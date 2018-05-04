@@ -45,7 +45,7 @@
 /**
  * For compression we enable all used compressors in the fileset.
  */
-bool adjust_compression_buffers(JobControlRecord *jcr)
+bool AdjustCompressionBuffers(JobControlRecord *jcr)
 {
    findFILESET *fileset = jcr->ff->fileset;
    uint32_t compress_buf_size = 0;
@@ -58,7 +58,7 @@ bool adjust_compression_buffers(JobControlRecord *jcr)
          for (j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
 
-            if (!setup_compression_buffers(jcr, me->compatible, fo->Compress_algo,
+            if (!SetupCompressionBuffers(jcr, me->compatible, fo->Compress_algo,
                                            &compress_buf_size)) {
                return false;
             }
@@ -66,7 +66,7 @@ bool adjust_compression_buffers(JobControlRecord *jcr)
       }
 
       if (compress_buf_size > 0) {
-         jcr->compress.deflate_buffer = get_memory(compress_buf_size);
+         jcr->compress.deflate_buffer = GetMemory(compress_buf_size);
          jcr->compress.deflate_buffer_size = compress_buf_size;
       }
    }
@@ -77,25 +77,25 @@ bool adjust_compression_buffers(JobControlRecord *jcr)
 /**
  * For decompression we use the same decompression buffer for each algorithm.
  */
-bool adjust_decompression_buffers(JobControlRecord *jcr)
+bool AdjustDecompressionBuffers(JobControlRecord *jcr)
 {
    uint32_t decompress_buf_size;
 
-   setup_decompression_buffers(jcr, &decompress_buf_size);
+   SetupDecompressionBuffers(jcr, &decompress_buf_size);
 
    if (decompress_buf_size > 0) {
-      jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+      jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
       jcr->compress.inflate_buffer_size = decompress_buf_size;
    }
 
    return true;
 }
 
-bool setup_compression_context(b_ctx &bctx)
+bool SetupCompressionContext(b_ctx &bctx)
 {
    bool retval = false;
 
-   if (bit_is_set(FO_COMPRESS, bctx.ff_pkt->flags)) {
+   if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
       /*
        * See if we need to be compatible with the old GZIP stream encoding.
        */
@@ -105,8 +105,8 @@ bool setup_compression_context(b_ctx &bctx)
          /*
           * Calculate buffer offsets.
           */
-         if (bit_is_set(FO_SPARSE, bctx.ff_pkt->flags) ||
-             bit_is_set(FO_OFFSETS, bctx.ff_pkt->flags)) {
+         if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags) ||
+             BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
             bctx.chead = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
             bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
@@ -125,8 +125,8 @@ bool setup_compression_context(b_ctx &bctx)
           * Calculate buffer offsets.
           */
          bctx.chead = NULL;
-         if (bit_is_set(FO_SPARSE, bctx.ff_pkt->flags) ||
-             bit_is_set(FO_OFFSETS, bctx.ff_pkt->flags)) {
+         if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags) ||
+             BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
             bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
          } else {
@@ -217,12 +217,12 @@ bail_out:
 
 #else
 
-bool adjust_compression_buffers(JobControlRecord *jcr)
+bool AdjustCompressionBuffers(JobControlRecord *jcr)
 {
    return true;
 }
 
-bool setup_compression_context(b_ctx &bctx)
+bool SetupCompressionContext(b_ctx &bctx)
 {
    return true;
 }

@@ -56,7 +56,7 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-static bool authenticate_with_director(JobControlRecord *jcr, DirectorResource *dir_res) {
+static bool AuthenticateWithDirector(JobControlRecord *jcr, DirectorResource *dir_res) {
    MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
 
    BareosSocket *dir = jcr->dir_bsock;
@@ -65,9 +65,9 @@ static bool authenticate_with_director(JobControlRecord *jcr, DirectorResource *
    int32_t errmsg_len = sizeof(errmsg);
 
    bstrncpy(bashed_name, monitor->name(), sizeof(bashed_name));
-   bash_spaces(bashed_name);
+   BashSpaces(bashed_name);
 
-   if (!dir->authenticate_with_director(jcr, bashed_name,(s_password &) monitor->password, errmsg, errmsg_len, monitor)) {
+   if (!dir->AuthenticateWithDirector(jcr, bashed_name,(s_password &) monitor->password, errmsg, errmsg_len, monitor)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
                                  "Most likely the passwords do not agree.\n"
                                  "Please see %s for help.\n"), MANUAL_AUTH_URL);
@@ -80,7 +80,7 @@ static bool authenticate_with_director(JobControlRecord *jcr, DirectorResource *
 /*
  * Authenticate Storage daemon connection
  */
-static bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource* store)
+static bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource* store)
 {
    const MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
 
@@ -92,7 +92,7 @@ static bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResourc
     * Send my name to the Storage daemon then do authentication
     */
    bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
-   bash_spaces(dirname);
+   BashSpaces(dirname);
 
    if (!sd->fsend(SDFDhello, dirname)) {
       Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
@@ -100,7 +100,7 @@ static bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResourc
       return false;
    }
 
-   auth_success = sd->authenticate_outbound_connection(
+   auth_success = sd->AuthenticateOutboundConnection(
       jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {
       Dmsg2(debuglevel,
@@ -139,7 +139,7 @@ static bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResourc
 /*
  * Authenticate File daemon connection
  */
-static bool authenticate_with_file_daemon(JobControlRecord *jcr, ClientResource* client)
+static bool AuthenticateWithFileDaemon(JobControlRecord *jcr, ClientResource* client)
 {
    const MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
 
@@ -158,7 +158,7 @@ static bool authenticate_with_file_daemon(JobControlRecord *jcr, ClientResource*
     * Send my name to the File daemon then do authentication
     */
    bstrncpy(dirname, monitor->name(), sizeof(dirname));
-   bash_spaces(dirname);
+   BashSpaces(dirname);
 
    if (!fd->fsend(SDFDhello, dirname)) {
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
@@ -168,7 +168,7 @@ static bool authenticate_with_file_daemon(JobControlRecord *jcr, ClientResource*
    Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
    auth_success =
-      fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, client);
+      fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password, client);
 
    if (!auth_success) {
       Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
@@ -205,15 +205,15 @@ static bool authenticate_with_file_daemon(JobControlRecord *jcr, ClientResource*
    return true;
 }
 
-bool authenticate_with_daemon(MonitorItem* item, JobControlRecord *jcr)
+bool AuthenticateWithDaemon(MonitorItem* item, JobControlRecord *jcr)
 {
    switch (item->type()) {
    case R_DIRECTOR:
-      return authenticate_with_director(jcr, (DirectorResource*)item->resource());
+      return AuthenticateWithDirector(jcr, (DirectorResource*)item->resource());
    case R_CLIENT:
-      return authenticate_with_file_daemon(jcr, (ClientResource*)item->resource());
+      return AuthenticateWithFileDaemon(jcr, (ClientResource*)item->resource());
    case R_STORAGE:
-      return authenticate_with_storage_daemon(jcr, (StoreResource*)item->resource());
+      return AuthenticateWithStorageDaemon(jcr, (StorageResource*)item->resource());
    default:
       printf(_("Error, currentitem is not a Client or a Storage..\n"));
       return false;

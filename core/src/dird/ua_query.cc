@@ -55,31 +55,31 @@ static POOLMEM *substitute_prompts(UaContext *ua,
 bool query_cmd(UaContext *ua, const char *cmd)
 {
    FILE *fd = NULL;
-   POOLMEM *query = get_pool_memory(PM_MESSAGE);
+   POOLMEM *query = GetPoolMemory(PM_MESSAGE);
    char line[1000];
    int i, item, len;
    char *prompt[9];
    int nprompt = 0;
    char *query_file = me->query_file;
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       goto bail_out;
    }
    if ((fd=fopen(query_file, "rb")) == NULL) {
       berrno be;
-      ua->error_msg(_("Could not open %s: ERR=%s\n"), query_file,
+      ua->ErrorMsg(_("Could not open %s: ERR=%s\n"), query_file,
          be.bstrerror());
       goto bail_out;
    }
 
-   start_prompt(ua, _("Available queries:\n"));
+   StartPrompt(ua, _("Available queries:\n"));
    while (fgets(line, sizeof(line), fd) != NULL) {
       if (line[0] == ':') {
-         strip_trailing_junk(line);
-         add_prompt(ua, line+1);
+         StripTrailingJunk(line);
+         AddPrompt(ua, line+1);
       }
    }
-   if ((item=do_prompt(ua, "", _("Choose a query"), NULL, 0)) < 0) {
+   if ((item=DoPrompt(ua, "", _("Choose a query"), NULL, 0)) < 0) {
       goto bail_out;
    }
    rewind(fd);
@@ -93,7 +93,7 @@ bool query_cmd(UaContext *ua, const char *cmd)
       }
    }
    if (i != item) {
-      ua->error_msg(_("Could not find query.\n"));
+      ua->ErrorMsg(_("Could not find query.\n"));
       goto bail_out;
    }
    query[0] = 0;
@@ -107,11 +107,11 @@ bool query_cmd(UaContext *ua, const char *cmd)
       if (line[0] == ':') {
          break;
       }
-      strip_trailing_junk(line);
+      StripTrailingJunk(line);
       len = strlen(line);
       if (line[0] == '*') {            /* prompt */
          if (nprompt >= 9) {
-            ua->error_msg(_("Too many prompts in query, max is 9.\n"));
+            ua->ErrorMsg(_("Too many prompts in query, max is 9.\n"));
          } else {
             line[len++] = ' ';
             line[len] = 0;
@@ -120,9 +120,9 @@ bool query_cmd(UaContext *ua, const char *cmd)
          }
       }
       if (*query != 0) {
-         pm_strcat(query, " ");
+         PmStrcat(query, " ");
       }
-      pm_strcat(query, line);
+      PmStrcat(query, line);
       if (line[len-1] != ';') {
          continue;
       }
@@ -131,9 +131,9 @@ bool query_cmd(UaContext *ua, const char *cmd)
          query = substitute_prompts(ua, query, prompt, nprompt);
          Dmsg1(100, "Query2=%s\n", query);
          if (query[0] == '!') {
-            ua->db->list_sql_query(ua->jcr, query + 1, ua->send, VERT_LIST, false);
-         } else if (!ua->db->list_sql_query(ua->jcr, query, ua->send, HORZ_LIST, true)) {
-            ua->send_msg("%s\n", query);
+            ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send, VERT_LIST, false);
+         } else if (!ua->db->ListSqlQuery(ua->jcr, query, ua->send, HORZ_LIST, true)) {
+            ua->SendMsg("%s\n", query);
          }
          query[0] = 0;
       }
@@ -143,9 +143,9 @@ bool query_cmd(UaContext *ua, const char *cmd)
       query = substitute_prompts(ua, query, prompt, nprompt);
       Dmsg1(100, "Query2=%s\n", query);
          if (query[0] == '!') {
-            ua->db->list_sql_query(ua->jcr, query + 1, ua->send, VERT_LIST, false);
-         } else if (!ua->db->list_sql_query(ua->jcr, query, ua->send, HORZ_LIST, true)) {
-            ua->error_msg("%s\n", query);
+            ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send, VERT_LIST, false);
+         } else if (!ua->db->ListSqlQuery(ua->jcr, query, ua->send, HORZ_LIST, true)) {
+            ua->ErrorMsg("%s\n", query);
          }
    }
 
@@ -153,7 +153,7 @@ bail_out:
    if (fd) {
       fclose(fd);
    }
-   free_pool_memory(query);
+   FreePoolMemory(query);
    for (i=0; i<nprompt; i++) {
       free(prompt[i]);
    }
@@ -175,12 +175,12 @@ static POOLMEM *substitute_prompts(UaContext *ua, POOLMEM *query, char **prompt,
       subst[i] = NULL;
    }
 
-   new_query = get_pool_memory(PM_FNAME);
+   new_query = GetPoolMemory(PM_FNAME);
    o = new_query;
    for (q=query; (p=strchr(q, '%')); ) {
       if (p) {
         olen = o - new_query;
-        new_query = check_pool_memory_size(new_query, olen + p - q + 10);
+        new_query = CheckPoolMemorySize(new_query, olen + p - q + 10);
         o = new_query + olen;
          while (q < p) {              /* copy up to % */
             *o++ = *q++;
@@ -199,23 +199,23 @@ static POOLMEM *substitute_prompts(UaContext *ua, POOLMEM *query, char **prompt,
             n = (int)(*p) - (int)'1';
             if (prompt[n]) {
                if (!subst[n]) {
-                  if (!get_cmd(ua, prompt[n])) {
+                  if (!GetCmd(ua, prompt[n])) {
                      q += 2;
                      break;
                   }
                }
                len = strlen(ua->cmd);
                p = (char *)malloc(len * 2 + 1);
-               ua->db->escape_string(ua->jcr, p, ua->cmd, len);
+               ua->db->EscapeString(ua->jcr, p, ua->cmd, len);
                subst[n] = p;
                olen = o - new_query;
-               new_query = check_pool_memory_size(new_query, olen + strlen(p) + 10);
+               new_query = CheckPoolMemorySize(new_query, olen + strlen(p) + 10);
                o = new_query + olen;
                while (*p) {
                   *o++ = *p++;
                }
             } else {
-               ua->error_msg(_("Warning prompt %d missing.\n"), n+1);
+               ua->ErrorMsg(_("Warning prompt %d missing.\n"), n+1);
             }
             q += 2;
             break;
@@ -231,7 +231,7 @@ static POOLMEM *substitute_prompts(UaContext *ua, POOLMEM *query, char **prompt,
       }
    }
    olen = o - new_query;
-   new_query = check_pool_memory_size(new_query, olen + strlen(q) + 10);
+   new_query = CheckPoolMemorySize(new_query, olen + strlen(q) + 10);
    o = new_query + olen;
    while (*q) {
       *o++ = *q++;
@@ -242,7 +242,7 @@ static POOLMEM *substitute_prompts(UaContext *ua, POOLMEM *query, char **prompt,
          free(subst[i]);
       }
    }
-   free_pool_memory(query);
+   FreePoolMemory(query);
    return new_query;
 }
 
@@ -255,37 +255,37 @@ bool sqlquery_cmd(UaContext *ua, const char *cmd)
    int len;
    const char *msg;
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return true;
    }
    *query.c_str() = 0;
 
-   ua->send_msg(_("Entering SQL query mode.\n"
+   ua->SendMsg(_("Entering SQL query mode.\n"
 "Terminate each query with a semicolon.\n"
 "Terminate query mode with a blank line.\n"));
    msg = _("Enter SQL query: ");
-   while (get_cmd(ua, msg)) {
+   while (GetCmd(ua, msg)) {
       len = strlen(ua->cmd);
       Dmsg2(400, "len=%d cmd=%s:\n", len, ua->cmd);
       if (len == 0) {
          break;
       }
       if (*query.c_str() != 0) {
-         pm_strcat(query, " ");
+         PmStrcat(query, " ");
       }
-      pm_strcat(query, ua->cmd);
+      PmStrcat(query, ua->cmd);
       if (ua->cmd[len-1] == ';') {
          ua->cmd[len-1] = 0;          /* zap ; */
          /*
           * Submit query
           */
-         ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+         ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
          *query.c_str() = 0;         /* start new query */
          msg = _("Enter SQL query: ");
       } else {
          msg = _("Add to SQL query: ");
       }
    }
-   ua->send_msg(_("End query mode.\n"));
+   ua->SendMsg(_("End query mode.\n"));
    return true;
 }

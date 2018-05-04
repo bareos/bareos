@@ -24,8 +24,8 @@
 
 #include "include/jcr.h"
 
-bool do_verify(JobControlRecord *jcr);
-bool do_verify_init(JobControlRecord *jcr);
-void verify_cleanup(JobControlRecord *jcr, int TermCode);
+bool DoVerify(JobControlRecord *jcr);
+bool DoVerifyInit(JobControlRecord *jcr);
+void VerifyCleanup(JobControlRecord *jcr, int TermCode);
 
 #endif // BAREOS_DIRD_VERIFY_H_

@@ -51,37 +51,37 @@
  *           PoolId = number of Pools deleted (should be 1)
  *           NumVols = number of Media records deleted
  */
-bool BareosDb::delete_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
+bool BareosDb::DeletePoolRecord(JobControlRecord *jcr, PoolDbRecord *pr)
 {
    bool retval = false;
    SQL_ROW row;
    int num_rows;
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(this);
-   escape_string(jcr, esc, pr->Name, strlen(pr->Name));
+   DbLock(this);
+   EscapeString(jcr, esc, pr->Name, strlen(pr->Name));
    Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
    Dmsg1(10, "selectpool: %s\n", cmd);
 
    pr->PoolId = pr->NumVols = 0;
 
    if (QUERY_DB(jcr, cmd)) {
-      num_rows = sql_num_rows();
+      num_rows = SqlNumRows();
       if (num_rows == 0) {
          Mmsg(errmsg, _("No pool record %s exists\n"), pr->Name);
-         sql_free_result();
+         SqlFreeResult();
          goto bail_out;
       } else if (num_rows != 1) {
          Mmsg(errmsg, _("Expecting one pool record, got %d\n"), num_rows);
-         sql_free_result();
+         SqlFreeResult();
          goto bail_out;
       }
-      if ((row = sql_fetch_row()) == NULL) {
+      if ((row = SqlFetchRow()) == NULL) {
          Mmsg1(errmsg, _("Error fetching row %s\n"), sql_strerror());
          goto bail_out;
       }
       pr->PoolId = str_to_int64(row[0]);
-      sql_free_result();
+      SqlFreeResult();
    }
 
    /* Delete Media owned by this pool */
@@ -98,7 +98,7 @@ bool BareosDb::delete_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -167,18 +167,18 @@ static int do_media_purge(BareosDb *mdb, MediaDbRecord *mr)
    }
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
 
-   mdb->sql_query(query.c_str(), delete_handler, (void *)&del);
+   mdb->SqlQuery(query.c_str(), delete_handler, (void *)&del);
 
    for (i = 0; i < del.num_ids; i++) {
       Dmsg1(400, "Delete JobId=%d\n", del.JobId[i]);
       Mmsg(query, "DELETE FROM Job WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      mdb->sql_query(query.c_str());
+      mdb->SqlQuery(query.c_str());
 
       Mmsg(query, "DELETE FROM File WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      mdb->sql_query(query.c_str());
+      mdb->SqlQuery(query.c_str());
 
       Mmsg(query, "DELETE FROM JobMedia WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      mdb->sql_query(query.c_str());
+      mdb->SqlQuery(query.c_str());
    }
 
    free(del.JobId);
@@ -191,12 +191,12 @@ static int do_media_purge(BareosDb *mdb, MediaDbRecord *mr)
  * Returns: false on error
  *          true on success
  */
-bool BareosDb::delete_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
+bool BareosDb::DeleteMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
 
-   db_lock(this);
-   if (mr->MediaId == 0 && !get_media_record(jcr, mr)) {
+   DbLock(this);
+   if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) {
       goto bail_out;
    }
    /* Do purge if not already purged */
@@ -206,11 +206,11 @@ bool BareosDb::delete_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
    }
 
    Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
-   sql_query(cmd);
+   SqlQuery(cmd);
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -224,8 +224,8 @@ bool BareosDb::purge_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
 
-   db_lock(this);
-   if (mr->MediaId == 0 && !get_media_record(jcr, mr)) {
+   DbLock(this);
+   if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) {
       goto bail_out;
    }
 
@@ -238,14 +238,14 @@ bool BareosDb::purge_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
     * Mark Volume as purged
     */
    strcpy(mr->VolStatus, "Purged");
-   if (!update_media_record(jcr, mr)) {
+   if (!UpdateMediaRecord(jcr, mr)) {
       goto bail_out;
    }
 
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES */

@@ -34,9 +34,9 @@ DLL_IMP_EXP extern void serial_int32(uint8_t * * const ptr, const int32_t v);
 DLL_IMP_EXP extern void serial_uint32(uint8_t * * const ptr, const uint32_t v);
 DLL_IMP_EXP extern void serial_int64(uint8_t * * ptr, int64_t v);
 DLL_IMP_EXP extern void serial_uint64(uint8_t * * const ptr, const uint64_t v);
-DLL_IMP_EXP extern void serial_btime(uint8_t * * const ptr, const btime_t v);
+DLL_IMP_EXP extern void SerialBtime(uint8_t * * const ptr, const btime_t v);
 DLL_IMP_EXP extern void serial_float64(uint8_t * * const ptr, const float64_t v);
-DLL_IMP_EXP extern void serial_string(uint8_t * * const ptr, const char * const str);
+DLL_IMP_EXP extern void SerialString(uint8_t * * const ptr, const char * const str);
 
 DLL_IMP_EXP extern int16_t unserial_int16(uint8_t * * const ptr);
 DLL_IMP_EXP extern uint16_t unserial_uint16(uint8_t * * const ptr);
@@ -44,9 +44,9 @@ DLL_IMP_EXP extern int32_t unserial_int32(uint8_t * * const ptr);
 DLL_IMP_EXP extern uint32_t unserial_uint32(uint8_t * * const ptr);
 DLL_IMP_EXP extern int64_t unserial_int64(uint8_t * * const ptr);
 DLL_IMP_EXP extern uint64_t unserial_uint64(uint8_t * * const ptr);
-DLL_IMP_EXP extern btime_t unserial_btime(uint8_t * * const ptr);
+DLL_IMP_EXP extern btime_t UnserialBtime(uint8_t * * const ptr);
 DLL_IMP_EXP extern float64_t unserial_float64(uint8_t * * const ptr);
-DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str, int max);
+DLL_IMP_EXP extern void UnserialString(uint8_t * * const ptr, char * const str, int max);
 
 /**
 
@@ -64,22 +64,22 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 #define ser_declare     uint8_t *ser_ptr
 #define unser_declare   uint8_t *ser_ptr
 
-/*  ser_begin(x, s)  --  Begin serialisation into a buffer x of size s.  */
-#define ser_begin(x, s) ser_ptr = ((uint8_t *)(x))
-#define unser_begin(x, s) ser_ptr = ((uint8_t *)(x))
+/*  SerBegin(x, s)  --  Begin serialisation into a buffer x of size s.  */
+#define SerBegin(x, s) ser_ptr = ((uint8_t *)(x))
+#define UnserBegin(x, s) ser_ptr = ((uint8_t *)(x))
 
-/*  ser_length  --  Determine length in bytes of serialised into a
+/*  SerLength  --  Determine length in bytes of serialised into a
                     buffer x.  */
-#define ser_length(x)  ((uint32_t)(ser_ptr - (uint8_t *)(x)))
-#define unser_length(x) ((uint32_t)(ser_ptr - (uint8_t *)(x)))
+#define SerLength(x)  ((uint32_t)(ser_ptr - (uint8_t *)(x)))
+#define UnserLength(x) ((uint32_t)(ser_ptr - (uint8_t *)(x)))
 
-/*  ser_end(x, s)  --  End serialisation into a buffer x of size s.  */
-#define ser_end(x, s)   ASSERT(ser_length(x) <= (s))
-#define unser_end(x, s)   ASSERT(ser_length(x) <= (s))
+/*  SerEnd(x, s)  --  End serialisation into a buffer x of size s.  */
+#define SerEnd(x, s)   ASSERT(SerLength(x) <= (s))
+#define UnserEnd(x, s)   ASSERT(SerLength(x) <= (s))
 
 /*  ser_check(x, s)  --  Verify length of serialised data in buffer x is
                          expected length s.  */
-#define ser_check(x, s) ASSERT(ser_length(x) == (s))
+#define ser_check(x, s) ASSERT(SerLength(x) == (s))
 
 /*                          Serialisation                   */
 
@@ -104,7 +104,7 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 #define ser_uint64(x)   serial_uint64(&ser_ptr, x)
 
 /* btime -- 64 bit unsigned integer */
-#define ser_btime(x)    serial_btime(&ser_ptr, x)
+#define SerBtime(x)    SerialBtime(&ser_ptr, x)
 
 
 /*  64 bit IEEE floating point number  */
@@ -114,13 +114,13 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 #define ser_int128(x)   memcpy(ser_ptr, x, sizeof(int128_t)), ser_ptr += sizeof(int128_t)
 
 /*  Binary byte stream len bytes not requiring serialisation  */
-#define ser_bytes(x, len) memcpy(ser_ptr, (x), (len)), ser_ptr += (len)
+#define SerBytes(x, len) memcpy(ser_ptr, (x), (len)), ser_ptr += (len)
 
 /*  Binary byte stream not requiring serialisation (length obtained by sizeof)  */
-#define ser_buffer(x)   ser_bytes((x), (sizeof (x)))
+#define ser_buffer(x)   SerBytes((x), (sizeof (x)))
 
 /* Binary string not requiring serialization */
-#define ser_string(x)   serial_string(&ser_ptr, (x))
+#define SerString(x)   SerialString(&ser_ptr, (x))
 
 /*                         Unserialisation                  */
 
@@ -145,7 +145,7 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 #define unser_uint64(x) (x) = unserial_uint64(&ser_ptr)
 
 /* btime -- 64 bit unsigned integer */
-#define unser_btime(x) (x) = unserial_btime(&ser_ptr)
+#define UnserBtime(x) (x) = UnserialBtime(&ser_ptr)
 
 /*  64 bit IEEE floating point number  */
 #define unser_float64(x)(x) = unserial_float64(&ser_ptr)
@@ -154,15 +154,15 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 #define unser_int128(x) memcpy(ser_ptr, x, sizeof(int128_t)), ser_ptr += sizeof(int128_t)
 
 /*  Binary byte stream len bytes not requiring serialisation  */
-#define unser_bytes(x, len) memcpy((x), ser_ptr, (len)), ser_ptr += (len)
+#define UnserBytes(x, len) memcpy((x), ser_ptr, (len)), ser_ptr += (len)
 
 /*  Binary byte stream not requiring serialisation (length obtained by sizeof)  */
-#define unser_buffer(x)  unser_bytes((x), (sizeof (x)))
+#define unser_buffer(x)  UnserBytes((x), (sizeof (x)))
 
 /* Binary string not requiring serialization (length obtained from max) */
-#define unser_nstring(x,max) unserial_string(&ser_ptr, (x), (int)(max))
+#define unser_nstring(x,max) UnserialString(&ser_ptr, (x), (int)(max))
 
 /*  Binary string not requiring serialisation (length obtained by sizeof)  */
-#define unser_string(x) unserial_string(&ser_ptr, (x), sizeof(x))
+#define UnserString(x) UnserialString(&ser_ptr, (x), sizeof(x))
 
 #endif /* BAREOS_LIB_SERIAL_H_ */

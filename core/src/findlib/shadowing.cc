@@ -119,7 +119,7 @@ static inline bool include_block_is_recursive(findIncludeExcludeItem *incexe)
    for (i = 0; i < incexe->opts_list.size(); i++) {
       fo = (findFOPTS *)incexe->opts_list.get(i);
 
-      recursive = !bit_is_set(FO_NO_RECURSION, fo->flags);
+      recursive = !BitIsSet(FO_NO_RECURSION, fo->flags);
    }
 
    return recursive;
@@ -143,7 +143,7 @@ static inline bool include_block_has_patterns(findIncludeExcludeItem *incexe)
        * e.g. exclude = yes is set then we
        * should still check for shadowing.
        */
-      if (bit_is_set(FO_EXCLUDE, fo->flags)) {
+      if (BitIsSet(FO_EXCLUDE, fo->flags)) {
          continue;
       }
 
@@ -403,7 +403,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord *jcr,
    }
 }
 
-void check_include_list_shadowing(JobControlRecord *jcr, findFILESET *fileset)
+void CheckIncludeListShadowing(JobControlRecord *jcr, findFILESET *fileset)
 {
    int i;
    findIncludeExcludeItem *incexe;

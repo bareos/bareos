@@ -84,7 +84,7 @@ void position_bsr_block(BootStrapRecord *bsr, DeviceBlock *block)
  *                  that can match the bsr).
  *
  */
-int match_bsr_block(BootStrapRecord *bsr, DeviceBlock *block)
+int MatchBsrBlock(BootStrapRecord *bsr, DeviceBlock *block)
 {
    if (!bsr || !bsr->use_fast_rejection || (block->BlockVer < 2)) {
       return 1;                       /* cannot fast reject */
@@ -146,7 +146,7 @@ static int match_fileregex(BootStrapRecord *bsr, DeviceRecord *rec, JobControlRe
    if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES ||
        rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
       bsr->skip_file = false;
-      if (unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, bsr->attr)) {
+      if (UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len, bsr->attr)) {
          if (regexec(bsr->fileregex_re, bsr->attr->fname, 0, NULL, 0) == 0) {
             Dmsg2(dbglevel, "Matched pattern, fname=%s FI=%d\n",
                   bsr->attr->fname, rec->FileIndex);
@@ -168,7 +168,7 @@ static int match_fileregex(BootStrapRecord *bsr, DeviceRecord *rec, JobControlRe
  *                      reposition the tape
  *       returns -1 no additional matches possible
  */
-int match_bsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, JobControlRecord *jcr)
+int MatchBsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, JobControlRecord *jcr)
 {
    int status;
 
@@ -209,7 +209,7 @@ BootStrapRecord *find_next_bsr(BootStrapRecord *root_bsr, Device *dev)
       return NULL;
    }
    if (!root_bsr->use_positioning ||
-       !root_bsr->reposition || !dev->has_cap(CAP_POSITIONBLOCKS)) {
+       !root_bsr->reposition || !dev->HasCap(CAP_POSITIONBLOCKS)) {
       Dmsg2(dbglevel, "No nxt_bsr use_pos=%d repos=%d\n", root_bsr->use_positioning, root_bsr->reposition);
       return NULL;
    }
@@ -348,7 +348,7 @@ static BootStrapRecord *find_smallest_volfile(BootStrapRecord *found_bsr, BootSt
  * Returns: true if we should reposition
  *        : false otherwise.
  */
-bool is_this_bsr_done(BootStrapRecord *bsr, DeviceRecord *rec)
+bool IsThisBsrDone(BootStrapRecord *bsr, DeviceRecord *rec)
 {
    BootStrapRecord *rbsr = rec->bsr;
    Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);
@@ -402,7 +402,7 @@ static int match_all(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volr
    if (!match_voladdr(bsr, bsr->voladdr, rec, 1)) {
       if (bsr->voladdr) {
          Dmsg3(dbglevel, "Fail on Addr=%llu. bsr=%llu,%llu\n",
-               get_record_address(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
+               GetRecordAddress(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
       }
       goto no_match;
    }
@@ -645,7 +645,7 @@ static int match_voladdr(BootStrapRecord *bsr, BsrVolumeAddress *voladdr, Device
 
 #endif
 
-   uint64_t addr = get_record_address(rec);
+   uint64_t addr = GetRecordAddress(rec);
    Dmsg6(dbglevel, "match_voladdr: saddr=%llu eaddr=%llu recaddr=%llu sfile=%u efile=%u recfile=%u\n",
          voladdr->saddr, voladdr->eaddr, addr, voladdr->saddr>>32, voladdr->eaddr>>32, addr>>32);
 
@@ -759,7 +759,7 @@ static int match_findex(BootStrapRecord *bsr, BsrFileIndex *findex, DeviceRecord
    return 0;
 }
 
-uint64_t get_bsr_start_addr(BootStrapRecord *bsr, uint32_t *file, uint32_t *block)
+uint64_t GetBsrStartAddr(BootStrapRecord *bsr, uint32_t *file, uint32_t *block)
 {
    uint64_t bsr_addr = 0;
    uint32_t sfile = 0, sblock = 0;
@@ -808,7 +808,7 @@ static bool add_restore_volume(JobControlRecord *jcr, VolumeList *vol)
    VolumeList *next = jcr->VolList;
 
    /* Add volume to volume manager's read list */
-   add_read_volume(jcr, vol->VolumeName);
+   AddReadVolume(jcr, vol->VolumeName);
 
    if (!next) {                       /* list empty ? */
       jcr->VolList = vol;             /* yes, add volume */
@@ -839,7 +839,7 @@ static bool add_restore_volume(JobControlRecord *jcr, VolumeList *vol)
  * Create a list of Volumes (and Slots and Start positions) to be
  *  used in the current restore job.
  */
-void create_restore_volume_list(JobControlRecord *jcr)
+void CreateRestoreVolumeList(JobControlRecord *jcr)
 {
    char *p, *n;
    VolumeList *vol;
@@ -904,14 +904,14 @@ void create_restore_volume_list(JobControlRecord *jcr)
    }
 }
 
-void free_restore_volume_list(JobControlRecord *jcr)
+void FreeRestoreVolumeList(JobControlRecord *jcr)
 {
    VolumeList *vol = jcr->VolList;
    VolumeList *tmp;
 
    for ( ; vol; ) {
       tmp = vol->next;
-      remove_read_volume(jcr, vol->VolumeName);
+      RemoveReadVolume(jcr, vol->VolumeName);
       free(vol);
       vol = tmp;
    }

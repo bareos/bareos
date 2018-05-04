@@ -43,7 +43,7 @@
  * If subprompt is set, we send a BNET_SUB_PROMPT signal otherwise
  *   send a BNET_TEXT_INPUT signal.
  */
-bool get_cmd(UaContext *ua, const char *prompt, bool subprompt)
+bool GetCmd(UaContext *ua, const char *prompt, bool subprompt)
 {
    int status;
    BareosSocket *sock = ua->UA_sock;
@@ -55,7 +55,7 @@ bool get_cmd(UaContext *ua, const char *prompt, bool subprompt)
    if (!subprompt && ua->api) {
       sock->signal(BNET_TEXT_INPUT);
    }
-   ua->send_msg("%s", prompt);
+   ua->SendMsg("%s", prompt);
    if (!ua->api || subprompt) {
       sock->signal(BNET_SUB_PROMPT);
    }
@@ -64,13 +64,13 @@ bool get_cmd(UaContext *ua, const char *prompt, bool subprompt)
       if (status == BNET_SIGNAL) {
          continue;                    /* ignore signals */
       }
-      if (is_bnet_stop(sock)) {
+      if (IsBnetStop(sock)) {
          return false;                /* error or terminate */
       }
-      pm_strcpy(ua->cmd, sock->msg);
-      strip_trailing_junk(ua->cmd);
+      PmStrcpy(ua->cmd, sock->msg);
+      StripTrailingJunk(ua->cmd);
       if (bstrcmp(ua->cmd, ".messages")) {
-         dot_messages_cmd(ua, ua->cmd);
+         DotMessagesCmd(ua, ua->cmd);
       }
       /* Lone dot => break */
       if (ua->cmd[0] == '.' && ua->cmd[1] == 0) {
@@ -86,28 +86,28 @@ bool get_cmd(UaContext *ua, const char *prompt, bool subprompt)
  *  Returns:  false if failure
  *            true  if success => value in ua->pint32_val
  */
-bool get_pint(UaContext *ua, const char *prompt)
+bool GetPint(UaContext *ua, const char *prompt)
 {
    double dval;
    ua->pint32_val = 0;
    ua->int64_val = 0;
    for (;;) {
       ua->cmd[0] = 0;
-      if (!get_cmd(ua, prompt)) {
+      if (!GetCmd(ua, prompt)) {
          return false;
       }
       /* Kludge for slots blank line => 0 */
       if (ua->cmd[0] == 0 && bstrncmp(prompt, _("Enter slot"), strlen(_("Enter slot")))) {
          return true;
       }
-      if (!is_a_number(ua->cmd)) {
-         ua->warning_msg(_("Expected a positive integer, got: %s\n"), ua->cmd);
+      if (!Is_a_number(ua->cmd)) {
+         ua->WarningMsg(_("Expected a positive integer, got: %s\n"), ua->cmd);
          continue;
       }
       errno = 0;
       dval = strtod(ua->cmd, NULL);
       if (errno != 0 || dval < 0) {
-         ua->warning_msg(_("Expected a positive integer, got: %s\n"), ua->cmd);
+         ua->WarningMsg(_("Expected a positive integer, got: %s\n"), ua->cmd);
          continue;
       }
       ua->pint32_val = (uint32_t)dval;
@@ -122,7 +122,7 @@ bool get_pint(UaContext *ua, const char *prompt)
  *            true  if success => ret == true for yes
  *                                ret == false for no
  */
-bool is_yesno(char *val, bool *ret)
+bool IsYesno(char *val, bool *ret)
 {
    *ret = 0;
    if (bstrcasecmp(val,   _("yes")) ||
@@ -144,7 +144,7 @@ bool is_yesno(char *val, bool *ret)
  *           true  if success => ua->pint32_val == 1 for yes
  *                               ua->pint32_val == 0 for no
  */
-bool get_yesno(UaContext *ua, const char *prompt)
+bool GetYesno(UaContext *ua, const char *prompt)
 {
    int len;
    bool ret;
@@ -155,7 +155,7 @@ bool get_yesno(UaContext *ua, const char *prompt)
          ua->UA_sock->signal(BNET_YESNO);
       }
 
-      if (!get_cmd(ua, prompt)) {
+      if (!GetCmd(ua, prompt)) {
          return false;
       }
 
@@ -164,12 +164,12 @@ bool get_yesno(UaContext *ua, const char *prompt)
          continue;
       }
 
-      if (is_yesno(ua->cmd, &ret)) {
+      if (IsYesno(ua->cmd, &ret)) {
          ua->pint32_val = ret;
          return true;
       }
 
-      ua->warning_msg(_("Invalid response. You must answer yes or no.\n"));
+      ua->WarningMsg(_("Invalid response. You must answer yes or no.\n"));
    }
 }
 
@@ -181,9 +181,9 @@ bool get_yesno(UaContext *ua, const char *prompt)
  *                 or user enters "yes"
  *           false otherwise
  */
-bool get_confirmation(UaContext *ua, const char *prompt)
+bool GetConfirmation(UaContext *ua, const char *prompt)
 {
-   if (find_arg(ua, NT_("yes")) >= 0) {
+   if (FindArg(ua, NT_("yes")) >= 0) {
       return true;
    }
 
@@ -191,7 +191,7 @@ bool get_confirmation(UaContext *ua, const char *prompt)
       return false;
    }
 
-   if (get_yesno(ua, prompt)) {
+   if (GetYesno(ua, prompt)) {
       return (ua->pint32_val == 1);
    }
 
@@ -218,23 +218,23 @@ int get_enabled(UaContext *ua, const char *val)
    }
 
    if (Enabled < 0 || Enabled > 2) {
-      ua->error_msg(_("Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
+      ua->ErrorMsg(_("Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
       return -1;
    }
 
    return Enabled;
 }
 
-void parse_ua_args(UaContext *ua)
+void ParseUaArgs(UaContext *ua)
 {
-   parse_args(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+   ParseArgs(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
 }
 
 /**
  * Check if the comment has legal characters
  * If ua is non-NULL send the message
  */
-bool is_comment_legal(UaContext *ua, const char *name)
+bool IsCommentLegal(UaContext *ua, const char *name)
 {
    int len;
    const char *p;
@@ -246,20 +246,20 @@ bool is_comment_legal(UaContext *ua, const char *name)
          continue;
       }
       if (ua) {
-         ua->error_msg(_("Illegal character \"%c\" in a comment.\n"), *p);
+         ua->ErrorMsg(_("Illegal character \"%c\" in a comment.\n"), *p);
       }
       return 0;
    }
    len = strlen(name);
    if (len >= MAX_NAME_LENGTH) {
       if (ua) {
-         ua->error_msg(_("Comment too long.\n"));
+         ua->ErrorMsg(_("Comment too long.\n"));
       }
       return 0;
    }
    if (len == 0) {
       if (ua) {
-         ua->error_msg(_("Comment must be at least one character long.\n"));
+         ua->ErrorMsg(_("Comment must be at least one character long.\n"));
       }
       return 0;
    }

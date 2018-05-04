@@ -104,7 +104,7 @@ static void *handle_connection_request(void *arg)
    return handle_director_connection(bs);
 }
 
-void start_socket_server(dlist *addrs)
+void StartSocketServer(dlist *addrs)
 {
    IPADDR *p;
 
@@ -114,7 +114,7 @@ void start_socket_server(dlist *addrs)
     * Become server, and handle requests
     */
    foreach_dlist(p, addrs) {
-      Dmsg1(10, "stored: listening on port %d\n", p->get_port_host_order());
+      Dmsg1(10, "stored: listening on port %d\n", p->GetPortHostOrder());
    }
 
    sock_fds = New(alist(10, not_owned_by_alist));
@@ -126,11 +126,11 @@ void start_socket_server(dlist *addrs)
                           handle_connection_request);
 }
 
-void stop_socket_server()
+void StopSocketServer()
 {
    if (sock_fds) {
       bnet_stop_thread_server_tcp(tcp_server_tid);
-      cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
+      CleanupBnetThreadServerTcp(sock_fds, &socket_workq);
       delete sock_fds;
       sock_fds = NULL;
    }

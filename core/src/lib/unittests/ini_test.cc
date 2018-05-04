@@ -79,8 +79,8 @@ int main()
    ConfigFile *ini = new ConfigFile();
    PoolMem *buf;
 
-   nok(ini->register_items(test_items, 5), "Check bad sizeof ini_items");
-   ok(ini->register_items(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
+   nok(ini->RegisterItems(test_items, 5), "Check bad sizeof ini_items");
+   ok(ini->RegisterItems(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
 
    if ((fp = fopen("test.cfg", "w")) == NULL) {
       exit (1);
@@ -89,7 +89,7 @@ int main()
    fflush(fp);
 
    nok(ini->parse("test.cfg"), "Test missing member");
-   ini->clear_items();
+   ini->ClearItems();
 
    fprintf(fp, "int64val=12 # with a comment\n");
    fprintf(fp, "int64val=10 # with a comment\n");
@@ -116,7 +116,7 @@ int main()
    fprintf(fp, "list=a\nlist=b\nlist=c\n");
    fflush(fp);
 
-   ini->clear_items();
+   ini->ClearItems();
    ok(ini->parse("test.cfg"), "Test with all members");
 
    list = ini->items[3].val.alistval;
@@ -135,13 +135,13 @@ int main()
    fprintf(fp, "int64val=-100\n"); /* TODO: fix negative numbers */
    fflush(fp);
 
-   ini->clear_items();
+   ini->ClearItems();
    ok(ini->parse("test.cfg"), "Test with errors");
    nok(ini->items[5].found, "Test presence of positive int");
 
    fclose(fp);
-   ini->clear_items();
-   ini->free_items();
+   ini->ClearItems();
+   ini->FreeItems();
 
    /* Test  */
    if ((fp = fopen("test2.cfg", "w")) == NULL) {
@@ -171,30 +171,30 @@ int main()
    ok(ini->serialize(buf) > 0, "Try to dump the item table in a buffer");
    ok(ini->parse("test3.cfg"), "Parse test file with dynamic grammar");
 
-   ok((pos = ini->get_item("datastore")) == 0, "Check datastore definition");
+   ok((pos = ini->GetItem("datastore")) == 0, "Check datastore definition");
    ok(ini->items[pos].found, "Test presence of char[]");
    ok(!strcmp(ini->items[pos].val.nameval, "datastore1"), "Test char[]");
    ok(!strcmp(ini->items[pos].comment, "Datastore Name"), "Check comment");
    ok(ini->items[pos].required == false, "Check required");
 
-   ok((pos = ini->get_item("newhost")) == 1, "Check newhost definition");
+   ok((pos = ini->GetItem("newhost")) == 1, "Check newhost definition");
    ok(ini->items[pos].found, "Test presence of char*");
    ok(!strcmp(ini->items[pos].val.strval, "host1"), "Test char*");
    ok(ini->items[pos].required == false, "Check required");
 
-   ok((pos = ini->get_item("int64val")) == 2, "Check int64val definition");
+   ok((pos = ini->GetItem("int64val")) == 2, "Check int64val definition");
    ok(ini->items[pos].found, "Test presence of int");
    ok(ini->items[pos].val.int64val == 10, "Test int");
    ok(ini->items[pos].required == true, "Check required");
 
-   ok((pos = ini->get_item("bool")) == 4, "Check bool definition");
+   ok((pos = ini->GetItem("bool")) == 4, "Check bool definition");
    ok(ini->items[pos].val.boolval == true, "Test bool");
 
    ok(ini->dump_results(buf), "Test to dump results");
    printf("<%s>\n", buf);
 
-   ini->clear_items();
-   ini->free_items();
+   ini->ClearItems();
+   ini->FreeItems();
    report();
 
    delete buf;

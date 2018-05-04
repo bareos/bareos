@@ -67,7 +67,7 @@ static inline void set_4_byte_value(unsigned char *field, int value)
  * The Send Encryption Key page has the encryption
  * and decryption set to disabled and the key is empty.
  */
-bool clear_scsi_encryption_key(int fd, const char *device_name)
+bool ClearScsiEncryptionKey(int fd, const char *device_name)
 {
    /*
     * Create a SPOUT Set Encryption Key CDB and
@@ -132,7 +132,7 @@ bool clear_scsi_encryption_key(int fd, const char *device_name)
  * The Send Encryption Key page has the encryption
  * and decryption set to not disabled and the key is filled.
  */
-bool set_scsi_encryption_key(int fd, const char *device_name, char *encryption_key)
+bool SetScsiEncryptionKey(int fd, const char *device_name, char *encryption_key)
 {
    /*
     * Create a SPOUT Set Encryption Key CDB and
@@ -197,7 +197,7 @@ bool set_scsi_encryption_key(int fd, const char *device_name, char *encryption_k
  *
  * The return data is interpreted and a status report is build.
  */
-int get_scsi_drive_encryption_status(int fd, const char *device_name,
+int GetScsiDriveEncryptionStatus(int fd, const char *device_name,
                                      POOLMEM *&status, int indent)
 {
    SPP_SCSI_CDB cdb;
@@ -221,7 +221,7 @@ int get_scsi_drive_encryption_status(int fd, const char *device_name,
    /*
     * Retrieve the drive encryption status.
     */
-   if (!recv_scsi_cmd_page(fd, device_name,
+   if (!RecvScsiCmdPage(fd, device_name,
                           (void *)&cdb, cdb_len,
                           (void *)&cmd_page, cmd_page_len)) {
       return 0;
@@ -234,7 +234,7 @@ int get_scsi_drive_encryption_status(int fd, const char *device_name,
     */
    spd = (SPP_PAGE_DES *)&cmd_page;
 
-   pm_strcpy(status, "");
+   PmStrcpy(status, "");
    indent_status_msg(status, _("Drive encryption status:\n"), indent);
 
    /*
@@ -414,7 +414,7 @@ int get_scsi_drive_encryption_status(int fd, const char *device_name,
  *
  * The return data is interpreted and a status report is build.
  */
-int get_scsi_volume_encryption_status(int fd, const char *device_name,
+int GetScsiVolumeEncryptionStatus(int fd, const char *device_name,
                                       POOLMEM *&status, int indent)
 {
    SPP_SCSI_CDB cdb;
@@ -438,7 +438,7 @@ int get_scsi_volume_encryption_status(int fd, const char *device_name,
    /*
     * Retrieve the volume encryption status.
     */
-   if (!recv_scsi_cmd_page(fd, device_name,
+   if (!RecvScsiCmdPage(fd, device_name,
                           (void *)&cdb, cdb_len,
                           (void *)&cmd_page, cmd_page_len)) {
       return 0;
@@ -451,7 +451,7 @@ int get_scsi_volume_encryption_status(int fd, const char *device_name,
     */
    spnb = (SPP_PAGE_NBES *)&cmd_page;
 
-   pm_strcpy(status, "");
+   PmStrcpy(status, "");
    indent_status_msg(status, _("Volume encryption status:\n"), indent);
 
    switch (spnb->compressionStatus) {
@@ -586,7 +586,7 @@ int get_scsi_volume_encryption_status(int fd, const char *device_name,
  * - SPIN Security Protocol IN SCSI CDB. (0xA2)
  * - SPIN Get Data Encryption Status page. (0x21)
  */
-bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status)
+bool NeedScsiCryptoKey(int fd, const char *device_name, bool use_drive_status)
 {
    SPP_SCSI_CDB cdb;
    SPP_PAGE_BUFFER cmd_page;
@@ -614,7 +614,7 @@ bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status
    /*
     * Retrieve the volume encryption status.
     */
-   if (!recv_scsi_cmd_page(fd, device_name,
+   if (!RecvScsiCmdPage(fd, device_name,
                           (void *)&cdb, cdb_len,
                           (void *)&cmd_page, cmd_page_len)) {
       return false;
@@ -663,7 +663,7 @@ bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status
  * - SPIN Security Protocol IN SCSI CDB. (0xA2)
  * - SPIN Get Data Encryption Status page. (0x20)
  */
-bool is_scsi_encryption_enabled(int fd, const char *device_name)
+bool IsScsiEncryptionEnabled(int fd, const char *device_name)
 {
    SPP_SCSI_CDB cdb;
    SPP_PAGE_BUFFER cmd_page;
@@ -686,7 +686,7 @@ bool is_scsi_encryption_enabled(int fd, const char *device_name)
    /*
     * Retrieve the drive encryption status.
     */
-   if (!recv_scsi_cmd_page(fd, device_name,
+   if (!RecvScsiCmdPage(fd, device_name,
                           (void *)&cdb, cdb_len,
                           (void *)&cmd_page, cmd_page_len)) {
       return false;
@@ -708,33 +708,33 @@ bool is_scsi_encryption_enabled(int fd, const char *device_name)
 
 #else
 
-bool clear_scsi_encryption_key(int fd, const char *device_name)
+bool ClearScsiEncryptionKey(int fd, const char *device_name)
 {
    return false;
 }
 
-bool set_scsi_encryption_key(int fd, const char *device_name, char *encryption_key)
+bool SetScsiEncryptionKey(int fd, const char *device_name, char *encryption_key)
 {
    return false;
 }
 
-int get_scsi_drive_encryption_status(int fd, const char *device_name,
+int GetScsiDriveEncryptionStatus(int fd, const char *device_name,
                                      POOLMEM *&status, int indent)
 {
-   pm_strcpy(status, "");
+   PmStrcpy(status, "");
    indent_status_msg(status, _("Drive encryption status: Unknown\n"), indent);
    return strlen(status);
 }
 
-int get_scsi_volume_encryption_status(int fd, const char *device_name,
+int GetScsiVolumeEncryptionStatus(int fd, const char *device_name,
                                       POOLMEM *&status, int indent)
 {
-   pm_strcpy(status, "");
+   PmStrcpy(status, "");
    indent_status_msg(status, _("Volume encryption status: Unknown\n"), indent);
    return strlen(status);
 }
 
-bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status)
+bool NeedScsiCryptoKey(int fd, const char *device_name, bool use_drive_status)
 {
    return false;
 }
@@ -758,8 +758,8 @@ static void indent_status_msg(POOLMEM *&status, const char *msg, int indent)
          indent_level[cnt] = ' ';
       }
       indent_level[cnt] = '\0';
-      pm_strcat(status, indent_level);
+      PmStrcat(status, indent_level);
    }
 
-   pm_strcat(status, msg);
+   PmStrcat(status, msg);
 }

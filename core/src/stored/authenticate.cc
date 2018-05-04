@@ -52,7 +52,7 @@ static char OK_hello[] =
  * This is the channel across which we will send error
  * messages and job status information.
  */
-bool authenticate_director(JobControlRecord *jcr)
+bool AuthenticateDirector(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *dirname;
@@ -68,8 +68,8 @@ bool authenticate_director(JobControlRecord *jcr)
             dir->who(), dir->msglen);
       return false;
    }
-   dirname = get_pool_memory(PM_MESSAGE);
-   dirname = check_pool_memory_size(dirname, dir->msglen);
+   dirname = GetPoolMemory(PM_MESSAGE);
+   dirname = CheckPoolMemorySize(dirname, dir->msglen);
 
    if (sscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
       dir->msg[100] = 0;
@@ -77,11 +77,11 @@ bool authenticate_director(JobControlRecord *jcr)
             dir->who(), dir->msg);
       Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
             dir->who(), dir->msg);
-      free_pool_memory(dirname);
+      FreePoolMemory(dirname);
       return false;
    }
 
-   unbash_spaces(dirname);
+   UnbashSpaces(dirname);
    director = (DirectorResource *)GetResWithName(R_DIRECTOR, dirname);
    jcr->director = director;
 
@@ -91,22 +91,22 @@ bool authenticate_director(JobControlRecord *jcr)
       Jmsg(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"
                               "Please see %s for help.\n"),
            dirname, dir->who(), MANUAL_AUTH_URL);
-      free_pool_memory(dirname);
+      FreePoolMemory(dirname);
       return false;
    }
 
-   if (!dir->authenticate_inbound_connection(jcr, "Director",
+   if (!dir->AuthenticateInboundConnection(jcr, "Director",
                                              director->name(), director->password,
                                              director)) {
       dir->fsend("%s", Dir_sorry);
       Dmsg2(debuglevel, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
       Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"), dir->who());
       bmicrosleep(5, 0);
-      free_pool_memory(dirname);
+      FreePoolMemory(dirname);
       return false;
    }
 
-   free_pool_memory(dirname);
+   FreePoolMemory(dirname);
    return dir->fsend("%s", OK_hello);
 }
 
@@ -115,7 +115,7 @@ bool authenticate_director(JobControlRecord *jcr)
  *
  * This is used for SD-SD replication of data.
  */
-bool authenticate_storagedaemon(JobControlRecord *jcr)
+bool AuthenticateStoragedaemon(JobControlRecord *jcr)
 {
    BareosSocket *sd = jcr->store_bsock;
    s_password password;
@@ -125,8 +125,8 @@ bool authenticate_storagedaemon(JobControlRecord *jcr)
    const char *identity =
        "* replicate *";
 
-   Dmsg2(debuglevel, "authenticate_storagedaemon %s %s\n", identity, (unsigned char *)password.value);
-   if (!sd->authenticate_inbound_connection(jcr, "Storage daemon", identity, password, me)) {
+   Dmsg2(debuglevel, "AuthenticateStoragedaemon %s %s\n", identity, (unsigned char *)password.value);
+   if (!sd->AuthenticateInboundConnection(jcr, "Storage daemon", identity, password, me)) {
       Jmsg1(
           jcr,
           M_FATAL,
@@ -144,7 +144,7 @@ bool authenticate_storagedaemon(JobControlRecord *jcr)
  *
  * This is used for SD-SD replication of data.
  */
-bool authenticate_with_storagedaemon(JobControlRecord *jcr)
+bool AuthenticateWithStoragedaemon(JobControlRecord *jcr)
 {
    BareosSocket *sd = jcr->store_bsock;
    s_password password;
@@ -154,7 +154,7 @@ bool authenticate_with_storagedaemon(JobControlRecord *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   if (!sd->authenticate_outbound_connection(
+   if (!sd->AuthenticateOutboundConnection(
            jcr, "Storage daemon", identity, password, me)) {
       Jmsg1(
           jcr,
@@ -173,7 +173,7 @@ bool authenticate_with_storagedaemon(JobControlRecord *jcr)
  *
  * This is used for FD backups or restores.
  */
-bool authenticate_filedaemon(JobControlRecord *jcr)
+bool AuthenticateFiledaemon(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
    s_password password;
@@ -181,7 +181,7 @@ bool authenticate_filedaemon(JobControlRecord *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   if (!fd->authenticate_inbound_connection(jcr, "File daemon", jcr->client_name, password, me)) {
+   if (!fd->AuthenticateInboundConnection(jcr, "File daemon", jcr->client_name, password, me)) {
       Jmsg1(jcr,
             M_FATAL,
             0,
@@ -198,7 +198,7 @@ bool authenticate_filedaemon(JobControlRecord *jcr)
  *
  * This is used for passive FD backups or restores.
  */
-bool authenticate_with_filedaemon(JobControlRecord *jcr)
+bool AuthenticateWithFiledaemon(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
    s_password password;
@@ -206,7 +206,7 @@ bool authenticate_with_filedaemon(JobControlRecord *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   if (!fd->authenticate_outbound_connection(
+   if (!fd->AuthenticateOutboundConnection(
            jcr, "File daemon", jcr->client_name, password, me)) {
       Jmsg1(jcr,
             M_FATAL,

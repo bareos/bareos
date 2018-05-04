@@ -50,19 +50,19 @@ class DLL_IMP_EXP IPADDR : public SmartAlloc {
    struct sockaddr_in6 *saddr6;
 #endif
  public:
-   void set_type(i_type o);
-   i_type get_type() const;
-   unsigned short get_port_net_order() const;
-   unsigned short get_port_host_order() const
+   void SetType(i_type o);
+   i_type GetType() const;
+   unsigned short GetPortNetOrder() const;
+   unsigned short GetPortHostOrder() const
    {
-      return ntohs(get_port_net_order());
+      return ntohs(GetPortNetOrder());
    }
-   void set_port_net(unsigned short port);
-   int get_family() const;
+   void SetPortNet(unsigned short port);
+   int GetFamily() const;
    struct sockaddr *get_sockaddr();
-   int get_sockaddr_len();
-   void copy_addr(IPADDR * src);
-   void set_addr_any();
+   int GetSockaddrLen();
+   void CopyAddr(IPADDR * src);
+   void SetAddrAny();
    void set_addr4(struct in_addr *ip4);
 #ifdef HAVE_IPV6
    void set_addr6(struct in6_addr *ip6);
@@ -76,18 +76,18 @@ class DLL_IMP_EXP IPADDR : public SmartAlloc {
 };
 
 DLL_IMP_EXP void init_default_addresses(dlist ** addr, const char *port);
-DLL_IMP_EXP void free_addresses(dlist * addrs);
+DLL_IMP_EXP void FreeAddresses(dlist * addrs);
 
 DLL_IMP_EXP const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
 DLL_IMP_EXP int get_first_port_net_order(dlist * addrs);
-DLL_IMP_EXP int get_first_port_host_order(dlist * addrs);
+DLL_IMP_EXP int GetFirstPortHostOrder(dlist * addrs);
 
-DLL_IMP_EXP int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
+DLL_IMP_EXP int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen);
 DLL_IMP_EXP const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port=true);
 
 DLL_IMP_EXP int sockaddr_get_port_net_order(const struct sockaddr *sa);
-DLL_IMP_EXP int sockaddr_get_port(const struct sockaddr *sa);
+DLL_IMP_EXP int SockaddrGetPort(const struct sockaddr *sa);
 DLL_IMP_EXP char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len);
 #ifdef WIN32
 #undef HAVE_OLD_SOCKOPT

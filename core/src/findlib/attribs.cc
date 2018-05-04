@@ -73,13 +73,13 @@ void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *ofile);
 /**
  * Return the data stream that will be used
  */
-int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
+int SelectDataStream(FindFilesPacket *ff_pkt, bool compatible)
 {
    int stream;
 
    /* This is a plugin special restore object */
    if (ff_pkt->type == FT_RESTORE_FIRST) {
-      clear_all_bits(FO_MAX, ff_pkt->flags);
+      ClearAllBits(FO_MAX, ff_pkt->flags);
       return STREAM_FILE_DATA;
    }
 
@@ -90,22 +90,22 @@ int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
    /**
     * No sparse option for encrypted data
     */
-   if (bit_is_set(FO_ENCRYPT, ff_pkt->flags)) {
-      clear_bit(FO_SPARSE, ff_pkt->flags);
+   if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
+      ClearBit(FO_SPARSE, ff_pkt->flags);
    }
 
    /*
     * Note, no sparse option for win32_data
     */
-   if (!is_portable_backup(&ff_pkt->bfd)) {
+   if (!IsPortableBackup(&ff_pkt->bfd)) {
       stream = STREAM_WIN32_DATA;
-      clear_bit(FO_SPARSE, ff_pkt->flags);
-   } else if (bit_is_set(FO_SPARSE, ff_pkt->flags)) {
+      ClearBit(FO_SPARSE, ff_pkt->flags);
+   } else if (BitIsSet(FO_SPARSE, ff_pkt->flags)) {
       stream = STREAM_SPARSE_DATA;
    } else {
       stream = STREAM_FILE_DATA;
    }
-   if (bit_is_set(FO_OFFSETS, ff_pkt->flags)) {
+   if (BitIsSet(FO_OFFSETS, ff_pkt->flags)) {
       stream = STREAM_SPARSE_DATA;
    }
 
@@ -115,20 +115,20 @@ int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
    if (stream != STREAM_FILE_DATA &&
        stream != STREAM_WIN32_DATA &&
        stream != STREAM_MACOS_FORK_DATA) {
-      clear_bit(FO_ENCRYPT, ff_pkt->flags);
+      ClearBit(FO_ENCRYPT, ff_pkt->flags);
    }
 
    /*
     * Compression is not supported for Mac fork data
     */
    if (stream == STREAM_MACOS_FORK_DATA) {
-      clear_bit(FO_COMPRESS, ff_pkt->flags);
+      ClearBit(FO_COMPRESS, ff_pkt->flags);
    }
 
    /*
     * Handle compression and encryption options
     */
-   if (bit_is_set(FO_COMPRESS, ff_pkt->flags)) {
+   if (BitIsSet(FO_COMPRESS, ff_pkt->flags)) {
       if (compatible && ff_pkt->Compress_algo == COMPRESS_GZIP) {
          switch (stream) {
          case STREAM_WIN32_DATA:
@@ -145,7 +145,7 @@ int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
              * All stream types that do not support compression should clear out
              * FO_COMPRESS above, and this code block should be unreachable.
              */
-            ASSERT(!bit_is_set(FO_COMPRESS, ff_pkt->flags));
+            ASSERT(!BitIsSet(FO_COMPRESS, ff_pkt->flags));
             return STREAM_NONE;
          }
       } else {
@@ -164,14 +164,14 @@ int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
              * All stream types that do not support compression should clear out
              * FO_COMPRESS above, and this code block should be unreachable.
              */
-            ASSERT(!bit_is_set(FO_COMPRESS, ff_pkt->flags));
+            ASSERT(!BitIsSet(FO_COMPRESS, ff_pkt->flags));
             return STREAM_NONE;
          }
       }
    }
 
 #ifdef HAVE_CRYPTO
-   if (bit_is_set(FO_ENCRYPT, ff_pkt->flags)) {
+   if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
       switch (stream) {
       case STREAM_WIN32_DATA:
          stream = STREAM_ENCRYPTED_WIN32_DATA;
@@ -196,7 +196,7 @@ int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
           * All stream types that do not support encryption should clear out
           * FO_ENCRYPT above, and this code block should be unreachable.
           */
-         ASSERT(!bit_is_set(FO_ENCRYPT, ff_pkt->flags));
+         ASSERT(!BitIsSet(FO_ENCRYPT, ff_pkt->flags));
          return STREAM_NONE;
       }
    }
@@ -218,7 +218,7 @@ static inline bool restore_file_attributes(JobControlRecord *jcr, Attributes *at
    /*
     * Save if we are working on an open file.
     */
-   file_is_open = is_bopen(ofd);
+   file_is_open = IsBopen(ofd);
 #endif
 
    /*
@@ -369,7 +369,7 @@ static inline bool restore_file_attributes(JobControlRecord *jcr, Attributes *at
  * Returns:  true  on success
  *           false on failure
  */
-bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
+bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
 {
    mode_t old_mask;
    bool ok = true;
@@ -389,20 +389,20 @@ bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket
 #if defined(HAVE_WIN32)
    if (attr->stream == STREAM_UNIX_ATTRIBUTES_EX &&
        set_win32_attributes(jcr, attr, ofd)) {
-       if (is_bopen(ofd)) {
+       if (IsBopen(ofd)) {
            bclose(ofd);
        }
-       pm_strcpy(attr->ofname, "*None*");
+       PmStrcpy(attr->ofname, "*None*");
        return true;
    }
 
    if (attr->data_stream == STREAM_WIN32_DATA ||
        attr->data_stream == STREAM_WIN32_GZIP_DATA ||
        attr->data_stream == STREAM_WIN32_COMPRESSED_DATA) {
-      if (is_bopen(ofd)) {
+      if (IsBopen(ofd)) {
          bclose(ofd);
       }
-      pm_strcpy(attr->ofname, "*None*");
+      PmStrcpy(attr->ofname, "*None*");
       return true;
    }
 
@@ -413,7 +413,7 @@ bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket
 #endif
 
    old_mask = umask(0);
-   if (is_bopen(ofd)) {
+   if (IsBopen(ofd)) {
       boffset_t fsize;
       char ec1[50], ec2[50];
 
@@ -492,11 +492,11 @@ bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket
    }
 
 bail_out:
-   if (is_bopen(ofd)) {
+   if (IsBopen(ofd)) {
       bclose(ofd);
    }
 
-   pm_strcpy(attr->ofname, "*None*");
+   PmStrcpy(attr->ofname, "*None*");
    umask(old_mask);
 
    return ok;
@@ -511,7 +511,7 @@ bail_out:
 
 /**
  * It is possible to piggyback additional data e.g. ACLs on
- *   the encode_stat() data by returning the extended attributes
+ *   the EncodeStat() data by returning the extended attributes
  *   here.  They must be "self-contained" (i.e. you keep track
  *   of your own length), and they must be in ASCII string
  *   format. Using this feature is not recommended.
@@ -532,7 +532,7 @@ int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff
       return STREAM_UNIX_ATTRIBUTES;
    }
    p = attribsEx;
-   if (bit_is_set(FO_HFSPLUS, ff_pkt->flags)) {
+   if (BitIsSet(FO_HFSPLUS, ff_pkt->flags)) {
       p += to_base64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
    }
    *p = 0;
@@ -564,12 +564,12 @@ int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff
       /**
        * Try unicode version
        */
-      POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
+      POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
       make_win32_path_UTF8_2_wchar(pwszBuf, ff_pkt->fname);
 
       BOOL b=p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
                                     (LPVOID)&atts);
-      free_pool_memory(pwszBuf);
+      FreePoolMemory(pwszBuf);
 
       if (!b) {
          win_error(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
@@ -651,7 +651,7 @@ static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, Bareos
 
    if (!p || !*p) {                   /* we should have attributes */
       Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname, ofd->fid);
-      if (is_bopen(ofd)) {
+      if (IsBopen(ofd)) {
          bclose(ofd);
       }
       return false;
@@ -685,7 +685,7 @@ static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, Bareos
 
    /** At this point, we have reconstructed the WIN32_FILE_ATTRIBUTE_DATA pkt */
 
-   if (!is_bopen(ofd)) {
+   if (!IsBopen(ofd)) {
       Dmsg1(100, "File not open: %s\n", attr->ofname);
       bopen(ofd, attr->ofname, O_WRONLY | O_BINARY, 0, 0); /* attempt to open the file */
    }
@@ -693,11 +693,11 @@ static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, Bareos
    /*
     * Restore file attributes and times on the restored file.
     */
-   if (!win32_restore_file_attributes(attr->ofname, bget_handle(ofd), &atts)) {
+   if (!win32_restore_file_attributes(attr->ofname, BgetHandle(ofd), &atts)) {
       win_error(jcr, "win32_restore_file_attributes:", attr->ofname);
    }
 
-   if (is_bopen(ofd)) {
+   if (IsBopen(ofd)) {
       bclose(ofd);
    }
 
@@ -716,7 +716,7 @@ void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *win32_ofile)
                  0,
                  NULL);
    Dmsg3(100, "Error in %s on file %s: ERR=%s\n", prefix, win32_ofile, msg);
-   strip_trailing_junk(msg);
+   StripTrailingJunk(msg);
    Jmsg3(jcr, M_ERROR, 0, _("Error in %s file %s: ERR=%s\n"), prefix, win32_ofile, msg);
    LocalFree(msg);
 }
@@ -731,7 +731,7 @@ void win_error(JobControlRecord *jcr, const char *prefix, DWORD lerror)
                  (LPTSTR)&msg,
                  0,
                  NULL);
-   strip_trailing_junk(msg);
+   StripTrailingJunk(msg);
    if (jcr) {
       Jmsg2(jcr, M_ERROR, 0, _("Error in %s: ERR=%s\n"), prefix, msg);
    } else {

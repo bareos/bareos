@@ -38,7 +38,7 @@
  *  Returns: 0 on success
  *           errno on failure
  */
-int rwl_init(brwlock_t *rwl, int priority)
+int RwlInit(brwlock_t *rwl, int priority)
 {
    int status;
 
@@ -67,7 +67,7 @@ int rwl_init(brwlock_t *rwl, int priority)
  * Returns: 0 on success
  *          errno on failure
  */
-int rwl_destroy(brwlock_t *rwl)
+int RwlDestroy(brwlock_t *rwl)
 {
    int status, status1, status2;
 
@@ -104,7 +104,7 @@ int rwl_destroy(brwlock_t *rwl)
    return (status != 0 ? status : (status1 != 0 ? status1 : status2));
 }
 
-bool rwl_is_init(brwlock_t *rwl)
+bool RwlIsInit(brwlock_t *rwl)
 {
    return (rwl->valid == RWLOCK_VALID);
 }
@@ -136,7 +136,7 @@ static void rwl_write_release(void *arg)
 /*
  * Lock for read access, wait until locked (or error).
  */
-int rwl_readlock(brwlock_t *rwl)
+int RwlReadlock(brwlock_t *rwl)
 {
    int status;
 
@@ -168,7 +168,7 @@ int rwl_readlock(brwlock_t *rwl)
 /*
  * Attempt to lock for read access, don't wait
  */
-int rwl_readtrylock(brwlock_t *rwl)
+int RwlReadtrylock(brwlock_t *rwl)
 {
    int status, status2;
 
@@ -190,7 +190,7 @@ int rwl_readtrylock(brwlock_t *rwl)
 /*
  * Unlock read lock
  */
-int rwl_readunlock(brwlock_t *rwl)
+int RwlReadunlock(brwlock_t *rwl)
 {
    int status, status2;
 
@@ -213,7 +213,7 @@ int rwl_readunlock(brwlock_t *rwl)
  * Lock for write access, wait until locked (or error).
  *   Multiple nested write locking is permitted.
  */
-int rwl_writelock_p(brwlock_t *rwl, const char *file, int line)
+int RwlWritelock_p(brwlock_t *rwl, const char *file, int line)
 {
    int status;
 
@@ -228,13 +228,13 @@ int rwl_writelock_p(brwlock_t *rwl, const char *file, int line)
       pthread_mutex_unlock(&rwl->mutex);
       return 0;
    }
-   lmgr_pre_lock(rwl, rwl->priority, file, line);
+   LmgrPreLock(rwl, rwl->priority, file, line);
    if (rwl->w_active || rwl->r_active > 0) {
       rwl->w_wait++;                  /* indicate that we are waiting */
       pthread_cleanup_push(rwl_write_release, (void *)rwl);
       while (rwl->w_active || rwl->r_active > 0) {
          if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
-            lmgr_do_unlock(rwl);
+            LmgrDoUnlock(rwl);
             break;                    /* error, bail out */
          }
       }
@@ -244,7 +244,7 @@ int rwl_writelock_p(brwlock_t *rwl, const char *file, int line)
    if (status == 0) {
       rwl->w_active++;                /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
-      lmgr_post_lock();
+      LmgrPostLock();
    }
    pthread_mutex_unlock(&rwl->mutex);
    return status;
@@ -253,7 +253,7 @@ int rwl_writelock_p(brwlock_t *rwl, const char *file, int line)
 /*
  * Attempt to lock for write access, don't wait
  */
-int rwl_writetrylock(brwlock_t *rwl)
+int RwlWritetrylock(brwlock_t *rwl)
 {
    int status, status2;
 
@@ -273,7 +273,7 @@ int rwl_writetrylock(brwlock_t *rwl)
    } else {
       rwl->w_active = 1;              /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
-      lmgr_do_lock(rwl, rwl->priority, __FILE__, __LINE__);
+      LmgrDoLock(rwl, rwl->priority, __FILE__, __LINE__);
    }
    status2 = pthread_mutex_unlock(&rwl->mutex);
    return (status == 0 ? status2 : status);
@@ -283,7 +283,7 @@ int rwl_writetrylock(brwlock_t *rwl)
  * Unlock write lock
  *  Start any waiting writers in preference to waiting readers
  */
-int rwl_writeunlock(brwlock_t *rwl)
+int RwlWriteunlock(brwlock_t *rwl)
 {
    int status, status2;
 
@@ -295,17 +295,17 @@ int rwl_writeunlock(brwlock_t *rwl)
    }
    if (rwl->w_active <= 0) {
       pthread_mutex_unlock(&rwl->mutex);
-      Jmsg0(NULL, M_ABORT, 0, _("rwl_writeunlock called too many times.\n"));
+      Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock called too many times.\n"));
    }
    rwl->w_active--;
    if (!pthread_equal(pthread_self(), rwl->writer_id)) {
       pthread_mutex_unlock(&rwl->mutex);
-      Jmsg0(NULL, M_ABORT, 0, _("rwl_writeunlock by non-owner.\n"));
+      Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock by non-owner.\n"));
    }
    if (rwl->w_active > 0) {
       status = 0;                       /* writers still active */
    } else {
-      lmgr_do_unlock(rwl);
+      LmgrDoUnlock(rwl);
       /* No more writers, awaken someone */
       if (rwl->r_wait > 0) {         /* if readers waiting */
          status = pthread_cond_broadcast(&rwl->read);

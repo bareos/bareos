@@ -61,9 +61,9 @@ struct b_ctx {
    CIPHER_CONTEXT *cipher_ctx;  /* Cipher context */
 };
 
-bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher);
-bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
-void strip_path(FindFilesPacket *ff_pkt);
-void unstrip_path(FindFilesPacket *ff_pkt);
+bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher);
+bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
+void StripPath(FindFilesPacket *ff_pkt);
+void UnstripPath(FindFilesPacket *ff_pkt);
 
 #endif

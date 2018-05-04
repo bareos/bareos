@@ -94,16 +94,16 @@ static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const 
    if (sd->errors) {
       return false;
                   }
-   if (bget_msg(sd) > 0) {
+   if (BgetMsg(sd) > 0) {
       Dmsg1(110, "<stored: %s", sd->msg);
       if (bstrcmp(sd->msg, resp)) {
          return true;
       }
    }
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return false;                   /* if canceled avoid useless error messages */
    }
-   if (is_bnet_error(sd)) {
+   if (IsBnetError(sd)) {
       Jmsg2(jcr, M_FATAL, 0, _("Comm error with SD. bad response to %s. ERR=%s\n"),
             cmd, bnet_strerror(sd));
    } else {
@@ -114,7 +114,7 @@ static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const 
 }
 
 /**
- * Called here for each record from read_records()
+ * Called here for each record from ReadRecords()
  * This function is used when we do a internal clone of a Job e.g.
  * this SD is both the reading and writing SD.
  *
@@ -157,7 +157,7 @@ static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
             struct date_time dt;
             struct tm tm;
 
-            unser_session_label(label, rec);
+            UnserSessionLabel(label, rec);
 
             /*
              * set job info from first SOS label
@@ -168,19 +168,19 @@ static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
             bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
 
             if (label->VerNum >= 11) {
-               jcr->sched_time = btime_to_unix(label->write_btime);
+               jcr->sched_time = BtimeToUnix(label->write_btime);
 
             } else {
                dt.julian_day_number = label->write_date;
                dt.julian_day_fraction = label->write_time;
-               tm_decode(&dt, &tm);
+               TmDecode(&dt, &tm);
                tm.tm_isdst = 0;
                jcr->sched_time = mktime(&tm);
             }
             jcr->start_time = jcr->sched_time;
 
             /* write the SOS Label with the existing timestamp infos */
-            if (!write_session_label(jcr->dcr, SOS_LABEL)) {
+            if (!WriteSessionLabel(jcr->dcr, SOS_LABEL)) {
                Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
                      dev->bstrerror());
                jcr->setJobStatus(JS_ErrorTerminated);
@@ -238,7 +238,7 @@ static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
     */
    jcr->dcr->before_rec = rec;
    jcr->dcr->after_rec = NULL;
-   if (generate_plugin_event(jcr, bsdEventWriteRecordTranslation, jcr->dcr) != bRC_OK) {
+   if (GeneratePluginEvent(jcr, bsdEventWriteRecordTranslation, jcr->dcr) != bRC_OK) {
       goto bail_out;
    }
 
@@ -253,11 +253,11 @@ static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
       translated_record = true;
    }
 
-   while (!write_record_to_block(jcr->dcr, jcr->dcr->after_rec)) {
-      Dmsg4(200, "!write_record_to_block blkpos=%u:%u len=%d rem=%d\n",
+   while (!WriteRecordToBlock(jcr->dcr, jcr->dcr->after_rec)) {
+      Dmsg4(200, "!WriteRecordToBlock blkpos=%u:%u len=%d rem=%d\n",
             dev->file, dev->block_num, jcr->dcr->after_rec->data_len, jcr->dcr->after_rec->remainder);
-      if (!jcr->dcr->write_block_to_device()) {
-         Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
+      if (!jcr->dcr->WriteBlockToDevice()) {
+         Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
             dev->print_name(), dev->bstrerror());
          Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                dev->print_name(), dev->bstrerror());
@@ -283,13 +283,13 @@ static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
          jcr->JobId, FI_to_ascii(buf1, jcr->dcr->after_rec->FileIndex), jcr->dcr->after_rec->VolSessionId,
          stream_to_ascii(buf2, jcr->dcr->after_rec->Stream, jcr->dcr->after_rec->FileIndex), jcr->dcr->after_rec->data_len);
 
-   send_attrs_to_dir(jcr, jcr->dcr->after_rec);
+   SendAttrsToDir(jcr, jcr->dcr->after_rec);
 
    retval = true;
 
 bail_out:
    if (translated_record) {
-      free_record(jcr->dcr->after_rec);
+      FreeRecord(jcr->dcr->after_rec);
       jcr->dcr->after_rec = NULL;
    }
 
@@ -297,7 +297,7 @@ bail_out:
 }
 
 /**
- * Called here for each record from read_records()
+ * Called here for each record from ReadRecords()
  * This function is used when we do a external clone of a Job e.g.
  * this SD is the reading SD. And a remote SD is the writing SD.
  *
@@ -384,7 +384,7 @@ static bool clone_record_to_remote_sd(DeviceControlRecord *dcr, DeviceRecord *re
     */
    if (send_eod) {
       if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
-         if (!jcr->is_job_canceled()) {
+         if (!jcr->IsJobCanceled()) {
             Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
                   sd->bstrerror());
          }
@@ -397,7 +397,7 @@ static bool clone_record_to_remote_sd(DeviceControlRecord *dcr, DeviceRecord *re
     */
    if (send_header) {
       if (!sd->fsend("%ld %d 0", rec->FileIndex, rec->Stream)) {
-         if (!jcr->is_job_canceled()) {
+         if (!jcr->IsJobCanceled()) {
             Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
                   sd->bstrerror());
          }
@@ -418,7 +418,7 @@ static bool clone_record_to_remote_sd(DeviceControlRecord *dcr, DeviceRecord *re
    if (!sd->send()) {
       sd->msg = msgsave;
       sd->msglen = 0;
-      if (!jcr->is_job_canceled()) {
+      if (!jcr->IsJobCanceled()) {
          Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
                sd->bstrerror());
       }
@@ -559,7 +559,7 @@ bool do_mac_run(JobControlRecord *jcr)
       /*
        * Ready devices for reading.
        */
-      if (!acquire_device_for_read(jcr->read_dcr)) {
+      if (!AcquireDeviceForRead(jcr->read_dcr)) {
          ok = false;
          goto bail_out;
       }
@@ -572,7 +572,7 @@ bool do_mac_run(JobControlRecord *jcr)
        * Set network buffering.
        */
       sd = jcr->store_bsock;
-      if (!sd->set_buffer_size(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
+      if (!sd->SetBufferSize(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
          Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size SD->SD.\n"));
          ok = false;
          goto bail_out;
@@ -587,7 +587,7 @@ bool do_mac_run(JobControlRecord *jcr)
       /*
        * Expect to receive back the Ticket number.
        */
-      if (bget_msg(sd) >= 0) {
+      if (BgetMsg(sd) >= 0) {
          Dmsg1(110, "<stored: %s", sd->msg);
          if (sscanf(sd->msg, OK_start_replicate, &jcr->Ticket) != 1) {
             Jmsg(jcr, M_FATAL, 0, _("Bad response to start replicate: %s\n"), sd->msg);
@@ -617,19 +617,19 @@ bool do_mac_run(JobControlRecord *jcr)
        * Update the initial Job Statistics.
        */
       now = (utime_t)time(NULL);
-      update_job_statistics(jcr, now);
+      UpdateJobStatistics(jcr, now);
 
       /*
        * Read all data and send it to remote SD.
        */
-      ok = read_records(jcr->read_dcr, clone_record_to_remote_sd, mount_next_read_volume);
+      ok = ReadRecords(jcr->read_dcr, clone_record_to_remote_sd, MountNextReadVolume);
 
       /*
        * Send the last EOD to close the last data transfer and a next EOD to
        * signal the remote we are done.
        */
       if (!sd->signal(BNET_EOD) || !sd->signal(BNET_EOD)) {
-         if (!jcr->is_job_canceled()) {
+         if (!jcr->IsJobCanceled()) {
             Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
                   sd->bstrerror());
          }
@@ -674,7 +674,7 @@ bool do_mac_run(JobControlRecord *jcr)
       /*
        * Ready devices for reading and writing.
        */
-      if (!acquire_device_for_read(jcr->read_dcr) ||
+      if (!AcquireDeviceForRead(jcr->read_dcr) ||
           !acquire_device_for_append(jcr->dcr)) {
          ok = false;
          goto bail_out;
@@ -688,27 +688,27 @@ bool do_mac_run(JobControlRecord *jcr)
        * Update the initial Job Statistics.
        */
       now = (utime_t)time(NULL);
-      update_job_statistics(jcr, now);
+      UpdateJobStatistics(jcr, now);
 
-      if (!begin_data_spool(jcr->dcr) ) {
+      if (!BeginDataSpool(jcr->dcr) ) {
          ok = false;
          goto bail_out;
       }
 
-      if (!begin_attribute_spool(jcr)) {
+      if (!BeginAttributeSpool(jcr)) {
          ok = false;
          goto bail_out;
       }
 
       jcr->dcr->VolFirstIndex = jcr->dcr->VolLastIndex = 0;
       jcr->run_time = time(NULL);
-      set_start_vol_position(jcr->dcr);
+      SetStartVolPosition(jcr->dcr);
       jcr->JobFiles = 0;
 
       /*
        * Read all data and make a local clone of it.
        */
-      ok = read_records(jcr->read_dcr, clone_record_internally, mount_next_read_volume);
+      ok = ReadRecords(jcr->read_dcr, clone_record_internally, MountNextReadVolume);
    }
 
 bail_out:
@@ -725,7 +725,7 @@ bail_out:
 
       Dmsg1(100, "ok=%d\n", ok);
 
-      if (ok || dev->can_write()) {
+      if (ok || dev->CanWrite()) {
 
          /*
             memorize current JobStatus and set to
@@ -738,12 +738,12 @@ bail_out:
           * Write End Of Session Label
           */
          DeviceControlRecord *dcr = jcr->dcr;
-         if (!write_session_label(dcr, EOS_LABEL)) {
+         if (!WriteSessionLabel(dcr, EOS_LABEL)) {
             /*
              * Print only if ok and not cancelled to avoid spurious messages
              */
 
-            if (ok && !jcr->is_job_canceled()) {
+            if (ok && !jcr->IsJobCanceled()) {
                Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                      dev->bstrerror());
             }
@@ -756,10 +756,10 @@ bail_out:
          /*
           * Flush out final partial block of this session
           */
-         if (!jcr->dcr->write_block_to_device()) {
+         if (!jcr->dcr->WriteBlockToDevice()) {
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
-            Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
+            Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
             ok = false;
          }
          Dmsg2(200, "Flush block to device pos %u:%u\n", dev->file, dev->block_num);
@@ -768,12 +768,12 @@ bail_out:
 
 
       if (!ok) {
-         discard_data_spool(jcr->dcr);
+         DiscardDataSpool(jcr->dcr);
       } else {
          /*
           * Note: if commit is OK, the device will remain blocked
           */
-         commit_data_spool(jcr->dcr);
+         CommitDataSpool(jcr->dcr);
       }
 
       job_elapsed = time(NULL) - jcr->run_time;
@@ -788,17 +788,17 @@ bail_out:
       /*
        * Release the device -- and send final Vol info to DIR
        */
-      release_device(jcr->dcr);
+      ReleaseDevice(jcr->dcr);
 
-      if (!ok || job_canceled(jcr)) {
-         discard_attribute_spool(jcr);
+      if (!ok || JobCanceled(jcr)) {
+         DiscardAttributeSpool(jcr);
       } else {
-         commit_attribute_spool(jcr);
+         CommitAttributeSpool(jcr);
       }
    }
 
    if (jcr->read_dcr) {
-      if (!release_device(jcr->read_dcr)) {
+      if (!ReleaseDevice(jcr->read_dcr)) {
          ok = false;
       }
    }
@@ -807,18 +807,18 @@ bail_out:
 
    Dmsg0(30, "Done reading.\n");
    jcr->end_time = time(NULL);
-   dequeue_messages(jcr);             /* send any queued messages */
+   DequeueMessages(jcr);             /* send any queued messages */
    if (ok) {
       jcr->setJobStatus(JS_Terminated);
    }
 
-   generate_plugin_event(jcr, bsdEventJobEnd);
+   GeneratePluginEvent(jcr, bsdEventJobEnd);
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
               edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
    Dmsg4(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1);
 
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
-   free_plugins(jcr);                 /* release instantiated plugins */
+   FreePlugins(jcr);                 /* release instantiated plugins */
 
    return false;                      /* Continue DIR session ? */
 }

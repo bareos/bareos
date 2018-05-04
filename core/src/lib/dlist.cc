@@ -33,10 +33,10 @@
  */
 void dlist::append(void *item)
 {
-   set_next(item, NULL);
-   set_prev(item, tail);
+   SetNext(item, NULL);
+   SetPrev(item, tail);
    if (tail) {
-      set_next(tail, item);
+      SetNext(tail, item);
    }
    tail = item;
    if (head == NULL) {                /* if empty list, */
@@ -50,10 +50,10 @@ void dlist::append(void *item)
  */
 void dlist::prepend(void *item)
 {
-   set_next(item, head);
-   set_prev(item, NULL);
+   SetNext(item, head);
+   SetPrev(item, NULL);
    if (head) {
-      set_prev(head, item);
+      SetPrev(head, item);
    }
    head = item;
    if (tail == NULL) {                /* if empty list, */
@@ -62,15 +62,15 @@ void dlist::prepend(void *item)
    num_items++;
 }
 
-void dlist::insert_before(void *item, void *where)
+void dlist::InsertBefore(void *item, void *where)
 {
    dlink *where_link = get_link(where);
 
-   set_next(item, where);
-   set_prev(item, where_link->prev);
+   SetNext(item, where);
+   SetPrev(item, where_link->prev);
 
    if (where_link->prev) {
-      set_next(where_link->prev, item);
+      SetNext(where_link->prev, item);
    }
    where_link->prev = item;
    if (head == where) {
@@ -79,15 +79,15 @@ void dlist::insert_before(void *item, void *where)
    num_items++;
 }
 
-void dlist::insert_after(void *item, void *where)
+void dlist::InsertAfter(void *item, void *where)
 {
    dlink *where_link = get_link(where);
 
-   set_next(item, where_link->next);
-   set_prev(item, where);
+   SetNext(item, where_link->next);
+   SetPrev(item, where);
 
    if (where_link->next) {
-      set_prev(where_link->next, item);
+      SetPrev(where_link->next, item);
    }
    where_link->next = item;
    if (tail == where) {
@@ -121,7 +121,7 @@ void *dlist::binary_insert(void *item, int compare(void *item1, void *item2))
        //Dmsg0(000, "Insert before first.\n");
          return item;
       } else if (comp > 0) {
-         insert_after(item, first());
+         InsertAfter(item, first());
        //Dmsg0(000, "Insert after first.\n");
          return item;
       } else {
@@ -150,7 +150,7 @@ void *dlist::binary_insert(void *item, int compare(void *item1, void *item2))
       return first();
    }
    if (num_items == 2) {
-      insert_after(item, first());
+      InsertAfter(item, first());
     //Dmsg0(000, "Inserted item after.\n");
       return item;
    }
@@ -184,10 +184,10 @@ void *dlist::binary_insert(void *item, int compare(void *item1, void *item2))
       }
    }
    if (high == cur) {
-      insert_before(item, cur_item);
+      InsertBefore(item, cur_item);
     //Dmsg1(000, "Insert before item %d\n", cur);
    } else {
-      insert_after(item, cur_item);
+      InsertAfter(item, cur_item);
     //Dmsg1(000, "Insert after item %d\n", cur);
    }
    return item;
@@ -202,7 +202,7 @@ void dlist::binary_insert_multiple(void *item, int compare(void *item1, void *it
    void *ins_item = binary_insert(item, compare);
    /* If identical, insert after the one found */
    if (ins_item != item) {
-      insert_after(item, ins_item);
+      InsertAfter(item, ins_item);
    }
 }
 
@@ -279,7 +279,7 @@ void dlist::remove(void *item)
    if (item == head) {
       head = ilink->next;
       if (head) {
-         set_prev(head, NULL);
+         SetPrev(head, NULL);
       }
       if (item == tail) {
          tail = ilink->prev;
@@ -287,13 +287,13 @@ void dlist::remove(void *item)
    } else if (item == tail) {
       tail = ilink->prev;
       if (tail) {
-         set_next(tail, NULL);
+         SetNext(tail, NULL);
       }
    } else {
       xitem = ilink->next;
-      set_prev(xitem, ilink->prev);
+      SetPrev(xitem, ilink->prev);
       xitem = ilink->prev;
-      set_next(xitem, ilink->next);
+      SetNext(xitem, ilink->next);
    }
    num_items--;
    if (num_items == 0) {

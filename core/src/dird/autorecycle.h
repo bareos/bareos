@@ -22,10 +22,10 @@
 #ifndef BAREOS_DIRD_AUTORECYCLE_H_
 #define BAREOS_DIRD_AUTORECYCLE_H_
 
-bool find_recycled_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
-                          StoreResource *store, const char *unwanted_volumes);
-bool recycle_oldest_purged_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
-                                  StoreResource *store, const char *unwanted_volumes);
-bool recycle_volume(JobControlRecord *jcr, MediaDbRecord *mr);
+bool FindRecycledVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
+                          StorageResource *store, const char *unwanted_volumes);
+bool RecycleOldestPurgedVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
+                                  StorageResource *store, const char *unwanted_volumes);
+bool RecycleVolume(JobControlRecord *jcr, MediaDbRecord *mr);
 
 #endif // BAREOS_DIRD_AUTORECYCLE_H_

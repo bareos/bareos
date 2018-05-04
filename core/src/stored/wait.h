@@ -22,8 +22,8 @@
 #ifndef BAREOS_STORED_WAIT_H_
 #define BAREOS_STORED_WAIT_H_
 
-int wait_for_sysop(DeviceControlRecord *dcr);
-bool wait_for_device(JobControlRecord *jcr, int &retries);
-void release_device_cond();
+int WaitForSysop(DeviceControlRecord *dcr);
+bool WaitForDevice(JobControlRecord *jcr, int &retries);
+void ReleaseDeviceCond();
 
 #endif // BAREOS_STORED_WAIT_H_

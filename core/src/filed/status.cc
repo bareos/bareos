@@ -66,7 +66,7 @@ static int privs = 0;
 /**
  * General status generator
  */
-static void output_status(StatusPacket *sp)
+static void OutputStatus(StatusPacket *sp)
 {
    list_status_header(sp);
    list_running_jobs(sp);
@@ -88,7 +88,7 @@ static void list_status_header(StatusPacket *sp)
    sendit(msg, len, sp);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d.\n"),
-        dt, num_jobs_run, job_count());
+        dt, num_jobs_run, JobCount());
    sendit(msg, len, sp);
 
 #if defined(HAVE_WIN32)
@@ -99,7 +99,7 @@ static void list_status_header(StatusPacket *sp)
 
    if (debug_level > 0) {
       if (!privs) {
-         privs = enable_backup_privileges(NULL, 1);
+         privs = EnableBackupPrivileges(NULL, 1);
       }
       len = Mmsg(msg, "Priv 0x%x\n", privs);
       sendit(msg, len, sp);
@@ -151,7 +151,7 @@ static void list_status_header(StatusPacket *sp)
    sendit(msg, len, sp);
    len = Mmsg(msg, _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
                      "bwlimit=%skB/s\n"), sizeof(boffset_t), sizeof(size_t),
-              debug_level, get_trace(), edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
+              debug_level, GetTrace(), edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
    sendit(msg, len, sp);
 
    if (me->secure_erase_cmdline) {
@@ -248,7 +248,7 @@ static void list_running_jobs_plain(StatusPacket *sp)
       sendit(msg, len, sp);
    }
 
-   len = pm_strcpy(msg, _("====\n"));
+   len = PmStrcpy(msg, _("====\n"));
    sendit(msg, len, sp);
 }
 
@@ -334,24 +334,24 @@ static void list_terminated_jobs(StatusPacket *sp)
    char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
    if (!sp->api) {
-      len = pm_strcpy(msg, _("\nTerminated Jobs:\n"));
+      len = PmStrcpy(msg, _("\nTerminated Jobs:\n"));
       sendit(msg, len, sp);
    }
 
    if (last_jobs->size() == 0) {
       if (!sp->api) {
-         len = pm_strcpy(msg, _("====\n"));
+         len = PmStrcpy(msg, _("====\n"));
          sendit(msg, len, sp);
       }
       return;
    }
 
-   lock_last_jobs_list();
+   LockLastJobsList();
 
    if (!sp->api) {
-      len = pm_strcpy(msg, _(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
+      len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
       sendit(msg, len, sp);
-      len = pm_strcpy(msg, _("======================================================================\n"));
+      len = PmStrcpy(msg, _("======================================================================\n"));
       sendit(msg, len, sp);
    }
 
@@ -427,10 +427,10 @@ static void list_terminated_jobs(StatusPacket *sp)
       sendit(msg, len, sp);
    }
 
-   unlock_last_jobs_list();
+   UnlockLastJobsList();
 
    if (!sp->api) {
-      len = pm_strcpy(msg, _("====\n"));
+      len = PmStrcpy(msg, _("====\n"));
       sendit(msg, len, sp);
    }
 }
@@ -462,7 +462,7 @@ bool status_cmd(JobControlRecord *jcr)
    user->fsend("\n");
    sp.bs = user;
    sp.api = false;                         /* no API output */
-   output_status(&sp);
+   OutputStatus(&sp);
 
    user->signal(BNET_EOD);
    return true;
@@ -480,17 +480,17 @@ bool qstatus_cmd(JobControlRecord *jcr)
    StatusPacket sp;
 
    sp.bs = dir;
-   cmd = get_memory(dir->msglen+1);
+   cmd = GetMemory(dir->msglen+1);
 
    if (sscanf(dir->msg, qstatus, cmd) != 1) {
-      pm_strcpy(jcr->errmsg, dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
       dir->fsend(_("2900 Bad .status command, missing argument.\n"));
       dir->signal(BNET_EOD);
-      free_memory(cmd);
+      FreeMemory(cmd);
       return false;
    }
-   unbash_spaces(cmd);
+   UnbashSpaces(cmd);
 
    if (bstrcmp(cmd, "current")) {
       dir->fsend(OKqstatus, cmd);
@@ -516,16 +516,16 @@ bool qstatus_cmd(JobControlRecord *jcr)
        sp.api = true;
        list_terminated_jobs(&sp);
    } else {
-      pm_strcpy(jcr->errmsg, dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
       dir->fsend(_("2900 Bad .status command, wrong argument.\n"));
       dir->signal(BNET_EOD);
-      free_memory(cmd);
+      FreeMemory(cmd);
       return false;
    }
 
    dir->signal(BNET_EOD);
-   free_memory(cmd);
+   FreeMemory(cmd);
    return true;
 }
 

@@ -22,6 +22,6 @@
 #ifndef BAREOS_DIRD_UA_RESTORE_H_
 #define BAREOS_DIRD_UA_RESTORE_H_
 
-void find_storage_resource(UaContext *ua, RestoreContext &rx, char *Storage, char *MediaType);
+void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char *MediaType);
 
 #endif // BAREOS_DIRD_UA_RESTORE_H_

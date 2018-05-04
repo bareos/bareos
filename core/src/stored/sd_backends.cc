@@ -46,7 +46,7 @@
 static alist *loaded_backends = NULL;
 static alist *backend_dirs = NULL;
 
-void sd_set_backend_dirs(alist *new_backend_dirs)
+void SdSetBackendDirs(alist *new_backend_dirs)
 {
    backend_dirs = new_backend_dirs;
 }
@@ -121,7 +121,7 @@ Device *init_backend_dev(JobControlRecord *jcr, int device_type)
       if (stat(shared_library_name.c_str(), &st) == 0) {
          dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
          if (!dl_handle) {
-            pm_strcpy(error, dlerror());
+            PmStrcpy(error, dlerror());
             Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
                  shared_library_name.c_str(), error.c_str());
             Dmsg2(100, _("Unable to load shared library: %s ERR=%s\n"),
@@ -134,7 +134,7 @@ Device *init_backend_dev(JobControlRecord *jcr, int device_type)
           */
          backend_instantiate = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
          if (backend_instantiate == NULL) {
-            pm_strcpy(error, dlerror());
+            PmStrcpy(error, dlerror());
             Jmsg(jcr, M_ERROR, 0, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
                  shared_library_name.c_str(), error.c_str());
             Dmsg2(100, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
@@ -149,7 +149,7 @@ Device *init_backend_dev(JobControlRecord *jcr, int device_type)
           */
          flush_backend = (t_flush_backend)dlsym(dl_handle, "flush_backend");
          if (flush_backend == NULL) {
-            pm_strcpy(error, dlerror());
+            PmStrcpy(error, dlerror());
             Jmsg(jcr, M_ERROR, 0, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
                  shared_library_name.c_str(), error.c_str());
             Dmsg2(100, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
@@ -189,7 +189,7 @@ Device *init_backend_dev(JobControlRecord *jcr, int device_type)
    }
 }
 
-void dev_flush_backends()
+void DevFlushBackends()
 {
    backend_shared_library_t *backend_shared_library;
 

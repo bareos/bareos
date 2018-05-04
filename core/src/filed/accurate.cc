@@ -30,7 +30,7 @@
 
 static int debuglevel = 100;
 
-bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname)
+bool AccurateMarkFileAsSeen(JobControlRecord *jcr, char *fname)
 {
    accurate_payload *temp;
 
@@ -40,7 +40,7 @@ bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname)
 
    temp = jcr->file_list->lookup_payload(fname);
    if (temp) {
-      jcr->file_list->mark_file_as_seen(temp);
+      jcr->file_list->MarkFileAsSeen(temp);
       Dmsg1(debuglevel, "marked <%s> as seen\n", fname);
    } else {
       Dmsg1(debuglevel, "<%s> not found to be marked as seen\n", fname);
@@ -49,7 +49,7 @@ bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname)
    return true;
 }
 
-bool accurate_unmark_file_as_seen(JobControlRecord *jcr, char *fname)
+bool accurate_unMarkFileAsSeen(JobControlRecord *jcr, char *fname)
 {
    accurate_payload *temp;
 
@@ -59,7 +59,7 @@ bool accurate_unmark_file_as_seen(JobControlRecord *jcr, char *fname)
 
    temp = jcr->file_list->lookup_payload(fname);
    if (temp) {
-      jcr->file_list->unmark_file_as_seen(temp);
+      jcr->file_list->UnmarkFileAsSeen(temp);
       Dmsg1(debuglevel, "unmarked <%s> as seen\n", fname);
    } else {
       Dmsg1(debuglevel, "<%s> not found to be unmarked as seen\n", fname);
@@ -74,17 +74,17 @@ bool accurate_mark_all_files_as_seen(JobControlRecord *jcr)
       return false;
    }
 
-   jcr->file_list->mark_all_files_as_seen();
+   jcr->file_list->MarkAllFilesAsSeen();
    return true;
 }
 
-bool accurate_unmark_all_files_as_seen(JobControlRecord *jcr)
+bool accurate_unMarkAllFilesAsSeen(JobControlRecord *jcr)
 {
    if (!jcr->accurate || !jcr->file_list) {
       return false;
    }
 
-   jcr->file_list->unmark_all_files_as_seen();
+   jcr->file_list->UnmarkAllFilesAsSeen();
    return true;
 }
 
@@ -101,7 +101,7 @@ static inline bool accurate_lookup(JobControlRecord *jcr, char *fname, accurate_
    return found;
 }
 
-void accurate_free(JobControlRecord *jcr)
+void AccurateFree(JobControlRecord *jcr)
 {
    if (jcr->file_list) {
       delete jcr->file_list;
@@ -112,25 +112,25 @@ void accurate_free(JobControlRecord *jcr)
 /**
  * Send the deleted or the base file list and cleanup.
  */
-bool accurate_finish(JobControlRecord *jcr)
+bool AccurateFinish(JobControlRecord *jcr)
 {
    bool retval = true;
 
-   if (jcr->is_canceled() || jcr->is_incomplete()) {
-      accurate_free(jcr);
+   if (jcr->IsCanceled() || jcr->IsIncomplete()) {
+      AccurateFree(jcr);
       return retval;
    }
 
    if (jcr->accurate && jcr->file_list) {
       if (jcr->is_JobLevel(L_FULL)) {
          if (!jcr->rerunning) {
-            retval = jcr->file_list->send_base_file_list();
+            retval = jcr->file_list->SendBaseFileList();
          }
       } else {
-         retval = jcr->file_list->send_deleted_list();
+         retval = jcr->file_list->SendDeletedList();
       }
 
-      accurate_free(jcr);
+      AccurateFree(jcr);
       if (jcr->is_JobLevel(L_FULL)) {
          Jmsg(jcr, M_INFO, 0, _("Space saved with Base jobs: %lld MB\n"), jcr->base_size / (1024 * 1024));
       }
@@ -171,7 +171,7 @@ bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    /**
     * Apply path stripping for lookup in accurate data.
     */
-   strip_path(ff_pkt);
+   StripPath(ff_pkt);
 
    if (S_ISDIR(ff_pkt->statp.st_mode)) {
       fname = ff_pkt->link;
@@ -182,22 +182,22 @@ bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    if (!accurate_lookup(jcr, fname, &payload)) {
       Dmsg1(debuglevel, "accurate %s (not found)\n", fname);
       status = true;
-      unstrip_path(ff_pkt);
+      UnstripPath(ff_pkt);
       goto bail_out;
    }
 
    /**
     * Restore original name so we can check the actual file when we check
     * the accurate options later on. This is mostly important for the
-    * calculate_and_compare_file_chksum() function as that needs to calulate
+    * CalculateAndCompareFileChksum() function as that needs to calulate
     * the checksum of the real file and not try to open the stripped pathname.
     */
-   unstrip_path(ff_pkt);
+   UnstripPath(ff_pkt);
 
    ff_pkt->accurate_found = true;
    ff_pkt->delta_seq = payload->delta_seq;
 
-   decode_stat(payload->lstat, &statc, sizeof(statc), &LinkFIc); /** decode catalog stat */
+   DecodeStat(payload->lstat, &statc, sizeof(statc), &LinkFIc); /** decode catalog stat */
 
    if (!jcr->rerunning && (jcr->getJobLevel() == L_FULL)) {
       opts = ff_pkt->BaseJobOpts;
@@ -296,15 +296,15 @@ bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
       case '1':                /** Compare SHA1 */
          if (!status && ff_pkt->type != FT_LNKSAVED &&
              (S_ISREG(ff_pkt->statp.st_mode) &&
-             (bit_is_set(FO_MD5, ff_pkt->flags) ||
-              bit_is_set(FO_SHA1, ff_pkt->flags) ||
-              bit_is_set(FO_SHA256, ff_pkt->flags) ||
-              bit_is_set(FO_SHA512, ff_pkt->flags)))) {
+             (BitIsSet(FO_MD5, ff_pkt->flags) ||
+              BitIsSet(FO_SHA1, ff_pkt->flags) ||
+              BitIsSet(FO_SHA256, ff_pkt->flags) ||
+              BitIsSet(FO_SHA512, ff_pkt->flags)))) {
             if (!*payload->chksum && !jcr->rerunning) {
                Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"), ff_pkt->fname);
                status = true;
             } else {
-               status = !calculate_and_compare_file_chksum(jcr, ff_pkt, fname, payload->chksum);
+               status = !CalculateAndCompareFileChksum(jcr, ff_pkt, fname, payload->chksum);
             }
          }
          break;
@@ -327,10 +327,10 @@ bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
           * Compute space saved with basefile.
           */
          jcr->base_size += ff_pkt->statp.st_size;
-         jcr->file_list->mark_file_as_seen(payload);
+         jcr->file_list->MarkFileAsSeen(payload);
       }
    } else {
-      jcr->file_list->mark_file_as_seen(payload);
+      jcr->file_list->MarkFileAsSeen(payload);
    }
 
 bail_out:
@@ -347,7 +347,7 @@ bool accurate_cmd(JobControlRecord *jcr)
    uint16_t delta_seq;
    BareosSocket *dir = jcr->dir_bsock;
 
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return true;
    }
 
@@ -404,11 +404,11 @@ bool accurate_cmd(JobControlRecord *jcr)
          }
       }
 
-      jcr->file_list->add_file(fname, fname_length, lstat, lstat_length,
+      jcr->file_list->AddFile(fname, fname_length, lstat, lstat_length,
                                chksum, chksum_length, delta_seq);
    }
 
-   if (!jcr->file_list->end_load()) {
+   if (!jcr->file_list->EndLoad()) {
       return false;
    }
 

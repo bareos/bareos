@@ -137,11 +137,11 @@ private:
     * Methods
     */
    int get_num_rows_filtered() { return num_rows_filtered; }
-   void set_num_rows_filtered(int value) { num_rows_filtered = value; }
-   void clear_num_rows_filtered() { set_num_rows_filtered(0); }
+   void SetNumRowsFiltered(int value) { num_rows_filtered = value; }
+   void ClearNumRowsFiltered() { SetNumRowsFiltered(0); }
 
-   void create_new_res_filter(of_filter_type type, int column, int restype);
-   bool process_text_buffer();
+   void CreateNewResFilter(of_filter_type type, int column, int restype);
+   bool ProcessTextBuffer();
 
    /*
     * reformat string.
@@ -153,7 +153,7 @@ private:
    void rewrap(PoolMem &string, int wrap);
 
 #if HAVE_JANSSON
-   bool json_send_error_message(const char *message);
+   bool JsonSendErrorMessage(const char *message);
 #endif
 
 public:
@@ -167,20 +167,20 @@ public:
                     int api_mode = API_MODE_OFF);
    ~OutputFormatter();
 
-   void set_mode(int mode) { api = mode; }
-   int get_mode() { return api; }
+   void SetMode(int mode) { api = mode; }
+   int GetMode() { return api; }
 
    /*
     * Allow to set compact output mode. Only used for json api mode.
     * There it can reduce the size of message by 1/3.
     */
-   void set_compact(bool value) { compact = value; }
-   bool get_compact() { return compact; }
+   void SetCompact(bool value) { compact = value; }
+   bool GetCompact() { return compact; }
 
-   void object_start(const char *name = NULL);
-   void object_end(const char *name = NULL);
-   void array_start(const char *name);
-   void array_end(const char *name);
+   void ObjectStart(const char *name = NULL);
+   void ObjectEnd(const char *name = NULL);
+   void ArrayStart(const char *name);
+   void ArrayEnd(const char *name);
    void decoration(const char *fmt, ...);
    /*
     * boolean and integer can not be used to distinguish overloading functions,
@@ -188,59 +188,59 @@ public:
     * The boolean value is given a string ("true" or "false") to the value_fmt string.
     * The format string must therefore match "%s".
     */
-   void object_key_value_bool(const char *key, bool value);
-   void object_key_value_bool(const char *key, bool value, const char *value_fmt);
-   void object_key_value_bool(const char *key, const char *key_fmt, bool value, const char *value_fmt);
-   void object_key_value(const char *key, uint64_t value);
-   void object_key_value(const char *key, uint64_t value, const char *value_fmt);
-   void object_key_value(const char *key, const char *key_fmt, uint64_t value, const char *value_fmt);
-   void object_key_value(const char *key, const char *value, int wrap = -1);
-   void object_key_value(const char *key, const char *value, const char *value_fmt, int wrap = -1);
-   void object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
+   void ObjectKeyValueBool(const char *key, bool value);
+   void ObjectKeyValueBool(const char *key, bool value, const char *value_fmt);
+   void ObjectKeyValueBool(const char *key, const char *key_fmt, bool value, const char *value_fmt);
+   void ObjectKeyValue(const char *key, uint64_t value);
+   void ObjectKeyValue(const char *key, uint64_t value, const char *value_fmt);
+   void ObjectKeyValue(const char *key, const char *key_fmt, uint64_t value, const char *value_fmt);
+   void ObjectKeyValue(const char *key, const char *value, int wrap = -1);
+   void ObjectKeyValue(const char *key, const char *value, const char *value_fmt, int wrap = -1);
+   void ObjectKeyValue(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
 
    /*
     * some programs (BAT in api mode 1) parses data message by message,
     * instead of using a separator.
     * An example for this is BAT with the ".defaults job" command in API mode 1.
-    * In this cases, the send_buffer function must be called at between two messages.
+    * In this cases, the SendBuffer function must be called at between two messages.
     * In API mode 2 this function has no effect.
     * This function should only be used, when there is a specific need for it.
     */
-   void send_buffer();
+   void SendBuffer();
 
    /*
     * Filtering.
     */
-   void add_limit_filter_tuple(int limit);
-   void add_offset_filter_tuple(int offset);
+   void AddLimitFilterTuple(int limit);
+   void AddOffsetFilterTuple(int offset);
    void add_acl_filter_tuple(int column, int acltype);
-   void add_res_filter_tuple(int column, int restype);
-   void add_enabled_filter_tuple(int column, int restype);
-   void add_disabled_filter_tuple(int column, int restype);
-   void clear_filters();
-   bool has_filters() { return filters && !filters->empty(); }
+   void AddResFilterTuple(int column, int restype);
+   void AddEnabledFilterTuple(int column, int restype);
+   void AddDisabledFilterTuple(int column, int restype);
+   void ClearFilters();
+   bool HasFilters() { return filters && !filters->empty(); }
    bool has_acl_filters();
-   bool filter_data(void *data);
+   bool FilterData(void *data);
 
    /*
     * Hidden columns.
     */
-   void add_hidden_column(int column);
-   bool is_hidden_column(int column);
-   void clear_hidden_columns();
+   void AddHiddenColumn(int column);
+   bool IsHiddenColumn(int column);
+   void ClearHiddenColumns();
 
    void message(const char *type, PoolMem &message);
 
-   void finalize_result(bool result);
+   void FinalizeResult(bool result);
 
 #if HAVE_JANSSON
    void json_add_result(json_t *json);
-   bool json_key_value_add_bool(const char *key, bool value);
-   bool json_key_value_add(const char *key, uint64_t value);
-   bool json_key_value_add(const char *key, const char *value);
-   void json_add_message(const char *type, PoolMem &message);
-   bool json_has_error_message();
-   void json_finalize_result(bool result);
+   bool JsonKeyValueAddBool(const char *key, bool value);
+   bool JsonKeyValueAdd(const char *key, uint64_t value);
+   bool JsonKeyValueAdd(const char *key, const char *value);
+   void JsonAddMessage(const char *type, PoolMem &message);
+   bool JsonHasErrorMessage();
+   void JsonFinalizeResult(bool result);
 #endif
 };
 

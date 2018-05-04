@@ -76,7 +76,7 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
    JobId_t JobId = str_to_int32(jcr->JobIds);
    // TODO: Check if JobId is Zero as this indicates error
 
-   if (jcr->db->get_ndmp_environment_string(jcr, JobId,
+   if (jcr->db->GetNdmpEnvironmentString(jcr, JobId,
                            ndmp_env_handler, &job->env_tab)) {
       /*
        * extract ndmp_filesystem from environment
@@ -144,17 +144,17 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
           * Use the restore_prefix as an absolute restore prefix.
           * We skip the leading ^ that is the trigger for absolute restores.
           */
-         pm_strcpy(destination_path, restore_prefix + 1);
+         PmStrcpy(destination_path, restore_prefix + 1);
          break;
       default:
          /*
           * Use the restore_prefix as an relative restore prefix.
           */
          if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-            pm_strcpy(destination_path, ndmp_filesystem);
+            PmStrcpy(destination_path, ndmp_filesystem);
          } else {
-            pm_strcpy(destination_path, ndmp_filesystem);
-            pm_strcat(destination_path, restore_prefix);
+            PmStrcpy(destination_path, ndmp_filesystem);
+            PmStrcat(destination_path, restore_prefix);
          }
       }
    } else {
@@ -162,12 +162,12 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
          /*
           * Use the original pathname as restore prefix.
           */
-         pm_strcpy(destination_path, ndmp_filesystem);
+         PmStrcpy(destination_path, ndmp_filesystem);
       } else {
          /*
           * Use the restore_prefix as an absolute restore prefix.
           */
-         pm_strcpy(destination_path, restore_prefix);
+         PmStrcpy(destination_path, restore_prefix);
       }
    }
 
@@ -176,7 +176,7 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
    ndma_store_env_list(&job->env_tab, &pv);
 
    if (ndmp_filesystem &&
-         set_files_to_restore_ndmp_native(jcr, job, current_fi,
+         SetFilesToRestoreNdmpNative(jcr, job, current_fi,
             destination_path.c_str(), ndmp_filesystem) == 0) {
             Jmsg(jcr, M_INFO, 0, _("No files selected for restore\n"));
       return false;
@@ -187,7 +187,7 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
 /*
  * See in the tree with selected files what files were selected to be restored.
  */
-int set_files_to_restore_ndmp_native(JobControlRecord *jcr, struct ndm_job_param *job, int32_t FileIndex,
+int SetFilesToRestoreNdmpNative(JobControlRecord *jcr, struct ndm_job_param *job, int32_t FileIndex,
                                        const char *restore_prefix, const char *ndmp_filesystem)
 {
    int len;
@@ -195,7 +195,7 @@ int set_files_to_restore_ndmp_native(JobControlRecord *jcr, struct ndm_job_param
    TREE_NODE *node, *parent;
    PoolMem restore_pathname, tmp;
 
-   node = first_tree_node(jcr->restore_tree_root);
+   node = FirstTreeNode(jcr->restore_tree_root);
    while (node) {
       /*
        * node->extract_dir  means that only the directory should be selected for extraction
@@ -210,12 +210,12 @@ int set_files_to_restore_ndmp_native(JobControlRecord *jcr, struct ndm_job_param
        * an namelist entry for every single file and directory below the selected one.
        */
       if (node->extract_dir || node->extract) {
-         pm_strcpy(restore_pathname, node->fname);
+         PmStrcpy(restore_pathname, node->fname);
          /*
           * Walk up the parent until we hit the head of the list.
           */
          for (parent = node->parent; parent; parent = parent->parent) {
-            pm_strcpy(tmp, restore_pathname.c_str());
+            PmStrcpy(tmp, restore_pathname.c_str());
             Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
          }
          /*
@@ -234,7 +234,7 @@ int set_files_to_restore_ndmp_native(JobControlRecord *jcr, struct ndm_job_param
             Jmsg(jcr, M_INFO, 0, _("Namelist add: node:%llu, info:%llu, name:\"%s\" \n"),
                   node->fhnode, node->fhinfo, restore_pathname.c_str());
 
-            add_to_namelist(job,  restore_pathname.c_str() + len, restore_prefix,
+            AddToNamelist(job,  restore_pathname.c_str() + len, restore_prefix,
                   (char *)"", (char *)"", node->fhnode, node->fhinfo);
 
             cnt++;
@@ -246,7 +246,7 @@ int set_files_to_restore_ndmp_native(JobControlRecord *jcr, struct ndm_job_param
          }
 
       }
-      node = next_tree_node(node);
+      node = NextTreeNode(node);
    }
    return cnt;
 }
@@ -294,7 +294,7 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
    ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
    ndmp_sess.param->log.deliver = ndmp_loghandler;
-   ndmp_sess.param->log_level = native_to_ndmp_loglevel(NdmpLoglevel, debug_level, nis);
+   ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
    nis->jcr = jcr;
    ndmp_sess.param->log.ctx = nis;
    ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
@@ -302,7 +302,7 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
 
    int drive=0;
    ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.rstore, drive);
-   if (!ndmp_build_client_and_storage_job(jcr, jcr->res.rstore, jcr->res.client,
+   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.rstore, jcr->res.client,
             true, /* init_tape */
             true, /* init_robot */
             NDM_JOB_OP_EXTRACT, &ndmp_job)) {
@@ -338,7 +338,7 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
    ndmp_sess.control_acb->job.record_size = ndmp_job.record_size;
 
 
-   get_ndmmedia_info_from_database(&ndmp_sess.control_acb->job.media_tab, jcr);
+   GetNdmmediaInfoFromDatabase(&ndmp_sess.control_acb->job.media_tab, jcr);
 
    for (ndmmedia *media = ndmp_sess.control_acb->job.media_tab.head; media; media = media->next) {
       ndmmedia_to_str(media, mediabuf);
@@ -347,15 +347,15 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
 
    for (ndmmedia *media = ndmp_sess.control_acb->job.media_tab.head; media; media = media->next) {
 
-      if (!ndmp_update_storage_mappings(jcr, jcr->res.rstore )){
-         Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_update_storage_mappings\n"));
+      if (!NdmpUpdateStorageMappings(jcr, jcr->res.rstore )){
+         Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpUpdateStorageMappings\n"));
       }
       /*
        * convert slot from database to ndmp slot
        */
       Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label, media->slot_addr);
 
-      ndmp_slot = lookup_storage_mapping(jcr->res.rstore, slot_type_normal, LOGICAL_TO_PHYSICAL, media->slot_addr);
+      ndmp_slot = LookupStorageMapping(jcr->res.rstore, slot_type_normal, LOGICAL_TO_PHYSICAL, media->slot_addr);
       media->slot_addr = ndmp_slot;
 
       Jmsg(jcr, M_INFO, 0, _("Physical(NDMP) slot for volume %s is %d\n"), media->label, media->slot_addr);
@@ -376,8 +376,8 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
    }
    ndmp_sess.control_acb->job.have_robot = 1;
 
-   if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
-      Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_validate_job\n"));
+   if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) {
+      Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpValidateJob\n"));
       goto cleanup_ndmp;
    }
 
@@ -411,8 +411,8 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
    /*
     * See if there were any errors during the restore.
     */
-   if (!extract_post_restore_stats(jcr, &ndmp_sess)) {
-      Jmsg(jcr, M_ERROR, 0, _("ERROR in extract_post_restore_stats\n"));
+   if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
+      Jmsg(jcr, M_ERROR, 0, _("ERROR in ExtractPostRestoreStats\n"));
       goto cleanup_ndmp;
    }
 
@@ -475,7 +475,7 @@ cleanup:
    free(nis);
 
 bail_out:
-   free_tree(jcr->restore_tree_root);
+   FreeTree(jcr->restore_tree_root);
    jcr->restore_tree_root = NULL;
    return retval;
 }
@@ -490,7 +490,7 @@ bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
 
    memset(&rjr, 0, sizeof(rjr));
    jcr->jr.JobLevel = L_FULL;         /* Full restore */
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
@@ -501,7 +501,7 @@ bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
    /*
     * Validate the Job to have a NDMP client.
     */
-   if (!ndmp_validate_client(jcr)) {
+   if (!NdmpValidateClient(jcr)) {
       return false;
    }
 
@@ -515,7 +515,7 @@ bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
    }
 
    status = JS_Terminated;
-   ndmp_restore_cleanup(jcr, status);
+   NdmpRestoreCleanup(jcr, status);
    return true;
 
 bail_out:

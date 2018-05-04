@@ -76,12 +76,12 @@ private:
    /*
     * Private Methods
     */
-   ssize_t read_object_data(boffset_t offset, char *buffer, size_t count);
-   ssize_t write_object_data(boffset_t offset, char *buffer, size_t count);
+   ssize_t ReadObjectData(boffset_t offset, char *buffer, size_t count);
+   ssize_t WriteObjectData(boffset_t offset, char *buffer, size_t count);
 #ifdef HAVE_RADOS_STRIPER
-   ssize_t striper_volume_size();
+   ssize_t StriperVolumeSize();
 #endif
-   ssize_t volume_size();
+   ssize_t VolumeSize();
 #ifdef HAVE_RADOS_STRIPER
    bool truncate_striper_volume(DeviceControlRecord *dcr);
 #endif

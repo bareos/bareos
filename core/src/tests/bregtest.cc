@@ -130,8 +130,8 @@ int main(int argc, char *const *argv)
    }
 
    while (fgets(data, sizeof(data)-1, fd)) {
-      strip_trailing_newline(data);
-      apply_bregexps(data, list, &p);
+      StripTrailingNewline(data);
+      ApplyBregexps(data, list, &p);
       if (sed) {
          printf("%s\n", p);
       } else {
@@ -139,7 +139,7 @@ int main(int argc, char *const *argv)
       }
    }
    fclose(fd);
-   free_bregexps(list);
+   FreeBregexps(list);
    delete list;
    exit(0);
 }

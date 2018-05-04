@@ -37,9 +37,9 @@
 #include "conio.h"
 //#define CONIO_FIX 1
 #else
-#define con_init(x)
-#define con_term()
-#define con_set_zed_keys();
+#define ConInit(x)
+#define ConTerm()
+#define ConSetZedKeys();
 #define trapctlc()
 #define clrbrk()
 #define usrbrk() 0
@@ -61,7 +61,7 @@ extern bool parse_cons_config(ConfigurationParser *config, const char *configfil
 /* Forward referenced functions */
 static void terminate_console(int sig);
 static int check_resources();
-int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec);
+int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec);
 static int do_outputcmd(FILE *input, BareosSocket *UA_sock);
 void senditf(const char *fmt, ...);
 void sendit(const char *buf);
@@ -157,7 +157,7 @@ void got_sigtin(int sig)
 
 static int zed_keyscmd(FILE *input, BareosSocket *UA_sock)
 {
-   con_set_zed_keys();
+   ConSetZedKeys();
    return 1;
 }
 
@@ -188,7 +188,7 @@ static struct cmdstruct commands[] = {
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
-static int do_a_command(FILE *input, BareosSocket *UA_sock)
+static int Do_a_command(FILE *input, BareosSocket *UA_sock)
 {
    unsigned int i;
    int status;
@@ -217,7 +217,7 @@ static int do_a_command(FILE *input, BareosSocket *UA_sock)
       }
    }
    if (!found) {
-      pm_strcat(UA_sock->msg, _(": is an invalid command\n"));
+      PmStrcat(UA_sock->msg, _(": is an invalid command\n"));
       UA_sock->msglen = strlen(UA_sock->msg);
       sendit(UA_sock->msg);
    }
@@ -240,7 +240,7 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
          at_prompt = true;
       }
       if (tty_input) {
-         status = get_cmd(input, prompt, UA_sock, 30);
+         status = GetCmd(input, prompt, UA_sock, 30);
          if (usrbrk() == 1) {
             clrbrk();
          }
@@ -251,7 +251,7 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
          /*
           * Reading input from a file
           */
-         int len = sizeof_pool_memory(UA_sock->msg) - 1;
+         int len = SizeofPoolMemory(UA_sock->msg) - 1;
          if (usrbrk()) {
             break;
          }
@@ -259,7 +259,7 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
             status = -1;
          } else {
             sendit(UA_sock->msg);     /* echo to terminal */
-            strip_trailing_junk(UA_sock->msg);
+            StripTrailingJunk(UA_sock->msg);
             UA_sock->msglen = strlen(UA_sock->msg);
             status = 1;
          }
@@ -268,9 +268,9 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
          break;                       /* error or interrupt */
       } else if (status == 0) {       /* timeout */
          if (bstrcmp(prompt, "*")) {
-            tid = start_bsock_timer(UA_sock, timeout);
+            tid = StartBsockTimer(UA_sock, timeout);
             UA_sock->fsend(".messages");
-            stop_bsock_timer(tid);
+            StopBsockTimer(tid);
          } else {
             continue;
          }
@@ -280,25 +280,25 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
           * @ => internal command for us
           */
          if (UA_sock->msg[0] == '@') {
-            parse_args(UA_sock->msg, args, &argc, argk, argv, MAX_CMD_ARGS);
-            if (!do_a_command(input, UA_sock)) {
+            ParseArgs(UA_sock->msg, args, &argc, argk, argv, MAX_CMD_ARGS);
+            if (!Do_a_command(input, UA_sock)) {
                break;
             }
             continue;
          }
-         tid = start_bsock_timer(UA_sock, timeout);
+         tid = StartBsockTimer(UA_sock, timeout);
          if (!UA_sock->send()) {      /* send command */
-            stop_bsock_timer(tid);
+            StopBsockTimer(tid);
             break;                    /* error */
          }
-         stop_bsock_timer(tid);
+         StopBsockTimer(tid);
       }
 
       if (bstrcmp(UA_sock->msg, ".quit") || bstrcmp(UA_sock->msg, ".exit")) {
          break;
       }
 
-      tid = start_bsock_timer(UA_sock, timeout);
+      tid = StartBsockTimer(UA_sock, timeout);
       while ((status = UA_sock->recv()) >= 0 ||
              ((status == BNET_SIGNAL) && (
               (UA_sock->msglen != BNET_EOD) &&
@@ -329,7 +329,7 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
             }
          }
       }
-      stop_bsock_timer(tid);
+      StopBsockTimer(tid);
 
       if (usrbrk() > 1) {
          break;
@@ -340,7 +340,7 @@ static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
          fflush(stdout);
       }
 
-      if (is_bnet_stop(UA_sock)) {
+      if (IsBnetStop(UA_sock)) {
          break;                       /* error or term */
       } else if (status == BNET_SIGNAL) {
          if (UA_sock->msglen == BNET_SUB_PROMPT) {
@@ -509,7 +509,7 @@ static void match_kw(regex_t *preg, const char *what, int len, POOLMEM *&buf)
       Pmsg2(0, "%i-%i\n", pmatch[3].rm_so, pmatch[3].rm_eo);
 #endif
       size = pmatch[1].rm_eo - pmatch[1].rm_so;
-      buf = check_pool_memory_size(buf, size + 1);
+      buf = CheckPoolMemorySize(buf, size + 1);
       memcpy(buf, what + pmatch[1].rm_so, size);
       buf[size] = '\0';
 
@@ -535,13 +535,13 @@ void get_arguments(const char *what)
       return;
    }
 
-   buf = get_pool_memory(PM_MESSAGE);
+   buf = GetPoolMemory(PM_MESSAGE);
    UA_sock->fsend(".help item=%s", what);
    while (UA_sock->recv() > 0) {
-      strip_trailing_junk(UA_sock->msg);
+      StripTrailingJunk(UA_sock->msg);
       match_kw(&preg, UA_sock->msg, UA_sock->msglen, buf);
    }
-   free_pool_memory(buf);
+   FreePoolMemory(buf);
    regfree(&preg);
 }
 
@@ -552,7 +552,7 @@ void get_items(const char *what)
 
    UA_sock->fsend("%s", what);
    while (UA_sock->recv() > 0) {
-      strip_trailing_junk(UA_sock->msg);
+      StripTrailingJunk(UA_sock->msg);
       items->list.append(bstrdup(UA_sock->msg));
    }
 }
@@ -733,7 +733,7 @@ static int eolcmd(FILE *input, BareosSocket *UA_sock)
  *        0 if no input
  *       -1 error (must stop)
  */
-int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
+int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 {
    static char *line = NULL;
    static char *next = NULL;
@@ -750,7 +750,7 @@ int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
       if (!line) {
          return -1;                      /* error return and exit */
       }
-      strip_trailing_junk(line);
+      StripTrailingJunk(line);
       command = line;
    } else if (next) {
       command = next + 1;
@@ -777,7 +777,7 @@ int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
       senditf("%s%s\n", prompt, command);
    }
 
-   sock->msglen = pm_strcpy(sock->msg, command);
+   sock->msglen = PmStrcpy(sock->msg, command);
    if (sock->msglen) {
       do_history++;
    }
@@ -811,7 +811,7 @@ static bool bisatty(int fd)
  *   Returns: 1 if got input
  *           -1 if EOF or error
  */
-int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
+int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 {
    int len;
 
@@ -822,7 +822,7 @@ int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
    }
 
 again:
-   len = sizeof_pool_memory(sock->msg) - 1;
+   len = SizeofPoolMemory(sock->msg) - 1;
    if (stop) {
       sleep(1);
       goto again;
@@ -830,7 +830,7 @@ again:
 
 #ifdef HAVE_CONIO
    if (bisatty(fileno(input))) {
-      input_line(sock->msg, len);
+      InputLine(sock->msg, len);
       goto ok_out;
    }
 #endif
@@ -849,7 +849,7 @@ again:
       clrbrk();
    }
 
-   strip_trailing_junk(sock->msg);
+   StripTrailingJunk(sock->msg);
    sock->msglen = strlen(sock->msg);
 
    return 1;
@@ -862,7 +862,7 @@ again:
  *            0 if timeout
  *           -1 if EOF or error
  */
-int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
+int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 {
    int len;
 
@@ -873,20 +873,20 @@ int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
    }
 
 again:
-   switch (wait_for_readable_fd(fileno(input), sec, true)) {
+   switch (WaitForReadableFd(fileno(input), sec, true)) {
    case 0:
       return 0;                    /* timeout */
    case -1:
       return -1;                   /* error */
    default:
-      len = sizeof_pool_memory(sock->msg) - 1;
+      len = SizeofPoolMemory(sock->msg) - 1;
       if (stop) {
          sleep(1);
          goto again;
       }
 #ifdef HAVE_CONIO
       if (bisatty(fileno(input))) {
-         input_line(sock->msg, len);
+         InputLine(sock->msg, len);
          break;
       }
 #endif
@@ -900,7 +900,7 @@ again:
       clrbrk();
    }
 
-   strip_trailing_junk(sock->msg);
+   StripTrailingJunk(sock->msg);
    sock->msglen = strlen(sock->msg);
 
    return 1;
@@ -1022,13 +1022,13 @@ try_again:
          senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->name(), dir->address, dir->DIRport);
       }
       UnlockRes();
-      if (get_cmd(stdin, _("Select Director by entering a number: "),
+      if (GetCmd(stdin, _("Select Director by entering a number: "),
                   UA_sock, 600) < 0)
       {
          WSACleanup();               /* Cleanup Windows sockets */
          return 0;
       }
-      if (!is_a_number(UA_sock->msg)) {
+      if (!Is_a_number(UA_sock->msg)) {
          senditf(_("%s is not a number. You must enter a number between "
                    "1 and %d\n"),
                  UA_sock->msg, numdir);
@@ -1153,12 +1153,12 @@ int main(int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   init_stack_dump();
-   lmgr_init_thread();
-   my_name_is(argc, argv, "bconsole");
-   init_msg(NULL, NULL);
+   InitStackDump();
+   LmgrInitThread();
+   MyNameIs(argc, argv, "bconsole");
+   InitMsg(NULL, NULL);
    working_directory = "/tmp";
-   args = get_pool_memory(PM_FNAME);
+   args = GetPoolMemory(PM_FNAME);
 
    while ((ch = getopt(argc, argv, "D:lc:d:nstu:x:?")) != -1) {
       switch (ch) {
@@ -1228,7 +1228,7 @@ int main(int argc, char *argv[])
    argv += optind;
 
    if (!no_signals) {
-      init_signals(terminate_console);
+      InitSignals(terminate_console);
    }
 
 #if !defined(HAVE_WIN32)
@@ -1252,8 +1252,8 @@ int main(int argc, char *argv[])
       PoolMem buffer;
 
       my_config = new_config_parser();
-      init_cons_config(my_config, configfile, M_ERROR_TERM);
-      print_config_schema_json(buffer);
+      InitConsConfig(my_config, configfile, M_ERROR_TERM);
+      PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       exit(0);
    }
@@ -1262,11 +1262,11 @@ int main(int argc, char *argv[])
    parse_cons_config(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->dump_resources(prtmsg, NULL);
+      my_config->DumpResources(prtmsg, NULL);
       exit(0);
    }
 
-   if (init_crypto() != 0) {
+   if (InitCrypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
@@ -1275,7 +1275,7 @@ int main(int argc, char *argv[])
    }
 
    if (!no_conio) {
-      con_init(stdin);
+      ConInit(stdin);
    }
 
    if (list_directors) {
@@ -1295,7 +1295,7 @@ int main(int argc, char *argv[])
 
    (void)WSA_Init();                        /* Initialize Windows sockets */
 
-   start_watchdog();                        /* Start socket watchdog */
+   StartWatchdog();                        /* Start socket watchdog */
 
    if (!select_director(director, &dir, &cons)) {
       return 1;
@@ -1332,7 +1332,7 @@ int main(int argc, char *argv[])
       password = &dir->password;
    }
 
-   if (!UA_sock->authenticate_with_director(&jcr, name, *password, errmsg, errmsg_len, dir)) {
+   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, dir)) {
       sendit(errmsg);
       terminate_console(0);
       return 1;
@@ -1362,8 +1362,8 @@ int main(int argc, char *argv[])
    if (env) {
       FILE *fp;
 
-      pm_strcpy(UA_sock->msg, env);
-      pm_strcat(UA_sock->msg, "/.bconsolerc");
+      PmStrcpy(UA_sock->msg, env);
+      PmStrcat(UA_sock->msg, "/.bconsolerc");
       fp = fopen(UA_sock->msg, "rb");
       if (fp) {
          read_and_process_input(fp, UA_sock);
@@ -1375,15 +1375,15 @@ int main(int argc, char *argv[])
     * See if there is an explicit setting of a history file to use.
     */
    if (me && me->history_file) {
-      pm_strcpy(history_file, me->history_file);
+      PmStrcpy(history_file, me->history_file);
       console_init_history(history_file.c_str());
    } else {
       if (env) {
-         pm_strcpy(history_file, env);
-         pm_strcat(history_file, "/.bconsole_history");
+         PmStrcpy(history_file, env);
+         PmStrcat(history_file, "/.bconsole_history");
          console_init_history(history_file.c_str());
       } else {
-         pm_strcpy(history_file, "");
+         PmStrcpy(history_file, "");
       }
    }
 
@@ -1412,17 +1412,17 @@ static void terminate_console(int sig)
       exit(1);
    }
    already_here = true;
-   stop_watchdog();
-   my_config->free_resources();
+   StopWatchdog();
+   my_config->FreeResources();
    free(my_config);
    my_config = NULL;
-   cleanup_crypto();
-   free_pool_memory(args);
+   CleanupCrypto();
+   FreePoolMemory(args);
    if (!no_conio) {
-      con_term();
+      ConTerm();
    }
    WSACleanup();               /* Cleanup Windows sockets */
-   lmgr_cleanup_main();
+   LmgrCleanupMain();
 
    if (sig != 0) {
       exit(1);
@@ -1568,7 +1568,7 @@ static int execcmd(FILE *input, BareosSocket *UA_sock)
    while (fgets(line, sizeof(line), bpipe->rfd)) {
       senditf("%s", line);
    }
-   status = close_bpipe(bpipe);
+   status = CloseBpipe(bpipe);
    if (status != 0) {
       berrno be;
       be.set_errno(status);

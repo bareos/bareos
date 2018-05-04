@@ -66,7 +66,7 @@ static int path_already_seen(JobControlRecord *jcr, char *path, int pnl);
  *
  * So, we return with the file descriptor open for normal files.
  */
-int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace)
+int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace)
 {
    mode_t new_mode, parent_mode;
    int flags;
@@ -83,7 +83,7 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
    if (is_win32_stream(attr->data_stream)) {
       set_win32_backup(bfd);
    } else {
-      set_portable_backup(bfd);
+      SetPortableBackup(bfd);
    }
 
    new_mode = attr->statp.st_mode;
@@ -137,7 +137,7 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
          /*
           * Set attributes if we created this directory
           */
-         if (attr->type == FT_DIREND && path_list_lookup(jcr->path_list, attr->ofname)) {
+         if (attr->type == FT_DIREND && PathListLookup(jcr->path_list, attr->ofname)) {
             break;
          }
          Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"), attr->ofname);
@@ -164,7 +164,7 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
       if (exists && attr->type != FT_RAW && attr->type != FT_FIFO) {
          /* Get rid of old copy */
          Dmsg1(400, "unlink %s\n", attr->ofname);
-         if (secure_erase(jcr, attr->ofname) == -1) {
+         if (SecureErase(jcr, attr->ofname) == -1) {
             berrno be;
 
             Qmsg(jcr, M_ERROR, 0, _("File %s already exists and could not be replaced. ERR=%s.\n"),
@@ -221,7 +221,7 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
             flags |= O_CTG;              /* set contiguous bit if needed */
          }
 
-         if (is_bopen(bfd)) {
+         if (IsBopen(bfd)) {
             Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
             bclose(bfd);
          }
@@ -301,7 +301,7 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
             } else {
                tid = NULL;
             }
-            if (is_bopen(bfd)) {
+            if (IsBopen(bfd)) {
                Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
             }
             Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
@@ -311,10 +311,10 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
                Qmsg2(jcr, M_ERROR, 0, _("Could not open %s: ERR=%s\n"),
                      attr->ofname, be.bstrerror());
                Dmsg2(400, "Could not open %s: ERR=%s\n", attr->ofname, be.bstrerror());
-               stop_thread_timer(tid);
+               StopThreadTimer(tid);
                return CF_ERROR;
             }
-            stop_thread_timer(tid);
+            StopThreadTimer(tid);
             return CF_EXTRACT;
          }
          Dmsg1(400, "FT_SPEC %s\n", attr->ofname);
@@ -428,8 +428,8 @@ int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bf
        * If we are using the Win32 Backup API, we open the directory so
        * that the security info will be read and saved.
        */
-      if (!is_portable_backup(bfd)) {
-         if (is_bopen(bfd)) {
+      if (!IsPortableBackup(bfd)) {
+         if (IsBopen(bfd)) {
             Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
          }
          if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0, attr->statp.st_rdev) < 0) {
@@ -530,12 +530,12 @@ static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofil
 static int path_already_seen(JobControlRecord *jcr, char *path, int pnl)
 {
    if (!jcr->cached_path) {
-      jcr->cached_path = get_pool_memory(PM_FNAME);
+      jcr->cached_path = GetPoolMemory(PM_FNAME);
    }
    if (jcr->cached_pnl == pnl && bstrcmp(path, jcr->cached_path)) {
       return 1;
    }
-   pm_strcpy(jcr->cached_path, path);
+   PmStrcpy(jcr->cached_path, path);
    jcr->cached_pnl = pnl;
    return 0;
 }

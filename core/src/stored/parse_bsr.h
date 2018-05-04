@@ -22,9 +22,9 @@
 #define BAREOS_STORED_PARSE_BSR_H_
 
 BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
-void dump_bsr(BootStrapRecord *bsr, bool recurse);
-DLL_IMP_EXP void free_bsr(BootStrapRecord *bsr);
-void free_restore_volume_list(JobControlRecord *jcr);
-void create_restore_volume_list(JobControlRecord *jcr);
+void DumpBsr(BootStrapRecord *bsr, bool recurse);
+DLL_IMP_EXP void FreeBsr(BootStrapRecord *bsr);
+void FreeRestoreVolumeList(JobControlRecord *jcr);
+void CreateRestoreVolumeList(JobControlRecord *jcr);
 
 #endif // BAREOS_STORED_PARSE_BSR_H_

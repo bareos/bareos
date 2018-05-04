@@ -60,13 +60,13 @@ typedef struct workq_tag {
 
 #define WORKQ_VALID  0xdec1992
 
-extern int workq_init(
+extern int WorkqInit(
               workq_t *wq,
               int     threads,        /* maximum threads */
               void   *(*engine)(void *)   /* engine routine */
                     );
-extern int workq_destroy(workq_t *wq);
-extern int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority);
+extern int WorkqDestroy(workq_t *wq);
+extern int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority);
 extern int workq_remove(workq_t *wq, workq_ele_t *work_item);
 
 #endif /* BAREOS_LIB_WORKQ_H_ */

@@ -56,17 +56,17 @@ class DLL_IMP_EXP rblist : public SmartAlloc {
    int16_t loffset;
    uint32_t num_items;
    bool down;
-   void left_rotate(void *item);
-   void right_rotate(void *item);
+   void LeftRotate(void *item);
+   void RightRotate(void *item);
 public:
    rblist(void *item, rblink *link);
    rblist(void);
    ~rblist(void) { destroy(); }
    void init(void *item, rblink *link);
-   void set_parent(void *item, void *parent);
-   void set_left(void *item, void *left);
-   void set_right(void *item, void *right);
-   void set_red(void *item, bool red);
+   void SetParent(void *item, void *parent);
+   void SetLeft(void *item, void *left);
+   void SetRight(void *item, void *right);
+   void SetRed(void *item, bool red);
    void *parent(const void *item) const;
    void *left(const void *item) const;
    void *right(const void *item) const;
@@ -108,22 +108,22 @@ inline rblist::rblist(void): head(0), loffset(0), num_items(0)
 {
 }
 
-inline void rblist::set_parent(void *item, void *parent)
+inline void rblist::SetParent(void *item, void *parent)
 {
    ((rblink *)(((char *)item)+loffset))->parent = parent;
 }
 
-inline void rblist::set_left(void *item, void *left)
+inline void rblist::SetLeft(void *item, void *left)
 {
    ((rblink *)(((char *)item)+loffset))->left = left;
 }
 
-inline void rblist::set_right(void *item, void *right)
+inline void rblist::SetRight(void *item, void *right)
 {
    ((rblink *)(((char *)item)+loffset))->right = right;
 }
 
-inline void rblist::set_red(void *item, bool red)
+inline void rblist::SetRed(void *item, bool red)
 {
    ((rblink *)(((char *)item)+loffset))->red = red;
 }

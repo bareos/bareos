@@ -93,7 +93,7 @@ CurLink *new_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fnam
  * When the current file is a hardlink, the backup code can compute
  * the checksum and store it into the CurLink structure.
  */
-void ff_pkt_set_link_digest(FindFilesPacket *ff_pkt, int32_t digest_stream,
+void FfPktSetLinkDigest(FindFilesPacket *ff_pkt, int32_t digest_stream,
                             const char *digest, uint32_t len)
 {
    if (ff_pkt->linked && !ff_pkt->linked->digest) {     /* is a hardlink */

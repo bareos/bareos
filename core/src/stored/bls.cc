@@ -51,7 +51,7 @@ static void do_jobs(char *infname);
 static void do_ls(char *fname);
 static void do_close(JobControlRecord *jcr);
 static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 static Device *dev;
 static DeviceControlRecord *dcr;
@@ -106,12 +106,12 @@ int main (int argc, char *argv[])
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   init_stack_dump();
-   lmgr_init_thread();
+   InitStackDump();
+   LmgrInitThread();
 
    working_directory = "/tmp";
-   my_name_is(argc, argv, "bls");
-   init_msg(NULL, NULL);              /* initialize message handler */
+   MyNameIs(argc, argv, "bls");
+   InitMsg(NULL, NULL);              /* initialize message handler */
 
    OSDependentInit();
 
@@ -156,9 +156,9 @@ int main (int argc, char *argv[])
             exit(1);
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
-            strip_trailing_junk(line);
+            StripTrailingJunk(line);
             Dmsg1(100, "add_exclude %s\n", line);
-            add_fname_to_exclude_list(ff, line);
+            AddFnameToExcludeList(ff, line);
          }
          fclose(fd);
          break;
@@ -171,9 +171,9 @@ int main (int argc, char *argv[])
             exit(1);
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
-            strip_trailing_junk(line);
+            StripTrailingJunk(line);
             Dmsg1(100, "add_include %s\n", line);
-            add_fname_to_include_list(ff, 0, line);
+            AddFnameToIncludeList(ff, 0, line);
          }
          fclose(fd);
          break;
@@ -232,13 +232,13 @@ int main (int argc, char *argv[])
       }
    }
 
-   load_sd_plugins(me->plugin_directory, me->plugin_names);
+   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-   read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->SDaddrs));
+   ReadCryptoCache(me->working_directory, "bareos-sd",
+                     GetFirstPortHostOrder(me->SDaddrs));
 
    if (ff->included_files_list == NULL) {
-      add_fname_to_include_list(ff, 0, "/");
+      AddFnameToIncludeList(ff, 0, "/");
    }
 
    for (i=0; i < argc; i++) {
@@ -278,21 +278,21 @@ int main (int argc, char *argv[])
       do_close(jcr);
    }
    if (bsr) {
-      free_bsr(bsr);
+      FreeBsr(bsr);
    }
-   term_include_exclude_files(ff);
-   term_find_files(ff);
+   TermIncludeExcludeFiles(ff);
+   TermFindFiles(ff);
    return 0;
 }
 
 static void do_close(JobControlRecord *jcr)
 {
-   free_attr(attr);
-   free_record(rec);
-   clean_device(jcr->dcr);
+   FreeAttr(attr);
+   FreeRecord(rec);
+   CleanDevice(jcr->dcr);
    dev->term();
-   free_dcr(jcr->dcr);
-   free_jcr(jcr);
+   FreeDcr(jcr->dcr);
+   FreeJcr(jcr);
 }
 
 /* List just block information */
@@ -301,10 +301,10 @@ static void do_blocks(char *infname)
    DeviceBlock *block = dcr->block;
    char buf1[100], buf2[100];
    for ( ;; ) {
-      if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
+      if (!dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
          Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
-         if (dev->at_eot()) {
-            if (!mount_next_read_volume(dcr)) {
+         if (dev->AtEot()) {
+            if (!MountNextReadVolume(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
                   dev->file, dev->print_name(), dcr->VolumeName);
                break;
@@ -312,26 +312,26 @@ static void do_blocks(char *infname)
             /* Read and discard Volume label */
             DeviceRecord *record;
             record = new_record();
-            dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK);
-            read_record_from_block(dcr, record);
+            dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
+            ReadRecordFromBlock(dcr, record);
             get_session_record(dev, record, &sessrec);
-            free_record(record);
+            FreeRecord(record);
             Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
-         } else if (dev->at_eof()) {
+         } else if (dev->AtEof()) {
             Jmsg(jcr, M_INFO, 0, _("End of file %u on device %s, Volume \"%s\"\n"),
                dev->file, dev->print_name(), dcr->VolumeName);
             Dmsg0(20, "read_record got eof. try again\n");
             continue;
-         } else if (dev->is_short_block()) {
+         } else if (dev->IsShortBlock()) {
             Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
             continue;
          } else {
             /* I/O error */
-            display_tape_error_status(jcr, dev);
+            DisplayTapeErrorStatus(jcr, dev);
             break;
          }
       }
-      if (!match_bsr_block(bsr, block)) {
+      if (!MatchBsrBlock(bsr, block)) {
          Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
             block->BlockNumber, block->block_len, block->BlockVer,
             block->VolSessionId, block->VolSessionTime);
@@ -341,7 +341,7 @@ static void do_blocks(char *infname)
         block->BlockNumber, block->block_len, block->BlockVer,
         block->VolSessionId, block->VolSessionTime);
       if (verbose == 1) {
-         read_record_from_block(dcr, rec);
+         ReadRecordFromBlock(dcr, rec);
          Pmsg9(-1, _("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%s rlen=%d\n"),
               dev->file, dev->block_num,
               block->BlockNumber, block->block_len,
@@ -349,7 +349,7 @@ static void do_blocks(char *infname)
               stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
          rec->remainder = 0;
       } else if (verbose > 1) {
-         dump_block(block, "");
+         DumpBlock(block, "");
       } else {
          printf(_("Block: %d size=%d\n"), block->BlockNumber, block->block_len);
       }
@@ -364,7 +364,7 @@ static void do_blocks(char *infname)
 static bool jobs_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    if (rec->FileIndex < 0) {
-      dump_label_record(dcr->dev, rec, verbose);
+      DumpLabelRecord(dcr->dev, rec, verbose);
    }
    rec->remainder = 0;
    return true;
@@ -373,24 +373,24 @@ static bool jobs_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 /* Do list job records */
 static void do_jobs(char *infname)
 {
-   read_records(dcr, jobs_cb, mount_next_read_volume);
+   ReadRecords(dcr, jobs_cb, MountNextReadVolume);
 }
 
 /* Do an ls type listing of an archive */
 static void do_ls(char *infname)
 {
    if (dump_label) {
-      dump_volume_label(dev);
+      DumpVolumeLabel(dev);
       return;
    }
-   read_records(dcr, record_cb, mount_next_read_volume);
+   ReadRecords(dcr, RecordCb, MountNextReadVolume);
    printf("%u files and directories found.\n", num_files);
 }
 
 /**
- * Called here for each record from read_records()
+ * Called here for each record from ReadRecords()
  */
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    PoolMem record_str(PM_MESSAGE);
 
@@ -405,7 +405,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
    switch (rec->maskedStream) {
    case STREAM_UNIX_ATTRIBUTES:
    case STREAM_UNIX_ATTRIBUTES_EX:
-      if (!unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
+      if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
          if (!forge_on) {
             Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
          } else {
@@ -415,12 +415,12 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
          return true;
       }
 
-      attr->data_stream = decode_stat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
-      build_attr_output_fnames(jcr, attr);
+      attr->data_stream = DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+      BuildAttrOutputFnames(jcr, attr);
 
-      if (file_is_included(ff, attr->fname) && !file_is_excluded(ff, attr->fname)) {
+      if (FileIsIncluded(ff, attr->fname) && !FileIsExcluded(ff, attr->fname)) {
          if (!verbose) {
-            print_ls_output(jcr, attr);
+            PrintLsOutput(jcr, attr);
          } else {
             Pmsg1(-1, "%s\n",  record_to_str(record_str, jcr, rec));
          }
@@ -435,7 +435,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
    }
 
    /* debug output of record */
-   dump_record("", rec);
+   DumpRecord("", rec);
 
    return true;
 }
@@ -451,11 +451,11 @@ static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *se
       break;
    case VOL_LABEL:
       rtype = _("Volume Label");
-      unser_volume_label(dev, rec);
+      UnserVolumeLabel(dev, rec);
       break;
    case SOS_LABEL:
       rtype = _("Begin Job Session");
-      unser_session_label(sessrec, rec);
+      UnserSessionLabel(sessrec, rec);
       jcr->JobId = sessrec->JobId;
       break;
    case EOS_LABEL:

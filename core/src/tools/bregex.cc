@@ -133,7 +133,7 @@ int main(int argc, char *const *argv)
       if (fgets(pat, sizeof(pat)-1, stdin) == NULL) {
          break;
       }
-      strip_trailing_newline(pat);
+      StripTrailingNewline(pat);
       if (pat[0] == 0) {
          exit(0);
       }
@@ -150,7 +150,7 @@ int main(int argc, char *const *argv)
       }
       lineno = 0;
       while (fgets(data, sizeof(data)-1, fd)) {
-         strip_trailing_newline(data);
+         StripTrailingNewline(data);
          lineno++;
          rc = regexec(&preg, data, 0, NULL,  0);
          if ((match_only && rc == 0) || (!match_only && rc != 0)) {

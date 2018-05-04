@@ -27,7 +27,7 @@
  * Subroutines to handle waiting for operator intervention
  * or waiting for a Device to be released
  *
- * Code for wait_for_sysop() pulled from askdir.c
+ * Code for WaitForSysop() pulled from askdir.c
  */
 
 #include "include/bareos.h"                   /* pull in global headers */
@@ -45,7 +45,7 @@ static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
  *
  *   Returns: W_ERROR, W_TIMEOUT, W_POLL, W_MOUNT, or W_WAKE
  */
-int wait_for_sysop(DeviceControlRecord *dcr)
+int WaitForSysop(DeviceControlRecord *dcr)
 {
    struct timeval tv;
    struct timezone tz;
@@ -65,9 +65,9 @@ int wait_for_sysop(DeviceControlRecord *dcr)
     * Since we want to mount a tape, make sure current one is
     *  not marked as using this drive.
     */
-   volume_unused(dcr);
+   VolumeUnused(dcr);
 
-   unmounted = dev->is_device_unmounted();
+   unmounted = dev->IsDeviceUnmounted();
    dev->poll = false;
    /*
     * Wait requested time (dev->rem_wait_sec).  However, we also wake up every
@@ -89,10 +89,10 @@ int wait_for_sysop(DeviceControlRecord *dcr)
    if (!unmounted) {
       Dmsg1(debuglevel, "blocked=%s\n", dev->print_blocked());
       dev->dev_prev_blocked = dev->blocked();
-      dev->set_blocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
+      dev->SetBlocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
    }
 
-   while (!job_canceled(jcr)) {
+   while (!JobCanceled(jcr)) {
       time_t now, start, total_waited;
 
       gettimeofday(&tv, &tz);
@@ -150,7 +150,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
       /*
        * Check if user unmounted the device while we were waiting
        */
-      unmounted = dev->is_device_unmounted();
+      unmounted = dev->IsDeviceUnmounted();
 
       if (!unmounted && dev->vol_poll_interval &&
           (total_waited >= dev->vol_poll_interval)) {
@@ -201,7 +201,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
    }
 
    if (!unmounted) {
-      dev->set_blocked(dev->dev_prev_blocked);    /* restore entry state */
+      dev->SetBlocked(dev->dev_prev_blocked);    /* restore entry state */
       Dmsg1(debuglevel, "set %s\n", dev->print_blocked());
    }
    Dmsg1(debuglevel, "Exit blocked=%s\n", dev->print_blocked());
@@ -220,7 +220,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
  * Returns: true  if a device has changed state
  *          false if the total wait time has expired.
  */
-bool wait_for_device(JobControlRecord *jcr, int &retries)
+bool WaitForDevice(JobControlRecord *jcr, int &retries)
 {
    struct timeval tv;
    struct timezone tz;
@@ -230,7 +230,7 @@ bool wait_for_device(JobControlRecord *jcr, int &retries)
    const int max_wait_time = 1 * 60;       /* wait 1 minute */
    char ed1[50];
 
-   Dmsg0(debuglevel, "Enter wait_for_device\n");
+   Dmsg0(debuglevel, "Enter WaitForDevice\n");
    P(device_release_mutex);
 
    if (++retries % 5 == 0) {
@@ -255,9 +255,9 @@ bool wait_for_device(JobControlRecord *jcr, int &retries)
 }
 
 /**
- * Signal the above wait_for_device function.
+ * Signal the above WaitForDevice function.
  */
-void release_device_cond()
+void ReleaseDeviceCond()
 {
    pthread_cond_broadcast(&wait_device_release);
 }

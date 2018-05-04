@@ -82,7 +82,7 @@ static inline bool lookup_device(JobControlRecord *jcr, const char *device_name,
     */
    dr.StorageId = StorageId;
    bstrncpy(dr.Name, device_name, sizeof(dr.Name));
-   if (!jcr->db->create_device_record(jcr, &dr)){
+   if (!jcr->db->CreateDeviceRecord(jcr, &dr)){
       Dmsg0(100, "Failed to create new Device record\n");
       goto bail_out;
    }
@@ -114,7 +114,7 @@ static inline void wait_for_next_run()
 
    /*
     * Wait for a next run. Normally this waits exactly me->stats_collect_interval seconds.
-    * It can be interrupted when signaled by the stop_statistics_thread() function.
+    * It can be interrupted when signaled by the StopStatisticsThread() function.
     */
    gettimeofday(&tv, &tz);
    timeout.tv_nsec = tv.tv_usec * 1000;
@@ -136,7 +136,7 @@ void *statistics_thread_runner(void *arg)
    PoolMem current_store(PM_NAME);
 
    memset(&cached_device, 0, sizeof(struct cached_device));
-   pm_strcpy(current_store, "");
+   PmStrcpy(current_store, "");
 
    /*
     * Create a dummy JobControlRecord for the statistics thread.
@@ -175,7 +175,7 @@ void *statistics_thread_runner(void *arg)
       /*
        * Do nothing if no job is running currently.
        */
-      if (job_count() == 0) {
+      if (JobCount() == 0) {
          if (!need_flush) {
             Dmsg0(200, "statistics_thread_runner: do nothing as no jobs are running\n");
             wait_for_next_run();
@@ -196,24 +196,24 @@ void *statistics_thread_runner(void *arg)
 
       while (1) {
          BareosSocket *sd;
-         StoreResource *store;
+         StorageResource *store;
          int64_t StorageId;
 
          LockRes();
          if ((current_store.c_str())[0]) {
-            store = (StoreResource *)GetResWithName(R_STORAGE, current_store.c_str());
+            store = (StorageResource *)GetResWithName(R_STORAGE, current_store.c_str());
          } else {
             store = NULL;
          }
 
-         store = (StoreResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
+         store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
          if (!store) {
-            pm_strcpy(current_store, "");
+            PmStrcpy(current_store, "");
             UnlockRes();
             break;
          }
 
-         pm_strcpy(current_store, store->name());
+         PmStrcpy(current_store, store->name());
          if (!store->collectstats) {
             UnlockRes();
             continue;
@@ -234,7 +234,7 @@ void *statistics_thread_runner(void *arg)
           * in the next run.
           */
          jcr->res.rstore = store;
-         if (!connect_to_storage_daemon(jcr, 2, 1, false)) {
+         if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
             UnlockRes();
             continue;
          }
@@ -248,7 +248,7 @@ void *statistics_thread_runner(void *arg)
           * Do our work retrieving the statistics from the remote SD.
           */
          if (sd->fsend("stats")) {
-            while (bnet_recv(sd) >= 0) {
+            while (BnetRecv(sd) >= 0) {
                Dmsg1(200, "<stored: %s", sd->msg);
                if (bstrncmp(sd->msg, "Devicestats", 10)) {
                   PoolMem DevName(PM_NAME);
@@ -271,7 +271,7 @@ void *statistics_thread_runner(void *arg)
                         continue;
                      }
 
-                     if (!jcr->db->create_device_statistics(jcr, &dsr)) {
+                     if (!jcr->db->CreateDeviceStatistics(jcr, &dsr)) {
                         continue;
                      }
                   } else {
@@ -283,7 +283,7 @@ void *statistics_thread_runner(void *arg)
 
                   memset(&tsr, 0, sizeof(tsr));
                   if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime, DevName.c_str(), &tsr.AlertFlags) == 3) {
-                     unbash_spaces(DevName);
+                     UnbashSpaces(DevName);
 
                      Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
                            tsr.SampleTime, DevName.c_str(), tsr.AlertFlags);
@@ -292,7 +292,7 @@ void *statistics_thread_runner(void *arg)
                         continue;
                      }
 
-                     if (!jcr->db->create_tapealert_statistics(jcr, &tsr)) {
+                     if (!jcr->db->CreateTapealertStatistics(jcr, &tsr)) {
                         continue;
                      }
                   } else {
@@ -304,7 +304,7 @@ void *statistics_thread_runner(void *arg)
 
                   memset(&jsr, 0, sizeof(jsr));
                   if (sscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId, &jsr.JobFiles, &jsr.JobBytes, DevName.c_str()) == 5) {
-                     unbash_spaces(DevName);
+                     UnbashSpaces(DevName);
 
                      Dmsg5(200, "New Jobstats [%lld]: JobId %ld, JobFiles %lu, JobBytes %llu, DevName %s\n",
                            jsr.SampleTime, jsr.JobId, jsr.JobFiles, jsr.JobBytes, DevName.c_str());
@@ -313,7 +313,7 @@ void *statistics_thread_runner(void *arg)
                         continue;
                      }
 
-                     if (!jcr->db->create_job_statistics(jcr, &jsr)) {
+                     if (!jcr->db->CreateJobStatistics(jcr, &jsr)) {
                         continue;
                      }
                   } else {
@@ -334,15 +334,15 @@ void *statistics_thread_runner(void *arg)
       wait_for_next_run();
    }
 
-   db_sql_close_pooled_connection(jcr, jcr->db);
+   DbSqlClosePooledConnection(jcr, jcr->db);
 
 bail_out:
-   free_jcr(jcr);
+   FreeJcr(jcr);
 
    return NULL;
 }
 
-int start_statistics_thread(void)
+int StartStatisticsThread(void)
 {
    int status;
 
@@ -359,7 +359,7 @@ int start_statistics_thread(void)
    return 0;
 }
 
-void stop_statistics_thread()
+void StopStatisticsThread()
 {
    if (!statistics_initialized) {
       return;

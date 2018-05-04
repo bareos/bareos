@@ -105,13 +105,13 @@ private:
     * Private Methods
     */
    char *allocate_chunkbuffer();
-   void free_chunkbuffer(char *buffer);
-   void free_chunk_io_request(chunk_io_request *request);
-   bool start_io_threads();
-   void stop_threads();
+   void FreeChunkbuffer(char *buffer);
+   void FreeChunkIoRequest(chunk_io_request *request);
+   bool StartIoThreads();
+   void StopThreads();
    bool enqueue_chunk(chunk_io_request *request);
-   bool flush_chunk(bool release_chunk, bool move_to_next_chunk);
-   bool read_chunk();
+   bool FlushChunk(bool release_chunk, bool move_to_next_chunk);
+   bool ReadChunk();
 
 protected:
    /*
@@ -127,17 +127,17 @@ protected:
    /*
     * Protected Methods
     */
-   bool set_inflight_chunk(chunk_io_request *request);
-   void clear_inflight_chunk(chunk_io_request *request);
-   bool is_inflight_chunk(chunk_io_request *request);
-   int nr_inflight_chunks();
+   bool SetInflightChunk(chunk_io_request *request);
+   void ClearInflightChunk(chunk_io_request *request);
+   bool IsInflightChunk(chunk_io_request *request);
+   int NrInflightChunks();
    int setup_chunk(const char *pathname, int flags, int mode);
    ssize_t read_chunked(int fd, void *buffer, size_t count);
    ssize_t write_chunked(int fd, const void *buffer, size_t count);
    int close_chunk();
    bool truncate_chunked_volume(DeviceControlRecord *dcr);
-   ssize_t chunked_volume_size();
-   bool load_chunk();
+   ssize_t ChunkedVolumeSize();
+   bool LoadChunk();
 
    /*
     * Methods implemented by inheriting class.
@@ -145,7 +145,7 @@ protected:
    virtual bool flush_remote_chunk(chunk_io_request *request) = 0;
    virtual bool read_remote_chunk(chunk_io_request *request) = 0;
    virtual ssize_t chunked_remote_volume_size() = 0;
-   virtual bool truncate_remote_chunked_volume(DeviceControlRecord *dcr) = 0;
+   virtual bool TruncateRemoteChunkedVolume(DeviceControlRecord *dcr) = 0;
 
 public:
    /*
@@ -154,8 +154,8 @@ public:
    chunked_device();
    virtual ~chunked_device();
 
-   bool dequeue_chunk();
-   bool device_status(bsdDevStatTrig *dst);
+   bool DequeueChunk();
+   bool DeviceStatus(bsdDevStatTrig *dst);
 
    /*
     * Interface from Device

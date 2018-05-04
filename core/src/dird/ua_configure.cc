@@ -37,7 +37,7 @@ static void configure_lex_error_handler(const char *file, int line, LEX *lc, Poo
    lc->error_counter++;
    if (lc->caller_ctx) {
       ua = (UaContext *)(lc->caller_ctx);
-      ua->error_msg("configure error: %s\n", msg.c_str());
+      ua->ErrorMsg("configure error: %s\n", msg.c_str());
    }
 }
 
@@ -88,7 +88,7 @@ static inline ResourceItem *config_get_res_item(UaContext *ua, ResourceTable *re
    if (res_table) {
       item = my_config->get_resource_item(res_table->items, key);
       if (!item) {
-         ua->error_msg("Resource \"%s\" does not permit directive \"%s\".\n", res_table->name, key);
+         ua->ErrorMsg("Resource \"%s\" does not permit directive \"%s\".\n", res_table->name, key);
          return NULL;
       }
    }
@@ -106,7 +106,7 @@ static inline ResourceItem *config_get_res_item(UaContext *ua, ResourceTable *re
    }
    if (errorcharmsg) {
       if (ua) {
-         ua->error_msg("Could not add directive \"%s\": character %s is forbidden.\n", key, errorcharmsg);
+         ua->ErrorMsg("Could not add directive \"%s\": character %s is forbidden.\n", key, errorcharmsg);
       }
       return NULL;
    }
@@ -159,7 +159,7 @@ static inline bool configure_create_resource_string(UaContext *ua, int first_par
 
    for (int i = first_parameter; i < ua->argc; i++) {
       if (!ua->argv[i]) {
-         ua->error_msg("Missing value for directive \"%s\"\n", ua->argk[i]);
+         ua->ErrorMsg("Missing value for directive \"%s\"\n", ua->argk[i]);
          return false;
       }
       if (bstrcasecmp(ua->argk[i], "name")) {
@@ -172,7 +172,7 @@ static inline bool configure_create_resource_string(UaContext *ua, int first_par
    resource.strcat("}\n");
 
    if (strlen(resourcename.c_str()) <= 0) {
-         ua->error_msg("Resource \"%s\": missing name parameter.\n", res_table->name);
+         ua->ErrorMsg("Resource \"%s\": missing name parameter.\n", res_table->name);
          return false;
    }
 
@@ -236,9 +236,9 @@ static inline bool configure_create_fd_resource(UaContext *ua, const char *clien
     */
    basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
    dirname = GetNextRes(R_DIRECTOR, NULL)->name;
-   if (!my_config->get_path_of_new_resource(filename, temp, basedir.c_str(), "director",
+   if (!my_config->GetPathOfNewResource(filename, temp, basedir.c_str(), "director",
                                             dirname, error_if_exists, create_directories)) {
-      ua->error_msg("%s", temp.c_str());
+      ua->ErrorMsg("%s", temp.c_str());
       return false;
    }
    filename_tmp.strcpy(temp);
@@ -247,18 +247,18 @@ static inline bool configure_create_fd_resource(UaContext *ua, const char *clien
     * Write resource to file.
     */
    if (!configure_write_resource(filename.c_str(), "filedaemon-export", clientname, resource.c_str(), overwrite)) {
-      ua->error_msg("failed to write filedaemon config resource file\n");
+      ua->ErrorMsg("failed to write filedaemon config resource file\n");
       return false;
    }
 
-   ua->send->object_start("export");
-   ua->send->object_key_value("clientname", clientname);
-   ua->send->object_key_value("component", "bareos-fd");
-   ua->send->object_key_value("resource", "director");
-   ua->send->object_key_value("name", dirname);
-   ua->send->object_key_value("filename", filename.c_str(), "Exported resource file \"%s\":\n");
-   ua->send->object_key_value("content", resource.c_str(), "%s");
-   ua->send->object_end("export");
+   ua->send->ObjectStart("export");
+   ua->send->ObjectKeyValue("clientname", clientname);
+   ua->send->ObjectKeyValue("component", "bareos-fd");
+   ua->send->ObjectKeyValue("resource", "director");
+   ua->send->ObjectKeyValue("name", dirname);
+   ua->send->ObjectKeyValue("filename", filename.c_str(), "Exported resource file \"%s\":\n");
+   ua->send->ObjectKeyValue("content", resource.c_str(), "%s");
+   ua->send->ObjectEnd("export");
 
    return true;
 }
@@ -290,30 +290,30 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
    }
 
    if (GetResWithName(res_table->rcode, name.c_str())) {
-      ua->error_msg("Resource \"%s\" with name \"%s\" already exists.\n", res_table->name, name.c_str());
+      ua->ErrorMsg("Resource \"%s\" with name \"%s\" already exists.\n", res_table->name, name.c_str());
       return false;
    }
 
-   if (!my_config->get_path_of_new_resource(filename, temp, NULL, res_table->name, name.c_str(), true)) {
-      ua->error_msg("%s", temp.c_str());
+   if (!my_config->GetPathOfNewResource(filename, temp, NULL, res_table->name, name.c_str(), true)) {
+      ua->ErrorMsg("%s", temp.c_str());
       return false;
    } else {
       filename_tmp.strcpy(temp);
    }
 
    if (!configure_write_resource(filename_tmp.c_str(), res_table->name, name.c_str(), resource.c_str())) {
-      ua->error_msg("failed to write config resource file\n");
+      ua->ErrorMsg("failed to write config resource file\n");
       return false;
    }
 
-   if (!my_config->parse_config_file(filename_tmp.c_str(), ua, configure_lex_error_handler, NULL, M_ERROR)) {
+   if (!my_config->ParseConfigFile(filename_tmp.c_str(), ua, configure_lex_error_handler, NULL, M_ERROR)) {
       unlink(filename_tmp.c_str());
-      my_config->remove_resource(res_table->rcode, name.c_str());
+      my_config->RemoveResource(res_table->rcode, name.c_str());
       return false;
    }
 
    /*
-    * parse_config_file has already done some validation.
+    * ParseConfigFile has already done some validation.
     * However, it skipped at least some checks for R_JOB
     * (reason: a job can get values from jobdefs,
     * and the value propagation happens after reading the full configuration)
@@ -321,11 +321,11 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
     */
    if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
       res = (JobResource *)GetResWithName(res_table->rcode, name.c_str());
-      propagate_jobdefs(res_table->rcode, res);
-      if (!validate_resource(res_table->rcode, res_table->items, (BareosResource *)res)) {
-         ua->error_msg("failed to create config resource \"%s\"\n", name.c_str());
+      PropagateJobdefs(res_table->rcode, res);
+      if (!ValidateResource(res_table->rcode, res_table->items, (BareosResource *)res)) {
+         ua->ErrorMsg("failed to create config resource \"%s\"\n", name.c_str());
          unlink(filename_tmp.c_str());
-         my_config->remove_resource(res_table->rcode, name.c_str());
+         my_config->RemoveResource(res_table->rcode, name.c_str());
          return false;
       }
    }
@@ -334,9 +334,9 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
     * new config resource is working fine. Rename file to its permanent name.
     */
    if (rename(filename_tmp.c_str(), filename.c_str()) != 0 ) {
-      ua->error_msg("failed to create config file \"%s\"\n", filename.c_str());
+      ua->ErrorMsg("failed to create config file \"%s\"\n", filename.c_str());
       unlink(filename_tmp.c_str());
-      my_config->remove_resource(res_table->rcode, name.c_str());
+      my_config->RemoveResource(res_table->rcode, name.c_str());
       return false;
    }
 
@@ -347,12 +347,12 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
       configure_create_fd_resource(ua, name.c_str());
    }
 
-   ua->send->object_start("add");
-   ua->send->object_key_value("resource", res_table->name);
-   ua->send->object_key_value("name", name.c_str());
-   ua->send->object_key_value("filename", filename.c_str(), "Created resource config file \"%s\":\n");
-   ua->send->object_key_value("content", resource.c_str(), "%s");
-   ua->send->object_end("add");
+   ua->send->ObjectStart("add");
+   ua->send->ObjectKeyValue("resource", res_table->name);
+   ua->send->ObjectKeyValue("name", name.c_str());
+   ua->send->ObjectKeyValue("filename", filename.c_str(), "Created resource config file \"%s\":\n");
+   ua->send->ObjectKeyValue("content", resource.c_str(), "%s");
+   ua->send->ObjectEnd("add");
 
    return true;
 }
@@ -364,25 +364,25 @@ static inline bool configure_add(UaContext *ua, int resource_type_parameter)
 
    res_table = my_config->get_resource_table(ua->argk[resource_type_parameter]);
    if (!res_table) {
-      ua->error_msg(_("invalid resource type %s.\n"), ua->argk[resource_type_parameter]);
+      ua->ErrorMsg(_("invalid resource type %s.\n"), ua->argk[resource_type_parameter]);
       return false;
    }
 
    if (res_table->rcode == R_DIRECTOR) {
-      ua->error_msg(_("Only one Director resource allowed.\n"));
+      ua->ErrorMsg(_("Only one Director resource allowed.\n"));
       return false;
    }
 
-   ua->send->object_start("configure");
+   ua->send->ObjectStart("configure");
    result = configure_add_resource(ua, resource_type_parameter+1, res_table);
-   ua->send->object_end("configure");
+   ua->send->ObjectEnd("configure");
 
    return result;
 }
 
 static inline void configure_export_usage(UaContext *ua)
 {
-   ua->error_msg(_("usage: configure export client=<clientname>\n"));
+   ua->ErrorMsg(_("usage: configure export client=<clientname>\n"));
 }
 
 static inline bool configure_export(UaContext *ua)
@@ -390,7 +390,7 @@ static inline bool configure_export(UaContext *ua)
    bool result = false;
    int i;
 
-   i = find_arg_with_value(ua, NT_("client"));
+   i = FindArgWithValue(ua, NT_("client"));
    if (i < 0) {
       configure_export_usage(ua);
       return false;
@@ -401,9 +401,9 @@ static inline bool configure_export(UaContext *ua)
       return false;
    }
 
-   ua->send->object_start("configure");
+   ua->send->ObjectStart("configure");
    result = configure_create_fd_resource(ua, ua->argv[i]);
-   ua->send->object_end("configure");
+   ua->send->ObjectEnd("configure");
 
    return result;
 }
@@ -412,8 +412,8 @@ bool configure_cmd(UaContext *ua, const char *cmd)
 {
    bool result = false;
 
-   if (!(my_config->is_using_config_include_dir())) {
-      ua->warning_msg(_(
+   if (!(my_config->IsUsingConfigIncludeDir())) {
+      ua->WarningMsg(_(
                "It seems that the configuration is not adapted to the include directory structure. "
                "This means, that the configure command may not work as expected. "
                "Your configuration changes may not survive a reload/restart. "
@@ -422,7 +422,7 @@ bool configure_cmd(UaContext *ua, const char *cmd)
    }
 
    if (ua->argc < 3) {
-      ua->error_msg(_("usage:\n"
+      ua->ErrorMsg(_("usage:\n"
                       "  configure add <resourcetype> <key1>=<value1> ...\n"
                       "  configure export client=<clientname>\n"));
       return false;
@@ -433,7 +433,7 @@ bool configure_cmd(UaContext *ua, const char *cmd)
    } else if (bstrcasecmp(ua->argk[1], NT_("export"))) {
       result = configure_export(ua);
    } else {
-      ua->error_msg(_("invalid subcommand %s.\n"), ua->argk[1]);
+      ua->ErrorMsg(_("invalid subcommand %s.\n"), ua->argk[1]);
       return false;
    }
 

@@ -78,32 +78,32 @@ public:
    }
 
    virtual bool init() = 0;
-   virtual bool add_file(char *fname,
+   virtual bool AddFile(char *fname,
                          int fname_length,
                          char *lstat,
                          int lstat_length,
                          char *chksum,
                          int checksum_length,
                          int32_t delta_seq) = 0;
-   virtual bool end_load() = 0;
+   virtual bool EndLoad() = 0;
    virtual accurate_payload *lookup_payload(char *fname) = 0;
    virtual bool update_payload(char *fname, accurate_payload *payload) = 0;
-   virtual bool send_base_file_list() = 0;
-   virtual bool send_deleted_list() = 0;
-   void mark_file_as_seen(accurate_payload *payload) {
-      set_bit(payload->filenr, seen_bitmap_);
+   virtual bool SendBaseFileList() = 0;
+   virtual bool SendDeletedList() = 0;
+   void MarkFileAsSeen(accurate_payload *payload) {
+      SetBit(payload->filenr, seen_bitmap_);
    }
 
-   void unmark_file_as_seen(accurate_payload *payload) {
-      clear_bit(payload->filenr, seen_bitmap_);
+   void UnmarkFileAsSeen(accurate_payload *payload) {
+      ClearBit(payload->filenr, seen_bitmap_);
    }
 
-   void mark_all_files_as_seen() {
-      set_bits(0, filenr_ - 1, seen_bitmap_);
+   void MarkAllFilesAsSeen() {
+      SetBits(0, filenr_ - 1, seen_bitmap_);
    }
 
-   void unmark_all_files_as_seen() {
-      clear_bits(0, filenr_ - 1, seen_bitmap_);
+   void UnmarkAllFilesAsSeen() {
+      ClearBits(0, filenr_ - 1, seen_bitmap_);
    }
 };
 
@@ -137,18 +137,18 @@ public:
       return true;
    }
 
-   bool add_file(char *fname,
+   bool AddFile(char *fname,
                  int fname_length,
                  char *lstat,
                  int lstat_length,
                  char *chksum,
                  int checksum_length,
                  int32_t delta_seq);
-   bool end_load();
+   bool EndLoad();
    accurate_payload *lookup_payload(char *fname);
    bool update_payload(char *fname, accurate_payload *payload);
-   bool send_base_file_list();
-   bool send_deleted_list();
+   bool SendBaseFileList();
+   bool SendDeletedList();
 };
 
 #ifdef HAVE_LMDB
@@ -178,28 +178,28 @@ public:
       destroy();
    }
    bool init();
-   bool add_file(char *fname,
+   bool AddFile(char *fname,
                  int fname_length,
                  char *lstat,
                  int lstat_length,
                  char *chksum,
                  int checksum_length,
                  int32_t delta_seq);
-   bool end_load();
+   bool EndLoad();
    accurate_payload *lookup_payload(char *fname);
    bool update_payload(char *fname, accurate_payload *payload);
-   bool send_base_file_list();
-   bool send_deleted_list();
+   bool SendBaseFileList();
+   bool SendDeletedList();
 };
 #endif /* HAVE_LMDB */
 
-bool accurate_finish(JobControlRecord *jcr);
+bool AccurateFinish(JobControlRecord *jcr);
 bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
-bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname);
-bool accurate_unmark_file_as_seen(JobControlRecord *jcr, char *fname);
+bool AccurateMarkFileAsSeen(JobControlRecord *jcr, char *fname);
+bool accurate_unMarkFileAsSeen(JobControlRecord *jcr, char *fname);
 bool accurate_mark_all_files_as_seen(JobControlRecord *jcr);
-bool accurate_unmark_all_files_as_seen(JobControlRecord *jcr);
-void accurate_free(JobControlRecord *jcr);
+bool accurate_unMarkAllFilesAsSeen(JobControlRecord *jcr);
+void AccurateFree(JobControlRecord *jcr);
 
 
 #endif /* BAREOS_FILED_ACCURATE_H_ */

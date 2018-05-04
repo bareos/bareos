@@ -65,13 +65,13 @@ public:
    bool signal(int signal);
    void close();
    void destroy();
-   int get_peer(char *buf, socklen_t buflen);
-   bool set_buffer_size(uint32_t size, int rw);
-   int set_nonblocking();
-   int set_blocking();
-   void restore_blocking(int flags);
-   int wait_data(int sec, int usec = 0);
-   int wait_data_intr(int sec, int usec = 0);
+   int GetPeer(char *buf, socklen_t buflen);
+   bool SetBufferSize(uint32_t size, int rw);
+   int SetNonblocking();
+   int SetBlocking();
+   void RestoreBlocking(int flags);
+   int WaitData(int sec, int usec = 0);
+   int WaitDataIntr(int sec, int usec = 0);
 };
 
 #endif /* BAREOS_LIB_BSOCK_TCP_H_ */

@@ -22,18 +22,18 @@
 #define BAREOS_LIB_SCAN_H_
 
 DLL_IMP_EXP void strip_leading_space(char *str);
-DLL_IMP_EXP void strip_trailing_junk(char *str);
-DLL_IMP_EXP void strip_trailing_newline(char *str);
-DLL_IMP_EXP void strip_trailing_slashes(char *dir);
-DLL_IMP_EXP bool skip_spaces(char **msg);
-DLL_IMP_EXP bool skip_nonspaces(char **msg);
+DLL_IMP_EXP void StripTrailingJunk(char *str);
+DLL_IMP_EXP void StripTrailingNewline(char *str);
+DLL_IMP_EXP void StripTrailingSlashes(char *dir);
+DLL_IMP_EXP bool SkipSpaces(char **msg);
+DLL_IMP_EXP bool SkipNonspaces(char **msg);
 DLL_IMP_EXP int fstrsch(const char *a, const char *b);
 DLL_IMP_EXP char *next_arg(char **s);
-DLL_IMP_EXP int parse_args(POOLMEM *cmd, POOLMEM *&args, int *argc,
+DLL_IMP_EXP int ParseArgs(POOLMEM *cmd, POOLMEM *&args, int *argc,
                char **argk, char **argv, int max_args);
-DLL_IMP_EXP int parse_args_only(POOLMEM *cmd, POOLMEM *&args, int *argc,
+DLL_IMP_EXP int ParseArgsOnly(POOLMEM *cmd, POOLMEM *&args, int *argc,
                     char **argk, char **argv, int max_args);
-DLL_IMP_EXP void split_path_and_filename(const char *fname, POOLMEM *&path,
+DLL_IMP_EXP void SplitPathAndFilename(const char *fname, POOLMEM *&path,
                              int *pnl, POOLMEM *&file, int *fnl);
 DLL_IMP_EXP int bsscanf(const char *buf, const char *fmt, ...);
 

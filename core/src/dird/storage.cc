@@ -40,43 +40,43 @@
 /**
  * Copy the storage definitions from an alist to the JobControlRecord
  */
-void copy_rwstorage(JobControlRecord *jcr, alist *storage, const char *where)
+void CopyRwstorage(JobControlRecord *jcr, alist *storage, const char *where)
 {
    if (jcr->JobReads()) {
-      copy_rstorage(jcr, storage, where);
+      CopyRstorage(jcr, storage, where);
    }
-   copy_wstorage(jcr, storage, where);
+   CopyWstorage(jcr, storage, where);
 }
 
 /**
  * Set storage override.
  * Releases any previous storage definition.
  */
-void set_rwstorage(JobControlRecord *jcr, UnifiedStoreResource *store)
+void SetRwstorage(JobControlRecord *jcr, UnifiedStorageResource *store)
 {
    if (!store) {
       Jmsg(jcr, M_FATAL, 0, _("No storage specified.\n"));
       return;
    }
    if (jcr->JobReads()) {
-      set_rstorage(jcr, store);
+      SetRstorage(jcr, store);
    }
-   set_wstorage(jcr, store);
+   SetWstorage(jcr, store);
 }
 
-void free_rwstorage(JobControlRecord *jcr)
+void FreeRwstorage(JobControlRecord *jcr)
 {
-   free_rstorage(jcr);
-   free_wstorage(jcr);
+   FreeRstorage(jcr);
+   FreeWstorage(jcr);
 }
 
 /**
  * Copy the storage definitions from an alist to the JobControlRecord
  */
-void copy_rstorage(JobControlRecord *jcr, alist *storage, const char *where)
+void CopyRstorage(JobControlRecord *jcr, alist *storage, const char *where)
 {
    if (storage) {
-      StoreResource *store;
+      StorageResource *store;
       if (jcr->res.rstorage) {
          delete jcr->res.rstorage;
       }
@@ -85,11 +85,11 @@ void copy_rstorage(JobControlRecord *jcr, alist *storage, const char *where)
          jcr->res.rstorage->append(store);
       }
       if (!jcr->res.rstore_source) {
-         jcr->res.rstore_source = get_pool_memory(PM_MESSAGE);
+         jcr->res.rstore_source = GetPoolMemory(PM_MESSAGE);
       }
-      pm_strcpy(jcr->res.rstore_source, where);
+      PmStrcpy(jcr->res.rstore_source, where);
       if (jcr->res.rstorage) {
-         jcr->res.rstore = (StoreResource *)jcr->res.rstorage->first();
+         jcr->res.rstore = (StorageResource *)jcr->res.rstorage->first();
       }
    }
 }
@@ -98,24 +98,24 @@ void copy_rstorage(JobControlRecord *jcr, alist *storage, const char *where)
  * Set storage override.
  * Remove all previous storage.
  */
-void set_rstorage(JobControlRecord *jcr, UnifiedStoreResource *store)
+void SetRstorage(JobControlRecord *jcr, UnifiedStorageResource *store)
 {
-   StoreResource *storage;
+   StorageResource *storage;
 
    if (!store->store) {
       return;
    }
    if (jcr->res.rstorage) {
-      free_rstorage(jcr);
+      FreeRstorage(jcr);
    }
    if (!jcr->res.rstorage) {
       jcr->res.rstorage = New(alist(10, not_owned_by_alist));
    }
    jcr->res.rstore = store->store;
    if (!jcr->res.rstore_source) {
-      jcr->res.rstore_source = get_pool_memory(PM_MESSAGE);
+      jcr->res.rstore_source = GetPoolMemory(PM_MESSAGE);
    }
-   pm_strcpy(jcr->res.rstore_source, store->store_source);
+   PmStrcpy(jcr->res.rstore_source, store->store_source);
    foreach_alist(storage, jcr->res.rstorage) {
       if (store->store == storage) {
          return;
@@ -125,7 +125,7 @@ void set_rstorage(JobControlRecord *jcr, UnifiedStoreResource *store)
    jcr->res.rstorage->prepend(store->store);
 }
 
-void free_rstorage(JobControlRecord *jcr)
+void FreeRstorage(JobControlRecord *jcr)
 {
    if (jcr->res.rstorage) {
       delete jcr->res.rstorage;
@@ -137,10 +137,10 @@ void free_rstorage(JobControlRecord *jcr)
 /**
  * Copy the storage definitions from an alist to the JobControlRecord
  */
-void copy_wstorage(JobControlRecord *jcr, alist *storage, const char *where)
+void CopyWstorage(JobControlRecord *jcr, alist *storage, const char *where)
 {
    if (storage) {
-      StoreResource *st;
+      StorageResource *st;
       if (jcr->res.wstorage) {
          delete jcr->res.wstorage;
       }
@@ -150,11 +150,11 @@ void copy_wstorage(JobControlRecord *jcr, alist *storage, const char *where)
          jcr->res.wstorage->append(st);
       }
       if (!jcr->res.wstore_source) {
-         jcr->res.wstore_source = get_pool_memory(PM_MESSAGE);
+         jcr->res.wstore_source = GetPoolMemory(PM_MESSAGE);
       }
-      pm_strcpy(jcr->res.wstore_source, where);
+      PmStrcpy(jcr->res.wstore_source, where);
       if (jcr->res.wstorage) {
-         jcr->res.wstore = (StoreResource *)jcr->res.wstorage->first();
+         jcr->res.wstore = (StorageResource *)jcr->res.wstorage->first();
          Dmsg2(100, "wstore=%s where=%s\n", jcr->res.wstore->name(), jcr->res.wstore_source);
       }
    }
@@ -164,24 +164,24 @@ void copy_wstorage(JobControlRecord *jcr, alist *storage, const char *where)
  * Set storage override.
  * Remove all previous storage.
  */
-void set_wstorage(JobControlRecord *jcr, UnifiedStoreResource *store)
+void SetWstorage(JobControlRecord *jcr, UnifiedStorageResource *store)
 {
-   StoreResource *storage;
+   StorageResource *storage;
 
    if (!store->store) {
       return;
    }
    if (jcr->res.wstorage) {
-      free_wstorage(jcr);
+      FreeWstorage(jcr);
    }
    if (!jcr->res.wstorage) {
       jcr->res.wstorage = New(alist(10, not_owned_by_alist));
    }
    jcr->res.wstore = store->store;
    if (!jcr->res.wstore_source) {
-      jcr->res.wstore_source = get_pool_memory(PM_MESSAGE);
+      jcr->res.wstore_source = GetPoolMemory(PM_MESSAGE);
    }
-   pm_strcpy(jcr->res.wstore_source, store->store_source);
+   PmStrcpy(jcr->res.wstore_source, store->store_source);
    Dmsg2(50, "wstore=%s where=%s\n", jcr->res.wstore->name(), jcr->res.wstore_source);
    foreach_alist(storage, jcr->res.wstorage) {
       if (store->store == storage) {
@@ -195,7 +195,7 @@ void set_wstorage(JobControlRecord *jcr, UnifiedStoreResource *store)
    jcr->res.wstorage->prepend(store->store);
 }
 
-void free_wstorage(JobControlRecord *jcr)
+void FreeWstorage(JobControlRecord *jcr)
 {
    if (jcr->res.wstorage) {
       delete jcr->res.wstorage;
@@ -210,9 +210,9 @@ void free_wstorage(JobControlRecord *jcr)
  * This way a Normal Storage Daemon can perform NDMP protocol based
  * saves and restores.
  */
-void set_paired_storage(JobControlRecord *jcr)
+void SetPairedStorage(JobControlRecord *jcr)
 {
-   StoreResource *store, *pstore;
+   StorageResource *store, *pstore;
 
    switch (jcr->getJobType()) {
    case JT_BACKUP:
@@ -237,7 +237,7 @@ void set_paired_storage(JobControlRecord *jcr)
          /*
           * Swap the actual jcr->res.wstore to point to the paired storage entry.
           * We save the actual storage entry in pstore which is for restore
-          * in the free_paired_storage() function.
+          * in the FreePairedStorage() function.
           */
          store = jcr->res.wstore;
          if (store->paired_storage) {
@@ -260,13 +260,13 @@ void set_paired_storage(JobControlRecord *jcr)
           */
          jcr->res.pstorage = New(alist(10, not_owned_by_alist));
          foreach_alist(pstore, jcr->res.rstorage) {
-            store = (StoreResource *)GetNextRes(R_STORAGE, NULL);
+            store = (StorageResource *)GetNextRes(R_STORAGE, NULL);
             while (store) {
                if (store->paired_storage == pstore) {
                   break;
                }
 
-               store = (StoreResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
+               store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
             }
 
             /*
@@ -314,7 +314,7 @@ void set_paired_storage(JobControlRecord *jcr)
          /*
           * Swap the actual jcr->res.rstore to point to the paired storage entry.
           * We save the actual storage entry in pstore which is for restore
-          * in the free_paired_storage() function.
+          * in the FreePairedStorage() function.
           */
          store = jcr->res.rstore;
          if (store->paired_storage) {
@@ -335,11 +335,11 @@ void set_paired_storage(JobControlRecord *jcr)
 }
 
 /**
- * This performs an undo of the actions the set_paired_storage() function
+ * This performs an undo of the actions the SetPairedStorage() function
  * performed. We reset the storage write storage back to its original
  * and remove the paired storage override if any.
  */
-void free_paired_storage(JobControlRecord *jcr)
+void FreePairedStorage(JobControlRecord *jcr)
 {
    if (jcr->res.pstorage) {
       switch (jcr->getJobType()) {
@@ -398,9 +398,9 @@ void free_paired_storage(JobControlRecord *jcr)
 /**
  * Check if every possible storage has paired storage associated.
  */
-bool has_paired_storage(JobControlRecord *jcr)
+bool HasPairedStorage(JobControlRecord *jcr)
 {
-   StoreResource *store;
+   StorageResource *store;
 
    switch (jcr->getJobType()) {
    case JT_BACKUP:
@@ -449,15 +449,15 @@ bool has_paired_storage(JobControlRecord *jcr)
 /**
  * Change the read storage resource for the current job.
  */
-bool select_next_rstore(JobControlRecord *jcr, bootstrap_info &info)
+bool SelectNextRstore(JobControlRecord *jcr, bootstrap_info &info)
 {
-   UnifiedStoreResource ustore;
+   UnifiedStorageResource ustore;
 
    if (bstrcmp(jcr->res.rstore->name(), info.storage)) {
       return true;                 /* Same SD nothing to change */
    }
 
-   if (!(ustore.store = (StoreResource *)GetResWithName(R_STORAGE,info.storage))) {
+   if (!(ustore.store = (StorageResource *)GetResWithName(R_STORAGE,info.storage))) {
       Jmsg(jcr, M_FATAL, 0,
            _("Could not get storage resource '%s'.\n"), info.storage);
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -477,9 +477,9 @@ bool select_next_rstore(JobControlRecord *jcr, bootstrap_info &info)
    /*
     * Release current read storage and get a new one
     */
-   dec_read_store(jcr);
-   free_rstorage(jcr);
-   set_rstorage(jcr, &ustore);
+   DecReadStore(jcr);
+   FreeRstorage(jcr);
+   SetRstorage(jcr, &ustore);
    jcr->setJobStatus(JS_WaitSD);
 
    /*
@@ -489,31 +489,31 @@ bool select_next_rstore(JobControlRecord *jcr, bootstrap_info &info)
       /*
        * Try to get read storage counter incremented
        */
-      if (inc_read_store(jcr)) {
+      if (IncReadStore(jcr)) {
          jcr->setJobStatus(JS_Running);
          return true;
       }
       bmicrosleep(10, 0);          /* Sleep 10 secs */
-      if (job_canceled(jcr)) {
-         free_rstorage(jcr);
+      if (JobCanceled(jcr)) {
+         FreeRstorage(jcr);
          return false;
       }
    }
 
    /*
-    * Failed to inc_read_store()
+    * Failed to IncReadStore()
     */
-   free_rstorage(jcr);
+   FreeRstorage(jcr);
    Jmsg(jcr, M_FATAL, 0,
       _("Could not acquire read storage lock for \"%s\""), info.storage);
    return false;
 }
 
-void storage_status(UaContext *ua, StoreResource *store, char *cmd)
+void StorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 {
    switch (store->Protocol) {
    case APT_NATIVE:
-      return do_native_storage_status(ua, store, cmd);
+      return DoNativeStorageStatus(ua, store, cmd);
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
@@ -564,7 +564,7 @@ static inline void free_vol_list(changer_vol_list_t *vol_list)
 /**
  * Generic routine to get the content of a storage autochanger.
  */
-changer_vol_list_t *get_vol_list_from_storage(UaContext *ua, StoreResource *store, bool listall, bool scan, bool cached)
+changer_vol_list_t *get_vol_list_from_storage(UaContext *ua, StorageResource *store, bool listall, bool scan, bool cached)
 {
    vol_list_type type;
    dlist *contents = NULL;
@@ -609,7 +609,7 @@ changer_vol_list_t *get_vol_list_from_storage(UaContext *ua, StoreResource *stor
          /*
           * Need to cleanup but things are still referenced.
           * We just remove the old changer_vol_list_t and on the next call to
-          * storage_release_vol_list() this orphaned changer_vol_list_t will
+          * StorageReleaseVolList() this orphaned changer_vol_list_t will
           * then be destroyed.
           */
          Dmsg0(100, "Need to free still referenced vol_list\n");
@@ -655,7 +655,7 @@ bail_out:
    return vol_list;
 }
 
-slot_number_t get_num_slots(UaContext *ua, StoreResource *store)
+slot_number_t GetNumSlots(UaContext *ua, StorageResource *store)
 {
    slot_number_t slots = 0;
 
@@ -670,12 +670,12 @@ slot_number_t get_num_slots(UaContext *ua, StoreResource *store)
 
    switch (store->Protocol) {
    case APT_NATIVE:
-      slots = native_get_num_slots(ua, store);
+      slots = NativeGetNumSlots(ua, store);
       break;
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      slots = ndmp_get_num_slots(ua, store);
+      slots = NdmpGetNumSlots(ua, store);
       break;
    default:
       break;
@@ -688,7 +688,7 @@ slot_number_t get_num_slots(UaContext *ua, StoreResource *store)
    return slots;
 }
 
-slot_number_t get_num_drives(UaContext *ua, StoreResource *store)
+slot_number_t GetNumDrives(UaContext *ua, StorageResource *store)
 {
    drive_number_t drives = 0;
 
@@ -703,12 +703,12 @@ slot_number_t get_num_drives(UaContext *ua, StoreResource *store)
 
    switch (store->Protocol) {
    case APT_NATIVE:
-      drives = native_get_num_drives(ua, store);
+      drives = NativeGetNumDrives(ua, store);
       break;
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      drives = ndmp_get_num_drives(ua, store);
+      drives = NdmpGetNumDrives(ua, store);
       break;
    default:
       break;
@@ -721,7 +721,7 @@ slot_number_t get_num_drives(UaContext *ua, StoreResource *store)
    return drives;
 }
 
-bool transfer_volume(UaContext *ua, StoreResource *store,
+bool transfer_volume(UaContext *ua, StorageResource *store,
                      slot_number_t src_slot, slot_number_t dst_slot)
 {
    bool retval = false;
@@ -730,12 +730,12 @@ bool transfer_volume(UaContext *ua, StoreResource *store,
 
    switch (store->Protocol) {
    case APT_NATIVE:
-      retval = native_transfer_volume(ua, store, src_slot, dst_slot);
+      retval = NativeTransferVolume(ua, store, src_slot, dst_slot);
       break;
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      retval = ndmp_transfer_volume(ua, store, src_slot, dst_slot);
+      retval = NdmpTransferVolume(ua, store, src_slot, dst_slot);
       break;
    default:
       break;
@@ -746,7 +746,7 @@ bool transfer_volume(UaContext *ua, StoreResource *store,
    return retval;
 }
 
-bool do_autochanger_volume_operation(UaContext *ua, StoreResource *store, const char *operation,
+bool DoAutochangerVolumeOperation(UaContext *ua, StorageResource *store, const char *operation,
                                      drive_number_t drive, slot_number_t slot)
 {
    bool retval = false;
@@ -755,12 +755,12 @@ bool do_autochanger_volume_operation(UaContext *ua, StoreResource *store, const 
 
    switch (store->Protocol) {
    case APT_NATIVE:
-      retval = native_autochanger_volume_operation(ua, store, operation, drive, slot);
+      retval = NativeAutochangerVolumeOperation(ua, store, operation, drive, slot);
       break;
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      retval = ndmp_autochanger_volume_operation(ua, store, operation, drive, slot);
+      retval = NdmpAutochangerVolumeOperation(ua, store, operation, drive, slot);
       break;
    default:
       break;
@@ -774,7 +774,7 @@ bool do_autochanger_volume_operation(UaContext *ua, StoreResource *store, const 
 /**
  * See if a specific slot is loaded in one of the drives.
  */
-vol_list_t *vol_is_loaded_in_drive(StoreResource *store, changer_vol_list_t *vol_list, slot_number_t slot)
+vol_list_t *vol_is_loaded_in_drive(StorageResource *store, changer_vol_list_t *vol_list, slot_number_t slot)
 {
    vol_list_t *vl;
 
@@ -799,7 +799,7 @@ vol_list_t *vol_is_loaded_in_drive(StoreResource *store, changer_vol_list_t *vol
 /**
  * Release the reference to the volume list returned from get_vol_list_from_storage()
  */
-void storage_release_vol_list(StoreResource *store, changer_vol_list_t *vol_list)
+void StorageReleaseVolList(StorageResource *store, changer_vol_list_t *vol_list)
 {
    P(store->rss->changer_lock);
 
@@ -828,7 +828,7 @@ void storage_release_vol_list(StoreResource *store, changer_vol_list_t *vol_list
 /**
  * Destroy the volume list returned from get_vol_list_from_storage()
  */
-void storage_free_vol_list(StoreResource *store, changer_vol_list_t *vol_list)
+void StorageFreeVolList(StorageResource *store, changer_vol_list_t *vol_list)
 {
    P(store->rss->changer_lock);
 
@@ -850,7 +850,7 @@ void storage_free_vol_list(StoreResource *store, changer_vol_list_t *vol_list)
  * Invalidate a cached volume list returned from get_vol_list_from_storage()
  * Called by functions that change the content of the storage like mount, umount, release.
  */
-void invalidate_vol_list(StoreResource *store)
+void InvalidateVolList(StorageResource *store)
 {
    P(store->rss->changer_lock);
 
@@ -859,7 +859,7 @@ void invalidate_vol_list(StoreResource *store)
 
       /*
        * If the volume list is unreferenced we can destroy it otherwise we just
-       * reset the pointer and the storage_release_vol_list() will destroy it for
+       * reset the pointer and the StorageReleaseVolList() will destroy it for
        * us the moment there are no more references.
        */
       if (store->rss->vol_list->reference_count == 0) {
@@ -896,7 +896,7 @@ int compare_storage_mapping(void *e1, void *e2)
  * Map a slotnr from Logical to Physical or the other way around based on
  * the s_mapping_type type given.
  */
-slot_number_t lookup_storage_mapping(StoreResource *store, slot_type slot_type,
+slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
                                      s_mapping_type type, slot_number_t slot)
 {
    slot_number_t retval = -1;

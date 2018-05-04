@@ -47,7 +47,7 @@
 extern ClientResource *me;                 /* "Global" Client resource */
 extern ConfigurationParser *my_config;             /* Our Global config */
 
-void terminate_filed(int sig);
+void TerminateFiled(int sig);
 
 /*
  * File Daemon protocol version

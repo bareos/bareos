@@ -22,9 +22,9 @@
 #ifndef BAREOS_DIRD_AUTHENTICATE_H_
 #define BAREOS_DIRD_AUTHENTICATE_H_
 
-bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *store);
-bool authenticate_with_file_daemon(JobControlRecord *jcr);
-bool authenticate_file_daemon(BareosSocket *fd, char *client_name);
-bool authenticate_user_agent(UaContext *ua);
+bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store);
+bool AuthenticateWithFileDaemon(JobControlRecord *jcr);
+bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name);
+bool AuthenticateUserAgent(UaContext *ua);
 
 #endif // BAREOS_DIRD_AUTHENTICATE_H_

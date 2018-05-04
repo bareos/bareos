@@ -64,14 +64,14 @@
 /**
  * Entry points when compiled without support for XATTRs or on an unsupported platform.
  */
-bxattr_exit_code build_xattr_streams(JobControlRecord *jcr,
+bxattr_exit_code BuildXattrStreams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
                                      FindFilesPacket *ff_pkt)
 {
    return bxattr_exit_fatal;
 }
 
-bxattr_exit_code parse_xattr_streams(JobControlRecord *jcr,
+bxattr_exit_code ParseXattrStreams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
                                      int stream,
                                      char *content,
@@ -83,7 +83,7 @@ bxattr_exit_code parse_xattr_streams(JobControlRecord *jcr,
 /**
  * Send a XATTR stream to the SD.
  */
-bxattr_exit_code send_xattr_stream(JobControlRecord *jcr,
+bxattr_exit_code SendXattrStream(JobControlRecord *jcr,
                                    xattr_data_t *xattr_data,
                                    int stream)
 {
@@ -139,7 +139,7 @@ bxattr_exit_code send_xattr_stream(JobControlRecord *jcr,
  * First some generic functions for OSes that use the same xattr encoding scheme.
  * Currently for all OSes except for Solaris.
  */
-void xattr_drop_internal_table(alist *xattr_value_list)
+void XattrDropInternalTable(alist *xattr_value_list)
 {
    xattr_t *current_xattr;
 
@@ -178,7 +178,7 @@ void xattr_drop_internal_table(alist *xattr_value_list)
  * This is repeated 1 or more times.
  *
  */
-uint32_t serialize_xattr_stream(JobControlRecord *jcr,
+uint32_t SerializeXattrStream(JobControlRecord *jcr,
                                 xattr_data_t *xattr_data,
                                 uint32_t expected_serialize_len,
                                 alist *xattr_value_list)
@@ -191,9 +191,9 @@ uint32_t serialize_xattr_stream(JobControlRecord *jcr,
     * We allocate some more to be sure the stream is gonna fit.
     */
    xattr_data->u.build->content =
-   check_pool_memory_size(xattr_data->u.build->content,
+   CheckPoolMemorySize(xattr_data->u.build->content,
                           expected_serialize_len + 10);
-   ser_begin(xattr_data->u.build->content,
+   SerBegin(xattr_data->u.build->content,
              expected_serialize_len + 10);
 
    /*
@@ -208,11 +208,11 @@ uint32_t serialize_xattr_stream(JobControlRecord *jcr,
 
       ser_uint32(current_xattr->magic);
       ser_uint32(current_xattr->name_length);
-      ser_bytes(current_xattr->name, current_xattr->name_length);
+      SerBytes(current_xattr->name, current_xattr->name_length);
 
       ser_uint32(current_xattr->value_length);
       if (current_xattr->value_length > 0 && current_xattr->value) {
-         ser_bytes(current_xattr->value, current_xattr->value_length);
+         SerBytes(current_xattr->value, current_xattr->value_length);
 
          Dmsg3(100, "Backup xattr named %s, value %*s\n",
                current_xattr->name, current_xattr->value_length, current_xattr->value);
@@ -221,14 +221,14 @@ uint32_t serialize_xattr_stream(JobControlRecord *jcr,
       }
    }
 
-   ser_end(xattr_data->u.build->content, expected_serialize_len + 10);
+   SerEnd(xattr_data->u.build->content, expected_serialize_len + 10);
    xattr_data->u.build->content_length =
-   ser_length(xattr_data->u.build->content);
+   SerLength(xattr_data->u.build->content);
 
    return xattr_data->u.build->content_length;
 }
 
-bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr,
+bxattr_exit_code UnserializeXattrStream(JobControlRecord *jcr,
                                           xattr_data_t *xattr_data,
                                           char *content,
                                           uint32_t content_length,
@@ -243,8 +243,8 @@ bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr,
     * Start unserializing the data. We keep on looping while we have not
     * unserialized all bytes in the stream.
     */
-   unser_begin(content, content_length);
-   while (unser_length(content) < content_length) {
+   UnserBegin(content, content_length);
+   while (UnserLength(content) < content_length) {
       /*
        * First make sure the magic is present. This way we can easily catch corruption.
        * Any missing MAGIC is fatal we do NOT try to continue.
@@ -279,7 +279,7 @@ bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr,
        * Allocate room for the name and decode its content.
        */
       current_xattr->name = (char *)malloc(current_xattr->name_length + 1);
-      unser_bytes(current_xattr->name, current_xattr->name_length);
+      UnserBytes(current_xattr->name, current_xattr->name_length);
 
       /*
        * The xattr_name needs to be null terminated.
@@ -296,7 +296,7 @@ bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr,
           * Allocate room for the value and decode its content.
           */
          current_xattr->value = (char *)malloc(current_xattr->value_length);
-         unser_bytes(current_xattr->value, current_xattr->value_length);
+         UnserBytes(current_xattr->value, current_xattr->value_length);
 
          Dmsg3(100, "Restoring xattr named %s, value %*s\n",
                current_xattr->name, current_xattr->value_length, current_xattr->value);
@@ -308,7 +308,7 @@ bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr,
       xattr_value_list->append(current_xattr);
    }
 
-   unser_end(content, content_length);
+   UnserEnd(content, content_length);
    return bxattr_exit_ok;
 }
 
@@ -582,7 +582,7 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Serialize the datastream.
        */
-      if (serialize_xattr_stream(jcr,
+      if (SerializeXattrStream(jcr,
 			         xattr_data,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
@@ -597,7 +597,7 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Send the datastream to the SD.
        */
-      retval = send_xattr_stream(jcr, xattr_data, os_default_xattr_streams[0]);
+      retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
    } else {
       retval = bxattr_exit_ok;
    }
@@ -607,7 +607,7 @@ bail_out:
       free(xattr_list);
    }
    if (xattr_value_list != NULL) {
-      xattr_drop_internal_table(xattr_value_list);
+      XattrDropInternalTable(xattr_value_list);
    }
 
    return retval;
@@ -625,7 +625,7 @@ static bxattr_exit_code aix_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (unserialize_xattr_stream(jcr,
+   if (UnserializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -668,7 +668,7 @@ static bxattr_exit_code aix_parse_xattr_streams(JobControlRecord *jcr,
    retval = bxattr_exit_ok;
 
 bail_out:
-   xattr_drop_internal_table(xattr_value_list);
+   XattrDropInternalTable(xattr_value_list);
 
    return retval;
 }
@@ -732,7 +732,7 @@ static bxattr_exit_code irix_build_xattr_streams(JobControlRecord *jcr,
    alist *xattr_value_list = NULL;
    uint32_t expected_serialize_len = 0;
    bxattr_exit_code retval = bxattr_exit_error;
-   POOLMEM *xattrbuf = get_memory(ATTR_MAX_VALUELEN);
+   POOLMEM *xattrbuf = GetMemory(ATTR_MAX_VALUELEN);
 
    for (cnt = 0; xattr_naming_spaces[cnt].name != NULL; cnt++) {
       memset(&cursor, 0, sizeof(attrlist_cursor_t));
@@ -915,7 +915,7 @@ ok_continue:
       /*
        * Serialize the datastream.
        */
-      if (serialize_xattr_stream(jcr,
+      if (SerializeXattrStream(jcr,
 			         xattr_data,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
@@ -930,16 +930,16 @@ ok_continue:
       /*
        * Send the datastream to the SD.
        */
-      retval = send_xattr_stream(jcr, xattr_data, os_default_xattr_streams[0]);
+      retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
    } else {
       retval = bxattr_exit_ok;
    }
 
 bail_out:
-   free_pool_memory(xattrbuf);
+   FreePoolMemory(xattrbuf);
 
    if (xattr_value_list != NULL) {
-      xattr_drop_internal_table(xattr_value_list);
+      XattrDropInternalTable(xattr_value_list);
    }
 
    return retval;
@@ -959,7 +959,7 @@ static bxattr_exit_code irix_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (unserialize_xattr_stream(jcr,
+   if (UnserializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -1042,7 +1042,7 @@ static bxattr_exit_code irix_parse_xattr_streams(JobControlRecord *jcr,
    retval = bxattr_exit_ok;
 
 bail_out:
-   xattr_drop_internal_table(xattr_value_list);
+   XattrDropInternalTable(xattr_value_list);
 
    return retval;
 }
@@ -1245,7 +1245,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
        * So we check if we are already backing up acls and if we do we
        * don't store the extended attribute with the same info.
        */
-      if (bit_is_set(FO_ACL, ff_pkt->flags)) {
+      if (BitIsSet(FO_ACL, ff_pkt->flags)) {
          for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
             if (bstrcmp(bp, xattr_acl_skiplist[cnt])) {
                skip_xattr = true;
@@ -1389,7 +1389,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Serialize the datastream.
        */
-      if (serialize_xattr_stream(jcr,
+      if (SerializeXattrStream(jcr,
 			         xattr_data,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
@@ -1404,7 +1404,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Send the datastream to the SD.
        */
-      retval = send_xattr_stream(jcr, xattr_data, os_default_xattr_streams[0]);
+      retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
    } else {
       retval = bxattr_exit_ok;
    }
@@ -1414,7 +1414,7 @@ bail_out:
       free(xattr_list);
    }
    if (xattr_value_list != NULL) {
-      xattr_drop_internal_table(xattr_value_list);
+      XattrDropInternalTable(xattr_value_list);
    }
 
    return retval;
@@ -1432,7 +1432,7 @@ static bxattr_exit_code generic_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (unserialize_xattr_stream(jcr,
+   if (UnserializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -1471,7 +1471,7 @@ static bxattr_exit_code generic_parse_xattr_streams(JobControlRecord *jcr,
    retval = bxattr_exit_ok;
 
 bail_out:
-   xattr_drop_internal_table(xattr_value_list);
+   XattrDropInternalTable(xattr_value_list);
 
    return retval;
 }
@@ -1713,7 +1713,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
           * So we check if we are already backing up acls and if we do we
           * don't store the extended attribute with the same info.
           */
-         if (bit_is_set(FO_ACL, ff_pkt->flags)) {
+         if (BitIsSet(FO_ACL, ff_pkt->flags)) {
             for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
                if (bstrcmp(current_attrtuple, xattr_acl_skiplist[cnt])) {
                   skip_xattr = true;
@@ -1873,7 +1873,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Serialize the datastream.
        */
-      if (serialize_xattr_stream(jcr,
+      if (SerializeXattrStream(jcr,
 			         xattr_data,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
@@ -1888,7 +1888,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Send the datastream to the SD.
        */
-      retval = send_xattr_stream(jcr, xattr_data, os_default_xattr_streams[0]);
+      retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
    } else {
       retval = bxattr_exit_ok;
    }
@@ -1901,7 +1901,7 @@ bail_out:
       free(xattr_list);
    }
    if (xattr_value_list != NULL) {
-      xattr_drop_internal_table(xattr_value_list);
+      XattrDropInternalTable(xattr_value_list);
    }
 
    return retval;
@@ -1921,7 +1921,7 @@ static bxattr_exit_code bsd_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (unserialize_xattr_stream(jcr,
+   if (UnserializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -1984,7 +1984,7 @@ static bxattr_exit_code bsd_parse_xattr_streams(JobControlRecord *jcr,
    retval = bxattr_exit_ok;
 
 bail_out:
-   xattr_drop_internal_table(xattr_value_list);
+   XattrDropInternalTable(xattr_value_list);
 
    return retval;
 }
@@ -2049,9 +2049,9 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
    alist *xattr_value_list = NULL;
    struct proplistname_args prop_args;
    bxattr_exit_code retval = bxattr_exit_error;
-   POOLMEM *xattrbuf = get_pool_memory(PM_MESSAGE);
+   POOLMEM *xattrbuf = GetPoolMemory(PM_MESSAGE);
 
-   xattrbuf_size = sizeof_pool_memory(xattrbuf);
+   xattrbuf_size = SizeofPoolMemory(xattrbuf);
    xattrbuf_min_size = 0;
    xattr_list_len = getproplist(xattr_data->last_fname, 1, &prop_args, xattrbuf_size,
                                 xattrbuf, &xattrbuf_min_size);
@@ -2091,7 +2091,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
           * The buffer isn't big enough to hold the xattr data, we now have
           * a minimum buffersize so we resize the buffer and try again.
           */
-         xattrbuf = check_pool_memory_size(xattrbuf, xattrbuf_min_size + 1);
+         xattrbuf = CheckPoolMemorySize(xattrbuf, xattrbuf_min_size + 1);
          xattrbuf_size = xattrbuf_min_size + 1;
          xattr_list_len = getproplist(xattr_data->last_fname, 1, &prop_args, xattrbuf_size,
                                    xattrbuf, &xattrbuf_min_size);
@@ -2151,7 +2151,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
        * So we check if we are already backing up acls and if we do we
        * don't store the extended attribute with the same info.
        */
-      if (bit_is_set(FO_ACL, ff_pkt->flags)) {
+      if (BitIsSet(FO_ACL, ff_pkt->flags)) {
          for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
             if (bstrcmp(xattr_name, xattr_acl_skiplist[cnt])) {
                skip_xattr = true;
@@ -2222,7 +2222,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Serialize the datastream.
        */
-      if (serialize_xattr_stream(jcr,
+      if (SerializeXattrStream(jcr,
 			         xattr_data,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
@@ -2237,16 +2237,16 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Send the datastream to the SD.
        */
-      retval = send_xattr_stream(jcr, xattr_data, os_default_xattr_streams[0]);
+      retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
    } else {
       retval = bxattr_exit_ok;
    }
 
 bail_out:
    if (xattr_value_list != NULL) {
-      xattr_drop_internal_table(xattr_value_list);
+      XattrDropInternalTable(xattr_value_list);
    }
-   free_pool_memory(xattrbuf);
+   FreePoolMemory(xattrbuf);
 
    return retval;
 }
@@ -2265,7 +2265,7 @@ static bxattr_exit_code tru64_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (unserialize_xattr_stream(jcr,
+   if (UnserializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -2345,7 +2345,7 @@ bail_out:
    if (xattrbuf) {
       free(xattrbuf);
    }
-   xattr_drop_internal_table(xattr_value_list);
+   XattrDropInternalTable(xattr_value_list);
 
    return retval;
 }
@@ -2833,7 +2833,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
        * but if it ever does we are prepared.
        * Encode the stat struct into an ASCII representation.
        */
-      encode_stat(attribs, &st, sizeof(st), 0, stream);
+      EncodeStat(attribs, &st, sizeof(st), 0, stream);
       cnt = bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c",
                       target_attrname, 0, attribs, 0,
                       (acl_text) ? acl_text : "", 0);
@@ -2856,12 +2856,12 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
           * Encode the stat struct into an ASCII representation and jump
           * out of the function.
           */
-         encode_stat(attribs, &st, sizeof(st), 0, stream);
+         EncodeStat(attribs, &st, sizeof(st), 0, stream);
          cnt = bsnprintf(buffer, sizeof(buffer),
                          "%s%c%s%c%s%c",
                          target_attrname, 0, attribs, 0,
                          (acl_text) ? acl_text : "", 0);
-         pm_memcpy(xattr_data->u.build->content, buffer, cnt);
+         PmMemcpy(xattr_data->u.build->content, buffer, cnt);
          xattr_data->u.build->content_length = cnt;
          goto bail_out;
       } else {
@@ -2870,7 +2870,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
           * but if it ever does we are prepared.
           * Encode the stat struct into an ASCII representation.
           */
-         encode_stat(attribs, &st, sizeof(st), 0, stream);
+         EncodeStat(attribs, &st, sizeof(st), 0, stream);
          cnt = bsnprintf(buffer, sizeof(buffer),
                          "%s%c%s%c%s%c",
                          target_attrname, 0, attribs, 0,
@@ -2889,13 +2889,13 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
             /*
              * Generate a xattr encoding with the reference to the target in there.
              */
-            encode_stat(attribs, &st, sizeof(st), st.st_ino, stream);
+            EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
             cnt = bsnprintf(buffer, sizeof(buffer),
                             "%s%c%s%c%s%c",
                             target_attrname, 0, attribs, 0, xlce->target, 0);
-            pm_memcpy(xattr_data->u.build->content, buffer, cnt);
+            PmMemcpy(xattr_data->u.build->content, buffer, cnt);
             xattr_data->u.build->content_length = cnt;
-            retval = send_xattr_stream(jcr, xattr_data, stream);
+            retval = SendXattrStream(jcr, xattr_data, stream);
 
             /*
              * For a hard linked file we are ready now, no need to recursively
@@ -2921,7 +2921,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
       /*
        * Encode the stat struct into an ASCII representation.
        */
-      encode_stat(attribs, &st, sizeof(st), 0, stream);
+      EncodeStat(attribs, &st, sizeof(st), 0, stream);
       cnt = bsnprintf(buffer, sizeof(buffer),
                      "%s%c%s%c%s%c",
                      target_attrname, 0, attribs, 0, (acl_text) ? acl_text : "", 0);
@@ -2972,13 +2972,13 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
       /*
        * Generate a xattr encoding with the reference to the target in there.
        */
-      encode_stat(attribs, &st, sizeof(st), st.st_ino, stream);
+      EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
       cnt = bsnprintf(buffer, sizeof(buffer),
                       "%s%c%s%c%s%c",
                       target_attrname, 0, attribs, 0, link_source, 0);
-      pm_memcpy(xattr_data->u.build->content, buffer, cnt);
+      PmMemcpy(xattr_data->u.build->content, buffer, cnt);
       xattr_data->u.build->content_length = cnt;
-      retval = send_xattr_stream(jcr, xattr_data, stream);
+      retval = SendXattrStream(jcr, xattr_data, stream);
 
       if (retval == bxattr_exit_ok) {
          xattr_data->u.build->nr_saved++;
@@ -2999,14 +2999,14 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
     * xattr_data->u.build->content buffer.
     */
    if (xattr_data->u.build->nr_saved == 0) {
-      retval = send_xattr_stream(jcr, xattr_data, STREAM_XATTR_SOLARIS);
+      retval = SendXattrStream(jcr, xattr_data, STREAM_XATTR_SOLARIS);
       if (retval != bxattr_exit_ok) {
          goto bail_out;
       }
       xattr_data->u.build->nr_saved++;
    }
 
-   pm_memcpy(xattr_data->u.build->content, buffer, cnt);
+   PmMemcpy(xattr_data->u.build->content, buffer, cnt);
    xattr_data->u.build->content_length = cnt;
 
    /*
@@ -3027,7 +3027,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
 
          while ((cnt = read(attrfd, buffer, sizeof(buffer))) > 0) {
             xattr_data->u.build->content =
-            check_pool_memory_size(xattr_data->u.build->content,
+            CheckPoolMemorySize(xattr_data->u.build->content,
                                    xattr_data->u.build->content_length + cnt);
             memcpy(xattr_data->u.build->content +
                    xattr_data->u.build->content_length, buffer, cnt);
@@ -3052,7 +3052,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
    /*
     * We build a new xattr stream send it to the SD.
     */
-   retval = send_xattr_stream(jcr, xattr_data, stream);
+   retval = SendXattrStream(jcr, xattr_data, stream);
    if (retval != bxattr_exit_ok) {
        goto bail_out;
    }
@@ -3478,7 +3478,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
    /*
     * Decode the attributes from the stream.
     */
-   decode_stat(attribs, &st, sizeof(st), &inum);
+   DecodeStat(attribs, &st, sizeof(st), &inum);
 
    /*
     * Decode the next field (acl_text).
@@ -3847,7 +3847,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 /**
  * Entry points when compiled with support for XATTRs on a supported platform.
  */
-bxattr_exit_code build_xattr_streams(JobControlRecord *jcr,
+bxattr_exit_code BuildXattrStreams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
                                      FindFilesPacket *ff_pkt)
 {
@@ -3877,7 +3877,7 @@ bxattr_exit_code build_xattr_streams(JobControlRecord *jcr,
    }
 }
 
-bxattr_exit_code parse_xattr_streams(JobControlRecord *jcr,
+bxattr_exit_code ParseXattrStreams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
                                      int stream,
                                      char *content,

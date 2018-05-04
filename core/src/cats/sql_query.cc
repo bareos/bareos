@@ -46,46 +46,46 @@ const char *BareosDb::get_predefined_query(BareosDb::SQL_QUERY_ENUM query) {
    return queries[query];
 }
 
-void BareosDb::fill_query(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::FillQuery(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
 
    va_start(arg_ptr, predefined_query);
-   fill_query_va_list(cmd, predefined_query, arg_ptr);
+   FillQueryVaList(cmd, predefined_query, arg_ptr);
    va_end(arg_ptr);
 }
 
-void BareosDb::fill_query(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::FillQuery(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
 
    va_start(arg_ptr, predefined_query);
-   fill_query_va_list(query, predefined_query, arg_ptr);
+   FillQueryVaList(query, predefined_query, arg_ptr);
    va_end(arg_ptr);
 }
 
-void BareosDb::fill_query(POOLMEM *&query, BareosDb::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::FillQuery(POOLMEM *&query, BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
 
    va_start(arg_ptr, predefined_query);
-   fill_query_va_list(query, predefined_query, arg_ptr);
+   FillQueryVaList(query, predefined_query, arg_ptr);
    va_end(arg_ptr);
 }
 
 
 
-void BareosDb::fill_query_va_list(POOLMEM *&query, BareosDb::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
+void BareosDb::FillQueryVaList(POOLMEM *&query, BareosDb::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
 {
    PoolMem query_tmp(PM_MESSAGE);
 
-   fill_query_va_list(query_tmp, predefined_query, arg_ptr);
-   pm_memcpy(query, query_tmp, query_tmp.strlen()+1);
+   FillQueryVaList(query_tmp, predefined_query, arg_ptr);
+   PmMemcpy(query, query_tmp, query_tmp.strlen()+1);
 }
 
 
 
-void BareosDb::fill_query_va_list(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
+void BareosDb::FillQueryVaList(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
 {
    const char *query_name;
    const char *query_template;
@@ -104,47 +104,47 @@ void BareosDb::fill_query_va_list(PoolMem &query, BareosDb::SQL_QUERY_ENUM prede
 
 
 
-bool BareosDb::sql_query(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
+bool BareosDb::SqlQuery(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
    PoolMem query(PM_MESSAGE);
 
    va_start(arg_ptr, predefined_query);
-   fill_query_va_list(query, predefined_query, arg_ptr);
+   FillQueryVaList(query, predefined_query, arg_ptr);
    va_end(arg_ptr);
 
-   return sql_query(query.c_str());
+   return SqlQuery(query.c_str());
 }
 
 
-bool BareosDb::sql_query(const char *query, int flags)
+bool BareosDb::SqlQuery(const char *query, int flags)
 {
    bool retval;
 
    Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
-   db_lock(this);
-   retval = sql_query_without_handler(query, flags);
+   DbLock(this);
+   retval = SqlQueryWithoutHandler(query, flags);
    if (!retval) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
    }
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
 
-bool BareosDb::sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::SqlQuery(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval;
 
    Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
-   db_lock(this);
-   retval = sql_query_with_handler(query, result_handler, ctx);
+   DbLock(this);
+   retval = SqlQueryWithHandler(query, result_handler, ctx);
    if (!retval) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
    }
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }

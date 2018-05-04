@@ -37,7 +37,7 @@
 #include "include/jcr.h"
 
 /* Forward referenced subroutines */
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 /* Responses sent to the File daemon */
 static char OK_data[] =
@@ -61,7 +61,7 @@ bool do_read_data(JobControlRecord *jcr)
 
    Dmsg0(20, "Start read data.\n");
 
-   if (!bnet_set_buffer_size(fd, dcr->device->max_network_buffer_size, BNET_SETBUF_WRITE)) {
+   if (!BnetSetBufferSize(fd, dcr->device->max_network_buffer_size, BNET_SETBUF_WRITE)) {
       return false;
    }
 
@@ -77,7 +77,7 @@ bool do_read_data(JobControlRecord *jcr)
    /*
     * Ready device for reading
     */
-   if (!acquire_device_for_read(dcr)) {
+   if (!AcquireDeviceForRead(dcr)) {
       fd->fsend(FD_error);
       return false;
    }
@@ -85,7 +85,7 @@ bool do_read_data(JobControlRecord *jcr)
    /*
     * Let any SD plugin know now its time to setup the record translation infra.
     */
-   if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+   if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
@@ -95,14 +95,14 @@ bool do_read_data(JobControlRecord *jcr)
     */
    fd->fsend(OK_data);
    jcr->sendJobStatus(JS_Running);
-   ok = read_records(dcr, record_cb, mount_next_read_volume);
+   ok = ReadRecords(dcr, RecordCb, MountNextReadVolume);
 
    /*
     * Send end of data to FD
     */
    fd->signal(BNET_EOD);
 
-   if (!release_device(jcr->read_dcr)) {
+   if (!ReleaseDevice(jcr->read_dcr)) {
       ok = false;
    }
 
@@ -111,12 +111,12 @@ bool do_read_data(JobControlRecord *jcr)
 }
 
 /**
- * Called here for each record from read_records()
+ * Called here for each record from ReadRecords()
  *
  * Returns: true if OK
  *          false if error
  */
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    JobControlRecord *jcr = dcr->jcr;
    BareosSocket *fd = jcr->file_bsock;

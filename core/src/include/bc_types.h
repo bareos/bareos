@@ -276,7 +276,7 @@ typedef float             float32_t;
 #endif /* HAVE_WIN32 */
 
 /**
- * Status codes returned by create_file()
+ * Status codes returned by CreateFile()
  *   Used in findlib, filed, and plugins
  */
 enum {

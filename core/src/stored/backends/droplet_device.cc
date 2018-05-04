@@ -296,7 +296,7 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
    /*
     * Set that we are uploading the chunk.
     */
-   if (!set_inflight_chunk(request)) {
+   if (!SetInflightChunk(request)) {
       goto bail_out;
    }
 
@@ -404,7 +404,7 @@ bail_out:
    /*
     * Clear that we are uploading the chunk.
     */
-   clear_inflight_chunk(request);
+   ClearInflightChunk(request);
 
    if (sysmd) {
       dpl_sysmd_free(sysmd);
@@ -508,7 +508,7 @@ bail_out:
 /*
  * Internal method for truncating a chunked volume on the remote backing store.
  */
-bool droplet_device::truncate_remote_chunked_volume(DeviceControlRecord *dcr)
+bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord *dcr)
 {
    PoolMem chunk_dir(PM_FNAME);
 
@@ -663,7 +663,7 @@ bool droplet_device::initialize()
        */
       memset(&sysmd_, 0, sizeof(sysmd_));
       if (location_) {
-         pm_strcpy(temp, location_);
+         PmStrcpy(temp, location_);
          sysmd_.mask |= DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
          sysmd_.location_constraint = dpl_location_constraint(temp.c_str());
          if (sysmd_.location_constraint == -1) {
@@ -673,7 +673,7 @@ bool droplet_device::initialize()
       }
 
       if (canned_acl_) {
-         pm_strcpy(temp, canned_acl_);
+         PmStrcpy(temp, canned_acl_);
          sysmd_.mask |= DPL_SYSMD_MASK_CANNED_ACL;
          sysmd_.canned_acl = dpl_canned_acl(temp.c_str());
          if (sysmd_.canned_acl == -1) {
@@ -683,7 +683,7 @@ bool droplet_device::initialize()
       }
 
       if (storage_class_) {
-         pm_strcpy(temp, storage_class_);
+         PmStrcpy(temp, storage_class_);
          sysmd_.mask |= DPL_SYSMD_MASK_STORAGE_CLASS;
          sysmd_.storage_class = dpl_storage_class(temp.c_str());
          if (sysmd_.storage_class == -1) {
@@ -695,7 +695,7 @@ bool droplet_device::initialize()
       /*
        * See if this is a path.
        */
-      pm_strcpy(temp, profile_);
+      PmStrcpy(temp, profile_);
       bp = strrchr(temp.c_str(), '/');
       if (!bp) {
          /*
@@ -873,7 +873,7 @@ boffset_t droplet_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, in
    case SEEK_END: {
       ssize_t volumesize;
 
-      volumesize = chunked_volume_size();
+      volumesize = ChunkedVolumeSize();
 
       Dmsg1(100, "Current volumesize: %lld\n", volumesize);
 
@@ -888,7 +888,7 @@ boffset_t droplet_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, in
       return -1;
    }
 
-   if (!load_chunk()) {
+   if (!LoadChunk()) {
       return -1;
    }
 

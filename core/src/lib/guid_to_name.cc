@@ -52,7 +52,7 @@ guid_list *new_guid_list()
    return list;
 }
 
-void free_guid_list(guid_list *list)
+void FreeGuidList(guid_list *list)
 {
    guitem *item;
    foreach_dlist(item, list->uid_list) {

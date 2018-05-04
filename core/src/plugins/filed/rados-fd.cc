@@ -232,7 +232,7 @@ static bRC newPlugin(bpContext *ctx)
    memset(p_ctx, 0, sizeof(plugin_ctx));
    ctx->pContext = (void *)p_ctx;        /* set our context pointer */
 
-   p_ctx->next_filename = get_pool_memory(PM_FNAME);
+   p_ctx->next_filename = GetPoolMemory(PM_FNAME);
    bfuncs->getBareosValue(ctx, bVarJobId, (void *)&p_ctx->JobId);
 
    /*
@@ -273,7 +273,7 @@ static bRC freePlugin(bpContext *ctx)
       p_ctx->cluster_initialized = false;
    }
 
-   free_pool_memory(p_ctx->next_filename);
+   FreePoolMemory(p_ctx->next_filename);
 
    if (p_ctx->rados_snapshotname) {
       free(p_ctx->rados_snapshotname);
@@ -562,7 +562,7 @@ static inline void set_string_if_null(char **destination, char *value)
 /**
  * Always set destination to value and clean any previous one.
  */
-static inline void set_string(char **destination, char *value)
+static inline void SetString(char **destination, char *value)
 {
    if (*destination) {
       free(*destination);
@@ -683,7 +683,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                if (keep_existing) {
                   set_string_if_null(str_destination, argument_value);
                } else {
-                  set_string(str_destination, argument_value);
+                  SetString(str_destination, argument_value);
                }
             }
 
@@ -1039,7 +1039,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    /*
     * Filename is in the form <pool_name>/<object_name>
     */
-   pm_strcpy(p_ctx->next_filename, rp->ofname);
+   PmStrcpy(p_ctx->next_filename, rp->ofname);
    bp = strrchr(p_ctx->next_filename, '/');
    if (!bp) {
       rp->create_status = CF_SKIP;

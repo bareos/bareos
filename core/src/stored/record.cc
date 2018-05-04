@@ -100,9 +100,9 @@ static const char *record_compression_to_str(PoolMem &resultbuffer, const Device
        maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
       uint64_t faddr = 0;
 
-      ser_begin(buf, sizeof(uint64_t));
+      SerBegin(buf, sizeof(uint64_t));
       unser_uint64(faddr);
-      ser_end(buf, sizeof(uint64_t));
+      SerEnd(buf, sizeof(uint64_t));
 
       buf += sizeof(uint64_t);
 
@@ -111,7 +111,7 @@ static const char *record_compression_to_str(PoolMem &resultbuffer, const Device
       resultbuffer.strcat(tmp);
    }
 
-   Dmsg1(400, "Stream found in decompress_data(): %d\n", maskedStream);
+   Dmsg1(400, "Stream found in DecompressData(): %d\n", maskedStream);
    switch (maskedStream) {
    case STREAM_COMPRESSED_DATA:
    case STREAM_SPARSE_COMPRESSED_DATA:
@@ -124,12 +124,12 @@ static const char *record_compression_to_str(PoolMem &resultbuffer, const Device
       /*
        * Read compress header
        */
-      unser_begin(buf, sizeof(comp_stream_header));
+      UnserBegin(buf, sizeof(comp_stream_header));
       unser_uint32(comp_magic);
       unser_uint32(comp_len);
       unser_uint16(comp_level);
       unser_uint16(comp_version);
-      unser_end(buf, sizeof(comp_stream_header));
+      UnserEnd(buf, sizeof(comp_stream_header));
 
       Dmsg4(400, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n",
             comp_magic, comp_len, comp_level, comp_version);
@@ -388,16 +388,16 @@ static const char *record_unix_attributes_to_str(PoolMem &resultbuffer, JobContr
 {
    Attributes *attr = new_attr(NULL);
 
-   if (!unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
+   if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
       resultbuffer.bsprintf("ERROR");
       return NULL;
    }
 
-   attr->data_stream = decode_stat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
-   build_attr_output_fnames(jcr, attr);
+   attr->data_stream = DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+   BuildAttrOutputFnames(jcr, attr);
    attr_to_str(resultbuffer, jcr, attr);
 
-   free_attr(attr);
+   FreeAttr(attr);
 
    return resultbuffer.c_str();
 }
@@ -450,12 +450,12 @@ const char *record_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const De
                          rec->FileIndex, rec->Stream,
                          stream_to_ascii(stream_buf, rec->Stream, rec->FileIndex),
                          rec->data_len);
-   indent_multiline_string(resultbuffer, get_record_short_info(record_info_buf, jcr, rec), " | ");
+   IndentMultilineString(resultbuffer, get_record_short_info(record_info_buf, jcr, rec), " | ");
 
    return resultbuffer.c_str();
 }
 
-void dump_record(const char *tag, const DeviceRecord *rec)
+void DumpRecord(const char *tag, const DeviceRecord *rec)
 {
    char stream[128];
    char findex[128];
@@ -493,10 +493,10 @@ DeviceRecord *new_record(bool with_data)
 {
    DeviceRecord *rec;
 
-   rec = (DeviceRecord *)get_pool_memory(PM_RECORD);
+   rec = (DeviceRecord *)GetPoolMemory(PM_RECORD);
    memset(rec, 0, sizeof(DeviceRecord));
    if (with_data) {
-      rec->data = get_pool_memory(PM_MESSAGE);
+      rec->data = GetPoolMemory(PM_MESSAGE);
       rec->own_mempool = true;
    }
    rec->state = st_none;
@@ -511,15 +511,15 @@ void empty_record(DeviceRecord *rec)
    rec->FileIndex = rec->Stream = 0;
    rec->data_len = rec->remainder = 0;
 
-   clear_bit(REC_PARTIAL_RECORD, rec->state_bits);
-   clear_bit(REC_BLOCK_EMPTY, rec->state_bits);
-   clear_bit(REC_NO_MATCH, rec->state_bits);
-   clear_bit(REC_CONTINUATION, rec->state_bits);
+   ClearBit(REC_PARTIAL_RECORD, rec->state_bits);
+   ClearBit(REC_BLOCK_EMPTY, rec->state_bits);
+   ClearBit(REC_NO_MATCH, rec->state_bits);
+   ClearBit(REC_CONTINUATION, rec->state_bits);
 
    rec->state = st_none;
 }
 
-void copy_record_state(DeviceRecord *dst, DeviceRecord *src)
+void CopyRecordState(DeviceRecord *dst, DeviceRecord *src)
 {
    bool own_mempool;
    int32_t Stream, maskedStream;
@@ -547,15 +547,15 @@ void copy_record_state(DeviceRecord *dst, DeviceRecord *src)
 /**
  * Free the record entity
  */
-void free_record(DeviceRecord *rec)
+void FreeRecord(DeviceRecord *rec)
 {
-   Dmsg0(950, "Enter free_record.\n");
+   Dmsg0(950, "Enter FreeRecord.\n");
    if (rec->data && rec->own_mempool) {
-      free_pool_memory(rec->data);
+      FreePoolMemory(rec->data);
    }
    Dmsg0(950, "Data buf is freed.\n");
-   free_pool_memory((POOLMEM *)rec);
-   Dmsg0(950, "Leave free_record.\n");
+   FreePoolMemory((POOLMEM *)rec);
+   Dmsg0(950, "Leave FreeRecord.\n");
 }
 
 static inline ssize_t write_header_to_block(DeviceBlock *block, const DeviceRecord *rec, int32_t Stream)
@@ -565,10 +565,10 @@ static inline ssize_t write_header_to_block(DeviceBlock *block, const DeviceReco
    /*
     * Require enough room to write a full header
     */
-   if (block_write_navail(block) < WRITE_RECHDR_LENGTH)
+   if (BlockWriteNavail(block) < WRITE_RECHDR_LENGTH)
       return -1;
 
-   ser_begin(block->bufp, WRITE_RECHDR_LENGTH);
+   SerBegin(block->bufp, WRITE_RECHDR_LENGTH);
 
    if (BLOCK_VER == 1) {
       ser_uint32(rec->VolSessionId);
@@ -603,7 +603,7 @@ static inline ssize_t write_data_to_block(DeviceBlock *block, const DeviceRecord
 {
    uint32_t len;
 
-   len = MIN(rec->remainder, block_write_navail(block));
+   len = MIN(rec->remainder, BlockWriteNavail(block));
    memcpy(block->bufp,
           ((unsigned char *)rec->data) + (rec->data_len - rec->remainder),
           len);
@@ -619,11 +619,11 @@ static inline ssize_t write_data_to_block(DeviceBlock *block, const DeviceRecord
             "len=%d rem=%d remainder=%d\n",
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             stream_to_ascii(buf2, rec->Stream, rec->FileIndex),
-            rec->data_len, len, block_write_navail(block),
+            rec->data_len, len, BlockWriteNavail(block),
             rec->remainder);
       Dmsg5(0, "Damaged block: bufp=%x binbuf=%d buf_len=%d rem=%d moved=%d\n",
             block->bufp, block->binbuf, block->buf_len,
-            block_write_navail(block), len);
+            BlockWriteNavail(block), len);
       Dmsg2(0, "Damaged block: buf=%x binbuffrombuf=%d \n",
             block->buf, block->bufp-block->buf);
       Emsg0(M_ABORT, 0, _("Damaged buffer\n"));
@@ -639,7 +639,7 @@ static inline ssize_t write_data_to_block(DeviceBlock *block, const DeviceRecord
  * Returns: false means the block could not be written to tape/disk.
  *          true on success (all bytes written to the block).
  */
-bool DeviceControlRecord::write_record()
+bool DeviceControlRecord::WriteRecord()
 {
    bool retval = false;
    bool translated_record = false;
@@ -650,7 +650,7 @@ bool DeviceControlRecord::write_record()
     */
    before_rec = rec;
    after_rec = NULL;
-   if (generate_plugin_event(jcr, bsdEventWriteRecordTranslation, this) != bRC_OK) {
+   if (GeneratePluginEvent(jcr, bsdEventWriteRecordTranslation, this) != bRC_OK) {
       goto bail_out;
    }
 
@@ -665,11 +665,11 @@ bool DeviceControlRecord::write_record()
       translated_record = true;
    }
 
-   while (!write_record_to_block(this, after_rec)) {
-      Dmsg2(850, "!write_record_to_block data_len=%d rem=%d\n",
+   while (!WriteRecordToBlock(this, after_rec)) {
+      Dmsg2(850, "!WriteRecordToBlock data_len=%d rem=%d\n",
             after_rec->data_len, after_rec->remainder);
-      if (!write_block_to_device()) {
-         Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
+      if (!WriteBlockToDevice()) {
+         Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
                dev->print_name(), dev->bstrerror());
          goto bail_out;
       }
@@ -681,7 +681,7 @@ bool DeviceControlRecord::write_record()
       goto bail_out;
    }
 
-   Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
+   Dmsg4(850, "WriteRecord FI=%s SessId=%d Strm=%s len=%d\n",
          FI_to_ascii(buf1, after_rec->FileIndex), after_rec->VolSessionId,
          stream_to_ascii(buf2, after_rec->Stream, after_rec->FileIndex), after_rec->data_len);
 
@@ -689,8 +689,8 @@ bool DeviceControlRecord::write_record()
 
 bail_out:
    if (translated_record) {
-      copy_record_state(before_rec, after_rec);
-      free_record(after_rec);
+      CopyRecordState(before_rec, after_rec);
+      FreeRecord(after_rec);
       after_rec = NULL;
    }
 
@@ -711,7 +711,7 @@ bail_out:
  *  non-zero), and 2. The remaining bytes to write may not
  *  all fit into the block.
  */
-bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec)
+bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    ssize_t n;
    bool retval = false;
@@ -732,7 +732,7 @@ bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec)
             __PRETTY_FUNCTION__, rec->state, record_state_to_ascii(rec->state),
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
-            block_write_navail(block), rec->remainder);
+            BlockWriteNavail(block), rec->remainder);
 
       switch (rec->state) {
       case st_none:
@@ -756,7 +756,7 @@ bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec)
             goto bail_out;
          }
 
-         if (block_write_navail(block) == 0) {
+         if (BlockWriteNavail(block) == 0) {
             /*
              * The header fit, but no bytes of data will fit,
              * so flush this block and start the next block with a
@@ -793,7 +793,7 @@ bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec)
           */
          rec->state = st_data;
 
-         if (block_write_navail(block) == 0) {
+         if (BlockWriteNavail(block) == 0) {
             /*
              * The header fit, but no bytes of data will fit,
              * so flush the block and start the next block with
@@ -857,12 +857,12 @@ bail_out:
  *  Returns: false on failure
  *           true  on success (all bytes can be written)
  */
-bool can_write_record_to_block(DeviceBlock *block, const DeviceRecord *rec)
+bool CanWriteRecordToBlock(DeviceBlock *block, const DeviceRecord *rec)
 {
-   return block_write_navail(block) >= WRITE_RECHDR_LENGTH + rec->remainder;
+   return BlockWriteNavail(block) >= WRITE_RECHDR_LENGTH + rec->remainder;
 }
 
-uint64_t get_record_address(const DeviceRecord *rec)
+uint64_t GetRecordAddress(const DeviceRecord *rec)
 {
    return ((uint64_t)rec->File)<<32 | rec->Block;
 }
@@ -876,7 +876,7 @@ uint64_t get_record_address(const DeviceRecord *rec)
  *                routine may have to be called again with a new
  *                block if the entire record was not read.
  */
-bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
+bool ReadRecordFromBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    ser_declare;
    uint32_t remlen;
@@ -893,9 +893,9 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
    /*
     * Clear state flags
     */
-   clear_all_bits(REC_STATE_MAX, rec->state_bits);
-   if (dcr->block->dev->is_tape()) {
-      set_bit(REC_ISTAPE, rec->state_bits);
+   ClearAllBits(REC_STATE_MAX, rec->state_bits);
+   if (dcr->block->dev->IsTape()) {
+      SetBit(REC_ISTAPE, rec->state_bits);
    }
    rec->Block = ((Device *)(dcr->block->dev))->EndBlock;
    rec->File = ((Device *)(dcr->block->dev))->EndFile;
@@ -914,7 +914,7 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
       Dmsg4(450, "Enter read_record_block: remlen=%d data_len=%d rem=%d blkver=%d\n",
             remlen, rec->data_len, rec->remainder, dcr->block->BlockVer);
 
-      unser_begin(dcr->block->bufp, WRITE_RECHDR_LENGTH);
+      UnserBegin(dcr->block->bufp, WRITE_RECHDR_LENGTH);
       if (dcr->block->BlockVer == 1) {
          unser_uint32(VolSessionId);
          unser_uint32(VolSessionTime);
@@ -936,7 +936,7 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
        */
       if (rec->remainder && (rec->VolSessionId != VolSessionId ||
                              rec->VolSessionTime != VolSessionTime)) {
-         set_bit(REC_NO_MATCH, rec->state_bits);
+         SetBit(REC_NO_MATCH, rec->state_bits);
          Dmsg0(450, "remainder and VolSession doesn't match\n");
          return false;             /* This is from some other Session */
       }
@@ -947,11 +947,11 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
        */
       if (Stream < 0) {               /* continuation record? */
          Dmsg1(500, "Got negative Stream => continuation. remainder=%d\n", rec->remainder);
-         set_bit(REC_CONTINUATION, rec->state_bits);
+         SetBit(REC_CONTINUATION, rec->state_bits);
          if (!rec->remainder) {       /* if we didn't read previously */
             rec->data_len = 0;        /* return data as if no continuation */
          } else if (rec->Stream != -Stream) {
-            set_bit(REC_NO_MATCH, rec->state_bits);
+            SetBit(REC_NO_MATCH, rec->state_bits);
             return false;             /* This is from some other Session */
          }
          rec->Stream = -Stream;       /* set correct Stream */
@@ -986,9 +986,9 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
        * then reread.
        */
       Dmsg0(450, "read_record_block: nothing\n");
-      set_bit(REC_NO_HEADER, rec->state_bits);
-      set_bit(REC_BLOCK_EMPTY, rec->state_bits);
-      empty_block(dcr->block);                 /* mark block empty */
+      SetBit(REC_NO_HEADER, rec->state_bits);
+      SetBit(REC_BLOCK_EMPTY, rec->state_bits);
+      EmptyBlock(dcr->block);                 /* mark block empty */
       return false;
    }
 
@@ -998,15 +998,15 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
        * Something is wrong, force read of next block, abort
        *   continuing with this block.
        */
-      set_bit(REC_NO_HEADER, rec->state_bits);
-      set_bit(REC_BLOCK_EMPTY, rec->state_bits);
-      empty_block(dcr->block);
+      SetBit(REC_NO_HEADER, rec->state_bits);
+      SetBit(REC_BLOCK_EMPTY, rec->state_bits);
+      EmptyBlock(dcr->block);
       Jmsg2(dcr->jcr, M_WARNING, 0, _("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
          MAX_BLOCK_LENGTH, data_bytes);
       return false;
    }
 
-   rec->data = check_pool_memory_size(rec->data, rec->data_len + data_bytes);
+   rec->data = CheckPoolMemorySize(rec->data, rec->data_len + data_bytes);
 
    /*
     * At this point, we have read the header, now we
@@ -1034,8 +1034,8 @@ bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
       rec->data_len += remlen;
       rec->remainder = 1;             /* partial record transferred */
       Dmsg1(450, "read_record_block: partial xfered=%d\n", rec->data_len);
-      set_bit(REC_PARTIAL_RECORD, rec->state_bits);
-      set_bit(REC_BLOCK_EMPTY, rec->state_bits);
+      SetBit(REC_PARTIAL_RECORD, rec->state_bits);
+      SetBit(REC_BLOCK_EMPTY, rec->state_bits);
       return true;
    }
    rec->remainder = 0;

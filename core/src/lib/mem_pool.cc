@@ -29,7 +29,7 @@
  *
  * A major advantage of the pool memory aside from the speed is that the buffer
  * carries around its size, so to ensure that there is enough memory, simply call
- * the check_pool_memory_size() with the desired size and it will adjust only
+ * the CheckPoolMemorySize() with the desired size and it will adjust only
  * if necessary.
  *
  * Kern E. Sibbald
@@ -99,7 +99,7 @@ struct abufhead {
    int32_t ablen;                     /* Buffer length in bytes */
    int32_t pool;                      /* pool */
    struct abufhead *next;             /* pointer to next free buffer */
-   int32_t bnet_size;                 /* dummy for bnet_send() */
+   int32_t bnet_size;                 /* dummy for BnetSend() */
 };
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -126,7 +126,7 @@ static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
    bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
    va_end(arg_ptr);
 
-   dispatch_message(NULL, M_ABORT, 0, buf);
+   DispatchMessage(NULL, M_ABORT, 0, buf);
 
    char *p = 0;
    p[0] = 0;                    /* Generate segmentation violation */
@@ -237,10 +237,10 @@ POOLMEM *sm_realloc_pool_memory(const char *fname, int lineno, POOLMEM *obuf, in
 POOLMEM *sm_check_pool_memory_size(const char *fname, int lineno, POOLMEM *obuf, int32_t size)
 {
    ASSERT(obuf);
-   if (size <= sizeof_pool_memory(obuf)) {
+   if (size <= SizeofPoolMemory(obuf)) {
       return obuf;
    }
-   return realloc_pool_memory(obuf, size);
+   return ReallocPoolMemory(obuf, size);
 }
 
 /* Free a memory buffer */
@@ -277,7 +277,7 @@ void sm_free_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
 
 /* =========  NO SMARTALLOC  =========================================  */
 
-POOLMEM *get_pool_memory(int pool)
+POOLMEM *GetPoolMemory(int pool)
 {
    struct abufhead *buf;
 
@@ -307,7 +307,7 @@ POOLMEM *get_pool_memory(int pool)
 }
 
 /* Get nonpool memory of size requested */
-POOLMEM *get_memory(int32_t size)
+POOLMEM *GetMemory(int32_t size)
 {
    struct abufhead *buf;
    int pool = 0;
@@ -328,7 +328,7 @@ POOLMEM *get_memory(int32_t size)
 }
 
 /* Return the size of a memory buffer */
-int32_t sizeof_pool_memory(POOLMEM *obuf)
+int32_t SizeofPoolMemory(POOLMEM *obuf)
 {
    char *cp = (char *)obuf;
 
@@ -338,7 +338,7 @@ int32_t sizeof_pool_memory(POOLMEM *obuf)
 }
 
 /* Realloc pool memory buffer */
-POOLMEM *realloc_pool_memory(POOLMEM *obuf, int32_t size)
+POOLMEM *ReallocPoolMemory(POOLMEM *obuf, int32_t size)
 {
    char *cp = (char *)obuf;
    void *buf;
@@ -363,17 +363,17 @@ POOLMEM *realloc_pool_memory(POOLMEM *obuf, int32_t size)
    return (POOLMEM *)(((char *)buf) + HEAD_SIZE);
 }
 
-POOLMEM *check_pool_memory_size(POOLMEM *obuf, int32_t size)
+POOLMEM *CheckPoolMemorySize(POOLMEM *obuf, int32_t size)
 {
    ASSERT(obuf);
-   if (size <= sizeof_pool_memory(obuf)) {
+   if (size <= SizeofPoolMemory(obuf)) {
       return obuf;
    }
-   return realloc_pool_memory(obuf, size);
+   return ReallocPoolMemory(obuf, size);
 }
 
 /* Free a memory buffer */
-void free_pool_memory(POOLMEM *obuf)
+void FreePoolMemory(POOLMEM *obuf)
 {
    struct abufhead *buf;
    int pool;
@@ -410,7 +410,7 @@ void free_pool_memory(POOLMEM *obuf)
 static time_t last_garbage_collection = 0;
 const int garbage_interval = 24 * 60 * 60;  /* garbage collect every 24 hours */
 
-void garbage_collect_memory_pool()
+void GarbageCollectMemoryPool()
 {
    time_t now;
 
@@ -424,14 +424,14 @@ void garbage_collect_memory_pool()
    if (now >= last_garbage_collection + garbage_interval) {
       last_garbage_collection = now;
       V(mutex);
-      garbage_collect_memory();
+      GarbageCollectMemory();
    } else {
       V(mutex);
    }
 }
 
 /* Release all freed pooled memory */
-void close_memory_pool()
+void CloseMemoryPool()
 {
    struct abufhead *buf, *next;
    int count = 0;
@@ -444,7 +444,7 @@ void close_memory_pool()
       while (buf) {
          next = buf->next;
          count++;
-         bytes += sizeof_pool_memory((char *)buf);
+         bytes += SizeofPoolMemory((char *)buf);
          free((char *)buf);
          buf = next;
       }
@@ -453,7 +453,7 @@ void close_memory_pool()
    V(mutex);
 
    if (debug_level >= 1) {
-      print_memory_pool_stats();
+      PrintMemoryPoolStats();
    }
 }
 
@@ -461,9 +461,9 @@ void close_memory_pool()
  * Garbage collect and trim memory if possible
  * This should be called after all big memory usages if possible.
  */
-void garbage_collect_memory()
+void GarbageCollectMemory()
 {
-   close_memory_pool();         /* release free chain */
+   CloseMemoryPool();         /* release free chain */
 #ifdef HAVE_MALLOC_TRIM
    P(mutex);
    malloc_trim(8192);
@@ -496,7 +496,7 @@ static const char *pool_name(int pool)
 /*
  * Print staticstics on memory pool usage
  */
-void print_memory_pool_stats()
+void PrintMemoryPoolStats()
 {
    Pmsg0(-1, "Pool   Maxsize  Maxused  Inuse\n");
    for (int i = 0; i <= PM_MAX; i++) {
@@ -510,14 +510,14 @@ void print_memory_pool_stats()
    Pmsg0(-1, "\n");
 }
 #else
-void print_memory_pool_stats() {}
+void PrintMemoryPoolStats() {}
 #endif /* DEBUG */
 
 /*
  * Concatenate a string (str) onto a pool memory buffer pm
  * Returns: length of concatenated string
  */
-int pm_strcat(POOLMEM *&pm, const char *str)
+int PmStrcat(POOLMEM *&pm, const char *str)
 {
    int pmlen = strlen(pm);
    int len;
@@ -525,22 +525,22 @@ int pm_strcat(POOLMEM *&pm, const char *str)
    if (!str) str = "";
 
    len = strlen(str) + 1;
-   pm = check_pool_memory_size(pm, pmlen + len);
+   pm = CheckPoolMemorySize(pm, pmlen + len);
    memcpy(pm+pmlen, str, len);
    return pmlen + len - 1;
 }
 
-int pm_strcat(POOLMEM *&pm, PoolMem &str)
+int PmStrcat(POOLMEM *&pm, PoolMem &str)
 {
    int pmlen = strlen(pm);
    int len = strlen(str.c_str()) + 1;
 
-   pm = check_pool_memory_size(pm, pmlen + len);
+   pm = CheckPoolMemorySize(pm, pmlen + len);
    memcpy(pm+pmlen, str.c_str(), len);
    return pmlen + len - 1;
 }
 
-int pm_strcat(PoolMem &pm, const char *str)
+int PmStrcat(PoolMem &pm, const char *str)
 {
    int pmlen = strlen(pm.c_str());
    int len;
@@ -553,7 +553,7 @@ int pm_strcat(PoolMem &pm, const char *str)
    return pmlen + len - 1;
 }
 
-int pm_strcat(PoolMem *&pm, const char *str)
+int PmStrcat(PoolMem *&pm, const char *str)
 {
    int pmlen = strlen(pm->c_str());
    int len;
@@ -570,28 +570,28 @@ int pm_strcat(PoolMem *&pm, const char *str)
  * Copy a string (str) into a pool memory buffer pm
  * Returns: length of string copied
  */
-int pm_strcpy(POOLMEM *&pm, const char *str)
+int PmStrcpy(POOLMEM *&pm, const char *str)
 {
    int len;
 
    if (!str) str = "";
 
    len = strlen(str) + 1;
-   pm = check_pool_memory_size(pm, len);
+   pm = CheckPoolMemorySize(pm, len);
    memcpy(pm, str, len);
    return len - 1;
 }
 
-int pm_strcpy(POOLMEM *&pm, PoolMem &str)
+int PmStrcpy(POOLMEM *&pm, PoolMem &str)
 {
    int len = strlen(str.c_str()) + 1;
 
-   pm = check_pool_memory_size(pm, len);
+   pm = CheckPoolMemorySize(pm, len);
    memcpy(pm, str.c_str(), len);
    return len - 1;
 }
 
-int pm_strcpy(PoolMem &pm, const char *str)
+int PmStrcpy(PoolMem &pm, const char *str)
 {
    int len;
 
@@ -603,7 +603,7 @@ int pm_strcpy(PoolMem &pm, const char *str)
    return len - 1;
 }
 
-int pm_strcpy(PoolMem *&pm, const char *str)
+int PmStrcpy(PoolMem *&pm, const char *str)
 {
    int len;
 
@@ -619,28 +619,28 @@ int pm_strcpy(PoolMem *&pm, const char *str)
  * Copy data into a pool memory buffer pm
  * Returns: length of data copied
  */
-int pm_memcpy(POOLMEM *&pm, const char *data, int32_t n)
+int PmMemcpy(POOLMEM *&pm, const char *data, int32_t n)
 {
-   pm = check_pool_memory_size(pm, n);
+   pm = CheckPoolMemorySize(pm, n);
    memcpy(pm, data, n);
    return n;
 }
 
-int pm_memcpy(POOLMEM *&pm, PoolMem &data, int32_t n)
+int PmMemcpy(POOLMEM *&pm, PoolMem &data, int32_t n)
 {
-   pm = check_pool_memory_size(pm, n);
+   pm = CheckPoolMemorySize(pm, n);
    memcpy(pm, data.c_str(), n);
    return n;
 }
 
-int pm_memcpy(PoolMem &pm, const char *data, int32_t n)
+int PmMemcpy(PoolMem &pm, const char *data, int32_t n)
 {
    pm.check_size(n);
    memcpy(pm.c_str(), data, n);
    return n;
 }
 
-int pm_memcpy(PoolMem *&pm, const char *data, int32_t n)
+int PmMemcpy(PoolMem *&pm, const char *data, int32_t n)
 {
    pm->check_size(n);
    memcpy(pm->c_str(), data, n);
@@ -652,7 +652,7 @@ int pm_memcpy(PoolMem *&pm, const char *data, int32_t n)
 /*
  * Return the size of a memory buffer
  */
-int32_t PoolMem::max_size()
+int32_t PoolMem::MaxSize()
 {
    int32_t size;
    char *cp = mem;
@@ -663,7 +663,7 @@ int32_t PoolMem::max_size()
    return size;
 }
 
-void PoolMem::realloc_pm(int32_t size)
+void PoolMem::ReallocPm(int32_t size)
 {
    char *cp = mem;
    char *buf;
@@ -744,12 +744,12 @@ int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
    va_list ap;
 
 again:
-   maxlen = max_size() - 1;
+   maxlen = MaxSize() - 1;
    va_copy(ap, arg_ptr);
    len = ::bvsnprintf(mem, maxlen, fmt, ap);
    va_end(ap);
    if (len < 0 || len >= maxlen) {
-      realloc_pm(maxlen + maxlen / 2);
+      ReallocPm(maxlen + maxlen / 2);
       goto again;
    }
    return len;
@@ -761,8 +761,8 @@ int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
 {
    int maxlen, len;
 
-   realloc_pm(5000);
-   maxlen = max_size() - 1;
+   ReallocPm(5000);
+   maxlen = MaxSize() - 1;
    len = ::bvsnprintf(mem, maxlen, fmt, arg_ptr);
    if (len < 0 || len >= maxlen) {
       if (len >= maxlen) {

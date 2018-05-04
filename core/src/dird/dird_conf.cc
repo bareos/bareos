@@ -570,7 +570,7 @@ static ResourceTable resources[] = {
    { "Client", cli_items, R_CLIENT, sizeof(ClientResource), [] (void *res){ return new((ClientResource*) res) ClientResource(); }  },
    { "JobDefs", job_items, R_JOBDEFS, sizeof(JobResource)},
    { "Job", job_items, R_JOB, sizeof(JobResource)  },
-   { "Storage", store_items, R_STORAGE, sizeof(StoreResource), [] (void *res){ return new((StoreResource *) res) StoreResource(); }   },
+   { "Storage", store_items, R_STORAGE, sizeof(StorageResource), [] (void *res){ return new((StorageResource *) res) StorageResource(); }   },
    { "Catalog", cat_items, R_CATALOG, sizeof(CatalogResource)   },
    { "Schedule", sch_items, R_SCHEDULE, sizeof(ScheduleResource)   },
    { "FileSet", fs_items, R_FILESET, sizeof(FilesetResource)   },
@@ -878,12 +878,12 @@ json_t *json_datatype(const int type, ResourceItem items[])
 /**
  * Print configuration file schema in json format
  */
-bool print_config_schema_json(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem &buffer)
 {
    DatatypeName *datatype;
    ResourceTable *resources = my_config->resources_;
 
-   initialize_json();
+   InitializeJson();
 
    json_t *json = json_object();
    json_object_set_new(json, "format-version", json_integer(2));
@@ -967,15 +967,15 @@ bool print_config_schema_json(PoolMem &buffer)
     * - FS_options: are they needed?
     */
 
-   pm_strcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
    json_decref(json);
 
    return true;
 }
 #else
-bool print_config_schema_json(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem &buffer)
 {
-   pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
 
    return false;
 }
@@ -1014,7 +1014,7 @@ static inline bool cmdline_item(PoolMem *buffer, ResourceItem *item)
    key.toLower();
 
    temp.bsprintf(" %s%s=<%s>%s", mod_start, key.c_str(), datatype_to_str(item->type), mod_end);
-   pm_strcat(buffer, temp.c_str());
+   PmStrcat(buffer, temp.c_str());
 
    return true;
 }
@@ -1076,7 +1076,7 @@ const char *get_configure_usage_string()
    return configure_usage_string->c_str();
 }
 
-void destroy_configure_usage_string()
+void DestroyConfigureUsageString()
 {
    if (configure_usage_string) {
       delete configure_usage_string;
@@ -1092,8 +1092,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
    uint32_t offset;
 
    for (int i = 0; items[i].name; i++) {
-      if (!bit_is_set(i, dest->hdr.item_present) &&
-           bit_is_set(i, source->hdr.item_present)) {
+      if (!BitIsSet(i, dest->hdr.item_present) &&
+           BitIsSet(i, source->hdr.item_present)) {
          offset = (char *)(items[i].value) - (char *)&res_all;
          switch (items[i].type) {
          case CFG_TYPE_STR:
@@ -1109,8 +1109,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
                free(*svalue);
             }
             *svalue = bstrdup(*def_svalue);
-            set_bit(i, dest->hdr.item_present);
-            set_bit(i, dest->hdr.inherit_content);
+            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->hdr.inherit_content);
             break;
          }
          case CFG_TYPE_RES: {
@@ -1125,8 +1125,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
                Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
             }
             *svalue = *def_svalue;
-            set_bit(i, dest->hdr.item_present);
-            set_bit(i, dest->hdr.inherit_content);
+            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->hdr.inherit_content);
             break;
          }
          case CFG_TYPE_ALIST_STR: {
@@ -1152,8 +1152,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
                   (*new_list)->append(bstrdup(str));
                }
 
-               set_bit(i, dest->hdr.item_present);
-               set_bit(i, dest->hdr.inherit_content);
+               SetBit(i, dest->hdr.item_present);
+               SetBit(i, dest->hdr.inherit_content);
             }
             break;
          }
@@ -1180,8 +1180,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
                   (*new_list)->append(res);
                }
 
-               set_bit(i, dest->hdr.item_present);
-               set_bit(i, dest->hdr.inherit_content);
+               SetBit(i, dest->hdr.item_present);
+               SetBit(i, dest->hdr.inherit_content);
             }
             break;
          }
@@ -1208,8 +1208,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
                   (*new_list)->append(bstrdup(str));
                }
 
-               set_bit(i, dest->hdr.item_present);
-               set_bit(i, dest->hdr.inherit_content);
+               SetBit(i, dest->hdr.item_present);
+               SetBit(i, dest->hdr.inherit_content);
             }
             break;
          }
@@ -1231,8 +1231,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
             def_ivalue = (uint32_t *)((char *)(source) + offset);
             ivalue = (uint32_t *)((char *)dest + offset);
             *ivalue = *def_ivalue;
-            set_bit(i, dest->hdr.item_present);
-            set_bit(i, dest->hdr.inherit_content);
+            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->hdr.inherit_content);
             break;
          }
          case CFG_TYPE_TIME:
@@ -1247,8 +1247,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
             def_lvalue = (int64_t *)((char *)(source) + offset);
             lvalue = (int64_t *)((char *)dest + offset);
             *lvalue = *def_lvalue;
-            set_bit(i, dest->hdr.item_present);
-            set_bit(i, dest->hdr.inherit_content);
+            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->hdr.inherit_content);
             break;
          }
          case CFG_TYPE_BOOL: {
@@ -1260,8 +1260,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
             def_bvalue = (bool *)((char *)(source) + offset);
             bvalue = (bool *)((char *)dest + offset);
             *bvalue = *def_bvalue;
-            set_bit(i, dest->hdr.item_present);
-            set_bit(i, dest->hdr.inherit_content);
+            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->hdr.inherit_content);
             break;
          }
          case CFG_TYPE_AUTOPASSWORD: {
@@ -1275,8 +1275,8 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
 
             d_pwd->encoding = s_pwd->encoding;
             d_pwd->value = bstrdup(s_pwd->value);
-            set_bit(i, dest->hdr.item_present);
-            set_bit(i, dest->hdr.inherit_content);
+            SetBit(i, dest->hdr.item_present);
+            SetBit(i, dest->hdr.inherit_content);
             break;
          }
          default:
@@ -1291,7 +1291,7 @@ static void propagate_resource(ResourceItem *items, BareosResource *source, Bare
 /**
  * Ensure that all required items are present
  */
-bool validate_resource(int res_type, ResourceItem *items, BareosResource *res)
+bool ValidateResource(int res_type, ResourceItem *items, BareosResource *res)
 {
    if (res_type == R_JOBDEFS) {
       /*
@@ -1306,7 +1306,7 @@ bool validate_resource(int res_type, ResourceItem *items, BareosResource *res)
 
    for (int i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
-         if (!bit_is_set(i, res->hdr.item_present)) {
+         if (!BitIsSet(i, res->hdr.item_present)) {
             Jmsg(NULL, M_ERROR, 0,
                  _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
                  items[i].name, res_to_str(res_type), res->name());
@@ -1388,7 +1388,7 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
          foreach_alist(runscript, list) {
             PoolMem esc;
 
-            escape_string(esc, runscript->command, strlen(runscript->command));
+            EscapeString(esc, runscript->command, strlen(runscript->command));
 
             /*
              * Don't print runscript when its inherited from a JobDef.
@@ -1426,10 +1426,10 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
                           bstrcmp(runscript->target, "")) {
                   Mmsg(temp, "run after failed job = \"%s\"\n", esc.c_str());
                }
-               indent_config_item(cfg_str, 1, temp.c_str());
+               IndentConfigItem(cfg_str, 1, temp.c_str());
             } else {
                Mmsg(temp, "runscript {\n");
-               indent_config_item(cfg_str, 1, temp.c_str());
+               IndentConfigItem(cfg_str, 1, temp.c_str());
 
                char *cmdstring = (char *)"command"; /* '|' */
                if (runscript->cmd_type == '@') {
@@ -1437,7 +1437,7 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
                }
 
                Mmsg(temp, "%s = \"%s\"\n", cmdstring, esc.c_str());
-               indent_config_item(cfg_str, 2, temp.c_str());
+               IndentConfigItem(cfg_str, 2, temp.c_str());
 
                /*
                 * Default: never
@@ -1460,7 +1460,7 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
 
                if (!bstrcasecmp(when, "never")) { /* suppress default value */
                   Mmsg(temp, "runswhen = %s\n", when);
-                  indent_config_item(cfg_str, 2, temp.c_str());
+                  IndentConfigItem(cfg_str, 2, temp.c_str());
                }
 
                /*
@@ -1470,7 +1470,7 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
                if (!runscript->fail_on_error){
                   fail_on_error = (char *)"No";
                   Mmsg(temp, "failonerror = %s\n", fail_on_error);
-                  indent_config_item(cfg_str, 2, temp.c_str());
+                  IndentConfigItem(cfg_str, 2, temp.c_str());
                }
 
                /*
@@ -1480,7 +1480,7 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
                if (!runscript->on_success){
                   run_on_success = (char *)"No";
                   Mmsg(temp, "runsonsuccess = %s\n", run_on_success);
-                  indent_config_item(cfg_str, 2, temp.c_str());
+                  IndentConfigItem(cfg_str, 2, temp.c_str());
                }
 
                /*
@@ -1490,7 +1490,7 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
                if (runscript->on_failure) {
                   run_on_failure = (char *)"Yes";
                   Mmsg(temp, "runsonfailure = %s\n", run_on_failure);
-                  indent_config_item(cfg_str, 2, temp.c_str());
+                  IndentConfigItem(cfg_str, 2, temp.c_str());
                }
 
                /* level is not implemented
@@ -1504,10 +1504,10 @@ static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
                if (bstrcmp(runscript->target, "")) {
                   runsonclient = (char *)"No";
                   Mmsg(temp, "runsonclient = %s\n", runsonclient);
-                  indent_config_item(cfg_str, 2, temp.c_str());
+                  IndentConfigItem(cfg_str, 2, temp.c_str());
                }
 
-               indent_config_item(cfg_str, 1, "}\n");
+               IndentConfigItem(cfg_str, 1, "}\n");
             }
          }
       } /* foreach runscript */
@@ -1558,46 +1558,46 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          PoolMem run_str; /* holds the complete run= ... line */
          PoolMem interval; /* is one entry of day/month/week etc. */
 
-         indent_config_item(cfg_str, 1, "run = ");
+         IndentConfigItem(cfg_str, 1, "run = ");
 
          /*
           * Overrides
           */
          if (run->pool) {
             Mmsg(temp, "pool=\"%s\" ", run->pool->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->full_pool) {
             Mmsg(temp, "fullpool=\"%s\" ", run->full_pool->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->vfull_pool) {
             Mmsg(temp, "virtualfullpool=\"%s\" ", run->vfull_pool->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->inc_pool) {
             Mmsg(temp, "incrementalpool=\"%s\" ", run->inc_pool->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->diff_pool) {
             Mmsg(temp, "differentialpool=\"%s\" ", run->diff_pool->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->next_pool) {
             Mmsg(temp, "nextpool=\"%s\" ", run->next_pool->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->level) {
             for (int j = 0; joblevels[j].level_name; j++) {
                if (joblevels[j].level == run->level) {
-                  pm_strcat(run_str, joblevels[j].level_name);
-                  pm_strcat(run_str, " ");
+                  PmStrcat(run_str, joblevels[j].level_name);
+                  PmStrcat(run_str, " ");
                   break;
                }
             }
@@ -1605,22 +1605,22 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
 
          if (run->storage) {
             Mmsg(temp, "storage=\"%s\" ", run->storage->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->msgs) {
             Mmsg(temp, "messages=\"%s\" ", run->msgs->name());
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->Priority && run->Priority != 10) {
             Mmsg(temp, "priority=%d ", run->Priority);
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->MaxRunSchedTime) {
             Mmsg(temp, "maxrunschedtime=%d ", run->MaxRunSchedTime);
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          if (run->accurate) {
@@ -1629,7 +1629,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
              *       maybe we need an additional variable like "accurate_set".
              */
             Mmsg(temp, "accurate=\"%s\" ","yes");
-            pm_strcat(run_str, temp.c_str());
+            PmStrcat(run_str, temp.c_str());
          }
 
          /*
@@ -1639,7 +1639,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          /*
           * run->mday , output is just the number comma separated
           */
-         pm_strcpy(temp, "");
+         PmStrcpy(temp, "");
 
          /*
           * First see if not all bits are set.
@@ -1647,7 +1647,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          all_set = true;
          nr_items = 31;
          for (i = 0; i < nr_items; i++) {
-            if (!bit_is_set(i, run->mday)) {
+            if (!BitIsSet(i, run->mday)) {
                all_set = false;
             }
          }
@@ -1656,21 +1656,21 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
             interval_start = -1;
 
             for (i = 0; i < nr_items; i++) {
-               if (bit_is_set(i, run->mday)) {
+               if (BitIsSet(i, run->mday)) {
                   if (interval_start == -1) {   /* bit is set and we are not in an interval */
                      interval_start = i;        /* start an interval */
                      Dmsg1(200, "starting interval at %d\n", i + 1);
                      Mmsg(interval, ",%d", i + 1);
-                     pm_strcat(temp, interval.c_str());
+                     PmStrcat(temp, interval.c_str());
                   }
                }
 
-               if (!bit_is_set(i, run->mday)) {
+               if (!BitIsSet(i, run->mday)) {
                   if (interval_start != -1) {   /* bit is unset and we are in an interval */
                      if ((i - interval_start) > 1) {
                         Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1, i);
                         Mmsg(interval, "-%d", i);
-                        pm_strcat(temp, interval.c_str());
+                        PmStrcat(temp, interval.c_str());
                      }
                      interval_start = -1;       /* end the interval */
                   }
@@ -1681,16 +1681,16 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
              * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
              */
             i = nr_items - 1;
-            if (interval_start != -1 && bit_is_set(i, run->mday)) {
+            if (interval_start != -1 && BitIsSet(i, run->mday)) {
                if ((i - interval_start) > 1) {
                   Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1, i + 1);
                   Mmsg(interval, "-%d", i + 1);
-                  pm_strcat(temp, interval.c_str());
+                  PmStrcat(temp, interval.c_str());
                }
             }
 
-            pm_strcat(temp, " ");
-            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            PmStrcat(temp, " ");
+            PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
          }
 
          /*
@@ -1701,7 +1701,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          all_set = true;
          nr_items = 5;
          for (i = 0; i < nr_items; i++) {
-            if (!bit_is_set(i, run->wom)) {
+            if (!BitIsSet(i, run->wom)) {
                all_set = false;
             }
          }
@@ -1709,23 +1709,23 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          if (!all_set) {
             interval_start = -1;
 
-            pm_strcpy(temp, "");
+            PmStrcpy(temp, "");
             for (i = 0; i < nr_items; i++) {
-               if (bit_is_set(i, run->wom)) {
+               if (BitIsSet(i, run->wom)) {
                   if (interval_start == -1) {   /* bit is set and we are not in an interval */
                      interval_start = i;        /* start an interval */
                      Dmsg1(200, "starting interval at %s\n", ordinals[i]);
                      Mmsg(interval, ",%s", ordinals[i]);
-                     pm_strcat(temp, interval.c_str());
+                     PmStrcat(temp, interval.c_str());
                   }
                }
 
-               if (!bit_is_set(i, run->wom)) {
+               if (!BitIsSet(i, run->wom)) {
                   if (interval_start != -1) {   /* bit is unset and we are in an interval */
                      if ((i - interval_start) > 1) {
                         Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i - 1]);
                         Mmsg(interval, "-%s", ordinals[i - 1]);
-                        pm_strcat(temp, interval.c_str());
+                        PmStrcat(temp, interval.c_str());
                      }
                      interval_start = -1;       /* end the interval */
                   }
@@ -1736,16 +1736,16 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
              * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
              */
             i = nr_items - 1;
-            if (interval_start != -1 && bit_is_set(i, run->wom)) {
+            if (interval_start != -1 && BitIsSet(i, run->wom)) {
                if ((i - interval_start) > 1) {
                   Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i]);
                   Mmsg(interval, "-%s", ordinals[i]);
-                  pm_strcat(temp, interval.c_str());
+                  PmStrcat(temp, interval.c_str());
                }
             }
 
-            pm_strcat(temp, " ");
-            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            PmStrcat(temp, " ");
+            PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
          }
 
          /*
@@ -1754,7 +1754,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          all_set = true;
          nr_items = 7;
          for (i = 0; i < nr_items; i++) {
-            if (!bit_is_set(i, run->wday)) {
+            if (!BitIsSet(i, run->wday)) {
                all_set = false;
             }
          }
@@ -1762,23 +1762,23 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          if (!all_set) {
             interval_start = -1;
 
-            pm_strcpy(temp, "");
+            PmStrcpy(temp, "");
             for (i = 0; i < nr_items; i++) {
-               if (bit_is_set(i, run->wday)) {
+               if (BitIsSet(i, run->wday)) {
                   if (interval_start == -1) {   /* bit is set and we are not in an interval */
                      interval_start = i;        /* start an interval */
                      Dmsg1(200, "starting interval at %s\n", weekdays[i]);
                      Mmsg(interval, ",%s", weekdays[i]);
-                     pm_strcat(temp, interval.c_str());
+                     PmStrcat(temp, interval.c_str());
                   }
                }
 
-               if (!bit_is_set(i, run->wday)) {
+               if (!BitIsSet(i, run->wday)) {
                   if (interval_start != -1) {   /* bit is unset and we are in an interval */
                      if ((i - interval_start) > 1) {
                         Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i - 1]);
                         Mmsg(interval, "-%s", weekdays[i - 1]);
-                        pm_strcat(temp, interval.c_str());
+                        PmStrcat(temp, interval.c_str());
                      }
                      interval_start = -1;       /* end the interval */
                   }
@@ -1789,16 +1789,16 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
              * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
              */
             i = nr_items - 1;
-            if (interval_start != -1 && bit_is_set(i, run->wday)) {
+            if (interval_start != -1 && BitIsSet(i, run->wday)) {
                if ((i - interval_start) > 1) {
                   Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i]);
                   Mmsg(interval, "-%s", weekdays[i]);
-                  pm_strcat(temp, interval.c_str());
+                  PmStrcat(temp, interval.c_str());
                }
             }
 
-            pm_strcat(temp, " ");
-            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            PmStrcat(temp, " ");
+            PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
          }
 
          /*
@@ -1807,7 +1807,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          all_set = true;
          nr_items = 12;
          for (i = 0; i < nr_items; i++) {
-            if (!bit_is_set(i, run->month)) {
+            if (!BitIsSet(i, run->month)) {
                all_set = false;
             }
          }
@@ -1815,23 +1815,23 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          if (!all_set) {
             interval_start = -1;
 
-            pm_strcpy(temp, "");
+            PmStrcpy(temp, "");
             for (i = 0; i < nr_items; i++) {
-               if (bit_is_set(i, run->month)) {
+               if (BitIsSet(i, run->month)) {
                   if (interval_start == -1) {   /* bit is set and we are not in an interval */
                      interval_start = i;        /* start an interval */
                      Dmsg1(200, "starting interval at %s\n", months[i]);
                      Mmsg(interval, ",%s", months[i]);
-                     pm_strcat(temp, interval.c_str());
+                     PmStrcat(temp, interval.c_str());
                   }
                }
 
-               if (!bit_is_set(i, run->month)) {
+               if (!BitIsSet(i, run->month)) {
                   if (interval_start != -1) {   /* bit is unset and we are in an interval */
                      if ((i - interval_start) > 1) {
                         Dmsg2(200, "found end of interval from %s to %s\n", months[interval_start], months[i - 1]);
                         Mmsg(interval, "-%s", months[i - 1]);
-                        pm_strcat(temp, interval.c_str());
+                        PmStrcat(temp, interval.c_str());
                      }
                      interval_start = -1;       /* end the interval */
                   }
@@ -1842,16 +1842,16 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
              * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
              */
             i = nr_items - 1;
-            if (interval_start != -1 && bit_is_set(i, run->month)) {
+            if (interval_start != -1 && BitIsSet(i, run->month)) {
                if ((i - interval_start) > 1) {
                   Dmsg2(200, "found end of interval from %s to %s\n", months[interval_start], months[i]);
                   Mmsg(interval, "-%s", months[i]);
-                  pm_strcat(temp, interval.c_str());
+                  PmStrcat(temp, interval.c_str());
                }
             }
 
-            pm_strcat(temp, " ");
-            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            PmStrcat(temp, " ");
+            PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
          }
 
          /*
@@ -1860,7 +1860,7 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          all_set = true;
          nr_items = 54;
          for (i = 0; i < nr_items; i++) {
-            if (!bit_is_set(i, run->woy)) {
+            if (!BitIsSet(i, run->woy)) {
                all_set = false;
             }
          }
@@ -1868,23 +1868,23 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
          if (!all_set) {
             interval_start = -1;
 
-            pm_strcpy(temp, "");
+            PmStrcpy(temp, "");
             for (i = 0; i < nr_items; i++) {
-               if (bit_is_set(i, run->woy)) {
+               if (BitIsSet(i, run->woy)) {
                   if (interval_start == -1) {   /* bit is set and we are not in an interval */
                      interval_start = i;        /* start an interval */
                      Dmsg1(200, "starting interval at w%02d\n", i);
                      Mmsg(interval, ",w%02d", i);
-                     pm_strcat(temp, interval.c_str());
+                     PmStrcat(temp, interval.c_str());
                   }
                }
 
-               if (!bit_is_set(i, run->woy)) {
+               if (!BitIsSet(i, run->woy)) {
                   if (interval_start != -1) {   /* bit is unset and we are in an interval */
                      if ((i - interval_start) > 1) {
                         Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i - 1);
                         Mmsg(interval, "-w%02d", i - 1);
-                        pm_strcat(temp, interval.c_str());
+                        PmStrcat(temp, interval.c_str());
                      }
                      interval_start = -1;       /* end the interval */
                   }
@@ -1895,57 +1895,57 @@ static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
              * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
              */
             i = nr_items - 1;
-            if (interval_start != -1 && bit_is_set(i, run->woy)) {
+            if (interval_start != -1 && BitIsSet(i, run->woy)) {
                if ((i - interval_start) > 1) {
                   Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i);
                   Mmsg(interval, "-w%02d", i);
-                  pm_strcat(temp, interval.c_str());
+                  PmStrcat(temp, interval.c_str());
                }
             }
 
-            pm_strcat(temp, " ");
-            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            PmStrcat(temp, " ");
+            PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
          }
 
          /*
           * run->hour output is HH:MM for hour and minute though its a bitfield.
           * only "hourly" sets all bits.
           */
-         pm_strcpy(temp, "");
+         PmStrcpy(temp, "");
          for (i = 0; i < 24; i++) {
-            if bit_is_set(i, run->hour) {
+            if BitIsSet(i, run->hour) {
                Mmsg(temp, "at %02d:%02d\n", i, run->minute);
-               pm_strcat(run_str, temp.c_str());
+               PmStrcat(run_str, temp.c_str());
             }
          }
 
          /*
           * run->minute output is smply the minute in HH:MM
           */
-         pm_strcat(cfg_str, run_str.c_str());
+         PmStrcat(cfg_str, run_str.c_str());
 
          run = run->next;
       } /* loop over runs */
    }
 }
 
-bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool verbose)
+bool FilesetResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool verbose)
 {
    PoolMem cfg_str;
    PoolMem temp;
    const char *p;
 
-   Dmsg0(200,"FilesetResource::print_config\n");
+   Dmsg0(200,"FilesetResource::PrintConfig\n");
 
    Mmsg(temp, "FileSet {\n");
-   pm_strcat(cfg_str, temp.c_str());
+   PmStrcat(cfg_str, temp.c_str());
 
    Mmsg(temp, "Name = \"%s\"\n", this->name());
-   indent_config_item(cfg_str, 1, temp.c_str());
+   IndentConfigItem(cfg_str, 1, temp.c_str());
 
    if (this->hdr.desc != NULL ) {
       Mmsg(temp, "Description = \"%s\"\n", this->hdr.desc);
-      indent_config_item(cfg_str, 1, temp.c_str());
+      IndentConfigItem(cfg_str, 1, temp.c_str());
    }
 
    if (num_includes) {
@@ -1955,7 +1955,7 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
       for (int i = 0;  i < num_includes; i++) {
          IncludeExcludeItem *incexe = include_items[i];
 
-         indent_config_item(cfg_str, 1, "Include {\n");
+         IndentConfigItem(cfg_str, 1, "Include {\n");
 
          /*
           * Start options block
@@ -1964,152 +1964,152 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
             for (int j = 0; j < incexe->num_opts; j++) {
                FileOptions *fo = incexe->opts_list[j];
 
-               indent_config_item(cfg_str, 2, "Options {\n");
+               IndentConfigItem(cfg_str, 2, "Options {\n");
                for (p = &fo->opts[0]; *p; p++) {
                   switch (*p) {
                   case '0':                 /* no option */
                      break;
                   case 'a':                 /* alway replace */
-                     indent_config_item(cfg_str, 3, "Replace = Always\n");
+                     IndentConfigItem(cfg_str, 3, "Replace = Always\n");
                      break;
                   case 'C':                 /* */
-                     indent_config_item(cfg_str, 3, "Accurate = ");
+                     IndentConfigItem(cfg_str, 3, "Accurate = ");
                      p++;                   /* skip C */
                      for (; *p && *p != ':'; p++) {
                         Mmsg(temp, "%c", *p);
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                      }
-                     pm_strcat(cfg_str, "\n");
+                     PmStrcat(cfg_str, "\n");
                      break;
                   case 'c':
-                     indent_config_item(cfg_str, 3, "CheckFileChanges = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "CheckFileChanges = Yes\n");
                      break;
                   case 'd':
                      switch(*(p + 1)) {
                      case '1':
-                        indent_config_item(cfg_str, 3, "Shadowing = LocalWarn\n");
+                        IndentConfigItem(cfg_str, 3, "Shadowing = LocalWarn\n");
                         p++;
                         break;
                      case '2':
-                        indent_config_item(cfg_str, 3, "Shadowing = LocalRemove\n");
+                        IndentConfigItem(cfg_str, 3, "Shadowing = LocalRemove\n");
                         p++;
                         break;
                      case '3':
-                        indent_config_item(cfg_str, 3, "Shadowing = GlobalWarn\n");
+                        IndentConfigItem(cfg_str, 3, "Shadowing = GlobalWarn\n");
                         p++;
                         break;
                      case '4':
-                        indent_config_item(cfg_str, 3, "Shadowing = GlobalRemove\n");
+                        IndentConfigItem(cfg_str, 3, "Shadowing = GlobalRemove\n");
                         p++;
                         break;
                      }
                      break;
                   case 'e':
-                     indent_config_item(cfg_str, 3, "Exclude = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "Exclude = Yes\n");
                      break;
                   case 'f':
-                     indent_config_item(cfg_str, 3, "OneFS = No\n");
+                     IndentConfigItem(cfg_str, 3, "OneFS = No\n");
                      break;
                   case 'h':                 /* no recursion */
-                     indent_config_item(cfg_str, 3, "Recurse = No\n");
+                     IndentConfigItem(cfg_str, 3, "Recurse = No\n");
                      break;
                   case 'H':                 /* no hard link handling */
-                     indent_config_item(cfg_str, 3, "Hardlinks = No\n");
+                     IndentConfigItem(cfg_str, 3, "Hardlinks = No\n");
                      break;
                   case 'i':
-                     indent_config_item(cfg_str, 3, "IgnoreCase = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "IgnoreCase = Yes\n");
                      break;
                   case 'J':                 /* Base Job */
-                     indent_config_item(cfg_str, 3, "BaseJob = ");
+                     IndentConfigItem(cfg_str, 3, "BaseJob = ");
                      p++;                   /* skip J */
                      for (; *p && *p != ':'; p++) {
                         Mmsg(temp, "%c", *p);
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                      }
-                     pm_strcat(cfg_str, "\n");
+                     PmStrcat(cfg_str, "\n");
                      break;
                   case 'M':                 /* MD5 */
-                     indent_config_item(cfg_str, 3, "Signature = MD5\n");
+                     IndentConfigItem(cfg_str, 3, "Signature = MD5\n");
                      break;
                   case 'n':
-                     indent_config_item(cfg_str, 3, "Replace = Never\n");
+                     IndentConfigItem(cfg_str, 3, "Replace = Never\n");
                      break;
                   case 'p':                 /* use portable data format */
-                     indent_config_item(cfg_str, 3, "Portable = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "Portable = Yes\n");
                      break;
                   case 'P':                 /* strip path */
-                     indent_config_item(cfg_str, 3, "Strip = ");
+                     IndentConfigItem(cfg_str, 3, "Strip = ");
                      p++;                   /* skip P */
                      for (; *p && *p != ':'; p++) {
                         Mmsg(temp, "%c", *p);
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                      }
-                     pm_strcat(cfg_str, "\n");
+                     PmStrcat(cfg_str, "\n");
                      break;
                   case 'R':                 /* Resource forks and Finder Info */
-                     indent_config_item(cfg_str, 3, "HFSPlusSupport = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "HFSPlusSupport = Yes\n");
                      break;
                   case 'r':                 /* read fifo */
-                     indent_config_item(cfg_str, 3, "ReadFifo = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "ReadFifo = Yes\n");
                      break;
                   case 'S':
                      switch(*(p + 1)) {
 #ifdef HAVE_SHA2
                      case '2':
-                        indent_config_item(cfg_str, 3, "Signature = SHA256\n");
+                        IndentConfigItem(cfg_str, 3, "Signature = SHA256\n");
                         p++;
                         break;
                      case '3':
-                        indent_config_item(cfg_str, 3, "Signature = SHA512\n");
+                        IndentConfigItem(cfg_str, 3, "Signature = SHA512\n");
                         p++;
                         break;
 #endif
                      default:
-                        indent_config_item(cfg_str, 3, "Signature = SHA1\n");
+                        IndentConfigItem(cfg_str, 3, "Signature = SHA1\n");
                         break;
                      }
                      break;
                   case 's':
-                     indent_config_item(cfg_str, 3, "Sparse = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "Sparse = Yes\n");
                      break;
                   case 'm':
-                     indent_config_item(cfg_str, 3, "MtimeOnly = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "MtimeOnly = Yes\n");
                      break;
                   case 'k':
-                     indent_config_item(cfg_str, 3, "KeepAtime = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "KeepAtime = Yes\n");
                      break;
                   case 'K':
-                     indent_config_item(cfg_str, 3, "NoAtime = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "NoAtime = Yes\n");
                      break;
                   case 'A':
-                     indent_config_item(cfg_str, 3, "AclSupport = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "AclSupport = Yes\n");
                      break;
                   case 'V':                  /* verify options */
-                     indent_config_item(cfg_str, 3, "Verify = ");
+                     IndentConfigItem(cfg_str, 3, "Verify = ");
                      p++;                   /* skip V */
                      for (; *p && *p != ':'; p++) {
                         Mmsg(temp, "%c", *p);
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                      }
-                     pm_strcat(cfg_str, "\n");
+                     PmStrcat(cfg_str, "\n");
                      break;
                   case 'w':
-                     indent_config_item(cfg_str, 3, "Replace = IfNewer\n");
+                     IndentConfigItem(cfg_str, 3, "Replace = IfNewer\n");
                      break;
                   case 'W':
-                     indent_config_item(cfg_str, 3, "EnhancedWild = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "EnhancedWild = Yes\n");
                      break;
                   case 'z':                 /* size */
-                     indent_config_item(cfg_str, 3, "Size = ");
+                     IndentConfigItem(cfg_str, 3, "Size = ");
                      p++;                   /* skip z */
                      for (; *p && *p != ':'; p++) {
                         Mmsg(temp, "%c", *p);
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                      }
-                     pm_strcat(cfg_str, "\n");
+                     PmStrcat(cfg_str, "\n");
                      break;
                   case 'Z':                 /* compression */
-                     indent_config_item(cfg_str, 3, "Compression = ");
+                     IndentConfigItem(cfg_str, 3, "Compression = ");
                      p++;                   /* skip Z */
                      switch (*p) {
                      case '0':
@@ -2123,26 +2123,26 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
                      case '8':
                      case '9':
                         Mmsg(temp, "GZIP%c\n", *p);
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                         break;
                      case 'o':
                         Mmsg(temp, "LZO\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        PmStrcat(cfg_str, temp.c_str());
                         break;
                      case 'f':
                         p++;                /* skip f */
                         switch (*p) {
                         case 'f':
                            Mmsg(temp, "LZFAST\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           PmStrcat(cfg_str, temp.c_str());
                            break;
                         case '4':
                            Mmsg(temp, "LZ4\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           PmStrcat(cfg_str, temp.c_str());
                            break;
                         case 'h':
                            Mmsg(temp, "LZ4HC\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           PmStrcat(cfg_str, temp.c_str());
                            break;
                         default:
                            Emsg1(M_ERROR, 0, _("Unknown compression include/exclude option: %c\n"), *p);
@@ -2155,10 +2155,10 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
                      }
                      break;
                   case 'X':
-                     indent_config_item(cfg_str, 3, "Xattr = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "Xattr = Yes\n");
                      break;
                   case 'x':
-                     indent_config_item(cfg_str, 3, "AutoExclude = No\n");
+                     IndentConfigItem(cfg_str, 3, "AutoExclude = No\n");
                      break;
                   default:
                      Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
@@ -2168,32 +2168,32 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
 
                for (int k = 0; k < fo->regex.size(); k++) {
                   Mmsg(temp, "Regex = \"%s\"\n", fo->regex.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->regexdir.size(); k++) {
                   Mmsg(temp, "Regex Dir = \"%s\"\n", fo->regexdir.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->regexfile.size(); k++) {
                   Mmsg(temp, "Regex File = \"%s\"\n", fo->regexfile.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->wild.size(); k++) {
                   Mmsg(temp, "Wild = \"%s\"\n", fo->wild.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->wilddir.size(); k++) {
                   Mmsg(temp, "Wild Dir = \"%s\"\n", fo->wilddir.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->wildfile.size(); k++) {
                   Mmsg(temp, "Wild File = \"%s\"\n", fo->wildfile.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                /*
@@ -2203,45 +2203,45 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
                 */
                for (int k = 0; k < fo->wildbase.size(); k++) {
                   Mmsg(temp, "Wild File = \"%s\"\n", fo->wildbase.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->base.size(); k++) {
                   Mmsg(temp, "Base = \"%s\"\n", fo->base.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->fstype.size(); k++) {
                   Mmsg(temp, "Fs Type = \"%s\"\n", fo->fstype.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->drivetype.size(); k++) {
                   Mmsg(temp, "Drive Type = \"%s\"\n", fo->drivetype.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->meta.size(); k++) {
                   Mmsg(temp, "Meta = \"%s\"\n", fo->meta.get(k));
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                if (fo->plugin) {
                   Mmsg(temp, "Plugin = \"%s\"\n", fo->plugin);
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                if (fo->reader) {
                   Mmsg(temp, "Reader = \"%s\"\n", fo->reader);
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
                if (fo->writer) {
                   Mmsg(temp, "Writer = \"%s\"\n", fo->writer);
-                  indent_config_item(cfg_str, 3, temp.c_str());
+                  IndentConfigItem(cfg_str, 3, temp.c_str());
                }
 
-               indent_config_item(cfg_str, 2, "}\n");
+               IndentConfigItem(cfg_str, 2, "}\n");
             }
          } /* end options block */
 
@@ -2254,9 +2254,9 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
 
             for (int l = 0; l < incexe->name_list.size(); l++) {
                entry = (char *)incexe->name_list.get(l);
-               escape_string(esc, entry, strlen(entry));
+               EscapeString(esc, entry, strlen(entry));
                Mmsg(temp, "File = \"%s\"\n", esc.c_str());
-               indent_config_item(cfg_str, 2, temp.c_str());
+               IndentConfigItem(cfg_str, 2, temp.c_str());
             }
          }
 
@@ -2269,9 +2269,9 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
 
             for (int l = 0; l < incexe->plugin_list.size(); l++) {
                entry = (char *)incexe->plugin_list.get(l);
-               escape_string(esc, entry, strlen(entry));
+               EscapeString(esc, entry, strlen(entry));
                Mmsg(temp, "Plugin = \"%s\"\n", esc.c_str());
-               indent_config_item(cfg_str, 2, temp.c_str());
+               IndentConfigItem(cfg_str, 2, temp.c_str());
             }
          }
 
@@ -2281,11 +2281,11 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
          if (incexe->ignoredir.size()) {
             for (int l = 0; l < incexe->ignoredir.size(); l++) {
                Mmsg(temp, "Exclude Dir Containing = \"%s\"\n", incexe->ignoredir.get(l));
-               indent_config_item(cfg_str, 2, temp.c_str());
+               IndentConfigItem(cfg_str, 2, temp.c_str());
             }
          }
 
-         indent_config_item(cfg_str, 1, "}\n");
+         IndentConfigItem(cfg_str, 1, "}\n");
 
          /*
           * End Include block
@@ -2304,21 +2304,21 @@ bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool
             char *entry;
             PoolMem esc;
 
-            indent_config_item(cfg_str, 1, "Exclude {\n");
+            IndentConfigItem(cfg_str, 1, "Exclude {\n");
             for (int k = 0; k < incexe->name_list.size(); k++) {
                entry = (char *)incexe->name_list.get(k);
-               escape_string(esc, entry, strlen(entry));
+               EscapeString(esc, entry, strlen(entry));
                Mmsg(temp, "File = \"%s\"\n", esc.c_str());
-               indent_config_item(cfg_str, 2, temp.c_str());
+               IndentConfigItem(cfg_str, 2, temp.c_str());
             }
 
-            indent_config_item(cfg_str, 1, "}\n");
+            IndentConfigItem(cfg_str, 1, "}\n");
          }
       } /* loop over all exclude blocks */
    }
 
-   pm_strcat(cfg_str, "}\n\n");
-   pm_strcat(buff, cfg_str.c_str());
+   PmStrcat(cfg_str, "}\n\n");
+   PmStrcat(buff, cfg_str.c_str());
 
    return true;
 }
@@ -2378,56 +2378,56 @@ void dump_resource(int type, CommonResourceHeader *ures,
 
    switch (type) {
    case R_DIRECTOR:
-      res->res_dir.print_config(buf, hide_sensitive_data, verbose);
+      res->res_dir.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_PROFILE:
-      res->res_profile.print_config(buf, hide_sensitive_data, verbose);
+      res->res_profile.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CONSOLE:
-      res->res_con.print_config(buf, hide_sensitive_data, verbose);
+      res->res_con.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_COUNTER:
-      res->res_counter.print_config(buf, hide_sensitive_data, verbose);
+      res->res_counter.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CLIENT:
-      res->res_client.print_config(buf, hide_sensitive_data, verbose);
+      res->res_client.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_DEVICE:
-      res->res_dev.print_config(buf, hide_sensitive_data, verbose);
+      res->res_dev.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_STORAGE:
-      res->res_store.print_config(buf, hide_sensitive_data, verbose);
+      res->res_store.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CATALOG:
-      res->res_cat.print_config(buf, hide_sensitive_data, verbose);
+      res->res_cat.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_JOBDEFS:
    case R_JOB:
-      res->res_job.print_config(buf, hide_sensitive_data, verbose);
+      res->res_job.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_FILESET:
-      res->res_fs.print_config(buf, hide_sensitive_data, verbose);
+      res->res_fs.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_SCHEDULE:
-      res->res_sch.print_config(buf, hide_sensitive_data, verbose);
+      res->res_sch.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_POOL:
-      res->res_pool.print_config(buf, hide_sensitive_data, verbose);
+      res->res_pool.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_MSGS:
-      res->res_msgs.print_config(buf, hide_sensitive_data, verbose);
+      res->res_msgs.PrintConfig(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    default:
@@ -2486,7 +2486,7 @@ static void free_incexe(IncludeExcludeItem *incexe)
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(CommonResourceHeader *sres, int type)
+void FreeResource(CommonResourceHeader *sres, int type)
 {
    int num;
    CommonResourceHeader *nres; /* next resource if linked */
@@ -2536,10 +2536,10 @@ void free_resource(CommonResourceHeader *sres, int type)
          free(res->res_dir.query_file);
       }
       if (res->res_dir.DIRaddrs) {
-         free_addresses(res->res_dir.DIRaddrs);
+         FreeAddresses(res->res_dir.DIRaddrs);
       }
       if (res->res_dir.DIRsrc_addr) {
-         free_addresses(res->res_dir.DIRsrc_addr);
+         FreeAddresses(res->res_dir.DIRsrc_addr);
       }
       if (res->res_dir.verid) {
          free(res->res_dir.verid);
@@ -2556,15 +2556,15 @@ void free_resource(CommonResourceHeader *sres, int type)
       if (res->res_dir.log_timestamp_format) {
          free(res->res_dir.log_timestamp_format);
       }
-      if (res->res_dir.tls_cert.allowed_cns) {
-         res->res_dir.tls_cert.allowed_cns->destroy();
-         free(res->res_dir.tls_cert.allowed_cns);
+      if (res->res_dir.tls_cert.AllowedCns) {
+         res->res_dir.tls_cert.AllowedCns->destroy();
+         free(res->res_dir.tls_cert.AllowedCns);
       }
-      if (res->res_dir.tls_cert.ca_certfile) {
-         delete res->res_dir.tls_cert.ca_certfile;
+      if (res->res_dir.tls_cert.CaCertfile) {
+         delete res->res_dir.tls_cert.CaCertfile;
       }
-      if (res->res_dir.tls_cert.ca_certdir) {
-         delete res->res_dir.tls_cert.ca_certdir;
+      if (res->res_dir.tls_cert.CaCertdir) {
+         delete res->res_dir.tls_cert.CaCertdir;
       }
       if (res->res_dir.tls_cert.crlfile) {
          delete res->res_dir.tls_cert.crlfile;
@@ -2615,15 +2615,15 @@ void free_resource(CommonResourceHeader *sres, int type)
             res->res_con.ACL_lists[i] = NULL;
          }
       }
-      if (res->res_con.tls_cert.allowed_cns) {
-         res->res_con.tls_cert.allowed_cns->destroy();
-         free(res->res_con.tls_cert.allowed_cns);
+      if (res->res_con.tls_cert.AllowedCns) {
+         res->res_con.tls_cert.AllowedCns->destroy();
+         free(res->res_con.tls_cert.AllowedCns);
       }
-      if (res->res_con.tls_cert.ca_certfile) {
-         delete res->res_con.tls_cert.ca_certfile;
+      if (res->res_con.tls_cert.CaCertfile) {
+         delete res->res_con.tls_cert.CaCertfile;
       }
-      if (res->res_con.tls_cert.ca_certdir) {
-         delete res->res_con.tls_cert.ca_certdir;
+      if (res->res_con.tls_cert.CaCertdir) {
+         delete res->res_con.tls_cert.CaCertdir;
       }
       if (res->res_con.tls_cert.crlfile) {
          delete res->res_con.tls_cert.crlfile;
@@ -2666,15 +2666,15 @@ void free_resource(CommonResourceHeader *sres, int type)
       if (res->res_client.rcs) {
          free(res->res_client.rcs);
       }
-      if (res->res_client.tls_cert.allowed_cns) {
-         res->res_client.tls_cert.allowed_cns->destroy();
-         free(res->res_client.tls_cert.allowed_cns);
+      if (res->res_client.tls_cert.AllowedCns) {
+         res->res_client.tls_cert.AllowedCns->destroy();
+         free(res->res_client.tls_cert.AllowedCns);
       }
-      if (res->res_client.tls_cert.ca_certfile) {
-         delete res->res_client.tls_cert.ca_certfile;
+      if (res->res_client.tls_cert.CaCertfile) {
+         delete res->res_client.tls_cert.CaCertfile;
       }
-      if (res->res_client.tls_cert.ca_certdir) {
-         delete res->res_client.tls_cert.ca_certdir;
+      if (res->res_client.tls_cert.CaCertdir) {
+         delete res->res_client.tls_cert.CaCertdir;
       }
       if (res->res_client.tls_cert.crlfile) {
          delete res->res_client.tls_cert.crlfile;
@@ -2744,15 +2744,15 @@ void free_resource(CommonResourceHeader *sres, int type)
          pthread_mutex_destroy(&res->res_store.rss->changer_lock);
          free(res->res_store.rss);
       }
-      if (res->res_store.tls_cert.allowed_cns) {
-         res->res_store.tls_cert.allowed_cns->destroy();
-         free(res->res_store.tls_cert.allowed_cns);
+      if (res->res_store.tls_cert.AllowedCns) {
+         res->res_store.tls_cert.AllowedCns->destroy();
+         free(res->res_store.tls_cert.AllowedCns);
       }
-      if (res->res_store.tls_cert.ca_certfile) {
-         delete res->res_store.tls_cert.ca_certfile;
+      if (res->res_store.tls_cert.CaCertfile) {
+         delete res->res_store.tls_cert.CaCertfile;
       }
-      if (res->res_store.tls_cert.ca_certdir) {
-         delete res->res_store.tls_cert.ca_certdir;
+      if (res->res_store.tls_cert.CaCertdir) {
+         delete res->res_store.tls_cert.CaCertdir;
       }
       if (res->res_store.tls_cert.crlfile) {
          delete res->res_store.tls_cert.crlfile;
@@ -2891,7 +2891,7 @@ void free_resource(CommonResourceHeader *sres, int type)
          delete res->res_job.base;
       }
       if (res->res_job.RunScripts) {
-         free_runscripts(res->res_job.RunScripts);
+         FreeRunscripts(res->res_job.RunScripts);
          delete res->res_job.RunScripts;
       }
       if (res->res_job.rjs) {
@@ -2908,11 +2908,11 @@ void free_resource(CommonResourceHeader *sres, int type)
       if (res->res_msgs.timestamp_format) {
          free(res->res_msgs.timestamp_format);
       }
-      free_msgs_res((MessagesResource *)res); /* free message resource */
+      FreeMsgsRes((MessagesResource *)res); /* free message resource */
       res = NULL;
       break;
    default:
-      printf(_("Unknown resource type %d in free_resource.\n"), type);
+      printf(_("Unknown resource type %d in FreeResource.\n"), type);
    }
    /*
     * Common stuff again -- free the resource, recurse to next one
@@ -2921,7 +2921,7 @@ void free_resource(CommonResourceHeader *sres, int type)
       free(res);
    }
    if (nres) {
-      free_resource(nres, type);
+      FreeResource(nres, type);
    }
 }
 
@@ -2971,7 +2971,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
          Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          return false;
       } else {
-         res->res_con.tls_cert.allowed_cns = res_all.res_con.tls_cert.allowed_cns;
+         res->res_con.tls_cert.AllowedCns = res_all.res_con.tls_cert.AllowedCns;
          res->res_con.profiles = res_all.res_con.profiles;
       }
       break;
@@ -2983,7 +2983,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
          res->res_dir.plugin_names = res_all.res_dir.plugin_names;
          res->res_dir.messages = res_all.res_dir.messages;
          res->res_dir.backend_directories = res_all.res_dir.backend_directories;
-         res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
+         res->res_dir.tls_cert.AllowedCns = res_all.res_dir.tls_cert.AllowedCns;
       }
       break;
    case R_STORAGE:
@@ -2994,7 +2994,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
          int status;
 
          res->res_store.paired_storage = res_all.res_store.paired_storage;
-         res->res_store.tls_cert.allowed_cns = res_all.res_store.tls_cert.allowed_cns;
+         res->res_store.tls_cert.AllowedCns = res_all.res_store.tls_cert.AllowedCns;
 
          /*
           * We must explicitly copy the device alist pointer
@@ -3039,7 +3039,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
 
          /*
           * TODO: JobDefs where/regexwhere doesn't work well (but this is not very useful)
-          * We have to set_bit(index, res_all.hdr.item_present); or something like that
+          * We have to SetBit(index, res_all.hdr.item_present); or something like that
           *
           * We take RegexWhere before all other options
           */
@@ -3047,7 +3047,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
                (res->res_job.strip_prefix ||
                 res->res_job.add_suffix ||
                 res->res_job.add_prefix)) {
-            int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
+            int len = BregexpGetBuildWhereSize(res->res_job.strip_prefix,
                   res->res_job.add_prefix,
                   res->res_job.add_suffix);
             res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
@@ -3093,7 +3093,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
              */
             res->res_client.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
          }
-         res->res_client.tls_cert.allowed_cns = res_all.res_client.tls_cert.allowed_cns;
+         res->res_client.tls_cert.AllowedCns = res_all.res_client.tls_cert.AllowedCns;
 
          res->res_client.rcs = (runtime_client_status_t *)malloc(sizeof(runtime_client_status_t));
          memset(res->res_client.rcs, 0, sizeof(runtime_client_status_t));
@@ -3156,7 +3156,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
        * Ensure that the name item is present however.
        */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
-         if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
+         if (!BitIsSet(0, res_all.res_dir.hdr.item_present)) {
             Emsg2(M_ERROR, 0,
                   _("%s item is required in %s resource, but not found.\n"),
                   items[0].name, resources[rindex].name);
@@ -3168,7 +3168,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
       /*
        * Ensure that all required items are present
        */
-      if (!validate_resource(type, items, &res_all.res_dir)) {
+      if (!ValidateResource(type, items, &res_all.res_dir)) {
          return false;
       }
    }
@@ -3218,7 +3218,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
    return true;
 }
 
-bool propagate_jobdefs(int res_type, JobResource *res)
+bool PropagateJobdefs(int res_type, JobResource *res)
 {
    JobResource *jobdefs = NULL;
 
@@ -3274,19 +3274,19 @@ static inline bool populate_jobdefs()
     * Propagate the content of a JobDefs to another.
     */
    foreach_res(jobdefs, R_JOBDEFS) {
-      propagate_jobdefs(R_JOBDEFS, jobdefs);
+      PropagateJobdefs(R_JOBDEFS, jobdefs);
    }
 
    /*
     * Propagate the content of the JobDefs to the actual Job.
     */
    foreach_res(job, R_JOB) {
-      propagate_jobdefs(R_JOB, job);
+      PropagateJobdefs(R_JOB, job);
 
       /*
        * Ensure that all required items are present
        */
-      if (!validate_resource(R_JOB, job_items, job)) {
+      if (!ValidateResource(R_JOB, job_items, job)) {
          retval = false;
          goto bail_out;
       }
@@ -3297,7 +3297,7 @@ bail_out:
    return retval;
 }
 
-bool populate_defs()
+bool PopulateDefs()
 {
    return populate_jobdefs();
 }
@@ -3306,7 +3306,7 @@ static void store_pooltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    if (pass == 1) {
       for (i = 0; PoolTypes[i].name; i++) {
          if (bstrcasecmp(lc->str, PoolTypes[i].name)) {
@@ -3327,9 +3327,9 @@ static void store_pooltype(LEX *lc, ResourceItem *item, int index, int pass)
       }
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 static void store_actiononpurge(LEX *lc, ResourceItem *item, int index, int pass)
@@ -3337,7 +3337,7 @@ static void store_actiononpurge(LEX *lc, ResourceItem *item, int index, int pass
    int i;
    uint32_t *destination = item->ui32value;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     * Scan ActionOnPurge options
@@ -3354,9 +3354,9 @@ static void store_actiononpurge(LEX *lc, ResourceItem *item, int index, int pass
       scan_err1(lc, _("Expected an Action On Purge option, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3371,7 +3371,7 @@ static void store_device(LEX *lc, ResourceItem *item, int index, int pass)
    bool found = false;
 
    if (pass == 1) {
-      lex_get_token(lc, BCT_NAME);
+      LexGetToken(lc, BCT_NAME);
       if (!res_head[rindex]) {
          res = (UnionOfResources *)malloc(resources[rindex].size);
          memset(res, 0, resources[rindex].size);
@@ -3400,11 +3400,11 @@ static void store_device(LEX *lc, ResourceItem *item, int index, int pass)
          }
       }
 
-      scan_to_eol(lc);
-      set_bit(index, res_all.hdr.item_present);
-      clear_bit(index, res_all.hdr.inherit_content);
+      ScanToEol(lc);
+      SetBit(index, res_all.hdr.item_present);
+      ClearBit(index, res_all.hdr.inherit_content);
    } else {
-      store_resource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
+      StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
    }
 }
 
@@ -3415,7 +3415,7 @@ static void store_migtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3431,9 +3431,9 @@ static void store_migtype(LEX *lc, ResourceItem *item, int index, int pass)
       scan_err1(lc, _("Expected a Migration Job Type keyword, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3443,7 +3443,7 @@ static void store_jobtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3459,9 +3459,9 @@ static void store_jobtype(LEX *lc, ResourceItem *item, int index, int pass)
       scan_err1(lc, _("Expected a Job Type keyword, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3471,7 +3471,7 @@ static void store_protocoltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3487,16 +3487,16 @@ static void store_protocoltype(LEX *lc, ResourceItem *item, int index, int pass)
       scan_err1(lc, _("Expected a Protocol Type keyword, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 static void store_replace(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Scan Replacement options
     */
@@ -3512,9 +3512,9 @@ static void store_replace(LEX *lc, ResourceItem *item, int index, int pass)
       scan_err1(lc, _("Expected a Restore replacement option, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3524,7 +3524,7 @@ static void store_authprotocoltype(LEX *lc, ResourceItem *item, int index, int p
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3539,9 +3539,9 @@ static void store_authprotocoltype(LEX *lc, ResourceItem *item, int index, int p
    if (i != 0) {
       scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
    }
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3551,7 +3551,7 @@ static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3567,9 +3567,9 @@ static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
       scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3579,7 +3579,7 @@ static void store_level(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    /*
     * Store the level pass 2 so that type is defined
     */
@@ -3595,9 +3595,9 @@ static void store_level(LEX *lc, ResourceItem *item, int index, int pass)
       scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3614,10 +3614,10 @@ static void store_autopassword(LEX *lc, ResourceItem *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -3626,10 +3626,10 @@ static void store_autopassword(LEX *lc, ResourceItem *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -3638,18 +3638,18 @@ static void store_autopassword(LEX *lc, ResourceItem *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_CATALOG:
-      store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
    default:
-      store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -3671,19 +3671,19 @@ static void store_acl(LEX *lc, ResourceItem *item, int index, int pass)
    list = item->alistvalue[item->code];
 
    for (;;) {
-      lex_get_token(lc, BCT_STRING);
+      LexGetToken(lc, BCT_STRING);
       if (pass == 1) {
          list->append(bstrdup(lc->str));
          Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token == BCT_COMMA) {
          continue; /* get another ACL */
       }
       break;
    }
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -3702,25 +3702,25 @@ static void store_audit(LEX *lc, ResourceItem *item, int index, int pass)
    list = *item->alistvalue;
 
    for (;;) {
-      lex_get_token(lc, BCT_STRING);
+      LexGetToken(lc, BCT_STRING);
       if (pass == 1) {
          list->append(bstrdup(lc->str));
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token == BCT_COMMA) {
          continue;
       }
       break;
    }
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 /**
  * Store a runscript->when in a bit field
  */
 static void store_runscript_when(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
 
    if (bstrcasecmp(lc->str, "before")) {
       *(item->ui32value) = SCRIPT_Before;
@@ -3733,7 +3733,7 @@ static void store_runscript_when(LEX *lc, ResourceItem *item, int index, int pas
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "Before, After, AfterVSS or Always", lc->str);
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -3741,15 +3741,15 @@ static void store_runscript_when(LEX *lc, ResourceItem *item, int index, int pas
  */
 static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, BCT_STRING);
+   LexGetToken(lc, BCT_STRING);
 
    if (pass == 2) {
       if (bstrcmp(lc->str, "%c")) {
-         ((RunScript *)item->value)->set_target(lc->str);
+         ((RunScript *)item->value)->SetTarget(lc->str);
       } else if (bstrcasecmp(lc->str, "yes")) {
-         ((RunScript *)item->value)->set_target("%c");
+         ((RunScript *)item->value)->SetTarget("%c");
       } else if (bstrcasecmp(lc->str, "no")) {
-         ((RunScript *)item->value)->set_target("");
+         ((RunScript *)item->value)->SetTarget("");
       } else {
          CommonResourceHeader *res;
 
@@ -3758,10 +3758,10 @@ static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int p
                       lc->str, lc->line_no, lc->line);
          }
 
-         ((RunScript *)item->value)->set_target(lc->str);
+         ((RunScript *)item->value)->SetTarget(lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -3769,55 +3769,55 @@ static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int p
  */
 static void store_runscript_cmd(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, BCT_STRING);
+   LexGetToken(lc, BCT_STRING);
 
    if (pass == 2) {
       Dmsg2(1, "runscript cmd=%s type=%c\n", lc->str, item->code);
-      POOLMEM *c = get_pool_memory(PM_FNAME);
+      POOLMEM *c = GetPoolMemory(PM_FNAME);
       /*
        * Each runscript command takes 2 entries in commands list
        */
-      pm_strcpy(c, lc->str);
+      PmStrcpy(c, lc->str);
       ((RunScript *)item->value)->commands->prepend(c); /* command line */
       ((RunScript *)item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, BCT_STRING);
+   LexGetToken(lc, BCT_STRING);
    alist **runscripts = item->alistvalue;
 
    if (pass == 2) {
-      RunScript *script = new_runscript();
-      script->set_job_code_callback(job_code_callback_director);
+      RunScript *script = NewRunscript();
+      script->SetJobCodeCallback(job_code_callback_director);
 
-      script->set_command(lc->str);
+      script->SetCommand(lc->str);
       if (bstrcasecmp(item->name, "runbeforejob")) {
          script->when = SCRIPT_Before;
-         script->set_target("");
+         script->SetTarget("");
       } else if (bstrcasecmp(item->name, "runafterjob")) {
          script->when = SCRIPT_After;
          script->on_success = true;
          script->on_failure = false;
          script->fail_on_error = false;
-         script->set_target("");
+         script->SetTarget("");
       } else if (bstrcasecmp(item->name, "clientrunafterjob")) {
          script->when = SCRIPT_After;
          script->on_success = true;
          script->on_failure = false;
          script->fail_on_error = false;
-         script->set_target("%c");
+         script->SetTarget("%c");
       } else if (bstrcasecmp(item->name, "clientrunbeforejob")) {
          script->when = SCRIPT_Before;
-         script->set_target("%c");
+         script->SetTarget("%c");
       } else if (bstrcasecmp(item->name, "runafterfailedjob")) {
          script->when = SCRIPT_After;
          script->on_failure = true;
          script->on_success = false;
          script->fail_on_error = false;
-         script->set_target("");
+         script->SetTarget("");
       }
 
       /*
@@ -3833,7 +3833,7 @@ static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pa
       script->debug();
    }
 
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -3842,7 +3842,7 @@ static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pa
  */
 static void store_runscript_bool(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       *(item->boolvalue) = true;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
@@ -3850,7 +3850,7 @@ static void store_runscript_bool(LEX *lc, ResourceItem *item, int index, int pas
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -3868,7 +3868,7 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 
    Dmsg1(200, "store_runscript: begin store_runscript pass=%i\n", pass);
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
 
    if (token != BCT_BOB) {
       scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
@@ -3876,13 +3876,13 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
    /*
     * Setting on_success, on_failure, fail_on_error
     */
-   res_runscript.reset_default();
+   res_runscript.ResetDefault();
 
    if (pass == 2) {
       res_runscript.commands = New(alist(10, not_owned_by_alist));
    }
 
-   while ((token = lex_get_token(lc, BCT_SKIP_EOL)) != BCT_EOF) {
+   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
       if (token == BCT_EOB) {
         break;
       }
@@ -3893,7 +3893,7 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 
       for (i = 0; runscript_items[i].name; i++) {
         if (bstrcasecmp(runscript_items[i].name, lc->str)) {
-           token = lex_get_token(lc, BCT_SKIP_EOL);
+           token = LexGetToken(lc, BCT_SKIP_EOL);
            if (token != BCT_EQUALS) {
               scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
            }
@@ -3932,7 +3932,7 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
        * Run on client by default
        */
       if (!res_runscript.target) {
-         res_runscript.set_target("%c");
+         res_runscript.SetTarget("%c");
       }
       if (!*runscripts) {
          *runscripts = New(alist(10, not_owned_by_alist));
@@ -3942,10 +3942,10 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
        * - POOLMEM command string (ex: /bin/true)
        * - int command type (ex: SHELL_CMD)
        */
-      res_runscript.set_job_code_callback(job_code_callback_director);
+      res_runscript.SetJobCodeCallback(job_code_callback_director);
       while ((c = (char *)res_runscript.commands->pop()) != NULL) {
          t = (intptr_t)res_runscript.commands->pop();
-         RunScript *script = new_runscript();
+         RunScript *script = NewRunscript();
          memcpy(script, &res_runscript, sizeof(RunScript));
          script->command = c;
          script->cmd_type = t;
@@ -3954,7 +3954,7 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
           * each runscript object have a copy
           */
          script->target = NULL;
-         script->set_target(res_runscript.target);
+         script->SetTarget(res_runscript.target);
 
          /*
           * Remember that the entry was configured in the short runscript form.
@@ -3968,12 +3968,12 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
       /*
        * setting on_success, on_failure... cleanup target field
        */
-      res_runscript.reset_default(true);
+      res_runscript.ResetDefault(true);
    }
 
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
-   clear_bit(index, res_all.hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
 }
 
 /**
@@ -4046,7 +4046,7 @@ extern "C" char *job_code_callback_director(JobControlRecord *jcr, const char *p
 
 /**
  * callback function for init_resource
- * See ../lib/parse_conf.c, function init_resource, for more generic handling.
+ * See ../lib/parse_conf.c, function InitResource, for more generic handling.
  */
 static void init_resource_cb(ResourceItem *item, int pass)
 {
@@ -4088,7 +4088,7 @@ static void init_resource_cb(ResourceItem *item, int pass)
 
 /**
  * callback function for parse_config
- * See ../lib/parse_conf.c, function parse_config, for more generic handling.
+ * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
 static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
 {
@@ -4151,7 +4151,7 @@ static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
 
 /**
  * callback function for print_config
- * See ../lib/res.c, function BareosResource::print_config, for more generic handling.
+ * See ../lib/res.c, function BareosResource::PrintConfig, for more generic handling.
  */
 static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool hide_sensitive_data, bool inherited)
 {
@@ -4170,21 +4170,21 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
       list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+         IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 
-         pm_strcpy(res_names, "");
+         PmStrcpy(res_names, "");
          foreach_alist(res, list) {
             if (cnt) {
                Mmsg(temp, ",\"%s\"", res->name);
             } else {
                Mmsg(temp, "\"%s\"", res->name);
             }
-            pm_strcat(res_names, temp.c_str());
+            PmStrcat(res_names, temp.c_str());
             cnt++;
          }
 
-         pm_strcat(cfg_str, res_names.c_str());
-         pm_strcat(cfg_str, "\n");
+         PmStrcat(cfg_str, res_names.c_str());
+         PmStrcat(cfg_str, "\n");
       }
       break;
    }
@@ -4206,19 +4206,19 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
       list = items[i].alistvalue[items[i].code];
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+         IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
          foreach_alist(value, list) {
             if (cnt) {
                Mmsg(temp, ",\"%s\"", value);
             } else {
                Mmsg(temp, "\"%s\"", value);
             }
-            pm_strcat(acl, temp.c_str());
+            PmStrcat(acl, temp.c_str());
             cnt++;
          }
 
-         pm_strcat(cfg_str, acl.c_str());
-         pm_strcat(cfg_str, "\n");
+         PmStrcat(cfg_str, acl.c_str());
+         PmStrcat(cfg_str, "\n");
       }
       break;
    }
@@ -4232,7 +4232,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
          for (int j = 0; jobtypes[j].type_name; j++) {
             if (jobtypes[j].job_type == jobtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4255,7 +4255,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
                }
 
                Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4269,7 +4269,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
          for (int j = 0; migtypes[j].type_name; j++) {
             if (migtypes[j].job_type == migtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4292,7 +4292,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
                }
 
                Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4306,7 +4306,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
          for (int j = 0; joblevels[j].level_name; j++) {
             if (joblevels[j].level == level) {
                Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4320,7 +4320,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
          for (int j = 0; ActionOnPurgeOptions[j].name; j++) {
             if (ActionOnPurgeOptions[j].token == action) {
                Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4334,7 +4334,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
          for (int j = 0; authprotocols[j].name; j++) {
             if (authprotocols[j].token == authprotocol) {
                Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4348,7 +4348,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
          for (int j = 0; authmethods[j].name; j++) {
             if (authprotocols[j].token == authtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+               IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4367,27 +4367,27 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
       list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+         IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 
-         pm_strcpy(audit_events, "");
+         PmStrcpy(audit_events, "");
          foreach_alist(audit_event, list) {
             if (cnt) {
                Mmsg(temp, ",\"%s\"", audit_event);
             } else {
                Mmsg(temp, "\"%s\"", audit_event);
             }
-            pm_strcat(audit_events, temp.c_str());
+            PmStrcat(audit_events, temp.c_str());
             cnt++;
          }
 
-         pm_strcat(cfg_str, audit_events.c_str());
-         pm_strcat(cfg_str, "\n");
+         PmStrcat(cfg_str, audit_events.c_str());
+         PmStrcat(cfg_str, "\n");
       }
       break;
    }
    case CFG_TYPE_POOLTYPE:
       Mmsg(temp, "%s = %s\n", items[i].name, *(items[i].value));
-      indent_config_item(cfg_str, 1, temp.c_str());
+      IndentConfigItem(cfg_str, 1, temp.c_str());
       break;
    default:
       Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
@@ -4395,7 +4395,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
    }
 }
 
-void init_dir_config(ConfigurationParser *config, const char *configfile, int exit_code)
+void InitDirConfig(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -4410,13 +4410,13 @@ void init_dir_config(ConfigurationParser *config, const char *configfile, int ex
                 R_LAST,
                 resources,
                 res_head);
-   config->set_default_config_filename(CONFIG_FILE);
-   config->set_config_include_dir("bareos-dir.d");
+   config->SetDefaultConfigFilename(CONFIG_FILE);
+   config->SetConfigIncludeDir("bareos-dir.d");
 }
 
 bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
-   init_dir_config(config, configfile, exit_code);
+   InitDirConfig(config, configfile, exit_code);
 
-   return config->parse_config();
+   return config->ParseConfig();
 }

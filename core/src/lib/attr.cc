@@ -39,23 +39,23 @@ Attributes *new_attr(JobControlRecord *jcr)
 {
    Attributes *attr = (Attributes *)malloc(sizeof(Attributes));
    memset(attr, 0, sizeof(Attributes));
-   attr->ofname = get_pool_memory(PM_FNAME);
-   attr->olname = get_pool_memory(PM_FNAME);
-   attr->attrEx = get_pool_memory(PM_FNAME);
+   attr->ofname = GetPoolMemory(PM_FNAME);
+   attr->olname = GetPoolMemory(PM_FNAME);
+   attr->attrEx = GetPoolMemory(PM_FNAME);
    attr->jcr = jcr;
    attr->uid = getuid();
    return attr;
 }
 
-void free_attr(Attributes *attr)
+void FreeAttr(Attributes *attr)
 {
-   free_pool_memory(attr->olname);
-   free_pool_memory(attr->ofname);
-   free_pool_memory(attr->attrEx);
+   FreePoolMemory(attr->olname);
+   FreePoolMemory(attr->ofname);
+   FreePoolMemory(attr->attrEx);
    free(attr);
 }
 
-int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr)
+int UnpackAttributesRecord(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr)
 {
    char *p;
    int object_len;
@@ -108,13 +108,13 @@ int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, i
    if (attr->type == FT_RESTORE_FIRST) {
       /* We have an object, so do a binary copy */
       object_len = reclen + rec - p;
-      attr->attrEx = check_pool_memory_size(attr->attrEx, object_len + 1);
+      attr->attrEx = CheckPoolMemorySize(attr->attrEx, object_len + 1);
       memcpy(attr->attrEx, p, object_len);
       /* Add a EOS for those who attempt to print the object */
       p = attr->attrEx + object_len;
       *p = 0;
    } else {
-      pm_strcpy(attr->attrEx, p);     /* copy extended attributes, if any */
+      PmStrcpy(attr->attrEx, p);     /* copy extended attributes, if any */
       if (attr->data_stream) {
          int64_t val;
          while (*p++ != 0)            /* skip extended attributes */
@@ -157,7 +157,7 @@ static void strip_double_slashes(char *fname)
  * Build attr->ofname from attr->fname and
  *       attr->olname from attr->olname
  */
-void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
+void BuildAttrOutputFnames(JobControlRecord *jcr, Attributes *attr)
 {
    /*
     * Prepend the where directory so that the
@@ -172,8 +172,8 @@ void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
 
    if (jcr->where_bregexp) {
       char *ret;
-      apply_bregexps(attr->fname, jcr->where_bregexp, &ret);
-      pm_strcpy(attr->ofname, ret);
+      ApplyBregexps(attr->fname, jcr->where_bregexp, &ret);
+      PmStrcpy(attr->ofname, ret);
 
       if (attr->type == FT_LNKSAVED || attr->type == FT_LNK) {
          /* Always add prefix to hard links (FT_LNKSAVED) and
@@ -181,22 +181,22 @@ void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
           */
 
          if ((attr->type == FT_LNKSAVED || jcr->prefix_links)) {
-            apply_bregexps(attr->lname, jcr->where_bregexp, &ret);
-            pm_strcpy(attr->olname, ret);
+            ApplyBregexps(attr->lname, jcr->where_bregexp, &ret);
+            PmStrcpy(attr->olname, ret);
 
          } else {
-            pm_strcpy(attr->olname, attr->lname);
+            PmStrcpy(attr->olname, attr->lname);
          }
       }
 
    } else if (jcr->where[0] == 0) {
-      pm_strcpy(attr->ofname, attr->fname);
-      pm_strcpy(attr->olname, attr->lname);
+      PmStrcpy(attr->ofname, attr->fname);
+      PmStrcpy(attr->olname, attr->lname);
 
    } else {
       const char *fn;
       int wherelen = strlen(jcr->where);
-      pm_strcpy(attr->ofname, jcr->where);  /* copy prefix */
+      PmStrcpy(attr->ofname, jcr->where);  /* copy prefix */
 #if defined(HAVE_WIN32)
       if (attr->fname[1] == ':') {
          attr->fname[1] = '/';     /* convert : to / */
@@ -205,9 +205,9 @@ void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
       fn = attr->fname;            /* take whole name */
       /* Ensure where is terminated with a slash */
       if (!IsPathSeparator(jcr->where[wherelen-1]) && !IsPathSeparator(fn[0])) {
-         pm_strcat(attr->ofname, "/");
+         PmStrcat(attr->ofname, "/");
       }
-      pm_strcat(attr->ofname, fn); /* copy rest of name */
+      PmStrcat(attr->ofname, fn); /* copy rest of name */
       /*
        * Fixup link name -- if it is an absolute path
        */
@@ -218,7 +218,7 @@ void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
           */
          if (IsPathSeparator(attr->lname[0]) &&
              (attr->type == FT_LNKSAVED || jcr->prefix_links)) {
-            pm_strcpy(attr->olname, jcr->where);
+            PmStrcpy(attr->olname, jcr->where);
             add_link = true;
          } else {
             attr->olname[0] = 0;
@@ -229,9 +229,9 @@ void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
          if (add_link &&
             !IsPathSeparator(jcr->where[wherelen-1]) &&
             !IsPathSeparator(fn[0])) {
-            pm_strcat(attr->olname, "/");
+            PmStrcat(attr->olname, "/");
          }
-         pm_strcat(attr->olname, fn);     /* copy rest of link */
+         PmStrcat(attr->olname, fn);     /* copy rest of link */
       }
    }
 #if defined(HAVE_WIN32)
@@ -306,7 +306,7 @@ static const char *attr_to_ls_output(PoolMem &resultbuffer, JobControlRecord *jc
 /**
  * Print an ls style message, also send M_RESTORED
  */
-void print_ls_output(JobControlRecord *jcr, Attributes *attr)
+void PrintLsOutput(JobControlRecord *jcr, Attributes *attr)
 {
    PoolMem resultbuffer(PM_MESSAGE);
    attr_to_ls_output(resultbuffer, jcr, attr);

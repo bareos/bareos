@@ -194,5 +194,5 @@ union UnionOfResources {
    ~UnionOfResources() {}
 };
 
-void init_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
-bool print_config_schema_json(PoolMem &buffer);
+void InitSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+bool PrintConfigSchemaJson(PoolMem &buffer);

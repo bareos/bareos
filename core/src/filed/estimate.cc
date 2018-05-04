@@ -37,20 +37,20 @@ static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
 /**
  * Find all the requested files and count them.
  */
-int make_estimate(JobControlRecord *jcr)
+int MakeEstimate(JobControlRecord *jcr)
 {
    int status;
 
    jcr->setJobStatus(JS_Running);
 
-   set_find_options((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
+   SetFindOptions((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
    /* in accurate mode, we overwrite the find_one check function */
    if (jcr->accurate) {
-      set_find_changed_function((FindFilesPacket *)jcr->ff, accurate_check_file);
+      SetFindChangedFunction((FindFilesPacket *)jcr->ff, accurate_check_file);
    }
 
-   status = find_files(jcr, (FindFilesPacket *)jcr->ff, tally_file, plugin_estimate);
-   accurate_free(jcr);
+   status = FindFiles(jcr, (FindFilesPacket *)jcr->ff, tally_file, plugin_estimate);
+   AccurateFree(jcr);
    return status;
 }
 
@@ -62,7 +62,7 @@ static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
 {
    Attributes attr;
 
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return 0;
    }
    switch (ff_pkt->type) {
@@ -98,7 +98,7 @@ static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
          jcr->JobBytes += ff_pkt->statp.st_size;
       }
 #ifdef HAVE_DARWIN_OS
-      if (bit_is_set(FO_HFSPLUS, ff_pkt->flags)) {
+      if (BitIsSet(FO_HFSPLUS, ff_pkt->flags)) {
          if (ff_pkt->hfsinfo.rsrclength > 0) {
             jcr->JobBytes += ff_pkt->hfsinfo.rsrclength;
          }
@@ -113,7 +113,7 @@ static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
       attr.type = ff_pkt->type;
       attr.ofname = (POOLMEM *)ff_pkt->fname;
       attr.olname = (POOLMEM *)ff_pkt->link;
-      print_ls_output(jcr, &attr);
+      PrintLsOutput(jcr, &attr);
    }
    return 1;
 }

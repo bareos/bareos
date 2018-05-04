@@ -70,12 +70,12 @@ public:
    int writelock(int reason, bool can_take=false);
    int writetrylock();
    int writeunlock();
-   void write_release();
+   void WriteRelease();
 
    int readunlock();
    int readlock();
    int readtrylock();
-   void read_release();
+   void ReadRelease();
 
 };
 

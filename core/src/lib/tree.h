@@ -47,7 +47,7 @@ struct s_mem {
 #define foreach_child(var, list) \
     for((var)=NULL; (*((TREE_NODE **)&(var))=(TREE_NODE*)(list->child.next(var))); )
 
-#define tree_node_has_child(node) \
+#define TreeNodeHasChild(node) \
         ((node)->child.size() > 0)
 
 #define first_child(node) \
@@ -147,16 +147,16 @@ DLL_IMP_EXP TREE_NODE *insert_tree_node(char *path, char *fname, int type,
 DLL_IMP_EXP TREE_NODE *make_tree_path(char *path, TREE_ROOT *root);
 DLL_IMP_EXP TREE_NODE *tree_cwd(char *path, TREE_ROOT *root, TREE_NODE *node);
 DLL_IMP_EXP TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node);
-DLL_IMP_EXP void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
+DLL_IMP_EXP void TreeAddDeltaPart(TREE_ROOT *root, TREE_NODE *node,
                          JobId_t JobId, int32_t FileIndex);
-DLL_IMP_EXP void free_tree(TREE_ROOT *root);
+DLL_IMP_EXP void FreeTree(TREE_ROOT *root);
 DLL_IMP_EXP POOLMEM *tree_getpath(TREE_NODE *node);
-DLL_IMP_EXP void tree_remove_node(TREE_ROOT *root, TREE_NODE *node);
+DLL_IMP_EXP void TreeRemoveNode(TREE_ROOT *root, TREE_NODE *node);
 
 /**
  * Use the following for traversing the whole tree. It will be
  *   traversed in the order the entries were inserted into the
  *   tree.
  */
-#define first_tree_node(r) (r)->first
-#define next_tree_node(n)  (n)->next
+#define FirstTreeNode(r) (r)->first
+#define NextTreeNode(n)  (n)->next

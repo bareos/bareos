@@ -90,7 +90,7 @@ class DLL_IMP_EXP alist : public SmartAlloc {
    int num_grow;
    int cur_item;
    bool own_items;
-   void grow_list(void);
+   void GrowList(void);
 public:
    alist(int num = 1, bool own=true);
    ~alist();

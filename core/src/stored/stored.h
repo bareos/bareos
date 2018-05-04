@@ -74,7 +74,7 @@ const int sd_debuglevel = 300;
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
 #ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 #include "sd_plugins.h"

@@ -67,7 +67,7 @@ static void dec_write_store(JobControlRecord *jcr);
  * Returns: 0 on success
  *          errno on failure
  */
-int jobq_init(jobq_t *jq, int threads, void *(*engine)(void *arg))
+int JobqInit(jobq_t *jq, int threads, void *(*engine)(void *arg))
 {
    int status;
    jobq_item_t *item = NULL;
@@ -117,7 +117,7 @@ int jobq_init(jobq_t *jq, int threads, void *(*engine)(void *arg))
  * Returns: 0 on success
  *          errno on failure
  */
-int jobq_destroy(jobq_t *jq)
+int JobqDestroy(jobq_t *jq)
 {
    int status, status1, status2;
 
@@ -176,7 +176,7 @@ extern "C" void *sched_wait(void *arg)
    JobControlRecord *jcr = ((wait_pkt *)arg)->jcr;
    jobq_t *jq = ((wait_pkt *)arg)->jq;
 
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
    Dmsg0(2300, "Enter sched_wait.\n");
    free(arg);
    time_t wtime = jcr->sched_time - time(NULL);
@@ -195,19 +195,19 @@ extern "C" void *sched_wait(void *arg)
     */
    while (wtime > 0) {
       Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%d use=%d\n",
-         jcr->JobId, wtime, jcr->use_count());
+         jcr->JobId, wtime, jcr->UseCount());
       if (wtime > 30) {
          wtime = 30;
       }
       bmicrosleep(wtime, 0);
-      if (job_canceled(jcr)) {
+      if (JobCanceled(jcr)) {
          break;
       }
       wtime = jcr->sched_time - time(NULL);
    }
-   Dmsg1(200, "resched use=%d\n", jcr->use_count());
-   jobq_add(jq, jcr);
-   free_jcr(jcr);                     /* we are done with jcr */
+   Dmsg1(200, "resched use=%d\n", jcr->UseCount());
+   JobqAdd(jq, jcr);
+   FreeJcr(jcr);                     /* we are done with jcr */
    Dmsg0(2300, "Exit sched_wait\n");
 
    return NULL;
@@ -217,7 +217,7 @@ extern "C" void *sched_wait(void *arg)
  * Add a job to the queue
  * jq is a queue that was created with jobq_init
  */
-int jobq_add(jobq_t *jq, JobControlRecord *jcr)
+int JobqAdd(jobq_t *jq, JobControlRecord *jcr)
 {
    int status;
    jobq_item_t *item, *li;
@@ -238,16 +238,16 @@ int jobq_add(jobq_t *jq, JobControlRecord *jcr)
       jcr->term_wait_inited = true;
    }
 
-   Dmsg3(2300, "jobq_add jobid=%d jcr=0x%x use_count=%d\n", jcr->JobId, jcr, jcr->use_count());
+   Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr, jcr->UseCount());
    if (jq->valid != JOBQ_VALID) {
       Jmsg0(jcr, M_ERROR, 0, "Jobq_add queue not initialized.\n");
       return EINVAL;
    }
 
-   jcr->inc_use_count();                 /* mark jcr in use by us */
-   Dmsg3(2300, "jobq_add jobid=%d jcr=0x%x use_count=%d\n", jcr->JobId, jcr, jcr->use_count());
-   if (!job_canceled(jcr) && wtime > 0) {
-      set_thread_concurrency(jq->max_workers + 2);
+   jcr->IncUseCount();                 /* mark jcr in use by us */
+   Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr, jcr->UseCount());
+   if (!JobCanceled(jcr) && wtime > 0) {
+      SetThreadConcurrency(jq->max_workers + 2);
       sched_pkt = (wait_pkt *)malloc(sizeof(wait_pkt));
       sched_pkt->jcr = jcr;
       sched_pkt->jq = jq;
@@ -262,7 +262,7 @@ int jobq_add(jobq_t *jq, JobControlRecord *jcr)
    P(jq->mutex);
 
    if ((item = (jobq_item_t *)malloc(sizeof(jobq_item_t))) == NULL) {
-      free_jcr(jcr);                    /* release jcr */
+      FreeJcr(jcr);                    /* release jcr */
       return ENOMEM;
    }
    item->jcr = jcr;
@@ -270,8 +270,8 @@ int jobq_add(jobq_t *jq, JobControlRecord *jcr)
    /*
     * While waiting in a queue this job is not attached to a thread
     */
-   set_jcr_in_tsd(INVALID_JCR);
-   if (job_canceled(jcr)) {
+   SetJcrInTsd(INVALID_JCR);
+   if (JobCanceled(jcr)) {
       /*
        * Add job to ready queue so that it is canceled quickly
        */
@@ -285,8 +285,8 @@ int jobq_add(jobq_t *jq, JobControlRecord *jcr)
          Dmsg2(2300, "waiting item jobid=%d priority=%d\n",
             li->jcr->JobId, li->jcr->JobPriority);
          if (li->jcr->JobPriority > jcr->JobPriority) {
-            jq->waiting_jobs->insert_before(item, li);
-            Dmsg2(2300, "insert_before jobid=%d before waiting job=%d\n",
+            jq->waiting_jobs->InsertBefore(item, li);
+            Dmsg2(2300, "InsertBefore jobid=%d before waiting job=%d\n",
                li->jcr->JobId, jcr->JobId);
             inserted = true;
             break;
@@ -308,12 +308,12 @@ int jobq_add(jobq_t *jq, JobControlRecord *jcr)
    status = start_server(jq);
 
    V(jq->mutex);
-   Dmsg0(2300, "Return jobq_add\n");
+   Dmsg0(2300, "Return JobqAdd\n");
    return status;
 }
 
 /**
- * Remove a job from the job queue. Used only by cancel_job().
+ * Remove a job from the job queue. Used only by CancelJob().
  * jq is a queue that was created with jobq_init
  * work_item is an element of work
  *
@@ -385,7 +385,7 @@ static int start_server(jobq_t *jq)
       /*
        * No idle threads so create a new one
        */
-      set_thread_concurrency(jq->max_workers + 1);
+      SetThreadConcurrency(jq->max_workers + 1);
       jq->num_workers++;
       if ((status = pthread_create(&id, &jq->attr, jobq_server, (void *)jq)) != 0) {
          berrno be;
@@ -411,7 +411,7 @@ extern "C" void *jobq_server(void *arg)
    bool timedout = false;
    bool work = true;
 
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
    Dmsg0(2300, "Start jobq_server\n");
    P(jq->mutex);
 
@@ -471,8 +471,8 @@ extern "C" void *jobq_server(void *arg)
          /*
           * Attach jcr to this thread while we run the job
           */
-         jcr->set_killable(true);
-         set_jcr_in_tsd(jcr);
+         jcr->SetKillable(true);
+         SetJcrInTsd(jcr);
          Dmsg1(2300, "Took jobid=%d from ready and appended to run\n", jcr->JobId);
 
          /*
@@ -484,17 +484,17 @@ extern "C" void *jobq_server(void *arg)
           * Call user's routine here
           */
          Dmsg3(2300, "Calling user engine for jobid=%d use=%d stat=%c\n", jcr->JobId,
-               jcr->use_count(), jcr->JobStatus);
+               jcr->UseCount(), jcr->JobStatus);
          jq->engine(je->jcr);
 
          /*
           * Job finished detach from thread
           */
-         remove_jcr_from_tsd(je->jcr);
-         je->jcr->set_killable(false);
+         RemoveJcrFromTsd(je->jcr);
+         je->jcr->SetKillable(false);
 
          Dmsg2(2300, "Back from user engine jobid=%d use=%d.\n", jcr->JobId,
-               jcr->use_count());
+               jcr->UseCount());
 
          /*
           * Reacquire job queue lock
@@ -508,7 +508,7 @@ extern "C" void *jobq_server(void *arg)
           * been acquired for jobs canceled before they were put into the ready queue.
           */
          if (jcr->acquired_resource_locks) {
-            dec_read_store(jcr);
+            DecReadStore(jcr);
             dec_write_store(jcr);
             dec_client_concurrency(jcr);
             dec_job_concurrency(jcr);
@@ -522,10 +522,10 @@ extern "C" void *jobq_server(void *arg)
          /*
           * Clean up and release old jcr
           */
-         Dmsg2(2300, "====== Termination job=%d use_cnt=%d\n", jcr->JobId, jcr->use_count());
+         Dmsg2(2300, "====== Termination job=%d use_cnt=%d\n", jcr->JobId, jcr->UseCount());
          jcr->SDJobStatus = 0;
          V(jq->mutex);                /* release internal lock */
-         free_jcr(jcr);
+         FreeJcr(jcr);
          free(je);                    /* release job entry */
          P(jq->mutex);                /* reacquire job queue lock */
       }
@@ -591,7 +591,7 @@ extern "C" void *jobq_server(void *arg)
                /*
                 * If resource conflict, job is canceled
                 */
-               if (!job_canceled(jcr)) {
+               if (!JobCanceled(jcr)) {
                   je = jn;            /* point to next waiting job */
                   continue;
                }
@@ -690,13 +690,13 @@ static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
           * Check for incomplete jobs
           */
          (jcr->res.job->RescheduleIncompleteJobs &&
-          jcr->is_incomplete() && jcr->is_JobType(JT_BACKUP) &&
+          jcr->IsIncomplete() && jcr->is_JobType(JT_BACKUP) &&
           !jcr->is_JobLevel(L_BASE)) ||
          /*
           * Check for failed jobs
           */
          (jcr->res.job->RescheduleOnError &&
-          !jcr->is_terminated_ok() &&
+          !jcr->IsTerminatedOk() &&
           !jcr->is_JobStatus(JS_Canceled) &&
           jcr->is_JobType(JT_BACKUP));
    }
@@ -717,11 +717,11 @@ static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
             (int)jcr->res.job->RescheduleInterval, now, jcr->sched_time);
       Jmsg(jcr, M_INFO, 0, _("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
            jcr->Job, dt, (int)jcr->res.job->RescheduleInterval, dt2);
-      dird_free_jcr_pointers(jcr);     /* partial cleanup old stuff */
+      DirdFreeJcrPointers(jcr);     /* partial cleanup old stuff */
       jcr->JobStatus = -1;
       jcr->SDJobStatus = 0;
       jcr->JobErrors = 0;
-      if (!allow_duplicate_job(jcr)) {
+      if (!AllowDuplicateJob(jcr)) {
          return false;
       }
 
@@ -729,13 +729,13 @@ static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
        * Only jobs with no output or Incomplete jobs can run on same JobControlRecord
        */
       if (jcr->JobBytes == 0) {
-         update_job_end(jcr, JS_WaitStartTime);
-         Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->use_count());
+         UpdateJobEnd(jcr, JS_WaitStartTime);
+         Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->UseCount());
          V(jq->mutex);
          jcr->jr.RealEndTime = 0;
-         jobq_add(jq, jcr);     /* queue the job to run again */
+         JobqAdd(jq, jcr);     /* queue the job to run again */
          P(jq->mutex);
-         free_jcr(jcr);         /* release jcr */
+         FreeJcr(jcr);         /* release jcr */
          free(je);              /* free the job entry */
          retval = true;         /* we already cleaned up */
       } else {
@@ -749,7 +749,7 @@ static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
           */
          jcr->setJobStatus(JS_WaitStartTime);
          njcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
-         set_jcr_defaults(njcr, jcr->res.job);
+         SetJcrDefaults(njcr, jcr->res.job);
          njcr->reschedule_count = jcr->reschedule_count;
          njcr->sched_time = jcr->sched_time;
          njcr->initial_sched_time = jcr->initial_sched_time;
@@ -768,21 +768,21 @@ static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
          njcr->JobStatus = -1;
          njcr->setJobStatus(jcr->JobStatus);
          if (jcr->res.rstore) {
-            copy_rstorage(njcr, jcr->res.rstorage, _("previous Job"));
+            CopyRstorage(njcr, jcr->res.rstorage, _("previous Job"));
          } else {
-            free_rstorage(njcr);
+            FreeRstorage(njcr);
          }
          if (jcr->res.wstore) {
-            copy_wstorage(njcr, jcr->res.wstorage, _("previous Job"));
+            CopyWstorage(njcr, jcr->res.wstorage, _("previous Job"));
          } else {
-            free_wstorage(njcr);
+            FreeWstorage(njcr);
          }
          njcr->res.messages = jcr->res.messages;
          njcr->spool_data = jcr->spool_data;
          Dmsg0(2300, "Call to run new job\n");
          V(jq->mutex);
-         run_job(njcr);            /* This creates a "new" job */
-         free_jcr(njcr);           /* release "new" jcr */
+         RunJob(njcr);            /* This creates a "new" job */
+         FreeJcr(njcr);           /* release "new" jcr */
          P(jq->mutex);
          Dmsg0(2300, "Back from running new job.\n");
       }
@@ -851,7 +851,7 @@ static bool acquire_resources(JobControlRecord *jcr)
 #endif
 
    if (jcr->res.rstore) {
-      if (!inc_read_store(jcr)) {
+      if (!IncReadStore(jcr)) {
          jcr->setJobStatus(JS_WaitStoreRes);
 
          return false;
@@ -860,7 +860,7 @@ static bool acquire_resources(JobControlRecord *jcr)
 
    if (jcr->res.wstore) {
       if (!inc_write_store(jcr)) {
-         dec_read_store(jcr);
+         DecReadStore(jcr);
          jcr->setJobStatus(JS_WaitStoreRes);
 
          return false;
@@ -872,7 +872,7 @@ static bool acquire_resources(JobControlRecord *jcr)
        * Back out previous locks
        */
       dec_write_store(jcr);
-      dec_read_store(jcr);
+      DecReadStore(jcr);
       jcr->setJobStatus(JS_WaitClientRes);
 
       return false;
@@ -883,7 +883,7 @@ static bool acquire_resources(JobControlRecord *jcr)
        * Back out previous locks
        */
       dec_write_store(jcr);
-      dec_read_store(jcr);
+      DecReadStore(jcr);
       dec_client_concurrency(jcr);
       jcr->setJobStatus(JS_WaitJobRes);
 
@@ -958,10 +958,10 @@ static void dec_job_concurrency(JobControlRecord *jcr)
 }
 
 /**
- * Note: inc_read_store() and dec_read_store() are
- * called from select_next_rstore() in src/dird/job.c
+ * Note: IncReadStore() and DecReadStore() are
+ * called from SelectNextRstore() in src/dird/job.c
  */
-bool inc_read_store(JobControlRecord *jcr)
+bool IncReadStore(JobControlRecord *jcr)
 {
    if (jcr->IgnoreStorageConcurrency) {
       return true;
@@ -985,7 +985,7 @@ bool inc_read_store(JobControlRecord *jcr)
    return false;
 }
 
-void dec_read_store(JobControlRecord *jcr)
+void DecReadStore(JobControlRecord *jcr)
 {
    if (jcr->res.rstore && !jcr->IgnoreStorageConcurrency) {
       P(mutex);

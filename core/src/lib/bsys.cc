@@ -45,7 +45,7 @@ static const char *secure_erase_cmdline = NULL;
  * excepting it. It also requires the file to be in
  * the working directory.
  */
-int safer_unlink(const char *pathname, const char *regx)
+int SaferUnlink(const char *pathname, const char *regx)
 {
    int rc;
    regex_t preg1;
@@ -76,7 +76,7 @@ int safer_unlink(const char *pathname, const char *regx)
     */
    if (regexec(&preg1, pathname, 0, NULL, 0) == 0) {
       Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
-      rtn = secure_erase(NULL, pathname);
+      rtn = SecureErase(NULL, pathname);
    } else {
       Pmsg2(000, "safe_unlink regex failed: regex=%s file=%s\n", regx, pathname);
       rtn = EROFS;
@@ -89,7 +89,7 @@ int safer_unlink(const char *pathname, const char *regx)
 /*
  * This routine will use an external secure erase program to delete a file.
  */
-int secure_erase(JobControlRecord *jcr, const char *pathname)
+int SecureErase(JobControlRecord *jcr, const char *pathname)
 {
    int retval = -1;
 
@@ -101,7 +101,7 @@ int secure_erase(JobControlRecord *jcr, const char *pathname)
 
       Mmsg(cmdline,"%s \"%s\"", secure_erase_cmdline, pathname);
       if (jcr) {
-         Jmsg(jcr, M_INFO, 0, _("secure_erase: executing %s\n"), cmdline.c_str());
+         Jmsg(jcr, M_INFO, 0, _("SecureErase: executing %s\n"), cmdline.c_str());
       }
 
       bpipe = open_bpipe(cmdline.c_str(), 0, "r");
@@ -109,25 +109,25 @@ int secure_erase(JobControlRecord *jcr, const char *pathname)
          berrno be;
 
          if (jcr) {
-            Jmsg(jcr, M_FATAL, 0, _("secure_erase: %s could not execute. ERR=%s\n"),
+            Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s could not execute. ERR=%s\n"),
                  secure_erase_cmdline, be.bstrerror());
          }
          goto bail_out;
       }
 
       while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
-         strip_trailing_junk(line.c_str());
+         StripTrailingJunk(line.c_str());
          if (jcr) {
-            Jmsg(jcr, M_INFO, 0, _("secure_erase: %s\n"), line.c_str());
+            Jmsg(jcr, M_INFO, 0, _("SecureErase: %s\n"), line.c_str());
          }
       }
 
-      status = close_bpipe(bpipe);
+      status = CloseBpipe(bpipe);
       if (status != 0) {
          berrno be;
 
          if (jcr) {
-            Jmsg(jcr, M_FATAL, 0, _("secure_erase: %s returned non-zero status=%d. ERR=%s\n"),
+            Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s returned non-zero status=%d. ERR=%s\n"),
                  secure_erase_cmdline, be.code(status), be.bstrerror(status));
          }
          goto bail_out;
@@ -146,7 +146,7 @@ bail_out:
    return retval;
 }
 
-void set_secure_erase_cmdline(const char *cmdline)
+void SetSecureEraseCmdline(const char *cmdline)
 {
    secure_erase_cmdline = cmdline;
 }
@@ -477,14 +477,14 @@ int bvsnprintf(char *str, int32_t size, const char  *format, va_list ap)
    int len, buflen;
    char *buf;
    buflen = size > BIG_BUF ? size : BIG_BUF;
-   buf = get_memory(buflen);
+   buf = GetMemory(buflen);
    len = vsprintf(buf, format, ap);
    if (len >= buflen) {
       Emsg0(M_ABORT, 0, _("Buffer overflow.\n"));
    }
    memcpy(str, buf, len);
    str[len] = 0;                /* len excludes the null */
-   free_memory(buf);
+   FreeMemory(buf);
    return len;
 #endif
 }
@@ -510,7 +510,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *tm)
 #ifndef HAVE_WIN32
 #include <dirent.h>
 
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     struct dirent *ndir;
@@ -572,14 +572,14 @@ static bool del_pid_file_ok = false;
 /*
  * Create a standard "Unix" pid file.
  */
-void create_pid_file(char *dir, const char *progname, int port)
+void CreatePidFile(char *dir, const char *progname, int port)
 {
 #if !defined(HAVE_WIN32)
    int pidfd = -1;
    int len;
    int oldpid;
    char  pidbuf[20];
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
    struct stat statp;
 
    Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
@@ -634,26 +634,26 @@ void create_pid_file(char *dir, const char *progname, int port)
       Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
             be.bstrerror());
    }
-   free_pool_memory(fname);
+   FreePoolMemory(fname);
 #endif
 }
 
 /*
  * Delete the pid file if we created it
  */
-int delete_pid_file(char *dir, const char *progname, int port)
+int DeletePidFile(char *dir, const char *progname, int port)
 {
 #if !defined(HAVE_WIN32)
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
 
    if (!del_pid_file_ok) {
-      free_pool_memory(fname);
+      FreePoolMemory(fname);
       return 0;
    }
    del_pid_file_ok = false;
    Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
    unlink(fname);
-   free_pool_memory(fname);
+   FreePoolMemory(fname);
 #endif
    return 1;
 }
@@ -674,12 +674,12 @@ static struct s_state_hdr state_hdr = {
 /*
  * Open and read the state file for the daemon
  */
-void read_state_file(char *dir, const char *progname, int port)
+void ReadStateFile(char *dir, const char *progname, int port)
 {
    int sfd;
    ssize_t status;
    bool ok = false;
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
    struct s_state_hdr hdr;
    int hdr_size = sizeof(hdr);
 
@@ -710,7 +710,7 @@ void read_state_file(char *dir, const char *progname, int port)
       goto bail_out;
    }
 
-   if (!read_last_jobs_list(sfd, hdr.last_jobs_addr)) {
+   if (!ReadLastJobsList(sfd, hdr.last_jobs_addr)) {
       goto bail_out;
    }
    ok = true;
@@ -720,10 +720,10 @@ bail_out:
    }
 
    if (!ok) {
-      secure_erase(NULL, fname);
+      SecureErase(NULL, fname);
    }
 
-   free_pool_memory(fname);
+   FreePoolMemory(fname);
 }
 
 /*
@@ -731,11 +731,11 @@ bail_out:
  */
 static pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void write_state_file(char *dir, const char *progname, int port)
+void WriteStateFile(char *dir, const char *progname, int port)
 {
    int sfd;
    bool ok = false;
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
 
    P(state_mutex);                    /* Only one job at a time can call here */
    Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
@@ -743,7 +743,7 @@ void write_state_file(char *dir, const char *progname, int port)
    /*
     * Create new state file
     */
-   secure_erase(NULL, fname);
+   SecureErase(NULL, fname);
    if ((sfd = open(fname, O_CREAT|O_WRONLY|O_BINARY, 0640)) < 0) {
       berrno be;
       Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname, be.bstrerror());
@@ -757,7 +757,7 @@ void write_state_file(char *dir, const char *progname, int port)
    }
 
    state_hdr.last_jobs_addr = sizeof(state_hdr);
-   state_hdr.reserved[0] = write_last_jobs_list(sfd, state_hdr.last_jobs_addr);
+   state_hdr.reserved[0] = WriteLastJobsList(sfd, state_hdr.last_jobs_addr);
    if (lseek(sfd, 0, SEEK_SET) < 0) {
       berrno be;
       Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());
@@ -776,10 +776,10 @@ bail_out:
    }
 
    if (!ok) {
-      secure_erase(NULL, fname);
+      SecureErase(NULL, fname);
    }
    V(state_mutex);
-   free_pool_memory(fname);
+   FreePoolMemory(fname);
 }
 
 /* BSDI does not have this.  This is a *poor* simulation */
@@ -843,7 +843,7 @@ char *bfgets(POOLMEM *&s, FILE *fd)
    int i = 0;
 
    s[0] = 0;
-   soft_max = sizeof_pool_memory(s) - 10;
+   soft_max = SizeofPoolMemory(s) - 10;
    for ( ;; ) {
       do {
          errno = 0;
@@ -861,8 +861,8 @@ char *bfgets(POOLMEM *&s, FILE *fd)
          if (soft_max > 1000000) {
             return s;
          }
-         s = check_pool_memory_size(s, soft_max+10000);
-         soft_max = sizeof_pool_memory(s) - 10;
+         s = CheckPoolMemorySize(s, soft_max+10000);
+         soft_max = SizeofPoolMemory(s) - 10;
       }
       s[i++] = ch;
       s[i] = 0;
@@ -888,7 +888,7 @@ char *bfgets(POOLMEM *&s, FILE *fd)
  *   without saving its name, and re-generate the name
  *   so that it can be deleted.
  */
-void make_unique_filename(POOLMEM *&name, int Id, char *what)
+void MakeUniqueFilename(POOLMEM *&name, int Id, char *what)
 {
    Mmsg(name, "%s/%s.%s.%d.tmp", working_directory, my_name, what, Id);
 }
@@ -915,7 +915,7 @@ char *escape_filename(const char *file_path)
    return escaped_path;
 }
 
-bool path_exists(const char *path)
+bool PathExists(const char *path)
 {
    struct stat statp;
 
@@ -926,12 +926,12 @@ bool path_exists(const char *path)
    return (stat(path, &statp) == 0);
 }
 
-bool path_exists(PoolMem &path)
+bool PathExists(PoolMem &path)
 {
-   return path_exists(path.c_str());
+   return PathExists(path.c_str());
 }
 
-bool path_is_directory(const char *path)
+bool PathIsDirectory(const char *path)
 {
    struct stat statp;
 
@@ -946,9 +946,9 @@ bool path_is_directory(const char *path)
    }
 }
 
-bool path_is_directory(PoolMem &path)
+bool PathIsDirectory(PoolMem &path)
 {
-   return path_is_directory(path.c_str());
+   return PathIsDirectory(path.c_str());
 }
 
 bool path_is_absolute(const char *path)
@@ -987,7 +987,7 @@ bool path_is_absolute(PoolMem &path)
    return path_is_absolute(path.c_str());
 }
 
-bool path_contains_directory(const char *path)
+bool PathContainsDirectory(const char *path)
 {
    int i;
 
@@ -1007,22 +1007,22 @@ bool path_contains_directory(const char *path)
    return false;
 }
 
-bool path_contains_directory(PoolMem &path)
+bool PathContainsDirectory(PoolMem &path)
 {
-   return path_contains_directory(path.c_str());
+   return PathContainsDirectory(path.c_str());
 }
 
 
 /*
  * Get directory from path.
  */
-bool path_get_directory(PoolMem &directory, PoolMem &path)
+bool PathGetDirectory(PoolMem &directory, PoolMem &path)
 {
    char *dir = NULL;
    int i = path.strlen();
 
    directory.strcpy(path);
-   if (!path_is_directory(directory)) {
+   if (!PathIsDirectory(directory)) {
       dir = directory.addr();
       while ((!IsPathSeparator(dir[i])) && (i > 0)) {
          dir[i] = 0;
@@ -1030,18 +1030,18 @@ bool path_get_directory(PoolMem &directory, PoolMem &path)
       }
    }
 
-   if (path_is_directory(directory)) {
+   if (PathIsDirectory(directory)) {
       /*
        * Make sure, path ends with path separator
        */
-      path_append(directory, "");
+      PathAppend(directory, "");
       return true;
    }
 
    return false;
 }
 
-bool path_append(char *path, const char *extra, unsigned int max_path)
+bool PathAppend(char *path, const char *extra, unsigned int max_path)
 {
    unsigned int path_len;
    unsigned int required_length;
@@ -1069,7 +1069,7 @@ bool path_append(char *path, const char *extra, unsigned int max_path)
    return true;
 }
 
-bool path_append(PoolMem &path, const char *extra)
+bool PathAppend(PoolMem &path, const char *extra)
 {
    unsigned int required_length;
 
@@ -1082,15 +1082,15 @@ bool path_append(PoolMem &path, const char *extra)
       return false;
    }
 
-   return path_append(path.c_str(), extra, required_length);
+   return PathAppend(path.c_str(), extra, required_length);
 }
 
 /*
  * Append to paths together.
  */
-bool path_append(PoolMem &path, PoolMem &extra)
+bool PathAppend(PoolMem &path, PoolMem &extra)
 {
-   return path_append(path, extra.c_str());
+   return PathAppend(path, extra.c_str());
 }
 
 /*
@@ -1099,9 +1099,9 @@ bool path_append(PoolMem &path, PoolMem &extra)
  */
 static bool path_mkdir(char *path, mode_t mode)
 {
-   if (path_exists(path)) {
+   if (PathExists(path)) {
       Dmsg1(500, "skipped, path %s already exists.\n", path);
-      return path_is_directory(path);
+      return PathIsDirectory(path);
    }
 
    if (mkdir(path, mode) != 0) {
@@ -1118,7 +1118,7 @@ static bool path_mkdir(char *path, mode_t mode)
  * based on
  * src/findlib/mkpath.c:bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mode, ...
  */
-bool path_create(const char *apath, mode_t mode)
+bool PathCreate(const char *apath, mode_t mode)
 {
    char *p;
    int len;
@@ -1137,7 +1137,7 @@ bool path_create(const char *apath, mode_t mode)
    len = strlen(apath);
    path = (char *)alloca(len + 1);
    bstrncpy(path, apath, len + 1);
-   strip_trailing_slashes(path);
+   StripTrailingSlashes(path);
 
 #if defined(HAVE_WIN32)
    /*
@@ -1197,9 +1197,9 @@ bail_out:
    return ok;
 }
 
-bool path_create(PoolMem &path, mode_t mode)
+bool PathCreate(PoolMem &path, mode_t mode)
 {
-   return path_create(path.c_str(), mode);
+   return PathCreate(path.c_str(), mode);
 }
 
 /*

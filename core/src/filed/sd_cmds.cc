@@ -52,7 +52,7 @@ void *handle_stored_connection(BareosSocket *sd)
 
    if (sscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name) != 1) {
       char addr[64];
-      char *who = bnet_get_peer(sd, addr, sizeof(addr)) ? sd->who() : addr;
+      char *who = BnetGetPeer(sd, addr, sizeof(addr)) ? sd->who() : addr;
 
       sd->msg[100] = 0;
       Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", sd->who(), sd->msg);
@@ -73,12 +73,12 @@ void *handle_stored_connection(BareosSocket *sd)
    Dmsg1(50, "Found Job %s\n", job_name);
 
    jcr->store_bsock = sd;
-   jcr->store_bsock->set_jcr(jcr);
+   jcr->store_bsock->SetJcr(jcr);
 
    /*
     * Authenticate the Storage Daemon.
     */
-   if (!authenticate_storagedaemon(jcr)) {
+   if (!AuthenticateStoragedaemon(jcr)) {
       Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
       Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -94,12 +94,12 @@ void *handle_stored_connection(BareosSocket *sd)
       }
    }
 
-   sd->set_bwlimit(jcr->max_bandwidth);
+   sd->SetBwlimit(jcr->max_bandwidth);
    if (me->allow_bw_bursting) {
-      sd->set_bwlimit_bursting();
+      sd->SetBwlimitBursting();
    }
 
-   free_jcr(jcr);
+   FreeJcr(jcr);
 
    return NULL;
 }

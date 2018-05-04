@@ -92,7 +92,7 @@ static inline bool extract_post_backup_stats(JobControlRecord *jcr,
    /*
     * Process the FHDB.
     */
-   process_fhdb(&sess->control_acb->job.index_log);
+   ProcessFhdb(&sess->control_acb->job.index_log);
 
    /*
     * Update the Job statistics from the NDMP statistics.
@@ -105,7 +105,7 @@ static inline bool extract_post_backup_stats(JobControlRecord *jcr,
     */
    ndm_ee = sess->control_acb->job.result_env_tab.head;
    while (ndm_ee) {
-      if (!jcr->db->create_ndmp_environment_string(jcr, &jcr->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
+      if (!jcr->db->CreateNdmpEnvironmentString(jcr, &jcr->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
          break;
       }
       ndm_ee = ndm_ee->next;
@@ -115,7 +115,7 @@ static inline bool extract_post_backup_stats(JobControlRecord *jcr,
     * If we are doing a backup type that uses dumplevels save the last used dump level.
     */
    if (nbf_options && nbf_options->uses_level) {
-      jcr->db->update_ndmp_level_mapping(jcr, &jcr->jr, filesystem, sess->control_acb->job.bu_level);
+      jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->jr, filesystem, sess->control_acb->job.bu_level);
    }
 
    return retval;
@@ -124,22 +124,22 @@ static inline bool extract_post_backup_stats(JobControlRecord *jcr,
 /**
  * Setup a NDMP backup session.
  */
-bool do_ndmp_backup_init(JobControlRecord *jcr)
+bool DoNdmpBackupInit(JobControlRecord *jcr)
 {
-   free_rstorage(jcr);                   /* we don't read so release */
+   FreeRstorage(jcr);                   /* we don't read so release */
 
-   if (!allow_duplicate_job(jcr)) {
+   if (!AllowDuplicateJob(jcr)) {
       return false;
    }
 
-   jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->res.pool->name());
+   jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->name());
    if (jcr->jr.PoolId == 0) {
       return false;
    }
 
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
@@ -147,7 +147,7 @@ bool do_ndmp_backup_init(JobControlRecord *jcr)
    /*
     * If pool storage specified, use it instead of job storage
     */
-   copy_wstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
+   CopyWstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
    if (!jcr->res.wstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
@@ -157,11 +157,11 @@ bool do_ndmp_backup_init(JobControlRecord *jcr)
    /*
     * Validate the Job to have a NDMP client and NDMP storage.
     */
-   if (!ndmp_validate_client(jcr)) {
+   if (!NdmpValidateClient(jcr)) {
       return false;
    }
 
-   if (!ndmp_validate_storage(jcr)) {
+   if (!NdmpValidateStorage(jcr)) {
       return false;
    }
 
@@ -169,7 +169,7 @@ bool do_ndmp_backup_init(JobControlRecord *jcr)
     * For now we only allow NDMP backups to bareos SD's
     * so we need a paired storage definition.
     */
-   if (!has_paired_storage(jcr)) {
+   if (!HasPairedStorage(jcr)) {
       Jmsg(jcr, M_FATAL, 0,
            _("Write storage doesn't point to storage definition with paired storage option.\n"));
       return false;
@@ -209,17 +209,17 @@ bool do_ndmp_backup(JobControlRecord *jcr)
 
    jcr->setJobStatus(JS_Running);
    Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->jr.JobId, jcr->jr.JobLevel);
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
 
-   if (check_hardquotas(jcr)) {
+   if (CheckHardquotas(jcr)) {
       Jmsg(jcr, M_FATAL, 0, "Quota Exceeded. Job terminated.");
       return false;
    }
 
-   if (check_softquotas(jcr)) {
+   if (CheckSoftquotas(jcr)) {
       Dmsg0(10, "Quota exceeded\n");
       Jmsg(jcr, M_FATAL, 0, "Soft Quota Exceeded / Grace Time expired. Job terminated.");
       return false;
@@ -234,17 +234,17 @@ bool do_ndmp_backup(JobControlRecord *jcr)
     * TAPE AGENT.
     */
    if (jcr->res.wstore->paired_storage) {
-      set_paired_storage(jcr);
+      SetPairedStorage(jcr);
 
       jcr->setJobStatus(JS_WaitSD);
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
          return false;
       }
 
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, NULL, jcr->res.wstorage)) {
+      if (!StartStorageDaemonJob(jcr, NULL, jcr->res.wstorage)) {
          return false;
       }
 
@@ -262,7 +262,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
        *   this thread is used to provide the catalog services
        *   for the backup job.
        */
-      if (!start_storage_daemon_message_thread(jcr)) {
+      if (!StartStorageDaemonMessageThread(jcr)) {
          return false;
       }
       Dmsg0(150, "Storage daemon connection OK\n");
@@ -275,7 +275,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
     * and reuse the job definition for each separate sub-backup we perform as
     * part of the whole job. We only free the env_table between every sub-backup.
     */
-   if (!ndmp_build_client_job(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_BACKUP, &ndmp_job)) {
+   if (!NdmpBuildClientJob(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_BACKUP, &ndmp_job)) {
       goto bail_out;
    }
 
@@ -325,7 +325,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
          ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
          memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
          ndmp_sess.param->log.deliver = ndmp_loghandler;
-         ndmp_sess.param->log_level = native_to_ndmp_loglevel(NdmpLoglevel, debug_level, nis);
+         ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
          nis->filesystem = item;
          nis->FileIndex = cnt + 1;
          nis->jcr = jcr;
@@ -355,7 +355,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
           */
          ndmp_sess.control_acb->job.index_log.ctx = ndmp_sess.param->log.ctx;
 
-         if (!fill_backup_environment(jcr,
+         if (!FillBackupEnvironment(jcr,
                                       ie,
                                       nis->filesystem,
                                       &ndmp_sess.control_acb->job)) {
@@ -379,7 +379,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
          nis->virtual_filename = bstrdup(virtual_filename.c_str());
 
          ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
-         if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
+         if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) {
             goto cleanup;
          }
 
@@ -400,7 +400,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
          ndmp_sess.conn_open = 1;
          ndmp_sess.conn_authorized = 1;
 
-         register_callback_hooks(&ndmp_sess.control_acb->job.index_log);
+         RegisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
          /*
           * Let the DMA perform its magic.
@@ -417,7 +417,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
             goto cleanup;
          }
 
-         unregister_callback_hooks(&ndmp_sess.control_acb->job.index_log);
+         UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
          /*
           * Reset the NDMP session states.
@@ -468,8 +468,8 @@ bool do_ndmp_backup(JobControlRecord *jcr)
     */
    if (jcr->store_bsock) {
       jcr->store_bsock->fsend("finish");
-      wait_for_storage_daemon_termination(jcr);
-      jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
+      WaitForStorageDaemonTermination(jcr);
+      jcr->db_batch->WriteBatchFileRecords(jcr); /* used by bulk batch file insert */
    }
 
    /*
@@ -499,7 +499,7 @@ cleanup:
          free(ndmp_sess.control_acb->job.tape_device);
       }
 
-      unregister_callback_hooks(&ndmp_sess.control_acb->job.index_log);
+      UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
       /*
        * Destroy the session.
@@ -520,8 +520,8 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
    if (jcr->store_bsock) {
-      cancel_storage_daemon_job(jcr);
-      wait_for_storage_daemon_termination(jcr);
+      CancelStorageDaemonJob(jcr);
+      WaitForStorageDaemonTermination(jcr);
    }
 
 ok_out:
@@ -531,17 +531,17 @@ ok_out:
       }
       free(nis);
    }
-   free_paired_storage(jcr);
+   FreePairedStorage(jcr);
 
    if (status == JS_Terminated) {
-      ndmp_backup_cleanup(jcr, status);
+      NdmpBackupCleanup(jcr, status);
    }
 
    return retval;
 }
 
 #else
-bool do_ndmp_backup_init(JobControlRecord *jcr)
+bool DoNdmpBackupInit(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

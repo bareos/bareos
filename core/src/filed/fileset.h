@@ -19,13 +19,13 @@
    02110-1301, USA.
 */
 
-bool init_fileset(JobControlRecord *jcr);
-void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool is_file);
+bool InitFileset(JobControlRecord *jcr);
+void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool IsFile);
 findIncludeExcludeItem *get_incexe(JobControlRecord *jcr);
 void set_incexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe);
-int add_regex_to_fileset(JobControlRecord *jcr, const char *item, int type);
-int add_wild_to_fileset(JobControlRecord *jcr, const char *item, int type);
-int add_options_to_fileset(JobControlRecord *jcr, const char *item);
+int AddRegexToFileset(JobControlRecord *jcr, const char *item, int type);
+int AddWildToFileset(JobControlRecord *jcr, const char *item, int type);
+int AddOptionsToFileset(JobControlRecord *jcr, const char *item);
 void add_fileset(JobControlRecord *jcr, const char *item);
-bool term_fileset(JobControlRecord *jcr);
+bool TermFileset(JobControlRecord *jcr);
 

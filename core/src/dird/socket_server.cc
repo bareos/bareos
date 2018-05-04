@@ -104,7 +104,7 @@ static void *handle_connection_request(void *arg)
 extern "C" void *connect_thread(void *arg)
 {
    pthread_detach(pthread_self());
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
 
    /*
     * Permit MaxConnections connections.
@@ -125,7 +125,7 @@ extern "C" void *connect_thread(void *arg)
  * command thread. This routine creates the thread and then
  * returns.
  */
-void start_socket_server(dlist *addrs)
+void StartSocketServer(dlist *addrs)
 {
    int status;
    static dlist *myaddrs = addrs;
@@ -141,11 +141,11 @@ void start_socket_server(dlist *addrs)
    return;
 }
 
-void stop_socket_server()
+void StopSocketServer()
 {
    if (sock_fds) {
       bnet_stop_thread_server_tcp(tcp_server_tid);
-      cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
+      CleanupBnetThreadServerTcp(sock_fds, &socket_workq);
       delete sock_fds;
       sock_fds = NULL;
    }

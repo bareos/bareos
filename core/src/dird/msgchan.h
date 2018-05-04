@@ -22,10 +22,10 @@
 #ifndef BAREOS_DIRD_MSGCHAN_H_
 #define BAREOS_DIRD_MSGCHAN_H_
 
-bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstore,
+bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore,
                               bool send_bsr = false);
-bool start_storage_daemon_message_thread(JobControlRecord *jcr);
-int bget_dirmsg(BareosSocket *bs, bool allow_any_msg = false);
-void wait_for_storage_daemon_termination(JobControlRecord *jcr);
+bool StartStorageDaemonMessageThread(JobControlRecord *jcr);
+int BgetDirmsg(BareosSocket *bs, bool allow_any_msg = false);
+void WaitForStorageDaemonTermination(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_MSGCHAN_H_

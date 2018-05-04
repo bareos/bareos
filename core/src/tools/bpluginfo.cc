@@ -230,7 +230,7 @@ void freepdata(progdata *pdata)
  * -a    bareos api version (default 1)
  * -h    help screen
  */
-void parse_args(progdata *pdata, int argc, char *argv[])
+void ParseArgs(progdata *pdata, int argc, char *argv[])
 {
 
    int ch;
@@ -518,7 +518,7 @@ int main(int argc, char *argv[])
    bareosinfos binfos;
 
    pdata = allocpdata();
-   parse_args(pdata, argc, argv);
+   ParseArgs(pdata, argc, argv);
 
    binfos.bfdinfo.size = sizeof(binfos);
    binfos.bfdinfo.version = DEFAULT_API_VERSION;

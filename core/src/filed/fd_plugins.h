@@ -250,29 +250,29 @@ typedef struct s_bareosInfo {
 #ifdef FILE_DAEMON
 struct BareosWinFilePacket;                   /* forward referenced */
 struct FindFilesPacket;
-void load_fd_plugins(const char *plugin_dir, alist *plugin_names);
-void unload_fd_plugins(void);
+void LoadFdPlugins(const char *plugin_dir, alist *plugin_names);
+void UnloadFdPlugins(void);
 int list_fd_plugins(PoolMem &msg);
-void new_plugins(JobControlRecord *jcr);
-void free_plugins(JobControlRecord *jcr);
-bRC generate_plugin_event(JobControlRecord *jcr, bEventType event,
+void NewPlugins(JobControlRecord *jcr);
+void FreePlugins(JobControlRecord *jcr);
+bRC GeneratePluginEvent(JobControlRecord *jcr, bEventType event,
                           void *value = NULL, bool reverse = false);
-bool send_plugin_name(JobControlRecord *jcr, BareosSocket *sd, bool start);
-bool plugin_name_stream(JobControlRecord *jcr, char *name);
-int plugin_create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace);
-bool plugin_set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
+bool SendPluginName(JobControlRecord *jcr, BareosSocket *sd, bool start);
+bool PluginNameStream(JobControlRecord *jcr, char *name);
+int PluginCreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace);
+bool PluginSetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
 bacl_exit_code plugin_build_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
 bacl_exit_code plugin_parse_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, int stream,
                                         char *content, uint32_t content_length);
-bxattr_exit_code plugin_build_xattr_streams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                             FindFilesPacket *ff_pkt);
-bxattr_exit_code plugin_parse_xattr_streams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                             int stream, char *content, uint32_t content_length);
-int plugin_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
+int PluginSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 int plugin_estimate(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 bool plugin_check_file(JobControlRecord *jcr, char *fname);
-void plugin_update_ff_pkt(FindFilesPacket *ff_pkt, struct save_pkt *sp);
-bRC plugin_option_handle_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, struct save_pkt *sp);
+void PluginUpdateFfPkt(FindFilesPacket *ff_pkt, struct save_pkt *sp);
+bRC PluginOptionHandleFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, struct save_pkt *sp);
 #endif
 
 #ifdef __cplusplus
@@ -350,7 +350,7 @@ typedef struct s_pluginFuncs {
    bRC (*setXattr)(bpContext *ctx, struct xattr_pkt *xp);
 } pFuncs;
 
-#define plug_func(plugin) ((pFuncs *)(plugin->pfuncs))
+#define PlugFunc(plugin) ((pFuncs *)(plugin->pfuncs))
 #define plug_info(plugin) ((genpInfo *)(plugin->pinfo))
 
 #ifdef __cplusplus

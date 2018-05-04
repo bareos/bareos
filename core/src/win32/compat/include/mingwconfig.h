@@ -134,7 +134,7 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
 
-/* Define to 1 if you have the `readdir_r' function. */
+/* Define to 1 if you have the `Readdir_r' function. */
 /* #undef HAVE_READDIR_R */
 
 /* Define to 1 if you have the <resolv.h> header file. */

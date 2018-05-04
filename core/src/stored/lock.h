@@ -38,10 +38,10 @@
 #define dunlock()   _dunlock(__FILE__, __LINE__);    /* in lock.c */
 #endif
 
-#define block_device(d, s)          _block_device(__FILE__, __LINE__, (d), s)
-#define unblock_device(d)           _unblock_device(__FILE__, __LINE__, (d))
-#define steal_device_lock(d, p, s)  _steal_device_lock(__FILE__, __LINE__, (d), (p), s)
-#define give_back_device_lock(d, p) _give_back_device_lock(__FILE__, __LINE__, (d), (p))
+#define BlockDevice(d, s)          _block_device(__FILE__, __LINE__, (d), s)
+#define UnblockDevice(d)           _unBlockDevice(__FILE__, __LINE__, (d))
+#define StealDeviceLock(d, p, s)  _steal_device_lock(__FILE__, __LINE__, (d), (p), s)
+#define GiveBackDeviceLock(d, p) _give_back_device_lock(__FILE__, __LINE__, (d), (p))
 
 /**
  * blocked_ states (mutually exclusive)
@@ -77,7 +77,7 @@ enum {
 void _lock_device(const char *file, int line, Device *dev);
 void _unlock_device(const char *file, int line, Device *dev);
 void _block_device(const char *file, int line, Device *dev, int state);
-void _unblock_device(const char *file, int line, Device *dev);
+void _unBlockDevice(const char *file, int line, Device *dev);
 void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state);
 void _give_back_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold);
 

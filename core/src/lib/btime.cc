@@ -126,7 +126,7 @@ char *bstrutime(char *dt, int maxlen, utime_t utime)
 /*
  * Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
  */
-utime_t str_to_utime(const char *str)
+utime_t StrToUtime(const char *str)
 {
    struct tm tm;
    time_t time;
@@ -167,7 +167,7 @@ utime_t str_to_utime(const char *str)
  * the number of microseconds since Epoch Time (1 Jan 1970) UTC.
  */
 
-btime_t get_current_btime()
+btime_t GetCurrentBtime()
 {
    struct timeval tv;
    if (gettimeofday(&tv, NULL) != 0) {
@@ -180,7 +180,7 @@ btime_t get_current_btime()
 /*
  * Convert btime to Unix time
  */
-time_t btime_to_unix(btime_t bt)
+time_t BtimeToUnix(btime_t bt)
 {
    return (time_t)(bt/1000000);
 }
@@ -188,7 +188,7 @@ time_t btime_to_unix(btime_t bt)
 /*
  * Convert btime to utime
  */
-utime_t btime_to_utime(btime_t bt)
+utime_t BtimeToUtime(btime_t bt)
 {
    return (utime_t)(bt/1000000);
 }
@@ -224,7 +224,7 @@ int tm_wom(int mday, int wday)
  * the 4th of January).  We return 0, if the week of the
  * year does not fall in the current year.
  */
-int tm_woy(time_t stime)
+int TmWoy(time_t stime)
 {
    int woy, fty, tm_yday;
    time_t time4;
@@ -252,7 +252,7 @@ int tm_woy(time_t stime)
 /*
  * Deprecated. Do not use.
  */
-void get_current_time(struct date_time *dt)
+void GetCurrentTime(struct date_time *dt)
 {
    struct tm tm;
    time_t now;
@@ -261,20 +261,20 @@ void get_current_time(struct date_time *dt)
    (void)gmtime_r(&now, &tm);
    Dmsg6(200, "m=%d d=%d y=%d h=%d m=%d s=%d\n", tm.tm_mon+1, tm.tm_mday, tm.tm_year+1900,
       tm.tm_hour, tm.tm_min, tm.tm_sec);
-   tm_encode(dt, &tm);
+   TmEncode(dt, &tm);
 #ifdef DEBUG
    Dmsg2(200, "jday=%f jmin=%f\n", dt->julian_day_number, dt->julian_day_fraction);
-   tm_decode(dt, &tm);
+   TmDecode(dt, &tm);
    Dmsg6(200, "m=%d d=%d y=%d h=%d m=%d s=%d\n", tm.tm_mon+1, tm.tm_mday, tm.tm_year+1900,
       tm.tm_hour, tm.tm_min, tm.tm_sec);
 #endif
 }
 
 
-/*  date_encode  --  Encode civil date as a Julian day number.  */
+/*  DateEncode  --  Encode civil date as a Julian day number.  */
 
 /* Deprecated. Do not use. */
-fdate_t date_encode(uint32_t year, uint8_t month, uint8_t day)
+fdate_t DateEncode(uint32_t year, uint8_t month, uint8_t day)
 {
 
     /* Algorithm as given in Meeus, Astronomical Algorithms, Chapter 7, page 61 */
@@ -307,11 +307,11 @@ fdate_t date_encode(uint32_t year, uint8_t month, uint8_t day)
                 day + b - 1524.5);
 }
 
-/*  time_encode  --  Encode time from hours, minutes, and seconds
+/*  TimeEncode  --  Encode time from hours, minutes, and seconds
                      into a fraction of a day.  */
 
 /* Deprecated. Do not use. */
-ftime_t time_encode(uint8_t hour, uint8_t minute, uint8_t second,
+ftime_t TimeEncode(uint8_t hour, uint8_t minute, uint8_t second,
                    float32_t second_fraction)
 {
     ASSERT((second_fraction >= 0.0) || (second_fraction < 1.0));
@@ -328,14 +328,14 @@ void date_time_encode(struct date_time *dt,
                       uint8_t hour, uint8_t minute, uint8_t second,
                       float32_t second_fraction)
 {
-    dt->julian_day_number = date_encode(year, month, day);
-    dt->julian_day_fraction = time_encode(hour, minute, second, second_fraction);
+    dt->julian_day_number = DateEncode(year, month, day);
+    dt->julian_day_fraction = TimeEncode(hour, minute, second, second_fraction);
 }
 
-/*  date_decode  --  Decode a Julian day number into civil date.  */
+/*  DateDecode  --  Decode a Julian day number into civil date.  */
 
 /* Deprecated. Do not use. */
-void date_decode(fdate_t date, uint32_t *year, uint8_t *month,
+void DateDecode(fdate_t date, uint32_t *year, uint8_t *month,
                  uint8_t *day)
 {
     fdate_t z, f, a, alpha, b, c, d, e;
@@ -361,10 +361,10 @@ void date_decode(fdate_t date, uint32_t *year, uint8_t *month,
     *year = (uint32_t) ((*month > 2) ? (c - 4716) : (c - 4715));
 }
 
-/*  time_decode  --  Decode a day fraction into civil time.  */
+/*  TimeDecode  --  Decode a day fraction into civil time.  */
 
 /* Deprecated. Do not use. */
-void time_decode(ftime_t time, uint8_t *hour, uint8_t *minute,
+void TimeDecode(ftime_t time, uint8_t *hour, uint8_t *minute,
                  uint8_t *second, float32_t *second_fraction)
 {
     uint32_t ij;
@@ -387,16 +387,16 @@ void date_time_decode(struct date_time *dt,
                       uint8_t *hour, uint8_t *minute, uint8_t *second,
                       float32_t *second_fraction)
 {
-    date_decode(dt->julian_day_number, year, month, day);
-    time_decode(dt->julian_day_fraction, hour, minute, second, second_fraction);
+    DateDecode(dt->julian_day_number, year, month, day);
+    TimeDecode(dt->julian_day_fraction, hour, minute, second, second_fraction);
 }
 
-/*  tm_encode  --  Encode a civil date and time from a tm structure
+/*  TmEncode  --  Encode a civil date and time from a tm structure
  *                 to a Julian day and day fraction.
  */
 
 /* Deprecated. Do not use. */
-void tm_encode(struct date_time *dt,
+void TmEncode(struct date_time *dt,
                       struct tm *tm)
 {
     uint32_t year;
@@ -408,23 +408,23 @@ void tm_encode(struct date_time *dt,
     hour = tm->tm_hour;
     minute = tm->tm_min;
     second = tm->tm_sec;
-    dt->julian_day_number = date_encode(year, month, day);
-    dt->julian_day_fraction = time_encode(hour, minute, second, 0.0);
+    dt->julian_day_number = DateEncode(year, month, day);
+    dt->julian_day_fraction = TimeEncode(hour, minute, second, 0.0);
 }
 
 
-/*  tm_decode  --  Decode a Julian day and day fraction
+/*  TmDecode  --  Decode a Julian day and day fraction
                    into civil date and time in tm structure */
 
 /* Deprecated. Do not use. */
-void tm_decode(struct date_time *dt,
+void TmDecode(struct date_time *dt,
                       struct tm *tm)
 {
     uint32_t year;
     uint8_t month, day, hour, minute, second;
 
-    date_decode(dt->julian_day_number, &year, &month, &day);
-    time_decode(dt->julian_day_fraction, &hour, &minute, &second, NULL);
+    DateDecode(dt->julian_day_number, &year, &month, &day);
+    TimeDecode(dt->julian_day_fraction, &hour, &minute, &second, NULL);
     tm->tm_year = year - 1900;
     tm->tm_mon = month - 1;
     tm->tm_mday = day;

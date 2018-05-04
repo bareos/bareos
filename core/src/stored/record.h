@@ -94,10 +94,10 @@ enum {
 /*
  * Make sure you have enough bits to store all above bit fields.
  */
-#define REC_STATE_BYTES nbytes_for_bits(REC_STATE_MAX + 1)
+#define REC_STATE_BYTES NbytesForBits(REC_STATE_MAX + 1)
 
-#define is_partial_record(r) (bit_is_set(REC_PARTIAL_RECORD, (r)->state_bits))
-#define is_block_empty(r) (bit_is_set(REC_BLOCK_EMPTY, (r)->state_bits))
+#define IsPartialRecord(r) (BitIsSet(REC_PARTIAL_RECORD, (r)->state_bits))
+#define IsBlockEmpty(r) (BitIsSet(REC_BLOCK_EMPTY, (r)->state_bits))
 
 /*
  * DeviceRecord for reading and writing records.
@@ -121,7 +121,7 @@ struct DeviceRecord {
    uint32_t data_len;                 /**< Current record length */
    uint32_t remainder;                /**< Remaining bytes to read/write */
    char state_bits[REC_STATE_BYTES];  /**< State bits */
-   rec_state state;                   /**< State of write_record_to_block */
+   rec_state state;                   /**< State of WriteRecordToBlock */
    BootStrapRecord *bsr;                          /**< Pointer to bsr that matched */
    POOLMEM *data;                     /**< Record data. This MUST be a memory pool item */
    int32_t match_stat;                /**< BootStrapRecord match status */
@@ -149,7 +149,7 @@ struct DeviceRecord {
 /*
  * Volume Label Record.  This is the in-memory definition. The
  * tape definition is defined in the serialization code itself
- * ser_volume_label() and unser_volume_label() and is slightly different.
+ * ser_volume_label() and UnserVolumeLabel() and is slightly different.
  */
 struct Volume_Label {
   /*
@@ -271,14 +271,14 @@ class DeviceBlock;         /* Forward Reference */
 DLL_IMP_EXP const char *FI_to_ascii(char *buf, int fi);
 DLL_IMP_EXP const char *stream_to_ascii(char *buf, int stream, int fi);
 DLL_IMP_EXP const char *record_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec);
-DLL_IMP_EXP void dump_record(const char *tag, const DeviceRecord *rec);
-DLL_IMP_EXP bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec);
-DLL_IMP_EXP bool can_write_record_to_block(DeviceBlock *block, const DeviceRecord *rec);
-DLL_IMP_EXP bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec);
+DLL_IMP_EXP void DumpRecord(const char *tag, const DeviceRecord *rec);
+DLL_IMP_EXP bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
+DLL_IMP_EXP bool CanWriteRecordToBlock(DeviceBlock *block, const DeviceRecord *rec);
+DLL_IMP_EXP bool ReadRecordFromBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
 DLL_IMP_EXP DeviceRecord *new_record(bool with_data = true);
 DLL_IMP_EXP void empty_record(DeviceRecord *rec);
-DLL_IMP_EXP void copy_record_state(DeviceRecord *dst, DeviceRecord *src);
-DLL_IMP_EXP void free_record(DeviceRecord *rec);
-DLL_IMP_EXP uint64_t get_record_address(const DeviceRecord *rec);
+DLL_IMP_EXP void CopyRecordState(DeviceRecord *dst, DeviceRecord *src);
+DLL_IMP_EXP void FreeRecord(DeviceRecord *rec);
+DLL_IMP_EXP uint64_t GetRecordAddress(const DeviceRecord *rec);
 
 #endif

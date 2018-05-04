@@ -103,14 +103,14 @@ public:
 /*
  * Store Resource
  */
-class StoreResource : public TlsResource {
+class StorageResource : public TlsResource {
 public:
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
 
-   StoreResource() : TlsResource() {}
+   StorageResource() : TlsResource() {}
 };
 
 class ConsoleFontResource : public BareosResource {
@@ -125,7 +125,7 @@ union UnionOfResources {
    MonitorResource res_monitor;
    DirectorResource res_dir;
    ClientResource res_client;
-   StoreResource res_store;
+   StorageResource res_store;
    ConsoleFontResource con_font;
    CommonResourceHeader hdr;
 
@@ -137,7 +137,7 @@ union UnionOfResources {
    ~UnionOfResources() {}
 };
 
-void init_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code);
-bool print_config_schema_json(PoolMem &buffer);
+void InitTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+bool PrintConfigSchemaJson(PoolMem &buffer);
 
 #endif /* TRAY_CONF_H_INCLUDED */

@@ -88,20 +88,20 @@ IPADDR::IPADDR(int af) : type(R_EMPTY)
 #endif
    }
 
-   set_addr_any();
+   SetAddrAny();
 }
 
-void IPADDR::set_type(i_type o)
+void IPADDR::SetType(i_type o)
 {
    type = o;
 }
 
-IPADDR::i_type IPADDR::get_type() const
+IPADDR::i_type IPADDR::GetType() const
 {
    return type;
 }
 
-unsigned short IPADDR::get_port_net_order() const
+unsigned short IPADDR::GetPortNetOrder() const
 {
    unsigned short port = 0;
    if (saddr->sa_family == AF_INET) {
@@ -115,7 +115,7 @@ unsigned short IPADDR::get_port_net_order() const
     return port;
 }
 
-void IPADDR::set_port_net(unsigned short port)
+void IPADDR::SetPortNet(unsigned short port)
 {
    if (saddr->sa_family == AF_INET) {
       saddr4->sin_port = port;
@@ -127,7 +127,7 @@ void IPADDR::set_port_net(unsigned short port)
 #endif
 }
 
-int IPADDR::get_family() const
+int IPADDR::GetFamily() const
 {
     return saddr->sa_family;
 }
@@ -137,7 +137,7 @@ struct sockaddr *IPADDR::get_sockaddr()
    return saddr;
 }
 
-int IPADDR::get_sockaddr_len()
+int IPADDR::GetSockaddrLen()
 {
 #ifdef HAVE_IPV6
    return saddr->sa_family == AF_INET ? sizeof(*saddr4) : sizeof(*saddr6);
@@ -145,7 +145,7 @@ int IPADDR::get_sockaddr_len()
    return sizeof(*saddr4);
 #endif
 }
-void IPADDR::copy_addr(IPADDR *src)
+void IPADDR::CopyAddr(IPADDR *src)
 {
    if (saddr->sa_family == AF_INET) {
       saddr4->sin_addr.s_addr = src->saddr4->sin_addr.s_addr;
@@ -157,7 +157,7 @@ void IPADDR::copy_addr(IPADDR *src)
 #endif
 }
 
-void IPADDR::set_addr_any()
+void IPADDR::SetAddrAny()
 {
    if (saddr->sa_family == AF_INET) {
       saddr4->sin_addr.s_addr = INADDR_ANY;
@@ -208,14 +208,14 @@ const char *IPADDR::build_config_str(char *buf, int blen)
 {
    char tmp[1024];
 
-   switch (get_family()) {
+   switch (GetFamily()) {
    case AF_INET:
       bsnprintf(buf, blen, "      ipv4 = {\n"
                            "         addr = %s\n"
                            "         port = %hu\n"
                            "      }",
                 get_address(tmp, sizeof(tmp) - 1),
-                get_port_host_order());
+                GetPortHostOrder());
       break;
    case AF_INET6:
       bsnprintf(buf, blen, "      ipv6 = {\n"
@@ -223,7 +223,7 @@ const char *IPADDR::build_config_str(char *buf, int blen)
                            "         port = %hu\n"
                            "      }",
                 get_address(tmp, sizeof(tmp) - 1),
-                get_port_host_order());
+                GetPortHostOrder());
       break;
    default:
       break;
@@ -236,20 +236,20 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
 {
    char tmp[1024];
    if (print_port) {
-      switch (get_family()) {
+      switch (GetFamily()) {
       case AF_INET:
          bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
-                   get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+                   get_address(tmp, sizeof(tmp) - 1), GetPortHostOrder());
          break;
       case AF_INET6:
          bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
-                   get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+                   get_address(tmp, sizeof(tmp) - 1), GetPortHostOrder());
          break;
       default:
          break;
       }
    } else {
-      switch (get_family()) {
+      switch (GetFamily()) {
       case AF_INET:
          bsnprintf(buf, blen, "host[ipv4;%s] ",
                    get_address(tmp, sizeof(tmp) - 1));
@@ -295,20 +295,20 @@ int get_first_port_net_order(dlist *addrs)
    if (!addrs) {
       return 0;
    } else {
-      return ((IPADDR *)(addrs->first()))->get_port_net_order();
+      return ((IPADDR *)(addrs->first()))->GetPortNetOrder();
    }
 }
 
-int get_first_port_host_order(dlist *addrs)
+int GetFirstPortHostOrder(dlist *addrs)
 {
    if (!addrs) {
       return 0;
    } else {
-      return ((IPADDR *)(addrs->first()))->get_port_host_order();
+      return ((IPADDR *)(addrs->first()))->GetPortHostOrder();
    }
 }
 
-int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
+int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen)
 {
    IPADDR *iaddr;
@@ -329,9 +329,9 @@ int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, in
    if (type != IPADDR::R_DEFAULT) {
       IPADDR *def = 0;
       foreach_dlist(iaddr, addrs) {
-         if (iaddr->get_type() == IPADDR::R_DEFAULT) {
+         if (iaddr->GetType() == IPADDR::R_DEFAULT) {
             def = iaddr;
-         } else if (iaddr->get_type() != type) {
+         } else if (iaddr->GetType() != type) {
             bsnprintf(buf, buflen,
                       _("the old style addresses cannot be mixed with new style"));
             return 0;
@@ -374,38 +374,38 @@ int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, in
          addr = (IPADDR *)addrs->first();
       } else {
          addr = New(IPADDR(family));
-         addr->set_type(type);
-         addr->set_port_net(defaultport);
-         addr->set_addr_any();
+         addr->SetType(type);
+         addr->SetPortNet(defaultport);
+         addr->SetAddrAny();
          addrs->append(addr);
       }
       if (intype == IPADDR::R_SINGLE_PORT) {
-         addr->set_port_net(port);
+         addr->SetPortNet(port);
       }
       if (intype == IPADDR::R_SINGLE_ADDR) {
-         addr->copy_addr((IPADDR *)(hostaddrs->first()));
+         addr->CopyAddr((IPADDR *)(hostaddrs->first()));
       }
    } else {
       foreach_dlist(iaddr, hostaddrs) {
          IPADDR *clone;
          /* for duplicates */
          foreach_dlist(jaddr, addrs) {
-            if (iaddr->get_sockaddr_len() == jaddr->get_sockaddr_len() &&
+            if (iaddr->GetSockaddrLen() == jaddr->GetSockaddrLen() &&
             !memcmp(iaddr->get_sockaddr(), jaddr->get_sockaddr(),
-                    iaddr->get_sockaddr_len()))
+                    iaddr->GetSockaddrLen()))
                 {
                goto skip;          /* no price */
             }
          }
          clone = New(IPADDR(*iaddr));
-         clone->set_type(type);
-         clone->set_port_net(port);
+         clone->SetType(type);
+         clone->SetPortNet(port);
          addrs->append(clone);
        skip:
          continue;
       }
    }
-   free_addresses(hostaddrs);
+   FreeAddresses(hostaddrs);
    return 1;
 }
 
@@ -414,12 +414,12 @@ void init_default_addresses(dlist **out, const char *port)
    char buf[1024];
    unsigned short sport = str_to_int32(port);
 
-   if (!add_address(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf, sizeof(buf))) {
+   if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf, sizeof(buf))) {
       Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
    }
 }
 
-void free_addresses(dlist * addrs)
+void FreeAddresses(dlist * addrs)
 {
    while (!addrs->empty()) {
       IPADDR *ptr = (IPADDR*)addrs->first();
@@ -442,7 +442,7 @@ int sockaddr_get_port_net_order(const struct sockaddr *client_addr)
    return -1;
 }
 
-int sockaddr_get_port(const struct sockaddr *client_addr)
+int SockaddrGetPort(const struct sockaddr *client_addr)
 {
    if (client_addr->sa_family == AF_INET) {
       return ntohs(((struct sockaddr_in *)client_addr)->sin_port);
@@ -479,7 +479,7 @@ int inet_aton(const char *cp, struct in_addr *inp)
 {
    struct in_addr inaddr;
 
-   if((inaddr.s_addr = inet_addr(cp)) != INADDR_NONE) {
+   if((inaddr.s_addr = InetAddr(cp)) != INADDR_NONE) {
       inp->s_addr = inaddr.s_addr;
       return 1;
    }

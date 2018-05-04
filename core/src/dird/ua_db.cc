@@ -44,7 +44,7 @@
  * have a catalog, look for a Job keyword and get the
  * catalog from its client record.
  */
-bool open_client_db(UaContext *ua, bool use_private)
+bool OpenClientDb(UaContext *ua, bool use_private)
 {
    int i;
    CatalogResource *catalog;
@@ -54,65 +54,65 @@ bool open_client_db(UaContext *ua, bool use_private)
    /*
     * Try for catalog keyword
     */
-   i = find_arg_with_value(ua, NT_("catalog"));
+   i = FindArgWithValue(ua, NT_("catalog"));
    if (i >= 0) {
       catalog = ua->GetCatalogResWithName(ua->argv[i]);
       if (catalog) {
          if (ua->catalog && ua->catalog != catalog) {
-            close_db(ua);
+            CloseDb(ua);
          }
          ua->catalog = catalog;
-         return open_db(ua, use_private);
+         return OpenDb(ua, use_private);
       }
    }
 
    /*
     * Try for client keyword
     */
-   i = find_arg_with_value(ua, NT_("client"));
+   i = FindArgWithValue(ua, NT_("client"));
    if (i >= 0) {
       client = ua->GetClientResWithName(ua->argv[i]);
       if (client) {
          catalog = client->catalog;
          if (ua->catalog && ua->catalog != catalog) {
-            close_db(ua);
+            CloseDb(ua);
          }
          if (!ua->acl_access_ok(Catalog_ACL, catalog->name(), true)) {
-            ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
+            ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }
          ua->catalog = catalog;
-         return open_db(ua, use_private);
+         return OpenDb(ua, use_private);
       }
    }
 
    /*
     * Try for Job keyword
     */
-   i = find_arg_with_value(ua, NT_("job"));
+   i = FindArgWithValue(ua, NT_("job"));
    if (i >= 0) {
       job = ua->GetJobResWithName(ua->argv[i]);
       if (job && job->client) {
          catalog = job->client->catalog;
          if (ua->catalog && ua->catalog != catalog) {
-            close_db(ua);
+            CloseDb(ua);
          }
          if (!ua->acl_access_ok(Catalog_ACL, catalog->name(), true)) {
-            ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
+            ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }
          ua->catalog = catalog;
-         return open_db(ua, use_private);
+         return OpenDb(ua, use_private);
       }
    }
 
-   return open_db(ua, use_private);
+   return OpenDb(ua, use_private);
 }
 
 /**
  * Open the catalog database.
  */
-bool open_db(UaContext *ua, bool use_private)
+bool OpenDb(UaContext *ua, bool use_private)
 {
    bool mult_db_conn;
 
@@ -136,7 +136,7 @@ bool open_db(UaContext *ua, bool use_private)
    if (!ua->catalog) {
       ua->catalog = get_catalog_resource(ua);
       if (!ua->catalog) {
-         ua->error_msg(_("Could not find a Catalog resource\n"));
+         ua->ErrorMsg(_("Could not find a Catalog resource\n"));
          return false;
       }
    }
@@ -165,7 +165,7 @@ bool open_db(UaContext *ua, bool use_private)
                                          ua->catalog->exit_on_fatal,
                                          use_private);
    if (ua->db == NULL) {
-      ua->error_msg(_("Could not open catalog database \"%s\".\n"), ua->catalog->db_name);
+      ua->ErrorMsg(_("Could not open catalog database \"%s\".\n"), ua->catalog->db_name);
       return false;
    }
    ua->jcr->db = ua->db;
@@ -180,26 +180,26 @@ bool open_db(UaContext *ua, bool use_private)
    }
 
    if (!ua->api && !ua->runscript) {
-      ua->send_msg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
+      ua->SendMsg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
    }
 
    Dmsg1(150, "DB %s opened\n", ua->catalog->db_name);
    return true;
 }
 
-void close_db(UaContext *ua)
+void CloseDb(UaContext *ua)
 {
    if (ua->jcr) {
       ua->jcr->db = NULL;
    }
 
    if (ua->shared_db) {
-      db_sql_close_pooled_connection(ua->jcr, ua->shared_db);
+      DbSqlClosePooledConnection(ua->jcr, ua->shared_db);
       ua->shared_db = NULL;
    }
 
    if (ua->private_db) {
-      db_sql_close_pooled_connection(ua->jcr, ua->private_db);
+      DbSqlClosePooledConnection(ua->jcr, ua->private_db);
       ua->private_db = NULL;
    }
 }
@@ -211,7 +211,7 @@ void close_db(UaContext *ua)
  *           0  record already exists
  *           1  record created
  */
-int create_pool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_op op)
+int CreatePool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_op op)
 {
    PoolDbRecord  pr;
 
@@ -219,22 +219,22 @@ int create_pool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_
 
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
-   if (db->get_pool_record(jcr, &pr)) {
+   if (db->GetPoolRecord(jcr, &pr)) {
       /*
        * Pool Exists
        */
       if (op == POOL_OP_UPDATE) {  /* update request */
-         set_pooldbr_from_poolres(&pr, pool, op);
-         set_pooldbr_references(jcr, db, &pr, pool);
-         db->update_pool_record(jcr, &pr);
+         SetPooldbrFromPoolres(&pr, pool, op);
+         SetPooldbrReferences(jcr, db, &pr, pool);
+         db->UpdatePoolRecord(jcr, &pr);
       }
       return 0;                       /* exists */
    }
 
-   set_pooldbr_from_poolres(&pr, pool, op);
-   set_pooldbr_references(jcr, db, &pr, pool);
+   SetPooldbrFromPoolres(&pr, pool, op);
+   SetPooldbrReferences(jcr, db, &pr, pool);
 
-   if (!db->create_pool_record(jcr, &pr)) {
+   if (!db->CreatePoolRecord(jcr, &pr)) {
       return -1;                      /* error */
    }
    return 1;
@@ -244,7 +244,7 @@ int create_pool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_
  * This is a common routine used to stuff the Pool DB record defaults
  * into the Media DB record just before creating a media (Volume) record.
  */
-void set_pool_dbr_defaults_in_media_dbr(MediaDbRecord *mr, PoolDbRecord *pr)
+void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord *mr, PoolDbRecord *pr)
 {
    mr->PoolId = pr->PoolId;
    bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
@@ -266,7 +266,7 @@ void set_pool_dbr_defaults_in_media_dbr(MediaDbRecord *mr, PoolDbRecord *pr)
  * Set PoolDbRecord.RecyclePoolId and PoolDbRecord.ScratchPoolId from Pool resource
  * works with set_pooldbr_from_poolres
  */
-bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool)
+bool SetPooldbrReferences(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool)
 {
    PoolDbRecord rpool;
    bool ret = true;
@@ -275,7 +275,7 @@ bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *p
       memset(&rpool, 0, sizeof(rpool));
 
       bstrncpy(rpool.Name, pool->RecyclePool->name(), sizeof(rpool.Name));
-      if (db->get_pool_record(jcr, &rpool)) {
+      if (db->GetPoolRecord(jcr, &rpool)) {
         pr->RecyclePoolId = rpool.PoolId;
       } else {
         Jmsg(jcr, M_WARNING, 0,
@@ -293,7 +293,7 @@ bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *p
       memset(&rpool, 0, sizeof(rpool));
 
       bstrncpy(rpool.Name, pool->ScratchPool->name(), sizeof(rpool.Name));
-      if (db->get_pool_record(jcr, &rpool)) {
+      if (db->GetPoolRecord(jcr, &rpool)) {
         pr->ScratchPoolId = rpool.PoolId;
       } else {
         Jmsg(jcr, M_WARNING, 0,
@@ -319,7 +319,7 @@ bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *p
  * Caution : RecyclePoolId isn't setup in this function.
  *           You can use set_pooldbr_recyclepoolid();
  */
-void set_pooldbr_from_poolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op)
+void SetPooldbrFromPoolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op)
 {
    bstrncpy(pr->PoolType, pool->pool_type, sizeof(pr->PoolType));
    if (op == POOL_OP_CREATE) {
@@ -372,17 +372,17 @@ int update_pool_references(JobControlRecord *jcr, BareosDb *db, PoolResource *po
    memset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
-   if (!db->get_pool_record(jcr, &pr)) {
+   if (!db->GetPoolRecord(jcr, &pr)) {
       return -1;                       /* not exists in database */
    }
 
-   set_pooldbr_from_poolres(&pr, pool, POOL_OP_UPDATE);
+   SetPooldbrFromPoolres(&pr, pool, POOL_OP_UPDATE);
 
-   if (!set_pooldbr_references(jcr, db, &pr, pool)) {
+   if (!SetPooldbrReferences(jcr, db, &pr, pool)) {
       return -1;                      /* error */
    }
 
-   if (!db->update_pool_record(jcr, &pr)) {
+   if (!db->UpdatePoolRecord(jcr, &pr)) {
       return -1;                      /* error */
    }
    return true;

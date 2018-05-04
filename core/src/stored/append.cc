@@ -55,7 +55,7 @@ void possible_incomplete_job(JobControlRecord *jcr, int32_t last_file_index)
 /**
  * Append Data sent from File daemon
  */
-bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
+bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
 {
    int32_t n, file_index, stream, last_file_index, job_elapsed;
    bool ok = true;
@@ -75,9 +75,9 @@ bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
       return false;
    }
 
-   Dmsg1(100, "Start append data. res=%d\n", dev->num_reserved());
+   Dmsg1(100, "Start append data. res=%d\n", dev->NumReserved());
 
-   if (!bs->set_buffer_size(dcr->device->max_network_buffer_size, BNET_SETBUF_WRITE)) {
+   if (!bs->SetBufferSize(dcr->device->max_network_buffer_size, BNET_SETBUF_WRITE)) {
       Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
       goto bail_out;
    }
@@ -86,7 +86,7 @@ bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
       goto bail_out;
    }
 
-   if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+   if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
       goto bail_out;
    }
 
@@ -97,12 +97,12 @@ bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
    }
    Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
-   if (!begin_data_spool(dcr) ) {
+   if (!BeginDataSpool(dcr) ) {
       goto bail_out;
    }
 
-   if (!begin_attribute_spool(jcr)) {
-      discard_data_spool(dcr);
+   if (!BeginAttributeSpool(jcr)) {
+      DiscardDataSpool(dcr);
       goto bail_out;
    }
 
@@ -114,7 +114,7 @@ bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
    /*
     * Write Begin Session Record
     */
-   if (!write_session_label(dcr, SOS_LABEL)) {
+   if (!WriteSessionLabel(dcr, SOS_LABEL)) {
       Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
          dev->bstrerror());
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -153,7 +153,7 @@ bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
     */
    dcr->VolFirstIndex = dcr->VolLastIndex = 0;
    jcr->run_time = time(NULL);              /* start counting time for rates */
-   for (last_file_index = 0; ok && !jcr->is_job_canceled(); ) {
+   for (last_file_index = 0; ok && !jcr->IsJobCanceled(); ) {
       /*
        * Read Stream header from the daemon.
        *
@@ -163,7 +163,7 @@ bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
        * - info       (Info for Storage daemon -- compressed, encrypted, ...)
        *               info is not currently used, so is read, but ignored!
        */
-      if ((n = bget_msg(bs)) <= 0) {
+      if ((n = BgetMsg(bs)) <= 0) {
          if (n == BNET_SIGNAL && bs->msglen == BNET_EOD) {
             break;                    /* end of data */
          }
@@ -214,7 +214,7 @@ fi_checked:
        * that after the loop ends.
        */
       rec_data = dcr->rec->data;
-      while ((n = bget_msg(bs)) > 0 && !jcr->is_job_canceled()) {
+      while ((n = BgetMsg(bs)) > 0 && !jcr->IsJobCanceled()) {
          dcr->rec->VolSessionId = jcr->VolSessionId;
          dcr->rec->VolSessionTime = jcr->VolSessionTime;
          dcr->rec->FileIndex = file_index;
@@ -228,14 +228,14 @@ fi_checked:
                stream_to_ascii(buf1, dcr->rec->Stream,
                dcr->rec->FileIndex), dcr->rec->data_len);
 
-         ok = dcr->write_record();
+         ok = dcr->WriteRecord();
          if (!ok) {
-            Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
+            Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
                   dcr->dev->print_name(), dcr->dev->bstrerror());
             break;
          }
 
-         send_attrs_to_dir(jcr, dcr->rec);
+         SendAttrsToDir(jcr, dcr->rec);
          Dmsg0(650, "Enter bnet_get\n");
       }
       Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
@@ -245,8 +245,8 @@ fi_checked:
        */
       dcr->rec->data = rec_data;
 
-      if (bs->is_error()) {
-         if (!jcr->is_job_canceled()) {
+      if (bs->IsError()) {
+         if (!jcr->IsJobCanceled()) {
             Dmsg2(350, "Network read error from %s. ERR=%s\n",
                   what, bs->bstrerror());
             Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
@@ -268,7 +268,7 @@ fi_checked:
        * Terminate connection with FD
        */
       bs->fsend(OK_append);
-      do_fd_commands(jcr);               /* finish dialog with FD */
+      DoFdCommands(jcr);               /* finish dialog with FD */
    } else if (bs == jcr->store_bsock) {
       bs->fsend(OK_replicate);
    } else {
@@ -281,12 +281,12 @@ fi_checked:
     * Check if we can still write. This may not be the case
     * if we are at the end of the tape or we got a fatal I/O error.
     */
-   if (ok || dev->can_write()) {
-      if (!write_session_label(dcr, EOS_LABEL)) {
+   if (ok || dev->CanWrite()) {
+      if (!WriteSessionLabel(dcr, EOS_LABEL)) {
          /*
           * Print only if ok and not cancelled to avoid spurious messages
           */
-         if (ok && !jcr->is_job_canceled()) {
+         if (ok && !jcr->IsJobCanceled()) {
             Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                   dev->bstrerror());
             possible_incomplete_job(jcr, last_file_index);
@@ -299,14 +299,14 @@ fi_checked:
       /*
        * Flush out final partial block of this session
        */
-      if (!dcr->write_block_to_device()) {
+      if (!dcr->WriteBlockToDevice()) {
          /*
           * Print only if ok and not cancelled to avoid spurious messages
           */
-         if (ok && !jcr->is_job_canceled()) {
+         if (ok && !jcr->IsJobCanceled()) {
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
-            Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
+            Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
             possible_incomplete_job(jcr, last_file_index);
          }
          jcr->setJobStatus(JS_ErrorTerminated);
@@ -315,12 +315,12 @@ fi_checked:
    }
 
    if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
-      discard_data_spool(dcr);
+      DiscardDataSpool(dcr);
    } else {
       /*
        * Note: if commit is OK, the device will remain blocked
        */
-      commit_data_spool(dcr);
+      CommitDataSpool(dcr);
    }
 
    /*
@@ -339,17 +339,17 @@ fi_checked:
    /*
     * Release the device -- and send final Vol info to DIR and unlock it.
     */
-   release_device(dcr);
+   ReleaseDevice(dcr);
 
-   if ((!ok || jcr->is_job_canceled()) && !jcr->is_JobStatus(JS_Incomplete)) {
-      discard_attribute_spool(jcr);
+   if ((!ok || jcr->IsJobCanceled()) && !jcr->is_JobStatus(JS_Incomplete)) {
+      DiscardAttributeSpool(jcr);
    } else {
-      commit_attribute_spool(jcr);
+      CommitAttributeSpool(jcr);
    }
 
    jcr->sendJobStatus();          /* update director */
 
-   Dmsg1(100, "return from do_append_data() ok=%d\n", ok);
+   Dmsg1(100, "return from DoAppendData() ok=%d\n", ok);
    return ok;
 
 bail_out:
@@ -360,25 +360,25 @@ bail_out:
 /**
  * Send attributes and digest to Director for Catalog
  */
-bool send_attrs_to_dir(JobControlRecord *jcr, DeviceRecord *rec)
+bool SendAttrsToDir(JobControlRecord *jcr, DeviceRecord *rec)
 {
    if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES    ||
        rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX ||
        rec->maskedStream == STREAM_RESTORE_OBJECT     ||
-       crypto_digest_stream_type(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
+       CryptoDigestStreamType(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
       if (!jcr->no_attributes) {
          BareosSocket *dir = jcr->dir_bsock;
-         if (are_attributes_spooled(jcr)) {
-            dir->set_spooling();
+         if (AreAttributesSpooled(jcr)) {
+            dir->SetSpooling();
          }
          Dmsg0(850, "Send attributes to dir.\n");
-         if (!jcr->dcr->dir_update_file_attributes(rec)) {
+         if (!jcr->dcr->DirUpdateFileAttributes(rec)) {
             Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
                dir->bstrerror());
-            dir->clear_spooling();
+            dir->ClearSpooling();
             return false;
          }
-         dir->clear_spooling();
+         dir->ClearSpooling();
       }
    }
    return true;

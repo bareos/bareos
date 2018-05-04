@@ -108,9 +108,9 @@ int main (int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   init_stack_dump();
-   my_name_is(argc, argv, "bareos-fd");
-   init_msg(NULL, NULL);
+   InitStackDump();
+   MyNameIs(argc, argv, "bareos-fd");
+   InitMsg(NULL, NULL);
    daemon_start_time = time(NULL);
 
    while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:?")) != -1) {
@@ -215,7 +215,7 @@ int main (int argc, char *argv[])
    }
 
    if (!no_signals) {
-      init_signals(terminate_filed);
+      InitSignals(TerminateFiled);
    } else {
       /*
        * This reduces the number of signals facilitating debugging
@@ -227,8 +227,8 @@ int main (int argc, char *argv[])
       PoolMem buffer;
 
       my_config = new_config_parser();
-      init_fd_config(my_config, configfile, M_ERROR_TERM);
-      print_config_schema_json(buffer);
+      InitFdConfig(my_config, configfile, M_ERROR_TERM);
+      PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       goto bail_out;
    }
@@ -237,26 +237,26 @@ int main (int argc, char *argv[])
    parse_fd_config(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->dump_resources(prtmsg, NULL);
+      my_config->DumpResources(prtmsg, NULL);
       goto bail_out;
    }
 
    if (!foreground && !test_config) {
       daemon_start();
-      init_stack_dump();              /* set new pid */
+      InitStackDump();              /* set new pid */
    }
 
-   if (init_crypto() != 0) {
+   if (InitCrypto() != 0) {
       Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
-      terminate_filed(1);
+      TerminateFiled(1);
    }
 
    if (!check_resources()) {
       Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
-      terminate_filed(1);
+      TerminateFiled(1);
    }
 
-   set_working_directory(me->working_directory);
+   SetWorkingDirectory(me->working_directory);
 
 #if defined(HAVE_WIN32)
    if (me->compatible) {
@@ -267,44 +267,44 @@ int main (int argc, char *argv[])
 #endif
 
    if (test_config) {
-      terminate_filed(0);
+      TerminateFiled(0);
    }
 
-   set_thread_concurrency(me->MaxConcurrentJobs * 2 + 10);
-   lmgr_init_thread(); /* initialize the lockmanager stack */
+   SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 10);
+   LmgrInitThread(); /* initialize the lockmanager stack */
 
    /* Maximum 1 daemon at a time */
-   create_pid_file(me->pid_directory, "bareos-fd",
-                   get_first_port_host_order(me->FDaddrs));
-   read_state_file(me->working_directory, "bareos-fd",
-                   get_first_port_host_order(me->FDaddrs));
+   CreatePidFile(me->pid_directory, "bareos-fd",
+                   GetFirstPortHostOrder(me->FDaddrs));
+   ReadStateFile(me->working_directory, "bareos-fd",
+                   GetFirstPortHostOrder(me->FDaddrs));
 
-   load_fd_plugins(me->plugin_directory, me->plugin_names);
+   LoadFdPlugins(me->plugin_directory, me->plugin_names);
 
    if (!no_signals) {
-      start_watchdog();               /* start watchdog thread */
+      StartWatchdog();               /* start watchdog thread */
       if (me->jcr_watchdog_time) {
-         init_jcr_subsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
+         InitJcrSubsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
       }
    }
 
    /*
     * if configured, start threads and connect to Director.
     */
-   start_connect_to_director_threads();
+   StartConnectToDirectorThreads();
 
    /*
     * start socket server to listen for new connections.
     */
-   start_socket_server(me->FDaddrs);
+   StartSocketServer(me->FDaddrs);
 
-   terminate_filed(0);
+   TerminateFiled(0);
 
 bail_out:
    exit(0);
 }
 
-void terminate_filed(int sig)
+void TerminateFiled(int sig)
 {
    static bool already_here = false;
 
@@ -314,32 +314,32 @@ void terminate_filed(int sig)
    }
    already_here = true;
    debug_level = 0;                   /* turn off debug */
-   stop_watchdog();
+   StopWatchdog();
 
-   stop_connect_to_director_threads(true);
-   stop_socket_server(true);
+   StopConnectToDirectorThreads(true);
+   StopSocketServer(true);
 
-   unload_fd_plugins();
-   flush_mntent_cache();
-   write_state_file(me->working_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));
-   delete_pid_file(me->pid_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));
+   UnloadFdPlugins();
+   FlushMntentCache();
+   WriteStateFile(me->working_directory, "bareos-fd", GetFirstPortHostOrder(me->FDaddrs));
+   DeletePidFile(me->pid_directory, "bareos-fd", GetFirstPortHostOrder(me->FDaddrs));
 
    if (configfile != NULL) {
       free(configfile);
    }
 
    if (debug_level > 0) {
-      print_memory_pool_stats();
+      PrintMemoryPoolStats();
    }
    if (my_config) {
-      my_config->free_resources();
+      my_config->FreeResources();
       free(my_config);
       my_config = NULL;
    }
-   term_msg();
-   cleanup_crypto();
-   close_memory_pool();               /* release free memory in pool */
-   lmgr_cleanup_main();
+   TermMsg();
+   CleanupCrypto();
+   CloseMemoryPool();               /* release free memory in pool */
+   LmgrCleanupMain();
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }
@@ -375,7 +375,7 @@ static bool check_resources()
               configfile);
          OK = false;
       }
-      my_name_is(0, NULL, me->name());
+      MyNameIs(0, NULL, me->name());
       if (!me->messages) {
          me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
@@ -411,13 +411,13 @@ static bool check_resources()
             Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
             OK = false;
          } else {
-            if (!crypto_keypair_load_cert(me->pki_keypair, me->pki_keypair_file)) {
+            if (!CryptoKeypairLoadCert(me->pki_keypair, me->pki_keypair_file)) {
                Emsg2(M_FATAL, 0, _("Failed to load public certificate for File"
                      " daemon \"%s\" in %s.\n"), me->name(), configfile);
                OK = false;
             }
 
-            if (!crypto_keypair_load_key(me->pki_keypair, me->pki_keypair_file, NULL, NULL)) {
+            if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file, NULL, NULL)) {
                Emsg2(M_FATAL, 0, _("Failed to load private key for File"
                      " daemon \"%s\" in %s.\n"), me->name(), configfile);
                OK = false;
@@ -442,12 +442,12 @@ static bool check_resources()
                   Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
                   OK = false;
                } else {
-                  if (crypto_keypair_load_cert(keypair, filepath)) {
+                  if (CryptoKeypairLoadCert(keypair, filepath)) {
                      me->pki_signers->append(keypair);
 
                      /* Attempt to load a private key, if available */
-                     if (crypto_keypair_has_key(filepath)) {
-                        if (!crypto_keypair_load_key(keypair, filepath, NULL, NULL)) {
+                     if (CryptoKeypairHasKey(filepath)) {
+                        if (!CryptoKeypairLoadKey(keypair, filepath, NULL, NULL)) {
                            Emsg3(M_FATAL, 0, _("Failed to load private key from file %s for File"
                               " daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
                            OK = false;
@@ -483,7 +483,7 @@ static bool check_resources()
                   Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
                   OK = false;
                } else {
-                  if (crypto_keypair_load_cert(keypair, filepath)) {
+                  if (CryptoKeypairLoadCert(keypair, filepath)) {
                      me->pki_recipients->append(keypair);
                   } else {
                      Emsg3(M_FATAL, 0, _("Failed to load master key certificate"
@@ -510,13 +510,13 @@ static bool check_resources()
    UnlockRes();
 
    if (OK) {
-      close_msg(NULL);                /* close temp message handler */
-      init_msg(NULL, me->messages);   /* open user specified message handler */
+      CloseMsg(NULL);                /* close temp message handler */
+      InitMsg(NULL, me->messages);   /* open user specified message handler */
       if (me->secure_erase_cmdline) {
-         set_secure_erase_cmdline(me->secure_erase_cmdline);
+         SetSecureEraseCmdline(me->secure_erase_cmdline);
       }
       if (me->log_timestamp_format) {
-         set_log_timestamp_format(me->log_timestamp_format);
+         SetLogTimestampFormat(me->log_timestamp_format);
       }
    }
 

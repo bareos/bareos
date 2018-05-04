@@ -22,32 +22,32 @@
 #ifndef BAREOS_DIRD_FD_CMDS_H_
 #define BAREOS_DIRD_FD_CMDS_H_
 
-bool connect_to_file_daemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose);
-int  send_job_info(JobControlRecord *jcr);
-bool send_include_list(JobControlRecord *jcr);
-bool send_exclude_list(JobControlRecord *jcr);
-bool send_level_command(JobControlRecord *jcr);
-bool send_bwlimit_to_fd(JobControlRecord *jcr, const char *Job);
-bool send_secure_erase_req_to_fd(JobControlRecord *jcr);
-bool send_previous_restore_objects(JobControlRecord *jcr);
-int get_attributes_and_put_in_catalog(JobControlRecord *jcr);
-void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId);
+bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose);
+int  SendJobInfo(JobControlRecord *jcr);
+bool SendIncludeList(JobControlRecord *jcr);
+bool SendExcludeList(JobControlRecord *jcr);
+bool SendLevelCommand(JobControlRecord *jcr);
+bool SendBwlimitToFd(JobControlRecord *jcr, const char *Job);
+bool SendSecureEraseReqToFd(JobControlRecord *jcr);
+bool SendPreviousRestoreObjects(JobControlRecord *jcr);
+int GetAttributesAndPutInCatalog(JobControlRecord *jcr);
+void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId);
 int put_file_into_catalog(JobControlRecord *jcr, long file_index, char *fname,
                           char *link, char *attr, int stream);
-int send_runscripts_commands(JobControlRecord *jcr);
+int SendRunscriptsCommands(JobControlRecord *jcr);
 bool send_plugin_options(JobControlRecord *jcr);
 bool send_restore_objects(JobControlRecord *jcr, JobId_t JobId, bool send_global);
 bool cancel_file_daemon_job(UaContext *ua, JobControlRecord *jcr);
-void do_native_client_status(UaContext *ua, ClientResource *client, char *cmd);
-void do_client_resolve(UaContext *ua, ClientResource *client);
+void DoNativeClientStatus(UaContext *ua, ClientResource *client, char *cmd);
+void DoClientResolve(UaContext *ua, ClientResource *client);
 void *handle_filed_connection(ConnectionPool *connections, BareosSocket *fd,
                               char *client_name, int fd_protocol_version);
 
 ConnectionPool *get_client_connections();
-bool is_connecting_to_client_allowed(ClientResource *res);
-bool is_connecting_to_client_allowed(JobControlRecord *jcr);
-bool is_connect_from_client_allowed(ClientResource *res);
-bool is_connect_from_client_allowed(JobControlRecord *jcr);
-bool use_waiting_client(JobControlRecord *jcr_job, int timeout);
+bool IsConnectingToClientAllowed(ClientResource *res);
+bool IsConnectingToClientAllowed(JobControlRecord *jcr);
+bool IsConnectFromClientAllowed(ClientResource *res);
+bool IsConnectFromClientAllowed(JobControlRecord *jcr);
+bool UseWaitingClient(JobControlRecord *jcr_job, int timeout);
 
 #endif // BAREOS_DIRD_FD_CMDS_H_

@@ -504,7 +504,7 @@ static bool setup_auto_deflation(bpContext *ctx, DeviceControlRecord *dcr)
       jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    }
 
-   if (!setup_compression_buffers(jcr, sd_enabled_compatible,
+   if (!SetupCompressionBuffers(jcr, sd_enabled_compatible,
                                   dcr->device->autodeflate_algorithm,
                                   &compress_buf_size)) {
       goto bail_out;
@@ -514,11 +514,11 @@ static bool setup_auto_deflation(bpContext *ctx, DeviceControlRecord *dcr)
     * See if we need to create a new compression buffer or make sure the existing is big enough.
     */
    if (!jcr->compress.deflate_buffer) {
-      jcr->compress.deflate_buffer = get_memory(compress_buf_size);
+      jcr->compress.deflate_buffer = GetMemory(compress_buf_size);
       jcr->compress.deflate_buffer_size = compress_buf_size;
    } else {
       if (compress_buf_size > jcr->compress.deflate_buffer_size) {
-         jcr->compress.deflate_buffer = realloc_pool_memory(jcr->compress.deflate_buffer, compress_buf_size);
+         jcr->compress.deflate_buffer = ReallocPoolMemory(jcr->compress.deflate_buffer, compress_buf_size);
          jcr->compress.deflate_buffer_size = compress_buf_size;
       }
    }
@@ -594,17 +594,17 @@ static bool setup_auto_inflation(bpContext *ctx, DeviceControlRecord *dcr)
       jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    }
 
-   setup_decompression_buffers(jcr, &decompress_buf_size);
+   SetupDecompressionBuffers(jcr, &decompress_buf_size);
    if (decompress_buf_size > 0) {
       /*
        * See if we need to create a new compression buffer or make sure the existing is big enough.
        */
       if (!jcr->compress.inflate_buffer) {
-         jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+         jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
          jcr->compress.inflate_buffer_size = decompress_buf_size;
       } else {
          if (decompress_buf_size > jcr->compress.inflate_buffer_size) {
-            jcr->compress.inflate_buffer = realloc_pool_memory(jcr->compress.inflate_buffer, decompress_buf_size);
+            jcr->compress.inflate_buffer = ReallocPoolMemory(jcr->compress.inflate_buffer, decompress_buf_size);
             jcr->compress.inflate_buffer_size = decompress_buf_size;
          }
       }
@@ -671,7 +671,7 @@ static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
     * with the with_data boolean set explicitly to false.
     */
    nrec = bfuncs->new_record(false);
-   bfuncs->copy_record_state(nrec, rec);
+   bfuncs->CopyRecordState(nrec, rec);
 
    /*
     * Setup the converted DeviceRecord to point with its data buffer to the compression buffer.
@@ -692,9 +692,9 @@ static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
    /*
     * Compress the data using the configured compression algorithm.
     */
-   if (!compress_data(dcr->jcr, dcr->device->autodeflate_algorithm, rec->data, rec->data_len,
+   if (!CompressData(dcr->jcr, dcr->device->autodeflate_algorithm, rec->data, rec->data_len,
                       data, max_compression_length, &nrec->data_len)) {
-      bfuncs->free_record(nrec);
+      bfuncs->FreeRecord(nrec);
       goto bail_out;
    }
 
@@ -729,12 +729,12 @@ static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
    switch (nrec->maskedStream) {
    case STREAM_COMPRESSED_DATA:
    case STREAM_WIN32_COMPRESSED_DATA:
-      ser_begin(nrec->data, sizeof(comp_stream_header));
+      SerBegin(nrec->data, sizeof(comp_stream_header));
       ser_uint32(ch.magic);
       ser_uint32(ch.size);
       ser_uint16(ch.level);
       ser_uint16(ch.version);
-      ser_end(nrec->data, sizeof(comp_stream_header));
+      SerEnd(nrec->data, sizeof(comp_stream_header));
       nrec->data_len += sizeof(comp_stream_header);
       break;
    case STREAM_SPARSE_COMPRESSED_DATA:
@@ -742,12 +742,12 @@ static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
        * Copy the sparse offset from the original.
        */
       memcpy(nrec->data, rec->data, OFFSET_FADDR_SIZE);
-      ser_begin(nrec->data + OFFSET_FADDR_SIZE, sizeof(comp_stream_header));
+      SerBegin(nrec->data + OFFSET_FADDR_SIZE, sizeof(comp_stream_header));
       ser_uint32(ch.magic);
       ser_uint32(ch.size);
       ser_uint16(ch.level);
       ser_uint16(ch.version);
-      ser_end(nrec->data + OFFSET_FADDR_SIZE, sizeof(comp_stream_header));
+      SerEnd(nrec->data + OFFSET_FADDR_SIZE, sizeof(comp_stream_header));
       nrec->data_len += OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
       break;
    }
@@ -762,7 +762,7 @@ static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
     * If the input is just an intermediate value free it now.
     */
    if (intermediate_value) {
-      bfuncs->free_record(dcr->after_rec);
+      bfuncs->FreeRecord(dcr->after_rec);
    }
    dcr->after_rec = nrec;
    retval = true;
@@ -823,20 +823,20 @@ static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr)
     * with the with_data boolean set explicitly to false.
     */
    nrec = bfuncs->new_record(false);
-   bfuncs->copy_record_state(nrec, rec);
+   bfuncs->CopyRecordState(nrec, rec);
 
    /*
     * Setup the converted record to point to the original data.
-    * The decompress_data function will decompress that data and
+    * The DecompressData function will decompress that data and
     * then update the pointers with the data in the compression buffer
     * and with the length of the decompressed data.
     */
    nrec->data = rec->data;
    nrec->data_len = rec->data_len;
 
-   if (!decompress_data(dcr->jcr, "Unknown", rec->maskedStream,
+   if (!DecompressData(dcr->jcr, "Unknown", rec->maskedStream,
                         &nrec->data, &nrec->data_len, true)) {
-      bfuncs->free_record(nrec);
+      bfuncs->FreeRecord(nrec);
       goto bail_out;
    }
 
@@ -870,7 +870,7 @@ static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr)
     * If the input is just an intermediate value free it now.
     */
    if (intermediate_value) {
-      bfuncs->free_record(dcr->after_rec);
+      bfuncs->FreeRecord(dcr->after_rec);
    }
    dcr->after_rec = nrec;
    retval = true;

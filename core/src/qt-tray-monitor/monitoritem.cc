@@ -48,8 +48,8 @@ char* MonitorItem::get_name() const
 void MonitorItem::writecmd(const char* command)
 {
    if (d->DSock) {
-      d->DSock->msglen = pm_strcpy(d->DSock->msg, command);
-      bnet_send(d->DSock);
+      d->DSock->msglen = PmStrcpy(d->DSock->msg, command);
+      BnetSend(d->DSock);
    }
 }
 
@@ -75,7 +75,7 @@ bool MonitorItem::get_job_defaults(struct JobDefaults &job_defs)
 
          /* Pointer to default value */
          *def++ = 0;
-         strip_trailing_newline(def);
+         StripTrailingNewline(def);
 
          if (strcmp(dircomm->msg, "job") == 0) {
 
@@ -118,7 +118,7 @@ bool MonitorItem::doconnect()
 
   DirectorResource *dird;
   ClientResource *filed;
-  StoreResource *stored;
+  StorageResource *stored;
   QString message;
 
   switch (d->type) {
@@ -152,7 +152,7 @@ bool MonitorItem::doconnect()
      break;
 
   case R_STORAGE:
-     stored = static_cast<StoreResource*>(d->resource);
+     stored = static_cast<StorageResource*>(d->resource);
      message = QString("Connecting to Storage %1:%2").arg(stored->address).arg(stored->SDport);
      emit showStatusbarMessage(message);
      d->DSock =  New(BareosSocketTCP);
@@ -182,7 +182,7 @@ bool MonitorItem::doconnect()
      return false;
   }
 
-  if (!authenticate_with_daemon(this, &jcr)) {
+  if (!AuthenticateWithDaemon(this, &jcr)) {
 
      d->state = MonitorItem::Error;
      emit statusChanged(name, d->state);
@@ -250,8 +250,8 @@ bool MonitorItem::docmd(const char* command)
 
    while (1) {
       int stat;
-      if ((stat = bnet_recv(d->DSock)) >= 0) {
-         strip_trailing_newline(d->DSock->msg);
+      if ((stat = BnetRecv(d->DSock)) >= 0) {
+         StripTrailingNewline(d->DSock->msg);
          QString msg = QString::fromUtf8(d->DSock->msg);
          emit appendText(QString::fromUtf8(get_name()), msg);
          if (d->type == R_CLIENT) {
@@ -268,7 +268,7 @@ bool MonitorItem::docmd(const char* command)
             // qDebug() << "<< PROMPT >>";
             return false;
          } else if (d->DSock->msglen == BNET_HEARTBEAT) {
-            bnet_sig(d->DSock, BNET_HB_RESPONSE);
+            BnetSig(d->DSock, BNET_HB_RESPONSE);
          } else {
             qDebug() << bnet_sig_to_ascii(d->DSock);
          }
@@ -279,16 +279,16 @@ bool MonitorItem::docmd(const char* command)
          emit showStatusbarMessage("Error : BNET_HARDEOF or BNET_ERROR");
          //fprintf(stderr, "<< ERROR >>\n"));
          return false;
-      } /* if ((stat = bnet_recv(d->DSock)) >= 0) */
+      } /* if ((stat = BnetRecv(d->DSock)) >= 0) */
 
-      if (is_bnet_stop(d->DSock)) {
+      if (IsBnetStop(d->DSock)) {
          d->DSock = NULL;
          d->state = MonitorItem::Error;
          emit statusChanged(get_name(), d->state);
          emit showStatusbarMessage("Error : Connection closed.");
          //fprintf(stderr, "<< STOP >>\n");
          return false;            /* error or term */
-      } /* if (is_bnet_stop(d->DSock) */
+      } /* if (IsBnetStop(d->DSock) */
 
    } /* while (1) */
 }
@@ -297,15 +297,15 @@ void MonitorItem::get_list(const char *cmd, QStringList &lst)
 {
    doconnect();
    writecmd(cmd);
-   while (bnet_recv(d->DSock) >= 0) {
-      strip_trailing_newline(d->DSock->msg);
+   while (BnetRecv(d->DSock) >= 0) {
+      StripTrailingNewline(d->DSock->msg);
       if (*(d->DSock->msg)) {
          lst << QString(d->DSock->msg);
       }
    }
 }
 
-void MonitorItem::get_status()
+void MonitorItem::GetStatus()
 {
     switch (d->type) {
         case R_DIRECTOR:

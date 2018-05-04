@@ -22,6 +22,6 @@
 #ifndef BAREOS_DIRD_UA_STATUS_H_
 #define BAREOS_DIRD_UA_STATUS_H_
 
-void list_dir_status_header(UaContext *ua);
+void ListDirStatusHeader(UaContext *ua);
 
 #endif // BAREOS_DIRD_UA_STATUS_H_

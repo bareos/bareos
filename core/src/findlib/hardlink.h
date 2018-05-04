@@ -23,7 +23,7 @@
 
 DLL_IMP_EXP CurLink *lookup_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, ino_t ino, dev_t dev);
 DLL_IMP_EXP CurLink *new_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname, ino_t ino, dev_t dev);
-DLL_IMP_EXP void ff_pkt_set_link_digest(FindFilesPacket *ff_pkt,
+DLL_IMP_EXP void FfPktSetLinkDigest(FindFilesPacket *ff_pkt,
                             int32_t digest_stream,
                             const char *digest,
                             uint32_t len);

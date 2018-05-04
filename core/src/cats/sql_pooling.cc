@@ -80,9 +80,9 @@ BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
       return NULL;
    }
 
-   if (!mdb->open_database(jcr)) {
+   if (!mdb->OpenDatabase(jcr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->strerror());
-      mdb->close_database(jcr);
+      mdb->CloseDatabase(jcr);
       return NULL;
    }
 
@@ -103,9 +103,9 @@ static void destroy_pool_descriptor(SqlPoolDescriptor *spd, bool flush_only)
    while (spe) {
       spe_next = (SqlPoolEntry *)spd->pool_entries->get_next(spe);
       if (!flush_only || spe->reference_count == 0) {
-         Dmsg3(100, "db_sql_pool_destroy destroy db pool connection %d to %s, backend type %s\n",
-               spe->id, spe->db_handle->get_db_name(), spe->db_handle->get_type());
-         spe->db_handle->close_database(NULL);
+         Dmsg3(100, "DbSqlPoolDestroy destroy db pool connection %d to %s, backend type %s\n",
+               spe->id, spe->db_handle->get_db_name(), spe->db_handle->GetType());
+         spe->db_handle->CloseDatabase(NULL);
          if (flush_only) {
             spd->pool_entries->remove(spe);
             free(spe);
@@ -214,9 +214,9 @@ bool db_sql_pool_initialize(const char *db_drivername,
          goto bail_out;
       }
 
-      if (!mdb->open_database(NULL)) {
+      if (!mdb->OpenDatabase(NULL)) {
          Jmsg(NULL, M_FATAL, 0, "%s", mdb->strerror());
-         mdb->close_database(NULL);
+         mdb->CloseDatabase(NULL);
          goto bail_out;
       }
 
@@ -261,7 +261,7 @@ ok_out:
  * Cleanup the sql connection pools.
  * This gets called on shutdown.
  */
-void db_sql_pool_destroy(void)
+void DbSqlPoolDestroy(void)
 {
    SqlPoolDescriptor *spd, *spd_next;
 
@@ -288,7 +288,7 @@ void db_sql_pool_destroy(void)
  * Flush the sql connection pools.
  * This gets called on config reload. We close all unreferenced connections.
  */
-void db_sql_pool_flush(void)
+void DbSqlPoolFlush(void)
 {
    SqlPoolEntry *spe;
    SqlPoolDescriptor *spd, *spd_next;
@@ -382,7 +382,7 @@ static inline void sql_pool_grow(SqlPoolDescriptor *spd)
          spd->pool_entries->append(spe);
       }
       Dmsg3(100, "sql_pool_grow created %d connections to database %s, backend type %s\n",
-            cnt, spe->db_handle->get_db_name(), spe->db_handle->get_type());
+            cnt, spe->db_handle->get_db_name(), spe->db_handle->GetType());
       spd->last_update = now;
    } else {
       Dmsg0(100, "sql_pool_grow unable to determine first entry on pool list\n");
@@ -433,7 +433,7 @@ static inline void sql_pool_shrink(SqlPoolDescriptor *spd)
    spe = (SqlPoolEntry *)spd->pool_entries->first();
    if (spe) {
       Dmsg3(100, "sql_pool_shrink shrinking connection pool with %d connections to database %s, backend type %s\n",
-            cnt, spe->db_handle->get_db_name(), spe->db_handle->get_type());
+            cnt, spe->db_handle->get_db_name(), spe->db_handle->GetType());
    }
 
    /*
@@ -449,7 +449,7 @@ static inline void sql_pool_shrink(SqlPoolDescriptor *spd)
         */
       if (spe->reference_count == 0 && ((now - spe->last_update) >= spd->idle_timeout)) {
          spd->pool_entries->remove(spe);
-         spe->db_handle->close_database(NULL);
+         spe->db_handle->CloseDatabase(NULL);
          free(spe);
          spd->nr_connections--;
          cnt--;
@@ -488,7 +488,7 @@ static inline SqlPoolDescriptor *sql_find_pool_descriptor(const char *db_drivern
    foreach_dlist(spd, db_pooling_descriptors) {
       if (spd->active) {
          foreach_dlist(spe, spd->pool_entries) {
-            if (spe->db_handle->match_database(db_drivername, db_name, db_address, db_port)) {
+            if (spe->db_handle->MatchDatabase(db_drivername, db_name, db_address, db_port)) {
                return spd;
             }
          }
@@ -603,12 +603,12 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
              * See if the connection match needs validation.
              */
             if ((now - use_connection->last_update) >= wanted_pool->validate_timeout) {
-               if (!use_connection->db_handle->validate_connection()) {
+               if (!use_connection->db_handle->ValidateConnection()) {
                   /*
                    * Connection seems to be dead kill it from the pool.
                    */
                   wanted_pool->pool_entries->remove(use_connection);
-                  use_connection->db_handle->close_database(jcr);
+                  use_connection->db_handle->CloseDatabase(jcr);
                   free(use_connection);
                   wanted_pool->nr_connections--;
                   continue;
@@ -621,7 +621,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                 * Cannot find an already open connection that is unused.
                 * See if there is still room to grow the pool if not this is it.
                 * We just give back a non pooled connection which gets a proper cleanup
-                * anyhow when it discarded using db_sql_close_pooled_connection.
+                * anyhow when it discarded using DbSqlClosePooledConnection.
                 */
                if (wanted_pool->nr_connections >= wanted_pool->max_connections) {
                   db_handle = db_sql_get_non_pooled_connection(jcr,
@@ -678,9 +678,9 @@ ok_out:
    db_handle = use_connection->db_handle;
 
    /*
-    * Set the is_private flag of this database connection to the wanted state.
+    * Set the IsPrivate flag of this database connection to the wanted state.
     */
-   db_handle->set_private(need_private);
+   db_handle->SetPrivate(need_private);
 
 bail_out:
    V(mutex);
@@ -693,7 +693,7 @@ bail_out:
  * The abort flag is set when we encounter a dead or misbehaving connection
  * which needs to be closed right away and should not be reused.
  */
-void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool abort)
+void DbSqlClosePooledConnection(JobControlRecord *jcr, BareosDb *mdb, bool abort)
 {
    SqlPoolEntry *spe, *spe_next;
    SqlPoolDescriptor *spd, *spd_next;
@@ -704,7 +704,7 @@ void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool a
     * See if pooling is enabled.
     */
    if (!db_pooling_descriptors) {
-      mdb->close_database(jcr);
+      mdb->CloseDatabase(jcr);
       return;
    }
 
@@ -734,7 +734,7 @@ void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool a
                /*
                 * End any active transactions.
                 */
-               mdb->end_transaction(jcr);
+               mdb->EndTransaction(jcr);
 
                /*
                 * Decrement reference count and update last update field.
@@ -742,14 +742,14 @@ void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool a
                spe->reference_count--;
                time(&spe->last_update);
 
-               Dmsg3(100, "db_sql_close_pooled_connection decrementing reference count of connection %d now %d, backend type %s\n",
-                     spe->id, spe->reference_count, spe->db_handle->get_type());
+               Dmsg3(100, "DbSqlClosePooledConnection decrementing reference count of connection %d now %d, backend type %s\n",
+                     spe->id, spe->reference_count, spe->db_handle->GetType());
 
                /*
-                * Clear the is_private flag if this is a free connection again.
+                * Clear the IsPrivate flag if this is a free connection again.
                 */
                if (spe->reference_count == 0) {
-                  mdb->set_private(false);
+                  mdb->SetPrivate(false);
                }
 
                /*
@@ -757,15 +757,15 @@ void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool a
                 */
                if (!spd->active && spe->reference_count == 0) {
                   spd->pool_entries->remove(spe);
-                  spe->db_handle->close_database(jcr);
+                  spe->db_handle->CloseDatabase(jcr);
                   free(spe);
                   spd->nr_connections--;
                }
             } else {
-               Dmsg3(100, "db_sql_close_pooled_connection aborting connection to database %s reference count %d, backend type %s\n",
-                     spe->db_handle->get_db_name(), spe->reference_count, spe->db_handle->get_type());
+               Dmsg3(100, "DbSqlClosePooledConnection aborting connection to database %s reference count %d, backend type %s\n",
+                     spe->db_handle->get_db_name(), spe->reference_count, spe->db_handle->GetType());
                spd->pool_entries->remove(spe);
-               spe->db_handle->close_database(jcr);
+               spe->db_handle->CloseDatabase(jcr);
                free(spe);
                spd->nr_connections--;
             }
@@ -792,7 +792,7 @@ void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool a
           * Only try to shrink when the last update on the pool was more than the validate time ago.
           */
          if ((now - spd->last_update) >= spd->validate_timeout) {
-            Dmsg0(100, "db_sql_close_pooled_connection trying to shrink connection pool\n");
+            Dmsg0(100, "DbSqlClosePooledConnection trying to shrink connection pool\n");
             sql_pool_shrink(spd);
          }
       }
@@ -812,7 +812,7 @@ void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool a
     * this connection and we just close the connection.
     */
    if (!found) {
-      mdb->close_database(jcr);
+      mdb->CloseDatabase(jcr);
    }
 
    V(mutex);
@@ -847,7 +847,7 @@ bool db_sql_pool_initialize(const char *db_drivername,
  * Cleanup the sql connection pools.
  * For non pooling this is a no-op.
  */
-void db_sql_pool_destroy(void)
+void DbSqlPoolDestroy(void)
 {
 }
 
@@ -855,7 +855,7 @@ void db_sql_pool_destroy(void)
  * Flush the sql connection pools.
  * For non pooling this is a no-op.
  */
-void db_sql_pool_flush(void)
+void DbSqlPoolFlush(void)
 {
 }
 
@@ -894,11 +894,11 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
 
 /**
  * Put a connection back onto the pool for reuse.
- * For non pooling we just do a close_database.
+ * For non pooling we just do a CloseDatabase.
  */
-void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool abort)
+void DbSqlClosePooledConnection(JobControlRecord *jcr, BareosDb *mdb, bool abort)
 {
-   mdb->close_database(jcr);
+   mdb->CloseDatabase(jcr);
 }
 
 #endif /* HAVE_SQL_POOLING */

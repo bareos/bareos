@@ -69,14 +69,14 @@ public:
 inline berrno::berrno(int pool)
 {
    berrno_ = errno;
-   buf_ = get_pool_memory(pool);
+   buf_ = GetPoolMemory(pool);
    *buf_ = 0;
    errno = berrno_;
 }
 
 inline berrno::~berrno()
 {
-   free_pool_memory(buf_);
+   FreePoolMemory(buf_);
 }
 
 inline const char *berrno::bstrerror(int errnum)

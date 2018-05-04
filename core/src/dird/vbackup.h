@@ -21,8 +21,8 @@
 #ifndef BAREOS_DIRD_VBACKUP_H_
 #define BAREOS_DIRD_VBACKUP_H_
 
-bool do_native_vbackup_init(JobControlRecord *jcr);
+bool DoNativeVbackupInit(JobControlRecord *jcr);
 bool do_native_vbackup(JobControlRecord *jcr);
-void native_vbackup_cleanup(JobControlRecord *jcr, int TermCode, int JobLevel = L_FULL);
+void NativeVbackupCleanup(JobControlRecord *jcr, int TermCode, int JobLevel = L_FULL);
 
 #endif // BAREOS_DIRD_VBACKUP_H_

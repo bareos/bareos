@@ -42,10 +42,10 @@
 
 static const int debuglevel = 100;
 
-bool do_consolidate_init(JobControlRecord *jcr)
+bool DoConsolidateInit(JobControlRecord *jcr)
 {
-   free_rstorage(jcr);
-   if (!allow_duplicate_job(jcr)) {
+   FreeRstorage(jcr);
+   if (!AllowDuplicateJob(jcr)) {
       return false;
    }
    return true;
@@ -66,16 +66,16 @@ static inline void start_new_consolidation_job(JobControlRecord *jcr, char *jobn
    Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s", jobname, jcr->vf_jobids, jcr->accurate ? "accurate=yes" : "accurate=no");
 
    Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
-   parse_ua_args(ua);                 /* parse command */
+   ParseUaArgs(ua);                 /* parse command */
 
-   jobid = do_run_cmd(ua, ua->cmd);
+   jobid = DoRunCmd(ua, ua->cmd);
    if (jobid == 0) {
       Jmsg(jcr, M_ERROR, 0, _("Could not start %s job.\n"), jcr->get_OperationName());
    } else {
       Jmsg(jcr, M_INFO, 0, _("%s JobId %d started.\n"), jcr->get_OperationName(), (int)jobid);
    }
 
-   free_ua_context(ua);
+   FreeUaContext(ua);
 }
 
 /**
@@ -103,7 +103,7 @@ bool do_consolidate(JobControlRecord *jcr)
    max_full_consolidations = jcr->res.job->MaxFullConsolidations;
 
    jcr->jr.JobId = jcr->JobId;
-   jcr->fname = (char *)get_pool_memory(PM_FNAME);
+   jcr->fname = (char *)GetPoolMemory(PM_FNAME);
 
    /*
     * Print Job Start message
@@ -131,13 +131,13 @@ bool do_consolidate(JobControlRecord *jcr)
          jcr->jr.limit = 0;
          jcr->jr.StartTime = 0;
 
-         if (!get_or_create_fileset_record(jcr)) {
+         if (!GetOrCreateFilesetRecord(jcr)) {
             Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
             retval = false;
             goto bail_out;
          }
 
-         if (!get_or_create_client_record(jcr)) {
+         if (!GetOrCreateClientRecord(jcr)) {
             Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
             retval = false;
             goto bail_out;
@@ -146,7 +146,7 @@ bool do_consolidate(JobControlRecord *jcr)
          /*
           * First determine the number of total incrementals
           */
-         jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
+         jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
          incrementals_total = jobids_ctx.count - 1;
          Dmsg1(10, "unlimited jobids list:  %s.\n", jobids_ctx.list);
 
@@ -164,7 +164,7 @@ bool do_consolidate(JobControlRecord *jcr)
                   job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
          }
 
-         jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
+         jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
          Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
 
          /**
@@ -186,7 +186,7 @@ bool do_consolidate(JobControlRecord *jcr)
             jcr->jr.limit = max_incrementals_to_consolidate + 1;
             Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, max_incrementals_to_consolidate, jcr->jr.limit);
             jobids_ctx.reset();
-            jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
+            jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids_ctx);
             incrementals_to_consolidate = jobids_ctx.count - 1;
             Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.count, jobids_ctx.list);
             if (incrementals_to_consolidate < 1) {
@@ -233,7 +233,7 @@ bool do_consolidate(JobControlRecord *jcr)
             jcr->previous_jr.JobId = str_to_int64(jobids);
             Dmsg1(10, "Previous JobId=%s\n", jobids);
 
-            if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+            if (!jcr->db->GetJobRecord(jcr, &jcr->previous_jr)) {
                Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), jcr->db->strerror());
                goto bail_out;
             }
@@ -276,9 +276,9 @@ bool do_consolidate(JobControlRecord *jcr)
           * Set the virtualfull jobids to be consolidated
           */
          if (!jcr->vf_jobids) {
-            jcr->vf_jobids = get_pool_memory(PM_MESSAGE);
+            jcr->vf_jobids = GetPoolMemory(PM_MESSAGE);
          }
-         pm_strcpy(jcr->vf_jobids, p);
+         PmStrcpy(jcr->vf_jobids, p);
 
          Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"), job->name());
          start_new_consolidation_job(jcr, job->name());
@@ -291,7 +291,7 @@ bail_out:
     */
    jcr->res.job = tmpjob;
    jcr->setJobStatus(JS_Terminated);
-   consolidate_cleanup(jcr, JS_Terminated);
+   ConsolidateCleanup(jcr, JS_Terminated);
 
    if (jobids) {
       free(jobids);
@@ -303,18 +303,18 @@ bail_out:
 /**
  * Release resources allocated during backup.
  */
-void consolidate_cleanup(JobControlRecord *jcr, int TermCode)
+void ConsolidateCleanup(JobControlRecord *jcr, int TermCode)
 {
    int msg_type;
    char term_code[100];
-   const char *term_msg;
+   const char *TermMsg;
    char sdt[50], edt[50], schedt[50];
 
    Dmsg0(debuglevel, "Enter backup_cleanup()\n");
 
-   update_job_end(jcr, TermCode);
+   UpdateJobEnd(jcr, TermCode);
 
-   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+   if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
@@ -322,18 +322,18 @@ void consolidate_cleanup(JobControlRecord *jcr, int TermCode)
    msg_type = M_INFO;                 /* by default INFO message */
    switch (jcr->JobStatus) {
    case JS_Terminated:
-      term_msg = _("Consolidate OK");
+      TermMsg = _("Consolidate OK");
       break;
    case JS_FatalError:
    case JS_ErrorTerminated:
-      term_msg = _("*** Consolidate Error ***");
+      TermMsg = _("*** Consolidate Error ***");
       msg_type = M_ERROR;          /* Generate error message */
       break;
    case JS_Canceled:
-      term_msg = _("Consolidate Canceled");
+      TermMsg = _("Consolidate Canceled");
       break;
    default:
-      term_msg = term_code;
+      TermMsg = term_code;
       sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
       break;
    }
@@ -354,7 +354,7 @@ void consolidate_cleanup(JobControlRecord *jcr, int TermCode)
         schedt,
         sdt,
         edt,
-        term_msg);
+        TermMsg);
 
-   Dmsg0(debuglevel, "Leave consolidate_cleanup()\n");
+   Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");
 }

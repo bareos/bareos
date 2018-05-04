@@ -24,13 +24,13 @@
 
 #include "dird/ua.h"
 
-bool is_volume_purged(UaContext *ua, MediaDbRecord *mr, bool force = false);
-bool mark_media_purged(UaContext *ua, MediaDbRecord *mr);
-void purge_files_from_volume(UaContext *ua, MediaDbRecord *mr);
-bool purge_jobs_from_volume(UaContext *ua, MediaDbRecord *mr, bool force = false);
-void purge_files_from_jobs(UaContext *ua, char *jobs);
-void purge_jobs_from_catalog(UaContext *ua, char *jobs);
-void purge_job_list_from_catalog(UaContext *ua, del_ctx &del);
-void purge_files_from_job_list(UaContext *ua, del_ctx &del);
+bool IsVolumePurged(UaContext *ua, MediaDbRecord *mr, bool force = false);
+bool MarkMediaPurged(UaContext *ua, MediaDbRecord *mr);
+void PurgeFilesFromVolume(UaContext *ua, MediaDbRecord *mr);
+bool PurgeJobsFromVolume(UaContext *ua, MediaDbRecord *mr, bool force = false);
+void PurgeFilesFromJobs(UaContext *ua, char *jobs);
+void PurgeJobsFromCatalog(UaContext *ua, char *jobs);
+void PurgeJobListFromCatalog(UaContext *ua, del_ctx &del);
+void PurgeFilesFromJobList(UaContext *ua, del_ctx &del);
 
 #endif // BAREOS_DIRD_UA_PURGE_H_

@@ -372,7 +372,7 @@ static inline bool parse_boolean(const char *argument_value)
 /**
  * Always set destination to value and clean any previous one.
  */
-static inline void set_string(char **destination, char *value)
+static inline void SetString(char **destination, char *value)
 {
    if (*destination) {
       free(*destination);
@@ -405,7 +405,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
     * Parse the plugin definition.
     * Make a private copy of the whole string.
     */
-   pm_strcpy(plugin_definition, (char *)value);
+   PmStrcpy(plugin_definition, (char *)value);
 
    bp = strchr(plugin_definition.c_str(), ':');
    if (!bp) {
@@ -483,7 +483,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
             }
 
             if (str_destination) {
-               set_string(str_destination, argument_value);
+               SetString(str_destination, argument_value);
             }
 
             if (bool_destination) {
@@ -506,17 +506,17 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
 
          if (cnt) {
             Mmsg(option, ":%s=%s", argument, argument_value);
-            pm_strcat(plugin_options, option.c_str());
+            PmStrcat(plugin_options, option.c_str());
          } else {
             Mmsg(option, "%s=%s", argument, argument_value);
-            pm_strcat(plugin_options, option.c_str());
+            PmStrcat(plugin_options, option.c_str());
          }
          cnt++;
       }
    }
 
    if (cnt > 0) {
-      pm_strcat(plugin_options, ":");
+      PmStrcat(plugin_options, ":");
    }
 
    return bRC_OK;

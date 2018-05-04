@@ -44,7 +44,7 @@
  With dynamic creation, you can use:
     bthread_mutex_t mutex;
     pthread_mutex_init(&mutex);
-    bthread_mutex_set_priority(&mutex, 10);
+    BthreadMutexSetPriority(&mutex, 10);
     pthread_mutex_destroy(&mutex);
 
  */
@@ -86,7 +86,7 @@
  * pthread_mutex_lock for memory allocator and other
  * parts that are _LOCKMGR_COMPLIANT
  */
-void lmgr_p(pthread_mutex_t *m)
+void Lmgr_p(pthread_mutex_t *m)
 {
    int errstat;
    if ((errstat=pthread_mutex_lock(m))) {
@@ -96,7 +96,7 @@ void lmgr_p(pthread_mutex_t *m)
    }
 }
 
-void lmgr_v(pthread_mutex_t *m)
+void Lmgr_v(pthread_mutex_t *m)
 {
    int errstat;
    if ((errstat=pthread_mutex_unlock(m))) {
@@ -290,11 +290,11 @@ public:
    }
 
    void dump(FILE *fp) {
-      lmgr_p(&mutex);
+      Lmgr_p(&mutex);
       {
          _dump(fp);
       }
-      lmgr_v(&mutex);
+      Lmgr_v(&mutex);
    }
 
    /*
@@ -306,7 +306,7 @@ public:
       int max_prio = max_priority;
       ASSERT_p(current < LMGR_MAX_LOCK, f, l);
       ASSERT_p(current >= -1, f, l);
-      lmgr_p(&mutex);
+      Lmgr_p(&mutex);
       {
          current++;
          lock_list[current].lock = m;
@@ -318,7 +318,7 @@ public:
          max = MAX(current, max);
          max_priority = MAX(priority, max_priority);
       }
-      lmgr_v(&mutex);
+      Lmgr_v(&mutex);
       ASSERT_p(!priority || priority >= max_prio, f, l);
    }
 
@@ -353,7 +353,7 @@ public:
     */
    virtual void do_V(void *m, const char *f="*unknown*", int l=0) {
       ASSERT_p(current >= 0, f, l);
-      lmgr_p(&mutex);
+      Lmgr_p(&mutex);
       {
          if (lock_list[current].lock == m) {
             lock_list[current].lock = NULL;
@@ -383,7 +383,7 @@ public:
             max_priority = 0;
          }
       }
-      lmgr_v(&mutex);
+      Lmgr_v(&mutex);
    }
 
    virtual ~lmgr_thread_t() {destroy();}
@@ -422,11 +422,11 @@ static bool use_undertaker=true;
  */
 void lmgr_register_thread(lmgr_thread_t *item)
 {
-   lmgr_p(&lmgr_global_mutex);
+   Lmgr_p(&lmgr_global_mutex);
    {
       global_mgr->prepend(item);
    }
-   lmgr_v(&lmgr_global_mutex);
+   Lmgr_v(&lmgr_global_mutex);
 }
 
 /*
@@ -437,18 +437,18 @@ void lmgr_unregister_thread(lmgr_thread_t *item)
    if (!lmgr_is_active()) {
       return;
    }
-   lmgr_p(&lmgr_global_mutex);
+   Lmgr_p(&lmgr_global_mutex);
    {
       global_mgr->remove(item);
    }
-   lmgr_v(&lmgr_global_mutex);
+   Lmgr_v(&lmgr_global_mutex);
 }
 
 /*
  * Search for a deadlock when it's secure to walk across
- * locks list. (after lmgr_detect_deadlock or a fatal signal)
+ * locks list. (after LmgrDetectDeadlock or a fatal signal)
  */
-bool lmgr_detect_deadlock_unlocked()
+bool LmgrDetectDeadlockUnlocked()
 {
    bool ret=false;
    lmgr_node_t *node=NULL;
@@ -498,27 +498,27 @@ bool lmgr_detect_deadlock_unlocked()
  * It will lock all thread specific lock manager, nothing
  * can be locked during this check.
  */
-bool lmgr_detect_deadlock()
+bool LmgrDetectDeadlock()
 {
    bool ret=false;
    if (!lmgr_is_active()) {
       return ret;
    }
 
-   lmgr_p(&lmgr_global_mutex);
+   Lmgr_p(&lmgr_global_mutex);
    {
       lmgr_thread_t *item;
       foreach_dlist(item, global_mgr) {
-         lmgr_p(&item->mutex);
+         Lmgr_p(&item->mutex);
       }
 
-      ret = lmgr_detect_deadlock_unlocked();
+      ret = LmgrDetectDeadlockUnlocked();
 
       foreach_dlist(item, global_mgr) {
-         lmgr_v(&item->mutex);
+         Lmgr_v(&item->mutex);
       }
    }
-   lmgr_v(&lmgr_global_mutex);
+   Lmgr_v(&lmgr_global_mutex);
 
    return ret;
 }
@@ -543,33 +543,33 @@ void dbg_print_lock(FILE *fp)
 /*
  * Dump each lmgr_thread_t object
  */
-void lmgr_dump()
+void LmgrDump()
 {
-   lmgr_p(&lmgr_global_mutex);
+   Lmgr_p(&lmgr_global_mutex);
    {
       lmgr_thread_t *item;
       foreach_dlist(item, global_mgr) {
          item->dump(stderr);
       }
    }
-   lmgr_v(&lmgr_global_mutex);
+   Lmgr_v(&lmgr_global_mutex);
 }
 
 void cln_hdl(void *a)
 {
-   lmgr_cleanup_thread();
+   LmgrCleanupThread();
 }
 
 void *check_deadlock(void *)
 {
    int old;
-   lmgr_init_thread();
+   LmgrInitThread();
    pthread_cleanup_push(cln_hdl, NULL);
 
    while (!bmicrosleep(30, 0)) {
       pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
-      if (lmgr_detect_deadlock()) {
-         lmgr_dump();
+      if (LmgrDetectDeadlock()) {
+         LmgrDump();
          ASSERT(0);
       }
       pthread_setcancelstate(old, NULL);
@@ -623,7 +623,7 @@ void create_lmgr_key()
  * Each thread have to call this function to put a lmgr_thread_t object
  * in the stack and be able to call mutex_lock/unlock
  */
-void lmgr_init_thread()
+void LmgrInitThread()
 {
    int status = pthread_once(&key_lmgr_once, create_lmgr_key);
    if (status != 0) {
@@ -639,7 +639,7 @@ void lmgr_init_thread()
 /*
  * Call this function at the end of the thread
  */
-void lmgr_cleanup_thread()
+void LmgrCleanupThread()
 {
    if (!lmgr_is_active()) {
       return ;
@@ -654,7 +654,7 @@ void lmgr_cleanup_thread()
  * Some thread like the watchdog are already present, so the global_mgr
  * list is never empty. Should carefully clear the memory.
  */
-void lmgr_cleanup_main()
+void LmgrCleanupMain()
 {
    dlist *temp;
 
@@ -664,20 +664,20 @@ void lmgr_cleanup_main()
    if (use_undertaker) {
       pthread_cancel(undertaker);
    }
-   lmgr_cleanup_thread();
-   lmgr_p(&lmgr_global_mutex);
+   LmgrCleanupThread();
+   Lmgr_p(&lmgr_global_mutex);
    {
       temp = global_mgr;
       global_mgr = NULL;
       delete temp;
    }
-   lmgr_v(&lmgr_global_mutex);
+   Lmgr_v(&lmgr_global_mutex);
 }
 
 /*
  * Set the priority of the lmgr mutex object
  */
-void bthread_mutex_set_priority(bthread_mutex_t *m, int prio)
+void BthreadMutexSetPriority(bthread_mutex_t *m, int prio)
 {
 #ifdef USE_LOCKMGR_PRIORITY
    m->priority = prio;
@@ -704,7 +704,7 @@ int pthread_mutex_destroy(bthread_mutex_t *m)
 /*
  * Replacement for pthread_kill (only with USE_LOCKMGR_SAFEKILL)
  */
-int bthread_kill(pthread_t thread, int sig,
+int BthreadKill(pthread_t thread, int sig,
                  const char *file, int line)
 {
    bool thread_found_in_process=false;
@@ -715,7 +715,7 @@ int bthread_kill(pthread_t thread, int sig,
    /* This loop isn't very efficient with dozens of threads but we don't use
     * signal very much, and this feature is for testing only
     */
-   lmgr_p(&lmgr_global_mutex);
+   Lmgr_p(&lmgr_global_mutex);
    {
       lmgr_thread_t *item;
       foreach_dlist(item, global_mgr) {
@@ -725,7 +725,7 @@ int bthread_kill(pthread_t thread, int sig,
          }
       }
    }
-   lmgr_v(&lmgr_global_mutex);
+   Lmgr_v(&lmgr_global_mutex);
 
    /* Sending a signal to non existing thread can create problem
     * so, we can stop here.
@@ -739,11 +739,11 @@ int bthread_kill(pthread_t thread, int sig,
  * Replacement for pthread_mutex_lock()
  * Returns always ok
  */
-int bthread_mutex_lock_p(bthread_mutex_t *m, const char *file, int line)
+int BthreadMutexLock_p(bthread_mutex_t *m, const char *file, int line)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->pre_P(m, m->priority, file, line);
-   lmgr_p(&m->mutex);
+   Lmgr_p(&m->mutex);
    self->post_P();
    return 0;
 }
@@ -752,11 +752,11 @@ int bthread_mutex_lock_p(bthread_mutex_t *m, const char *file, int line)
  * Replacement for pthread_mutex_unlock()
  * Returns always ok
  */
-int bthread_mutex_unlock_p(bthread_mutex_t *m, const char *file, int line)
+int BthreadMutexUnlock_p(bthread_mutex_t *m, const char *file, int line)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->do_V(m, file, line);
-   lmgr_v(&m->mutex);
+   Lmgr_v(&m->mutex);
    return 0;
 }
 
@@ -764,11 +764,11 @@ int bthread_mutex_unlock_p(bthread_mutex_t *m, const char *file, int line)
  * Replacement for pthread_mutex_lock() but with real pthread_mutex_t
  * Returns always ok
  */
-int bthread_mutex_lock_p(pthread_mutex_t *m, const char *file, int line)
+int BthreadMutexLock_p(pthread_mutex_t *m, const char *file, int line)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->pre_P(m, 0, file, line);
-   lmgr_p(m);
+   Lmgr_p(m);
    self->post_P();
    return 0;
 }
@@ -777,18 +777,18 @@ int bthread_mutex_lock_p(pthread_mutex_t *m, const char *file, int line)
  * Replacement for pthread_mutex_unlock() but with real pthread_mutex_t
  * Returns always ok
  */
-int bthread_mutex_unlock_p(pthread_mutex_t *m, const char *file, int line)
+int BthreadMutexUnlock_p(pthread_mutex_t *m, const char *file, int line)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->do_V(m, file, line);
-   lmgr_v(m);
+   Lmgr_v(m);
    return 0;
 }
 
 
 /* TODO: check this
  */
-int bthread_cond_wait_p(pthread_cond_t *cond,
+int BthreadCondWait_p(pthread_cond_t *cond,
                         pthread_mutex_t *m,
                         const char *file, int line)
 {
@@ -803,7 +803,7 @@ int bthread_cond_wait_p(pthread_cond_t *cond,
 
 /* TODO: check this
  */
-int bthread_cond_timedwait_p(pthread_cond_t *cond,
+int BthreadCondTimedwait_p(pthread_cond_t *cond,
                              pthread_mutex_t *m,
                              const struct timespec * abstime,
                              const char *file, int line)
@@ -819,7 +819,7 @@ int bthread_cond_timedwait_p(pthread_cond_t *cond,
 
 /* TODO: check this
  */
-int bthread_cond_wait_p(pthread_cond_t *cond,
+int BthreadCondWait_p(pthread_cond_t *cond,
                         bthread_mutex_t *m,
                         const char *file, int line)
 {
@@ -834,7 +834,7 @@ int bthread_cond_wait_p(pthread_cond_t *cond,
 
 /* TODO: check this
  */
-int bthread_cond_timedwait_p(pthread_cond_t *cond,
+int BthreadCondTimedwait_p(pthread_cond_t *cond,
                              bthread_mutex_t *m,
                              const struct timespec * abstime,
                              const char *file, int line)
@@ -870,11 +870,11 @@ int lmgr_mutex_is_locked(void *m)
 /*
  * Use this function when the caller handle the mutex directly
  *
- * lmgr_pre_lock(m, 10);
+ * LmgrPreLock(m, 10);
  * pthread_mutex_lock(m);
- * lmgr_post_lock(m);
+ * LmgrPostLock(m);
  */
-void lmgr_pre_lock(void *m, int prio, const char *file, int line)
+void LmgrPreLock(void *m, int prio, const char *file, int line)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->pre_P(m, prio, file, line);
@@ -883,7 +883,7 @@ void lmgr_pre_lock(void *m, int prio, const char *file, int line)
 /*
  * Use this function when the caller handle the mutex directly
  */
-void lmgr_post_lock()
+void LmgrPostLock()
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->post_P();
@@ -892,7 +892,7 @@ void lmgr_post_lock()
 /*
  * Do directly pre_P and post_P (used by trylock)
  */
-void lmgr_do_lock(void *m, int prio, const char *file, int line)
+void LmgrDoLock(void *m, int prio, const char *file, int line)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->pre_P(m, prio, file, line);
@@ -902,7 +902,7 @@ void lmgr_do_lock(void *m, int prio, const char *file, int line)
 /*
  * Use this function when the caller handle the mutex directly
  */
-void lmgr_do_unlock(void *m)
+void LmgrDoUnlock(void *m)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
    self->do_V(m);
@@ -917,7 +917,7 @@ extern "C"
 void *lmgr_thread_launcher(void *x)
 {
    void *ret=NULL;
-   lmgr_init_thread();
+   LmgrInitThread();
    pthread_cleanup_push(cln_hdl, NULL);
 
    lmgr_thread_arg_t arg;
@@ -931,11 +931,11 @@ void *lmgr_thread_launcher(void *x)
    return ret;
 }
 
-int lmgr_thread_create(pthread_t *thread,
+int LmgrThreadCreate(pthread_t *thread,
                        const pthread_attr_t *attr,
                        void *(*start_routine)(void*), void *arg)
 {
-   /* lmgr should be active (lmgr_init_thread() call in main()) */
+   /* lmgr should be active (LmgrInitThread() call in main()) */
    ASSERT(lmgr_is_active());
    /* Will be freed by the child */
    lmgr_thread_arg_t *a = (lmgr_thread_arg_t*) malloc(sizeof(lmgr_thread_arg_t));
@@ -963,9 +963,9 @@ void dbg_print_lock(FILE *fp)
 #include "lockmgr.h"
 #undef P
 #undef V
-#define P(x) bthread_mutex_lock_p(&(x), __FILE__, __LINE__)
-#define V(x) bthread_mutex_unlock_p(&(x), __FILE__, __LINE__)
-#define pthread_create(a, b, c, d)    lmgr_thread_create(a,b,c,d)
+#define P(x) BthreadMutexLock_p(&(x), __FILE__, __LINE__)
+#define V(x) BthreadMutexUnlock_p(&(x), __FILE__, __LINE__)
+#define pthread_create(a, b, c, d)    LmgrThreadCreate(a,b,c,d)
 
 bthread_mutex_t mutex1 = BTHREAD_MUTEX_NO_PRIORITY;
 bthread_mutex_t mutex2 = BTHREAD_MUTEX_NO_PRIORITY;
@@ -1006,11 +1006,11 @@ void *locker(void *temp)
 void *rwlocker(void *temp)
 {
    brwlock_t *m = (brwlock_t*) temp;
-   rwl_writelock(m);
-   rwl_writelock(m);
+   RwlWritelock(m);
+   RwlWritelock(m);
 
-   rwl_writeunlock(m);
-   rwl_writeunlock(m);
+   RwlWriteunlock(m);
+   RwlWriteunlock(m);
    return NULL;
 }
 
@@ -1018,8 +1018,8 @@ void *mix_rwl_mutex(void *temp)
 {
    brwlock_t *m = (brwlock_t*) temp;
    P(mutex1);
-   rwl_writelock(m);
-   rwl_writeunlock(m);
+   RwlWritelock(m);
+   RwlWriteunlock(m);
    V(mutex1);
    return NULL;
 }
@@ -1030,14 +1030,14 @@ void *th2(void *temp)
    P(mutex2);
    P(mutex1);
 
-   lmgr_dump();
+   LmgrDump();
 
    sleep(10);
 
    V(mutex1);
    V(mutex2);
 
-   lmgr_dump();
+   LmgrDump();
    return NULL;
 }
 void *th1(void *temp)
@@ -1046,14 +1046,14 @@ void *th1(void *temp)
    sleep(2);
    P(mutex2);
 
-   lmgr_dump();
+   LmgrDump();
 
    sleep(10);
 
    V(mutex2);
    V(mutex1);
 
-   lmgr_dump();
+   LmgrDump();
    return NULL;
 }
 
@@ -1074,9 +1074,9 @@ void *th3(void *a) {
    while (1) {
       fprintf(stderr, "undertaker sleep()\n");
       sleep(10);
-      lmgr_dump();
-      if (lmgr_detect_deadlock()) {
-         lmgr_dump();
+      LmgrDump();
+      if (LmgrDetectDeadlock()) {
+         LmgrDump();
          exit(1);
       }
    }
@@ -1141,7 +1141,7 @@ int main(int argc, char **argv)
    my_prog = argv[0];
 
    use_undertaker = false;
-   lmgr_init_thread();
+   LmgrInitThread();
    self = lmgr_get_thread_info();
 
    if (argc == 2) {             /* do priority check */
@@ -1153,7 +1153,7 @@ int main(int argc, char **argv)
    }
 
    pthread_mutex_init(&bmutex1, NULL);
-   bthread_mutex_set_priority(&bmutex1, 10);
+   BthreadMutexSetPriority(&bmutex1, 10);
 
    pthread_mutex_init(&pmutex2, NULL);
    P(bmutex1);
@@ -1166,14 +1166,14 @@ int main(int argc, char **argv)
 
    pthread_create(&id1, NULL, self_lock, NULL);
    sleep(2);
-   ok(lmgr_detect_deadlock(), "Check self deadlock");
-   lmgr_v(&mutex1.mutex);                /* a bit dirty */
+   ok(LmgrDetectDeadlock(), "Check self deadlock");
+   Lmgr_v(&mutex1.mutex);                /* a bit dirty */
    pthread_join(id1, NULL);
 
 
    pthread_create(&id1, NULL, nolock, NULL);
    sleep(2);
-   nok(lmgr_detect_deadlock(), "Check for nolock");
+   nok(LmgrDetectDeadlock(), "Check for nolock");
    pthread_join(id1, NULL);
 
    P(mutex1);
@@ -1181,7 +1181,7 @@ int main(int argc, char **argv)
    pthread_create(&id2, NULL, locker, &mutex1);
    pthread_create(&id3, NULL, locker, &mutex1);
    sleep(2);
-   nok(lmgr_detect_deadlock(), "Check for multiple lock");
+   nok(LmgrDetectDeadlock(), "Check for multiple lock");
    V(mutex1);
    pthread_join(id1, NULL);
    pthread_join(id2, NULL);
@@ -1189,30 +1189,30 @@ int main(int argc, char **argv)
 
 
    brwlock_t wr;
-   rwl_init(&wr);
-   rwl_writelock(&wr);
-   rwl_writelock(&wr);
+   RwlInit(&wr);
+   RwlWritelock(&wr);
+   RwlWritelock(&wr);
    pthread_create(&id1, NULL, rwlocker, &wr);
    pthread_create(&id2, NULL, rwlocker, &wr);
    pthread_create(&id3, NULL, rwlocker, &wr);
-   nok(lmgr_detect_deadlock(), "Check for multiple rwlock");
-   rwl_writeunlock(&wr);
-   nok(lmgr_detect_deadlock(), "Check for simple rwlock");
-   rwl_writeunlock(&wr);
-   nok(lmgr_detect_deadlock(), "Check for multiple rwlock");
+   nok(LmgrDetectDeadlock(), "Check for multiple rwlock");
+   RwlWriteunlock(&wr);
+   nok(LmgrDetectDeadlock(), "Check for simple rwlock");
+   RwlWriteunlock(&wr);
+   nok(LmgrDetectDeadlock(), "Check for multiple rwlock");
 
    pthread_join(id1, NULL);
    pthread_join(id2, NULL);
    pthread_join(id3, NULL);
 
-   rwl_writelock(&wr);
+   RwlWritelock(&wr);
    P(mutex1);
    pthread_create(&id1, NULL, mix_rwl_mutex, &wr);
-   nok(lmgr_detect_deadlock(), "Check for mix rwlock/mutex");
+   nok(LmgrDetectDeadlock(), "Check for mix rwlock/mutex");
    V(mutex1);
-   nok(lmgr_detect_deadlock(), "Check for mix rwlock/mutex");
-   rwl_writeunlock(&wr);
-   nok(lmgr_detect_deadlock(), "Check for mix rwlock/mutex");
+   nok(LmgrDetectDeadlock(), "Check for mix rwlock/mutex");
+   RwlWriteunlock(&wr);
+   nok(LmgrDetectDeadlock(), "Check for mix rwlock/mutex");
    pthread_join(id1, NULL);
 
    P(mutex5);
@@ -1220,16 +1220,16 @@ int main(int argc, char **argv)
    V(mutex5);
    V(mutex6);
 
-   nok(lmgr_detect_deadlock(), "Check for wrong order");
+   nok(LmgrDetectDeadlock(), "Check for wrong order");
 
    for(int j=0; j<200; j++) {
       pthread_create(&tab[j], NULL, thx, NULL);
    }
    for(int j=0; j<200; j++) {
       pthread_join(tab[j], NULL);
-      if (j%3) { lmgr_detect_deadlock();}
+      if (j%3) { LmgrDetectDeadlock();}
    }
-   nok(lmgr_detect_deadlock(), "Check 200 lockers");
+   nok(LmgrDetectDeadlock(), "Check 200 lockers");
 
    P(mutex4);
    P(mutex5);
@@ -1244,7 +1244,7 @@ int main(int argc, char **argv)
    sleep(1);
    pthread_create(&id2, NULL, th2, NULL);
    sleep(1);
-   ok(lmgr_detect_deadlock(), "Check for deadlock");
+   ok(LmgrDetectDeadlock(), "Check for deadlock");
 
    pthread_create(&id3, NULL, th_prio, NULL);
    pthread_join(id3, &ret);
@@ -1287,13 +1287,13 @@ int main(int argc, char **argv)
    V(mutex_p1);
    V(mutex_p2);
 
-//   lmgr_dump();
+//   LmgrDump();
 //
 //   pthread_create(&id3, NULL, th3, NULL);
 //
 //   pthread_join(id1, NULL);
 //   pthread_join(id2, NULL);
-   lmgr_cleanup_main();
+   LmgrCleanupMain();
    sm_check(__FILE__, __LINE__, false);
    return report();
 }

@@ -125,17 +125,17 @@ void *handle_stored_connection(BareosSocket *sd, char *job_name)
          (uint32_t)jcr->JobId, jcr->Job);
       sd->close();
       delete sd;
-      free_jcr(jcr);
+      FreeJcr(jcr);
       return NULL;
    }
 
    jcr->store_bsock = sd;
-   jcr->store_bsock->set_jcr(jcr);
+   jcr->store_bsock->SetJcr(jcr);
 
    /*
     * Authenticate the Storage daemon
     */
-   if (jcr->authenticated || !authenticate_storagedaemon(jcr)) {
+   if (jcr->authenticated || !AuthenticateStoragedaemon(jcr)) {
       Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
       Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
    } else {
@@ -148,7 +148,7 @@ void *handle_stored_connection(BareosSocket *sd, char *job_name)
    }
 
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
-   free_jcr(jcr);
+   FreeJcr(jcr);
 
    return NULL;
 }
@@ -162,14 +162,14 @@ static void do_sd_commands(JobControlRecord *jcr)
    bool found, quit;
    BareosSocket *sd = jcr->store_bsock;
 
-   sd->set_jcr(jcr);
+   sd->SetJcr(jcr);
    quit = false;
    while (!quit) {
       /*
        * Read command coming from the Storage daemon
        */
       status = sd->recv();
-      if (is_bnet_stop(sd)) {         /* hardeof or error */
+      if (IsBnetStop(sd)) {         /* hardeof or error */
          break;                       /* connection terminated */
       }
       if (status <= 0) {
@@ -186,7 +186,7 @@ static void do_sd_commands(JobControlRecord *jcr)
                /*
                 * Note sd->msg command may be destroyed by comm activity
                 */
-               if (!job_canceled(jcr)) {
+               if (!JobCanceled(jcr)) {
                   if (jcr->errmsg[0]) {
                      Jmsg1(jcr, M_FATAL, 0, _("Command error with SD, hanging up. %s\n"),
                            jcr->errmsg);
@@ -202,7 +202,7 @@ static void do_sd_commands(JobControlRecord *jcr)
       }
 
       if (!found) {                   /* command not found */
-         if (!job_canceled(jcr)) {
+         if (!JobCanceled(jcr)) {
             Jmsg1(jcr, M_FATAL, 0, _("SD command not found: %s\n"), sd->msg);
             Dmsg1(110, "<stored: Command not found: %s\n", sd->msg);
          }
@@ -239,19 +239,19 @@ bool do_listen_run(JobControlRecord *jcr)
     * Wait for the Storage daemon to contact us to start the Job, when he does, we will be released.
     */
    P(mutex);
-   while (!jcr->authenticated && !job_canceled(jcr)) {
+   while (!jcr->authenticated && !JobCanceled(jcr)) {
       errstat = pthread_cond_wait(&jcr->job_start_wait, &mutex);
       if (errstat == EINVAL || errstat == EPERM) {
          break;
       }
       Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
    }
-   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated, job_canceled(jcr), errstat);
+   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated, JobCanceled(jcr), errstat);
    V(mutex);
 
    if (!jcr->authenticated || !jcr->store_bsock) {
       Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
-      dequeue_messages(jcr);          /* send any queued messages */
+      DequeueMessages(jcr);          /* send any queued messages */
 
       goto cleanup;
    }
@@ -267,9 +267,9 @@ bool do_listen_run(JobControlRecord *jcr)
     * See if we need to limit the inbound bandwidth.
     */
    if (me->max_bandwidth_per_job && jcr->store_bsock) {
-      jcr->store_bsock->set_bwlimit(me->max_bandwidth_per_job);
+      jcr->store_bsock->SetBwlimit(me->max_bandwidth_per_job);
       if (me->allow_bw_bursting) {
-         jcr->store_bsock->set_bwlimit_bursting();
+         jcr->store_bsock->SetBwlimitBursting();
       }
    }
 
@@ -277,18 +277,18 @@ bool do_listen_run(JobControlRecord *jcr)
 
    jcr->end_time = time(NULL);
 
-   dequeue_messages(jcr);             /* send any queued messages */
+   DequeueMessages(jcr);             /* send any queued messages */
    jcr->setJobStatus(JS_Terminated);
 
 cleanup:
-   generate_plugin_event(jcr, bsdEventJobEnd);
+   GeneratePluginEvent(jcr, bsdEventJobEnd);
 
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
               edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
 
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
 
-   free_plugins(jcr);                 /* release instantiated plugins */
+   FreePlugins(jcr);                 /* release instantiated plugins */
 
    /*
     * After a listen cmd we are done e.g. return false.
@@ -305,7 +305,7 @@ static bool start_replication_session(JobControlRecord *jcr)
 
    Dmsg1(120, "Start replication session: %s", sd->msg);
    if (jcr->session_opened) {
-      pm_strcpy(jcr->errmsg, _("Attempt to open already open session.\n"));
+      PmStrcpy(jcr->errmsg, _("Attempt to open already open session.\n"));
       sd->fsend(NO_open);
       return false;
    }
@@ -338,18 +338,18 @@ static bool replicate_data(JobControlRecord *jcr)
        * Update the initial Job Statistics.
        */
       now = (utime_t)time(NULL);
-      update_job_statistics(jcr, now);
+      UpdateJobStatistics(jcr, now);
 
       Dmsg1(110, "<stored: %s", sd->msg);
-      if (do_append_data(jcr, sd, "SD")) {
+      if (DoAppendData(jcr, sd, "SD")) {
          return true;
       } else {
-         pm_strcpy(jcr->errmsg, _("Replicate data error.\n"));
-         bnet_suppress_error_messages(sd, 1); /* ignore errors at this point */
+         PmStrcpy(jcr->errmsg, _("Replicate data error.\n"));
+         BnetSuppressErrorMessages(sd, 1); /* ignore errors at this point */
          sd->fsend(ERROR_replicate);
       }
    } else {
-      pm_strcpy(jcr->errmsg, _("Attempt to replicate on non-open session.\n"));
+      PmStrcpy(jcr->errmsg, _("Attempt to replicate on non-open session.\n"));
       sd->fsend(NOT_opened);
    }
 
@@ -365,7 +365,7 @@ static bool end_replication_session(JobControlRecord *jcr)
 
    Dmsg1(120, "stored<stored: %s", sd->msg);
    if (!jcr->session_opened) {
-      pm_strcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
+      PmStrcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
       sd->fsend(NOT_opened);
       return false;
    }

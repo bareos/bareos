@@ -58,7 +58,7 @@ extern void prtmsg(void *sock, const char *fmt, ...);
 #if !defined(HAVE_WIN32)
 static
 #endif
-void terminate_stored(int sig);
+void TerminateStored(int sig);
 static int check_resources();
 static void cleanup_old_files();
 
@@ -128,9 +128,9 @@ int main (int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   init_stack_dump();
-   my_name_is(argc, argv, "bareos-sd");
-   init_msg(NULL, NULL);
+   InitStackDump();
+   MyNameIs(argc, argv, "bareos-sd");
+   InitMsg(NULL, NULL);
    daemon_start_time = time(NULL);
 
    /*
@@ -216,7 +216,7 @@ int main (int argc, char *argv[])
    argv += optind;
 
    if (!no_signals) {
-      init_signals(terminate_stored);
+      InitSignals(TerminateStored);
    }
 
    if (argc) {
@@ -242,8 +242,8 @@ int main (int argc, char *argv[])
       PoolMem buffer;
 
       my_config = new_config_parser();
-      init_sd_config(my_config, configfile, M_ERROR_TERM);
-      print_config_schema_json(buffer);
+      InitSdConfig(my_config, configfile, M_ERROR_TERM);
+      PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       goto bail_out;
    }
@@ -252,16 +252,16 @@ int main (int argc, char *argv[])
    parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->dump_resources(prtmsg, NULL);
+      my_config->DumpResources(prtmsg, NULL);
       goto bail_out;
    }
 
    if (!foreground && !test_config) {
       daemon_start();                 /* become daemon */
-      init_stack_dump();              /* pick up new pid */
+      InitStackDump();              /* pick up new pid */
    }
 
-   if (init_crypto() != 0) {
+   if (InitCrypto() != 0) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
@@ -269,30 +269,30 @@ int main (int argc, char *argv[])
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
    }
 
-   init_reservations_lock();
+   InitReservationsLock();
 
    if (test_config) {
-      terminate_stored(0);
+      TerminateStored(0);
    }
 
-   my_name_is(0, (char **)NULL, me->name());     /* Set our real name */
+   MyNameIs(0, (char **)NULL, me->name());     /* Set our real name */
 
-   create_pid_file(me->pid_directory, "bareos-sd",
-                   get_first_port_host_order(me->SDaddrs));
-   read_state_file(me->working_directory, "bareos-sd",
-                   get_first_port_host_order(me->SDaddrs));
-   read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->SDaddrs));
+   CreatePidFile(me->pid_directory, "bareos-sd",
+                   GetFirstPortHostOrder(me->SDaddrs));
+   ReadStateFile(me->working_directory, "bareos-sd",
+                   GetFirstPortHostOrder(me->SDaddrs));
+   ReadCryptoCache(me->working_directory, "bareos-sd",
+                     GetFirstPortHostOrder(me->SDaddrs));
 
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
 
    /*
     * Make sure on Solaris we can run concurrent, watch dog + servers + misc
     */
-   set_thread_concurrency(me->MaxConcurrentJobs * 2 + 4);
-   lmgr_init_thread(); /* initialize the lockmanager stack */
+   SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4);
+   LmgrInitThread(); /* initialize the lockmanager stack */
 
-   load_sd_plugins(me->plugin_directory, me->plugin_names);
+   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
    cleanup_old_files();
 
@@ -307,18 +307,18 @@ int main (int argc, char *argv[])
    /*
     * Start the device allocation thread
     */
-   create_volume_lists();             /* do before device_init */
+   CreateVolumeLists();             /* do before device_init */
    if (pthread_create(&thid, NULL, device_initialization, NULL) != 0) {
       berrno be;
       Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
    }
 
-   start_watchdog();                  /* start watchdog thread */
+   StartWatchdog();                  /* start watchdog thread */
    if (me->jcr_watchdog_time) {
-      init_jcr_subsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
+      InitJcrSubsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
    }
 
-   start_statistics_thread();
+   StartStatisticsThread();
 
 #if HAVE_NDMP
    /*
@@ -332,10 +332,10 @@ int main (int argc, char *argv[])
    /*
     * Single server used for Director/Storage and File daemon
     */
-   start_socket_server(me->SDaddrs);
+   StartSocketServer(me->SDaddrs);
 
    /* to keep compiler quiet */
-   terminate_stored(0);
+   TerminateStored(0);
 
 bail_out:
    return 0;
@@ -433,9 +433,9 @@ static int check_resources()
       OK = false;
    }
 
-   if (((store->tls_cert.ca_certfile == nullptr || store->tls_cert.ca_certfile->empty()) &&
-        (store->tls_cert.ca_certdir == nullptr || store->tls_cert.ca_certdir->empty())) &&
-       tls_needed && store->tls_cert.verify_peer) {
+   if (((store->tls_cert.CaCertfile == nullptr || store->tls_cert.CaCertfile->empty()) &&
+        (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty())) &&
+       tls_needed && store->tls_cert.VerifyPeer) {
       Jmsg(NULL,
            M_FATAL,
            0,
@@ -470,9 +470,9 @@ static int check_resources()
          OK = false;
       }
 
-      if (((director->tls_cert.ca_certfile == nullptr || director->tls_cert.ca_certfile->empty()) &&
-           (director->tls_cert.ca_certdir == nullptr || director->tls_cert.ca_certdir->empty())) &&
-          tls_needed && director->tls_cert.verify_peer) {
+      if (((director->tls_cert.CaCertfile == nullptr || director->tls_cert.CaCertfile->empty()) &&
+           (director->tls_cert.CaCertdir == nullptr || director->tls_cert.CaCertdir->empty())) &&
+          tls_needed && director->tls_cert.VerifyPeer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
@@ -484,7 +484,7 @@ static int check_resources()
 
    DeviceResource *device;
    foreach_res(device, R_DEVICE) {
-      if (device->drive_crypto_enabled && bit_is_set(CAP_LABEL, device->cap_bits)) {
+      if (device->drive_crypto_enabled && BitIsSet(CAP_LABEL, device->cap_bits)) {
          Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
               device->name(), configfile);
          OK = false;
@@ -492,18 +492,18 @@ static int check_resources()
    }
 
    if (OK) {
-      OK = init_autochangers();
+      OK = InitAutochangers();
    }
 
    if (OK) {
-      close_msg(NULL);                   /* close temp message handler */
-      init_msg(NULL, me->messages);      /* open daemon message handler */
-      set_working_directory(me->working_directory);
+      CloseMsg(NULL);                   /* close temp message handler */
+      InitMsg(NULL, me->messages);      /* open daemon message handler */
+      SetWorkingDirectory(me->working_directory);
       if (me->secure_erase_cmdline) {
-         set_secure_erase_cmdline(me->secure_erase_cmdline);
+         SetSecureEraseCmdline(me->secure_erase_cmdline);
       }
       if (me->log_timestamp_format) {
-         set_log_timestamp_format(me->log_timestamp_format);
+         SetLogTimestampFormat(me->log_timestamp_format);
       }
    }
 
@@ -523,8 +523,8 @@ static void cleanup_old_files()
    int rc, name_max;
    int my_name_len = strlen(my_name);
    int len = strlen(me->working_directory);
-   POOLMEM *cleanup = get_pool_memory(PM_MESSAGE);
-   POOLMEM *basename = get_pool_memory(PM_MESSAGE);
+   POOLMEM *cleanup = GetPoolMemory(PM_MESSAGE);
+   POOLMEM *basename = GetPoolMemory(PM_MESSAGE);
    regex_t preg1;
    char prbuf[500];
    berrno be;
@@ -533,9 +533,9 @@ static void cleanup_old_files()
    const char *pat1 = "^[^ ]+\\.spool$";
 
    /* Setup working directory prefix */
-   pm_strcpy(basename, me->working_directory);
+   PmStrcpy(basename, me->working_directory);
    if (len > 0 && !IsPathSeparator(me->working_directory[len-1])) {
-      pm_strcat(basename, "/");
+      PmStrcat(basename, "/");
    }
 
    /* Compile regex expressions */
@@ -562,7 +562,7 @@ static void cleanup_old_files()
 #ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
    while (1) {
       result = readdir(dp);
@@ -580,10 +580,10 @@ static void cleanup_old_files()
 
       /* Unlink files that match regex */
       if (regexec(&preg1, result->d_name, 0, NULL, 0) == 0) {
-         pm_strcpy(cleanup, basename);
-         pm_strcat(cleanup, result->d_name);
+         PmStrcpy(cleanup, basename);
+         PmStrcat(cleanup, result->d_name);
          Dmsg1(500, "Unlink: %s\n", cleanup);
-         secure_erase(NULL, cleanup);
+         SecureErase(NULL, cleanup);
       }
    }
 #ifdef USE_READDIR_R
@@ -594,8 +594,8 @@ static void cleanup_old_files()
 get_out1:
    regfree(&preg1);
 get_out2:
-   free_pool_memory(cleanup);
-   free_pool_memory(basename);
+   FreePoolMemory(cleanup);
+   FreePoolMemory(basename);
 }
 
 
@@ -615,7 +615,7 @@ void *device_initialization(void *arg)
 
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JobControlRecord), stored_free_jcr);
-   new_plugins(jcr);  /* instantiate plugins */
+   NewPlugins(jcr);  /* instantiate plugins */
    jcr->setJobType(JT_SYSTEM);
 
    /*
@@ -637,8 +637,8 @@ void *device_initialization(void *arg)
    }
 
    foreach_res(device, R_DEVICE) {
-      Dmsg1(90, "calling init_dev %s\n", device->device_name);
-      dev = init_dev(NULL, device);
+      Dmsg1(90, "calling InitDev %s\n", device->device_name);
+      dev = InitDev(NULL, device);
       Dmsg1(10, "SD init done %s\n", device->device_name);
       if (!dev) {
          Jmsg1(NULL, M_ERROR, 0, _("Could not initialize %s\n"), device->device_name);
@@ -647,49 +647,49 @@ void *device_initialization(void *arg)
 
       dcr = New(StorageDaemonDeviceControlRecord);
       jcr->dcr = dcr;
-      setup_new_dcr_device(jcr, dcr, dev, NULL);
-      jcr->dcr->set_will_write();
-      generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
-      if (dev->is_autochanger()) {
+      SetupNewDcrDevice(jcr, dcr, dev, NULL);
+      jcr->dcr->SetWillWrite();
+      GeneratePluginEvent(jcr, bsdEventDeviceInit, dcr);
+      if (dev->IsAutochanger()) {
          /*
           * If autochanger set slot in dev structure
           */
-         get_autochanger_loaded_slot(dcr);
+         GetAutochangerLoadedSlot(dcr);
       }
 
-      if (bit_is_set(CAP_ALWAYSOPEN, device->cap_bits)) {
-         Dmsg1(20, "calling first_open_device %s\n", dev->print_name());
-         if (!first_open_device(dcr)) {
+      if (BitIsSet(CAP_ALWAYSOPEN, device->cap_bits)) {
+         Dmsg1(20, "calling FirstOpenDevice %s\n", dev->print_name());
+         if (!FirstOpenDevice(dcr)) {
             Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"), dev->print_name());
             Dmsg1(20, "Could not open device %s\n", dev->print_name());
-            free_dcr(dcr);
+            FreeDcr(dcr);
             jcr->dcr = NULL;
             continue;
          }
       }
 
-      if (bit_is_set(CAP_AUTOMOUNT, device->cap_bits) && dev->is_open()) {
-         switch (read_dev_volume_label(dcr)) {
+      if (BitIsSet(CAP_AUTOMOUNT, device->cap_bits) && dev->IsOpen()) {
+         switch (ReadDevVolumeLabel(dcr)) {
          case VOL_OK:
             memcpy(&dev->VolCatInfo, &dcr->VolCatInfo, sizeof(dev->VolCatInfo));
-            volume_unused(dcr);             /* mark volume "released" */
+            VolumeUnused(dcr);             /* mark volume "released" */
             break;
          default:
             Jmsg1(NULL, M_WARNING, 0, _("Could not mount device %s\n"), dev->print_name());
             break;
          }
       }
-      free_dcr(dcr);
+      FreeDcr(dcr);
       jcr->dcr = NULL;
    }
 #ifdef xxx
    if (jcr->dcr) {
-      Dmsg1(000, "free_dcr=%p\n", jcr->dcr);
-      free_dcr(jcr->dcr);
+      Dmsg1(000, "FreeDcr=%p\n", jcr->dcr);
+      FreeDcr(jcr->dcr);
       jcr->dcr = NULL;
    }
 #endif
-   free_jcr(jcr);
+   FreeJcr(jcr);
    init_done = true;
    UnlockRes();
    return NULL;
@@ -701,7 +701,7 @@ void *device_initialization(void *arg)
 #if !defined(HAVE_WIN32)
 static
 #endif
-void terminate_stored(int sig)
+void TerminateStored(int sig)
 {
    static bool in_here = false;
    DeviceResource *device;
@@ -713,15 +713,15 @@ void terminate_stored(int sig)
    }
    in_here = true;
    debug_level = 0;                   /* turn off any debug */
-   stop_statistics_thread();
+   StopStatisticsThread();
 #if HAVE_NDMP
    if (me->ndmp_enable) {
-      stop_ndmp_thread_server();
+      StopNdmpThreadServer();
    }
 #endif
-   stop_watchdog();
+   StopWatchdog();
 
-   stop_socket_server();
+   StopSocketServer();
 
    if (sig == SIGTERM) {              /* normal shutdown request? */
       /*
@@ -733,46 +733,46 @@ void terminate_stored(int sig)
       foreach_jcr(jcr) {
          BareosSocket *fd;
          if (jcr->JobId == 0) {
-            free_jcr(jcr);
+            FreeJcr(jcr);
             continue;                 /* ignore console */
          }
          jcr->setJobStatus(JS_Canceled);
          fd = jcr->file_bsock;
          if (fd) {
-            fd->set_timed_out();
-            jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+            fd->SetTimedOut();
+            jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
             Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
             /* ***FIXME*** wiffle through all dcrs */
             if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->blocked()) {
                pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-               release_device_cond();
+               ReleaseDeviceCond();
             }
             if (jcr->read_dcr && jcr->read_dcr->dev && jcr->read_dcr->dev->blocked()) {
                pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-               release_device_cond();
+               ReleaseDeviceCond();
             }
             bmicrosleep(0, 50000);
          }
-         free_jcr(jcr);
+         FreeJcr(jcr);
       }
       bmicrosleep(0, 500000);         /* give them 1/2 sec to clean up */
    }
 
-   write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
-   delete_pid_file(me->pid_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
+   WriteStateFile(me->working_directory, "bareos-sd", GetFirstPortHostOrder(me->SDaddrs));
+   DeletePidFile(me->pid_directory, "bareos-sd", GetFirstPortHostOrder(me->SDaddrs));
 
-   Dmsg1(200, "In terminate_stored() sig=%d\n", sig);
+   Dmsg1(200, "In TerminateStored() sig=%d\n", sig);
 
-   unload_sd_plugins();
-   flush_crypto_cache();
-   free_volume_lists();
+   UnloadSdPlugins();
+   FlushCryptoCache();
+   FreeVolumeLists();
 
    foreach_res(device, R_DEVICE) {
       Dmsg1(10, "Term device %s\n", device->device_name);
       if (device->dev) {
-         device->dev->clear_volhdr();
+         device->dev->ClearVolhdr();
          device->dev->term();
          device->dev = NULL;
       } else {
@@ -781,7 +781,7 @@ void terminate_stored(int sig)
    }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-   dev_flush_backends();
+   DevFlushBackends();
 #endif
 
    if (configfile) {
@@ -789,19 +789,19 @@ void terminate_stored(int sig)
       configfile = NULL;
    }
    if (my_config) {
-      my_config->free_resources();
+      my_config->FreeResources();
       free(my_config);
       my_config = NULL;
    }
 
    if (debug_level > 10) {
-      print_memory_pool_stats();
+      PrintMemoryPoolStats();
    }
-   term_msg();
-   cleanup_crypto();
-   term_reservations_lock();
-   close_memory_pool();
-   lmgr_cleanup_main();
+   TermMsg();
+   CleanupCrypto();
+   TermReservationsLock();
+   CloseMemoryPool();
+   LmgrCleanupMain();
 
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);

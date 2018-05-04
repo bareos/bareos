@@ -22,27 +22,27 @@
 #ifndef BAREOS_DIRD_JOB_H_
 #define BAREOS_DIRD_JOB_H_
 
-bool allow_duplicate_job(JobControlRecord *jcr);
-void set_jcr_defaults(JobControlRecord *jcr, JobResource *job);
-void create_unique_job_name(JobControlRecord *jcr, const char *base_name);
-void update_job_end_record(JobControlRecord *jcr);
-bool get_or_create_client_record(JobControlRecord *jcr);
-bool get_or_create_fileset_record(JobControlRecord *jcr);
-DBId_t get_or_create_pool_record(JobControlRecord *jcr, char *pool_name);
-bool get_level_since_time(JobControlRecord *jcr);
-void apply_pool_overrides(JobControlRecord *jcr, bool force = false);
-JobId_t run_job(JobControlRecord *jcr);
-bool cancel_job(UaContext *ua, JobControlRecord *jcr);
-void get_job_storage(UnifiedStoreResource *store, JobResource *job, RunResource *run);
-void init_jcr_job_record(JobControlRecord *jcr);
-void update_job_end(JobControlRecord *jcr, int TermCode);
-bool setup_job(JobControlRecord *jcr, bool suppress_output = false);
-void create_clones(JobControlRecord *jcr);
-int create_restore_bootstrap_file(JobControlRecord *jcr);
+bool AllowDuplicateJob(JobControlRecord *jcr);
+void SetJcrDefaults(JobControlRecord *jcr, JobResource *job);
+void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name);
+void UpdateJobEndRecord(JobControlRecord *jcr);
+bool GetOrCreateClientRecord(JobControlRecord *jcr);
+bool GetOrCreateFilesetRecord(JobControlRecord *jcr);
+DBId_t GetOrCreatePoolRecord(JobControlRecord *jcr, char *pool_name);
+bool GetLevelSinceTime(JobControlRecord *jcr);
+void ApplyPoolOverrides(JobControlRecord *jcr, bool force = false);
+JobId_t RunJob(JobControlRecord *jcr);
+bool CancelJob(UaContext *ua, JobControlRecord *jcr);
+void GetJobStorage(UnifiedStorageResource *store, JobResource *job, RunResource *run);
+void InitJcrJobRecord(JobControlRecord *jcr);
+void UpdateJobEnd(JobControlRecord *jcr, int TermCode);
+bool SetupJob(JobControlRecord *jcr, bool suppress_output = false);
+void CreateClones(JobControlRecord *jcr);
+int CreateRestoreBootstrapFile(JobControlRecord *jcr);
 void dird_free_jcr(JobControlRecord *jcr);
-void dird_free_jcr_pointers(JobControlRecord *jcr);
-void cancel_storage_daemon_job(JobControlRecord *jcr);
+void DirdFreeJcrPointers(JobControlRecord *jcr);
+void CancelStorageDaemonJob(JobControlRecord *jcr);
 bool run_console_command(JobControlRecord *jcr, const char *cmd);
-void sd_msg_thread_send_signal(JobControlRecord *jcr, int sig);
+void SdMsgThreadSendSignal(JobControlRecord *jcr, int sig);
 
 #endif // BAREOS_DIRD_JOB_H_

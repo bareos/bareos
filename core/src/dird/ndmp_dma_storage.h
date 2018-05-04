@@ -22,18 +22,18 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 #define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 
-void do_ndmp_storage_status(UaContext *ua, StoreResource *store, char *cmd);
-dlist *ndmp_get_vol_list(UaContext *ua, StoreResource *store, bool listall, bool scan);
-slot_number_t ndmp_get_num_slots(UaContext *ua, StoreResource *store);
-drive_number_t ndmp_get_num_drives(UaContext *ua, StoreResource *store);
-bool ndmp_transfer_volume(UaContext *ua, StoreResource *store,
+void do_ndmp_storage_status(UaContext *ua, StorageResource *store, char *cmd);
+dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bool scan);
+slot_number_t NdmpGetNumSlots(UaContext *ua, StorageResource *store);
+drive_number_t NdmpGetNumDrives(UaContext *ua, StorageResource *store);
+bool NdmpTransferVolume(UaContext *ua, StorageResource *store,
                           slot_number_t src_slot, slot_number_t dst_slot);
-bool ndmp_autochanger_volume_operation(UaContext *ua, StoreResource *store, const char *operation,
+bool NdmpAutochangerVolumeOperation(UaContext *ua, StorageResource *store, const char *operation,
                                        drive_number_t drive, slot_number_t slot);
-bool ndmp_send_label_request(UaContext *ua, StoreResource *store, MediaDbRecord *mr,
+bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *mr,
                              MediaDbRecord *omr, PoolDbRecord *pr, bool relabel,
                              drive_number_t drive, slot_number_t slot);
-char *lookup_ndmp_drive(StoreResource *store, drive_number_t drive);
-bool ndmp_update_storage_mappings(JobControlRecord* jcr, StoreResource *store);
+char *lookup_ndmp_drive(StorageResource *store, drive_number_t drive);
+bool NdmpUpdateStorageMappings(JobControlRecord* jcr, StorageResource *store);
 
 #endif // BAREOS_DIRD_NDMP_DMA_STORAGE_H_

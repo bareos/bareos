@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_JSON_H_
 #define BAREOS_LIB_JSON_H_
 
-DLL_IMP_EXP void initialize_json();
+DLL_IMP_EXP void InitializeJson();
 
 #endif // BAREOS_LIB_JSON_H_

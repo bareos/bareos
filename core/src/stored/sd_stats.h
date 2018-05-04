@@ -21,9 +21,9 @@
 #ifndef BAREOS_STORED_SD_STATS_H_
 #define BAREOS_STORED_SD_STATS_H_
 
-int start_statistics_thread(void);
-void stop_statistics_thread();
-void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
-void update_job_statistics(JobControlRecord *jcr, utime_t now);
+int StartStatisticsThread(void);
+void StopStatisticsThread();
+void UpdateDeviceTapealert(const char *devname, uint64_t flags, utime_t now);
+void UpdateJobStatistics(JobControlRecord *jcr, utime_t now);
 
 #endif // BAREOS_STORED_SD_STATS_H_

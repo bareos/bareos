@@ -61,15 +61,15 @@ struct jobq_t {
 
 #define JOBQ_VALID  0xdec1993
 
-extern int jobq_init(
+extern int JobqInit(
               jobq_t *wq,
               int     threads,            /* maximum threads */
               void   *(*engine)(void *)   /* engine routine */
                     );
-extern int jobq_destroy(jobq_t *wq);
-extern int jobq_add(jobq_t *wq, JobControlRecord *jcr);
+extern int JobqDestroy(jobq_t *wq);
+extern int JobqAdd(jobq_t *wq, JobControlRecord *jcr);
 extern int jobq_remove(jobq_t *wq, JobControlRecord *jcr);
 
-bool inc_read_store(JobControlRecord *jcr);
-void dec_read_store(JobControlRecord *jcr);
+bool IncReadStore(JobControlRecord *jcr);
+void DecReadStore(JobControlRecord *jcr);
 #endif /* BAREOS_DIRD_JOBQ_H_ */

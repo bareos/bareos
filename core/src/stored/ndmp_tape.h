@@ -21,9 +21,9 @@
 #ifndef BAREOS_STORED_NDMP_TAPE_H_
 #define BAREOS_STORED_NDMP_TAPE_H_
 
-void end_of_ndmp_backup(JobControlRecord *jcr);
-void end_of_ndmp_restore(JobControlRecord *jcr);
+void EndOfNdmpBackup(JobControlRecord *jcr);
+void EndOfNdmpRestore(JobControlRecord *jcr);
 int start_ndmp_thread_server(dlist *addr_list, int max_clients);
-void stop_ndmp_thread_server();
+void StopNdmpThreadServer();
 
 #endif // BAREOS_STORED_NDMP_TAPE_H_

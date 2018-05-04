@@ -67,11 +67,11 @@ static inline void free_findex(RestoreBootstrapRecordFileIndex *fi)
  */
 static bool get_storage_device(char *device, char *storage)
 {
-   StoreResource *store;
+   StorageResource *store;
    if (storage[0] == 0) {
       return false;
    }
-   store = (StoreResource *)GetResWithName(R_STORAGE, storage);
+   store = (StorageResource *)GetResWithName(R_STORAGE, storage);
    if (!store) {
       return false;
    }
@@ -93,12 +93,12 @@ static void print_bsr_item(PoolMem *pool_buf, const char *fmt, ...)
    PoolMem item(PM_MESSAGE);
 
    while (1) {
-      maxlen = item.max_size() - 1;
+      maxlen = item.MaxSize() - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (len < 0 || len >= (maxlen - 5)) {
-         item.realloc_pm(maxlen + maxlen / 2);
+         item.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
       break;
@@ -178,7 +178,7 @@ RestoreBootstrapRecord *new_bsr()
 /**
  * Free the entire BootStrapRecord
  */
-void free_bsr(RestoreBootstrapRecord *bsr)
+void FreeBsr(RestoreBootstrapRecord *bsr)
 {
    RestoreBootstrapRecord *next;
 
@@ -203,14 +203,14 @@ void free_bsr(RestoreBootstrapRecord *bsr)
  * Complete the BootStrapRecord by filling in the VolumeName and
  * VolSessionId and VolSessionTime using the JobId
  */
-bool complete_bsr(UaContext *ua, RestoreBootstrapRecord *bsr)
+bool CompleteBsr(UaContext *ua, RestoreBootstrapRecord *bsr)
 {
    for ( ; bsr; bsr=bsr->next) {
       JobDbRecord jr;
       memset(&jr, 0, sizeof(jr));
       jr.JobId = bsr->JobId;
-      if (!ua->db->get_job_record(ua->jcr, &jr)) {
-         ua->error_msg(_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());
+      if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+         ua->ErrorMsg(_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());
          return false;
       }
       bsr->VolSessionId = jr.VolSessionId;
@@ -219,9 +219,9 @@ bool complete_bsr(UaContext *ua, RestoreBootstrapRecord *bsr)
          bsr->VolCount = 0;        /*   there are no volumes */
          continue;
       }
-      if ((bsr->VolCount = ua->db->get_job_volume_parameters(ua->jcr, bsr->JobId,
+      if ((bsr->VolCount = ua->db->GetJobVolumeParameters(ua->jcr, bsr->JobId,
            &(bsr->VolParams))) == 0) {
-         ua->error_msg(_("Unable to get Job Volume Parameters. ERR=%s\n"), ua->db->strerror());
+         ua->ErrorMsg(_("Unable to get Job Volume Parameters. ERR=%s\n"), ua->db->strerror());
          if (bsr->VolParams) {
             free(bsr->VolParams);
             bsr->VolParams = NULL;
@@ -235,10 +235,10 @@ bool complete_bsr(UaContext *ua, RestoreBootstrapRecord *bsr)
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t uniq = 0;
 
-static void make_unique_restore_filename(UaContext *ua, PoolMem &fname)
+static void MakeUniqueRestoreFilename(UaContext *ua, PoolMem &fname)
 {
    JobControlRecord *jcr = ua->jcr;
-   int i = find_arg_with_value(ua, "bootstrap");
+   int i = FindArgWithValue(ua, "bootstrap");
    if (i >= 0) {
       Mmsg(fname, "%s", ua->argv[i]);
       jcr->unlink_bsr = false;
@@ -258,7 +258,7 @@ static void make_unique_restore_filename(UaContext *ua, PoolMem &fname)
 /**
  * Write the bootstrap records to file
  */
-uint32_t write_bsr_file(UaContext *ua, RestoreContext &rx)
+uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx)
 {
    FILE *fd;
    bool err;
@@ -266,11 +266,11 @@ uint32_t write_bsr_file(UaContext *ua, RestoreContext &rx)
    PoolMem fname(PM_MESSAGE);
    PoolMem buffer(PM_MESSAGE);
 
-   make_unique_restore_filename(ua, fname);
+   MakeUniqueRestoreFilename(ua, fname);
    fd = fopen(fname.c_str(), "w+b");
    if (!fd) {
       berrno be;
-      ua->error_msg(_("Unable to create bootstrap file %s. ERR=%s\n"),
+      ua->ErrorMsg(_("Unable to create bootstrap file %s. ERR=%s\n"),
          fname.c_str(), be.bstrerror());
       goto bail_out;
    }
@@ -278,7 +278,7 @@ uint32_t write_bsr_file(UaContext *ua, RestoreContext &rx)
    /*
     * Write them to a buffer.
     */
-   count = write_bsr(ua, rx, &buffer);
+   count = WriteBsr(ua, rx, &buffer);
 
    /*
     * Write the buffer to file
@@ -288,19 +288,19 @@ uint32_t write_bsr_file(UaContext *ua, RestoreContext &rx)
    err = ferror(fd);
    fclose(fd);
    if (count == 0) {
-      ua->info_msg(_("No files found to read. No bootstrap file written.\n"));
+      ua->InfoMsg(_("No files found to read. No bootstrap file written.\n"));
       goto bail_out;
    }
    if (err) {
-      ua->error_msg(_("Error writing bsr file.\n"));
+      ua->ErrorMsg(_("Error writing bsr file.\n"));
       count = 0;
       goto bail_out;
    }
 
-   ua->send_msg(_("Bootstrap records written to %s\n"), fname.c_str());
+   ua->SendMsg(_("Bootstrap records written to %s\n"), fname.c_str());
 
    if (debug_level >= 10) {
-      print_bsr(ua, rx);
+      PrintBsr(ua, rx);
    }
 
 bail_out:
@@ -333,13 +333,13 @@ static void display_vol_info(UaContext *ua, RestoreContext &rx, JobId_t JobId)
             Mmsg(volmsg, "%c%-25s %-25s %-25s",
                  online, bsr->VolParams[i].VolumeName,
                  bsr->VolParams[i].Storage, Device);
-            add_prompt(ua, volmsg.c_str());
+            AddPrompt(ua, volmsg.c_str());
          }
       }
    }
 }
 
-void display_bsr_info(UaContext *ua, RestoreContext &rx)
+void DisplayBsrInfo(UaContext *ua, RestoreContext &rx)
 {
    int i;
    char *p;
@@ -348,15 +348,15 @@ void display_bsr_info(UaContext *ua, RestoreContext &rx)
    /*
     * Tell the user what he will need to mount
     */
-   ua->send_msg("\n");
-   ua->send_msg(_("The job will require the following\n"
+   ua->SendMsg("\n");
+   ua->SendMsg(_("The job will require the following\n"
                   "   Volume(s)                 Storage(s)                SD Device(s)\n"
                   "===========================================================================\n"));
 
    /*
     * Create Unique list of Volumes using prompt list
     */
-   start_prompt(ua, "");
+   StartPrompt(ua, "");
    if (*rx.JobIds == 0) {
       /*
        * Print Volumes in any order
@@ -366,24 +366,24 @@ void display_bsr_info(UaContext *ua, RestoreContext &rx)
       /*
        * Ensure that the volumes are printed in JobId order
        */
-      for (p = rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
+      for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0; ) {
          display_vol_info(ua, rx, JobId);
       }
    }
 
    for (i = 0; i < ua->num_prompts; i++) {
-      ua->send_msg("   %s\n", ua->prompt[i]);
+      ua->SendMsg("   %s\n", ua->prompt[i]);
       free(ua->prompt[i]);
    }
 
    if (ua->num_prompts == 0) {
-      ua->send_msg(_("No Volumes found to restore.\n"));
+      ua->SendMsg(_("No Volumes found to restore.\n"));
    } else {
-      ua->send_msg(_("\nVolumes marked with \"*\" are online.\n"));
+      ua->SendMsg(_("\nVolumes marked with \"*\" are online.\n"));
    }
 
    ua->num_prompts = 0;
-   ua->send_msg("\n");
+   ua->SendMsg("\n");
 
    return;
 }
@@ -413,7 +413,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord *bsr, UaContext *ua,
       }
 
       if (!rx.store) {
-         find_storage_resource(ua, rx, bsr->VolParams[i].Storage,
+         FindStorageResource(ua, rx, bsr->VolParams[i].Storage,
                                bsr->VolParams[i].MediaType);
       }
 
@@ -472,7 +472,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord *bsr, UaContext *ua,
  * The bsrs must be written out in the order the JobIds
  * are found in the jobid list.
  */
-uint32_t write_bsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer)
+uint32_t WriteBsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer)
 {
    bool first = true;
    uint32_t LastIndex = 0;
@@ -488,7 +488,7 @@ uint32_t write_bsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer)
       return total_count;
    }
 
-   for (p = rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
+   for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0; ) {
       for (bsr = rx.bsr; bsr; bsr = bsr->next) {
          if (JobId == bsr->JobId) {
             total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
@@ -499,11 +499,11 @@ uint32_t write_bsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer)
    return total_count;
 }
 
-void print_bsr(UaContext *ua, RestoreContext &rx)
+void PrintBsr(UaContext *ua, RestoreContext &rx)
 {
    PoolMem buffer(PM_MESSAGE);
 
-   write_bsr(ua, rx, &buffer);
+   WriteBsr(ua, rx, &buffer);
    fprintf(stdout, "%s", buffer.c_str());
 }
 
@@ -514,7 +514,7 @@ void print_bsr(UaContext *ua, RestoreContext &rx)
  *
  * We expect that JobId, FileIndex are sorted ascending.
  */
-void add_findex(RestoreBootstrapRecord *bsr, uint32_t JobId, int32_t findex)
+void AddFindex(RestoreBootstrapRecord *bsr, uint32_t JobId, int32_t findex)
 {
    RestoreBootstrapRecord *nbsr;
    RestoreBootstrapRecordFileIndex *fi, *lfi;
@@ -716,7 +716,7 @@ void add_findex_all(RestoreBootstrapRecord *bsr, uint32_t JobId)
  * it should be used for next operations, and need to be
  * closed at the end.
  */
-bool open_bootstrap_file(JobControlRecord *jcr, bootstrap_info &info)
+bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info)
 {
    FILE *bs;
    UaContext *ua;
@@ -738,9 +738,9 @@ bool open_bootstrap_file(JobControlRecord *jcr, bootstrap_info &info)
    }
 
    ua = new_ua_context(jcr);
-   ua->cmd = check_pool_memory_size(ua->cmd, UA_CMD_SIZE + 1);
+   ua->cmd = CheckPoolMemorySize(ua->cmd, UA_CMD_SIZE + 1);
    while (!fgets(ua->cmd, UA_CMD_SIZE, bs)) {
-      parse_ua_args(ua);
+      ParseUaArgs(ua);
       if (ua->argc != 1) {
          continue;
       }
@@ -762,7 +762,7 @@ bool open_bootstrap_file(JobControlRecord *jcr, bootstrap_info &info)
  */
 static inline bool is_on_same_storage(JobControlRecord *jcr, char *new_one)
 {
-   StoreResource *new_store;
+   StorageResource *new_store;
 
    /*
     * With old FD, we send the whole bootstrap to the storage
@@ -785,7 +785,7 @@ static inline bool is_on_same_storage(JobControlRecord *jcr, char *new_one)
       return true;
    }
 
-   new_store = (StoreResource *)GetResWithName(R_STORAGE, new_one);
+   new_store = (StorageResource *)GetResWithName(R_STORAGE, new_one);
    if (!new_store) {
       Jmsg(jcr, M_WARNING, 0,
            _("Could not get storage resource '%s'.\n"), new_one);
@@ -816,7 +816,7 @@ static inline bool check_for_new_storage(JobControlRecord *jcr, bootstrap_info &
 {
    UaContext *ua = info.ua;
 
-   parse_ua_args(ua);
+   ParseUaArgs(ua);
    if (ua->argc != 1) {
       return false;
    }
@@ -843,14 +843,14 @@ static inline bool check_for_new_storage(JobControlRecord *jcr, bootstrap_info &
 /**
  * Send bootstrap file to Storage daemon section by section.
  */
-bool send_bootstrap_file(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info &info)
+bool SendBootstrapFile(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info &info)
 {
    boffset_t pos;
    const char *bootstrap = "bootstrap\n";
    UaContext *ua = info.ua;
    FILE *bs = info.bs;
 
-   Dmsg1(400, "send_bootstrap_file: %s\n", jcr->RestoreBootstrap);
+   Dmsg1(400, "SendBootstrapFile: %s\n", jcr->RestoreBootstrap);
    if (!jcr->RestoreBootstrap) {
       return false;
    }
@@ -879,12 +879,12 @@ bool send_bootstrap_file(JobControlRecord *jcr, BareosSocket *sock, bootstrap_in
 /**
  * Clean the bootstrap_info struct
  */
-void close_bootstrap_file(bootstrap_info &info)
+void CloseBootstrapFile(bootstrap_info &info)
 {
    if (info.bs) {
       fclose(info.bs);
    }
    if (info.ua) {
-      free_ua_context(info.ua);
+      FreeUaContext(info.ua);
    }
 }

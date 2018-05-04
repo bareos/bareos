@@ -77,7 +77,7 @@
  * If intermediate directories that lead to the path name to
  * recover do not exist, the server should create them.
  */
-void add_to_namelist(struct ndm_job_param *job,
+void AddToNamelist(struct ndm_job_param *job,
                                    char *filename,
                                    const char *restore_prefix,
                                    char *name,
@@ -94,7 +94,7 @@ void add_to_namelist(struct ndm_job_param *job,
     * See if the filename is an absolute pathname.
     */
    if (*filename == '\0') {
-      pm_strcpy(destination_path, restore_prefix);
+      PmStrcpy(destination_path, restore_prefix);
    } else if (*filename == '/') {
       Mmsg(destination_path, "%s%s", restore_prefix, filename);
    } else {
@@ -142,7 +142,7 @@ int ndmp_env_handler(void *ctx, int num_fields, char **row)
 /*
  * Extract any post backup statistics.
  */
-bool extract_post_restore_stats(JobControlRecord *jcr,
+bool ExtractPostRestoreStats(JobControlRecord *jcr,
                                 struct ndm_session *sess)
 {
    bool retval = true;
@@ -180,38 +180,38 @@ bool extract_post_restore_stats(JobControlRecord *jcr,
 /**
  * Cleanup a NDMP restore session.
  */
-void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode)
+void NdmpRestoreCleanup(JobControlRecord *jcr, int TermCode)
 {
    char term_code[100];
-   const char *term_msg;
+   const char *TermMsg;
    int msg_type = M_INFO;
 
-   Dmsg0(20, "In ndmp_restore_cleanup\n");
-   update_job_end(jcr, TermCode);
+   Dmsg0(20, "In NdmpRestoreCleanup\n");
+   UpdateJobEnd(jcr, TermCode);
 
    if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
-      secure_erase(jcr, jcr->RestoreBootstrap);
+      SecureErase(jcr, jcr->RestoreBootstrap);
       jcr->unlink_bsr = false;
    }
 
-   if (job_canceled(jcr)) {
-      cancel_storage_daemon_job(jcr);
+   if (JobCanceled(jcr)) {
+      CancelStorageDaemonJob(jcr);
    }
 
    switch (TermCode) {
    case JS_Terminated:
       if (jcr->ExpectedFiles > jcr->jr.JobFiles) {
-         term_msg = _("Restore OK -- warning file count mismatch");
+         TermMsg = _("Restore OK -- warning file count mismatch");
       } else {
-         term_msg = _("Restore OK");
+         TermMsg = _("Restore OK");
       }
       break;
    case JS_Warnings:
-         term_msg = _("Restore OK -- with warnings");
+         TermMsg = _("Restore OK -- with warnings");
          break;
    case JS_FatalError:
    case JS_ErrorTerminated:
-      term_msg = _("*** Restore Error ***");
+      TermMsg = _("*** Restore Error ***");
       msg_type = M_ERROR;          /* Generate error message */
       if (jcr->store_bsock) {
          jcr->store_bsock->signal(BNET_TERMINATE);
@@ -221,7 +221,7 @@ void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode)
       }
       break;
    case JS_Canceled:
-      term_msg = _("Restore Canceled");
+      TermMsg = _("Restore Canceled");
       if (jcr->store_bsock) {
          jcr->store_bsock->signal(BNET_TERMINATE);
          if (jcr->SD_msg_chan_started) {
@@ -230,19 +230,19 @@ void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode)
       }
       break;
    default:
-      term_msg = term_code;
+      TermMsg = term_code;
       sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
       break;
    }
 
-   generate_restore_summary(jcr, msg_type, term_msg);
+   GenerateRestoreSummary(jcr, msg_type, TermMsg);
 
-   Dmsg0(20, "Leaving ndmp_restore_cleanup\n");
+   Dmsg0(20, "Leaving NdmpRestoreCleanup\n");
 }
 
 #else  /* HAVE_NDMP */
 
-void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode)
+void NdmpRestoreCleanup(JobControlRecord *jcr, int TermCode)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

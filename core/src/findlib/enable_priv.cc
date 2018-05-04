@@ -39,7 +39,7 @@
 /*=============================================================*/
 
 #if !defined(HAVE_WIN32)
-int enable_backup_privileges(JobControlRecord *jcr, int ignore_errors)
+int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
  { return 0; }
 #endif
 
@@ -90,7 +90,7 @@ enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_e
  *  the SE_SECURITY_NAME, but since nothing seems to be working,
  *  we get it hoping to fix the problems.
  */
-int enable_backup_privileges(JobControlRecord *jcr, int ignore_errors)
+int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
 {
     HANDLE hToken, hProcess;
     int status = 0;

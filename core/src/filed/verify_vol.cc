@@ -44,7 +44,7 @@ static char rec_header[] =
  * Verify attributes of the requested files on the Volume
  *
  */
-void do_verify_volume(JobControlRecord *jcr)
+void DoVerifyVolume(JobControlRecord *jcr)
 {
    BareosSocket *sd, *dir;
    POOLMEM *fname;                    /* original file name */
@@ -74,19 +74,19 @@ void do_verify_volume(JobControlRecord *jcr)
    } else {
       buf_size = 0;                   /* use default */
    }
-   if (!bnet_set_buffer_size(sd, buf_size, BNET_SETBUF_WRITE)) {
+   if (!BnetSetBufferSize(sd, buf_size, BNET_SETBUF_WRITE)) {
       jcr->setJobStatus(JS_FatalError);
       return;
    }
    jcr->buf_size = sd->msglen;
 
-   fname = get_pool_memory(PM_FNAME);
-   lname = get_pool_memory(PM_FNAME);
+   fname = GetPoolMemory(PM_FNAME);
+   lname = GetPoolMemory(PM_FNAME);
 
    /*
     * Get a record from the Storage daemon
     */
-   while (bget_msg(sd) >= 0 && !job_canceled(jcr)) {
+   while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
       /*
        * First we expect a Stream Record Header
        */
@@ -100,7 +100,7 @@ void do_verify_volume(JobControlRecord *jcr)
       /*
        * Now we expect the Stream Data
        */
-      if (bget_msg(sd) < 0) {
+      if (BgetMsg(sd) < 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), bnet_strerror(sd));
          goto bail_out;
       }
@@ -118,12 +118,12 @@ void do_verify_volume(JobControlRecord *jcr)
 
          Dmsg0(400, "Stream=Unix Attributes.\n");
 
-         if ((int)sizeof_pool_memory(fname) < sd->msglen) {
-            fname = realloc_pool_memory(fname, sd->msglen + 1);
+         if ((int)SizeofPoolMemory(fname) < sd->msglen) {
+            fname = ReallocPoolMemory(fname, sd->msglen + 1);
          }
 
-         if ((int)sizeof_pool_memory(lname) < sd->msglen) {
-            lname = realloc_pool_memory(lname, sd->msglen + 1);
+         if ((int)SizeofPoolMemory(lname) < sd->msglen) {
+            lname = ReallocPoolMemory(lname, sd->msglen + 1);
          }
          *fname = 0;
          *lname = 0;
@@ -162,14 +162,14 @@ void do_verify_volume(JobControlRecord *jcr)
             while (*lp++ != 0) {
                ;
             }
-            pm_strcat(lname, lp);        /* "save" link name */
+            PmStrcat(lname, lp);        /* "save" link name */
          } else {
             *lname = 0;
          }
          jcr->lock();
          jcr->JobFiles++;
          jcr->num_files_examined++;
-         pm_strcpy(jcr->last_fname, fname); /* last file examined */
+         PmStrcpy(jcr->last_fname, fname); /* last file examined */
          jcr->unlock();
 
          /*
@@ -262,9 +262,9 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
 ok_out:
-   cleanup_compression(jcr);
+   CleanupCompression(jcr);
 
-   free_pool_memory(fname);
-   free_pool_memory(lname);
+   FreePoolMemory(fname);
+   FreePoolMemory(lname);
    Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%" lld "\n", jcr->JobFiles, jcr->JobBytes);
 }

@@ -22,11 +22,11 @@
 #ifndef BAREOS_DIRD_NEXT_VOL_H_
 #define BAREOS_DIRD_NEXT_VOL_H_
 
-void set_storageid_in_mr(StoreResource *store, MediaDbRecord *mr);
-int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int index,
+void SetStorageidInMr(StorageResource *store, MediaDbRecord *mr);
+int FindNextVolumeForAppend(JobControlRecord *jcr, MediaDbRecord *mr, int index,
                                 const char *unwanted_volumes, bool create, bool purge);
-bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr);
-void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason);
-bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StoreResource *store);
+bool HasVolumeExpired(JobControlRecord *jcr, MediaDbRecord *mr);
+void CheckIfVolumeValidOrRecyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason);
+bool GetScratchVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StorageResource *store);
 
 #endif // BAREOS_DIRD_NEXT_VOL_H_

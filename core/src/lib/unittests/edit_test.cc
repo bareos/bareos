@@ -47,8 +47,8 @@ TEST(edit, edit) {
 
    for (int i=0; i<8; i++) {
       strcpy(buf, str[i]);
-      if (!duration_to_utime(buf, &val)) {
-         printf("Error return from duration_to_utime for in=%s\n", str[i]);
+      if (!DurationToUtime(buf, &val)) {
+         printf("Error return from DurationToUtime for in=%s\n", str[i]);
          continue;
       }
       edit_utime(val, outval, sizeof(outval));

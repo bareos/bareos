@@ -31,19 +31,19 @@
  * static workq_t job_wq;    define work queue
  *
  *  Initialize queue
- *  if ((stat = workq_init(&job_wq, max_workers, job_thread)) != 0) {
+ *  if ((stat = WorkqInit(&job_wq, max_workers, job_thread)) != 0) {
  *     berrno be;
  *     Emsg1(M_ABORT, 0, "Could not init job work queue: ERR=%s\n", be.bstrerror(errno));
  *   }
  *
  *  Add an item to the queue
- *  if ((stat = workq_add(&job_wq, (void *)jcr)) != 0) {
+ *  if ((stat = WorkqAdd(&job_wq, (void *)jcr)) != 0) {
  *      berrno be;
  *      Emsg1(M_ABORT, 0, "Could not add job to work queue: ERR=%s\n", be.bstrerror(errno));
  *   }
  *
  *  Terminate the queue
- *  workq_destroy(workq_t *wq);
+ *  WorkqDestroy(workq_t *wq);
  */
 
 #include "include/bareos.h"
@@ -58,7 +58,7 @@ extern "C" void *workq_server(void *arg);
  *  Returns: 0 on success
  *           errno on failure
  */
-int workq_init(workq_t *wq, int threads, void *(*engine)(void *arg))
+int WorkqInit(workq_t *wq, int threads, void *(*engine)(void *arg))
 {
    int status;
 
@@ -94,7 +94,7 @@ int workq_init(workq_t *wq, int threads, void *(*engine)(void *arg))
  * Returns: 0 on success
  *          errno on failure
  */
-int workq_destroy(workq_t *wq)
+int WorkqDestroy(workq_t *wq)
 {
    int status, status1, status2;
 
@@ -140,13 +140,13 @@ int workq_destroy(workq_t *wq)
  *    priority if non-zero will cause the item to be placed on the
  *        head of the list instead of the tail.
  */
-int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
+int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
 {
    int status = 0;
    workq_ele_t *item;
    pthread_t id;
 
-   Dmsg0(1400, "workq_add\n");
+   Dmsg0(1400, "WorkqAdd\n");
    if (wq->valid != WORKQ_VALID) {
       return EINVAL;
    }
@@ -188,7 +188,7 @@ int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
    } else if (wq->num_workers < wq->max_workers) {
       Dmsg0(1400, "Create worker thread\n");
       /* No idle threads so create a new one */
-      set_thread_concurrency(wq->max_workers + 1);
+      SetThreadConcurrency(wq->max_workers + 1);
       if ((status = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
          V(wq->mutex);
          return status;
@@ -196,7 +196,7 @@ int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
       wq->num_workers++;
    }
    V(wq->mutex);
-   Dmsg0(1400, "Return workq_add\n");
+   Dmsg0(1400, "Return WorkqAdd\n");
    /* Return work_item if requested */
    if (work_item) {
       *work_item = item;
@@ -257,7 +257,7 @@ int workq_remove(workq_t *wq, workq_ele_t *work_item)
    } else {
       Dmsg0(1400, "Create worker thread\n");
       /* No idle threads so create a new one */
-      set_thread_concurrency(wq->max_workers + 1);
+      SetThreadConcurrency(wq->max_workers + 1);
       if ((status = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
          V(wq->mutex);
          return status;
@@ -284,7 +284,7 @@ void *workq_server(void *arg)
 
    Dmsg0(1400, "Start workq_server\n");
    P(wq->mutex);
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
 
    for (;;) {
       struct timeval tv;

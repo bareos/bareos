@@ -28,9 +28,9 @@
  * This object can be use to browse the catalog
  *
  * Bvfs fs;
- * fs.set_jobid(10);
+ * fs.SetJobid(10);
  * fs.update_cache();
- * fs.ch_dir("/");
+ * fs.ChDir("/");
  * fs.ls_dirs();
  * fs.ls_files();
  */
@@ -64,7 +64,7 @@ public:
    Bvfs(JobControlRecord *j, BareosDb *mdb);
    virtual ~Bvfs();
 
-   void set_jobid(JobId_t id);
+   void SetJobid(JobId_t id);
    void set_jobids(char *ids);
 
    void set_limit(uint32_t max) {
@@ -77,8 +77,8 @@ public:
 
    void set_pattern(char *p) {
       uint32_t len = strlen(p);
-      pattern = check_pool_memory_size(pattern, len * 2 + 1);
-      db->escape_string(jcr, pattern, p, len);
+      pattern = CheckPoolMemorySize(pattern, len * 2 + 1);
+      db->EscapeString(jcr, pattern, p, len);
    }
 
    /* Get the root point */
@@ -88,20 +88,20 @@ public:
     * It's much better to access Path though their PathId, it
     * avoids mistakes with string encoding
     */
-   void ch_dir(DBId_t pathid) {
-      reset_offset();
+   void ChDir(DBId_t pathid) {
+      ResetOffset();
       pwd_id = pathid;
    }
 
    /*
     * Returns true if the directory exists
     */
-   bool ch_dir(const char *path);
+   bool ChDir(const char *path);
 
    bool ls_files();             /* Returns true if we have more files to read */
    bool ls_dirs();              /* Returns true if we have more dir to read */
-   void get_all_file_versions(const char *path, const char *fname, const char *client);
-   void get_all_file_versions(DBId_t pathid, const char *fname, const char *client);
+   void GetAllFileVersions(const char *path, const char *fname, const char *client);
+   void GetAllFileVersions(DBId_t pathid, const char *fname, const char *client);
 
    void update_cache();
 
@@ -130,7 +130,7 @@ public:
       return jcr;
    }
 
-   void reset_offset() {
+   void ResetOffset() {
       offset=0;
    }
 
@@ -164,7 +164,7 @@ private:
    POOLMEM *pattern;
    DBId_t pwd_id;               /* Current pathid */
    POOLMEM *prev_dir; /* ls_dirs query returns all versions, take the 1st one */
-   Attributes *attr;        /* Can be use by handler to call decode_stat() */
+   Attributes *attr;        /* Can be use by handler to call DecodeStat() */
 
    bool see_all_versions;
    bool see_copies;
@@ -173,9 +173,9 @@ private:
    void *user_data;
 };
 
-#define bvfs_is_dir(row) ((row)[BVFS_Type][0] == BVFS_DIR_RECORD)
-#define bvfs_is_file(row) ((row)[BVFS_Type][0] == BVFS_FILE_RECORD)
-#define bvfs_is_version(row) ((row)[BVFS_Type][0] == BVFS_FILE_VERSION)
+#define BvfsIsDir(row) ((row)[BVFS_Type][0] == BVFS_DIR_RECORD)
+#define BvfsIsFile(row) ((row)[BVFS_Type][0] == BVFS_FILE_RECORD)
+#define BvfsIsVersion(row) ((row)[BVFS_Type][0] == BVFS_FILE_VERSION)
 
 char *bvfs_parent_dir(char *path);
 

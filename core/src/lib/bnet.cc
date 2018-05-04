@@ -64,9 +64,9 @@ static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
  *    2. Signal including end of data stream
  *    3. Hard end of file
  *    4. Error
- *  Using is_bnet_stop() and is_bnet_error() you can figure this all out.
+ *  Using IsBnetStop() and IsBnetError() you can figure this all out.
  */
-int32_t bnet_recv(BareosSocket * bsock)
+int32_t BnetRecv(BareosSocket * bsock)
 {
    return bsock->recv();
 }
@@ -76,24 +76,24 @@ int32_t bnet_recv(BareosSocket * bsock)
  * Return 1 if there are errors on this bsock or it is closed,
  *   i.e. stop communicating on this line.
  */
-bool is_bnet_stop(BareosSocket * bsock)
+bool IsBnetStop(BareosSocket * bsock)
 {
-   return bsock->is_stop();
+   return bsock->IsStop();
 }
 
 /**
  * Return number of errors on socket
  */
-int is_bnet_error(BareosSocket * bsock)
+int IsBnetError(BareosSocket * bsock)
 {
-   return bsock->is_error();
+   return bsock->IsError();
 }
 
 /**
  * Call here after error during closing to suppress error
  *  messages which are due to the other end shutting down too.
  */
-void bnet_suppress_error_messages(BareosSocket * bsock, bool flag)
+void BnetSuppressErrorMessages(BareosSocket * bsock, bool flag)
 {
    bsock->suppress_error_msgs_ = flag;
 }
@@ -106,7 +106,7 @@ void bnet_suppress_error_messages(BareosSocket * bsock, bool flag)
  * Returns: false on failure
  *          true  on success
  */
-bool bnet_send(BareosSocket *bsock)
+bool BnetSend(BareosSocket *bsock)
 {
    return bsock->send();
 }
@@ -118,7 +118,7 @@ bool bnet_send(BareosSocket *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, alist *verify_list)
+bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, alist *verify_list)
 {
    TLS_CONNECTION *tls_conn = nullptr;
    JobControlRecord *jcr = bsock->jcr();
@@ -152,7 +152,7 @@ bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, a
    return true;
 
 err:
-   bsock->free_tls();
+   bsock->FreeTls();
    return false;
 }
 
@@ -161,7 +161,7 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool verify_peer, alist *verify_list)
+bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
 {
    TLS_CONNECTION *tls_conn;
    JobControlRecord *jcr = bsock->jcr();
@@ -182,7 +182,7 @@ bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, 
       goto err;
    }
 
-   if (verify_peer) {
+   if (VerifyPeer) {
       /*
        * If there's an Allowed CN verify list, use that to validate the remote
        * certificate's CN. Otherwise, we use standard host/CN matching.
@@ -207,17 +207,17 @@ bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, 
    return true;
 
 err:
-   bsock->free_tls();
+   bsock->FreeTls();
    return false;
 }
 #else
-bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket * bsock, alist *verify_list)
+bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket * bsock, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool verify_peer, alist *verify_list)
+bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
@@ -234,15 +234,15 @@ bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, 
  */
 int bnet_wait_data(BareosSocket * bsock, int sec)
 {
-   return bsock->wait_data(sec);
+   return bsock->WaitData(sec);
 }
 
 /**
  * As above, but returns on interrupt
  */
-int bnet_wait_data_intr(BareosSocket * bsock, int sec)
+int BnetWaitDataIntr(BareosSocket * bsock, int sec)
 {
-   return bsock->wait_data_intr(sec);
+   return bsock->WaitDataIntr(sec);
 }
 
 #ifndef NETDB_INTERNAL
@@ -287,7 +287,7 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
       switch (rp->ai_addr->sa_family) {
       case AF_INET:
          addr = New(IPADDR(rp->ai_addr->sa_family));
-         addr->set_type(IPADDR::R_MULTIPLE);
+         addr->SetType(IPADDR::R_MULTIPLE);
          /*
           * Some serious casting to get the struct in_addr *
           * rp->ai_addr == struct sockaddr
@@ -301,7 +301,7 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
 #ifdef HAVE_IPV6
       case AF_INET6:
          addr = New(IPADDR(rp->ai_addr->sa_family));
-         addr->set_type(IPADDR::R_MULTIPLE);
+         addr->SetType(IPADDR::R_MULTIPLE);
          /*
           * Some serious casting to get the struct in6_addr *
           * rp->ai_addr == struct sockaddr
@@ -376,13 +376,13 @@ static const char *resolv_host(int family, const char *host, dlist *addr_list)
          switch (hp->h_addrtype) {
          case AF_INET:
             addr = New(IPADDR(hp->h_addrtype));
-            addr->set_type(IPADDR::R_MULTIPLE);
+            addr->SetType(IPADDR::R_MULTIPLE);
             addr->set_addr4((struct in_addr *)*p);
             break;
 #ifdef HAVE_IPV6
           case AF_INET6:
             addr = New(IPADDR(hp->h_addrtype));
-            addr->set_type(IPADDR::R_MULTIPLE);
+            addr->SetType(IPADDR::R_MULTIPLE);
             addr->set_addr6((struct in6_addr *)*p);
             break;
 #endif
@@ -400,8 +400,8 @@ static const char *resolv_host(int family, const char *host, dlist *addr_list)
 static IPADDR *add_any(int family)
 {
    IPADDR *addr = New(IPADDR(family));
-   addr->set_type(IPADDR::R_MULTIPLE);
-   addr->set_addr_any();
+   addr->SetType(IPADDR::R_MULTIPLE);
+   addr->SetAddrAny();
    return addr;
 }
 
@@ -429,7 +429,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
       }
    } else if (inet_aton(host, &inaddr)) { /* MA Bug 4 */
       addr = New(IPADDR(AF_INET));
-      addr->set_type(IPADDR::R_MULTIPLE);
+      addr->SetType(IPADDR::R_MULTIPLE);
       addr->set_addr4(&inaddr);
       addr_list->append(addr);
 #ifdef HAVE_IPV6
@@ -439,7 +439,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
    } else if (p_InetPton && p_InetPton(AF_INET6, host, &inaddr6) == 1) {
 #endif
       addr = New(IPADDR(AF_INET6));
-      addr->set_type(IPADDR::R_MULTIPLE);
+      addr->SetType(IPADDR::R_MULTIPLE);
       addr->set_addr6(&inaddr6);
       addr_list->append(addr);
 #endif
@@ -448,7 +448,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
          errmsg = resolv_host(family, host, addr_list);
          if (errmsg) {
             *errstr = errmsg;
-            free_addresses(addr_list);
+            FreeAddresses(addr_list);
             return 0;
          }
       } else {
@@ -463,7 +463,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
 
          if (addr_list->size() == 0) {
             *errstr = errmsg;
-            free_addresses(addr_list);
+            FreeAddresses(addr_list);
             return 0;
          }
       }
@@ -490,7 +490,7 @@ bool bnet_fsend(BareosSocket * bs, const char *fmt, ...)
    va_list arg_ptr;
    int maxlen;
 
-   if (bs->errors || bs->is_terminated()) {
+   if (bs->errors || bs->IsTerminated()) {
       return false;
    }
    /* This probably won't work, but we vsnprintf, then if we
@@ -499,21 +499,21 @@ bool bnet_fsend(BareosSocket * bs, const char *fmt, ...)
     * get a bigger buffer and try again.
     */
    for (;;) {
-      maxlen = sizeof_pool_memory(bs->msg) - 1;
+      maxlen = SizeofPoolMemory(bs->msg) - 1;
       va_start(arg_ptr, fmt);
       bs->msglen = bvsnprintf(bs->msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (bs->msglen > 0 && bs->msglen < (maxlen - 5)) {
          break;
       }
-      bs->msg = realloc_pool_memory(bs->msg, maxlen + maxlen / 2);
+      bs->msg = ReallocPoolMemory(bs->msg, maxlen + maxlen / 2);
    }
    return bs->send();
 }
 
-int bnet_get_peer(BareosSocket *bs, char *buf, socklen_t buflen)
+int BnetGetPeer(BareosSocket *bs, char *buf, socklen_t buflen)
 {
-   return bs->get_peer(buf, buflen);
+   return bs->GetPeer(buf, buflen);
 }
 
 /**
@@ -523,9 +523,9 @@ int bnet_get_peer(BareosSocket *bs, char *buf, socklen_t buflen)
  *  Returns: 0 on failure
  *           1 on success
  */
-bool bnet_set_buffer_size(BareosSocket * bs, uint32_t size, int rw)
+bool BnetSetBufferSize(BareosSocket * bs, uint32_t size, int rw)
 {
-   return bs->set_buffer_size(size, rw);
+   return bs->SetBufferSize(size, rw);
 }
 
 /**
@@ -534,7 +534,7 @@ bool bnet_set_buffer_size(BareosSocket * bs, uint32_t size, int rw)
  */
 int bnet_set_nonblocking(BareosSocket *bsock)
 {
-   return bsock->set_nonblocking();
+   return bsock->SetNonblocking();
 }
 
 /**
@@ -543,7 +543,7 @@ int bnet_set_nonblocking(BareosSocket *bsock)
  */
 int bnet_set_blocking(BareosSocket *bsock)
 {
-   return bsock->set_blocking();
+   return bsock->SetBlocking();
 }
 
 /**
@@ -551,7 +551,7 @@ int bnet_set_blocking(BareosSocket *bsock)
  */
 void bnet_restore_blocking (BareosSocket *bsock, int flags)
 {
-   bsock->restore_blocking(flags);
+   bsock->RestoreBlocking(flags);
 }
 
 /**
@@ -561,7 +561,7 @@ void bnet_restore_blocking (BareosSocket *bsock, int flags)
  *  Returns: false on failure
  *           true  on success
  */
-bool bnet_sig(BareosSocket * bs, int signal)
+bool BnetSig(BareosSocket * bs, int signal)
 {
    return bs->signal(signal);
 }

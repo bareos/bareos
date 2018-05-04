@@ -38,7 +38,7 @@ public:
    BareosSocket *bsock() { return socket_; }
    bool authenticated() { return authenticated_; }
    bool in_use() { return in_use_; }
-   time_t connect_time() { return connect_time_; }
+   time_t ConnectTime() { return connect_time_; }
 
    bool check(int timeout = 0);
    bool wait(int timeout = 60);
@@ -70,7 +70,7 @@ public:
    Connection *get_connection(const char *name);
    Connection *get_connection(const char *name, int timeout_seconds);
    Connection *get_connection(const char *name, timespec &timeout);
-   int wait_for_new_connection(timespec &timeout);
+   int WaitForNewConnection(timespec &timeout);
    /*
     * remove specific connection.
     */

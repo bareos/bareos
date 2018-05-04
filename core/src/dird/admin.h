@@ -23,8 +23,8 @@
 #define BAREOS_DIRD_ADMIN_H_
 
 #include "include/jcr.h"
-bool do_admin_init(JobControlRecord *jcr);
+bool DoAdminInit(JobControlRecord *jcr);
 bool do_admin(JobControlRecord *jcr);
-void admin_cleanup(JobControlRecord *jcr, int TermCode);
+void AdminCleanup(JobControlRecord *jcr, int TermCode);
 
 #endif // BAREOS_DIRD_ADMIN_H_

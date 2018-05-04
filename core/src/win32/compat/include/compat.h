@@ -246,7 +246,7 @@ struct stat
 #define iscsym  __iscsym
 #endif
 
-DLL_IMP_EXP bool initialize_com_security();
+DLL_IMP_EXP bool InitializeComSecurity();
 
 bool CreateJunction(const char *szJunction, const char *szPath);
 const char *errorString(void);
@@ -381,8 +381,8 @@ DLL_IMP_EXP void openlog(const char *ident, int option, int facility);
 #endif //HAVE_MINGW
 
 /* Don't let OS go to sleep (usually a Laptop) while we are backing up */
-DLL_IMP_EXP void prevent_os_suspensions();
-DLL_IMP_EXP void allow_os_suspensions();
+DLL_IMP_EXP void PreventOsSuspensions();
+DLL_IMP_EXP void AllowOsSuspensions();
 
 typedef DWORD EXECUTION_STATE;
 #ifndef ES_CONTINUOUS
@@ -442,7 +442,7 @@ DLL_IMP_EXP bool win32_restore_file_attributes(POOLMEM *ofname,
 #define HAVE_VA_COPY 1
 
 /*
- * use readdir_r on windows as the compat layer has
+ * use Readdir_r on windows as the compat layer has
  * an emulation for this call
  */
 #define USE_READDIR_R

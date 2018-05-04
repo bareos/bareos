@@ -115,13 +115,13 @@ int main (int argc, char *argv[])
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   init_stack_dump();
-   lmgr_init_thread();
+   InitStackDump();
+   LmgrInitThread();
 
    char **files = (char **) malloc (10 * sizeof(char *));
    int i;
-   my_name_is(argc, argv, "bbatch");
-   init_msg(NULL, NULL);
+   MyNameIs(argc, argv, "bbatch");
+   InitMsg(NULL, NULL);
 
    OSDependentInit();
 
@@ -210,7 +210,7 @@ int main (int argc, char *argv[])
       backend_directories = New(alist(10, owned_by_alist));
       backend_directories->append((char *)backend_directory);
 
-      db_set_backend_dirs(backend_directories);
+      DbSetBackendDirs(backend_directories);
 #endif
 
       if ((db = db_init_database(NULL,
@@ -227,16 +227,16 @@ int main (int argc, char *argv[])
                                  false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
-      if (!db->open_database(NULL)) {
+      if (!db->OpenDatabase(NULL)) {
          Emsg0(M_ERROR_TERM, 0, db->strerror());
       }
 
-      start = get_current_btime();
-      db->get_file_list(NULL, restore_list, false, false, list_handler, &nb_file);
-      end = get_current_btime();
+      start = GetCurrentBtime();
+      db->GetFileList(NULL, restore_list, false, false, list_handler, &nb_file);
+      end = GetCurrentBtime();
 
       Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"),
-            restore_list, nb_file, (uint32_t)btime_to_unix(end-start));
+            restore_list, nb_file, (uint32_t)BtimeToUnix(end-start));
 
       free(restore_list);
       return 0;
@@ -262,15 +262,15 @@ int main (int argc, char *argv[])
       bjcr->setJobLevel(L_FULL);
       bjcr->JobStatus = JS_Running;
       bjcr->where = bstrdup(files[i]);
-      bjcr->job_name = get_pool_memory(PM_FNAME);
-      pm_strcpy(bjcr->job_name, "Dummy.Job.Name");
-      bjcr->client_name = get_pool_memory(PM_FNAME);
-      pm_strcpy(bjcr->client_name, "Dummy.Client.Name");
+      bjcr->job_name = GetPoolMemory(PM_FNAME);
+      PmStrcpy(bjcr->job_name, "Dummy.Job.Name");
+      bjcr->client_name = GetPoolMemory(PM_FNAME);
+      PmStrcpy(bjcr->client_name, "Dummy.Client.Name");
       bstrncpy(bjcr->Job, "bbatch", sizeof(bjcr->Job));
-      bjcr->fileset_name = get_pool_memory(PM_FNAME);
-      pm_strcpy(bjcr->fileset_name, "Dummy.fileset.name");
-      bjcr->fileset_md5 = get_pool_memory(PM_FNAME);
-      pm_strcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
+      bjcr->fileset_name = GetPoolMemory(PM_FNAME);
+      PmStrcpy(bjcr->fileset_name, "Dummy.fileset.name");
+      bjcr->fileset_md5 = GetPoolMemory(PM_FNAME);
+      PmStrcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
 
       if ((db = db_init_database(NULL,
                                  db_driver,
@@ -286,7 +286,7 @@ int main (int argc, char *argv[])
                                  false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
-      if (!db->open_database(NULL)) {
+      if (!db->OpenDatabase(NULL)) {
          Emsg0(M_ERROR_TERM, 0, db->strerror());
       }
       Dmsg0(200, "Database opened\n");
@@ -344,7 +344,7 @@ static void *do_batch(void *jcr)
    int lineno = 0;
    struct AttributesDbRecord ar;
    memset(&ar, 0, sizeof(ar));
-   btime_t begin = get_current_btime();
+   btime_t begin = GetCurrentBtime();
    char *datafile = bjcr->where;
 
    FILE *fd = fopen(datafile, "r");
@@ -352,19 +352,19 @@ static void *do_batch(void *jcr)
       Emsg1(M_ERROR_TERM, 0, _("Error opening datafile %s\n"), datafile);
    }
    while (fgets(data, sizeof(data)-1, fd)) {
-      strip_trailing_newline(data);
+      StripTrailingNewline(data);
       lineno++;
       if (verbose && ((lineno % 5000) == 1)) {
          printf("\r%i", lineno);
       }
       fill_attr(&ar, data);
-      if (!bjcr->db->create_attributes_record(bjcr, &ar)) {
+      if (!bjcr->db->CreateAttributesRecord(bjcr, &ar)) {
          Emsg0(M_ERROR_TERM, 0, _("Error while inserting file\n"));
       }
    }
    fclose(fd);
-   bjcr->db->write_batch_file_records(bjcr);
-   btime_t end = get_current_btime();
+   bjcr->db->WriteBatchFileRecords(bjcr);
+   btime_t end = GetCurrentBtime();
 
    P(mutex);
    char ed1[200], ed2[200];

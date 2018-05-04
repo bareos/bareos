@@ -49,7 +49,7 @@ bool win32_onefs_is_disabled(findFILESET *fileset)
        */
       for (int j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         if (bit_is_set(FO_MULTIFS, fo->flags)) {
+         if (BitIsSet(FO_MULTIFS, fo->flags)) {
             return true;
          }
       }
@@ -175,7 +175,7 @@ int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps)
 
    cnt = 0;
    if (fileset) {
-      devicename = get_pool_memory(PM_FNAME);
+      devicename = GetPoolMemory(PM_FNAME);
       for (i = 0; i < fileset->include_list.size(); i++) {
          incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          /*
@@ -211,7 +211,7 @@ int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps)
             }
          }
       }
-      free_pool_memory(devicename);
+      FreePoolMemory(devicename);
    }
 
    return cnt;
@@ -375,7 +375,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
       for (int j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
 
-         if (bit_is_set(FO_NO_AUTOEXCL, fo->flags)) {
+         if (BitIsSet(FO_NO_AUTOEXCL, fo->flags)) {
             Qmsg(jcr, M_INFO, 1, _("Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key\n"));
             return true;
          }
@@ -438,13 +438,13 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
              * Create new options block in include block for the wildcard excludes
              */
             Dmsg0(100, "prepending new options block\n");
-            new_options(ff, ff->fileset->incexe);
+            NewOptions(ff, ff->fileset->incexe);
          } else {
             Dmsg0(100, "reusing existing options block\n");
          }
          fo = (findFOPTS *)include->opts_list.get(0);
-         set_bit(FO_EXCLUDE, fo->flags);               /* exclude = yes */
-         set_bit(FO_IGNORECASE, fo->flags);            /* ignore case = yes */
+         SetBit(FO_EXCLUDE, fo->flags);               /* exclude = yes */
+         SetBit(FO_IGNORECASE, fo->flags);            /* ignore case = yes */
 
          /*
           * Make sure the variables are big enough to contain the data.
@@ -455,7 +455,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
          destination.check_size(MAX_PATH);
 
          for (unsigned int i = 0; i < cValues; i++) {
-            pm_strcpy(achValue, "");
+            PmStrcpy(achValue, "");
             cchValue = achValue.size();
             retCode = RegEnumValue(hKey, i, achValue.c_str(), &cchValue, NULL, NULL, NULL, NULL);
 
@@ -487,7 +487,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
                      if (strlen(expandedKey.c_str()) <= 1) {
                         Dmsg0(100, TEXT("Single character entry ignored. Probably reading buggy DRM entry on Windows XP/2003 SP 1 and later\n"));
                      } else {
-                        pm_strcpy(destination, "");
+                        PmStrcpy(destination, "");
 
                         /*
                          * Do all post processing.
@@ -502,7 +502,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
                          * Begin with \ means all drives
                          */
                         if (*s == '\\') {
-                           d += pm_strcpy(destination, "[A-Z]:");
+                           d += PmStrcpy(destination, "[A-Z]:");
                         }
 
                         while (*s) {
@@ -738,16 +738,16 @@ int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, c
     * Find out which next slot will be used on the Circular Buffer.
     * The method will block when the circular buffer is full until a slot is available.
     */
-   slotnr = cb->next_slot();
+   slotnr = cb->NextSlot();
    save_data = &jcr->cp_thread->save_data[slotnr];
 
    /*
     * If this is the first time we use this slot we need to allocate some memory.
     */
    if (!save_data->data) {
-      save_data->data = get_pool_memory(PM_BSOCK);
+      save_data->data = GetPoolMemory(PM_BSOCK);
    }
-   save_data->data = check_pool_memory_size(save_data->data, length + 1);
+   save_data->data = CheckPoolMemorySize(save_data->data, length + 1);
    memcpy(save_data->data, data, length);
    save_data->data_len = length;
 
@@ -814,7 +814,7 @@ void win32_cleanup_copy_thread(JobControlRecord *jcr)
     */
    for (slotnr = 0; slotnr < jcr->cp_thread->nr_save_elements; slotnr++) {
       if (jcr->cp_thread->save_data[slotnr].data) {
-         free_pool_memory(jcr->cp_thread->save_data[slotnr].data);
+         FreePoolMemory(jcr->cp_thread->save_data[slotnr].data);
       }
    }
    free(jcr->cp_thread->save_data);

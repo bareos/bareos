@@ -111,7 +111,7 @@ bool fstype(const char *fname, char *fs, int fslen)
    if (lstat(fname, &st) == 0) {
       if ((mce = find_mntent_mapping(st.st_dev)) != NULL) {
          bstrncpy(fs, mce->fstype, fslen);
-         release_mntent_mapping(mce);
+         ReleaseMntentMapping(mce);
          return true;
       }
       return false;
@@ -184,9 +184,9 @@ bool fstype(const char *fname, char *fs, int fslen)
 /**
  * Compare function build on top of fstype, OS independent.
  *
- * bool fstype_equals(const char *fname, const char *fstypename);
+ * bool FstypeEquals(const char *fname, const char *fstypename);
  */
-bool fstype_equals(const char *fname, const char *fstypename)
+bool FstypeEquals(const char *fname, const char *fstypename)
 {
    char fs_typename[128];
 

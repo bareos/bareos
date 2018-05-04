@@ -22,8 +22,8 @@
 #define BAREOS_LIB_PATH_LIST_H_
 
 DLL_IMP_EXP htable *path_list_init();
-DLL_IMP_EXP bool path_list_lookup(htable *path_list, const char *fname);
-DLL_IMP_EXP bool path_list_add(htable *path_list, uint32_t len, const char *fname);
-DLL_IMP_EXP void free_path_list(htable *path_list);
+DLL_IMP_EXP bool PathListLookup(htable *path_list, const char *fname);
+DLL_IMP_EXP bool PathListAdd(htable *path_list, uint32_t len, const char *fname);
+DLL_IMP_EXP void FreePathList(htable *path_list);
 
 #endif // BAREOS_LIB_PATH_LIST_H_

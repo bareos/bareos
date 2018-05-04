@@ -111,34 +111,34 @@ class DLL_IMP_EXP TlsBase {
    TlsBase() : enable(false), require(false) {}
 };
 
-class DLL_IMP_EXP tls_cert_t : public TlsBase {
+class DLL_IMP_EXP TlsCert : public TlsBase {
    static u_int32_t const policy_offset = 0;
  public:
    bool authenticate;       /* Authenticate with TLS */
-   bool verify_peer;        /* TLS Verify Peer Certificate */
-   std::string *ca_certfile; /* TLS CA Certificate File */
-   std::string *ca_certdir;  /* TLS CA Certificate Directory */
+   bool VerifyPeer;        /* TLS Verify Peer Certificate */
+   std::string *CaCertfile; /* TLS CA Certificate File */
+   std::string *CaCertdir;  /* TLS CA Certificate Directory */
    std::string *crlfile;     /* TLS CA Certificate Revocation List File */
    std::string *certfile;    /* TLS Client Certificate File */
    std::string *keyfile;     /* TLS Client Key File */
    std::string *cipherlist;  /* TLS Cipher List */
    std::string *dhfile;      /* TLS Diffie-Hellman File */
-   alist *allowed_cns;      /* TLS Allowed Certificate Common Names (Clients) */
+   alist *AllowedCns;      /* TLS Allowed Certificate Common Names (Clients) */
    //   TLS_CONTEXT *ctx;   /* Shared TLS Context */
    std::string *pem_message;
-   tls_cert_t()
-      : TlsBase(), authenticate(false), verify_peer(0),
-        ca_certfile(nullptr), ca_certdir(nullptr), crlfile(nullptr), certfile(nullptr),
-        keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), allowed_cns(nullptr),
+   TlsCert()
+      : TlsBase(), authenticate(false), VerifyPeer(0),
+        CaCertfile(nullptr), CaCertdir(nullptr), crlfile(nullptr), certfile(nullptr),
+        keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), AllowedCns(nullptr),
         pem_message(nullptr) {}
-   ~tls_cert_t();
+   ~TlsCert();
 
    virtual uint32_t GetPolicy() const override;
 
    int (*tls_pem_callback)(char *buf, int size, const void *userdata);
 
-   bool GetVerifyPeer() const override { return verify_peer; }
-   alist *GetVerifyList() const override { return allowed_cns; }
+   bool GetVerifyPeer() const override { return VerifyPeer; }
+   alist *GetVerifyList() const override { return AllowedCns; }
    bool GetAuthenticate() const override { return authenticate; }
 
    /**
@@ -168,14 +168,14 @@ class DLL_IMP_EXP tls_cert_t : public TlsBase {
    static bool required(u_int32_t policy);
 };
 
-class DLL_IMP_EXP tls_psk_t : public TlsBase {
+class DLL_IMP_EXP TlsPsk : public TlsBase {
    static u_int32_t const policy_offset = 2;
 
  public:
    char *cipherlist; /* TLS Cipher List */
 
-   tls_psk_t() : TlsBase(), cipherlist(nullptr) {}
-   ~tls_psk_t();
+   TlsPsk() : TlsBase(), cipherlist(nullptr) {}
+   ~TlsPsk();
 
    virtual uint32_t GetPolicy() const override;
 

@@ -104,12 +104,12 @@ struct s_password {
   * TLS Settings for Certificate only
   */
  #define TLS_CERT_CONFIG(res) \
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert.verify_peer), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert.VerifyPeer), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "If disabled, all certificates signed by a known CA will be accepted. " \
          "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
-   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.ca_certfile), 0, 0, NULL, NULL, \
+   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertfile), 0, 0, NULL, NULL, \
          "Path of a PEM encoded TLS CA certificate(s) file." }, \
-   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.ca_certdir), 0, 0, NULL, NULL, \
+   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertdir), 0, 0, NULL, NULL, \
          "Path of a TLS CA certificate directory." }, \
    { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.crlfile), 0, 0, NULL, NULL, \
          "Path of a Certificate Revocation List file." }, \
@@ -117,7 +117,7 @@ struct s_password {
          "Path of a PEM encoded TLS certificate." }, \
    { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
          "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_cns), 0, 0, NULL, NULL, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.AllowedCns), 0, 0, NULL, NULL, \
          "\"Common Name\"s (CNs) of the allowed peer certificates."  }
 
  /*
@@ -329,7 +329,7 @@ public:
 
    /* Methods */
    inline char *name() const { return this->hdr.name; }
-   bool print_config(PoolMem &buf, bool hide_sensitive_data = false, bool verbose = false);
+   bool PrintConfig(PoolMem &buf, bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
     * when special rules for this resource type must be checked.
@@ -340,8 +340,8 @@ public:
 class TlsResource : public BareosResource {
  public:
    s_password password; /* UA server password */
-   tls_cert_t tls_cert; /* TLS structure */
-   tls_psk_t tls_psk;   /* TLS-PSK structure */
+   TlsCert tls_cert; /* TLS structure */
+   TlsPsk tls_psk;   /* TLS-PSK structure */
 };
 
 /*
@@ -356,7 +356,7 @@ public:
    char *operator_cmd;                /* Operator command */
    char *timestamp_format;            /* Timestamp format */
    DEST *dest_chain;                  /* chain of destinations */
-   char send_msg[nbytes_for_bits(M_MAX+1)]; /* Bit array of types */
+   char SendMsg[NbytesForBits(M_MAX+1)]; /* Bit array of types */
 
 private:
    bool in_use_;                     /* Set when using to send a message */
@@ -366,17 +366,17 @@ public:
    /*
     * Methods
     */
-   void clear_in_use() { lock(); in_use_=false; unlock(); }
-   void set_in_use() { wait_not_in_use(); in_use_=true; unlock(); }
-   void set_closing() { closing_=true; }
-   bool get_closing() { return closing_; }
-   void clear_closing() { lock(); closing_=false; unlock(); }
-   bool is_closing() { lock(); bool rtn=closing_; unlock(); return rtn; }
+   void ClearInUse() { lock(); in_use_=false; unlock(); }
+   void SetInUse() { WaitNotInUse(); in_use_=true; unlock(); }
+   void SetClosing() { closing_=true; }
+   bool GetClosing() { return closing_; }
+   void ClearClosing() { lock(); closing_=false; unlock(); }
+   bool IsClosing() { lock(); bool rtn=closing_; unlock(); return rtn; }
 
-   void wait_not_in_use();            /* in message.c */
+   void WaitNotInUse();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
-   bool print_config(PoolMem &buff, bool hide_sensitive_data = false, bool verbose = false);
+   bool PrintConfig(PoolMem &buff, bool hide_sensitive_data = false, bool verbose = false);
 };
 
 typedef void (INIT_RES_HANDLER)(ResourceItem *item, int pass);
@@ -414,7 +414,7 @@ public:
     */
    void init(
       const char *cf,
-      LEX_ERROR_HANDLER *scan_error,
+      LEX_ERROR_HANDLER *ScanError,
       LEX_WARNING_HANDLER *scan_warning,
       INIT_RES_HANDLER *init_res,
       STORE_RES_HANDLER *store_res,
@@ -426,29 +426,29 @@ public:
       int32_t r_last,
       ResourceTable *resources,
       CommonResourceHeader **res_head);
-   void set_default_config_filename(const char *filename);
-   void set_config_include_dir(const char *rel_path);
-   bool is_using_config_include_dir() { return use_config_include_dir_; }
-   bool parse_config();
-   bool parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error = NULL,
+   void SetDefaultConfigFilename(const char *filename);
+   void SetConfigIncludeDir(const char *rel_path);
+   bool IsUsingConfigIncludeDir() { return use_config_include_dir_; }
+   bool ParseConfig();
+   bool ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError = NULL,
                           LEX_WARNING_HANDLER *scan_warning = NULL, int32_t err_type = M_ERROR_TERM);
    const char *get_base_config_path() { return used_config_path_; }
-   void free_resources();
+   void FreeResources();
    CommonResourceHeader **save_resources();
    CommonResourceHeader **new_res_head();
-   void init_resource(int type, ResourceItem *items, int pass, std::function<void *(void *res)> initres);
-   bool remove_resource(int type, const char *name);
-   void dump_resources(void sendit(void *sock, const char *fmt, ...),
+   void InitResource(int type, ResourceItem *items, int pass, std::function<void *(void *res)> initres);
+   bool RemoveResource(int type, const char *name);
+   void DumpResources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);
    const char *get_resource_type_name(int code);
    int get_resource_code(const char *resource_type);
    ResourceTable *get_resource_table(int resource_type);
    ResourceTable *get_resource_table(const char *resource_type_name);
-   int get_resource_item_index(ResourceItem *res_table, const char *item);
+   int GetResourceItemIndex(ResourceItem *res_table, const char *item);
    ResourceItem *get_resource_item(ResourceItem *res_table, const char *item);
-   bool get_path_of_resource(PoolMem &path, const char *component, const char *resourcetype,
+   bool GetPathOfResource(PoolMem &path, const char *component, const char *resourcetype,
                              const char *name, bool set_wildcards = false);
-   bool get_path_of_new_resource(PoolMem &path, PoolMem &extramsg, const char *component,
+   bool GetPathOfNewResource(PoolMem &path, PoolMem &extramsg, const char *component,
                                  const char *resourcetype, const char *name,
                                  bool error_if_exits = false, bool create_directories = false);
 
@@ -464,7 +464,7 @@ protected:
    const char *get_default_configdir();
    bool get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename);
    bool get_config_include_path(PoolMem &full_path, const char *config_dir);
-   bool find_config_path(PoolMem &full_path);
+   bool FindConfigPath(PoolMem &full_path);
    int get_resource_table_index(int resource_type);
 };
 
@@ -488,11 +488,11 @@ DLL_IMP_EXP void b_LockRes(const char *file, int line);
 DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
 DLL_IMP_EXP void dump_resource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data = false, bool verbose = false);
-DLL_IMP_EXP void indent_config_item(PoolMem &cfg_str, int level, const char *config_item, bool inherited = false);
-DLL_IMP_EXP void free_resource(CommonResourceHeader *res, int type);
-DLL_IMP_EXP void init_resource(int type, ResourceItem *item);
+DLL_IMP_EXP void IndentConfigItem(PoolMem &cfg_str, int level, const char *config_item, bool inherited = false);
+DLL_IMP_EXP void FreeResource(CommonResourceHeader *res, int type);
+DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
 DLL_IMP_EXP bool save_resource(int type, ResourceItem *item, int pass);
-DLL_IMP_EXP bool store_resource(int type, LEX *lc, ResourceItem *item, int index, int pass);
+DLL_IMP_EXP bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
 DLL_IMP_EXP const char *res_to_str(int rcode);
 
 

@@ -100,7 +100,7 @@ bool job_cmd(JobControlRecord *jcr)
                    &jcr->VolSessionId, &jcr->VolSessionTime, &quota, &protocol,
                    backup_format.c_str());
    if (status != 19) {
-      pm_strcpy(jcr->errmsg, dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(BAD_job, status, jcr->errmsg);
       Dmsg1(100, ">dird: %s", dir->msg);
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -120,7 +120,7 @@ bool job_cmd(JobControlRecord *jcr)
    ojcr = get_jcr_by_full_name(job.c_str());
    if (ojcr && !ojcr->authenticated) {
       Dmsg2(100, "Found ojcr=0x%x Job %s\n", (unsigned)(intptr_t)ojcr, job.c_str());
-      free_jcr(ojcr);
+      FreeJcr(ojcr);
    }
    jcr->JobId = JobId;
    Dmsg2(800, "Start JobId=%d %p\n", JobId, jcr);
@@ -134,28 +134,28 @@ bool job_cmd(JobControlRecord *jcr)
       jcr->VolSessionTime = VolSessionTime;
    }
    bstrncpy(jcr->Job, job, sizeof(jcr->Job));
-   unbash_spaces(job_name);
-   jcr->job_name = get_pool_memory(PM_NAME);
-   pm_strcpy(jcr->job_name, job_name);
-   unbash_spaces(client_name);
-   jcr->client_name = get_pool_memory(PM_NAME);
-   pm_strcpy(jcr->client_name, client_name);
-   unbash_spaces(fileset_name);
-   jcr->fileset_name = get_pool_memory(PM_NAME);
-   pm_strcpy(jcr->fileset_name, fileset_name);
+   UnbashSpaces(job_name);
+   jcr->job_name = GetPoolMemory(PM_NAME);
+   PmStrcpy(jcr->job_name, job_name);
+   UnbashSpaces(client_name);
+   jcr->client_name = GetPoolMemory(PM_NAME);
+   PmStrcpy(jcr->client_name, client_name);
+   UnbashSpaces(fileset_name);
+   jcr->fileset_name = GetPoolMemory(PM_NAME);
+   PmStrcpy(jcr->fileset_name, fileset_name);
    jcr->setJobType(JobType);
    jcr->setJobLevel(level);
    jcr->no_attributes = no_attributes;
    jcr->spool_attributes = spool_attributes;
    jcr->spool_data = spool_data;
    jcr->spool_size = str_to_int64(spool_size);
-   jcr->fileset_md5 = get_pool_memory(PM_NAME);
-   pm_strcpy(jcr->fileset_md5, fileset_md5);
+   jcr->fileset_md5 = GetPoolMemory(PM_NAME);
+   PmStrcpy(jcr->fileset_md5, fileset_md5);
    jcr->PreferMountedVols = PreferMountedVols;
    jcr->RemainingQuota = quota;
-   unbash_spaces(backup_format);
-   jcr->backup_format = get_pool_memory(PM_NAME);
-   pm_strcpy(jcr->backup_format, backup_format);
+   UnbashSpaces(backup_format);
+   jcr->backup_format = GetPoolMemory(PM_NAME);
+   PmStrcpy(jcr->backup_format, backup_format);
    jcr->authenticated = false;
 
    Dmsg1(50, "Quota set as %llu\n", quota);
@@ -164,14 +164,14 @@ bool job_cmd(JobControlRecord *jcr)
     * Pass back an authorization key for the File daemon
     */
    bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
-   make_session_key(auth_key, seed, 1);
+   MakeSessionKey(auth_key, seed, 1);
    dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
    Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
    jcr->sd_auth_key = bstrdup(auth_key);
    memset(auth_key, 0, sizeof(auth_key));
 
-   dispatch_new_plugin_options(jcr);
-   generate_plugin_event(jcr, bsdEventJobStart, (void *)"JobStart");
+   DispatchNewPluginOptions(jcr);
+   GeneratePluginEvent(jcr, bsdEventJobStart, (void *)"JobStart");
 
    return true;
 }
@@ -199,7 +199,7 @@ bool do_job_run(JobControlRecord *jcr)
     * expires.
     */
    P(mutex);
-   while (!jcr->authenticated && !job_canceled(jcr)) {
+   while (!jcr->authenticated && !JobCanceled(jcr)) {
       errstat = pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
       if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
          break;
@@ -207,14 +207,14 @@ bool do_job_run(JobControlRecord *jcr)
       Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
    }
    Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-         job_canceled(jcr), errstat);
+         JobCanceled(jcr), errstat);
    V(mutex);
    Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
 
    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
    switch (jcr->getJobProtocol()) {
    case PT_NDMP_BAREOS:
-      if (jcr->authenticated && !job_canceled(jcr)) {
+      if (jcr->authenticated && !JobCanceled(jcr)) {
          Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
 
          /*
@@ -240,9 +240,9 @@ bool do_job_run(JobControlRecord *jcr)
       /*
        * Handle the file daemon session.
        */
-      if (jcr->authenticated && !job_canceled(jcr)) {
+      if (jcr->authenticated && !JobCanceled(jcr)) {
          Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
-         run_job(jcr);                   /* Run the job */
+         RunJob(jcr);                   /* Run the job */
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
@@ -254,7 +254,7 @@ bool do_job_run(JobControlRecord *jcr)
    }
 }
 
-bool nextrun_cmd(JobControlRecord *jcr)
+bool nextRunCmd(JobControlRecord *jcr)
 {
    char auth_key[MAX_NAME_LENGTH];
    char seed[MAX_NAME_LENGTH];
@@ -276,7 +276,7 @@ bool nextrun_cmd(JobControlRecord *jcr)
        * Pass back a new authorization key for the File daemon
        */
       bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
-      make_session_key(auth_key, seed, 1);
+      MakeSessionKey(auth_key, seed, 1);
       dir->fsend(OK_nextrun, auth_key);
       Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
       if (jcr->sd_auth_key) {
@@ -296,7 +296,7 @@ bool nextrun_cmd(JobControlRecord *jcr)
       Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
 
       P(mutex);
-      while (!jcr->authenticated && !job_canceled(jcr)) {
+      while (!jcr->authenticated && !JobCanceled(jcr)) {
          errstat = pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
          if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
             break;
@@ -304,11 +304,11 @@ bool nextrun_cmd(JobControlRecord *jcr)
          Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
       }
       Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-            job_canceled(jcr), errstat);
+            JobCanceled(jcr), errstat);
       V(mutex);
       Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
 
-      if (jcr->authenticated && !job_canceled(jcr)) {
+      if (jcr->authenticated && !JobCanceled(jcr)) {
          Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
 
          /*
@@ -331,7 +331,7 @@ bool nextrun_cmd(JobControlRecord *jcr)
        */
       return true;
    default:
-      Dmsg1(200, "Nextrun_cmd: %s", jcr->dir_bsock->msg);
+      Dmsg1(200, "NextRunCmd: %s", jcr->dir_bsock->msg);
       Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s tries to use nextrun cmd while not part of protocol.\n"),
             (uint32_t)jcr->JobId, jcr->Job);
       return false;
@@ -352,27 +352,27 @@ bool finish_cmd(JobControlRecord *jcr)
       Dmsg1(200, "Finish_cmd: %s", jcr->dir_bsock->msg);
 
       jcr->end_time = time(NULL);
-      dequeue_messages(jcr);             /* send any queued messages */
+      DequeueMessages(jcr);             /* send any queued messages */
       jcr->setJobStatus(JS_Terminated);
 
       switch (jcr->getJobType()) {
       case JT_BACKUP:
-         end_of_ndmp_backup(jcr);
+         EndOfNdmpBackup(jcr);
          break;
       case JT_RESTORE:
-         end_of_ndmp_restore(jcr);
+         EndOfNdmpRestore(jcr);
          break;
       default:
          break;
       }
 
-      generate_plugin_event(jcr, bsdEventJobEnd);
+      GeneratePluginEvent(jcr, bsdEventJobEnd);
 
       dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
                  edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
       dir->signal(BNET_EOD);             /* send EOD to Director daemon */
 
-      free_plugins(jcr);                 /* release instantiated plugins */
+      FreePlugins(jcr);                 /* release instantiated plugins */
 
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
@@ -406,12 +406,12 @@ bool query_cmd(JobControlRecord *jcr)
    ok = sscanf(dir->msg, query_device, dev_name.c_str()) == 1;
    Dmsg1(100, "<dird: %s", dir->msg);
    if (ok) {
-      unbash_spaces(dev_name);
+      UnbashSpaces(dev_name);
       foreach_res(device, R_DEVICE) {
          /* Find resource, and make sure we were able to open it */
          if (bstrcmp(dev_name.c_str(), device->name())) {
             if (!device->dev) {
-               device->dev = init_dev(jcr, device);
+               device->dev = InitDev(jcr, device);
             }
             if (!device->dev) {
                break;
@@ -441,13 +441,13 @@ bool query_cmd(JobControlRecord *jcr)
          }
       }
       /* If we get here, the device/autochanger was not found */
-      unbash_spaces(dir->msg);
-      pm_strcpy(jcr->errmsg, dir->msg);
+      UnbashSpaces(dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(NO_device, dev_name.c_str());
       Dmsg1(100, ">dird: %s", dir->msg);
    } else {
-      unbash_spaces(dir->msg);
-      pm_strcpy(jcr->errmsg, dir->msg);
+      UnbashSpaces(dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(BAD_query, jcr->errmsg);
       Dmsg1(100, ">dird: %s", dir->msg);
    }
@@ -462,7 +462,7 @@ bool query_cmd(JobControlRecord *jcr)
  */
 void stored_free_jcr(JobControlRecord *jcr)
 {
-   Dmsg0(200, "Start stored free_jcr\n");
+   Dmsg0(200, "Start stored FreeJcr\n");
    Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
 
    if (jcr->dir_bsock) {
@@ -484,52 +484,52 @@ void stored_free_jcr(JobControlRecord *jcr)
    }
 
    if (jcr->job_name) {
-      free_pool_memory(jcr->job_name);
+      FreePoolMemory(jcr->job_name);
    }
 
    if (jcr->client_name) {
-      free_memory(jcr->client_name);
+      FreeMemory(jcr->client_name);
       jcr->client_name = NULL;
    }
 
    if (jcr->fileset_name) {
-      free_memory(jcr->fileset_name);
+      FreeMemory(jcr->fileset_name);
    }
 
    if (jcr->fileset_md5) {
-      free_memory(jcr->fileset_md5);
+      FreeMemory(jcr->fileset_md5);
    }
 
    if (jcr->backup_format) {
-      free_memory(jcr->backup_format);
+      FreeMemory(jcr->backup_format);
    }
 
    if (jcr->bsr) {
-      free_bsr(jcr->bsr);
+      FreeBsr(jcr->bsr);
       jcr->bsr = NULL;
    }
 
    if (jcr->rctx) {
-      free_read_context(jcr->rctx);
+      FreeReadContext(jcr->rctx);
       jcr->rctx = NULL;
    }
 
    if (jcr->compress.deflate_buffer || jcr->compress.inflate_buffer) {
-      cleanup_compression(jcr);
+      CleanupCompression(jcr);
    }
 
    /*
     * Free any restore volume list created
     */
-   free_restore_volume_list(jcr);
+   FreeRestoreVolumeList(jcr);
    if (jcr->RestoreBootstrap) {
-      secure_erase(jcr, jcr->RestoreBootstrap);
-      free_pool_memory(jcr->RestoreBootstrap);
+      SecureErase(jcr, jcr->RestoreBootstrap);
+      FreePoolMemory(jcr->RestoreBootstrap);
       jcr->RestoreBootstrap = NULL;
    }
 
    if (jcr->next_dev || jcr->prev_dev) {
-      Emsg0(M_FATAL, 0, _("In free_jcr(), but still attached to device!!!!\n"));
+      Emsg0(M_FATAL, 0, _("In FreeJcr(), but still attached to device!!!!\n"));
    }
 
    pthread_cond_destroy(&jcr->job_start_wait);
@@ -548,12 +548,12 @@ void stored_free_jcr(JobControlRecord *jcr)
    }
 
    if (jcr->dcr) {
-      free_dcr(jcr->dcr);
+      FreeDcr(jcr->dcr);
       jcr->dcr = NULL;
    }
 
    if (jcr->read_dcr) {
-      free_dcr(jcr->read_dcr);
+      FreeDcr(jcr->read_dcr);
       jcr->read_dcr = NULL;
    }
 
@@ -581,15 +581,15 @@ void stored_free_jcr(JobControlRecord *jcr)
       jcr->write_store = NULL;
    }
 
-   free_plugins(jcr);                 /* release instantiated plugins */
+   FreePlugins(jcr);                 /* release instantiated plugins */
 
    Dsm_check(200);
 
    if (jcr->JobId != 0) {
-      write_state_file(me->working_directory, "bareos-sd", get_first_port_host_order(me->SDaddrs));
+      WriteStateFile(me->working_directory, "bareos-sd", GetFirstPortHostOrder(me->SDaddrs));
    }
 
-   Dmsg0(200, "End stored free_jcr\n");
+   Dmsg0(200, "End stored FreeJcr\n");
 
    return;
 }

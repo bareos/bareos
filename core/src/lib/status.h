@@ -25,7 +25,7 @@
 /**
  * @file
  * Status packet definition that is used in both the SD and FD. It
- * permits Win32 to call output_status() and get the output back
+ * permits Win32 to call OutputStatus() and get the output back
  * at the callback address line by line, and for Linux code,
  * the output can be sent directly to a BareosSocket.
  */
@@ -34,7 +34,7 @@
 #define BAREOS_LIB_STATUS_H_
 
 /**
- * Packet to send to output_status()
+ * Packet to send to OutputStatus()
  */
 class StatusPacket {
 public:

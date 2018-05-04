@@ -81,6 +81,6 @@ enum {
 /**
  * Make sure you have enough bits to store all above bit fields.
  */
-#define FOPTS_BYTES nbytes_for_bits(FO_MAX + 1)
+#define FOPTS_BYTES NbytesForBits(FO_MAX + 1)
 
 #endif /* __BFILEOPTSS_H */

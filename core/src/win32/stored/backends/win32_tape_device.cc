@@ -401,11 +401,11 @@ int win32_tape_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    int result = 0;
 
    if (request == MTIOCTOP) {
-      result = tape_op((mtop *)op);
+      result = TapeOp((mtop *)op);
    } else if (request == MTIOCGET) {
-      result = tape_get((mtget *)op);
+      result = TapeGet((mtget *)op);
    } else if (request == MTIOCPOS) {
-      result = tape_pos((mtpos *)op);
+      result = TapePos((mtpos *)op);
    } else {
       errno = ENOTTY;
       result = -1;
@@ -414,7 +414,7 @@ int win32_tape_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return result;
 }
 
-int win32_tape_device::tape_op(struct mtop *mt_com)
+int win32_tape_device::TapeOp(struct mtop *mt_com)
 {
    DWORD result = NO_ERROR;
    int   index;
@@ -716,7 +716,7 @@ int win32_tape_device::tape_op(struct mtop *mt_com)
    return result == NO_ERROR ? 0 : -1;
 }
 
-int win32_tape_device::tape_get(struct mtget *mt_get)
+int win32_tape_device::TapeGet(struct mtget *mt_get)
 {
    TAPE_POSITION_INFO pos_info;
    BOOL result;
@@ -1052,7 +1052,7 @@ static DWORD GetDensityBlockSize(HANDLE hDevice, DWORD *pdwDensity, DWORD *pdwBl
    return ERROR_NO_MEDIA_IN_DRIVE;
 }
 
-int win32_tape_device::tape_pos(struct mtpos *mt_pos)
+int win32_tape_device::TapePos(struct mtpos *mt_pos)
 {
    DWORD partition;
    DWORD offset;
@@ -1082,5 +1082,5 @@ win32_tape_device::~win32_tape_device()
 
 win32_tape_device::win32_tape_device()
 {
-   set_cap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
+   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }

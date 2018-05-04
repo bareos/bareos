@@ -91,7 +91,7 @@ static bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%s", item->val.strval);
       return true;
    }
-   if (lex_get_token(lc, BCT_STRING) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) {
       return false;
    }
    /*
@@ -101,7 +101,7 @@ static bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
       free(item->val.strval);
    }
    item->val.strval = bstrdup(lc->str);
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -111,11 +111,11 @@ static bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%s", item->val.nameval);
       return true;
    }
-   if (lex_get_token(lc, BCT_NAME) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_NAME) == BCT_ERROR) {
       return false;
    }
    bstrncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -128,7 +128,7 @@ static bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
        */
       return true;
    }
-   if (lex_get_token(lc, BCT_STRING) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) {
       return false;
    }
 
@@ -143,7 +143,7 @@ static bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
    list->append(bstrdup(lc->str));
    item->val.alistval = list;
 
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -153,11 +153,11 @@ static bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%lld", item->val.int64val);
       return true;
    }
-   if (lex_get_token(lc, BCT_INT64) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_INT64) == BCT_ERROR) {
       return false;
    }
    item->val.int64val = lc->u.int64_val;
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -167,11 +167,11 @@ static bool ini_store_pint64(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%lld", item->val.int64val);
       return true;
    }
-   if (lex_get_token(lc, BCT_PINT64) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_PINT64) == BCT_ERROR) {
       return false;
    }
    item->val.int64val = lc->u.pint64_val;
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -181,11 +181,11 @@ static bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%d", item->val.int32val);
       return true;
    }
-   if (lex_get_token(lc, BCT_PINT32) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_PINT32) == BCT_ERROR) {
       return false;
    }
    item->val.int32val = lc->u.pint32_val;
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -195,11 +195,11 @@ static bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%d", item->val.int32val);
       return true;
    }
-   if (lex_get_token(lc, BCT_INT32) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_INT32) == BCT_ERROR) {
       return false;
    }
    item->val.int32val = lc->u.int32_val;
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -209,7 +209,7 @@ static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%s", item->val.boolval?"yes":"no");
       return true;
    }
-   if (lex_get_token(lc, BCT_NAME) == BCT_ERROR) {
+   if (LexGetToken(lc, BCT_NAME) == BCT_ERROR) {
       return false;
    }
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -223,7 +223,7 @@ static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
       return false;
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return true;
 }
 
@@ -244,7 +244,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         buf.realloc_pm(maxlen + maxlen / 2);
+         buf.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -288,7 +288,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         buf.realloc_pm(maxlen + maxlen / 2);
+         buf.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -318,7 +318,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 /*
  * Reset free items
  */
-void ConfigFile::clear_items()
+void ConfigFile::ClearItems()
 {
    if (!items) {
       return;
@@ -346,7 +346,7 @@ void ConfigFile::clear_items()
    }
 }
 
-void ConfigFile::free_items()
+void ConfigFile::FreeItems()
 {
    if (items_allocated) {
       for (int i = 0; items[i].name; i++) {
@@ -362,7 +362,7 @@ void ConfigFile::free_items()
 /*
  * Get a particular item from the items list
  */
-int ConfigFile::get_item(const char *name)
+int ConfigFile::GetItem(const char *name)
 {
    if (!items) {
       return -1;
@@ -386,8 +386,8 @@ bool ConfigFile::dump_string(const char *buf, int32_t len)
    bool ret = false;
 
    if (!out_fname) {
-      out_fname = get_pool_memory(PM_FNAME);
-      make_unique_filename(out_fname, (int)(intptr_t)this, (char*)"configfile");
+      out_fname = GetPoolMemory(PM_FNAME);
+      MakeUniqueFilename(out_fname, (int)(intptr_t)this, (char*)"configfile");
    }
 
    fp = fopen(out_fname, "wb");
@@ -451,21 +451,21 @@ int ConfigFile::serialize(PoolMem *buf)
    for (int i = 0; items[i].name; i++) {
       if (items[i].comment) {
          Mmsg(tmp, "OptPrompt=%s\n", items[i].comment);
-         pm_strcat(buf, tmp.c_str());
+         PmStrcat(buf, tmp.c_str());
       }
       if (items[i].default_value) {
          Mmsg(tmp, "OptDefault=%s\n", items[i].default_value);
-         pm_strcat(buf, tmp.c_str());
+         PmStrcat(buf, tmp.c_str());
       }
       if (items[i].required) {
          Mmsg(tmp, "OptRequired=yes\n");
-         pm_strcat(buf, tmp.c_str());
+         PmStrcat(buf, tmp.c_str());
       }
 
       /* variable = @INT64@ */
       Mmsg(tmp, "%s=%s\n\n",
            items[i].name, ini_get_store_code(items[i].type));
-      len = pm_strcat(buf, tmp.c_str());
+      len = PmStrcat(buf, tmp.c_str());
    }
 
    return len ;
@@ -520,10 +520,10 @@ int ConfigFile::dump_results(PoolMem *buf)
          }
          if (items[i].comment && *items[i].comment) {
             Mmsg(tmp, "# %s\n", items[i].comment);
-            pm_strcat(buf, tmp.c_str());
+            PmStrcat(buf, tmp.c_str());
          }
          Mmsg(tmp, "%s=%s\n\n", items[i].name, this->edit);
-         len = pm_strcat(buf, tmp.c_str());
+         len = PmStrcat(buf, tmp.c_str());
       }
    }
 
@@ -551,14 +551,14 @@ bool ConfigFile::parse(const char *fname)
    lc->options |= LOPT_NO_EXTERN;
    lc->caller_ctx = (void *)this;
 
-   while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
+   while ((token=LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg1(dbglevel, "parse got token=%s\n", lex_tok_to_str(token));
       if (token == BCT_EOL) {
          continue;
       }
       for (i = 0; items[i].name; i++) {
          if (bstrcasecmp(items[i].name, lc->str)) {
-            if ((token = lex_get_token(lc, BCT_EQUALS)) == BCT_ERROR) {
+            if ((token = LexGetToken(lc, BCT_EQUALS)) == BCT_ERROR) {
                Dmsg1(dbglevel, "in BCT_IDENT got token=%s\n",
                      lex_tok_to_str(token));
                break;
@@ -663,7 +663,7 @@ bool ConfigFile::unserialize(const char *fname)
    lc->options |= LOPT_NO_EXTERN;
    lc->caller_ctx = (void *)this;
 
-   while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
+   while ((token=LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg1(dbglevel, "parse got token=%s\n", lex_tok_to_str(token));
 
       if (token == BCT_EOL) {
@@ -683,13 +683,13 @@ bool ConfigFile::unserialize(const char *fname)
          assign = &(items[nb].default_value);
       } else if (bstrcasecmp("optrequired", lc->str)) {
          items[nb].required = true;               /* Don't use argument */
-         scan_to_eol(lc);
+         ScanToEol(lc);
          continue;
       } else {
          items[nb].name = bstrdup(lc->str);
       }
 
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       Dmsg1(dbglevel, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
 
       if (token != BCT_EQUALS) {
@@ -700,7 +700,7 @@ bool ConfigFile::unserialize(const char *fname)
       /*
        * We may allow blank variable
        */
-      if (lex_get_token(lc, BCT_STRING) == BCT_ERROR) {
+      if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) {
          break;
       }
 
@@ -714,7 +714,7 @@ bool ConfigFile::unserialize(const char *fname)
          }
          nb++;
       }
-      scan_to_eol(lc);
+      ScanToEol(lc);
       ret = true;
    }
 

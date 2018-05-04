@@ -59,7 +59,7 @@
  * @plain: plaintext key to be wrapped, n * 64 bit
  * @cipher: wrapped key, (n + 1) * 64 bit
  */
-void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
+void AesWrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
 {
    uint8_t *a, *r, b[16];
    int i, j;
@@ -131,7 +131,7 @@ void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
  * @cipher: wrapped key to be unwrapped, (n + 1) * 64 bit
  * @plain: plaintext key, n * 64 bit
  */
-int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
+int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
 {
    uint8_t a[8], *r, b[16];
    int i, j;
@@ -211,7 +211,7 @@ int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
  * @plain: plaintext key to be wrapped, n * 64 bit
  * @cipher: wrapped key, (n + 1) * 64 bit
  */
-void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
+void AesWrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
 {
    memcpy(cipher, plain, n * 8);
 }
@@ -222,7 +222,7 @@ void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
  * @cipher: wrapped key to be unwrapped, (n + 1) * 64 bit
  * @plain: plaintext key, n * 64 bit
  */
-int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
+int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
 {
    memcpy(cipher, plain, n * 8);
    return 0;

@@ -162,7 +162,7 @@ static tapealert_mapping tapealert_mappings[] = {
 };
 
 
-DLL_IMP_EXP bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags);
+DLL_IMP_EXP bool GetTapealertFlags(int fd, const char *device_name, uint64_t *flags);
 
 
 #endif /* BAREOS_LIB_SCSI_TAPEALERT_H_ */

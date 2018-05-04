@@ -87,7 +87,7 @@ static void *handle_connection_request(void *arg)
    return NULL;
 }
 
-void start_socket_server(dlist *addrs)
+void StartSocketServer(dlist *addrs)
 {
    IPADDR *p;
 
@@ -97,7 +97,7 @@ void start_socket_server(dlist *addrs)
     * Become server, and handle requests
     */
    foreach_dlist(p, addrs) {
-      Dmsg1(10, "filed: listening on port %d\n", p->get_port_host_order());
+      Dmsg1(10, "filed: listening on port %d\n", p->GetPortHostOrder());
    }
 
    /*
@@ -112,9 +112,9 @@ void start_socket_server(dlist *addrs)
                           handle_connection_request);
 }
 
-void stop_socket_server(bool wait)
+void StopSocketServer(bool wait)
 {
-   Dmsg0(100, "stop_socket_server\n");
+   Dmsg0(100, "StopSocketServer\n");
    if (sock_fds) {
       bnet_stop_thread_server_tcp(tcp_server_tid);
       /*

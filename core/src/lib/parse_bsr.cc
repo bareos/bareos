@@ -114,7 +114,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         buf.realloc_pm(maxlen + maxlen / 2);
+         buf.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -149,7 +149,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         buf.realloc_pm(maxlen + maxlen / 2);
+         buf.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -214,14 +214,14 @@ BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *fname)
             fname, be.bstrerror());
    }
    lc->caller_ctx = (void *)jcr;
-   while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
+   while ((token=LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg1(300, "parse got token=%s\n", lex_tok_to_str(token));
       if (token == BCT_EOL) {
          continue;
       }
       for (i=0; items[i].name; i++) {
          if (bstrcasecmp(items[i].name, lc->str)) {
-            token = lex_get_token(lc, BCT_ALL);
+            token = LexGetToken(lc, BCT_ALL);
             Dmsg1 (300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
             if (token != BCT_EQUALS) {
                scan_err1(lc, "expected an equals, got: %s", lc->str);
@@ -250,7 +250,7 @@ BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *fname)
    lc = lex_close_file(lc);
    Dmsg0(300, "Leave parse_bsf()\n");
    if (!bsr) {
-      free_bsr(root_bsr);
+      FreeBsr(root_bsr);
       root_bsr = NULL;
    }
    if (root_bsr) {
@@ -269,7 +269,7 @@ static BootStrapRecord *store_vol(LEX *lc, BootStrapRecord *bsr)
    BsrVolume *volume;
    char *p, *n;
 
-   token = lex_get_token(lc, BCT_STRING);
+   token = LexGetToken(lc, BCT_STRING);
    if (token == BCT_ERROR) {
       return NULL;
    }
@@ -313,7 +313,7 @@ static BootStrapRecord *store_mediatype(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_STRING);
+   token = LexGetToken(lc, BCT_STRING);
    if (token == BCT_ERROR) {
       return NULL;
    }
@@ -333,7 +333,7 @@ static BootStrapRecord *store_nothing(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_STRING);
+   token = LexGetToken(lc, BCT_STRING);
    if (token == BCT_ERROR) {
       return NULL;
    }
@@ -347,7 +347,7 @@ static BootStrapRecord *store_device(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_STRING);
+   token = LexGetToken(lc, BCT_STRING);
    if (token == BCT_ERROR) {
       return NULL;
    }
@@ -369,7 +369,7 @@ static BootStrapRecord *store_client(LEX *lc, BootStrapRecord *bsr)
    BsrClient *client;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_NAME);
+      token = LexGetToken(lc, BCT_NAME);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -388,7 +388,7 @@ static BootStrapRecord *store_client(LEX *lc, BootStrapRecord *bsr)
             { }
          bc->next = client;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -402,7 +402,7 @@ static BootStrapRecord *store_job(LEX *lc, BootStrapRecord *bsr)
    BsrJob *job;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_NAME);
+      token = LexGetToken(lc, BCT_NAME);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -424,7 +424,7 @@ static BootStrapRecord *store_job(LEX *lc, BootStrapRecord *bsr)
             { }
          bc->next = job;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -438,7 +438,7 @@ static BootStrapRecord *store_findex(LEX *lc, BootStrapRecord *bsr)
    BsrFileIndex *findex;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      token = LexGetToken(lc, BCT_PINT32_RANGE);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -461,7 +461,7 @@ static BootStrapRecord *store_findex(LEX *lc, BootStrapRecord *bsr)
             {  }
          bs->next = findex;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -475,7 +475,7 @@ static BootStrapRecord *store_jobid(LEX *lc, BootStrapRecord *bsr)
    BsrJobid *jobid;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      token = LexGetToken(lc, BCT_PINT32_RANGE);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -498,7 +498,7 @@ static BootStrapRecord *store_jobid(LEX *lc, BootStrapRecord *bsr)
             {  }
          bs->next = jobid;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -510,12 +510,12 @@ static BootStrapRecord *store_count(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_PINT32);
+   token = LexGetToken(lc, BCT_PINT32);
    if (token == BCT_ERROR) {
       return NULL;
    }
    bsr->count = lc->u.pint32_val;
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return bsr;
 }
 
@@ -524,7 +524,7 @@ static BootStrapRecord *store_fileregex(LEX *lc, BootStrapRecord *bsr)
    int token;
    int rc;
 
-   token = lex_get_token(lc, BCT_STRING);
+   token = LexGetToken(lc, BCT_STRING);
    if (token == BCT_ERROR) {
       return NULL;
    }
@@ -569,7 +569,7 @@ static BootStrapRecord *store_volfile(LEX *lc, BootStrapRecord *bsr)
    BsrVolumeFile *volfile;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      token = LexGetToken(lc, BCT_PINT32_RANGE);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -592,7 +592,7 @@ static BootStrapRecord *store_volfile(LEX *lc, BootStrapRecord *bsr)
             {  }
          bs->next = volfile;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -609,7 +609,7 @@ static BootStrapRecord *store_volblock(LEX *lc, BootStrapRecord *bsr)
    BsrVolumeBlock *volblock;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      token = LexGetToken(lc, BCT_PINT32_RANGE);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -632,7 +632,7 @@ static BootStrapRecord *store_volblock(LEX *lc, BootStrapRecord *bsr)
             {  }
          bs->next = volblock;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -649,7 +649,7 @@ static BootStrapRecord *store_voladdr(LEX *lc, BootStrapRecord *bsr)
    BsrVolumeAddress *voladdr;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT64_RANGE);
+      token = LexGetToken(lc, BCT_PINT64_RANGE);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -672,7 +672,7 @@ static BootStrapRecord *store_voladdr(LEX *lc, BootStrapRecord *bsr)
             {  }
          bs->next = voladdr;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -686,7 +686,7 @@ static BootStrapRecord *store_sessid(LEX *lc, BootStrapRecord *bsr)
    BsrSessionId *sid;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      token = LexGetToken(lc, BCT_PINT32_RANGE);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -709,7 +709,7 @@ static BootStrapRecord *store_sessid(LEX *lc, BootStrapRecord *bsr)
             {  }
          bs->next = sid;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -723,7 +723,7 @@ static BootStrapRecord *store_sesstime(LEX *lc, BootStrapRecord *bsr)
    BsrSessionTime *stime;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_PINT32);
+      token = LexGetToken(lc, BCT_PINT32);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -745,7 +745,7 @@ static BootStrapRecord *store_sesstime(LEX *lc, BootStrapRecord *bsr)
             { }
          bs->next = stime;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -759,7 +759,7 @@ static BootStrapRecord *store_stream(LEX *lc, BootStrapRecord *bsr)
    BsrStream *stream;
 
    for (;;) {
-      token = lex_get_token(lc, BCT_INT32);
+      token = LexGetToken(lc, BCT_INT32);
       if (token == BCT_ERROR) {
          return NULL;
       }
@@ -781,7 +781,7 @@ static BootStrapRecord *store_stream(LEX *lc, BootStrapRecord *bsr)
             { }
          bs->next = stream;
       }
-      token = lex_get_token(lc, BCT_ALL);
+      token = LexGetToken(lc, BCT_ALL);
       if (token != BCT_COMMA) {
          break;
       }
@@ -793,7 +793,7 @@ static BootStrapRecord *store_slot(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_PINT32);
+   token = LexGetToken(lc, BCT_PINT32);
    if (token == BCT_ERROR) {
       return NULL;
    }
@@ -802,19 +802,19 @@ static BootStrapRecord *store_slot(LEX *lc, BootStrapRecord *bsr)
       return bsr;
    }
    bsr->volume->Slot = lc->u.pint32_val;
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return bsr;
 }
 
 static BootStrapRecord *store_include(LEX *lc, BootStrapRecord *bsr)
 {
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return bsr;
 }
 
 static BootStrapRecord *store_exclude(LEX *lc, BootStrapRecord *bsr)
 {
-   scan_to_eol(lc);
+   ScanToEol(lc);
    return bsr;
 }
 
@@ -913,7 +913,7 @@ static inline void dump_sesstime(BsrSessionTime *sesstime)
    }
 }
 
-void dump_bsr(BootStrapRecord *bsr, bool recurse)
+void DumpBsr(BootStrapRecord *bsr, bool recurse)
 {
    int save_debug = debug_level;
    debug_level = 1;
@@ -944,7 +944,7 @@ void dump_bsr(BootStrapRecord *bsr, bool recurse)
    Pmsg1(-1,    _("fast_reject : %d\n"), bsr->use_fast_rejection);
    if (recurse && bsr->next) {
       Pmsg0(-1, "\n");
-      dump_bsr(bsr->next, true);
+      DumpBsr(bsr->next, true);
    }
    debug_level = save_debug;
 }
@@ -985,7 +985,7 @@ static inline void remove_bsr(BootStrapRecord *bsr)
       free(bsr->fileregex_re);
    }
    if (bsr->attr) {
-      free_attr(bsr->attr);
+      FreeAttr(bsr->attr);
    }
    if (bsr->next) {
       bsr->next->prev = bsr->prev;
@@ -999,7 +999,7 @@ static inline void remove_bsr(BootStrapRecord *bsr)
 /*
  * Free all bsrs in chain
  */
-void free_bsr(BootStrapRecord *bsr)
+void FreeBsr(BootStrapRecord *bsr)
 {
    BootStrapRecord *next_bsr;
 
@@ -1016,5 +1016,5 @@ void free_bsr(BootStrapRecord *bsr)
    /*
     * Now get the next one
     */
-   free_bsr(next_bsr);
+   FreeBsr(next_bsr);
 }

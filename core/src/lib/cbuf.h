@@ -47,11 +47,11 @@ public:
    void destroy();
    int enqueue(void *data);
    void *dequeue();
-   int next_slot();
+   int NextSlot();
    int flush();
    bool full() { return size_ == capacity_; }
    bool empty() { return size_ == 0; }
-   bool is_flushing() { return flush_; }
+   bool IsFlushing() { return flush_; }
    int capacity() const { return capacity_; }
 };
 

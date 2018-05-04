@@ -22,21 +22,21 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_RESTORE_COMMON_H_
 #define BAREOS_DIRD_NDMP_DMA_RESTORE_COMMON_H_
 
-void add_to_namelist(struct ndm_job_param *job,
+void AddToNamelist(struct ndm_job_param *job,
                                    char *filename,
                                    const char *restore_prefix,
                                    char *name,
                                    char *other_name,
                                    uint64_t node,
                                    uint64_t fhinfo);
-int set_files_to_restore_ndmp_native(JobControlRecord *jcr,
+int SetFilesToRestoreNdmpNative(JobControlRecord *jcr,
                               struct ndm_job_param *job,
                               int32_t FileIndex,
                               const char *restore_prefix,
                               const char *ndmp_filesystem);
 int ndmp_env_handler(void *ctx, int num_fields, char **row);
-bool extract_post_restore_stats(JobControlRecord *jcr,
+bool ExtractPostRestoreStats(JobControlRecord *jcr,
                                 struct ndm_session *sess);
-void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode);
+void NdmpRestoreCleanup(JobControlRecord *jcr, int TermCode);
 
 #endif // BAREOS_DIRD_NDMP_DMA_RESTORE_COMMON_H_

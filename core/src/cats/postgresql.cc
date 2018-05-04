@@ -111,18 +111,18 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord *jcr,
       have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
-   errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
+   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
    *errmsg = 0;
-   cmd = get_pool_memory(PM_EMSG); /* get command buffer */
-   cached_path = get_pool_memory(PM_FNAME);
+   cmd = GetPoolMemory(PM_EMSG); /* get command buffer */
+   cached_path = GetPoolMemory(PM_FNAME);
    cached_path_id = 0;
    ref_count_ = 1;
-   fname = get_pool_memory(PM_FNAME);
-   path = get_pool_memory(PM_FNAME);
-   esc_name = get_pool_memory(PM_FNAME);
-   esc_path = get_pool_memory(PM_FNAME);
-   esc_obj = get_pool_memory(PM_FNAME);
-   buf_ =  get_pool_memory(PM_FNAME);
+   fname = GetPoolMemory(PM_FNAME);
+   path = GetPoolMemory(PM_FNAME);
+   esc_name = GetPoolMemory(PM_FNAME);
+   esc_path = GetPoolMemory(PM_FNAME);
+   esc_obj = GetPoolMemory(PM_FNAME);
+   buf_ =  GetPoolMemory(PM_FNAME);
    allow_transactions_ = mult_db_connections;
    is_private_ = need_private;
    try_reconnect_ = try_reconnect;
@@ -155,17 +155,17 @@ BareosDbPostgresql::~BareosDbPostgresql()
 /**
  * Check that the database correspond to the encoding we want
  */
-bool BareosDbPostgresql::check_database_encoding(JobControlRecord *jcr)
+bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord *jcr)
 {
    SQL_ROW row;
    bool retval = false;
 
-   if (!sql_query_without_handler("SELECT getdatabaseencoding()", QF_STORE_RESULT)) {
+   if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()", QF_STORE_RESULT)) {
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       return false;
    }
 
-   if ((row = sql_fetch_row()) == NULL) {
+   if ((row = SqlFetchRow()) == NULL) {
       Mmsg1(errmsg, _("error fetching row: %s\n"), errmsg);
       Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", errmsg);
    } else {
@@ -175,7 +175,7 @@ bool BareosDbPostgresql::check_database_encoding(JobControlRecord *jcr)
          /*
           * If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII too
           */
-         sql_query_without_handler("SET client_encoding TO 'SQL_ASCII'");
+         SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'");
       } else {
          /*
           * Something is wrong with database encoding
@@ -194,7 +194,7 @@ bool BareosDbPostgresql::check_database_encoding(JobControlRecord *jcr)
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool BareosDbPostgresql::open_database(JobControlRecord *jcr)
+bool BareosDbPostgresql::OpenDatabase(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
@@ -206,7 +206,7 @@ bool BareosDbPostgresql::open_database(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if ((errstat = rwl_init(&lock_)) != 0) {
+   if ((errstat = RwlInit(&lock_)) != 0) {
       berrno be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
@@ -256,24 +256,24 @@ bool BareosDbPostgresql::open_database(JobControlRecord *jcr)
    }
 
    connected_ = true;
-   if (!check_tables_version(jcr)) {
+   if (!CheckTablesVersion(jcr)) {
       goto bail_out;
    }
 
-   sql_query_without_handler("SET datestyle TO 'ISO, YMD'");
-   sql_query_without_handler("SET cursor_tuple_fraction=1");
+   SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+   SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
 
    /*
     * Tell PostgreSQL we are using standard conforming strings
     * and avoid warnings such as:
     *  WARNING:  nonstandard use of \\ in a string literal
     */
-   sql_query_without_handler("SET standard_conforming_strings=on");
+   SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
    /*
     * Check that encoding is SQL_ASCII
     */
-   check_database_encoding(jcr);
+   CheckDatabaseEncoding(jcr);
 
    retval = true;
 
@@ -282,33 +282,33 @@ bail_out:
    return retval;
 }
 
-void BareosDbPostgresql::close_database(JobControlRecord *jcr)
+void BareosDbPostgresql::CloseDatabase(JobControlRecord *jcr)
 {
    if (connected_) {
-      end_transaction(jcr);
+      EndTransaction(jcr);
    }
    P(mutex);
    ref_count_--;
    if (ref_count_ == 0) {
       if (connected_) {
-         sql_free_result();
+         SqlFreeResult();
       }
       db_list->remove(this);
       if (connected_ && db_handle_) {
          PQfinish(db_handle_);
       }
-      if (rwl_is_init(&lock_)) {
-         rwl_destroy(&lock_);
+      if (RwlIsInit(&lock_)) {
+         RwlDestroy(&lock_);
       }
-      free_pool_memory(errmsg);
-      free_pool_memory(cmd);
-      free_pool_memory(cached_path);
-      free_pool_memory(fname);
-      free_pool_memory(path);
-      free_pool_memory(esc_name);
-      free_pool_memory(esc_path);
-      free_pool_memory(esc_obj);
-      free_pool_memory(buf_);
+      FreePoolMemory(errmsg);
+      FreePoolMemory(cmd);
+      FreePoolMemory(cached_path);
+      FreePoolMemory(fname);
+      FreePoolMemory(path);
+      FreePoolMemory(esc_name);
+      FreePoolMemory(esc_path);
+      FreePoolMemory(esc_obj);
+      FreePoolMemory(buf_);
       if (db_driver_) {
          free(db_driver_);
       }
@@ -336,15 +336,15 @@ void BareosDbPostgresql::close_database(JobControlRecord *jcr)
    V(mutex);
 }
 
-bool BareosDbPostgresql::validate_connection(void)
+bool BareosDbPostgresql::ValidateConnection(void)
 {
    bool retval = false;
 
    /*
     * Perform a null query to see if the connection is still valid.
     */
-   db_lock(this);
-   if (!sql_query_without_handler("SELECT 1", true)) {
+   DbLock(this);
+   if (!SqlQueryWithoutHandler("SELECT 1", true)) {
       /*
        * Try resetting the connection.
        */
@@ -353,23 +353,23 @@ bool BareosDbPostgresql::validate_connection(void)
          goto bail_out;
       }
 
-      sql_query_without_handler("SET datestyle TO 'ISO, YMD'");
-      sql_query_without_handler("SET cursor_tuple_fraction=1");
-      sql_query_without_handler("SET standard_conforming_strings=on");
+      SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+      SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
+      SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
       /*
        * Retry the null query.
        */
-      if (!sql_query_without_handler("SELECT 1", true)) {
+      if (!SqlQueryWithoutHandler("SELECT 1", true)) {
          goto bail_out;
       }
    }
 
-   sql_free_result();
+   SqlFreeResult();
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -380,7 +380,7 @@ bail_out:
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-void BareosDbPostgresql::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
+void BareosDbPostgresql::EscapeString(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    int error;
 
@@ -407,7 +407,7 @@ char *BareosDbPostgresql::escape_object(JobControlRecord *jcr, char *old, int le
       Jmsg(jcr, M_FATAL, 0, _("PQescapeByteaConn returned NULL.\n"));
    }
 
-   esc_obj = check_pool_memory_size(esc_obj, new_len+1);
+   esc_obj = CheckPoolMemorySize(esc_obj, new_len+1);
    memcpy(esc_obj, obj, new_len);
    esc_obj[new_len]=0;
 
@@ -420,7 +420,7 @@ char *BareosDbPostgresql::escape_object(JobControlRecord *jcr, char *old, int le
  * Unescape binary object so that PostgreSQL is happy
  *
  */
-void BareosDbPostgresql::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
+void BareosDbPostgresql::UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
                                       POOLMEM *&dest, int32_t *dest_len)
 {
    size_t new_len;
@@ -439,7 +439,7 @@ void BareosDbPostgresql::unescape_object(JobControlRecord *jcr, char *from, int3
    }
 
    *dest_len = new_len;
-   dest = check_pool_memory_size(dest, new_len + 1);
+   dest = CheckPoolMemorySize(dest, new_len + 1);
    memcpy(dest, obj, new_len);
    dest[new_len] = '\0';
 
@@ -453,10 +453,10 @@ void BareosDbPostgresql::unescape_object(JobControlRecord *jcr, char *from, int3
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void BareosDbPostgresql::start_transaction(JobControlRecord *jcr)
+void BareosDbPostgresql::StartTransaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
-      jcr->attr = get_pool_memory(PM_FNAME);
+      jcr->attr = GetPoolMemory(PM_FNAME);
    }
    if (!jcr->ar) {
       jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
@@ -470,26 +470,26 @@ void BareosDbPostgresql::start_transaction(JobControlRecord *jcr)
       return;
    }
 
-   db_lock(this);
+   DbLock(this);
    /*
     * Allow only 25,000 changes per transaction
     */
    if (transaction_ && changes > 25000) {
-      end_transaction(jcr);
+      EndTransaction(jcr);
    }
    if (!transaction_) {
-      sql_query_without_handler("BEGIN");  /* begin transaction */
+      SqlQueryWithoutHandler("BEGIN");  /* begin transaction */
       Dmsg0(400, "Start PosgreSQL transaction\n");
       transaction_ = true;
    }
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDbPostgresql::end_transaction(JobControlRecord *jcr)
+void BareosDbPostgresql::EndTransaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!create_attributes_record(jcr, jcr->ar)) {
+      if (!CreateAttributesRecord(jcr, jcr->ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
@@ -499,56 +499,56 @@ void BareosDbPostgresql::end_transaction(JobControlRecord *jcr)
       return;
    }
 
-   db_lock(this);
+   DbLock(this);
    if (transaction_) {
-      sql_query_without_handler("COMMIT"); /* end transaction */
+      SqlQueryWithoutHandler("COMMIT"); /* end transaction */
       transaction_ = false;
       Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
    }
    changes = 0;
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool BareosDbPostgresql::big_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbPostgresql::BigSqlQuery(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = false;
    bool in_transaction = transaction_;
 
-   Dmsg1(500, "big_sql_query starts with '%s'\n", query);
+   Dmsg1(500, "BigSqlQuery starts with '%s'\n", query);
 
    /* This code handles only SELECT queries */
    if (!bstrncasecmp(query, "SELECT", 6)) {
-      return sql_query_with_handler(query, result_handler, ctx);
+      return SqlQueryWithHandler(query, result_handler, ctx);
    }
 
    if (!result_handler) {       /* no need of big_query without handler */
       return false;
    }
 
-   db_lock(this);
+   DbLock(this);
 
    if (!in_transaction) {       /* CURSOR needs transaction */
-      sql_query_without_handler("BEGIN");
+      SqlQueryWithoutHandler("BEGIN");
    }
 
    Mmsg(buf_, "DECLARE _bac_cursor CURSOR FOR %s", query);
 
-   if (!sql_query_without_handler(buf_)) {
+   if (!SqlQueryWithoutHandler(buf_)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), buf_, sql_strerror());
-      Dmsg0(50, "sql_query_without_handler failed\n");
+      Dmsg0(50, "SqlQueryWithoutHandler failed\n");
       goto bail_out;
    }
 
    do {
-      if (!sql_query_without_handler("FETCH 100 FROM _bac_cursor")) {
+      if (!SqlQueryWithoutHandler("FETCH 100 FROM _bac_cursor")) {
          goto bail_out;
       }
-      while ((row = sql_fetch_row()) != NULL) {
+      while ((row = SqlFetchRow()) != NULL) {
          Dmsg1(500, "Fetching %d rows\n", num_rows_);
          if (result_handler(ctx, num_fields_, row))
             break;
@@ -558,18 +558,18 @@ bool BareosDbPostgresql::big_sql_query(const char *query, DB_RESULT_HANDLER *res
 
    } while (num_rows_ > 0);
 
-   sql_query_without_handler("CLOSE _bac_cursor");
+   SqlQueryWithoutHandler("CLOSE _bac_cursor");
 
-   Dmsg0(500, "big_sql_query finished\n");
-   sql_free_result();
+   Dmsg0(500, "BigSqlQuery finished\n");
+   SqlFreeResult();
    retval = true;
 
 bail_out:
    if (!in_transaction) {
-      sql_query_without_handler("COMMIT");  /* end transaction */
+      SqlQueryWithoutHandler("COMMIT");  /* end transaction */
    }
 
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -577,37 +577,37 @@ bail_out:
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool BareosDbPostgresql::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbPostgresql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = true;
 
-   Dmsg1(500, "sql_query_with_handler starts with '%s'\n", query);
+   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
-   db_lock(this);
-   if (!sql_query_without_handler(query, QF_STORE_RESULT)) {
+   DbLock(this);
+   if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "sql_query_with_handler failed\n");
+      Dmsg0(500, "SqlQueryWithHandler failed\n");
       retval = false;
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
+   Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
-      Dmsg0(500, "sql_query_with_handler invoking handler\n");
-      while ((row = sql_fetch_row()) != NULL) {
-         Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
+      Dmsg0(500, "SqlQueryWithHandler invoking handler\n");
+      while ((row = SqlFetchRow()) != NULL) {
+         Dmsg0(500, "SqlQueryWithHandler SqlFetchRow worked\n");
          if (result_handler(ctx, num_fields_, row))
             break;
       }
-      sql_free_result();
+      SqlFreeResult();
    }
 
-   Dmsg0(500, "sql_query_with_handler finished\n");
+   Dmsg0(500, "SqlQueryWithHandler finished\n");
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -619,13 +619,13 @@ bail_out:
  * Returns:  true  on success
  *           false on failure
  */
-bool BareosDbPostgresql::sql_query_without_handler(const char *query, int flags)
+bool BareosDbPostgresql::SqlQueryWithoutHandler(const char *query, int flags)
 {
    int i;
    bool retry = true;
    bool retval = false;
 
-   Dmsg1(500, "sql_query_without_handler starts with '%s'\n", query);
+   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
    /*
     * We are starting a new query. reset everything.
@@ -712,7 +712,7 @@ retry_query:
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query_without_handler finishing\n");
+   Dmsg0(500, "SqlQueryWithoutHandler finishing\n");
    goto ok_out;
 
 bail_out:
@@ -725,9 +725,9 @@ ok_out:
    return retval;
 }
 
-void BareosDbPostgresql::sql_free_result(void)
+void BareosDbPostgresql::SqlFreeResult(void)
 {
-   db_lock(this);
+   DbLock(this);
    if (result_) {
       PQclear(result_);
       result_ = NULL;
@@ -741,24 +741,24 @@ void BareosDbPostgresql::sql_free_result(void)
       fields_ = NULL;
    }
    num_rows_ = num_fields_ = 0;
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-SQL_ROW BareosDbPostgresql::sql_fetch_row(void)
+SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
 {
    int j;
    SQL_ROW row = NULL; /* by default, return NULL */
 
-   Dmsg0(500, "sql_fetch_row start\n");
+   Dmsg0(500, "SqlFetchRow start\n");
 
    if (num_fields_ == 0) {     /* No field, no row */
-      Dmsg0(500, "sql_fetch_row finishes returning NULL, no fields\n");
+      Dmsg0(500, "SqlFetchRow finishes returning NULL, no fields\n");
       return NULL;
    }
 
    if (!rows_ || rows_size_ < num_fields_) {
       if (rows_) {
-         Dmsg0(500, "sql_fetch_row freeing space\n");
+         Dmsg0(500, "SqlFetchRow freeing space\n");
          free(rows_);
       }
       Dmsg1(500, "we need space for %d bytes\n", sizeof(char *) * num_fields_);
@@ -775,13 +775,13 @@ SQL_ROW BareosDbPostgresql::sql_fetch_row(void)
     * If still within the result set
     */
    if (row_number_ >= 0 && row_number_ < num_rows_) {
-      Dmsg2(500, "sql_fetch_row row number '%d' is acceptable (0..%d)\n", row_number_, num_rows_);
+      Dmsg2(500, "SqlFetchRow row number '%d' is acceptable (0..%d)\n", row_number_, num_rows_);
       /*
        * Get each value from this row
        */
       for (j = 0; j < num_fields_; j++) {
          rows_[j] = PQgetvalue(result_, row_number_, j);
-         Dmsg2(500, "sql_fetch_row field '%d' has value '%s'\n", j, rows_[j]);
+         Dmsg2(500, "SqlFetchRow field '%d' has value '%s'\n", j, rows_[j]);
       }
       /*
        * Increment the row number for the next call
@@ -789,10 +789,10 @@ SQL_ROW BareosDbPostgresql::sql_fetch_row(void)
       row_number_++;
       row = rows_;
    } else {
-      Dmsg2(500, "sql_fetch_row row number '%d' is NOT acceptable (0..%d)\n", row_number_, num_rows_);
+      Dmsg2(500, "SqlFetchRow row number '%d' is NOT acceptable (0..%d)\n", row_number_, num_rows_);
    }
 
-   Dmsg1(500, "sql_fetch_row finishes returning %p\n", row);
+   Dmsg1(500, "SqlFetchRow finishes returning %p\n", row);
 
    return row;
 }
@@ -802,7 +802,7 @@ const char *BareosDbPostgresql::sql_strerror(void)
    return PQerrorMessage(db_handle_);
 }
 
-void BareosDbPostgresql::sql_data_seek(int row)
+void BareosDbPostgresql::SqlDataSeek(int row)
 {
    /*
     * Set the row number to be returned on the next call to sql_fetch_row
@@ -810,12 +810,12 @@ void BareosDbPostgresql::sql_data_seek(int row)
    row_number_ = row;
 }
 
-int BareosDbPostgresql::sql_affected_rows(void)
+int BareosDbPostgresql::SqlAffectedRows(void)
 {
    return (unsigned) str_to_int32(PQcmdTuples(result_));
 }
 
-uint64_t BareosDbPostgresql::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char *query, const char *table_name)
 {
    int i;
    uint64_t id = 0;
@@ -826,11 +826,11 @@ uint64_t BareosDbPostgresql::sql_insert_autokey_record(const char *query, const 
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (!sql_query_without_handler(query)) {
+   if (!SqlQueryWithoutHandler(query)) {
       return 0;
    }
 
-   num_rows_ = sql_affected_rows();
+   num_rows_ = SqlAffectedRows();
    if (num_rows_ != 1) {
       return 0;
    }
@@ -866,7 +866,7 @@ uint64_t BareosDbPostgresql::sql_insert_autokey_record(const char *query, const 
    bstrncat(sequence, "_seq", sizeof(sequence));
    bsnprintf(getkeyval_query, sizeof(getkeyval_query), "SELECT currval('%s')", sequence);
 
-   Dmsg1(500, "sql_insert_autokey_record executing query '%s'\n", getkeyval_query);
+   Dmsg1(500, "SqlInsertAutokeyRecord executing query '%s'\n", getkeyval_query);
    for (i = 0; i < 10; i++) {
       pg_result = PQexec(db_handle_, getkeyval_query);
       if (pg_result) {
@@ -896,13 +896,13 @@ bail_out:
    return id;
 }
 
-SQL_FIELD *BareosDbPostgresql::sql_fetch_field(void)
+SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
 {
    int i, j;
    int max_length;
    int this_length;
 
-   Dmsg0(500, "sql_fetch_field starts\n");
+   Dmsg0(500, "SqlFetchField starts\n");
 
    if (!fields_ || fields_size_ < num_fields_) {
       if (fields_) {
@@ -936,7 +936,7 @@ SQL_FIELD *BareosDbPostgresql::sql_fetch_field(void)
          }
          fields_[i].max_length = max_length;
 
-         Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
+         Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
                fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
@@ -947,7 +947,7 @@ SQL_FIELD *BareosDbPostgresql::sql_fetch_field(void)
    return &fields_[field_number_++];
 }
 
-bool BareosDbPostgresql::sql_field_is_not_null(int field_type)
+bool BareosDbPostgresql::SqlFieldIsNotNull(int field_type)
 {
    switch (field_type) {
    case 1:
@@ -957,7 +957,7 @@ bool BareosDbPostgresql::sql_field_is_not_null(int field_type)
    }
 }
 
-bool BareosDbPostgresql::sql_field_is_numeric(int field_type)
+bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
 {
    /*
     * TEMP: the following is taken from select OID, typname from pg_type;
@@ -1021,13 +1021,13 @@ static char *pgsql_copy_escape(char *dest, char *src, size_t len)
    return dest;
 }
 
-bool BareosDbPostgresql::sql_batch_start(JobControlRecord *jcr)
+bool BareosDbPostgresql::SqlBatchStart(JobControlRecord *jcr)
 {
    const char *query = "COPY batch FROM STDIN";
 
-   Dmsg0(500, "sql_batch_start started\n");
+   Dmsg0(500, "SqlBatchStart started\n");
 
-   if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+   if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
                                   "FileIndex int,"
                                   "JobId int,"
                                   "Path varchar,"
@@ -1037,7 +1037,7 @@ bool BareosDbPostgresql::sql_batch_start(JobControlRecord *jcr)
                                   "DeltaSeq smallint,"
                                   "Fhinfo NUMERIC(20),"
                                   "Fhnode NUMERIC(20))")) {
-      Dmsg0(500, "sql_batch_start failed\n");
+      Dmsg0(500, "SqlBatchStart failed\n");
       return false;
    }
 
@@ -1048,7 +1048,7 @@ bool BareosDbPostgresql::sql_batch_start(JobControlRecord *jcr)
    row_number_ = -1;
    field_number_ = -1;
 
-   sql_free_result();
+   SqlFreeResult();
 
    for (int i=0; i < 10; i++) {
       result_ = PQexec(db_handle_, query);
@@ -1075,7 +1075,7 @@ bool BareosDbPostgresql::sql_batch_start(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_batch_start finishing\n");
+   Dmsg0(500, "SqlBatchStart finishing\n");
 
    return true;
 
@@ -1090,13 +1090,13 @@ bail_out:
 /**
  * Set error to something to abort operation
  */
-bool BareosDbPostgresql::sql_batch_end(JobControlRecord *jcr, const char *error)
+bool BareosDbPostgresql::SqlBatchEnd(JobControlRecord *jcr, const char *error)
 {
    int res;
    int count=30;
    PGresult *pg_result;
 
-   Dmsg0(500, "sql_batch_end started\n");
+   Dmsg0(500, "SqlBatchEnd started\n");
 
    do {
       res = PQputCopyEnd(db_handle_, error);
@@ -1125,12 +1125,12 @@ bool BareosDbPostgresql::sql_batch_end(JobControlRecord *jcr, const char *error)
 
    PQclear(pg_result);
 
-   Dmsg0(500, "sql_batch_end finishing\n");
+   Dmsg0(500, "SqlBatchEnd finishing\n");
 
    return true;
 }
 
-bool BareosDbPostgresql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
+bool BareosDbPostgresql::SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    int res;
    int count=30;
@@ -1138,10 +1138,10 @@ bool BareosDbPostgresql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRec
    const char *digest;
    char ed1[50], ed2[50], ed3[50];
 
-   esc_name = check_pool_memory_size(esc_name, fnl*2+1);
+   esc_name = CheckPoolMemorySize(esc_name, fnl*2+1);
    pgsql_copy_escape(esc_name, fname, fnl);
 
-   esc_path = check_pool_memory_size(esc_path, pnl*2+1);
+   esc_path = CheckPoolMemorySize(esc_path, pnl*2+1);
    pgsql_copy_escape(esc_path, path, pnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
@@ -1173,7 +1173,7 @@ bool BareosDbPostgresql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRec
       Dmsg1(500, "failure %s\n", errmsg);
    }
 
-   Dmsg0(500, "sql_batch_insert finishing\n");
+   Dmsg0(500, "SqlBatchInsert finishing\n");
 
    return true;
 }
@@ -1225,13 +1225,13 @@ BareosDb *db_init_database(JobControlRecord *jcr,
     */
    if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
-         if (mdb->is_private()) {
+         if (mdb->IsPrivate()) {
             continue;
          }
 
-         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->MatchDatabase(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
-            mdb->increment_refcount();
+            mdb->IncrementRefcount();
             goto bail_out;
          }
       }
@@ -1260,7 +1260,7 @@ bail_out:
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void CATS_IMP_EXP flush_backend(void)
 #else
-void db_flush_backends(void)
+void DbFlushBackends(void)
 #endif
 {
 }

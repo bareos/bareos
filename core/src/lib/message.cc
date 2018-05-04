@@ -127,7 +127,7 @@ void MessagesResource::unlock()
 /*
  * Wait for not in use variable to be clear
  */
-void MessagesResource::wait_not_in_use()    /* leaves fides_mutex set */
+void MessagesResource::WaitNotInUse()    /* leaves fides_mutex set */
 {
    lock();
    while (in_use_ || closing_) {
@@ -147,7 +147,7 @@ static void delivery_error(const char *fmt,...)
    POOLMEM *pool_buf;
    char dt[MAX_TIME_LENGTH];
 
-   pool_buf = get_pool_memory(PM_EMSG);
+   pool_buf = GetPoolMemory(PM_EMSG);
 
    bstrftime(dt, sizeof(dt), time(NULL), log_timestamp_format);
    bstrncat(dt, " ", sizeof(dt));
@@ -155,13 +155,13 @@ static void delivery_error(const char *fmt,...)
    i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
    while (1) {
-      maxlen = sizeof_pool_memory(pool_buf) - i - 1;
+      maxlen = SizeofPoolMemory(pool_buf) - i - 1;
       va_start(ap, fmt);
       len = bvsnprintf(pool_buf+i, maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + i + maxlen / 2);
+         pool_buf = ReallocPoolMemory(pool_buf, maxlen + i + maxlen / 2);
          continue;
       }
 
@@ -171,7 +171,7 @@ static void delivery_error(const char *fmt,...)
    fputs(pool_buf, stdout);        /* print this here to INSURE that it is printed */
    fflush(stdout);
    syslog(LOG_DAEMON | LOG_ERR, "%s", pool_buf);
-   free_memory(pool_buf);
+   FreeMemory(pool_buf);
 }
 
 void register_message_callback(void msg_callback(int type, char *msg))
@@ -189,7 +189,7 @@ void register_message_callback(void msg_callback(int type, char *msg))
  * Resource record. On the second call, generally,
  * argv is NULL to avoid doing the path code twice.
  */
-void my_name_is(int argc, char *argv[], const char *name)
+void MyNameIs(int argc, char *argv[], const char *name)
 {
    char *l, *p, *q;
    char cpath[1024];
@@ -247,7 +247,7 @@ void my_name_is(int argc, char *argv[], const char *name)
    }
 }
 
-void set_db_type(const char *name)
+void SetDbType(const char *name)
 {
    if (catalog_db != NULL) {
       free(catalog_db);
@@ -263,19 +263,19 @@ void set_db_type(const char *name)
  * NULL for jcr -> initialize global messages for daemon
  * non-NULL     -> initialize jcr using Message resource
  */
-void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback)
+void InitMsg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback)
 {
    DEST *d, *dnew, *temp_chain = NULL;
    int i;
 
    if (jcr == NULL && msg == NULL) {
-      init_last_jobs_list();
+      InitLastJobsList();
       /*
        * Setup a daemon key then set invalid jcr
        * Maybe we should give the daemon a jcr???
        */
       setup_tsd_key();
-      set_jcr_in_tsd(INVALID_JCR);
+      SetJcrInTsd(INVALID_JCR);
    }
 
    message_job_code_callback = job_code_callback;
@@ -305,7 +305,7 @@ void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t 
       daemon_msgs = (MessagesResource *)malloc(sizeof(MessagesResource));
       memset(daemon_msgs, 0, sizeof(MessagesResource));
       for (i=1; i<=M_MAX; i++) {
-         add_msg_dest(daemon_msgs, MD_STDOUT, i, NULL, NULL, NULL);
+         AddMsgDest(daemon_msgs, MD_STDOUT, i, NULL, NULL, NULL);
       }
       Dmsg1(050, "Create daemon global message resource %p\n", daemon_msgs);
       return;
@@ -333,18 +333,18 @@ void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t 
       jcr->jcr_msgs = (MessagesResource *)malloc(sizeof(MessagesResource));
       memset(jcr->jcr_msgs, 0, sizeof(MessagesResource));
       jcr->jcr_msgs->dest_chain = temp_chain;
-      memcpy(jcr->jcr_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
+      memcpy(jcr->jcr_msgs->SendMsg, msg->SendMsg, sizeof(msg->SendMsg));
    } else {
       /*
        * If we have default values, release them now
        */
       if (daemon_msgs) {
-         free_msgs_res(daemon_msgs);
+         FreeMsgsRes(daemon_msgs);
       }
       daemon_msgs = (MessagesResource *)malloc(sizeof(MessagesResource));
       memset(daemon_msgs, 0, sizeof(MessagesResource));
       daemon_msgs->dest_chain = temp_chain;
-      memcpy(daemon_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
+      memcpy(daemon_msgs->SendMsg, msg->SendMsg, sizeof(msg->SendMsg));
    }
 
    Dmsg2(250, "Copy message resource %p to %p\n", msg, temp_chain);
@@ -353,7 +353,7 @@ void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t 
 /*
  * Initialize so that the console (User Agent) can receive messages -- stored in a file.
  */
-void init_console_msg(const char *wd)
+void InitConsoleMsg(const char *wd)
 {
    int fd;
 
@@ -374,7 +374,7 @@ void init_console_msg(const char *wd)
       Emsg2(M_ERROR, 0, _("Could not open console message file %s: ERR=%s\n"),
             con_fname, be.bstrerror());
    }
-   if (rwl_init(&con_lock) != 0) {
+   if (RwlInit(&con_lock) != 0) {
       berrno be;
       Emsg1(M_ERROR_TERM, 0, _("Could not get con mutex: ERR=%s\n"),
             be.bstrerror());
@@ -391,7 +391,7 @@ void init_console_msg(const char *wd)
  * but in the case of MAIL is a space separated list of
  * email addresses, ...
  */
-void add_msg_dest(MessagesResource *msg, int dest_code, int msg_type,
+void AddMsgDest(MessagesResource *msg, int dest_code, int msg_type,
                   char *where, char *mail_cmd, char *timestamp_format)
 {
    DEST *d;
@@ -405,8 +405,8 @@ void add_msg_dest(MessagesResource *msg, int dest_code, int msg_type,
           bstrcmp(where, d->where))) {
          Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n",
                d, msg_type, dest_code, NPRT(where));
-         set_bit(msg_type, d->msg_types);
-         set_bit(msg_type, msg->send_msg);  /* Set msg_type bit in our local */
+         SetBit(msg_type, d->msg_types);
+         SetBit(msg_type, msg->SendMsg);  /* Set msg_type bit in our local */
          return;
       }
    }
@@ -418,8 +418,8 @@ void add_msg_dest(MessagesResource *msg, int dest_code, int msg_type,
    memset(d, 0, sizeof(DEST));
    d->next = msg->dest_chain;
    d->dest_code = dest_code;
-   set_bit(msg_type, d->msg_types);      /* Set type bit in structure */
-   set_bit(msg_type, msg->send_msg);     /* Set type bit in our local */
+   SetBit(msg_type, d->msg_types);      /* Set type bit in structure */
+   SetBit(msg_type, msg->SendMsg);     /* Set type bit in our local */
 
    if (where) {
       d->where = bstrdup(where);
@@ -443,19 +443,19 @@ void add_msg_dest(MessagesResource *msg, int dest_code, int msg_type,
  *
  * Remove a message destination
  */
-void rem_msg_dest(MessagesResource *msg, int dest_code, int msg_type, char *where)
+void RemMsgDest(MessagesResource *msg, int dest_code, int msg_type, char *where)
 {
    DEST *d;
 
    for (d = msg->dest_chain; d; d = d->next) {
       Dmsg2(850, "Remove_msg_dest d=%p where=%s\n", d, NPRT(d->where));
-      if (bit_is_set(msg_type, d->msg_types) && (dest_code == d->dest_code) &&
+      if (BitIsSet(msg_type, d->msg_types) && (dest_code == d->dest_code) &&
           ((where == NULL && d->where == NULL) ||
           bstrcmp(where, d->where))) {
          Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n",
                d, msg_type, dest_code);
-         clear_bit(msg_type, d->msg_types);
-         Dmsg0(850, "Return rem_msg_dest\n");
+         ClearBit(msg_type, d->msg_types);
+         Dmsg0(850, "Return RemMsgDest\n");
          return;
       }
    }
@@ -509,7 +509,7 @@ static Bpipe *open_mail_pipe(JobControlRecord *jcr, POOLMEM *&cmd, DEST *d)
  * Close the messages for this Messages resource, which means to close
  * any open files, and dispatch any pending email messages.
  */
-void close_msg(JobControlRecord *jcr)
+void CloseMsg(JobControlRecord *jcr)
 {
    MessagesResource *msgs;
    DEST *d;
@@ -532,23 +532,23 @@ void close_msg(JobControlRecord *jcr)
    /*
     * Wait for item to be not in use, then mark closing
     */
-   if (msgs->is_closing()) {
+   if (msgs->IsClosing()) {
       return;
    }
-   msgs->wait_not_in_use();          /* leaves fides_mutex set */
+   msgs->WaitNotInUse();          /* leaves fides_mutex set */
 
    /*
-    * Note get_closing() does not lock because we are already locked
+    * Note GetClosing() does not lock because we are already locked
     */
-   if (msgs->get_closing()) {
+   if (msgs->GetClosing()) {
       msgs->unlock();
       return;
    }
-   msgs->set_closing();
+   msgs->SetClosing();
    msgs->unlock();
 
    Dmsg1(850, "===Begin close msg resource at %p\n", msgs);
-   cmd = get_pool_memory(PM_MESSAGE);
+   cmd = GetPoolMemory(PM_MESSAGE);
    for (d = msgs->dest_chain; d; ) {
       if (d->fd) {
          switch (d->dest_code) {
@@ -601,12 +601,12 @@ void close_msg(JobControlRecord *jcr)
 
             Dmsg0(850, "Opened mail pipe\n");
             len = d->max_len+10;
-            line = get_memory(len);
+            line = GetMemory(len);
             rewind(d->fd);
             while (fgets(line, len, d->fd)) {
                fputs(line, bpipe->wfd);
             }
-            if (!close_wpipe(bpipe)) {       /* close write pipe sending mail */
+            if (!CloseWpipe(bpipe)) {       /* close write pipe sending mail */
                berrno be;
                Pmsg1(000, _("close error: ERR=%s\n"), be.bstrerror());
             }
@@ -625,7 +625,7 @@ void close_msg(JobControlRecord *jcr)
                }
             }
 
-            status = close_bpipe(bpipe);
+            status = CloseBpipe(bpipe);
             if (status != 0 && msgs != daemon_msgs) {
                berrno be;
                be.set_errno(status);
@@ -634,7 +634,7 @@ void close_msg(JobControlRecord *jcr)
                                  "CMD=%s\n"
                                  "ERR=%s\n"), cmd, be.bstrerror());
             }
-            free_memory(line);
+            FreeMemory(line);
 rem_temp_file:
             /*
              * Remove temp file
@@ -647,8 +647,8 @@ rem_temp_file:
                /*
                 * Exclude spaces in mail_filename
                 */
-               safer_unlink(d->mail_filename, MAIL_REGEX);
-               free_pool_memory(d->mail_filename);
+               SaferUnlink(d->mail_filename, MAIL_REGEX);
+               FreePoolMemory(d->mail_filename);
                d->mail_filename = NULL;
             }
             Dmsg0(850, "end mail or mail on error\n");
@@ -660,13 +660,13 @@ rem_temp_file:
       }
       d = d->next;                    /* point to next buffer */
    }
-   free_pool_memory(cmd);
+   FreePoolMemory(cmd);
    Dmsg0(850, "Done walking message chain.\n");
    if (jcr) {
-      free_msgs_res(msgs);
+      FreeMsgsRes(msgs);
       msgs = NULL;
    } else {
-      msgs->clear_closing();
+      msgs->ClearClosing();
    }
    Dmsg0(850, "===End close msg resource\n");
 }
@@ -674,7 +674,7 @@ rem_temp_file:
 /*
  * Free memory associated with Messages resource
  */
-void free_msgs_res(MessagesResource *msgs)
+void FreeMsgsRes(MessagesResource *msgs)
 {
    DEST *d, *old;
 
@@ -706,11 +706,11 @@ void free_msgs_res(MessagesResource *msgs)
  * Also, clean up a few other items (cons, exepath). Note,
  * these really should be done elsewhere.
  */
-void term_msg()
+void TermMsg()
 {
-   Dmsg0(850, "Enter term_msg\n");
-   close_msg(NULL);                   /* close global chain */
-   free_msgs_res(daemon_msgs);        /* free the resources */
+   Dmsg0(850, "Enter TermMsg\n");
+   CloseMsg(NULL);                   /* close global chain */
+   FreeMsgsRes(daemon_msgs);        /* free the resources */
    daemon_msgs = NULL;
    if (con_fd) {
       fflush(con_fd);
@@ -733,7 +733,7 @@ void term_msg()
       free(catalog_db);
       catalog_db = NULL;
    }
-   term_last_jobs_list();
+   TermLastJobsList();
 }
 
 static inline bool open_dest_file(JobControlRecord *jcr, DEST *d, const char *mode)
@@ -845,7 +845,7 @@ static inline void send_to_syslog(int mode, const char *msg)
 /*
  * Handle sending the message to the appropriate place
  */
-void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
+void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
 {
    DEST *d;
    char dt[MAX_TIME_LENGTH];
@@ -856,7 +856,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
    const char *mode;
    bool dt_conversion = false;
 
-   Dmsg2(850, "Enter dispatch_message type=%d msg=%s", type, msg);
+   Dmsg2(850, "Enter DispatchMessage type=%d msg=%s", type, msg);
 
    /*
     * Most messages are prefixed by a date and time. If mtime is
@@ -932,7 +932,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
    /*
     * If closing this message resource, print and send to syslog, then get out.
     */
-   if (msgs->is_closing()) {
+   if (msgs->IsClosing()) {
       if (dt_conversion) {
          bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
          bstrncat(dt, " ", sizeof(dt));
@@ -945,7 +945,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
    }
 
    for (d = msgs->dest_chain; d; d = d->next) {
-      if (bit_is_set(type, d->msg_types)) {
+      if (BitIsSet(type, d->msg_types)) {
          /*
           * See if a specific timestamp format was specified for this log resource.
           * Otherwise apply the global setting in log_timestamp_format.
@@ -1002,7 +1002,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             Dmsg1(850, "SYSLOG for following msg: %s\n", msg);
 
             if (!d->syslog_facility && !set_syslog_facility(jcr, d)) {
-               msgs->clear_in_use();
+               msgs->ClearInUse();
                break;
             }
 
@@ -1046,7 +1046,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             break;
          case MD_OPERATOR:
             Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
-            mcmd = get_pool_memory(PM_MESSAGE);
+            mcmd = GetPoolMemory(PM_MESSAGE);
             if ((bpipe=open_mail_pipe(jcr, mcmd, d))) {
                int status;
                fputs(dt, bpipe->wfd);
@@ -1054,7 +1054,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
                /*
                 * Messages to the operator go one at a time
                 */
-               status = close_bpipe(bpipe);
+               status = CloseBpipe(bpipe);
                if (status != 0) {
                   berrno be;
                   be.set_errno(status);
@@ -1062,26 +1062,26 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
                                    "CMD=%s\nERR=%s\n"), mcmd, be.bstrerror());
                }
             }
-            free_pool_memory(mcmd);
+            FreePoolMemory(mcmd);
             break;
          case MD_MAIL:
          case MD_MAIL_ON_ERROR:
          case MD_MAIL_ON_SUCCESS:
             Dmsg1(850, "MAIL for following msg: %s", msg);
-            if (msgs->is_closing()) {
+            if (msgs->IsClosing()) {
                break;
             }
-            msgs->set_in_use();
+            msgs->SetInUse();
             if (!d->fd) {
-               POOLMEM *name = get_pool_memory(PM_MESSAGE);
+               POOLMEM *name = GetPoolMemory(PM_MESSAGE);
                make_unique_mail_filename(jcr, name, d);
                d->fd = fopen(name, "w+b");
                if (!d->fd) {
                   berrno be;
                   delivery_error(_("Msg delivery error: fopen %s failed: ERR=%s\n"), name,
                            be.bstrerror());
-                  free_pool_memory(name);
-                  msgs->clear_in_use();
+                  FreePoolMemory(name);
+                  msgs->ClearInUse();
                   break;
                }
                d->mail_filename = name;
@@ -1092,7 +1092,7 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
                d->max_len = len;      /* keep max line length */
             }
             fputs(msg, d->fd);
-            msgs->clear_in_use();
+            msgs->ClearInUse();
             break;
          case MD_APPEND:
             Dmsg1(850, "APPEND for following msg: %s", msg);
@@ -1102,12 +1102,12 @@ void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             Dmsg1(850, "FILE for following msg: %s", msg);
             mode = "w+b";
 send_to_file:
-            if (msgs->is_closing()) {
+            if (msgs->IsClosing()) {
                break;
             }
-            msgs->set_in_use();
+            msgs->SetInUse();
             if (!d->fd && !open_dest_file(jcr, d, mode)) {
-               msgs->clear_in_use();
+               msgs->ClearInUse();
                break;
             }
             fputs(dt, d->fd);
@@ -1124,7 +1124,7 @@ send_to_file:
                }
             }
             fflush(d->fd);
-            msgs->clear_in_use();
+            msgs->ClearInUse();
             break;
          case MD_DIRECTOR:
             Dmsg1(850, "DIRECTOR for following msg: %s", msg);
@@ -1235,26 +1235,26 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
 
    if (level <= debug_level) {
       if (dbg_timestamp) {
-         mtime = get_current_btime();
+         mtime = GetCurrentBtime();
          usecs = mtime % 1000000;
-         Mmsg(buf, "%s.%06d ", bstrftimes(ed1, sizeof(ed1), btime_to_utime(mtime)), usecs);
+         Mmsg(buf, "%s.%06d ", bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)), usecs);
          pt_out(buf.c_str());
       }
 
 #ifdef FULL_LOCATION
       if (details) {
-         Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level, get_basename(file), line, get_jobid_from_tsd());
+         Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level, get_basename(file), line, GetJobidFromTsd());
       }
 #endif
 
       while (1) {
-         maxlen = more.max_size() - 1;
+         maxlen = more.MaxSize() - 1;
          va_start(ap, fmt);
          len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
          va_end(ap);
 
          if (len < 0 || len >= (maxlen - 5)) {
-            more.realloc_pm(maxlen + maxlen / 2);
+            more.ReallocPm(maxlen + maxlen / 2);
             continue;
          }
 
@@ -1274,7 +1274,7 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
 /*
  * Set trace flag on/off. If argument is negative, there is no change
  */
-void set_trace(int trace_flag)
+void SetTrace(int trace_flag)
 {
    if (trace_flag < 0) {
       return;
@@ -1292,7 +1292,7 @@ void set_trace(int trace_flag)
    }
 }
 
-void set_hangup(int hangup_value)
+void SetHangup(int hangup_value)
 {
    if (hangup_value < 0) {
       return;
@@ -1301,7 +1301,7 @@ void set_hangup(int hangup_value)
    }
 }
 
-void set_timestamp(int timestamp_flag)
+void SetTimestamp(int timestamp_flag)
 {
    if (timestamp_flag < 0) {
       return;
@@ -1312,17 +1312,17 @@ void set_timestamp(int timestamp_flag)
    }
 }
 
-bool get_hangup(void)
+bool GetHangup(void)
 {
    return hangup;
 }
 
-bool get_trace(void)
+bool GetTrace(void)
 {
    return trace;
 }
 
-bool get_timestamp(void)
+bool GetTimestamp(void)
 {
    return dbg_timestamp;
 }
@@ -1341,18 +1341,18 @@ void p_msg(const char *file, int line, int level, const char *fmt,...)
 
 #ifdef FULL_LOCATION
    if (level >= 0) {
-      Mmsg(buf,  "%s: %s:%d-%u ", my_name, get_basename(file), line, get_jobid_from_tsd());
+      Mmsg(buf,  "%s: %s:%d-%u ", my_name, get_basename(file), line, GetJobidFromTsd());
    }
 #endif
 
    while (1) {
-      maxlen = more.max_size() - 1;
+      maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
+         more.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -1384,7 +1384,7 @@ void p_msg_fb(const char *file, int line, int level, const char *fmt,...)
    if (level >= 0) {
       len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
                       my_name, get_basename(file), line,
-                      get_jobid_from_tsd());
+                      GetJobidFromTsd());
    }
 #endif
 
@@ -1425,18 +1425,18 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
 
 #ifdef FULL_LOCATION
       if (details) {
-         Mmsg(buf,  "%s: %s:%d-%u ", my_name, get_basename(file), line, get_jobid_from_tsd());
+         Mmsg(buf,  "%s: %s:%d-%u ", my_name, get_basename(file), line, GetJobidFromTsd());
       }
 #endif
 
       while (1) {
-         maxlen = more.max_size() - 1;
+         maxlen = more.MaxSize() - 1;
          va_start(ap, fmt);
          len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
          va_end(ap);
 
          if (len < 0 || len >= (maxlen - 5)) {
-            more.realloc_pm(maxlen + maxlen / 2);
+            more.ReallocPm(maxlen + maxlen / 2);
             continue;
          }
 
@@ -1503,13 +1503,13 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
    }
 
    while (1) {
-      maxlen = more.max_size() - 1;
+      maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
+         more.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -1526,12 +1526,12 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
     * We always report M_ABORT and M_ERROR_TERM
     */
    if (!daemon_msgs || ((type != M_ABORT && type != M_ERROR_TERM) &&
-                        !bit_is_set(type, daemon_msgs->send_msg))) {
+                        !BitIsSet(type, daemon_msgs->SendMsg))) {
       return;                        /* no destination */
    }
 
-   pm_strcat(buf, more.c_str());
-   dispatch_message(NULL, type, 0, buf.c_str());
+   PmStrcat(buf, more.c_str());
+   DispatchMessage(NULL, type, 0, buf.c_str());
 
    if (type == M_ABORT) {
       char *p = 0;
@@ -1566,7 +1566,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
       BareosSocket *dir = jcr->dir_bsock;
 
       va_start(ap, fmt);
-      dir->msglen = bvsnprintf(dir->msg, sizeof_pool_memory(dir->msg), fmt, ap);
+      dir->msglen = bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
       va_end(ap);
       jcr->dir_bsock->send();
 
@@ -1576,15 +1576,15 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
    /*
     * The watchdog thread can't use Jmsg directly, we always queued it
     */
-   if (is_watchdog()) {
+   if (IsWatchdog()) {
       while (1) {
-         maxlen = buf.max_size() - 1;
+         maxlen = buf.MaxSize() - 1;
          va_start(ap, fmt);
          len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
          va_end(ap);
 
          if (len < 0 || len >= (maxlen - 5)) {
-            buf.realloc_pm(maxlen + maxlen / 2);
+            buf.ReallocPm(maxlen + maxlen / 2);
             continue;
          }
 
@@ -1605,7 +1605,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
        * Dequeue messages to keep the original order
        */
       if (!jcr->dequeuing_msgs) {    /* Avoid recursion */
-         dequeue_messages(jcr);
+         DequeueMessages(jcr);
       }
       msgs = jcr->jcr_msgs;
       JobId = jcr->JobId;
@@ -1619,7 +1619,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
     * Check if we have a message destination defined.
     * We always report M_ABORT and M_ERROR_TERM
     */
-   if (msgs && (type != M_ABORT && type != M_ERROR_TERM) && !bit_is_set(type, msgs->send_msg)) {
+   if (msgs && (type != M_ABORT && type != M_ERROR_TERM) && !BitIsSet(type, msgs->SendMsg)) {
       return;                        /* no destination */
    }
 
@@ -1660,21 +1660,21 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
    }
 
    while (1) {
-      maxlen = more.max_size() - 1;
+      maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
+         more.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
       break;
    }
 
-   pm_strcat(buf, more.c_str());
-   dispatch_message(jcr, type, mtime, buf.c_str());
+   PmStrcat(buf, more.c_str());
+   DispatchMessage(jcr, type, mtime, buf.c_str());
 
    if (type == M_ABORT){
       char *p = 0;
@@ -1701,20 +1701,20 @@ void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t 
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.max_size() - 1;
+      maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
+         more.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
       break;
    }
 
-   pm_strcat(buf, more.c_str());
+   PmStrcat(buf, more.c_str());
 
    Jmsg(jcr, type, mtime, "%s", buf.c_str());
 }
@@ -1731,21 +1731,21 @@ int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.max_size() - 1;
+      maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
+         more.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
       break;
    }
 
-   pm_strcpy(pool_buf, buf.c_str());
-   len = pm_strcat(pool_buf, more.c_str());
+   PmStrcpy(pool_buf, buf.c_str());
+   len = PmStrcat(pool_buf, more.c_str());
 
    return len;
 }
@@ -1762,13 +1762,13 @@ int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
    va_list ap;
 
    while (1) {
-      maxlen = sizeof_pool_memory(pool_buf) - 1;
+      maxlen = SizeofPoolMemory(pool_buf) - 1;
       va_start(ap, fmt);
       len = bvsnprintf(pool_buf, maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + maxlen / 2);
+         pool_buf = ReallocPoolMemory(pool_buf, maxlen + maxlen / 2);
          continue;
       }
 
@@ -1784,13 +1784,13 @@ int Mmsg(PoolMem &pool_buf, const char *fmt, ...)
    va_list ap;
 
    while (1) {
-      maxlen = pool_buf.max_size() - 1;
+      maxlen = pool_buf.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf.realloc_pm(maxlen + maxlen / 2);
+         pool_buf.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -1806,13 +1806,13 @@ int Mmsg(PoolMem *&pool_buf, const char *fmt, ...)
    va_list ap;
 
    while (1) {
-      maxlen = pool_buf->max_size() - 1;
+      maxlen = pool_buf->MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(pool_buf->c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf->realloc_pm(maxlen + maxlen / 2);
+         pool_buf->ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -1837,13 +1837,13 @@ void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
    MessageQeueItem *item;
 
    while (1) {
-      maxlen = buf.max_size() - 1;
+      maxlen = buf.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         buf.realloc_pm(maxlen + maxlen / 2);
+         buf.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
@@ -1878,7 +1878,7 @@ void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
 /*
  * Dequeue messages
  */
-void dequeue_messages(JobControlRecord *jcr)
+void DequeueMessages(JobControlRecord *jcr)
 {
    MessageQeueItem *item;
 
@@ -1913,20 +1913,20 @@ void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t 
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.max_size() - 1;
+      maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
+         more.ReallocPm(maxlen + maxlen / 2);
          continue;
       }
 
       break;
    }
 
-   pm_strcat(buf, more.c_str());
+   PmStrcat(buf, more.c_str());
 
    Qmsg(jcr, type, mtime, "%s", buf.c_str());
 }
@@ -1934,7 +1934,7 @@ void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t 
 /*
  * Set gobal date format used for log messages.
  */
-void set_log_timestamp_format(const char *format)
+void SetLogTimestampFormat(const char *format)
 {
    log_timestamp_format = format;
 }

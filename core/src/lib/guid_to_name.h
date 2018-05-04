@@ -38,4 +38,4 @@ public:
 };
 
 DLL_IMP_EXP guid_list *new_guid_list();
-DLL_IMP_EXP void free_guid_list(guid_list *list);
+DLL_IMP_EXP void FreeGuidList(guid_list *list);

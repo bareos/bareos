@@ -101,11 +101,11 @@ class DLL_IMP_EXP htable : public SmartAlloc {
    uint32_t rshift;                   /* Amount to shift down */
    uint32_t blocks;                   /* Blocks malloced */
    struct h_mem *mem_block;           /* Malloc'ed memory block chain */
-   void malloc_big_buf(int size);     /* Get a big buffer */
-   void hash_index(char *key);        /* Produce hash key,index */
-   void hash_index(uint32_t key);     /* Produce hash key,index */
-   void hash_index(uint64_t key);     /* Produce hash key,index */
-   void hash_index(uint8_t *key, uint32_t key_len); /* Produce hash key,index */
+   void MallocBigBuf(int size);     /* Get a big buffer */
+   void HashIndex(char *key);        /* Produce hash key,index */
+   void HashIndex(uint32_t key);     /* Produce hash key,index */
+   void HashIndex(uint64_t key);     /* Produce hash key,index */
+   void HashIndex(uint8_t *key, uint32_t key_len); /* Produce hash key,index */
    void grow_table();                 /* Grow the table */
 
 public:
@@ -128,6 +128,6 @@ public:
    void stats();                      /* Print stats about the table */
    uint32_t size();                   /* Return size of table */
    char *hash_malloc(int size);       /* Malloc bytes for a hash entry */
-   void hash_big_free();              /* Free all hash allocated big buffers */
+   void HashBigFree();              /* Free all hash allocated big buffers */
 };
 #endif  /* BAREOS_LIB_HTABLE_H_ */

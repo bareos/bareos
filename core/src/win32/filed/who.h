@@ -27,5 +27,5 @@
 #define APP_DESC "Bareos File Backup Service"
 #define SERVICE_DESC "Provides file backup and restore services (bareos client)."
 
-#define terminate_app(x) terminate_filed(x)
-void terminate_filed(int sig);
+#define TerminateApp(x) TerminateFiled(x)
+void TerminateFiled(int sig);

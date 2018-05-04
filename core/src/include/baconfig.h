@@ -103,7 +103,7 @@ void InitWinAPIWrapper();
 
 #define sbrk(x)  0
 
-#define clear_thread_id(x) memset(&(x), 0, sizeof(x))
+#define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
 #if defined(BUILDING_DLL)
 #define DLL_IMP_EXP _declspec(dllexport)
@@ -121,7 +121,7 @@ void InitWinAPIWrapper();
 
 #else  /* HAVE_WIN32 */
 
-#define clear_thread_id(x) x = 0
+#define ClearThreadId(x) x = 0
 
 #define DLL_IMP_EXP
 #define CATS_IMP_EXP
@@ -320,13 +320,13 @@ typedef int16_t slot_flags_t;
 
 /* These probably should be subroutines */
 #define Pw(x) \
-do { int errstat; if ((errstat=rwl_writelock(&(x)))) \
+do { int errstat; if ((errstat=RwlWritelock(&(x)))) \
    e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock lock failure. ERR=%s\n",\
         strerror(errstat)); \
 } while(0)
 
 #define Vw(x) \
-do { int errstat; if ((errstat=rwl_writeunlock(&(x)))) \
+do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
       e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock unlock failure. ERR=%s\n",\
         strerror(errstat)); \
 } while(0)
@@ -580,7 +580,7 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 
 /** Use our strdup with smartalloc */
 #undef strdup
-#define strdup(buf) bad_call_on_strdup_use_bstrdup(buf)
+#define strdup(buf) BadCallOnStrdupUseBstrdup(buf)
 
 /** Use our fgets which handles interrupts */
 #undef fgets
@@ -600,7 +600,7 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 #endif
 
 /** Macro to simplify free/reset pointers */
-#define bfree_and_null(a) do{if(a){free(a); (a)=NULL;}} while(0)
+#define BfreeAndNull(a) do{if(a){free(a); (a)=NULL;}} while(0)
 
 /**
 * Replace codes needed in both file routines and non-file routines
@@ -643,18 +643,18 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 */
 #ifdef USE_THR_SETCONCURRENCY
 #include <thread.h>
-#define set_thread_concurrency(x)  thr_setconcurrency(x)
-extern int thr_setconcurrency(int);
+#define SetThreadConcurrency(x)  ThrSetconcurrency(x)
+extern int ThrSetconcurrency(int);
 #define SunOS 1
 #else
-#define set_thread_concurrency(x)
+#define SetThreadConcurrency(x)
 #endif
 
 #else
 /**
  * Not needed on most systems
  */
-#define set_thread_concurrency(x)
+#define SetThreadConcurrency(x)
 
 #endif
 
@@ -682,8 +682,8 @@ inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }
 inline char *first_path_separator(char *path) { return strpbrk(path, "/\\"); }
 inline const char *first_path_separator(const char *path) { return strpbrk(path, "/\\"); }
 
-extern void pause_msg(const char *file, const char *func, int line, const char *msg);
-#define pause(msg) if (debug_level) pause_msg(__FILE__, __func__, __LINE__, (msg))
+extern void PauseMsg(const char *file, const char *func, int line, const char *msg);
+#define pause(msg) if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
 
 #else
 /**

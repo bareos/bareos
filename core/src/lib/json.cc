@@ -48,12 +48,12 @@ static void set_alloc_funcs()
    json_set_alloc_funcs(json_malloc, json_free);
 }
 
-void initialize_json()
+void InitializeJson()
 {
    pthread_once(&json_setup, set_alloc_funcs);
 }
 #else
-void initialize_json()
+void InitializeJson()
 {
 }
 #endif /* HAVE_JANSSON */

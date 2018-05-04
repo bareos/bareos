@@ -147,7 +147,7 @@ bail_out:
  * Make sure there is a free next slot available on the circular buffer.
  * So the next enqueue will not block but we block now until one is available.
  */
-int circbuf::next_slot()
+int circbuf::NextSlot()
 {
    if (pthread_mutex_lock(&lock_) != 0) {
       return -1;

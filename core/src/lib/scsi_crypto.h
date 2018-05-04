@@ -378,13 +378,13 @@ typedef struct {
    uint8_t descriptor[SPP_DESCRIPTOR_LENGTH];
 } SPP_KAD;
 
-DLL_IMP_EXP bool clear_scsi_encryption_key(int fd, const char *device);
-DLL_IMP_EXP bool set_scsi_encryption_key(int fd, const char *device, char *encryption_key);
-DLL_IMP_EXP int get_scsi_drive_encryption_status(int fd, const char *device_name,
+DLL_IMP_EXP bool ClearScsiEncryptionKey(int fd, const char *device);
+DLL_IMP_EXP bool SetScsiEncryptionKey(int fd, const char *device, char *encryption_key);
+DLL_IMP_EXP int GetScsiDriveEncryptionStatus(int fd, const char *device_name,
                                      POOLMEM *&status, int indent);
-DLL_IMP_EXP int get_scsi_volume_encryption_status(int fd, const char *device_name,
+DLL_IMP_EXP int GetScsiVolumeEncryptionStatus(int fd, const char *device_name,
                                       POOLMEM *&status, int indent);
-DLL_IMP_EXP bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status);
-DLL_IMP_EXP bool is_scsi_encryption_enabled(int fd, const char *device_name);
+DLL_IMP_EXP bool NeedScsiCryptoKey(int fd, const char *device_name, bool use_drive_status);
+DLL_IMP_EXP bool IsScsiEncryptionEnabled(int fd, const char *device_name);
 
 #endif /* BAREOS_LIB_SCSI_CRYPTO_H_ */

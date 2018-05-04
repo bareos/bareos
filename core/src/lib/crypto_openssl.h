@@ -22,8 +22,8 @@
 #define BAREOS_LIB_CRYPTO_OPENSSL_H_
 
 #ifdef HAVE_OPENSSL
-DLL_IMP_EXP void openssl_post_errors(int code, const char *errstring);
-DLL_IMP_EXP void openssl_post_errors(JobControlRecord *jcr, int code, const char *errstring);
+DLL_IMP_EXP void OpensslPostErrors(int code, const char *errstring);
+DLL_IMP_EXP void OpensslPostErrors(JobControlRecord *jcr, int code, const char *errstring);
 DLL_IMP_EXP int openssl_init_threads(void);
 DLL_IMP_EXP void openssl_cleanup_threads(void);
 DLL_IMP_EXP int openssl_seed_prng(void);

@@ -37,13 +37,13 @@
  * #define USE_RUNSCRIPT
  * #include "lib/runscript.h"
  *
- * RunScript *script = new_runscript();
- * script->set_command("/bin/sleep 20");
+ * RunScript *script = NewRunscript();
+ * script->SetCommand("/bin/sleep 20");
  * script->on_failure = true;
  * script->when = SCRIPT_After;
  *
  * script->run("LabelBefore");  // the label must contain "Before" or "After" special keyword
- * free_runscript(script);
+ * FreeRunscript(script);
  */
 
 /**
@@ -81,31 +81,31 @@ public:
                                 /* Optional callback function passed to edit_job_code */
    alist *commands;             /* Use during parsing */
    bool run(JobControlRecord *job, const char *name=""); /* name must contain "Before" or "After" keyword */
-   bool can_run_at_level(int JobLevel) { return true;}        /* TODO */
-   void set_command(const char *cmd, int cmd_type = SHELL_CMD);
-   void set_target(const char *client_name);
-   void reset_default(bool free_string = false);
-   bool is_local();             /* True if running on local host */
+   bool CanRunAtLevel(int JobLevel) { return true;}        /* TODO */
+   void SetCommand(const char *cmd, int cmd_type = SHELL_CMD);
+   void SetTarget(const char *client_name);
+   void ResetDefault(bool free_string = false);
+   bool IsLocal();             /* True if running on local host */
    void debug();
 
-   void set_job_code_callback(job_code_callback_t job_code_callback);
+   void SetJobCodeCallback(job_code_callback_t job_code_callback);
 };
 
 /* create new RunScript (set all value to 0) */
-DLL_IMP_EXP RunScript *new_runscript();
+DLL_IMP_EXP RunScript *NewRunscript();
 
 /* create new RunScript from another */
 DLL_IMP_EXP RunScript *copy_runscript(RunScript *src);
 
 /* launch each script from runscripts*/
-DLL_IMP_EXP int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *name,
+DLL_IMP_EXP int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *name,
                 alist *allowed_script_dirs = NULL);
 
 /* free RunScript (and all POOLMEM) */
-DLL_IMP_EXP void free_runscript(RunScript *script);
+DLL_IMP_EXP void FreeRunscript(RunScript *script);
 
 /* foreach_alist free RunScript */
-DLL_IMP_EXP void free_runscripts(alist *runscripts); /* you have to free alist */
+DLL_IMP_EXP void FreeRunscripts(alist *runscripts); /* you have to free alist */
 
 extern DLL_IMP_EXP bool (*console_command)(JobControlRecord *jcr, const char *cmd);
 

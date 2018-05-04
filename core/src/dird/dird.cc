@@ -54,14 +54,14 @@
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
 #ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 /* Forward referenced subroutines */
 #if !defined(HAVE_WIN32)
 static
 #endif
-void terminate_dird(int sig);
+void TerminateDird(int sig);
 static bool check_resources();
 static bool initialize_sql_pooling(void);
 static void cleanup_old_files();
@@ -104,7 +104,7 @@ typedef enum {
 } cat_op;
 
 struct resource_table_reference {
-   int job_count;
+   int JobCount;
    CommonResourceHeader **res_table;
 };
 
@@ -119,13 +119,13 @@ static void free_saved_resources(resource_table_reference *table)
    }
 
    for (int j = 0; j < num; j++) {
-      free_resource(table->res_table[j], my_config->r_first_ + j);
+      FreeResource(table->res_table[j], my_config->r_first_ + j);
    }
    free(table->res_table);
 }
 
 /**
- * Called here at the end of every job that was hooked decrementing the active job_count.
+ * Called here at the end of every job that was hooked decrementing the active JobCount.
  * When it goes to zero, no one is using the associated resource table, so free it.
  */
 static void reload_job_end_cb(JobControlRecord *jcr, void *ctx)
@@ -133,12 +133,12 @@ static void reload_job_end_cb(JobControlRecord *jcr, void *ctx)
    int i;
    resource_table_reference *table;
 
-   lock_jobs();
+   LockJobs();
    LockRes();
 
    foreach_alist_index(i, table, reload_table) {
       if (table == (resource_table_reference *)ctx) {
-         if (--table->job_count <= 0) {
+         if (--table->JobCount <= 0) {
             Dmsg0(100, "Last reference to old configuration, removing saved configuration\n");
             free_saved_resources(table);
             reload_table->remove(i);
@@ -149,7 +149,7 @@ static void reload_job_end_cb(JobControlRecord *jcr, void *ctx)
    }
 
    UnlockRes();
-   unlock_jobs();
+   UnlockJobs();
 }
 
 /**
@@ -166,18 +166,18 @@ static bool dir_db_log_insert(JobControlRecord *jcr, utime_t mtime, char *msg)
    PoolMem query(PM_MESSAGE),
             esc_msg(PM_MESSAGE);
 
-   if (!jcr || !jcr->db || !jcr->db->is_connected()) {
+   if (!jcr || !jcr->db || !jcr->db->IsConnected()) {
       return false;
    }
    length = strlen(msg);
    esc_msg.check_size(length * 2 + 1);
-   jcr->db->escape_string(jcr, esc_msg.c_str(), msg, length);
+   jcr->db->EscapeString(jcr, esc_msg.c_str(), msg, length);
 
    bstrutime(dt, sizeof(dt), mtime);
    Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
         edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
 
-   return jcr->db->sql_query(query.c_str());
+   return jcr->db->SqlQuery(query.c_str());
 }
 
 static void usage()
@@ -231,9 +231,9 @@ int main (int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   init_stack_dump();
-   my_name_is(argc, argv, "bareos-dir");
-   init_msg(NULL, NULL);              /* initialize message handler */
+   InitStackDump();
+   MyNameIs(argc, argv, "bareos-dir");
+   InitMsg(NULL, NULL);              /* initialize message handler */
    daemon_start_time = time(NULL);
 
    console_command = run_console_command;
@@ -316,7 +316,7 @@ int main (int argc, char *argv[])
    argv += optind;
 
    if (!no_signals) {
-      init_signals(terminate_dird);
+      InitSignals(TerminateDird);
    }
 
    if (argc) {
@@ -342,8 +342,8 @@ int main (int argc, char *argv[])
       PoolMem buffer;
 
       my_config = new_config_parser();
-      init_dir_config(my_config, configfile, M_ERROR_TERM);
-      print_config_schema_json(buffer);
+      InitDirConfig(my_config, configfile, M_ERROR_TERM);
+      PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       goto bail_out;
    }
@@ -352,18 +352,18 @@ int main (int argc, char *argv[])
    parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->dump_resources(prtmsg, NULL);
+      my_config->DumpResources(prtmsg, NULL);
       goto bail_out;
    }
 
    if (!test_config) {                /* we don't need to do this block in test mode */
       if (background) {
          daemon_start();
-         init_stack_dump();              /* grab new pid */
+         InitStackDump();              /* grab new pid */
       }
    }
 
-   if (init_crypto() != 0) {
+   if (InitCrypto() != 0) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
       goto bail_out;
    }
@@ -375,16 +375,16 @@ int main (int argc, char *argv[])
 
    if (!test_config) {                /* we don't need to do this block in test mode */
       /* Create pid must come after we are a daemon -- so we have our final pid */
-      create_pid_file(me->pid_directory, "bareos-dir",
-                      get_first_port_host_order(me->DIRaddrs));
-      read_state_file(me->working_directory, "bareos-dir",
-                      get_first_port_host_order(me->DIRaddrs));
+      CreatePidFile(me->pid_directory, "bareos-dir",
+                      GetFirstPortHostOrder(me->DIRaddrs));
+      ReadStateFile(me->working_directory, "bareos-dir",
+                      GetFirstPortHostOrder(me->DIRaddrs));
    }
 
-   set_jcr_in_tsd(INVALID_JCR);
-   set_thread_concurrency(me->MaxConcurrentJobs * 2 +
+   SetJcrInTsd(INVALID_JCR);
+   SetThreadConcurrency(me->MaxConcurrentJobs * 2 +
                           4 /* UA */ + 5 /* sched+watchdog+jobsvr+misc */);
-   lmgr_init_thread(); /* initialize the lockmanager stack */
+   LmgrInitThread(); /* initialize the lockmanager stack */
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    char *backend_dir;
@@ -393,9 +393,9 @@ int main (int argc, char *argv[])
       Dmsg1(100, "backend path: %s\n", backend_dir);
    }
 
-   db_set_backend_dirs(me->backend_directories);
+   DbSetBackendDirs(me->backend_directories);
 #endif
-   load_dir_plugins(me->plugin_directory, me->plugin_names);
+   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 
    /*
     * If we are in testing mode, we don't try to fix the catalog
@@ -408,7 +408,7 @@ int main (int argc, char *argv[])
    }
 
    if (test_config) {
-      terminate_dird(0);
+      TerminateDird(0);
    }
 
    if (!initialize_sql_pooling()) {
@@ -416,7 +416,7 @@ int main (int argc, char *argv[])
       goto bail_out;
    }
 
-   my_name_is(0, NULL, me->name());    /* set user defined name */
+   MyNameIs(0, NULL, me->name());    /* set user defined name */
 
    cleanup_old_files();
 
@@ -424,37 +424,37 @@ int main (int argc, char *argv[])
 
    init_sighandler_sighup();
 
-   init_console_msg(working_directory);
+   InitConsoleMsg(working_directory);
 
    Dmsg0(200, "Start UA server\n");
-   start_socket_server(me->DIRaddrs);
+   StartSocketServer(me->DIRaddrs);
 
-   start_watchdog();                  /* start network watchdog thread */
+   StartWatchdog();                  /* start network watchdog thread */
 
    if (me->jcr_watchdog_time) {
-      init_jcr_subsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
+      InitJcrSubsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
    }
 
    init_job_server(me->MaxConcurrentJobs);
 
-   dbg_jcr_add_hook(db_debug_print); /* used to debug BareosDb connexion after fatal signal */
+   DbgJcrAddHook(DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
 
 //   init_device_resources();
 
-   start_statistics_thread();
+   StartStatisticsThread();
 
    Dmsg0(200, "wait for next job\n");
    /* Main loop -- call scheduler to get next job to run */
    while ((jcr = wait_for_next_job(runjob))) {
-      run_job(jcr);                   /* run job */
-      free_jcr(jcr);                  /* release jcr */
-      set_jcr_in_tsd(INVALID_JCR);
+      RunJob(jcr);                   /* run job */
+      FreeJcr(jcr);                  /* release jcr */
+      SetJcrInTsd(INVALID_JCR);
       if (runjob) {                   /* command line, run a single job? */
          break;                       /* yes, terminate */
       }
    }
 
-   terminate_dird(0);
+   TerminateDird(0);
 
 bail_out:
    return 0;
@@ -467,7 +467,7 @@ bail_out:
 #if !defined(HAVE_WIN32)
 static
 #endif
-void terminate_dird(int sig)
+void TerminateDird(int sig)
 {
    static bool already_here = false;
 
@@ -479,17 +479,17 @@ void terminate_dird(int sig)
    already_here = true;
    debug_level = 0;                   /* turn off debug */
 
-   destroy_configure_usage_string();
-   stop_statistics_thread();
-   stop_watchdog();
-   db_sql_pool_destroy();
-   db_flush_backends();
-   unload_dir_plugins();
+   DestroyConfigureUsageString();
+   StopStatisticsThread();
+   StopWatchdog();
+   DbSqlPoolDestroy();
+   DbFlushBackends();
+   UnloadDirPlugins();
    if (!test_config) {                /* we don't need to do this block in test mode */
-      write_state_file(me->working_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
-      delete_pid_file(me->pid_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
+      WriteStateFile(me->working_directory, "bareos-dir", GetFirstPortHostOrder(me->DIRaddrs));
+      DeletePidFile(me->pid_directory, "bareos-dir", GetFirstPortHostOrder(me->DIRaddrs));
    }
-   term_scheduler();
+   TermScheduler();
    term_job_server();
 
    if (runjob) {
@@ -499,19 +499,19 @@ void terminate_dird(int sig)
       free(configfile);
    }
    if (debug_level > 5) {
-      print_memory_pool_stats();
+      PrintMemoryPoolStats();
    }
    if (my_config) {
-      my_config->free_resources();
+      my_config->FreeResources();
       free(my_config);
       my_config = NULL;
    }
 
-   stop_socket_server();
-   term_msg();                        /* terminate message handler */
-   cleanup_crypto();
-   close_memory_pool();               /* release free memory in pool */
-   lmgr_cleanup_main();
+   StopSocketServer();
+   TermMsg();                        /* terminate message handler */
+   CleanupCrypto();
+   CloseMemoryPool();               /* release free memory in pool */
+   LmgrCleanupMain();
    sm_dump(false, false);
 
    exit(sig);
@@ -600,19 +600,19 @@ bool do_reload_config()
    }
    already_here = true;
 
-   lock_jobs();
+   LockJobs();
    LockRes();
 
    /*
     * Flush the sql connection pools.
     */
-   db_sql_pool_flush();
+   DbSqlPoolFlush();
 
    /*
     * Save the previous config so we can restore it.
     */
    prev_config.res_table = my_config->save_resources();
-   prev_config.job_count = 0;
+   prev_config.JobCount = 0;
 
    /*
     * Start parsing the new config.
@@ -659,8 +659,8 @@ bool do_reload_config()
                new_table = (resource_table_reference *)malloc(sizeof(resource_table_reference));
                memcpy(new_table, &prev_config, sizeof(resource_table_reference));
             }
-            new_table->job_count++;
-            register_job_end_callback(jcr, reload_job_end_cb, (void *)new_table);
+            new_table->JobCount++;
+            RegisterJobEndCallback(jcr, reload_job_end_cb, (void *)new_table);
             njobs++;
          }
       }
@@ -670,7 +670,7 @@ bool do_reload_config()
       /*
        * Reset globals
        */
-      set_working_directory(me->working_directory);
+      SetWorkingDirectory(me->working_directory);
       Dmsg0(10, "Director's configuration file reread.\n");
 
       if (njobs > 0) {
@@ -695,7 +695,7 @@ bool do_reload_config()
 
 bail_out:
    UnlockRes();
-   unlock_jobs();
+   UnlockJobs();
    already_here = false;
    return reloaded;
 }
@@ -795,7 +795,7 @@ static int store_psk_client_callback(char *identity,
  *  - SDport
  *  - password
  */
-static inline bool is_same_storage_daemon(StoreResource *store1, StoreResource *store2)
+static inline bool is_same_storage_daemon(StorageResource *store1, StorageResource *store2)
 {
    return store1->SDport == store2->SDport &&
           bstrcasecmp(store1->address, store2->address) &&
@@ -834,7 +834,7 @@ static bool check_resources()
       }
 
       my_config->omit_defaults_ = me->omit_defaults;
-      set_working_directory(me->working_directory);
+      SetWorkingDirectory(me->working_directory);
 
       /*
        * See if message resource is specified.
@@ -893,9 +893,9 @@ static bool check_resources()
          goto bail_out;
       }
 
-      if (((me->tls_cert.ca_certfile == nullptr || me->tls_cert.ca_certfile->empty()) &&
-           (me->tls_cert.ca_certdir == nullptr || me->tls_cert.ca_certdir->empty())) &&
-          need_tls && me->tls_cert.verify_peer) {
+      if (((me->tls_cert.CaCertfile == nullptr || me->tls_cert.CaCertfile->empty()) &&
+           (me->tls_cert.CaCertdir == nullptr || me->tls_cert.CaCertdir->empty())) &&
+          need_tls && me->tls_cert.VerifyPeer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
               " Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
@@ -912,7 +912,7 @@ static bool check_resources()
       goto bail_out;
    }
 
-   if (!populate_defs()) {
+   if (!PopulateDefs()) {
       OK = false;
       goto bail_out;
    }
@@ -972,9 +972,9 @@ static bool check_resources()
          goto bail_out;
       }
 
-      if ((cons->tls_cert.ca_certfile == nullptr || cons->tls_cert.ca_certfile->empty()) &&
-          (cons->tls_cert.ca_certdir == nullptr || cons->tls_cert.ca_certdir->empty()) && need_tls &&
-          cons->tls_cert.verify_peer) {
+      if ((cons->tls_cert.CaCertfile == nullptr || cons->tls_cert.CaCertfile->empty()) &&
+          (cons->tls_cert.CaCertdir == nullptr || cons->tls_cert.CaCertdir->empty()) && need_tls &&
+          cons->tls_cert.VerifyPeer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
             " Certificate Dir\" are defined for Console \"%s\" in %s."
             " At least one CA certificate store is required"
@@ -1011,8 +1011,8 @@ static bool check_resources()
          }
       }
       need_tls = client->tls_cert.enable || client->tls_cert.authenticate;
-      if ((client->tls_cert.ca_certfile == nullptr || client->tls_cert.ca_certfile->empty()) &&
-          (client->tls_cert.ca_certdir == nullptr || client->tls_cert.ca_certdir->empty()) && need_tls) {
+      if ((client->tls_cert.CaCertfile == nullptr || client->tls_cert.CaCertfile->empty()) &&
+          (client->tls_cert.CaCertdir == nullptr || client->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
             " or \"TLS CA Certificate Dir\" are defined for File daemon \"%s\" in %s.\n"),
             client->name(), configfile);
@@ -1024,7 +1024,7 @@ static bool check_resources()
    /*
     * Loop over Storages
     */
-   StoreResource *store, *nstore;
+   StorageResource *store, *nstore;
    foreach_res(store, R_STORAGE) {
       /*
        * tls_require implies tls_enable
@@ -1041,8 +1041,8 @@ static bool check_resources()
 
       need_tls = store->tls_cert.enable || store->tls_cert.authenticate;
 
-      if ((store->tls_cert.ca_certfile == nullptr || store->tls_cert.ca_certfile->empty()) &&
-          (store->tls_cert.ca_certdir == nullptr || store->tls_cert.ca_certdir->empty()) && need_tls) {
+      if ((store->tls_cert.CaCertfile == nullptr || store->tls_cert.CaCertfile->empty()) &&
+          (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
               store->name(), configfile);
@@ -1057,7 +1057,7 @@ static bool check_resources()
        */
       if (store->collectstats) {
          nstore = store;
-         while ((nstore = (StoreResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
+         while ((nstore = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
             if (is_same_storage_daemon(store, nstore) && nstore->collectstats) {
                nstore->collectstats = false;
                Dmsg1(200, _("Disabling collectstats for storage \"%s\""
@@ -1068,13 +1068,13 @@ static bool check_resources()
    }
 
    if (OK) {
-      close_msg(NULL);                    /* close temp message handler */
-      init_msg(NULL, me->messages);       /* open daemon message handler */
+      CloseMsg(NULL);                    /* close temp message handler */
+      InitMsg(NULL, me->messages);       /* open daemon message handler */
       if (me->secure_erase_cmdline) {
-         set_secure_erase_cmdline(me->secure_erase_cmdline);
+         SetSecureEraseCmdline(me->secure_erase_cmdline);
       }
       if (me->log_timestamp_format) {
-         set_log_timestamp_format(me->log_timestamp_format);
+         SetLogTimestampFormat(me->log_timestamp_format);
       }
    }
 
@@ -1150,7 +1150,7 @@ static bool check_catalog(cat_op mode)
                             catalog->try_reconnect,
                             catalog->exit_on_fatal);
 
-      if (!db || !db->open_database(NULL)) {
+      if (!db || !db->OpenDatabase(NULL)) {
          Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
          Jmsg(NULL, M_FATAL, 0, _("Could not open Catalog \"%s\", database \"%s\".\n"),
@@ -1158,7 +1158,7 @@ static bool check_catalog(cat_op mode)
          if (db) {
             Jmsg(NULL, M_FATAL, 0, _("%s"), db->strerror());
             Pmsg1(000, "%s", db->strerror());
-            db->close_database(NULL);
+            db->CloseDatabase(NULL);
          }
          OK = false;
          goto bail_out;
@@ -1172,7 +1172,7 @@ static bool check_catalog(cat_op mode)
 
       /* we are in testing mode, so don't touch anything in the catalog */
       if (mode == CHECK_CONNECTION) {
-         db->close_database(NULL);
+         db->CloseDatabase(NULL);
          continue;
       }
 
@@ -1184,7 +1184,7 @@ static bool check_catalog(cat_op mode)
           *   in that catalog.
           */
          if (!pool->catalog || pool->catalog == catalog) {
-            create_pool(NULL, db, pool, POOL_OP_UPDATE);  /* update request */
+            CreatePool(NULL, db, pool, POOL_OP_UPDATE);  /* update request */
          }
       }
 
@@ -1215,11 +1215,11 @@ static bool check_catalog(cat_op mode)
                client->catalog->name(), client->name());
          memset(&cr, 0, sizeof(cr));
          bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
-         db->create_client_record(NULL, &cr);
+         db->CreateClientRecord(NULL, &cr);
       }
 
       /* Ensure basic storage record is in DB */
-      StoreResource *store;
+      StorageResource *store;
       foreach_res(store, R_STORAGE) {
          StorageDbRecord sr;
          MediaTypeDbRecord mtr;
@@ -1268,7 +1268,7 @@ static bool check_catalog(cat_op mode)
             } else {
                cr.WrapCounter[0] = 0;  /* empty string */
             }
-            if (db->create_counter_record(NULL, &cr)) {
+            if (db->CreateCounterRecord(NULL, &cr)) {
                counter->CurrentValue = cr.CurrentValue;
                counter->created = true;
                Dmsg2(100, "Create counter %s val=%d\n", counter->name(), counter->CurrentValue);
@@ -1280,14 +1280,14 @@ static bool check_catalog(cat_op mode)
       }
       /* cleanup old job records */
       if (mode == UPDATE_AND_FIX) {
-         db->sql_query(BareosDb::SQL_QUERY_cleanup_created_job);
-         db->sql_query(BareosDb::SQL_QUERY_cleanup_running_job);
+         db->SqlQuery(BareosDb::SQL_QUERY_cleanup_created_job);
+         db->SqlQuery(BareosDb::SQL_QUERY_cleanup_running_job);
       }
 
       /* Set type in global for debugging */
-      set_db_type(db->get_type());
+      SetDbType(db->GetType());
 
-      db->close_database(NULL);
+      db->CloseDatabase(NULL);
    }
 
 bail_out:
@@ -1304,8 +1304,8 @@ static void cleanup_old_files()
    int rc, name_max;
    int my_name_len = strlen(my_name);
    int len = strlen(me->working_directory);
-   POOLMEM *cleanup = get_pool_memory(PM_MESSAGE);
-   POOLMEM *basename = get_pool_memory(PM_MESSAGE);
+   POOLMEM *cleanup = GetPoolMemory(PM_MESSAGE);
+   POOLMEM *basename = GetPoolMemory(PM_MESSAGE);
    regex_t preg1;
    char prbuf[500];
    berrno be;
@@ -1314,9 +1314,9 @@ static void cleanup_old_files()
    const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail)$";
 
    /* Setup working directory prefix */
-   pm_strcpy(basename, me->working_directory);
+   PmStrcpy(basename, me->working_directory);
    if (len > 0 && !IsPathSeparator(me->working_directory[len-1])) {
-      pm_strcat(basename, "/");
+      PmStrcat(basename, "/");
    }
 
    /* Compile regex expressions */
@@ -1344,7 +1344,7 @@ static void cleanup_old_files()
 #ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
    while (1) {
       result = readdir(dp);
@@ -1362,10 +1362,10 @@ static void cleanup_old_files()
 
       /* Unlink files that match regexes */
       if (regexec(&preg1, result->d_name, 0, NULL, 0) == 0) {
-         pm_strcpy(cleanup, basename);
-         pm_strcat(cleanup, result->d_name);
+         PmStrcpy(cleanup, basename);
+         PmStrcat(cleanup, result->d_name);
          Dmsg1(100, "Unlink: %s\n", cleanup);
-         secure_erase(NULL, cleanup);
+         SecureErase(NULL, cleanup);
       }
    }
 
@@ -1377,6 +1377,6 @@ static void cleanup_old_files()
 get_out1:
    regfree(&preg1);
 get_out2:
-   free_pool_memory(cleanup);
-   free_pool_memory(basename);
+   FreePoolMemory(cleanup);
+   FreePoolMemory(basename);
 }

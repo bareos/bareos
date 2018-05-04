@@ -22,13 +22,13 @@
 #ifndef BAREOS_DIRD_UA_INPUT_H_
 #define BAREOS_DIRD_UA_INPUT_H_
 
-bool get_cmd(UaContext *ua, const char *prompt, bool subprompt = false);
-bool get_pint(UaContext *ua, const char *prompt);
-bool get_yesno(UaContext *ua, const char *prompt);
-bool is_yesno(char *val, bool *ret);
-bool get_confirmation(UaContext *ua, const char *prompt = _("Confirm (yes/no): "));
+bool GetCmd(UaContext *ua, const char *prompt, bool subprompt = false);
+bool GetPint(UaContext *ua, const char *prompt);
+bool GetYesno(UaContext *ua, const char *prompt);
+bool IsYesno(char *val, bool *ret);
+bool GetConfirmation(UaContext *ua, const char *prompt = _("Confirm (yes/no): "));
 int get_enabled(UaContext *ua, const char *val);
-void parse_ua_args(UaContext *ua);
-bool is_comment_legal(UaContext *ua, const char *name);
+void ParseUaArgs(UaContext *ua);
+bool IsCommentLegal(UaContext *ua, const char *name);
 
 #endif // BAREOS_DIRD_UA_INPUT_H_

@@ -29,25 +29,25 @@
 #include "breg.h"
 #include "mem_pool.h"
 
-BareosRegex *new_bregexp(const char *motif)
+BareosRegex *NewBregexp(const char *motif)
 {
    Dmsg0(500, "bregexp: creating new bregexp object\n");
    BareosRegex *self = (BareosRegex *)bmalloc(sizeof(BareosRegex));
    memset(self, 0, sizeof(BareosRegex));
 
-   if (!self->extract_regexp(motif)) {
-      Dmsg0(100, "bregexp: extract_regexp error\n");
-      free_bregexp(self);
+   if (!self->ExtractRegexp(motif)) {
+      Dmsg0(100, "bregexp: ExtractRegexp error\n");
+      FreeBregexp(self);
       return NULL;
    }
 
-   self->result = get_pool_memory(PM_FNAME);
+   self->result = GetPoolMemory(PM_FNAME);
    self->result[0] = '\0';
 
    return self;
 }
 
-void free_bregexp(BareosRegex *self)
+void FreeBregexp(BareosRegex *self)
 {
    Dmsg0(500, "bregexp: freeing BareosRegex object\n");
 
@@ -59,7 +59,7 @@ void free_bregexp(BareosRegex *self)
       bfree(self->expr);
    }
    if (self->result) {
-      free_pool_memory(self->result);
+      FreePoolMemory(self->result);
    }
    regfree(&self->preg);
    bfree(self);
@@ -67,19 +67,19 @@ void free_bregexp(BareosRegex *self)
 
 /* Free a bregexps alist
  */
-void free_bregexps(alist *bregexps)
+void FreeBregexps(alist *bregexps)
 {
    Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
    BareosRegex *elt;
    foreach_alist(elt, bregexps) {
-      free_bregexp(elt);
+      FreeBregexp(elt);
    }
 }
 
 /* Apply all regexps to fname
  */
-bool apply_bregexps(const char *fname, alist *bregexps, char **result)
+bool ApplyBregexps(const char *fname, alist *bregexps, char **result)
 {
    BareosRegex *elt;
    bool ok=false;
@@ -104,12 +104,12 @@ alist *get_bregexps(const char *where)
    alist *list = New(alist(10, not_owned_by_alist));
    BareosRegex *reg;
 
-   reg = new_bregexp(p);
+   reg = NewBregexp(p);
 
    while(reg) {
       p = reg->eor;
       list->append(reg);
-      reg = new_bregexp(p);
+      reg = NewBregexp(p);
    }
 
    if (list->size()) {
@@ -120,7 +120,7 @@ alist *get_bregexps(const char *where)
    }
 }
 
-bool BareosRegex::extract_regexp(const char *motif)
+bool BareosRegex::ExtractRegexp(const char *motif)
 {
    if ( !motif ) {
       return false;
@@ -222,10 +222,10 @@ char *BareosRegex::replace(const char *fname)
       return return_fname(fname, flen);
    }
 
-   int len = compute_dest_len(fname, regs);
+   int len = ComputeDestLen(fname, regs);
 
    if (len) {
-      result = check_pool_memory_size(result, len);
+      result = CheckPoolMemorySize(result, len);
       edit_subst(fname, regs);
       success = true;
       Dmsg2(500, "bregexp: len = %i, result_len = %i\n", len, strlen(result));
@@ -240,12 +240,12 @@ char *BareosRegex::replace(const char *fname)
 
 char *BareosRegex::return_fname(const char *fname, int len)
 {
-   result = check_pool_memory_size(result, len+1);
+   result = CheckPoolMemorySize(result, len+1);
    strcpy(result,fname);
    return result;
 }
 
-int BareosRegex::compute_dest_len(const char *fname, regmatch_t pmatch[])
+int BareosRegex::ComputeDestLen(const char *fname, regmatch_t pmatch[])
 {
    int len=0;
    char *p;
@@ -351,7 +351,7 @@ static const char *str_strip_prefix = "!%s!!i";
 static const char *str_add_prefix   = "!^!%s!";
 static const char *str_add_suffix   = "!([^/])$!$1%s!";
 
-int bregexp_get_build_where_size(char *strip_prefix,
+int BregexpGetBuildWhereSize(char *strip_prefix,
                                  char *add_prefix,
                                  char *add_suffix)
 {
@@ -361,14 +361,14 @@ int bregexp_get_build_where_size(char *strip_prefix,
          /* escape + 3*, + \0 */
             * 2    + 3   + 1;
 
-   Dmsg1(200, "bregexp_get_build_where_size = %i\n", str_size);
+   Dmsg1(200, "BregexpGetBuildWhereSize = %i\n", str_size);
    return str_size;
 }
 
 /* build a regexp string with user arguments
  * Usage :
  *
- * int len = bregexp_get_build_where_size(a,b,c) ;
+ * int len = BregexpGetBuildWhereSize(a,b,c) ;
  * char *dest = (char *) bmalloc (len * sizeof(char));
  * bregexp_build_where(dest, len, a, b, c);
  * bfree(dest);
@@ -381,7 +381,7 @@ char *bregexp_build_where(char *dest, int str_size,
 {
    int len=0;
 
-   POOLMEM *str_tmp = get_memory(str_size);
+   POOLMEM *str_tmp = GetMemory(str_size);
 
    *str_tmp = *dest = '\0';
 
@@ -404,7 +404,7 @@ char *bregexp_build_where(char *dest, int str_size,
                        bregexp_escape_string(str_tmp, add_prefix, regexp_sep));
    }
 
-   free_pool_memory(str_tmp);
+   FreePoolMemory(str_tmp);
 
    return dest;
 }

@@ -204,7 +204,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
    acl_type_t type;
    size_t aclsize, acltxtsize;
    bacl_exit_code retval = bacl_exit_error;
-   POOLMEM *aclbuf = get_pool_memory(PM_MESSAGE);
+   POOLMEM *aclbuf = GetPoolMemory(PM_MESSAGE);
 
    /*
     * First see how big the buffers should be.
@@ -247,7 +247,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
    /*
     * Make sure the buffers are big enough.
     */
-   aclbuf = check_pool_memory_size(aclbuf, aclsize + 1);
+   aclbuf = CheckPoolMemorySize(aclbuf, aclsize + 1);
 
    /*
     * Retrieve the ACL info.
@@ -303,7 +303,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
    /*
     * We have a non-trivial acl lets convert it into some ASCII form.
     */
-   acltxtsize = sizeof_pool_memory(acl_data->u.build->content);
+   acltxtsize = SizeofPoolMemory(acl_data->u.build->content);
    if (aclx_printStr(acl_data->u.build->content, &acltxtsize, aclbuf,
                      aclsize, type, acl_data->last_fname, 0) < 0) {
       switch (errno) {
@@ -313,7 +313,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
           * the aclx_printStr really need. So we increase the buffer and try again.
           */
          acl_data->u.build->content =
-         check_pool_memory_size(acl_data->u.build->content, acltxtsize + 1);
+         CheckPoolMemorySize(acl_data->u.build->content, acltxtsize + 1);
          if (aclx_printStr(acl_data->u.build->content, &acltxtsize, aclbuf,
                            aclsize, type, acl_data->last_fname, 0) < 0) {
             Mmsg1(jcr->errmsg,
@@ -345,7 +345,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
    }
 
 bail_out:
-   free_pool_memory(aclbuf);
+   FreePoolMemory(aclbuf);
 
    return retval;
 }
@@ -387,7 +387,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
    acl_type_t type;
    size_t aclsize;
    bacl_exit_code retval = bacl_exit_error;
-   POOLMEM *aclbuf = get_pool_memory(PM_MESSAGE);
+   POOLMEM *aclbuf = GetPoolMemory(PM_MESSAGE);
 
    switch (stream) {
    case STREAM_ACL_AIX_TEXT:
@@ -424,7 +424,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
     * Set the acl buffer to an initial size. For now we set it
     * to the same size as the ASCII representation.
     */
-   aclbuf = check_pool_memory_size(aclbuf, content_length);
+   aclbuf = CheckPoolMemorySize(aclbuf, content_length);
    aclsize = content_length;
    if (aclx_scanStr(content, aclbuf, &aclsize, type) < 0) {
       berrno be;
@@ -439,7 +439,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
           */
          for (cnt = 0; cnt < 3; cnt++) {
             aclsize = 2 * aclsize;
-            aclbuf = check_pool_memory_size(aclbuf, aclsize);
+            aclbuf = CheckPoolMemorySize(aclbuf, aclsize);
 
             if (aclx_scanStr(content, aclbuf, &aclsize, type) == 0) {
                break;
@@ -506,7 +506,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
    retval = bacl_exit_ok;
 
 bail_out:
-   free_pool_memory(aclbuf);
+   FreePoolMemory(aclbuf);
 
    return retval;
 }
@@ -533,7 +533,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
 
    if ((acl_text = acl_get(acl_data->last_fname)) != NULL) {
       acl_data->u.build->content_length =
-      pm_strcpy(acl_data->u.build->content, acl_text);
+      PmStrcpy(acl_data->u.build->content, acl_text);
       actuallyfree(acl_text);
       return send_acl_stream(jcr, acl_data, STREAM_ACL_AIX_TEXT);
    }
@@ -837,7 +837,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
        */
       if ((acl_text = acl_to_text(acl, NULL)) != NULL) {
          acl_data->u.build->content_length =
-         pm_strcpy(acl_data->u.build->content, acl_text);
+         PmStrcpy(acl_data->u.build->content, acl_text);
          acl_free(acl);
          acl_free(acl_text);
          return bacl_exit_ok;
@@ -889,7 +889,7 @@ bail_out:
    if (acl) {
       acl_free(acl);
    }
-   pm_strcpy(acl_data->u.build->content, "");
+   PmStrcpy(acl_data->u.build->content, "");
    acl_data->u.build->content_length = 0;
    return retval;
 }
@@ -1175,7 +1175,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
     */
    if (acl_enabled == 0) {
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
-      pm_strcpy(acl_data->u.build->content, "");
+      PmStrcpy(acl_data->u.build->content, "");
       acl_data->u.build->content_length = 0;
       return bacl_exit_ok;
    }
@@ -1576,12 +1576,12 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
           * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
-         pm_strcpy(acl_data->u.build->content, "");
+         PmStrcpy(acl_data->u.build->content, "");
          acl_data->u.build->content_length = 0;
          return bacl_exit_ok;
 #endif
       case ENOENT:
-         pm_strcpy(acl_data->u.build->content, "");
+         PmStrcpy(acl_data->u.build->content, "");
          acl_data->u.build->content_length = 0;
          return bacl_exit_ok;
       default:
@@ -1591,13 +1591,13 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
          Dmsg2(100, "getacl error file=%s ERR=%s\n",
                acl_data->last_fname, be.bstrerror());
 
-         pm_strcpy(acl_data->u.build->content, "");
+         PmStrcpy(acl_data->u.build->content, "");
          acl_data->u.build->content_length = 0;
          return bacl_exit_error;
       }
    }
    if (n == 0) {
-      pm_strcpy(acl_data->u.build->content, "");
+      PmStrcpy(acl_data->u.build->content, "");
       acl_data->u.build->content_length = 0;
       return bacl_exit_ok;
    }
@@ -1607,13 +1607,13 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
           * The ACLs simply reflect the (already known) standard permissions
           * So we don't send an ACL stream to the SD.
           */
-         pm_strcpy(acl_data->u.build->content, "");
+         PmStrcpy(acl_data->u.build->content, "");
          acl_data->u.build->content_length = 0;
          return bacl_exit_ok;
       }
       if ((acl_text = acltostr(n, acls, FORM_SHORT)) != NULL) {
          acl_data->u.build->content_length =
-         pm_strcpy(acl_data->u.build->content, acl_text);
+         PmStrcpy(acl_data->u.build->content, acl_text);
          actuallyfree(acl_text);
 
          return send_acl_stream(jcr, acl_data, STREAM_ACL_HPUX_ACL_ENTRY);
@@ -1785,7 +1785,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
        * when we change from one filesystem to another.
        */
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
-      pm_strcpy(acl_data->u.build->content, "");
+      PmStrcpy(acl_data->u.build->content, "");
       acl_data->u.build->content_length = 0;
       return bacl_exit_ok;
    case -1: {
@@ -1831,7 +1831,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
        * The ACLs simply reflect the (already known) standard permissions
        * So we don't send an ACL stream to the SD.
        */
-      pm_strcpy(acl_data->u.build->content, "");
+      PmStrcpy(acl_data->u.build->content, "");
       acl_data->u.build->content_length = 0;
       return bacl_exit_ok;
    }
@@ -1847,7 +1847,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
 
    if ((acl_text = acl_totext(aclp, flags)) != NULL) {
       acl_data->u.build->content_length =
-      pm_strcpy(acl_data->u.build->content, acl_text);
+      PmStrcpy(acl_data->u.build->content, acl_text);
       actuallyfree(acl_text);
 
       switch (acl_type(aclp)) {
@@ -2069,14 +2069,14 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
           * So we don't send an ACL stream to the SD.
           */
          free(acls);
-         pm_strcpy(acl_data->u.build->content, "");
+         PmStrcpy(acl_data->u.build->content, "");
          acl_data->u.build->content_length = 0;
          return bacl_exit_ok;
       }
 
       if ((acl_text = acltotext(acls, n)) != NULL) {
          acl_data->u.build->content_length =
-         pm_strcpy(acl_data->u.build->content, acl_text);
+         PmStrcpy(acl_data->u.build->content, acl_text);
          actuallyfree(acl_text);
          free(acls);
          return send_acl_stream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
@@ -2203,7 +2203,7 @@ static bacl_exit_code afs_build_acl_streams(JobControlRecord *jcr,
       return bacl_exit_error;
    }
    acl_data->u.build->content_length =
-   pm_strcpy(acl_data->u.build->content, acl_text);
+   PmStrcpy(acl_data->u.build->content, acl_text);
    return send_acl_stream(jcr, acl_data, STREAM_ACL_AFS_TEXT);
 }
 
@@ -2264,7 +2264,7 @@ bacl_exit_code build_acl_streams(JobControlRecord *jcr,
        * AFS is a non OS specific filesystem so see if this path is on an AFS filesystem
        * Set the BACL_FLAG_SAVE_AFS flag if it is. If not set the BACL_FLAG_SAVE_NATIVE flag.
        */
-      if (fstype_equals(acl_data->last_fname, "afs")) {
+      if (FstypeEquals(acl_data->last_fname, "afs")) {
          acl_data->flags |= BACL_FLAG_SAVE_AFS;
       } else {
          acl_data->flags |= BACL_FLAG_SAVE_NATIVE;
@@ -2355,7 +2355,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord *jcr,
        * AFS is a non OS specific filesystem so see if this path is on an AFS filesystem
        * Set the BACL_FLAG_RESTORE_AFS flag if it is. If not set the BACL_FLAG_RETORE_NATIVE flag.
        */
-      if (fstype_equals(acl_data->last_fname, "afs")) {
+      if (FstypeEquals(acl_data->last_fname, "afs")) {
          acl_data->flags |= BACL_FLAG_RESTORE_AFS;
       } else {
          acl_data->flags |= BACL_FLAG_RESTORE_NATIVE;

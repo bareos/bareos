@@ -112,10 +112,10 @@ public:
       done = false;
       level = 0;
       delta = 0;
-      fname = get_pool_memory(PM_FNAME);
+      fname = GetPoolMemory(PM_FNAME);
    }
    ~delta_test() {
-      free_and_null_pool_memory(fname);
+      FreeAndNullPoolMemory(fname);
    }
 };
 
@@ -291,11 +291,11 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       bRC state = bfuncs->checkChanges(ctx, sp);
       /* Should always be bRC_OK */
       sp->type = (state == bRC_Seen)? FT_NOCHG : FT_REG;
-      set_bit(FO_DELTA, sp->flags);
-      set_bit(FO_OFFSETS, sp->flags);
+      SetBit(FO_DELTA, sp->flags);
+      SetBit(FO_OFFSETS, sp->flags);
       self->delta = sp->delta_seq + 1;
    }
-   pm_strcpy(self->fname, files[self->delta % nb_files]);
+   PmStrcpy(self->fname, files[self->delta % nb_files]);
    Dmsg(ctx, debuglevel, "delta-test-fd: delta_seq=%i delta=%i fname=%s\n",
         sp->delta_seq, self->delta, self->fname);
 // Dmsg(ctx, debuglevel, "delta-test-fd: startBackupFile\n");
@@ -453,7 +453,7 @@ static bRC endRestoreFile(bpContext *ctx)
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
    delta_test *self = get_self(ctx);
-   pm_strcpy(self->fname, rp->ofname);
+   PmStrcpy(self->fname, rp->ofname);
    rp->create_status = CF_EXTRACT;
    return bRC_OK;
 }

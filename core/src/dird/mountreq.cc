@@ -57,7 +57,7 @@ typedef struct mnt_req_s {
    JobControlRecord *jcr;
 } MNT_REQ;
 
-void mount_request(JobControlRecord *jcr, BareosSocket *bs, char *buf)
+void MountRequest(JobControlRecord *jcr, BareosSocket *bs, char *buf)
 {
    MNT_REQ *mreq;
 

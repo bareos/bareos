@@ -72,7 +72,7 @@ DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type)
    return (digest);
 }
 
-bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
+bool CryptoDigestUpdate(DIGEST *digest, const uint8_t *data, uint32_t length)
 {
    switch (digest->type) {
    case CRYPTO_DIGEST_MD5:
@@ -88,7 +88,7 @@ bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
    }
 }
 
-bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
+bool CryptoDigestFinalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
 {
    switch (digest->type) {
    case CRYPTO_DIGEST_MD5:
@@ -113,7 +113,7 @@ bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
    return false;
 }
 
-void crypto_digest_free(DIGEST *digest)
+void CryptoDigestFree(DIGEST *digest)
 {
    free(digest);
 }
@@ -123,23 +123,23 @@ SIGNATURE *crypto_sign_new(JobControlRecord *jcr)
    return NULL;
 }
 
-crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
+crypto_error_t CryptoSignGetDigest(SIGNATURE *sig, X509_KEYPAIR *keypair,
                                       crypto_digest_t &type, DIGEST **digest)
 {
    return CRYPTO_ERROR_INTERNAL;
 }
 
-crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest)
+crypto_error_t CryptoSignVerify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest)
 {
    return CRYPTO_ERROR_INTERNAL;
 }
 
-int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair)
+int CryptoSignAddSigner(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair)
 {
    return false;
 }
 
-int crypto_sign_encode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
+int CryptoSignEncode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
 {
    return false;
 }
@@ -149,7 +149,7 @@ SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uin
    return NULL;
 }
 
-void crypto_sign_free(SIGNATURE *sig)
+void CryptoSignFree(SIGNATURE *sig)
 {
 }
 
@@ -163,22 +163,22 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
    return NULL;
 }
 
-int crypto_keypair_load_cert(X509_KEYPAIR *keypair, const char *file)
+int CryptoKeypairLoadCert(X509_KEYPAIR *keypair, const char *file)
 {
    return false;
 }
 
-bool crypto_keypair_has_key(const char *file)
+bool CryptoKeypairHasKey(const char *file)
 {
    return false;
 }
 
-int crypto_keypair_load_key(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata)
+int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata)
 {
    return false;
 }
 
-void crypto_keypair_free(X509_KEYPAIR *keypair)
+void CryptoKeypairFree(X509_KEYPAIR *keypair)
 {
 }
 
@@ -187,16 +187,16 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
    return NULL;
 }
 
-void crypto_session_free(CRYPTO_SESSION *cs)
+void CryptoSessionFree(CRYPTO_SESSION *cs)
 {
 }
 
-bool crypto_session_encode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
+bool CryptoSessionEncode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
 {
    return false;
 }
 
-crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session)
+crypto_error_t CryptoSessionDecode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session)
 {
    return CRYPTO_ERROR_INTERNAL;
 }
@@ -206,17 +206,17 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
    return NULL;
 }
 
-bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
+bool CryptoCipherUpdate(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
 {
    return false;
 }
 
-bool crypto_cipher_finalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
+bool CryptoCipherFinalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
 {
    return false;
 }
 
-void crypto_cipher_free(CIPHER_CONTEXT *cipher_ctx)
+void CryptoCipherFree(CIPHER_CONTEXT *cipher_ctx)
 {
 }
 
@@ -226,12 +226,12 @@ const char *crypto_digest_name(DIGEST *digest)
 }
 #endif /* HAVE_CRYPTO */
 
-int init_crypto(void)
+int InitCrypto(void)
 {
    return 0;
 }
 
-int cleanup_crypto(void)
+int CleanupCrypto(void)
 {
    return 0;
 }

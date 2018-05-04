@@ -40,7 +40,7 @@
 
 
 
-bool BareosDb::match_database(const char *db_driver, const char *db_name,
+bool BareosDb::MatchDatabase(const char *db_driver, const char *db_name,
                           const char *db_address, int db_port)
 {
    bool match;
@@ -93,7 +93,7 @@ BareosDb *BareosDb::clone_database_connection(JobControlRecord *jcr,
    }
 }
 
-const char *BareosDb::get_type(void)
+const char *BareosDb::GetType(void)
 {
    switch (db_interface_type_) {
    case SQL_INTERFACE_TYPE_MYSQL:
@@ -125,15 +125,15 @@ const char *BareosDb::get_type(void)
 /**
  * Lock database, this can be called multiple times by the same
  * thread without blocking, but must be unlocked the number of
- * times it was locked using db_unlock().
+ * times it was locked using DbUnlock().
  */
 void BareosDb::_lock_db(const char *file, int line)
 {
    int errstat;
 
-   if ((errstat = rwl_writelock_p(&lock_, file, line)) != 0) {
+   if ((errstat = RwlWritelock_p(&lock_, file, line)) != 0) {
       berrno be;
-      e_msg(file, line, M_FATAL, 0, "rwl_writelock failure. stat=%d: ERR=%s\n",
+      e_msg(file, line, M_FATAL, 0, "RwlWritelock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
 }
@@ -141,20 +141,20 @@ void BareosDb::_lock_db(const char *file, int line)
 /**
  * Unlock the database. This can be called multiple times by the
  * same thread up to the number of times that thread called
- * db_lock()/
+ * DbLock()/
  */
 void BareosDb::_unlock_db(const char *file, int line)
 {
    int errstat;
 
-   if ((errstat = rwl_writeunlock(&lock_)) != 0) {
+   if ((errstat = RwlWriteunlock(&lock_)) != 0) {
       berrno be;
-      e_msg(file, line, M_FATAL, 0, "rwl_writeunlock failure. stat=%d: ERR=%s\n",
+      e_msg(file, line, M_FATAL, 0, "RwlWriteunlock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
 }
 
-void BareosDb::print_lock_info(FILE *fp)
+void BareosDb::PrintLockInfo(FILE *fp)
 {
    if (lock_.valid == RWLOCK_VALID) {
       fprintf(fp, "\tRWLOCK=%p w_active=%i w_wait=%i\n", &lock_, lock_.w_active, lock_.w_wait);
@@ -168,7 +168,7 @@ void BareosDb::print_lock_info(FILE *fp)
  *       string must be long enough (max 2*old+1) to hold
  *       the escaped output.
  */
-void BareosDb::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
+void BareosDb::EscapeString(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    char *n, *o;
 
@@ -205,7 +205,7 @@ char *BareosDb::escape_object(JobControlRecord *jcr, char *old, int len)
    int max_length;
 
    max_length = (len * 4) / 3;
-   esc_obj = check_pool_memory_size(esc_obj, max_length + 1);
+   esc_obj = CheckPoolMemorySize(esc_obj, max_length + 1);
    length = bin_to_base64(esc_obj, max_length, old, len, true);
    esc_obj[length] = '\0';
 
@@ -216,7 +216,7 @@ char *BareosDb::escape_object(JobControlRecord *jcr, char *old, int len)
  * Unescape binary object
  * We base64 encode the data so its normal ASCII
  */
-void BareosDb::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
+void BareosDb::UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
                            POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
@@ -225,7 +225,7 @@ void BareosDb::unescape_object(JobControlRecord *jcr, char *from, int32_t expect
       return;
    }
 
-   dest = check_pool_memory_size(dest, expected_len + 1);
+   dest = CheckPoolMemorySize(dest, expected_len + 1);
    base64_to_bin(dest, expected_len + 1, from, strlen(from));
    *dest_len = expected_len;
    dest[expected_len] = '\0';

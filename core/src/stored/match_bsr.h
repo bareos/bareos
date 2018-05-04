@@ -21,13 +21,13 @@
 #ifndef BAREOS_STORED_MATCH_BSR_H_
 #define BAREOS_STORED_MATCH_BSR_H_
 
-int match_bsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec,
+int MatchBsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec,
               SESSION_LABEL *sesrec, JobControlRecord *jcr);
-int match_bsr_block(BootStrapRecord *bsr, DeviceBlock *block);
+int MatchBsrBlock(BootStrapRecord *bsr, DeviceBlock *block);
 void position_bsr_block(BootStrapRecord *bsr, DeviceBlock *block);
 BootStrapRecord *find_next_bsr(BootStrapRecord *root_bsr, Device *dev);
-bool is_this_bsr_done(BootStrapRecord *bsr, DeviceRecord *rec);
-uint64_t get_bsr_start_addr(BootStrapRecord *bsr,
+bool IsThisBsrDone(BootStrapRecord *bsr, DeviceRecord *rec);
+uint64_t GetBsrStartAddr(BootStrapRecord *bsr,
                             uint32_t *file = NULL,
                             uint32_t *block = NULL);
 

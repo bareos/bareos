@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_UA_CMDS_H_
 #define BAREOS_DIRD_UA_CMDS_H_
 
-bool do_a_command(UaContext *ua);
-bool dot_messages_cmd(UaContext *ua, const char *cmd);
+bool Do_a_command(UaContext *ua);
+bool DotMessagesCmd(UaContext *ua, const char *cmd);
 
 #endif // BAREOS_DIRD_UA_CMDS_H_

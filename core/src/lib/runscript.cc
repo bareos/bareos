@@ -37,23 +37,23 @@
 bool (*console_command)(JobControlRecord *jcr, const char *cmd) = NULL;
 
 
-RunScript *new_runscript()
+RunScript *NewRunscript()
 {
    Dmsg0(500, "runscript: creating new RunScript object\n");
    RunScript *cmd = (RunScript *)malloc(sizeof(RunScript));
    memset(cmd, 0, sizeof(RunScript));
-   cmd->reset_default();
+   cmd->ResetDefault();
 
    return cmd;
 }
 
-void RunScript::reset_default(bool free_strings)
+void RunScript::ResetDefault(bool free_strings)
 {
    if (free_strings && command) {
-     free_pool_memory(command);
+     FreePoolMemory(command);
    }
    if (free_strings && target) {
-     free_pool_memory(target);
+     FreePoolMemory(target);
    }
 
    target = NULL;
@@ -75,21 +75,21 @@ RunScript *copy_runscript(RunScript *src)
    dst->command = NULL;
    dst->target = NULL;
 
-   dst->set_command(src->command, src->cmd_type);
-   dst->set_target(src->target);
+   dst->SetCommand(src->command, src->cmd_type);
+   dst->SetTarget(src->target);
 
    return dst;
 }
 
-void free_runscript(RunScript *script)
+void FreeRunscript(RunScript *script)
 {
    Dmsg0(500, "runscript: freeing RunScript object\n");
 
    if (script->command) {
-      free_pool_memory(script->command);
+      FreePoolMemory(script->command);
    }
    if (script->target) {
-      free_pool_memory(script->target);
+      FreePoolMemory(script->target);
    }
    free(script);
 }
@@ -110,7 +110,7 @@ static inline bool script_dir_allowed(JobControlRecord *jcr, RunScript *script, 
    /*
     * Determine the dir the script is in.
     */
-   pm_strcpy(script_dir, script->command);
+   PmStrcpy(script_dir, script->command);
    if ((bp = strrchr(script_dir.c_str(), '/'))) {
       *bp = '\0';
    }
@@ -141,7 +141,7 @@ static inline bool script_dir_allowed(JobControlRecord *jcr, RunScript *script, 
    return allowed;
 }
 
-int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
+int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
 {
    RunScript *script;
    bool runit;
@@ -168,7 +168,7 @@ int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *label, ali
 
       if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
          if ((script->on_success && (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created)) ||
-             (script->on_failure && (job_canceled(jcr) || jcr->JobStatus == JS_Differences))) {
+             (script->on_failure && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
             Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                   script->command, script->on_success, script->on_failure, jcr->JobStatus );
             runit = true;
@@ -177,7 +177,7 @@ int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *label, ali
 
       if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
          if ((script->on_success && (jcr->JobStatus == JS_Blocked)) ||
-             (script->on_failure && job_canceled(jcr))) {
+             (script->on_failure && JobCanceled(jcr))) {
             Dmsg4(200, "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
                   script->command, script->on_success, script->on_failure, jcr->JobStatus );
             runit = true;
@@ -185,15 +185,15 @@ int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *label, ali
       }
 
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
-         if ((script->on_success && jcr->is_terminated_ok()) ||
-             (script->on_failure && (job_canceled(jcr) || jcr->JobStatus == JS_Differences))) {
+         if ((script->on_success && jcr->IsTerminatedOk()) ||
+             (script->on_failure && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
             Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                   script->command, script->on_success, script->on_failure, jcr->JobStatus );
             runit = true;
          }
       }
 
-      if (!script->is_local()) {
+      if (!script->IsLocal()) {
          runit = false;
       }
 
@@ -218,7 +218,7 @@ bail_out:
    return 1;
 }
 
-bool RunScript::is_local()
+bool RunScript::IsLocal()
 {
    if (!target || bstrcmp(target, "")) {
       return true;
@@ -228,7 +228,7 @@ bool RunScript::is_local()
 }
 
 /* set this->command to cmd */
-void RunScript::set_command(const char *cmd, int acmd_type)
+void RunScript::SetCommand(const char *cmd, int acmd_type)
 {
    Dmsg1(500, "runscript: setting command = %s\n", NPRT(cmd));
 
@@ -237,15 +237,15 @@ void RunScript::set_command(const char *cmd, int acmd_type)
    }
 
    if (!command) {
-      command = get_pool_memory(PM_FNAME);
+      command = GetPoolMemory(PM_FNAME);
    }
 
-   pm_strcpy(command, cmd);
+   PmStrcpy(command, cmd);
    cmd_type = acmd_type;
 }
 
 /* set this->target to client_name */
-void RunScript::set_target(const char *client_name)
+void RunScript::SetTarget(const char *client_name)
 {
    Dmsg1(500, "runscript: setting target = %s\n", NPRT(client_name));
 
@@ -254,16 +254,16 @@ void RunScript::set_target(const char *client_name)
    }
 
    if (!target) {
-      target = get_pool_memory(PM_FNAME);
+      target = GetPoolMemory(PM_FNAME);
    }
 
-   pm_strcpy(target, client_name);
+   PmStrcpy(target, client_name);
 }
 
 bool RunScript::run(JobControlRecord *jcr, const char *name)
 {
    Dmsg1(100, "runscript: running a RunScript object type=%d\n", cmd_type);
-   POOLMEM *ecmd = get_pool_memory(PM_FNAME);
+   POOLMEM *ecmd = GetPoolMemory(PM_FNAME);
    int status;
    Bpipe *bpipe;
    PoolMem line(PM_NAME);
@@ -276,7 +276,7 @@ bool RunScript::run(JobControlRecord *jcr, const char *name)
    switch (cmd_type) {
    case SHELL_CMD:
       bpipe = open_bpipe(ecmd, 0, "r");
-      free_pool_memory(ecmd);
+      FreePoolMemory(ecmd);
 
       if (bpipe == NULL) {
          berrno be;
@@ -286,11 +286,11 @@ bool RunScript::run(JobControlRecord *jcr, const char *name)
       }
 
       while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
-         strip_trailing_junk(line.c_str());
+         StripTrailingJunk(line.c_str());
          Jmsg(jcr, M_INFO, 0, _("%s: %s\n"), name, line.c_str());
       }
 
-      status = close_bpipe(bpipe);
+      status = CloseBpipe(bpipe);
 
       if (status != 0) {
          berrno be;
@@ -320,13 +320,13 @@ bail_out:
    return false;
 }
 
-void free_runscripts(alist *runscripts)
+void FreeRunscripts(alist *runscripts)
 {
    Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
    RunScript *elt;
    foreach_alist(elt, runscripts) {
-      free_runscript(elt);
+      FreeRunscript(elt);
    }
 }
 
@@ -342,7 +342,7 @@ void RunScript::debug()
    Dmsg1(200,  _("  --> RunWhen=%u\n"),  when);
 }
 
-void RunScript::set_job_code_callback(job_code_callback_t arg_job_code_callback)
+void RunScript::SetJobCodeCallback(job_code_callback_t arg_job_code_callback)
 {
    this->job_code_callback = arg_job_code_callback;
 }

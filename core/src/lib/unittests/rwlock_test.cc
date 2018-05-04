@@ -95,7 +95,7 @@ void *thread_routine(void *arg)
        * lock).
        */
 //      if ((iteration % self->interval) == 0) {
-         status = rwl_writelock(&data[element].lock);
+         status = RwlWritelock(&data[element].lock);
          if (status != 0) {
             berrno be;
             printf("Write lock failed. ERR=%s\n", be.bstrerror(status));
@@ -104,7 +104,7 @@ void *thread_routine(void *arg)
          data[element].data = self->thread_num;
          data[element].writes++;
          self->writes++;
-         status = rwl_writelock(&data[element].lock);
+         status = RwlWritelock(&data[element].lock);
          if (status != 0) {
             berrno be;
             printf("Write lock failed. ERR=%s\n", be.bstrerror(status));
@@ -113,13 +113,13 @@ void *thread_routine(void *arg)
          data[element].data = self->thread_num;
          data[element].writes++;
          self->writes++;
-         status = rwl_writeunlock(&data[element].lock);
+         status = RwlWriteunlock(&data[element].lock);
          if (status != 0) {
             berrno be;
             printf("Write unlock failed. ERR=%s\n", be.bstrerror(status));
             exit(1);
          }
-         status = rwl_writeunlock(&data[element].lock);
+         status = RwlWriteunlock(&data[element].lock);
          if (status != 0) {
             berrno be;
             printf("Write unlock failed. ERR=%s\n", be.bstrerror(status));
@@ -133,7 +133,7 @@ void *thread_routine(void *arg)
           * the current thread last updated it. Count the
           * times to report later.
           */
-          status = rwl_readlock(&data[element].lock);
+          status = RwlReadlock(&data[element].lock);
           if (status != 0) {
              berrno be;
              printf("Read lock failed. ERR=%s\n", be.bstrerror(status));
@@ -142,7 +142,7 @@ void *thread_routine(void *arg)
           self->reads++;
           if (data[element].data == self->thread_num)
              repeats++;
-          status = rwl_readunlock(&data[element].lock);
+          status = RwlReadunlock(&data[element].lock);
           if (status != 0) {
              berrno be;
              printf("Read unlock failed. ERR=%s\n", be.bstrerror(status));
@@ -179,7 +179,7 @@ void test_rwlock(void **state) {
      * that our threads can run concurrently, we need to
      * increase the concurrency level to THREADS.
      */
-    thr_setconcurrency (THREADS);
+    ThrSetconcurrency (THREADS);
 #endif
 
     /*
@@ -188,7 +188,7 @@ void test_rwlock(void **state) {
     for (data_count = 0; data_count < DATASIZE; data_count++) {
         data[data_count].data = 0;
         data[data_count].writes = 0;
-        status = rwl_init(&data[data_count].lock);
+        status = RwlInit(&data[data_count].lock);
         if (status != 0) {
            berrno be;
            printf("Init rwlock failed. ERR=%s\n", be.bstrerror(status));
@@ -240,7 +240,7 @@ void test_rwlock(void **state) {
         data_writes += data[data_count].writes;
         printf (_("data %02d: value %d, %d writes\n"),
             data_count, data[data_count].data, data[data_count].writes);
-        rwl_destroy (&data[data_count].lock);
+        RwlDestroy (&data[data_count].lock);
     }
 
     printf (_("Total: %d thread writes, %d data writes\n"),
@@ -255,7 +255,7 @@ void test_rwlock(void **state) {
  *
  * Demonstrate use of non-blocking read-write locks.
  *
- * Special notes: On older Solaris system, call thr_setconcurrency()
+ * Special notes: On older Solaris system, call ThrSetconcurrency()
  * to allow interleaved thread execution, since threads are not
  * timesliced.
  */
@@ -300,23 +300,23 @@ void *thread_routine (void *arg)
     int iteration;
     int element;
     int status;
-    lmgr_init_thread();
+    LmgrInitThread();
     element = 0;                        /* Current data element */
 
     for (iteration = 0; iteration < ITERATIONS; iteration++) {
         if ((iteration % self->interval) == 0) {
-            status = rwl_writetrylock (&data[element].lock);
+            status = RwlWritetrylock (&data[element].lock);
             if (status == EBUSY)
                 self->w_collisions++;
             else if (status == 0) {
                 data[element].data++;
                 data[element].updates++;
                 self->updates++;
-                rwl_writeunlock (&data[element].lock);
+                RwlWriteunlock (&data[element].lock);
             } else
                 err_abort (status, _("Try write lock"));
         } else {
-            status = rwl_readtrylock (&data[element].lock);
+            status = RwlReadtrylock (&data[element].lock);
             if (status == EBUSY)
                 self->r_collisions++;
             else if (status != 0) {
@@ -326,7 +326,7 @@ void *thread_routine (void *arg)
                     printf ("%d: data[%d] %d != %d\n",
                         self->thread_num, element,
                         data[element].data, data[element].updates);
-                rwl_readunlock (&data[element].lock);
+                RwlReadunlock (&data[element].lock);
             }
         }
 
@@ -334,7 +334,7 @@ void *thread_routine (void *arg)
         if (element >= DATASIZE)
             element = 0;
     }
-    lmgr_cleanup_thread();
+    LmgrCleanupThread();
     return NULL;
 }
 
@@ -358,7 +358,7 @@ void test_rwlock(void **state) {
      * increase the concurrency level to THREADS.
      */
     DPRINTF (("Setting concurrency level to %d\n", THREADS));
-    thr_setconcurrency (THREADS);
+    ThrSetconcurrency (THREADS);
 #endif
 
     /*
@@ -367,7 +367,7 @@ void test_rwlock(void **state) {
     for (data_count = 0; data_count < DATASIZE; data_count++) {
         data[data_count].data = 0;
         data[data_count].updates = 0;
-        rwl_init(&data[data_count].lock);
+        RwlInit(&data[data_count].lock);
     }
 
     /*
@@ -408,7 +408,7 @@ void test_rwlock(void **state) {
         data_updates += data[data_count].updates;
         printf (_("data %02d: value %d, %d updates\n"),
             data_count, data[data_count].data, data[data_count].updates);
-        rwl_destroy (&data[data_count].lock);
+        RwlDestroy (&data[data_count].lock);
     }
 
     return 0;

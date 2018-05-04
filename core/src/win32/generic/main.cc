@@ -313,7 +313,7 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
       ReportStatus(SERVICE_STOPPED, service_error, 0);
    }
    /* Tell main "Unix" program to go away */
-   terminate_app(0);
+   TerminateApp(0);
 
    /* Should not get here */
    pthread_kill(main_tid, SIGTERM);   /* ask main thread to terminate */
@@ -362,7 +362,7 @@ int BareosAppMain()
 }
 
 
-void pause_msg(const char *file, const char *func, int line, const char *msg)
+void PauseMsg(const char *file, const char *func, int line, const char *msg)
 {
    char buf[1000];
    if (msg) {

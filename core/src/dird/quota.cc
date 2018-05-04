@@ -37,7 +37,7 @@
  * Returns: unsigned long long containing remaining bytes before going over quota.
  *          0 if over quota
  */
-uint64_t fetch_remaining_quotas(JobControlRecord *jcr)
+uint64_t FetchRemainingQuotas(JobControlRecord *jcr)
 {
    uint64_t remaining = 0;
    uint64_t now = (uint64_t)time(NULL);
@@ -101,7 +101,7 @@ uint64_t fetch_remaining_quotas(JobControlRecord *jcr)
  * Returns: true on reaching quota
  *          false on not reaching quota.
  */
-bool check_hardquotas(JobControlRecord *jcr)
+bool CheckHardquotas(JobControlRecord *jcr)
 {
    bool retval = false;
 
@@ -115,12 +115,12 @@ bool check_hardquotas(JobControlRecord *jcr)
    Dmsg1(debuglevel, "Checking hard quotas for JobId %d\n", jcr->JobId);
    if (!jcr->HasQuota) {
       if (jcr->res.client->QuotaIncludeFailedJobs) {
-         if (!jcr->db->get_quota_jobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->GetQuotaJobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
       } else {
-         if (!jcr->db->get_quota_jobbytes_nofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->GetQuotaJobbytesNofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
@@ -153,7 +153,7 @@ bail_out:
  * Returns: true on reaching soft quota
  *          false on not reaching soft quota.
  */
-bool check_softquotas(JobControlRecord *jcr)
+bool CheckSoftquotas(JobControlRecord *jcr)
 {
    bool retval = false;
    uint64_t now = (uint64_t)time(NULL);
@@ -168,13 +168,13 @@ bool check_softquotas(JobControlRecord *jcr)
    Dmsg1(debuglevel, "Checking soft quotas for JobId %d\n", jcr->JobId);
    if (!jcr->HasQuota) {
       if (jcr->res.client->QuotaIncludeFailedJobs) {
-         if (!jcr->db->get_quota_jobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->GetQuotaJobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
          Dmsg0(debuglevel, "Quota Includes Failed Jobs\n");
       } else {
-         if (!jcr->db->get_quota_jobbytes_nofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->GetQuotaJobbytesNofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
@@ -196,8 +196,8 @@ bool check_softquotas(JobControlRecord *jcr)
        * Check if gracetime has been set
        */
       if (jcr->res.client->GraceTime == 0 && jcr->res.client->SoftQuotaGracePeriod) {
-         Dmsg1(debuglevel, "update_quota_gracetime: %d\n", now);
-         if (!jcr->db->update_quota_gracetime(jcr, &jcr->jr)) {
+         Dmsg1(debuglevel, "UpdateQuotaGracetime: %d\n", now);
+         if (!jcr->db->UpdateQuotaGracetime(jcr, &jcr->jr)) {
             Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s"), jcr->db->strerror());
          } else {
              Jmsg(jcr, M_ERROR, 0, _("Softquota Exceeded, Grace Period starts now.\n"));
@@ -213,7 +213,7 @@ bool check_softquotas(JobControlRecord *jcr)
           * If gracetime has expired update else check more if not set softlimit yet then set and bail out.
           */
          if (jcr->res.client->QuotaLimit < 1) {
-           if (!jcr->db->update_quota_softlimit(jcr, &jcr->jr)) {
+           if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->jr)) {
                Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s"), jcr->db->strerror());
            }
            Jmsg(jcr, M_WARNING, 0, _("Softquota Exceeded and Grace Period expired.\n"));
@@ -227,7 +227,7 @@ bool check_softquotas(JobControlRecord *jcr)
              * If gracetime has expired update else check more if not set softlimit yet then set and bail out.
              */
             if (jcr->res.client->QuotaLimit < 1) {
-               if (!jcr->db->update_quota_softlimit(jcr, &jcr->jr)) {
+               if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->jr)) {
                   Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s"),
                         jcr->db->strerror());
                }
@@ -267,7 +267,7 @@ bool check_softquotas(JobControlRecord *jcr)
       ClientDbRecord cr;
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jcr->jr.ClientId;
-      if (!jcr->db->reset_quota_record(jcr, &cr)) {
+      if (!jcr->db->ResetQuotaRecord(jcr, &cr)) {
          Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s\n"),
             jcr->db->strerror());
       } else {

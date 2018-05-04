@@ -58,7 +58,7 @@ struct mntent_cache_entry_t {
 };
 
 mntent_cache_entry_t *find_mntent_mapping(uint32_t dev);
-void release_mntent_mapping(mntent_cache_entry_t *mce);
-DLL_IMP_EXP void flush_mntent_cache(void);
+void ReleaseMntentMapping(mntent_cache_entry_t *mce);
+DLL_IMP_EXP void FlushMntentCache(void);
 
 #endif /* BAREOS_LIB_MNTENT_CACHE_H_ */

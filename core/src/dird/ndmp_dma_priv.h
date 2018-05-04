@@ -109,25 +109,25 @@ typedef struct ndmp_internal_state NIS;
  */
 ndmp_backup_format_option *ndmp_lookup_backup_format_options(const char *backup_format);
 
-bool ndmp_validate_job(JobControlRecord *jcr, struct ndm_job_param *job);
-void ndmp_parse_meta_tag(struct ndm_env_table *env_tab, char *meta_tag);
-int native_to_ndmp_loglevel(int NdmpLoglevel, int debuglevel, NIS *nis);
-bool ndmp_build_client_job(JobControlRecord *jcr, ClientResource *client, StoreResource *store, int operation,
+bool NdmpValidateJob(JobControlRecord *jcr, struct ndm_job_param *job);
+void NdmpParseMetaTag(struct ndm_env_table *env_tab, char *meta_tag);
+int NativeToNdmpLoglevel(int NdmpLoglevel, int debuglevel, NIS *nis);
+bool NdmpBuildClientJob(JobControlRecord *jcr, ClientResource *client, StorageResource *store, int operation,
                            struct ndm_job_param *job);
-bool ndmp_build_storage_job(JobControlRecord *jcr, StoreResource *store, bool init_tape, bool init_robot,
+bool NdmpBuildStorageJob(JobControlRecord *jcr, StorageResource *store, bool init_tape, bool init_robot,
                            int operation, struct ndm_job_param *job);
-bool ndmp_build_client_and_storage_job(JobControlRecord *jcr, StoreResource *store, ClientResource *client,
+bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr, StorageResource *store, ClientResource *client,
                            bool init_tape, bool init_robot, int operation, struct ndm_job_param *job);
 
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg);
-void ndmp_do_query(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
+void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
 
 /*
  * NDMP FHDB specific helpers.
  */
-void ndmp_store_attribute_record(JobControlRecord *jcr, char *fname, char *linked_fname,
+void NdmpStoreAttributeRecord(JobControlRecord *jcr, char *fname, char *linked_fname,
                                  char *attributes, int8_t FileType, uint64_t Node, uint64_t fhinfo);
-void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
+void NdmpConvertFstat(ndmp9_file_stat *fstat, int32_t FileIndex,
                         int8_t *FileType, PoolMem &attribs);
 
 /*
@@ -147,7 +147,7 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog);
 /*
  * NDMP Media Info in DB storage and retrieval
  */
-bool store_ndmmedia_info_in_database(ndmmedia *media, JobControlRecord  *jcr);
-bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JobControlRecord  *jcr);
+bool StoreNdmmediaInfoInDatabase(ndmmedia *media, JobControlRecord  *jcr);
+bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *jcr);
 extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
 #endif

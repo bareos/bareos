@@ -60,12 +60,12 @@ extern "C" {
 #define regmatch_t            b_regmatch_t
 #define re_syntax             b_re_syntax
 #define re_syntax_table       b_re_syntax_table
-#define re_compile_initialize b_re_compile_initialize
+#define ReCompileInitialize b_re_compile_initialize
 #define re_set_syntax         b_re_set_syntax
 #define re_compile_pattern    b_re_compile_pattern
-#define re_match              b_re_match
-#define re_search             b_re_search
-#define re_compile_fastmap    b_re_compile_fastmap
+#define ReMatch              b_re_match
+#define ReSearch             b_re_search
+#define ReCompileFastmap    b_re_compile_fastmap
 #define re_comp               b_re_comp
 #define re_exec               b_re_exec
 #define regcomp               b_regcomp
@@ -148,7 +148,7 @@ extern int re_syntax;
 
 extern unsigned char re_syntax_table[256];
 
-void re_compile_initialize(void);
+void ReCompileInitialize(void);
 
 int re_set_syntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
@@ -163,14 +163,14 @@ const char *re_compile_pattern(regex_t *compiled, unsigned char *regex);
  * buffer is NULL).  Also, the translate field must be set to point to a
  * valid translation table, or NULL if it is not used. */
 
-int re_match(regex_t *compiled, unsigned char *string, int size, int pos,
+int ReMatch(regex_t *compiled, unsigned char *string, int size, int pos,
              regexp_registers_t old_regs);
 /* This tries to match the regexp against the string.  This returns the
  * length of the matched portion, or -1 if the pattern could not be
  * matched and -2 if an error (such as failure stack overflow) is
  * encountered. */
 
-int re_search(regex_t *compiled, unsigned char *string, int size, int startpos,
+int ReSearch(regex_t *compiled, unsigned char *string, int size, int startpos,
               int range, regexp_registers_t regs);
 /* This searches for a substring matching the regexp.  This returns the
  * first index at which a match is found.  range specifies at how many
@@ -180,7 +180,7 @@ int re_search(regex_t *compiled, unsigned char *string, int size, int startpos,
  * -1 if no match is found, and -2 if an error (such as failure stack
  * overflow) is encountered. */
 
-void re_compile_fastmap(regex_t *compiled);
+void ReCompileFastmap(regex_t *compiled);
 /* This computes the fastmap for the regexp.  For this to have any effect,
  * the calling program must have initialized the fastmap field to point
  * to an array of 256 characters. */

@@ -60,7 +60,7 @@ bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t tls_loc
 
    host.check_size(MAXHOSTNAMELEN);
    if (!gethostname(host.c_str(), MAXHOSTNAMELEN)) {
-      pm_strcpy(host, my_name);
+      PmStrcpy(host, my_name);
    }
 
    /* Send challenge -- no hashing yet */
@@ -73,7 +73,7 @@ bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t tls_loc
    }
 
    /* Read hashed response to challenge */
-   if (bs->wait_data(180) <= 0 || bs->recv() <= 0) {
+   if (bs->WaitData(180) <= 0 || bs->recv() <= 0) {
       Dmsg1(debuglevel, "Bnet receive challenge response comm error. ERR=%s\n", bs->bstrerror());
       bmicrosleep(5, 0);
       return false;
@@ -134,7 +134,7 @@ bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remo
       return false;
    }
    Dmsg1(99, "sending resp to challenge: %s\n", bs->msg);
-   if (bs->wait_data(180) <= 0 || bs->recv() <= 0) {
+   if (bs->WaitData(180) <= 0 || bs->recv() <= 0) {
       Dmsg1(debuglevel, "Receive challenge response failed. ERR=%s\n", bs->bstrerror());
       bmicrosleep(5, 0);
       return false;

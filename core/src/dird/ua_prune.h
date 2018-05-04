@@ -24,13 +24,13 @@
 
 #include "dird/ua.h"
 
-bool prune_files(UaContext *ua, ClientResource *client, PoolResource *pool);
+bool PruneFiles(UaContext *ua, ClientResource *client, PoolResource *pool);
 bool prune_jobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType);
-bool prune_volume(UaContext *ua, MediaDbRecord *mr);
+bool PruneVolume(UaContext *ua, MediaDbRecord *mr);
 int job_delete_handler(void *ctx, int num_fields, char **row);
 int del_count_handler(void *ctx, int num_fields, char **row);
 int file_delete_handler(void *ctx, int num_fields, char **row);
-int get_prune_list_for_volume(UaContext *ua, MediaDbRecord *mr, del_ctx *del);
-int exclude_running_jobs_from_list(del_ctx *prune_list);
+int GetPruneListForVolume(UaContext *ua, MediaDbRecord *mr, del_ctx *del);
+int ExcludeRunningJobsFromList(del_ctx *prune_list);
 
 #endif // BAREOS_DIRD_UA_PRUNE_H_

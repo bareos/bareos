@@ -68,12 +68,12 @@ bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_save(JobCo
    struct s_included_file *inc = NULL;
 
    /* This is the old deprecated way */
-   while (!job_canceled(jcr) && (inc = get_next_included_file(ff, inc))) {
+   while (!JobCanceled(jcr) && (inc = get_next_included_file(ff, inc))) {
       /* Copy options for this file */
       bstrncat(ff->VerifyOpts, inc->VerifyOpts, sizeof(ff->VerifyOpts));
-      Dmsg1(100, "find_files: file=%s\n", inc->fname);
-      if (!file_is_excluded(ff, inc->fname)) {
-         if (find_one_file(jcr, ff, file_save, inc->fname, (dev_t)-1, 1) ==0) {
+      Dmsg1(100, "FindFiles: file=%s\n", inc->fname);
+      if (!FileIsExcluded(ff, inc->fname)) {
+         if (FindOneFile(jcr, ff, file_save, inc->fname, (dev_t)-1, 1) ==0) {
             return false;                  /* error return */
          }
       }
@@ -85,7 +85,7 @@ bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_save(JobCo
  * Done doing filename matching, release all
  *  resources used.
  */
-void term_include_exclude_files(FindFilesPacket *ff)
+void TermIncludeExcludeFiles(FindFilesPacket *ff)
 {
    struct s_included_file *inc, *next_inc;
    struct s_excluded_file *exc, *next_exc;
@@ -118,7 +118,7 @@ void term_include_exclude_files(FindFilesPacket *ff)
 /**
  * Add a filename to list of included files
  */
-void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fname)
+void AddFnameToIncludeList(FindFilesPacket *ff, int prefixed, const char *fname)
 {
    int len, j;
    struct s_included_file *inc;
@@ -139,13 +139,13 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
       for (rp = fname; *rp && *rp != ' '; rp++) {
          switch (*rp) {
          case 'A':
-            set_bit(FO_ACL, inc->options);
+            SetBit(FO_ACL, inc->options);
             break;
          case 'a':                 /* alway replace */
          case '0':                 /* no option */
             break;
          case 'c':
-            set_bit(FO_CHKCHANGES, inc->options);
+            SetBit(FO_CHKCHANGES, inc->options);
             break;
          case 'd':
             switch(*(rp + 1)) {
@@ -168,7 +168,7 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
             }
             break;
          case 'e':
-            set_bit(FO_EXCLUDE, inc->options);
+            SetBit(FO_EXCLUDE, inc->options);
             break;
          case 'E':
             switch(*(rp + 1)) {
@@ -213,7 +213,7 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
                }
                break;
             case 'f':
-               set_bit(FO_FORCE_ENCRYPT, inc->options);
+               SetBit(FO_FORCE_ENCRYPT, inc->options);
                rp++;
                break;
             case 'h':
@@ -230,57 +230,57 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
             }
             break;
          case 'f':
-            set_bit(FO_MULTIFS, inc->options);
+            SetBit(FO_MULTIFS, inc->options);
             break;
          case 'H':                 /* no hard link handling */
-            set_bit(FO_NO_HARDLINK, inc->options);
+            SetBit(FO_NO_HARDLINK, inc->options);
             break;
          case 'h':                 /* no recursion */
-            set_bit(FO_NO_RECURSION, inc->options);
+            SetBit(FO_NO_RECURSION, inc->options);
             break;
          case 'i':
-            set_bit(FO_IGNORECASE, inc->options);
+            SetBit(FO_IGNORECASE, inc->options);
             break;
          case 'K':
-            set_bit(FO_NOATIME, inc->options);
+            SetBit(FO_NOATIME, inc->options);
             break;
          case 'k':
-            set_bit(FO_KEEPATIME, inc->options);
+            SetBit(FO_KEEPATIME, inc->options);
             break;
          case 'M':                 /* MD5 */
-            set_bit(FO_MD5, inc->options);
+            SetBit(FO_MD5, inc->options);
             break;
          case 'm':
-            set_bit(FO_MTIMEONLY, inc->options);
+            SetBit(FO_MTIMEONLY, inc->options);
             break;
          case 'N':
-            set_bit(FO_HONOR_NODUMP, inc->options);
+            SetBit(FO_HONOR_NODUMP, inc->options);
             break;
          case 'n':
-            set_bit(FO_NOREPLACE, inc->options);
+            SetBit(FO_NOREPLACE, inc->options);
             break;
          case 'p':                 /* use portable data format */
-            set_bit(FO_PORTABLE, inc->options);
+            SetBit(FO_PORTABLE, inc->options);
             break;
          case 'R':                 /* Resource forks and Finder Info */
-            set_bit(FO_HFSPLUS, inc->options);
+            SetBit(FO_HFSPLUS, inc->options);
             break;
          case 'r':                 /* read fifo */
-            set_bit(FO_READFIFO, inc->options);
+            SetBit(FO_READFIFO, inc->options);
             break;
          case 'S':
             switch(*(rp + 1)) {
             case '1':
-               set_bit(FO_SHA1, inc->options);
+               SetBit(FO_SHA1, inc->options);
                rp++;
                break;
 #ifdef HAVE_SHA2
             case '2':
-               set_bit(FO_SHA256, inc->options);
+               SetBit(FO_SHA256, inc->options);
                rp++;
                break;
             case '3':
-               set_bit(FO_SHA512, inc->options);
+               SetBit(FO_SHA512, inc->options);
                rp++;
                break;
 #endif
@@ -292,12 +292,12 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
                if (rp[1] == '2' || rp[1] == '3') {
                   rp++;
                }
-               set_bit(FO_SHA1, inc->options);
+               SetBit(FO_SHA1, inc->options);
                break;
             }
             break;
          case 's':
-            set_bit(FO_SPARSE, inc->options);
+            SetBit(FO_SPARSE, inc->options);
             break;
          case 'V':                  /* verify options */
             /* Copy Verify Options */
@@ -310,41 +310,41 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
             inc->VerifyOpts[j] = 0;
             break;
          case 'W':
-            set_bit(FO_ENHANCEDWILD, inc->options);
+            SetBit(FO_ENHANCEDWILD, inc->options);
             break;
          case 'w':
-            set_bit(FO_IF_NEWER, inc->options);
+            SetBit(FO_IF_NEWER, inc->options);
             break;
          case 'x':
-            set_bit(FO_NO_AUTOEXCL, inc->options);
+            SetBit(FO_NO_AUTOEXCL, inc->options);
             break;
          case 'X':
-            set_bit(FO_XATTR, inc->options);
+            SetBit(FO_XATTR, inc->options);
             break;
          case 'Z':                  /* Compression */
             rp++;                   /* Skip Z */
             if (*rp >= '0' && *rp <= '9') {
-               set_bit(FO_COMPRESS, inc->options);
+               SetBit(FO_COMPRESS, inc->options);
                inc->algo = COMPRESS_GZIP;
                inc->level = *rp - '0';
             } else if (*rp == 'o') {
-               set_bit(FO_COMPRESS, inc->options);
+               SetBit(FO_COMPRESS, inc->options);
                inc->algo = COMPRESS_LZO1X;
                inc->level = 1;      /* Not used with LZO */
             } else if (*rp == 'f') {
                if (rp[1] == 'f') {
                   rp++;             /* Skip f */
-                  set_bit(FO_COMPRESS, inc->options);
+                  SetBit(FO_COMPRESS, inc->options);
                   inc->algo = COMPRESS_FZFZ;
                   inc->level = 1;   /* Not used with libfzlib */
                } else if (rp[1] == '4') {
                   rp++;             /* Skip f */
-                  set_bit(FO_COMPRESS, inc->options);
+                  SetBit(FO_COMPRESS, inc->options);
                   inc->algo = COMPRESS_FZ4L;
                   inc->level = 1;   /* Not used with libfzlib */
                } else if (rp[1] == 'h') {
                   rp++;             /* Skip f */
-                  set_bit(FO_COMPRESS, inc->options);
+                  SetBit(FO_COMPRESS, inc->options);
                   inc->algo = COMPRESS_FZ4H;
                   inc->level = 1;   /* Not used with libfzlib */
                }
@@ -363,7 +363,7 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
             if (!inc->size_match) {
                inc->size_match = (struct s_sz_matching *)bmalloc(sizeof(struct s_sz_matching));
             }
-            if (!parse_size_match(size, inc->size_match)) {
+            if (!ParseSizeMatch(size, inc->size_match)) {
                Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
             }
             break;
@@ -418,14 +418,14 @@ void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fn
       next->next = inc;
    }
    Dmsg4(100, "add_fname_to_include prefix=%d compres=%d alg= %d fname=%s\n",
-         prefixed, bit_is_set(FO_COMPRESS, inc->options), inc->algo, inc->fname);
+         prefixed, BitIsSet(FO_COMPRESS, inc->options), inc->algo, inc->fname);
 }
 
 /**
  * We add an exclude name to either the exclude path
  *  list or the exclude filename list.
  */
-void add_fname_to_exclude_list(FindFilesPacket *ff, const char *fname)
+void AddFnameToExcludeList(FindFilesPacket *ff, const char *fname)
 {
    int len;
    struct s_excluded_file *exc, **list;
@@ -473,7 +473,7 @@ struct s_included_file *get_next_included_file(FindFilesPacket *ff, struct s_inc
     * copy inc_options for this file into the ff packet
     */
    if (inc) {
-      copy_bits(FO_MAX, inc->options, ff->flags);
+      CopyBits(FO_MAX, inc->options, ff->flags);
       ff->Compress_algo = inc->algo;
       ff->Compress_level = inc->level;
    }
@@ -484,7 +484,7 @@ struct s_included_file *get_next_included_file(FindFilesPacket *ff, struct s_inc
  * Walk through the included list to see if this
  *  file is included possibly with wild-cards.
  */
-bool file_is_included(FindFilesPacket *ff, const char *file)
+bool FileIsIncluded(FindFilesPacket *ff, const char *file)
 {
    struct s_included_file *inc = ff->included_files_list;
    int len;
@@ -540,7 +540,7 @@ static bool file_in_excluded_list(struct s_excluded_file *exc, const char *file)
  *  file is excluded, or if it matches a component
  *  of an excluded directory.
  */
-bool file_is_excluded(FindFilesPacket *ff, const char *file)
+bool FileIsExcluded(FindFilesPacket *ff, const char *file)
 {
    const char *p;
 
@@ -572,7 +572,7 @@ bool file_is_excluded(FindFilesPacket *ff, const char *file)
 /**
  * Parse a size matching fileset option.
  */
-bool parse_size_match(const char *size_match_pattern,
+bool ParseSizeMatch(const char *size_match_pattern,
                       struct s_sz_matching *size_matching)
 {
   bool retval = false;

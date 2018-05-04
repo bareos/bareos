@@ -104,7 +104,7 @@ void WINAPI serviceStartCallback(DWORD argc, char **argv)
     */
    service_handle = RegisterServiceCtrlHandler(APP_NAME, serviceControlCallback);
    if (!service_handle) {
-      log_error_message(_("RegisterServiceCtlHandler failed"));
+      LogErrorMessage(_("RegisterServiceCtlHandler failed"));
       MessageBox(NULL,
                  _("Failure contacting the Service Handler"),
                  APP_DESC, MB_OK);
@@ -119,7 +119,7 @@ void WINAPI serviceStartCallback(DWORD argc, char **argv)
     */
    if (!ReportStatus(SERVICE_START_PENDING, NO_ERROR, 45000)) {
        ReportStatus(SERVICE_STOPPED, service_error,  0);
-       log_error_message(_("Service start report failed"));
+       LogErrorMessage(_("Service start report failed"));
        return;
    }
 
@@ -177,7 +177,7 @@ int bareosServiceMain()
        * Start the service control dispatcher
        */
       if (!StartServiceCtrlDispatcher(dispatchTable)) {
-         log_error_message(_("StartServiceCtrlDispatcher failed."));
+         LogErrorMessage(_("StartServiceCtrlDispatcher failed."));
       }
       /*
        * Note, this thread continues in the ServiceCallback routine
@@ -201,7 +201,7 @@ int bareosServiceMain()
          MessageBox(NULL,
                     _("Registry service not found: Bareos service not started"),
                     APP_DESC, MB_OK);
-         log_error_message(_("Registry service entry point not found"));
+         LogErrorMessage(_("Registry service entry point not found"));
          FreeLibrary(kerneldll);         /* free up kernel dll */
          return 1;
       }
@@ -225,7 +225,7 @@ DWORD WINAPI bareosWorkerThread(LPVOID lpwThreadParam)
       MessageBox(NULL,
                  _("Report Service failure"),
                  APP_DESC, MB_OK);
-      log_error_message("ReportStatus RUNNING failed");
+      LogErrorMessage("ReportStatus RUNNING failed");
       return 0;
    }
 
@@ -273,7 +273,7 @@ int installService(const char *cmdOpts)
    if ((int)strlen(path) + (int)strlen(cmdOpts) + 30  < maxlen) {
       bsnprintf(svcmd, sizeof(svcmd), "\"%s\" /service %s", path, cmdOpts);
    } else {
-      log_error_message(_("Service command length too long"));
+      LogErrorMessage(_("Service command length too long"));
       MessageBox(NULL,
                  _("Service command length too long. Service not registered."),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
@@ -288,7 +288,7 @@ int installService(const char *cmdOpts)
        */
       serviceManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
       if (!serviceManager) {
-         log_error_message("Open Service Manager failed");
+         LogErrorMessage("Open Service Manager failed");
          MessageBox(NULL,
                     _("The Service Control Manager could not be contacted - the service was not installed"),
                     APP_DESC, MB_ICONEXCLAMATION | MB_OK);
@@ -313,7 +313,7 @@ int installService(const char *cmdOpts)
                                     NULL);
       if (!bareosService) {
          CloseServiceHandle(serviceManager);
-         log_error_message("CreateService failed for " APP_DESC);
+         LogErrorMessage("CreateService failed for " APP_DESC);
          MessageBox(NULL,
                     _("The Bareos service: " APP_NAME " could not be installed"),
                     APP_DESC, MB_ICONEXCLAMATION | MB_OK);
@@ -338,7 +338,7 @@ int installService(const char *cmdOpts)
       if (RegCreateKey(HKEY_LOCAL_MACHINE,
               "Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
               &runservices) != ERROR_SUCCESS) {
-         log_error_message(_("Cannot write System Registry for " APP_DESC));
+         LogErrorMessage(_("Cannot write System Registry for " APP_DESC));
          MessageBox(NULL,
                     _("The System Registry could not be updated - the Bareos service was not installed"),
                     APP_DESC, MB_ICONEXCLAMATION | MB_OK);
@@ -351,7 +351,7 @@ int installService(const char *cmdOpts)
       if (RegSetValueEx(runservices, APP_NAME, 0, REG_SZ,
                         (unsigned char *)svcmd, strlen(svcmd)+1) != ERROR_SUCCESS) {
          RegCloseKey(runservices);
-         log_error_message(_("Cannot add Bareos key to System Registry"));
+         LogErrorMessage(_("Cannot add Bareos key to System Registry"));
          MessageBox(NULL,
                     _("The Bareos service: " APP_NAME " could not be installed"),
                     APP_DESC, MB_ICONEXCLAMATION | MB_OK);
@@ -535,7 +535,7 @@ BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint)
     */
    result = SetServiceStatus(service_handle, &service_status);
    if (!result) {
-      log_error_message(_("SetServiceStatus failed"));
+      LogErrorMessage(_("SetServiceStatus failed"));
    }
 
    return result;
@@ -622,7 +622,7 @@ static void set_service_description(SC_HANDLE hSCManager, SC_HANDLE hService, LP
         * Exit if the database is not locked by another process.
         */
        if (GetLastError() != ERROR_SERVICE_DATABASE_LOCKED) {
-          log_error_message("LockServiceDatabase");
+          LogErrorMessage("LockServiceDatabase");
           return;
        }
 
@@ -631,7 +631,7 @@ static void set_service_description(SC_HANDLE hSCManager, SC_HANDLE hService, LP
         */
        lpqslsBuf = (LPQUERY_SERVICE_LOCK_STATUS)LocalAlloc(LPTR, sizeof(QUERY_SERVICE_LOCK_STATUS)+256);
        if (lpqslsBuf == NULL) {
-          log_error_message("LocalAlloc");
+          LogErrorMessage("LocalAlloc");
           return;
        }
 
@@ -642,7 +642,7 @@ static void set_service_description(SC_HANDLE hSCManager, SC_HANDLE hService, LP
                                    lpqslsBuf,
                                    sizeof(QUERY_SERVICE_LOCK_STATUS)+256,
                                    &dwBytesNeeded)) {
-          log_error_message("QueryServiceLockStatus");
+          LogErrorMessage("QueryServiceLockStatus");
        }
 
        if (lpqslsBuf->fIsLocked) {
@@ -652,7 +652,7 @@ static void set_service_description(SC_HANDLE hSCManager, SC_HANDLE hService, LP
        }
 
        LocalFree(lpqslsBuf);
-       log_error_message(_("Could not lock database"));
+       LogErrorMessage(_("Could not lock database"));
        return;
     }
 
@@ -664,7 +664,7 @@ static void set_service_description(SC_HANDLE hSCManager, SC_HANDLE hService, LP
     if (!ChangeServiceDescription(hService,                   /* handle to service */
                                   SERVICE_CONFIG_DESCRIPTION, /* change: description */
                                   &sdBuf) ) {                 /* value: new description */
-       log_error_message("ChangeServiceConfig2");
+       LogErrorMessage("ChangeServiceConfig2");
     }
 
     /*

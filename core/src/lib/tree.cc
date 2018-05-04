@@ -92,7 +92,7 @@ TREE_ROOT *new_tree(int count)
    Dmsg2(400, "count=%d size=%d\n", count, size);
    malloc_buf(root, size);
    root->cached_path_len = -1;
-   root->cached_path = get_pool_memory(PM_FNAME);
+   root->cached_path = GetPoolMemory(PM_FNAME);
    root->type = TN_ROOT;
    root->fname = "";
    HL_ENTRY* entry = NULL;
@@ -123,7 +123,7 @@ static void free_tree_node(TREE_ROOT *root)
    root->mem->mem -= asize;
 }
 
-void tree_remove_node(TREE_ROOT *root, TREE_NODE *node)
+void TreeRemoveNode(TREE_ROOT *root, TREE_NODE *node)
 {
    int asize = BALIGN(sizeof(TREE_NODE));
    node->parent->child.remove(node);
@@ -162,7 +162,7 @@ static char *tree_alloc(TREE_ROOT *root, int size)
 /*
  * This routine frees the whole tree
  */
-void free_tree(TREE_ROOT *root)
+void FreeTree(TREE_ROOT *root)
 {
    struct s_mem *mem, *rel;
    uint32_t freed_blocks = 0;
@@ -175,19 +175,19 @@ void free_tree(TREE_ROOT *root)
       freed_blocks++;
    }
    if (root->cached_path) {
-      free_pool_memory(root->cached_path);
+      FreePoolMemory(root->cached_path);
       root->cached_path = NULL;
    }
    Dmsg3(100, "Total size=%u blocks=%u freed_blocks=%u\n", root->total_size, root->blocks, freed_blocks);
    free(root);
-   garbage_collect_memory();
+   GarbageCollectMemory();
    return;
 }
 
 /*
  * Add Delta part for this node
  */
-void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
+void TreeAddDeltaPart(TREE_ROOT *root, TREE_NODE *node,
                          JobId_t JobId, int32_t FileIndex)
 {
    struct delta_list *elt = (struct delta_list *)
@@ -247,7 +247,7 @@ TREE_NODE *insert_tree_node(char *path, char *fname, int type,
             parent = root->cached_parent;
          } else {
             root->cached_path_len = path_len;
-            pm_strcpy(root->cached_path, path);
+            PmStrcpy(root->cached_path, path);
             parent = make_tree_path(path, root);
             root->cached_parent = parent;
          }
@@ -380,9 +380,9 @@ static void tree_getpath_item(TREE_NODE *node, POOLMEM *&path)
     * win32 names don't generally start with /
     */
    if (node->type == TN_DIR_NLS && IsPathSeparator(path[0]) && path[1] == '\0') {
-      pm_strcpy(path, "");
+      PmStrcpy(path, "");
    }
-   pm_strcat(path, node->fname);
+   PmStrcat(path, node->fname);
 
    /*
     * Add a slash for all directories unless we are at the root,
@@ -390,8 +390,8 @@ static void tree_getpath_item(TREE_NODE *node, POOLMEM *&path)
     * i.e. it is linked to a directory.
     */
    if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0')) ||
-       (node->soft_link && tree_node_has_child(node))) {
-      pm_strcat(path, "/");
+       (node->soft_link && TreeNodeHasChild(node))) {
+      PmStrcat(path, "/");
    }
 }
 
@@ -406,8 +406,8 @@ POOLMEM *tree_getpath(TREE_NODE *node)
    /*
     * Allocate a new empty path.
     */
-   path = get_pool_memory(PM_NAME);
-   pm_strcpy(path, "");
+   path = GetPoolMemory(PM_NAME);
+   PmStrcpy(path, "");
 
    /*
     * Fill the path with the full path.
@@ -494,7 +494,7 @@ TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node)
       }
    }
 
-   if (!cd || (cd->type == TN_FILE && !tree_node_has_child(cd))) {
+   if (!cd || (cd->type == TN_FILE && !TreeNodeHasChild(cd))) {
       return NULL;
    }
 

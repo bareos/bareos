@@ -21,13 +21,13 @@
 #ifndef BAREOS_STORED_AUTOCHANGER_H_
 #define BAREOS_STORED_AUTOCHANGER_H_
 
-bool init_autochangers();
-int autoload_device(DeviceControlRecord *dcr, int writing, BareosSocket *dir);
-bool autochanger_cmd(DeviceControlRecord *dcr, BareosSocket *dir, const char *cmd);
-bool autochanger_transfer_cmd(DeviceControlRecord *dcr, BareosSocket *dir,
+bool InitAutochangers();
+int AutoloadDevice(DeviceControlRecord *dcr, int writing, BareosSocket *dir);
+bool AutochangerCmd(DeviceControlRecord *dcr, BareosSocket *dir, const char *cmd);
+bool AutochangerTransferCmd(DeviceControlRecord *dcr, BareosSocket *dir,
                               slot_number_t src_slot, slot_number_t dst_slot);
-bool unload_autochanger(DeviceControlRecord *dcr, slot_number_t loaded, bool lock_set = false);
-bool unload_dev(DeviceControlRecord *dcr, Device *dev, bool lock_set = false);
-slot_number_t get_autochanger_loaded_slot(DeviceControlRecord *dcr, bool lock_set = false);
+bool UnloadAutochanger(DeviceControlRecord *dcr, slot_number_t loaded, bool lock_set = false);
+bool UnloadDev(DeviceControlRecord *dcr, Device *dev, bool lock_set = false);
+slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord *dcr, bool lock_set = false);
 
 #endif // BAREOS_STORED_AUTOCHANGER_H_

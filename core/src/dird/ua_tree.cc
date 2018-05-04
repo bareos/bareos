@@ -121,7 +121,7 @@ bool user_select_files_from_tree(TreeContext *tree)
    ua->api = tree->ua->api;           /* keep API flag too */
    user = ua->UA_sock;
 
-   ua->send_msg(_("\nYou are now entering file selection mode where you add (mark) and\n"
+   ua->SendMsg(_("\nYou are now entering file selection mode where you add (mark) and\n"
                   "remove (unmark) files to be restored. No files are initially added, unless\n"
                   "you used the \"all\" keyword on the command line.\n"
                   "Enter \"done\" to leave this mode.\n\n"));
@@ -133,13 +133,13 @@ bool user_select_files_from_tree(TreeContext *tree)
    tree->node = (TREE_NODE *)tree->root;
    cwd = tree_getpath(tree->node);
    if (cwd) {
-      ua->send_msg(_("cwd is: %s\n"), cwd);
-      free_pool_memory(cwd);
+      ua->SendMsg(_("cwd is: %s\n"), cwd);
+      FreePoolMemory(cwd);
    }
 
    while (1) {
       int found, len, i;
-      if (!get_cmd(ua, "$ ", true)) {
+      if (!GetCmd(ua, "$ ", true)) {
          break;
       }
 
@@ -147,9 +147,9 @@ bool user_select_files_from_tree(TreeContext *tree)
          user->signal(BNET_CMD_BEGIN);
       }
 
-      parse_args_only(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+      ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
       if (ua->argc == 0) {
-         ua->warning_msg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
+         ua->WarningMsg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
          if (ua->api) {
             user->signal(BNET_CMD_FAILED);
          }
@@ -172,7 +172,7 @@ bool user_select_files_from_tree(TreeContext *tree)
             /* Some unknow dot command -- probably .messages, ignore it */
             continue;
          }
-         ua->warning_msg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
+         ua->WarningMsg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
          if (ua->api) {
             user->signal(BNET_CMD_FAILED);
          }
@@ -193,7 +193,7 @@ bool user_select_files_from_tree(TreeContext *tree)
    ua->UA_sock = NULL;                /* don't release restore socket */
    status = !ua->quit;
    ua->quit = false;
-   free_ua_context(ua);               /* get rid of temp UA context */
+   FreeUaContext(ua);               /* get rid of temp UA context */
 
    return status;
 }
@@ -233,7 +233,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    } else {
       type = TN_FILE;
    }
-   decode_stat(row[4], &statp, sizeof(statp), &LinkFI);
+   DecodeStat(row[4], &statp, sizeof(statp), &LinkFI);
    hard_link = (LinkFI != 0);
    node = insert_tree_node(row[0], row[1], type, tree->root, NULL);
    JobId = str_to_int64(row[3]);
@@ -249,15 +249,15 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
     */
    if (delta_seq > 0) {
       if (delta_seq == (node->delta_seq + 1)) {
-         tree_add_delta_part(tree->root, node, node->JobId, node->FileIndex);
+         TreeAddDeltaPart(tree->root, node, node->JobId, node->FileIndex);
 
       } else {
          /* File looks to be deleted */
          if (node->delta_seq == -1) { /* just created */
-            tree_remove_node(tree->root, node);
+            TreeRemoveNode(tree->root, node);
 
          } else {
-            tree->ua->warning_msg(_("Something is wrong with the Delta sequence of %s, "
+            tree->ua->WarningMsg(_("Something is wrong with the Delta sequence of %s, "
                                     "skipping new parts. Current sequence is %d\n"),
                                   row[1], node->delta_seq);
 
@@ -340,7 +340,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    if (node->inserted) {
       tree->FileCount++;
       if (tree->DeltaCount > 0 && (tree->FileCount-tree->LastCount) > tree->DeltaCount) {
-         tree->ua->send_msg("+");
+         tree->ua->SendMsg("+");
          tree->LastCount = tree->FileCount;
       }
    }
@@ -370,7 +370,7 @@ static int set_extract(UaContext *ua, TREE_NODE *node, TreeContext *tree, bool e
    /*
     * For a non-file (i.e. directory), we see all the children
     */
-   if (node->type != TN_FILE || (node->soft_link && tree_node_has_child(node))) {
+   if (node->type != TN_FILE || (node->soft_link && TreeNodeHasChild(node))) {
       /*
        * Recursive set children within directory
        */
@@ -416,15 +416,15 @@ static int set_extract(UaContext *ua, TREE_NODE *node, TreeContext *tree, bool e
                fdbr.FileId = 0;
                fdbr.JobId = node->JobId;
 
-               if (node->hard_link && ua->db->get_file_attributes_record(ua->jcr, cwd, NULL, &fdbr)) {
+               if (node->hard_link && ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
                   int32_t LinkFI;
                   struct stat statp;
 
-                  decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
+                  DecodeStat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
                   key = (((uint64_t) node->JobId) << 32) + LinkFI;  /* lookup by linked file's fileindex */
                   is_hardlinked = true;
                }
-               free_pool_memory(cwd);
+               FreePoolMemory(cwd);
             }
          }
 
@@ -470,8 +470,8 @@ static int markcmd(UaContext *ua, TreeContext *tree)
    POOLMEM *cwd;
    bool restore_cwd = false;
 
-   if (ua->argc < 2 || !tree_node_has_child(tree->node)) {
-      ua->send_msg(_("No files marked.\n"));
+   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
+      ua->SendMsg(_("No files marked.\n"));
       return 1;
    }
 
@@ -488,22 +488,22 @@ static int markcmd(UaContext *ua, TreeContext *tree)
        */
       if (strchr(ua->argk[i], '/')) {
          int pnl, fnl;
-         POOLMEM *file = get_pool_memory(PM_FNAME);
-         POOLMEM *path = get_pool_memory(PM_FNAME);
+         POOLMEM *file = GetPoolMemory(PM_FNAME);
+         POOLMEM *path = GetPoolMemory(PM_FNAME);
 
          /*
           * Split the argument into a path and file part.
           */
-         split_path_and_filename(ua->argk[i], path, &pnl, file, &fnl);
+         SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
 
          /*
           * First change the CWD to the correct PATH.
           */
          node = tree_cwd(path, tree->root, tree->node);
          if (!node) {
-            ua->warning_msg(_("Invalid path %s given.\n"), path);
-            free_pool_memory(file);
-            free_pool_memory(path);
+            ua->WarningMsg(_("Invalid path %s given.\n"), path);
+            FreePoolMemory(file);
+            FreePoolMemory(path);
             continue;
          }
          tree->node = node;
@@ -515,8 +515,8 @@ static int markcmd(UaContext *ua, TreeContext *tree)
             }
          }
 
-         free_pool_memory(file);
-         free_pool_memory(path);
+         FreePoolMemory(file);
+         FreePoolMemory(path);
       } else {
          /*
           * Only a pattern without a / so do things relative to CWD.
@@ -530,11 +530,11 @@ static int markcmd(UaContext *ua, TreeContext *tree)
    }
 
    if (count == 0) {
-      ua->send_msg(_("No files marked.\n"));
+      ua->SendMsg(_("No files marked.\n"));
    } else if (count == 1) {
-      ua->send_msg(_("1 file marked.\n"));
+      ua->SendMsg(_("1 file marked.\n"));
    } else {
-      ua->send_msg(_("%s files marked.\n"),
+      ua->SendMsg(_("%s files marked.\n"),
                    edit_uint64_with_commas(count, ec1));
    }
 
@@ -544,14 +544,14 @@ static int markcmd(UaContext *ua, TreeContext *tree)
    if (restore_cwd && cwd) {
       node = tree_cwd(cwd, tree->root, tree->node);
       if (!node) {
-         ua->warning_msg(_("Invalid path %s given.\n"), cwd);
+         ua->WarningMsg(_("Invalid path %s given.\n"), cwd);
       } else {
          tree->node = node;
       }
    }
 
    if (cwd) {
-      free_pool_memory(cwd);
+      FreePoolMemory(cwd);
    }
 
    return 1;
@@ -563,8 +563,8 @@ static int markdircmd(UaContext *ua, TreeContext *tree)
    int count = 0;
    char ec1[50];
 
-   if (ua->argc < 2 || !tree_node_has_child(tree->node)) {
-      ua->send_msg(_("No files marked.\n"));
+   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
+      ua->SendMsg(_("No files marked.\n"));
       return 1;
    }
    for (int i = 1; i < ua->argc; i++) {
@@ -579,11 +579,11 @@ static int markdircmd(UaContext *ua, TreeContext *tree)
       }
    }
    if (count == 0) {
-      ua->send_msg(_("No directories marked.\n"));
+      ua->SendMsg(_("No directories marked.\n"));
    } else if (count == 1) {
-      ua->send_msg(_("1 directory marked.\n"));
+      ua->SendMsg(_("1 directory marked.\n"));
    } else {
-      ua->send_msg(_("%s directories marked.\n"),
+      ua->SendMsg(_("%s directories marked.\n"),
                edit_uint64_with_commas(count, ec1));
    }
    return 1;
@@ -596,9 +596,9 @@ static int countcmd(UaContext *ua, TreeContext *tree)
    char ec1[50], ec2[50];
 
    total = num_extract = 0;
-   for (node = first_tree_node(tree->root);
+   for (node = FirstTreeNode(tree->root);
         node;
-        node = next_tree_node(node)) {
+        node = NextTreeNode(node)) {
       if (node->type != TN_NEWDIR) {
          total++;
          if (node->extract || node->extract_dir) {
@@ -606,7 +606,7 @@ static int countcmd(UaContext *ua, TreeContext *tree)
          }
       }
    }
-   ua->send_msg(_("%s total files/dirs. %s marked to be restored.\n"),
+   ua->SendMsg(_("%s total files/dirs. %s marked to be restored.\n"),
             edit_uint64_with_commas(total, ec1),
             edit_uint64_with_commas(num_extract, ec2));
    return 1;
@@ -618,14 +618,14 @@ static int findcmd(UaContext *ua, TreeContext *tree)
    POOLMEM *cwd;
 
    if (ua->argc == 1) {
-      ua->send_msg(_("No file specification given.\n"));
+      ua->SendMsg(_("No file specification given.\n"));
       return 1;      /* make it non-fatal */
    }
 
    for (int i = 1; i < ua->argc; i++) {
-      for (node = first_tree_node(tree->root);
+      for (node = FirstTreeNode(tree->root);
            node;
-           node = next_tree_node(node)) {
+           node = NextTreeNode(node)) {
          if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
             const char *tag;
 
@@ -637,8 +637,8 @@ static int findcmd(UaContext *ua, TreeContext *tree)
             } else {
                tag = "";
             }
-            ua->send_msg("%s%s\n", tag, cwd);
-            free_pool_memory(cwd);
+            ua->SendMsg("%s%s\n", tag, cwd);
+            FreePoolMemory(cwd);
          }
       }
    }
@@ -649,14 +649,14 @@ static int dot_lsdircmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
 
-   if (!tree_node_has_child(tree->node)) {
+   if (!TreeNodeHasChild(tree->node)) {
       return 1;
    }
 
    foreach_child(node, tree->node) {
       if (ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) {
-         if (tree_node_has_child(node)) {
-            ua->send_msg("%s/\n", node->fname);
+         if (TreeNodeHasChild(node)) {
+            ua->SendMsg("%s/\n", node->fname);
          }
       }
    }
@@ -669,7 +669,7 @@ static int dot_helpcmd(UaContext *ua, TreeContext *tree)
    for (int i = 0; i < comsize; i++) {
       /* List only non-dot commands */
       if (commands[i].key[0] != '.') {
-         ua->send_msg("%s\n", commands[i].key);
+         ua->SendMsg("%s\n", commands[i].key);
       }
    }
    return 1;
@@ -679,13 +679,13 @@ static int dot_lscmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
 
-   if (!tree_node_has_child(tree->node)) {
+   if (!TreeNodeHasChild(tree->node)) {
       return 1;
    }
 
    foreach_child(node, tree->node) {
       if (ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) {
-         ua->send_msg("%s%s\n", node->fname, tree_node_has_child(node)?"/":"");
+         ua->SendMsg("%s%s\n", node->fname, TreeNodeHasChild(node)?"/":"");
       }
    }
 
@@ -696,7 +696,7 @@ static int lscmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
 
-   if (!tree_node_has_child(tree->node)) {
+   if (!TreeNodeHasChild(tree->node)) {
       return 1;
    }
    foreach_child(node, tree->node) {
@@ -709,7 +709,7 @@ static int lscmd(UaContext *ua, TreeContext *tree)
          } else {
             tag = "";
          }
-         ua->send_msg("%s%s%s\n", tag, node->fname, tree_node_has_child(node)?"/":"");
+         ua->SendMsg("%s%s%s\n", tag, node->fname, TreeNodeHasChild(node)?"/":"");
       }
    }
    return 1;
@@ -721,13 +721,13 @@ static int lscmd(UaContext *ua, TreeContext *tree)
 static int dot_lsmarkcmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
-   if (!tree_node_has_child(tree->node)) {
+   if (!TreeNodeHasChild(tree->node)) {
       return 1;
    }
    foreach_child(node, tree->node) {
       if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) &&
           (node->extract || node->extract_dir)) {
-         ua->send_msg("%s%s\n", node->fname, tree_node_has_child(node)?"/":"");
+         ua->SendMsg("%s%s\n", node->fname, TreeNodeHasChild(node)?"/":"");
       }
    }
    return 1;
@@ -743,7 +743,7 @@ static void rlsmark(UaContext *ua, TREE_NODE *tnode, int level)
    char indent[max_level*2+1];
    int i, j;
 
-   if (!tree_node_has_child(tnode)) {
+   if (!TreeNodeHasChild(tnode)) {
       return;
    }
 
@@ -766,8 +766,8 @@ static void rlsmark(UaContext *ua, TREE_NODE *tnode, int level)
          } else {
             tag = "";
          }
-         ua->send_msg("%s%s%s%s\n", indent, tag, node->fname, tree_node_has_child(node)?"/":"");
-         if (tree_node_has_child(node)) {
+         ua->SendMsg("%s%s%s%s\n", indent, tag, node->fname, TreeNodeHasChild(node)?"/":"");
+         if (TreeNodeHasChild(node)) {
             rlsmark(ua, node, level+1);
          }
       }
@@ -845,13 +845,13 @@ static int do_dircmd(UaContext *ua, TreeContext *tree, bool dot_cmd)
    struct stat statp;
    char *pcwd;
 
-   if (!tree_node_has_child(tree->node)) {
-      ua->send_msg(_("Node %s has no children.\n"), tree->node->fname);
+   if (!TreeNodeHasChild(tree->node)) {
+      ua->SendMsg(_("Node %s has no children.\n"), tree->node->fname);
       return 1;
    }
 
    ua->guid = new_guid_list();
-   buf = get_pool_memory(PM_FNAME);
+   buf = GetPoolMemory(PM_FNAME);
 
    foreach_child(node, tree->node) {
       const char *tag;
@@ -877,8 +877,8 @@ static int do_dircmd(UaContext *ua, TreeContext *tree, bool dot_cmd)
           * treats soft links as files, so they do not have a trailing
           * slash like directory names.
           */
-         if (node->type == TN_FILE && tree_node_has_child(node)) {
-            pm_strcpy(buf, cwd);
+         if (node->type == TN_FILE && TreeNodeHasChild(node)) {
+            PmStrcpy(buf, cwd);
             pcwd = buf;
             int len = strlen(buf);
             if (len > 1) {
@@ -888,22 +888,22 @@ static int do_dircmd(UaContext *ua, TreeContext *tree, bool dot_cmd)
             pcwd = cwd;
          }
 
-         if (ua->db->get_file_attributes_record(ua->jcr, pcwd, NULL, &fdbr)) {
+         if (ua->db->GetFileAttributesRecord(ua->jcr, pcwd, NULL, &fdbr)) {
             int32_t LinkFI;
-            decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
+            DecodeStat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
          } else {
             /* Something went wrong getting attributes -- print name */
             memset(&statp, 0, sizeof(statp));
          }
 
          ls_output(ua->guid, buf, cwd, tag, &statp, dot_cmd);
-         ua->send_msg("%s\n", buf);
+         ua->SendMsg("%s\n", buf);
 
-         free_pool_memory(cwd);
+         FreePoolMemory(cwd);
       }
    }
 
-   free_pool_memory(buf);
+   FreePoolMemory(buf);
 
    return 1;
 }
@@ -929,9 +929,9 @@ static int estimatecmd(UaContext *ua, TreeContext *tree)
    char ec1[50];
 
    total = num_extract = 0;
-   for (node = first_tree_node(tree->root);
+   for (node = FirstTreeNode(tree->root);
         node;
-        node = next_tree_node(node)) {
+        node = NextTreeNode(node)) {
       if (node->type != TN_NEWDIR) {
          total++;
          if (node->extract && node->type == TN_FILE) {
@@ -944,15 +944,15 @@ static int estimatecmd(UaContext *ua, TreeContext *tree)
             fdbr.FileId = 0;
             fdbr.JobId = node->JobId;
 
-            if (ua->db->get_file_attributes_record(ua->jcr, cwd, NULL, &fdbr)) {
+            if (ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
                int32_t LinkFI;
-               decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
+               DecodeStat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
                if (S_ISREG(statp.st_mode) && statp.st_size > 0) {
                   total_bytes += statp.st_size;
                }
             }
 
-            free_pool_memory(cwd);
+            FreePoolMemory(cwd);
          } else if (node->extract || node->extract_dir) {
             /*
              * Directory, count only
@@ -961,7 +961,7 @@ static int estimatecmd(UaContext *ua, TreeContext *tree)
          }
       }
    }
-   ua->send_msg(_("%d total files; %d marked to be restored; %s bytes.\n"),
+   ua->SendMsg(_("%d total files; %d marked to be restored; %s bytes.\n"),
             total, num_extract, edit_uint64_with_commas(total_bytes, ec1));
    return 1;
 }
@@ -970,16 +970,16 @@ static int helpcmd(UaContext *ua, TreeContext *tree)
 {
    unsigned int i;
 
-   ua->send_msg(_("  Command    Description\n  =======    ===========\n"));
+   ua->SendMsg(_("  Command    Description\n  =======    ===========\n"));
    for (i = 0; i < comsize; i++) {
       /*
        * List only non-dot commands
        */
       if (commands[i].key[0] != '.') {
-         ua->send_msg("  %-10s %s\n", _(commands[i].key), _(commands[i].help));
+         ua->SendMsg("  %-10s %s\n", _(commands[i].key), _(commands[i].help));
       }
    }
-   ua->send_msg("\n");
+   ua->SendMsg("\n");
    return 1;
 }
 
@@ -994,7 +994,7 @@ static int cdcmd(UaContext *ua, TreeContext *tree)
    POOLMEM *cwd;
 
    if (ua->argc != 2) {
-      ua->error_msg(_("Too few or too many arguments. Try using double quotes.\n"));
+      ua->ErrorMsg(_("Too few or too many arguments. Try using double quotes.\n"));
       return 1;
    }
 
@@ -1004,15 +1004,15 @@ static int cdcmd(UaContext *ua, TreeContext *tree)
        * Try once more if Win32 drive -- make absolute
        */
       if (ua->argk[1][1] == ':') {  /* win32 drive */
-         cwd = get_pool_memory(PM_FNAME);
-         pm_strcpy(cwd, "/");
-         pm_strcat(cwd, ua->argk[1]);
+         cwd = GetPoolMemory(PM_FNAME);
+         PmStrcpy(cwd, "/");
+         PmStrcat(cwd, ua->argk[1]);
          node = tree_cwd(cwd, tree->root, tree->node);
-         free_pool_memory(cwd);
+         FreePoolMemory(cwd);
       }
 
       if (!node) {
-         ua->warning_msg(_("Invalid path given.\n"));
+         ua->WarningMsg(_("Invalid path given.\n"));
       } else {
          tree->node = node;
       }
@@ -1030,11 +1030,11 @@ static int pwdcmd(UaContext *ua, TreeContext *tree)
    cwd = tree_getpath(tree->node);
    if (cwd) {
       if (ua->api) {
-         ua->send_msg("%s", cwd);
+         ua->SendMsg("%s", cwd);
       } else {
-         ua->send_msg(_("cwd is: %s\n"), cwd);
+         ua->SendMsg(_("cwd is: %s\n"), cwd);
       }
-      free_pool_memory(cwd);
+      FreePoolMemory(cwd);
    }
 
    return 1;
@@ -1046,8 +1046,8 @@ static int dot_pwdcmd(UaContext *ua, TreeContext *tree)
 
    cwd = tree_getpath(tree->node);
    if (cwd) {
-      ua->send_msg("%s", cwd);
-      free_pool_memory(cwd);
+      ua->SendMsg("%s", cwd);
+      FreePoolMemory(cwd);
    }
 
    return 1;
@@ -1060,8 +1060,8 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
    int count = 0;
    bool restore_cwd = false;
 
-   if (ua->argc < 2 || !tree_node_has_child(tree->node)) {
-      ua->send_msg(_("No files unmarked.\n"));
+   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
+      ua->SendMsg(_("No files unmarked.\n"));
       return 1;
    }
 
@@ -1078,22 +1078,22 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
        */
       if (strchr(ua->argk[i], '/')) {
          int pnl, fnl;
-         POOLMEM *file = get_pool_memory(PM_FNAME);
-         POOLMEM *path = get_pool_memory(PM_FNAME);
+         POOLMEM *file = GetPoolMemory(PM_FNAME);
+         POOLMEM *path = GetPoolMemory(PM_FNAME);
 
          /*
           * Split the argument into a path and file part.
           */
-         split_path_and_filename(ua->argk[i], path, &pnl, file, &fnl);
+         SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
 
          /*
           * First change the CWD to the correct PATH.
           */
          node = tree_cwd(path, tree->root, tree->node);
          if (!node) {
-            ua->warning_msg(_("Invalid path %s given.\n"), path);
-            free_pool_memory(file);
-            free_pool_memory(path);
+            ua->WarningMsg(_("Invalid path %s given.\n"), path);
+            FreePoolMemory(file);
+            FreePoolMemory(path);
             continue;
          }
          tree->node = node;
@@ -1105,8 +1105,8 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
             }
          }
 
-         free_pool_memory(file);
-         free_pool_memory(path);
+         FreePoolMemory(file);
+         FreePoolMemory(path);
       } else {
          /*
           * Only a pattern without a / so do things relative to CWD.
@@ -1120,12 +1120,12 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
    }
 
    if (count == 0) {
-      ua->send_msg(_("No files unmarked.\n"));
+      ua->SendMsg(_("No files unmarked.\n"));
    } else if (count == 1) {
-      ua->send_msg(_("1 file unmarked.\n"));
+      ua->SendMsg(_("1 file unmarked.\n"));
    } else {
       char ed1[50];
-      ua->send_msg(_("%s files unmarked.\n"), edit_uint64_with_commas(count, ed1));
+      ua->SendMsg(_("%s files unmarked.\n"), edit_uint64_with_commas(count, ed1));
    }
 
    /*
@@ -1134,14 +1134,14 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
    if (restore_cwd && cwd) {
       node = tree_cwd(cwd, tree->root, tree->node);
       if (!node) {
-         ua->warning_msg(_("Invalid path %s given.\n"), cwd);
+         ua->WarningMsg(_("Invalid path %s given.\n"), cwd);
       } else {
          tree->node = node;
       }
    }
 
    if (cwd) {
-      free_pool_memory(cwd);
+      FreePoolMemory(cwd);
    }
 
    return 1;
@@ -1152,8 +1152,8 @@ static int unmarkdircmd(UaContext *ua, TreeContext *tree)
    TREE_NODE *node;
    int count = 0;
 
-   if (ua->argc < 2 || !tree_node_has_child(tree->node)) {
-      ua->send_msg(_("No directories unmarked.\n"));
+   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
+      ua->SendMsg(_("No directories unmarked.\n"));
       return 1;
    }
 
@@ -1170,11 +1170,11 @@ static int unmarkdircmd(UaContext *ua, TreeContext *tree)
    }
 
    if (count == 0) {
-      ua->send_msg(_("No directories unmarked.\n"));
+      ua->SendMsg(_("No directories unmarked.\n"));
    } else if (count == 1) {
-      ua->send_msg(_("1 directory unmarked.\n"));
+      ua->SendMsg(_("1 directory unmarked.\n"));
    } else {
-      ua->send_msg(_("%d directories unmarked.\n"), count);
+      ua->SendMsg(_("%d directories unmarked.\n"), count);
    }
    return 1;
 }

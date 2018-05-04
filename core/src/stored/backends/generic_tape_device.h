@@ -36,28 +36,28 @@ public:
    /*
     * Interface from Device
     */
-   virtual void open_device(DeviceControlRecord *dcr, int omode);
-   virtual char *status_dev();
+   virtual void OpenDevice(DeviceControlRecord *dcr, int omode);
+   virtual char *StatusDev();
    virtual bool eod(DeviceControlRecord *dcr);
-   virtual void set_ateof();
-   virtual void set_ateot();
+   virtual void SetAteof();
+   virtual void SetAteot();
    virtual bool offline();
    virtual bool weof(int num);
    virtual bool fsf(int num);
    virtual bool bsf(int num);
    virtual bool fsr(int num);
    virtual bool bsr(int num);
-   virtual bool load_dev();
-   virtual void lock_door();
-   virtual void unlock_door();
+   virtual bool LoadDev();
+   virtual void LockDoor();
+   virtual void UnlockDoor();
    virtual void clrerror(int func);
-   virtual void set_os_device_parameters(DeviceControlRecord *dcr);
-   virtual int32_t get_os_tape_file();
+   virtual void SetOsDeviceParameters(DeviceControlRecord *dcr);
+   virtual int32_t GetOsTapeFile();
    virtual bool rewind(DeviceControlRecord *dcr);
-   virtual bool update_pos(DeviceControlRecord *dcr);
+   virtual bool UpdatePos(DeviceControlRecord *dcr);
    virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
-   virtual bool mount_backend(DeviceControlRecord *dcr, int timeout);
-   virtual bool unmount_backend(DeviceControlRecord *dcr, int timeout);
+   virtual bool MountBackend(DeviceControlRecord *dcr, int timeout);
+   virtual bool UnmountBackend(DeviceControlRecord *dcr, int timeout);
    virtual int d_close(int);
    virtual int d_open(const char *pathname, int flags, int mode);
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);

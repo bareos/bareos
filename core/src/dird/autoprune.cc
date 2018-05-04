@@ -67,13 +67,13 @@ void do_autoprune(JobControlRecord *jcr)
    }
 
    if (job->PruneFiles || client->AutoPrune) {
-      prune_files(ua, client, pool);
+      PruneFiles(ua, client, pool);
       pruned = true;
    }
    if (pruned) {
       Jmsg(jcr, M_INFO, 0, _("End auto prune.\n\n"));
    }
-   free_ua_context(ua);
+   FreeUaContext(ua);
    return;
 }
 
@@ -81,8 +81,8 @@ void do_autoprune(JobControlRecord *jcr)
  * Prune at least one Volume in current Pool. This is called from catreq.c => next_vol.c
  * when the Storage daemon is asking for another volume and no appendable volumes are available.
  */
-void prune_volumes(JobControlRecord *jcr, bool InChanger,
-                   MediaDbRecord *mr, StoreResource *store)
+void PruneVolumes(JobControlRecord *jcr, bool InChanger,
+                   MediaDbRecord *mr, StorageResource *store)
 {
    int i;
    int count;
@@ -104,7 +104,7 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
    prune_list.JobId = (JobId_t *)malloc(sizeof(JobId_t) * prune_list.max_ids);
 
    ua = new_ua_context(jcr);
-   db_lock(jcr->db);
+   DbLock(jcr->db);
 
    /*
     * Edit PoolId
@@ -116,7 +116,7 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
     */
    memset(&spr, 0, sizeof(spr));
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
-   if (jcr->db->get_pool_record(jcr, &spr)) {
+   if (jcr->db->GetPoolRecord(jcr, &spr)) {
       edit_int64(spr.PoolId, ed2);
       bstrncat(ed2, ",", sizeof(ed2));
    } else {
@@ -155,7 +155,7 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
    }
 
    Dmsg1(100, "query=%s\n", query.c_str());
-   if (!jcr->db->get_query_dbids(ua->jcr, query, ids)) {
+   if (!jcr->db->GetQueryDbids(ua->jcr, query, ids)) {
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
@@ -169,7 +169,7 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
       memset(&lmr, 0, sizeof(lmr));
       lmr.MediaId = ids.DBId[i];
       Dmsg1(100, "Get record MediaId=%d\n", (int)lmr.MediaId);
-      if (!jcr->db->get_media_record(jcr, &lmr)) {
+      if (!jcr->db->GetMediaRecord(jcr, &lmr)) {
          Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
          continue;
       }
@@ -183,13 +183,13 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
       if (bstrcmp(lmr.VolStatus, "Full") ||
           bstrcmp(lmr.VolStatus, "Used")) {
          Dmsg2(100, "Add prune list MediaId=%d Volume %s\n", (int)lmr.MediaId, lmr.VolumeName);
-         count = get_prune_list_for_volume(ua, &lmr, &prune_list);
+         count = GetPruneListForVolume(ua, &lmr, &prune_list);
          Dmsg1(100, "Num pruned = %d\n", count);
          if (count != 0) {
-            purge_job_list_from_catalog(ua, prune_list);
+            PurgeJobListFromCatalog(ua, prune_list);
             prune_list.num_ids = 0;             /* reset count */
          }
-         if (!is_volume_purged(ua, &lmr)) {
+         if (!IsVolumePurged(ua, &lmr)) {
             Dmsg1(050, "Vol=%s not pruned\n", lmr.VolumeName);
             continue;
          }
@@ -211,7 +211,7 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
             continue;
          }
 
-         if (has_volume_expired(jcr, &lmr)) {
+         if (HasVolumeExpired(jcr, &lmr)) {
             Dmsg1(100, "Vol=%s has expired\n", lmr.VolumeName);
             continue;                     /* Volume not usable */
          }
@@ -222,7 +222,7 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
          if (lmr.PoolId == mr->PoolId) {
             Dmsg2(100, "Got Vol=%s MediaId=%d purged.\n", lmr.VolumeName, (int)lmr.MediaId);
             memcpy(mr, &lmr, sizeof(MediaDbRecord));
-            set_storageid_in_mr(store, mr);
+            SetStorageidInMr(store, mr);
             break;                        /* got a volume */
          }
       }
@@ -230,8 +230,8 @@ void prune_volumes(JobControlRecord *jcr, bool InChanger,
 
 bail_out:
    Dmsg0(100, "Leave prune volumes\n");
-   db_unlock(jcr->db);
-   free_ua_context(ua);
+   DbUnlock(jcr->db);
+   FreeUaContext(ua);
    if (prune_list.JobId) {
       free(prune_list.JobId);
    }

@@ -36,8 +36,8 @@ public:
    /*
     * Interface from Device
     */
-   bool mount_backend(DeviceControlRecord *dcr, int timeout);
-   bool unmount_backend(DeviceControlRecord *dcr, int timeout);
+   bool MountBackend(DeviceControlRecord *dcr, int timeout);
+   bool UnmountBackend(DeviceControlRecord *dcr, int timeout);
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);

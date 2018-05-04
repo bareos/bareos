@@ -200,7 +200,7 @@ static struct s_fs_opt FS_options[] = {
 #define PERMITTED_ACCURATE_OPTIONS (const char *)"ipnugsamcd51A"
 #define PERMITTED_BASEJOB_OPTIONS (const char *)"ipnugsamcd51"
 
-void find_used_compressalgos(PoolMem* compressalgos, JobControlRecord* jcr);
+void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr);
 bool print_incexc_schema_json(PoolMem &buffer, int level,
                               const int type, const bool last = false);
 bool print_options_schema_json(PoolMem &buffer, int level,

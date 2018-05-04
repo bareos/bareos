@@ -116,7 +116,7 @@ bail_out:
 /*
  * Receive a lowlevel SCSI cmd from a SCSI device using the Linux SG_IO ioctl interface.
  */
-bool recv_scsi_cmd_page(int fd, const char *device_name,
+bool RecvScsiCmdPage(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len)
 {
@@ -136,7 +136,7 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
 /*
  * Check if the SCSI sense is EOD.
  */
-bool check_scsi_at_eod(int fd)
+bool CheckScsiAtEod(int fd)
 {
    int rc;
    SCSI_PAGE_SENSE sense;
@@ -227,7 +227,7 @@ bail_out:
 /*
  * Receive a lowlevel SCSI cmd from a SCSI device using the Solaris USCSI ioctl interface.
  */
-bool recv_scsi_cmd_page(int fd, const char *device_name,
+bool RecvScsiCmdPage(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len)
 {
@@ -246,7 +246,7 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
                           (USCSI_WRITE | USCSI_SILENT | USCSI_RQENABLE));
 }
 
-bool check_scsi_at_eod(int fd)
+bool CheckScsiAtEod(int fd)
 {
    return false;
 }
@@ -359,7 +359,7 @@ bail_out:
 /*
  * Receive a lowlevel SCSI cmd from a SCSI device using the FreeBSD SCSI CAM interface.
  */
-bool recv_scsi_cmd_page(int fd, const char *device_name,
+bool RecvScsiCmdPage(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len)
 {
@@ -376,7 +376,7 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
    return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len, CAM_DIR_OUT);
 }
 
-bool check_scsi_at_eod(int fd)
+bool CheckScsiAtEod(int fd)
 {
    return false;
 }
@@ -480,7 +480,7 @@ bail_out:
  * Receive a lowlevel SCSI cmd from a SCSI device using the NetBSD/OpenBSD
  * SCIOCCOMMAND ioctl interface.
  */
-bool recv_scsi_cmd_page(int fd, const char *device_name,
+bool RecvScsiCmdPage(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len)
 {
@@ -498,7 +498,7 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
    return do_scsi_cmd_page(fd, device_name, cdb, cdb_len, cmd_page, cmd_page_len, SCCMD_WRITE);
 }
 
-bool check_scsi_at_eod(int fd)
+bool CheckScsiAtEod(int fd)
 {
    return false;
 }
@@ -507,7 +507,7 @@ bool check_scsi_at_eod(int fd)
 /*
  * Dummy lowlevel functions when no support for platform.
  */
-bool recv_scsi_cmd_page(int fd, const char *device_name,
+bool RecvScsiCmdPage(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len)
 {
@@ -521,7 +521,7 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
    return false;
 }
 
-bool check_scsi_at_eod(int fd)
+bool CheckScsiAtEod(int fd)
 {
    return false;
 }

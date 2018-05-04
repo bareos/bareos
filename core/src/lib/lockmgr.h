@@ -27,8 +27,8 @@
 /*
  * P and V op that don't use the lock manager (for memory allocation or on win32)
  */
-DLL_IMP_EXP void lmgr_p(pthread_mutex_t *m);
-DLL_IMP_EXP void lmgr_v(pthread_mutex_t *m);
+DLL_IMP_EXP void Lmgr_p(pthread_mutex_t *m);
+DLL_IMP_EXP void Lmgr_v(pthread_mutex_t *m);
 
 #ifdef BAREOS_INCLUDE_VERSION_H_
 
@@ -43,11 +43,11 @@ typedef struct bthread_mutex_t
  */
 #define LMGR_MAX_LOCK 32
 
-int bthread_cond_wait_p(pthread_cond_t *cond,
+int BthreadCondWait_p(pthread_cond_t *cond,
                         bthread_mutex_t *mutex,
                         const char *file="*unknown*", int line=0);
 
-int bthread_cond_timedwait_p(pthread_cond_t *cond,
+int BthreadCondTimedwait_p(pthread_cond_t *cond,
                              bthread_mutex_t *mutex,
                              const struct timespec * abstime,
                              const char *file="*unknown*", int line=0);
@@ -55,11 +55,11 @@ int bthread_cond_timedwait_p(pthread_cond_t *cond,
 /*
  * Same with real pthread_mutex_t
  */
-int bthread_cond_wait_p(pthread_cond_t *cond,
+int BthreadCondWait_p(pthread_cond_t *cond,
                         pthread_mutex_t *mutex,
                         const char *file="*unknown*", int line=0);
 
-int bthread_cond_timedwait_p(pthread_cond_t *cond,
+int BthreadCondTimedwait_p(pthread_cond_t *cond,
                              pthread_mutex_t *mutex,
                              const struct timespec * abstime,
                              const char *file="*unknown*", int line=0);
@@ -67,25 +67,25 @@ int bthread_cond_timedwait_p(pthread_cond_t *cond,
 /*
  * Replacement of pthread_mutex_lock()  but with real pthread_mutex_t
  */
-int bthread_mutex_lock_p(pthread_mutex_t *m,
+int BthreadMutexLock_p(pthread_mutex_t *m,
                          const char *file="*unknown*", int line=0);
 
 /*
  * Replacement for pthread_mutex_unlock() but with real pthread_mutex_t
  */
-int bthread_mutex_unlock_p(pthread_mutex_t *m,
+int BthreadMutexUnlock_p(pthread_mutex_t *m,
                            const char *file="*unknown*", int line=0);
 
 /*
  * Replacement of pthread_mutex_lock()
  */
-int bthread_mutex_lock_p(bthread_mutex_t *m,
+int BthreadMutexLock_p(bthread_mutex_t *m,
                          const char *file="*unknown*", int line=0);
 
 /*
  * Replacement of pthread_mutex_unlock()
  */
-int bthread_mutex_unlock_p(bthread_mutex_t *m,
+int BthreadMutexUnlock_p(bthread_mutex_t *m,
                            const char *file="*unknown*", int line=0);
 
 /*
@@ -102,24 +102,24 @@ int lmgr_mutex_is_locked(void *m);
 /*
  * Call before requesting the lock
  */
-void lmgr_pre_lock(void *m, int prio=0,
+void LmgrPreLock(void *m, int prio=0,
                    const char *file="*unknown*", int line=0);
 
 /*
  * Call after getting it
  */
-void lmgr_post_lock();
+void LmgrPostLock();
 
 /*
  * Same as pre+post lock
  */
-void lmgr_do_lock(void *m, int prio=0,
+void LmgrDoLock(void *m, int prio=0,
                   const char *file="*unknown*", int line=0);
 
 /*
  * Call just before releasing the lock
  */
-void lmgr_do_unlock(void *m);
+void LmgrDoUnlock(void *m);
 
 /*
  * We use C++ mangling to make integration eaysier
@@ -127,51 +127,51 @@ void lmgr_do_unlock(void *m);
 int pthread_mutex_init(bthread_mutex_t *m, const pthread_mutexattr_t *attr);
 int pthread_mutex_destroy(bthread_mutex_t *m);
 
-void bthread_mutex_set_priority(bthread_mutex_t *m, int prio);
+void BthreadMutexSetPriority(bthread_mutex_t *m, int prio);
 
 /*
  * Each thread have to call this function to put a lmgr_thread_t object
  * in the stack and be able to call mutex_lock/unlock
  */
-void lmgr_init_thread();
+void LmgrInitThread();
 
 /*
  * Call this function at the end of the thread
  */
-void lmgr_cleanup_thread();
+void LmgrCleanupThread();
 
 /*
  * Call this at the end of the program, it will release the
  * global lock manager
  */
-void lmgr_cleanup_main();
+void LmgrCleanupMain();
 
 /*
  * Dump each lmgr_thread_t object to stdout
  */
-void lmgr_dump();
+void LmgrDump();
 
 /*
  * Search a deadlock
  */
-bool lmgr_detect_deadlock();
+bool LmgrDetectDeadlock();
 
 /*
  * Search a deadlock after a fatal signal no lock are granted, so the program must be stopped.
  */
-bool lmgr_detect_deadlock_unlocked();
+bool LmgrDetectDeadlockUnlocked();
 
 /*
- * This function will run your thread with lmgr_init_thread() and lmgr_cleanup_thread().
+ * This function will run your thread with LmgrInitThread() and LmgrCleanupThread().
  */
-int lmgr_thread_create(pthread_t *thread,
+int LmgrThreadCreate(pthread_t *thread,
                        const pthread_attr_t *attr,
                        void *(*start_routine)(void*), void *arg);
 
 /*
  * Can use SAFEKILL to check if the argument is a valid threadid
  */
-int bthread_kill(pthread_t thread, int sig,
+int BthreadKill(pthread_t thread, int sig,
                  const char *file="*unknown*", int line=0);
 
 #define BTHREAD_MUTEX_NO_PRIORITY      {PTHREAD_MUTEX_INITIALIZER, 0}
@@ -186,53 +186,53 @@ int bthread_kill(pthread_t thread, int sig,
 #define BTHREAD_MUTEX_PRIORITY(p) BTHREAD_MUTEX_NO_PRIORITY
 #endif
 
-#define bthread_mutex_lock(x) bthread_mutex_lock_p(x, __FILE__, __LINE__)
-#define bthread_mutex_unlock(x) bthread_mutex_unlock_p(x, __FILE__, __LINE__)
-#define bthread_cond_wait(x,y) bthread_cond_wait_p(x,y, __FILE__, __LINE__)
-#define bthread_cond_timedwait(x,y,z) bthread_cond_timedwait_p(x,y,z, __FILE__, __LINE__)
+#define BthreadMutexLock(x) BthreadMutexLock_p(x, __FILE__, __LINE__)
+#define BthreadMutexUnlock(x) BthreadMutexUnlock_p(x, __FILE__, __LINE__)
+#define BthreadCondWait(x,y) BthreadCondWait_p(x,y, __FILE__, __LINE__)
+#define BthreadCondTimedwait(x,y,z) BthreadCondTimedwait_p(x,y,z, __FILE__, __LINE__)
 
 /*
  * Define _LOCKMGR_COMPLIANT to use real pthread functions
  */
 #ifdef _LOCKMGR_COMPLIANT
-#define P(x) lmgr_p(&(x))
-#define V(x) lmgr_v(&(x))
+#define P(x) Lmgr_p(&(x))
+#define V(x) Lmgr_v(&(x))
 #else
-#define P(x) bthread_mutex_lock_p(&(x), __FILE__, __LINE__)
-#define V(x) bthread_mutex_unlock_p(&(x), __FILE__, __LINE__)
-#define pthread_create(a,b,c,d) lmgr_thread_create(a,b,c,d)
-#define pthread_mutex_lock(x) bthread_mutex_lock(x)
-#define pthread_mutex_unlock(x) bthread_mutex_unlock(x)
-#define pthread_cond_wait(x,y) bthread_cond_wait(x,y)
-#define pthread_cond_timedwait(x,y,z) bthread_cond_timedwait(x,y,z)
+#define P(x) BthreadMutexLock_p(&(x), __FILE__, __LINE__)
+#define V(x) BthreadMutexUnlock_p(&(x), __FILE__, __LINE__)
+#define pthread_create(a,b,c,d) LmgrThreadCreate(a,b,c,d)
+#define pthread_mutex_lock(x) BthreadMutexLock(x)
+#define pthread_mutex_unlock(x) BthreadMutexUnlock(x)
+#define pthread_cond_wait(x,y) BthreadCondWait(x,y)
+#define pthread_cond_timedwait(x,y,z) BthreadCondTimedwait(x,y,z)
 #ifdef USE_LOCKMGR_SAFEKILL
-#define pthread_kill(a,b) bthread_kill((a),(b), __FILE__, __LINE__)
+#define pthread_kill(a,b) BthreadKill((a),(b), __FILE__, __LINE__)
 #endif
 #endif
 #else /* BAREOS_INCLUDE_VERSION_H_ */
 #define lmgr_detect_deadloc()
-#define lmgr_dump()
-#define lmgr_init_thread()
-#define lmgr_cleanup_thread()
-#define lmgr_pre_lock(m,prio,f,l)
-#define lmgr_post_lock()
-#define lmgr_do_lock(m,prio,f,l)
-#define lmgr_do_unlock(m)
-#define lmgr_cleanup_main()
-#define bthread_mutex_set_priority(a,b)
-#define bthread_mutex_lock(a) pthread_mutex_lock(a)
-#define bthread_mutex_lock_p(a,f,l) pthread_mutex_lock(a)
-#define bthread_mutex_unlock(a) pthread_mutex_unlock(a)
-#define bthread_mutex_unlock_p(a,f,l) pthread_mutex_unlock(a)
+#define LmgrDump()
+#define LmgrInitThread()
+#define LmgrCleanupThread()
+#define LmgrPreLock(m,prio,f,l)
+#define LmgrPostLock()
+#define LmgrDoLock(m,prio,f,l)
+#define LmgrDoUnlock(m)
+#define LmgrCleanupMain()
+#define BthreadMutexSetPriority(a,b)
+#define BthreadMutexLock(a) pthread_mutex_lock(a)
+#define BthreadMutexLock_p(a,f,l) pthread_mutex_lock(a)
+#define BthreadMutexUnlock(a) pthread_mutex_unlock(a)
+#define BthreadMutexUnlock_p(a,f,l) pthread_mutex_unlock(a)
 #define lmgr_cond_wait(a,b) pthread_cond_wait(a,b)
 #define lmgr_cond_timedwait(a,b,c) pthread_cond_timedwait(a,b,c)
 #define bthread_mutex_t pthread_mutex_t
-#define P(x) lmgr_p(&(x))
-#define V(x) lmgr_v(&(x))
+#define P(x) Lmgr_p(&(x))
+#define V(x) Lmgr_v(&(x))
 #define BTHREAD_MUTEX_PRIORITY(p) PTHREAD_MUTEX_INITIALIZER
 #define BTHREAD_MUTEX_NO_PRIORITY PTHREAD_MUTEX_INITIALIZER
 #define BTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #define lmgr_mutex_is_locked(m) (1)
-#define bthread_cond_wait_p(w,x,y,z) pthread_cond_wait(w,x)
+#define BthreadCondWait_p(w,x,y,z) pthread_cond_wait(w,x)
 #endif /* BAREOS_INCLUDE_VERSION_H_ */
 #endif /* BAREOS_LIB_LOCKMGR_H_ */

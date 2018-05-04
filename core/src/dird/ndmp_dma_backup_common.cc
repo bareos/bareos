@@ -42,7 +42,7 @@
 /*
  * Fill the NDMP backup environment table with the data for the data agent to act on.
  */
-bool fill_backup_environment(JobControlRecord *jcr,
+bool FillBackupEnvironment(JobControlRecord *jcr,
                              IncludeExcludeItem *ie,
                              char *filesystem,
                              struct ndm_job_param *job)
@@ -92,7 +92,7 @@ bool fill_backup_environment(JobControlRecord *jcr,
       /*
        * Set the dump level for the backup.
        */
-      jcr->DumpLevel = native_to_ndmp_level(jcr, filesystem);
+      jcr->DumpLevel = NativeToNdmpLevel(jcr, filesystem);
       job->bu_level = jcr->DumpLevel;
       if (job->bu_level == -1) {
          return false;
@@ -128,26 +128,26 @@ bool fill_backup_environment(JobControlRecord *jcr,
        * Pickup any interesting patterns.
        */
       cnt = 0;
-      pm_strcpy(pattern, "");
+      PmStrcpy(pattern, "");
       for (j = 0; j < fo->wild.size(); j++) {
          if (cnt != 0) {
-            pm_strcat(pattern, ",");
+            PmStrcat(pattern, ",");
          }
-         pm_strcat(pattern, (char *)fo->wild.get(j));
+         PmStrcat(pattern, (char *)fo->wild.get(j));
          cnt++;
       }
       for (j = 0; j < fo->wildfile.size(); j++) {
          if (cnt != 0) {
-            pm_strcat(pattern, ",");
+            PmStrcat(pattern, ",");
          }
-         pm_strcat(pattern, (char *)fo->wildfile.get(j));
+         PmStrcat(pattern, (char *)fo->wildfile.get(j));
          cnt++;
       }
       for (j = 0; j < fo->wilddir.size(); j++) {
          if (cnt != 0) {
-            pm_strcat(pattern, ",");
+            PmStrcat(pattern, ",");
          }
-         pm_strcat(pattern, (char *)fo->wilddir.get(j));
+         PmStrcat(pattern, (char *)fo->wilddir.get(j));
          cnt++;
       }
 
@@ -177,7 +177,7 @@ bool fill_backup_environment(JobControlRecord *jcr,
        * Parse all specific META tags for this option block.
        */
       for (j = 0; j < fo->meta.size(); j++) {
-         ndmp_parse_meta_tag(&job->env_tab, (char *)fo->meta.get(j));
+         NdmpParseMetaTag(&job->env_tab, (char *)fo->meta.get(j));
       }
    }
 
@@ -205,7 +205,7 @@ bool fill_backup_environment(JobControlRecord *jcr,
 /*
  * Translate bareos native backup level to NDMP backup level
  */
-int native_to_ndmp_level(JobControlRecord *jcr, char *filesystem)
+int NativeToNdmpLevel(JobControlRecord *jcr, char *filesystem)
 {
    int level = -1;
 
@@ -243,7 +243,7 @@ int native_to_ndmp_level(JobControlRecord *jcr, char *filesystem)
 /*
  * This glues the NDMP File Handle DB with internal code.
  */
-void register_callback_hooks(struct ndmlog *ixlog)
+void RegisterCallbackHooks(struct ndmlog *ixlog)
 {
 #ifdef HAVE_LMDB
    NIS *nis = (NIS *)ixlog->ctx;
@@ -258,7 +258,7 @@ void register_callback_hooks(struct ndmlog *ixlog)
 #endif
 }
 
-void unregister_callback_hooks(struct ndmlog *ixlog)
+void UnregisterCallbackHooks(struct ndmlog *ixlog)
 {
 #ifdef HAVE_LMDB
    NIS *nis = (NIS *)ixlog->ctx;
@@ -273,7 +273,7 @@ void unregister_callback_hooks(struct ndmlog *ixlog)
 #endif
 }
 
-void process_fhdb(struct ndmlog *ixlog)
+void ProcessFhdb(struct ndmlog *ixlog)
 {
 #ifdef HAVE_LMDB
    NIS *nis = (NIS *)ixlog->ctx;
@@ -291,14 +291,14 @@ void process_fhdb(struct ndmlog *ixlog)
 /*
  * Cleanup a NDMP backup session.
  */
-void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
+void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode)
 {
-   const char *term_msg;
+   const char *TermMsg;
    char term_code[100];
    int msg_type = M_INFO;
    ClientDbRecord cr;
 
-   Dmsg2(100, "Enter ndmp_backup_cleanup %d %c\n", TermCode, TermCode);
+   Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
 
    if (jcr->is_JobStatus(JS_Terminated) &&
@@ -306,32 +306,32 @@ void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
       TermCode = JS_Warnings;
    }
 
-   update_job_end(jcr, TermCode);
+   UpdateJobEnd(jcr, TermCode);
 
-   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+   if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
-   if (!jcr->db->get_client_record(jcr, &cr)) {
+   if (!jcr->db->GetClientRecord(jcr, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
          jcr->db->strerror());
    }
 
-   update_bootstrap_file(jcr);
+   UpdateBootstrapFile(jcr);
 
    switch (jcr->JobStatus) {
       case JS_Terminated:
-         term_msg = _("Backup OK");
+         TermMsg = _("Backup OK");
          break;
       case JS_Warnings:
-         term_msg = _("Backup OK -- with warnings");
+         TermMsg = _("Backup OK -- with warnings");
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-         term_msg = _("*** Backup Error ***");
+         TermMsg = _("*** Backup Error ***");
          msg_type = M_ERROR;          /* Generate error message */
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
@@ -341,7 +341,7 @@ void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
          }
          break;
       case JS_Canceled:
-         term_msg = _("Backup Canceled");
+         TermMsg = _("Backup Canceled");
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
             if (jcr->SD_msg_chan_started) {
@@ -350,19 +350,19 @@ void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
          }
          break;
       default:
-         term_msg = term_code;
+         TermMsg = term_code;
          sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
          break;
    }
 
-   generate_backup_summary(jcr, &cr, msg_type, term_msg);
+   GenerateBackupSummary(jcr, &cr, msg_type, TermMsg);
 
-   Dmsg0(100, "Leave ndmp_backup_cleanup\n");
+   Dmsg0(100, "Leave NdmpBackupCleanup\n");
 }
 
 #else  /* HAVE_NDMP */
 
-void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
+void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

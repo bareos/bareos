@@ -64,10 +64,10 @@ void *rblist::insert(void *item, int compare(void *item1, void *item2))
    if (found) {                    /* found? */
       return found;                /* yes, return item found */
    }
-   set_left(item, NULL);
-   set_right(item, NULL);
-   set_parent(item, NULL);
-   set_red(item, false);
+   SetLeft(item, NULL);
+   SetRight(item, NULL);
+   SetParent(item, NULL);
+   SetRed(item, false);
    /* Handle empty tree */
    if (num_items == 0) {
       head = item;
@@ -77,12 +77,12 @@ void *rblist::insert(void *item, int compare(void *item1, void *item2))
    x = last;
    /* Not found, so insert it on appropriate side of tree */
    if (comp < 0) {
-      set_left(last, item);
+      SetLeft(last, item);
    } else {
-      set_right(last, item);
+      SetRight(last, item);
    }
-   set_red(last, true);
-   set_parent(item, last);
+   SetRed(last, true);
+   SetParent(item, last);
    num_items++;
 
    /* Now we must walk up the tree balancing it */
@@ -93,42 +93,42 @@ void *rblist::insert(void *item, int compare(void *item1, void *item2))
          y = right(parent(parent(x)));
          if (y && red(y)) {
             /* our parent must be black */
-            set_red(parent(x), false);
-            set_red(y, false);
-            set_red(parent(parent(x)), true);
+            SetRed(parent(x), false);
+            SetRed(y, false);
+            SetRed(parent(parent(x)), true);
             x = parent(parent(x));       /* move up to grandpa */
          } else {
             if (x == right(parent(x))) { /* right side of parent? */
                x = parent(x);
-               left_rotate(x);
+               LeftRotate(x);
             }
             /* make parent black too */
-            set_red(parent(x), false);
-            set_red(parent(parent(x)), true);
-            right_rotate(parent(parent(x)));
+            SetRed(parent(x), false);
+            SetRed(parent(parent(x)), true);
+            RightRotate(parent(parent(x)));
          }
       } else {
          /* Look at left side of our grandparent */
          y = left(parent(parent(x)));
          if (y && red(y)) {
-            set_red(parent(x), false);
-            set_red(y, false);
-            set_red(parent(parent(x)), true);
+            SetRed(parent(x), false);
+            SetRed(y, false);
+            SetRed(parent(parent(x)), true);
             x = parent(parent(x));       /* move up to grandpa */
          } else {
             if (x == left(parent(x))) {
                x = parent(x);
-               right_rotate(x);
+               RightRotate(x);
             }
             /* make parent black too */
-            set_red(parent(x), false);
-            set_red(parent(parent(x)), true);
-            left_rotate(parent(parent(x)));
+            SetRed(parent(x), false);
+            SetRed(parent(parent(x)), true);
+            LeftRotate(parent(parent(x)));
          }
       }
    }
    /* Make sure the head is always black */
-   set_red(head, false);
+   SetRed(head, false);
    return item;
 }
 
@@ -267,51 +267,51 @@ void *rblist::any(void *item)
 
 
 /* x is item, y is below and to right, then rotated to below left */
-void rblist::left_rotate(void *item)
+void rblist::LeftRotate(void *item)
 {
    void *y;
    void *x;
 
    x = item;
    y = right(x);
-   set_right(x, left(y));
+   SetRight(x, left(y));
    if (left(y)) {
-      set_parent(left(y), x);
+      SetParent(left(y), x);
    }
-   set_parent(y, parent(x));
+   SetParent(y, parent(x));
    /* if no parent then we have a new head */
    if (!parent(x)) {
       head = y;
    } else if (x == left(parent(x))) {
-      set_left(parent(x), y);
+      SetLeft(parent(x), y);
    } else {
-      set_right(parent(x), y);
+      SetRight(parent(x), y);
    }
-   set_left(y, x);
-   set_parent(x, y);
+   SetLeft(y, x);
+   SetParent(x, y);
 }
 
-void rblist::right_rotate(void *item)
+void rblist::RightRotate(void *item)
 {
    void *x, *y;
 
    y = item;
    x = left(y);
-   set_left(y, right(x));
+   SetLeft(y, right(x));
    if (right(x)) {
-      set_parent(right(x), y);
+      SetParent(right(x), y);
    }
-   set_parent(x, parent(y));
+   SetParent(x, parent(y));
    /* if no parent then we have a new head */
    if (!parent(y)) {
       head = x;
    } else if (y == left(parent(y))) {
-      set_left(parent(y), x);
+      SetLeft(parent(y), x);
    } else {
-      set_right(parent(y), x);
+      SetRight(parent(y), x);
    }
-   set_right(x, y);
-   set_parent(y, x);
+   SetRight(x, y);
+   SetParent(y, x);
 }
 
 
@@ -330,9 +330,9 @@ void rblist::destroy()
       /* Prune the last item */
       if (parent(x)) {
          if (x == left(parent(x))) {
-            set_left(parent(x), NULL);
+            SetLeft(parent(x), NULL);
          } else if (x == right(parent(x))) {
-            set_right(parent(x), NULL);
+            SetRight(parent(x), NULL);
          }
       }
       if (!left(x) && !right(x)) {

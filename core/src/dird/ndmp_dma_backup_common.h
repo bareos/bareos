@@ -22,14 +22,14 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
 #define BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
 
-bool fill_backup_environment(JobControlRecord *jcr,
+bool FillBackupEnvironment(JobControlRecord *jcr,
                              IncludeExcludeItem *ie,
                              char *filesystem,
                              struct ndm_job_param *job);
-int native_to_ndmp_level(JobControlRecord *jcr, char *filesystem);
-void register_callback_hooks(struct ndmlog *ixlog);
-void unregister_callback_hooks(struct ndmlog *ixlog);
-void process_fhdb(struct ndmlog *ixlog);
-void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode);
+int NativeToNdmpLevel(JobControlRecord *jcr, char *filesystem);
+void RegisterCallbackHooks(struct ndmlog *ixlog);
+void UnregisterCallbackHooks(struct ndmlog *ixlog);
+void ProcessFhdb(struct ndmlog *ixlog);
+void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode);
 
 #endif // BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_

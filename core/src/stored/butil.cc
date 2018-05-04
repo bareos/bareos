@@ -72,20 +72,20 @@ JobControlRecord *setup_jcr(const char *name, char *dev_name,
    jcr->setJobLevel(L_FULL);
    jcr->JobStatus = JS_Terminated;
    jcr->where = bstrdup("");
-   jcr->job_name = get_pool_memory(PM_FNAME);
-   pm_strcpy(jcr->job_name, "Dummy.Job.Name");
-   jcr->client_name = get_pool_memory(PM_FNAME);
-   pm_strcpy(jcr->client_name, "Dummy.Client.Name");
+   jcr->job_name = GetPoolMemory(PM_FNAME);
+   PmStrcpy(jcr->job_name, "Dummy.Job.Name");
+   jcr->client_name = GetPoolMemory(PM_FNAME);
+   PmStrcpy(jcr->client_name, "Dummy.Client.Name");
    bstrncpy(jcr->Job, name, sizeof(jcr->Job));
-   jcr->fileset_name = get_pool_memory(PM_FNAME);
-   pm_strcpy(jcr->fileset_name, "Dummy.fileset.name");
-   jcr->fileset_md5 = get_pool_memory(PM_FNAME);
-   pm_strcpy(jcr->fileset_md5, "Dummy.fileset.md5");
+   jcr->fileset_name = GetPoolMemory(PM_FNAME);
+   PmStrcpy(jcr->fileset_name, "Dummy.fileset.name");
+   jcr->fileset_md5 = GetPoolMemory(PM_FNAME);
+   PmStrcpy(jcr->fileset_md5, "Dummy.fileset.md5");
 
-   new_plugins(jcr);  /* instantiate plugins */
+   NewPlugins(jcr);  /* instantiate plugins */
 
-   init_autochangers();
-   create_volume_lists();
+   InitAutochangers();
+   CreateVolumeLists();
 
    if (!setup_to_access_device(dcr, jcr, dev_name, VolumeName, readonly)) {
       return NULL;
@@ -114,7 +114,7 @@ static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *j
    DeviceResource *device;
    char VolName[MAX_NAME_LENGTH];
 
-   init_reservations_lock();
+   InitReservationsLock();
 
    /*
     * If no volume name already given and no bsr, and it is a file,
@@ -148,16 +148,16 @@ static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *j
       return false;
    }
 
-   dev = init_dev(jcr, device);
+   dev = InitDev(jcr, device);
    if (!dev) {
       Jmsg1(jcr, M_FATAL, 0, _("Cannot init device %s\n"), dev_name);
       return false;
    }
    device->dev = dev;
    jcr->dcr = dcr;
-   setup_new_dcr_device(jcr, dcr, dev, NULL);
+   SetupNewDcrDevice(jcr, dcr, dev, NULL);
    if (!readonly) {
-      dcr->set_will_write();
+      dcr->SetWillWrite();
    }
 
    if (VolName[0]) {
@@ -165,16 +165,16 @@ static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *j
    }
    bstrncpy(dcr->dev_name, device->device_name, sizeof(dcr->dev_name));
 
-   create_restore_volume_list(jcr);
+   CreateRestoreVolumeList(jcr);
 
    if (readonly) {                    /* read only access? */
       Dmsg0(100, "Acquire device for read\n");
-      if (!acquire_device_for_read(dcr)) {
+      if (!AcquireDeviceForRead(dcr)) {
          return false;
       }
       jcr->read_dcr = dcr;
    } else {
-      if (!first_open_device(dcr)) {
+      if (!FirstOpenDevice(dcr)) {
          Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
          return false;
       }
@@ -190,36 +190,36 @@ static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *j
 static void my_free_jcr(JobControlRecord *jcr)
 {
    if (jcr->job_name) {
-      free_pool_memory(jcr->job_name);
+      FreePoolMemory(jcr->job_name);
       jcr->job_name = NULL;
    }
 
    if (jcr->client_name) {
-      free_pool_memory(jcr->client_name);
+      FreePoolMemory(jcr->client_name);
       jcr->client_name = NULL;
    }
 
    if (jcr->fileset_name) {
-      free_pool_memory(jcr->fileset_name);
+      FreePoolMemory(jcr->fileset_name);
       jcr->fileset_name = NULL;
    }
 
    if (jcr->fileset_md5) {
-      free_pool_memory(jcr->fileset_md5);
+      FreePoolMemory(jcr->fileset_md5);
       jcr->fileset_md5 = NULL;
    }
 
    if (jcr->comment) {
-      free_pool_memory(jcr->comment);
+      FreePoolMemory(jcr->comment);
       jcr->comment = NULL;
    }
 
    if (jcr->VolList) {
-      free_restore_volume_list(jcr);
+      FreeRestoreVolumeList(jcr);
    }
 
    if (jcr->dcr) {
-      free_dcr(jcr->dcr);
+      FreeDcr(jcr->dcr);
       jcr->dcr = NULL;
    }
 
@@ -287,21 +287,21 @@ static DeviceResource *find_device_res(char *device_name, bool readonly)
 /**
  * Device got an error, attempt to analyse it
  */
-void display_tape_error_status(JobControlRecord *jcr, Device *dev)
+void DisplayTapeErrorStatus(JobControlRecord *jcr, Device *dev)
 {
    char *status;
 
-   status = dev->status_dev();
+   status = dev->StatusDev();
 
-   if (bit_is_set(BMT_EOD, status))
+   if (BitIsSet(BMT_EOD, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Data\n"));
-   else if (bit_is_set(BMT_EOT, status))
+   else if (BitIsSet(BMT_EOT, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Tape\n"));
-   else if (bit_is_set(BMT_EOF, status))
+   else if (BitIsSet(BMT_EOF, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of File\n"));
-   else if (bit_is_set(BMT_DR_OPEN, status))
+   else if (BitIsSet(BMT_DR_OPEN, status))
       Jmsg(jcr, M_ERROR, 0, _("Tape Door is Open\n"));
-   else if (!bit_is_set(BMT_ONLINE, status))
+   else if (!BitIsSet(BMT_ONLINE, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected Tape is Off-line\n"));
 
    free(status);

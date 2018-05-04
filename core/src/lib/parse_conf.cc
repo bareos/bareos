@@ -90,7 +90,7 @@ ConfigurationParser *new_config_parser()
 }
 
 void ConfigurationParser::init(const char *cf,
-                  LEX_ERROR_HANDLER *scan_error,
+                  LEX_ERROR_HANDLER *ScanError,
                   LEX_WARNING_HANDLER *scan_warning,
                   INIT_RES_HANDLER *init_res,
                   STORE_RES_HANDLER *store_res,
@@ -108,7 +108,7 @@ void ConfigurationParser::init(const char *cf,
    config_include_dir_ = NULL;
    config_include_naming_format_ = "%s/%s/%s.conf";
    used_config_path_ = NULL;
-   scan_error_ = scan_error;
+   scan_error_ = ScanError;
    scan_warning_ = scan_warning;
    init_res_ = init_res;
    store_res_ = store_res;
@@ -122,38 +122,38 @@ void ConfigurationParser::init(const char *cf,
    res_head_ = res_head;
 }
 
-void ConfigurationParser::set_default_config_filename(const char *filename)
+void ConfigurationParser::SetDefaultConfigFilename(const char *filename)
 {
    config_default_filename_ = bstrdup(filename);
 }
 
-void ConfigurationParser::set_config_include_dir(const char* rel_path)
+void ConfigurationParser::SetConfigIncludeDir(const char* rel_path)
 {
    config_include_dir_ = bstrdup(rel_path);
 }
 
-bool ConfigurationParser::parse_config()
+bool ConfigurationParser::ParseConfig()
 {
    static bool first = true;
    int errstat;
    PoolMem config_path;
 
-   if (first && (errstat = rwl_init(&res_lock_)) != 0) {
+   if (first && (errstat = RwlInit(&res_lock_)) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
             be.bstrerror(errstat));
    }
    first = false;
 
-   if (!find_config_path(config_path)) {
+   if (!FindConfigPath(config_path)) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
    }
    used_config_path_ = bstrdup(config_path.c_str());
    Dmsg1(100, "config file = %s\n", used_config_path_);
-   return parse_config_file(config_path.c_str(), NULL, scan_error_, scan_warning_, err_type_);
+   return ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_, err_type_);
 }
 
-bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error,
+bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError,
                                LEX_WARNING_HANDLER *scan_warning, int32_t err_type)
 {
    bool result = true;
@@ -170,10 +170,10 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
     * Make two passes. The first builds the name symbol table,
     * and the second picks up the items.
     */
-   Dmsg1(900, "Enter parse_config_file(%s)\n", cf);
+   Dmsg1(900, "Enter ParseConfigFile(%s)\n", cf);
    for (pass = 1; pass <= 2; pass++) {
-      Dmsg1(900, "parse_config pass %d\n", pass);
-      if ((lc = lex_open_file(lc, cf, scan_error, scan_warning)) == NULL) {
+      Dmsg1(900, "ParseConfig pass %d\n", pass);
+      if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == NULL) {
          berrno be;
 
          /*
@@ -182,30 +182,30 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
          lc = (LEX *)malloc(sizeof(LEX));
          memset(lc, 0, sizeof(LEX));
 
-         if (scan_error) {
-            lc->scan_error = scan_error;
+         if (ScanError) {
+            lc->ScanError = ScanError;
          } else {
-            lex_set_default_error_handler(lc);
+            LexSetDefaultErrorHandler(lc);
          }
 
          if (scan_warning) {
             lc->scan_warning = scan_warning;
          } else {
-            lex_set_default_warning_handler(lc);
+            LexSetDefaultWarningHandler(lc);
          }
 
-         lex_set_error_handler_error_type(lc, err_type) ;
+         LexSetErrorHandlerErrorType(lc, err_type) ;
          scan_err2(lc, _("Cannot open config file \"%s\": %s\n"),
             cf, be.bstrerror());
          free(lc);
 
          return false;
       }
-      lex_set_error_handler_error_type(lc, err_type);
+      LexSetErrorHandlerErrorType(lc, err_type);
       lc->error_counter = 0;
       lc->caller_ctx = caller_ctx;
 
-      while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
+      while ((token=LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
          Dmsg3(900, "parse state=%d pass=%d got token=%s\n", state, pass,
                lex_tok_to_str(token));
          switch (state) {
@@ -230,7 +230,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                items = res_table->items;
                state = p_resource;
                res_type = res_table->rcode;
-               init_resource(res_type, items, pass, res_table->initres);
+               InitResource(res_type, items, pass, res_table->initres);
             }
             if (state == p_none) {
                scan_err1(lc, _("expected resource name, got: %s"), lc->str);
@@ -247,7 +247,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                   scan_err1(lc, _("not in resource definition: %s"), lc->str);
                   goto bail_out;
                }
-               i = get_resource_item_index(items, lc->str);
+               i = GetResourceItemIndex(items, lc->str);
                if (i>=0) {
                   item = &items[i];
                   /*
@@ -255,7 +255,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                    *   scan for = after the keyword
                    */
                   if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
-                     token = lex_get_token(lc, BCT_SKIP_EOL);
+                     token = LexGetToken(lc, BCT_SKIP_EOL);
                      Dmsg1 (900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
                      if (token != BCT_EQUALS) {
                         scan_err1(lc, _("expected an equals, got: %s"), lc->str);
@@ -278,7 +278,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                   /*
                    * Call item handler
                    */
-                  if (!store_resource(item->type, lc, item, i, pass)) {
+                  if (!StoreResource(item->type, lc, item, i, pass)) {
                      /*
                       * None of the generic types fired if there is a registered callback call that now.
                       */
@@ -341,7 +341,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
 
       lc = lex_close_file(lc);
    }
-   Dmsg0(900, "Leave parse_config_file()\n");
+   Dmsg0(900, "Leave ParseConfigFile()\n");
 
    return result;
 
@@ -396,7 +396,7 @@ ResourceTable *ConfigurationParser::get_resource_table(const char *resource_type
    return result;
 }
 
-int ConfigurationParser::get_resource_item_index(ResourceItem *items, const char *item)
+int ConfigurationParser::GetResourceItemIndex(ResourceItem *items, const char *item)
 {
    int result = -1;
    int i;
@@ -416,7 +416,7 @@ ResourceItem *ConfigurationParser::get_resource_item(ResourceItem *items, const 
    ResourceItem *result = NULL;
    int i = -1;
 
-   i = get_resource_item_index(items, item);
+   i = GetResourceItemIndex(items, item);
    if (i>=0) {
       result = &items[i];
    }
@@ -474,14 +474,14 @@ bool ConfigurationParser::get_config_file(PoolMem &full_path, const char *config
 {
    bool found = false;
 
-   if (!path_is_directory(config_dir)) {
+   if (!PathIsDirectory(config_dir)) {
       return false;
    }
 
    if (config_filename) {
       full_path.strcpy(config_dir);
-      if (path_append(full_path, config_filename)) {
-         if (path_exists(full_path)) {
+      if (PathAppend(full_path, config_filename)) {
+         if (PathExists(full_path)) {
             config_dir_ = bstrdup(config_dir);
             found = true;
          }
@@ -502,13 +502,13 @@ bool ConfigurationParser::get_config_include_path(PoolMem &full_path, const char
        * On success, full_path will be overwritten with the full path.
        */
       full_path.strcpy(config_dir);
-      path_append(full_path, config_include_dir_);
-      if (path_is_directory(full_path)) {
+      PathAppend(full_path, config_include_dir_);
+      if (PathIsDirectory(full_path)) {
          config_dir_ = bstrdup(config_dir);
          /*
           * Set full_path to wildcard path.
           */
-         if (get_path_of_resource(full_path, NULL, NULL, NULL, true)) {
+         if (GetPathOfResource(full_path, NULL, NULL, NULL, true)) {
             use_config_include_dir_ = true;
             found = true;
          }
@@ -522,7 +522,7 @@ bool ConfigurationParser::get_config_include_path(PoolMem &full_path, const char
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-bool ConfigurationParser::find_config_path(PoolMem &full_path)
+bool ConfigurationParser::FindConfigPath(PoolMem &full_path)
 {
    bool found = false;
    PoolMem config_dir;
@@ -543,11 +543,11 @@ bool ConfigurationParser::find_config_path(PoolMem &full_path)
                  "\"%s\" (config file path) and \"%s\" (config include directory).\n"),
                config_path_file.c_str(), full_path.c_str());
       }
-   } else if (path_exists(cf_)) {
+   } else if (PathExists(cf_)) {
       /*
        * Path is given and exists.
        */
-      if (path_is_directory(cf_)) {
+      if (PathIsDirectory(cf_)) {
          found = get_config_file(full_path, cf_, config_default_filename_);
          if (!found) {
             config_path_file.strcpy(full_path);
@@ -561,7 +561,7 @@ bool ConfigurationParser::find_config_path(PoolMem &full_path)
          }
       } else {
          full_path.strcpy(cf_);
-         path_get_directory(config_dir, full_path);
+         PathGetDirectory(config_dir, full_path);
          config_dir_ = bstrdup(config_dir.c_str());
          found = true;
       }
@@ -588,10 +588,10 @@ bool ConfigurationParser::find_config_path(PoolMem &full_path)
    return found;
 }
 
-void ConfigurationParser::free_resources()
+void ConfigurationParser::FreeResources()
 {
    for (int i = r_first_; i<= r_last_; i++) {
-      free_resource(res_head_[i-r_first_], i);
+      FreeResource(res_head_[i-r_first_], i);
       res_head_[i-r_first_] = NULL;
    }
 
@@ -639,7 +639,7 @@ CommonResourceHeader **ConfigurationParser::new_res_head()
 /*
  * Initialize the static structure to zeros, then apply all the default values.
  */
-void ConfigurationParser::init_resource(int type,
+void ConfigurationParser::InitResource(int type,
                            ResourceItem *items,
                            int pass,
                            std::function<void *(void *res)> initres) {
@@ -690,9 +690,9 @@ void ConfigurationParser::init_resource(int type,
             switch (items[i].type) {
             case CFG_TYPE_BIT:
                if (bstrcasecmp(items[i].default_value, "on")) {
-                  set_bit(items[i].code, items[i].bitvalue);
+                  SetBit(items[i].code, items[i].bitvalue);
                } else if (bstrcasecmp(items[i].default_value, "off")) {
-                  clear_bit(items[i].code, items[i].bitvalue);
+                  ClearBit(items[i].code, items[i].bitvalue);
                }
                break;
             case CFG_TYPE_BOOL:
@@ -731,7 +731,7 @@ void ConfigurationParser::init_resource(int type,
             case CFG_TYPE_DIR: {
                PoolMem pathname(PM_FNAME);
 
-               pm_strcpy(pathname, items[i].default_value);
+               PmStrcpy(pathname, items[i].default_value);
                if (*pathname.c_str() != '|') {
                   int size;
 
@@ -740,7 +740,7 @@ void ConfigurationParser::init_resource(int type,
                    */
                   size = pathname.size() + 1024;
                   pathname.check_size(size);
-                  do_shell_expansion(pathname.c_str(), pathname.size());
+                  DoShellExpansion(pathname.c_str(), pathname.size());
                }
                *items[i].value = bstrdup(pathname.c_str());
                break;
@@ -748,7 +748,7 @@ void ConfigurationParser::init_resource(int type,
             case CFG_TYPE_STDSTRDIR: {
                PoolMem pathname(PM_FNAME);
 
-               pm_strcpy(pathname, items[i].default_value);
+               PmStrcpy(pathname, items[i].default_value);
                if (*pathname.c_str() != '|') {
                   int size;
 
@@ -757,7 +757,7 @@ void ConfigurationParser::init_resource(int type,
                    */
                   size = pathname.size() + 1024;
                   pathname.check_size(size);
-                  do_shell_expansion(pathname.c_str(), pathname.size());
+                  DoShellExpansion(pathname.c_str(), pathname.size());
                }
                *(items[i].strValue) = new std::string(pathname.c_str());
                break;
@@ -776,7 +776,7 @@ void ConfigurationParser::init_resource(int type,
             }
 
             if (!omit_defaults_) {
-               set_bit(i, res_all->hdr.inherit_content);
+               SetBit(i, res_all->hdr.inherit_content);
             }
          }
 
@@ -821,7 +821,7 @@ void ConfigurationParser::init_resource(int type,
                   *(items[i].alistvalue) = New(alist(10, owned_by_alist));
                }
 
-               pm_strcpy(pathname, items[i].default_value);
+               PmStrcpy(pathname, items[i].default_value);
                if (*items[i].default_value != '|') {
                   int size;
 
@@ -830,7 +830,7 @@ void ConfigurationParser::init_resource(int type,
                    */
                   size = pathname.size() + 1024;
                   pathname.check_size(size);
-                  do_shell_expansion(pathname.c_str(), pathname.size());
+                  DoShellExpansion(pathname.c_str(), pathname.size());
                }
                (*(items[i].alistvalue))->append(bstrdup(pathname.c_str()));
                break;
@@ -846,7 +846,7 @@ void ConfigurationParser::init_resource(int type,
             }
 
             if (!omit_defaults_) {
-               set_bit(i, res_all->hdr.inherit_content);
+               SetBit(i, res_all->hdr.inherit_content);
             }
          }
 
@@ -864,7 +864,7 @@ void ConfigurationParser::init_resource(int type,
    }
 }
 
-bool ConfigurationParser::remove_resource(int type, const char *name)
+bool ConfigurationParser::RemoveResource(int type, const char *name)
 {
    int rindex = type - r_first_;
    CommonResourceHeader *last;
@@ -888,7 +888,7 @@ bool ConfigurationParser::remove_resource(int type, const char *name)
             last->next = res->next;
         }
         res->next = NULL;
-        free_resource(res, type);
+        FreeResource(res, type);
         return true;
       }
       last = res;
@@ -900,7 +900,7 @@ bool ConfigurationParser::remove_resource(int type, const char *name)
    return false;
 }
 
-void ConfigurationParser::dump_resources(void sendit(void *sock, const char *fmt, ...),
+void ConfigurationParser::DumpResources(void sendit(void *sock, const char *fmt, ...),
                             void *sock, bool hide_sensitive_data)
 {
    for (int i = r_first_; i <= r_last_; i++) {
@@ -910,7 +910,7 @@ void ConfigurationParser::dump_resources(void sendit(void *sock, const char *fmt
    }
 }
 
-bool ConfigurationParser::get_path_of_resource(PoolMem &path, const char *component,
+bool ConfigurationParser::GetPathOfResource(PoolMem &path, const char *component,
                                   const char *resourcetype, const char *name, bool set_wildcards)
 {
    PoolMem rel_path(PM_FNAME);
@@ -944,12 +944,12 @@ bool ConfigurationParser::get_path_of_resource(PoolMem &path, const char *compon
 
    path.strcpy(config_dir_);
    rel_path.bsprintf(config_include_naming_format_, component, resourcetype_lowercase.c_str(), name);
-   path_append(path, rel_path);
+   PathAppend(path, rel_path);
 
    return true;
 }
 
-bool ConfigurationParser::get_path_of_new_resource(PoolMem &path, PoolMem &extramsg, const char *component,
+bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg, const char *component,
                                       const char *resourcetype, const char *name,
                                       bool error_if_exists, bool create_directories)
 {
@@ -958,17 +958,17 @@ bool ConfigurationParser::get_path_of_new_resource(PoolMem &path, PoolMem &extra
    PoolMem resourcetype_lowercase(resourcetype);
    resourcetype_lowercase.toLower();
 
-   if (!get_path_of_resource(path, component, resourcetype, name, false)) {
+   if (!GetPathOfResource(path, component, resourcetype, name, false)) {
       return false;
    }
 
-   path_get_directory(directory, path);
+   PathGetDirectory(directory, path);
 
    if (create_directories) {
-      path_create(directory);
+      PathCreate(directory);
    }
 
-   if (!path_exists(directory)) {
+   if (!PathExists(directory)) {
       extramsg.bsprintf("Resource config directory \"%s\" does not exist.\n", directory.c_str());
       return false;
    }
@@ -987,12 +987,12 @@ bool ConfigurationParser::get_path_of_new_resource(PoolMem &path, PoolMem &extra
    /*
     * File should not exists, as it is going to be created.
     */
-   if (path_exists(path)) {
+   if (PathExists(path)) {
       extramsg.bsprintf("Resource config file \"%s\" already exists.\n", path.c_str());
       return false;
    }
 
-   if (path_exists(extramsg)) {
+   if (PathExists(extramsg)) {
       extramsg.bsprintf("Temporary resource config file \"%s.tmp\" already exists.\n", path.c_str());
       return false;
    }

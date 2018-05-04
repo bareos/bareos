@@ -48,7 +48,7 @@ class sellist : public SmartAlloc {
 public:
    sellist();
    ~sellist();
-   bool set_string(char *string, bool scan);
+   bool SetString(char *string, bool scan);
    int64_t first();
    int64_t next();
    void begin();

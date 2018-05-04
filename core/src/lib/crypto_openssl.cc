@@ -425,7 +425,7 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
       newpair->keyid = M_ASN1_OCTET_STRING_dup(keypair->keyid);
       if (!newpair->keyid) {
          /* Allocation failed */
-         crypto_keypair_free(newpair);
+         CryptoKeypairFree(newpair);
          return NULL;
       }
    }
@@ -439,27 +439,27 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
  *  Returns: true on success
  *           false on failure
  */
-int crypto_keypair_load_cert(X509_KEYPAIR *keypair, const char *file)
+int CryptoKeypairLoadCert(X509_KEYPAIR *keypair, const char *file)
 {
    BIO *bio;
    X509 *cert;
 
    /* Open the file */
    if (!(bio = BIO_new_file(file, "r"))) {
-      openssl_post_errors(M_ERROR, _("Unable to open certificate file"));
+      OpensslPostErrors(M_ERROR, _("Unable to open certificate file"));
       return false;
    }
 
    cert = PEM_read_bio_X509(bio, NULL, NULL, NULL);
    BIO_free(bio);
    if (!cert) {
-      openssl_post_errors(M_ERROR, _("Unable to read certificate from file"));
+      OpensslPostErrors(M_ERROR, _("Unable to read certificate from file"));
       return false;
    }
 
    /* Extract the public key */
    if (!(keypair->pubkey = X509_get_pubkey(cert))) {
-      openssl_post_errors(M_ERROR, _("Unable to extract public key from certificate"));
+      OpensslPostErrors(M_ERROR, _("Unable to extract public key from certificate"));
       goto err;
    }
 
@@ -501,7 +501,7 @@ static int crypto_pem_callback_dispatch(char *buf, int size, int rwflag, void *u
  * Returns: true if a private key is found
  *          false otherwise
  */
-bool crypto_keypair_has_key(const char *file) {
+bool CryptoKeypairHasKey(const char *file) {
    BIO *bio;
    char *name = NULL;
    char *header = NULL;
@@ -510,7 +510,7 @@ bool crypto_keypair_has_key(const char *file) {
    long len;
 
    if (!(bio = BIO_new_file(file, "r"))) {
-      openssl_post_errors(M_ERROR, _("Unable to open private key file"));
+      OpensslPostErrors(M_ERROR, _("Unable to open private key file"));
       return false;
    }
 
@@ -540,7 +540,7 @@ bool crypto_keypair_has_key(const char *file) {
    BIO_free(bio);
 
    /* Post PEM-decoding error messages, if any */
-   openssl_post_errors(M_ERROR, _("Unable to read private key from file"));
+   OpensslPostErrors(M_ERROR, _("Unable to read private key from file"));
    return retval;
 }
 
@@ -549,7 +549,7 @@ bool crypto_keypair_has_key(const char *file) {
  *  Returns: true on success
  *           false on failure
  */
-int crypto_keypair_load_key(X509_KEYPAIR *keypair, const char *file,
+int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata)
 {
@@ -558,7 +558,7 @@ int crypto_keypair_load_key(X509_KEYPAIR *keypair, const char *file,
 
    /* Open the file */
    if (!(bio = BIO_new_file(file, "r"))) {
-      openssl_post_errors(M_ERROR, _("Unable to open private key file"));
+      OpensslPostErrors(M_ERROR, _("Unable to open private key file"));
       return false;
    }
 
@@ -574,7 +574,7 @@ int crypto_keypair_load_key(X509_KEYPAIR *keypair, const char *file,
    keypair->privkey = PEM_read_bio_PrivateKey(bio, NULL, crypto_pem_callback_dispatch, &ctx);
    BIO_free(bio);
    if (!keypair->privkey) {
-      openssl_post_errors(M_ERROR, _("Unable to read private key from file"));
+      OpensslPostErrors(M_ERROR, _("Unable to read private key from file"));
       return false;
    }
 
@@ -584,7 +584,7 @@ int crypto_keypair_load_key(X509_KEYPAIR *keypair, const char *file,
 /*
  * Free memory associated with a keypair object.
  */
-void crypto_keypair_free(X509_KEYPAIR *keypair)
+void CryptoKeypairFree(X509_KEYPAIR *keypair)
 {
    if (keypair->pubkey) {
       EVP_PKEY_free(keypair->pubkey);
@@ -642,8 +642,8 @@ DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type)
 err:
    /* This should not happen, but never say never ... */
    Dmsg0(150, "Digest init failed.\n");
-   openssl_post_errors(jcr, M_ERROR, _("OpenSSL digest initialization failed"));
-   crypto_digest_free(digest);
+   OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest initialization failed"));
+   CryptoDigestFree(digest);
    return NULL;
 }
 
@@ -652,11 +652,11 @@ err:
  * Returns: true on success
  *          false on failure
  */
-bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
+bool CryptoDigestUpdate(DIGEST *digest, const uint8_t *data, uint32_t length)
 {
    if (EVP_DigestUpdate(&digest->get_ctx(), data, length) == 0) {
       Dmsg0(150, "digest update failed\n");
-      openssl_post_errors(digest->jcr, M_ERROR, _("OpenSSL digest update failed"));
+      OpensslPostErrors(digest->jcr, M_ERROR, _("OpenSSL digest update failed"));
       return false;
    } else {
       return true;
@@ -670,11 +670,11 @@ bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
  * Returns: true on success
  *          false on failure
  */
-bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
+bool CryptoDigestFinalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
 {
    if (!EVP_DigestFinal(&digest->get_ctx(), dest, (unsigned int *)length)) {
       Dmsg0(150, "digest finalize failed\n");
-      openssl_post_errors(digest->jcr, M_ERROR, _("OpenSSL digest finalize failed"));
+      OpensslPostErrors(digest->jcr, M_ERROR, _("OpenSSL digest finalize failed"));
       return false;
    } else {
       return true;
@@ -684,7 +684,7 @@ bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
 /*
  * Free memory associated with a digest object.
  */
-void crypto_digest_free(DIGEST *digest)
+void CryptoDigestFree(DIGEST *digest)
 {
    delete digest;
 }
@@ -726,7 +726,7 @@ SIGNATURE *crypto_sign_new(JobControlRecord *jcr)
  * Returns: CRYPTO_ERROR_NONE on success, with the newly allocated DIGEST in digest.
  *          A crypto_error_t value on failure.
  */
-crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
+crypto_error_t CryptoSignGetDigest(SIGNATURE *sig, X509_KEYPAIR *keypair,
                                       crypto_digest_t &type, DIGEST **digest)
 {
    STACK_OF(SignerInfo) *signers;
@@ -739,7 +739,7 @@ crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
       si = sk_SignerInfo_value(signers, i);
       if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
          /* Get the digest algorithm and allocate a digest context */
-         Dmsg1(150, "crypto_sign_get_digest jcr=%p\n", sig->jcr);
+         Dmsg1(150, "CryptoSignGetDigest jcr=%p\n", sig->jcr);
          switch (OBJ_obj2nid(si->digestAlgorithm)) {
          case NID_md5:
             Dmsg0(100, "sign digest algorithm is MD5\n");
@@ -771,13 +771,13 @@ crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
 
          /* Shouldn't happen */
          if (*digest == NULL) {
-            openssl_post_errors(sig->jcr, M_ERROR, _("OpenSSL digest_new failed"));
+            OpensslPostErrors(sig->jcr, M_ERROR, _("OpenSSL digest_new failed"));
             return CRYPTO_ERROR_INVALID_DIGEST;
          } else {
             return CRYPTO_ERROR_NONE;
          }
       } else {
-         openssl_post_errors(sig->jcr, M_ERROR, _("OpenSSL sign get digest failed"));
+         OpensslPostErrors(sig->jcr, M_ERROR, _("OpenSSL sign get digest failed"));
       }
 
    }
@@ -790,7 +790,7 @@ crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
  * Returns: CRYPTO_ERROR_NONE on success.
  *          A crypto_error_t value on failure.
  */
-crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest)
+crypto_error_t CryptoSignVerify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest)
 {
    STACK_OF(SignerInfo) *signers;
    SignerInfo *si;
@@ -816,11 +816,11 @@ crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST 
          if (ok >= 1) {
             return CRYPTO_ERROR_NONE;
          } else if (ok == 0) {
-            openssl_post_errors(sig->jcr, M_ERROR, _("OpenSSL digest Verify final failed"));
+            OpensslPostErrors(sig->jcr, M_ERROR, _("OpenSSL digest Verify final failed"));
             return CRYPTO_ERROR_BAD_SIGNATURE;
          } else if (ok < 0) {
             /* Shouldn't happen */
-            openssl_post_errors(sig->jcr, M_ERROR, _("OpenSSL digest Verify final failed"));
+            OpensslPostErrors(sig->jcr, M_ERROR, _("OpenSSL digest Verify final failed"));
             return CRYPTO_ERROR_INTERNAL;
          }
       }
@@ -836,7 +836,7 @@ crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST 
  *  Returns: true on success
  *           false on failure
  */
-int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair)
+int CryptoSignAddSigner(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair)
 {
    SignerInfo *si = NULL;
    unsigned char *buf = NULL;
@@ -887,7 +887,7 @@ int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair
    len = EVP_PKEY_size(keypair->privkey);
    buf = (unsigned char *) malloc(len);
    if (!EVP_SignFinal(&digest->get_ctx(), buf, &len, keypair->privkey)) {
-      openssl_post_errors(M_ERROR, _("Signature creation failed"));
+      OpensslPostErrors(M_ERROR, _("Signature creation failed"));
       goto err;
    }
 
@@ -925,7 +925,7 @@ err:
  * Returns: true on success, stores the encoded data in dest, and the size in length.
  *          false on failure.
  */
-int crypto_sign_encode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
+int CryptoSignEncode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
 {
    if (*length == 0) {
       *length = i2d_SignatureData(sig->sigData, NULL);
@@ -965,7 +965,7 @@ SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uin
 
    if (!sig->sigData) {
       /* Allocation / Decoding failed in OpenSSL */
-      openssl_post_errors(jcr, M_ERROR, _("Signature decoding failed"));
+      OpensslPostErrors(jcr, M_ERROR, _("Signature decoding failed"));
       free(sig);
       return NULL;
    }
@@ -976,7 +976,7 @@ SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uin
 /*
  * Free memory associated with a signature object.
  */
-void crypto_sign_free(SIGNATURE *sig)
+void CryptoSignFree(SIGNATURE *sig)
 {
    SignatureData_free(sig->sigData);
    free (sig);
@@ -1095,7 +1095,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
 #endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
    default:
       Jmsg0(NULL, M_ERROR, 0, _("Unsupported cipher type specified\n"));
-      crypto_session_free(cs);
+      CryptoSessionFree(cs);
       return NULL;
    }
 
@@ -1104,7 +1104,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
    cs->session_key = (unsigned char *) malloc(cs->session_key_len);
    if (RAND_bytes(cs->session_key, cs->session_key_len) <= 0) {
       /* OpenSSL failure */
-      crypto_session_free(cs);
+      CryptoSessionFree(cs);
       return NULL;
    }
 
@@ -1115,7 +1115,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       /* Generate random IV */
       if (RAND_bytes(iv, iv_len) <= 0) {
          /* OpenSSL failure */
-         crypto_session_free(cs);
+         CryptoSessionFree(cs);
          free(iv);
          return NULL;
       }
@@ -1123,7 +1123,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       /* Store it in our ASN.1 structure */
       if (!M_ASN1_OCTET_STRING_set(cs->cryptoData->iv, iv, iv_len)) {
          /* Allocation failed in OpenSSL */
-         crypto_session_free(cs);
+         CryptoSessionFree(cs);
          free(iv);
          return NULL;
       }
@@ -1142,7 +1142,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       ri = RecipientInfo_new();
       if (!ri) {
          /* Allocation failed in OpenSSL */
-         crypto_session_free(cs);
+         CryptoSessionFree(cs);
          return NULL;
       }
 
@@ -1163,7 +1163,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key, cs->session_key_len, keypair->pubkey)) <= 0) {
          /* OpenSSL failure */
          RecipientInfo_free(ri);
-         crypto_session_free(cs);
+         CryptoSessionFree(cs);
          free(ekey);
          return NULL;
       }
@@ -1172,7 +1172,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
          /* Allocation failed in OpenSSL */
          RecipientInfo_free(ri);
-         crypto_session_free(cs);
+         CryptoSessionFree(cs);
          free(ekey);
          return NULL;
       }
@@ -1196,7 +1196,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
  * Returns: true on success, stores the encoded data in dest, and the size in length.
  *          false on failure.
  */
-bool crypto_session_encode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
+bool CryptoSessionEncode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
 {
    if (*length == 0) {
       *length = i2d_CryptoData(cs->cryptoData, NULL);
@@ -1216,7 +1216,7 @@ bool crypto_session_encode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
  * Returns: CRYPTO_ERROR_NONE and a pointer to a newly allocated CRYPTO_SESSION structure in *session on success.
  *          A crypto_error_t value on failure.
  */
-crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session)
+crypto_error_t CryptoSessionDecode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session)
 {
    CRYPTO_SESSION *cs;
    X509_KEYPAIR *keypair;
@@ -1243,7 +1243,7 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
 
    if (!cs->cryptoData) {
       /* Allocation / Decoding failed in OpenSSL */
-      openssl_post_errors(M_ERROR, _("CryptoData decoding failed"));
+      OpensslPostErrors(M_ERROR, _("CryptoData decoding failed"));
       retval = CRYPTO_ERROR_INTERNAL;
       goto err;
    }
@@ -1287,7 +1287,7 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
                                   M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
 
             if (cs->session_key_len <= 0) {
-               openssl_post_errors(M_ERROR, _("Failure decrypting the session key"));
+               OpensslPostErrors(M_ERROR, _("Failure decrypting the session key"));
                retval = CRYPTO_ERROR_DECRYPTION;
                goto err;
             }
@@ -1303,14 +1303,14 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
    return CRYPTO_ERROR_NORECIPIENT;
 
 err:
-   crypto_session_free(cs);
+   CryptoSessionFree(cs);
    return retval;
 }
 
 /*
  * Free memory associated with a crypto session object.
  */
-void crypto_session_free(CRYPTO_SESSION *cs)
+void CryptoSessionFree(CRYPTO_SESSION *cs)
 {
    if (cs->cryptoData) {
       CryptoData_free(cs->cryptoData);
@@ -1344,32 +1344,32 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
    if (encrypt) {
       /* Initialize for encryption */
       if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 1)) {
-         openssl_post_errors(M_ERROR, _("OpenSSL cipher context initialization failed"));
+         OpensslPostErrors(M_ERROR, _("OpenSSL cipher context initialization failed"));
          goto err;
       }
    } else {
       /* Initialize for decryption */
       if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 0)) {
-         openssl_post_errors(M_ERROR, _("OpenSSL cipher context initialization failed"));
+         OpensslPostErrors(M_ERROR, _("OpenSSL cipher context initialization failed"));
          goto err;
       }
    }
 
    /* Set the key size */
    if (!EVP_CIPHER_CTX_set_key_length(cipher_ctx->ctx, cs->session_key_len)) {
-      openssl_post_errors(M_ERROR, _("Encryption session provided an invalid symmetric key"));
+      OpensslPostErrors(M_ERROR, _("Encryption session provided an invalid symmetric key"));
       goto err;
    }
 
    /* Validate the IV length */
    if (EVP_CIPHER_iv_length(ec) != M_ASN1_STRING_length(cs->cryptoData->iv)) {
-      openssl_post_errors(M_ERROR, _("Encryption session provided an invalid IV"));
+      OpensslPostErrors(M_ERROR, _("Encryption session provided an invalid IV"));
       goto err;
    }
 
    /* Add the key and IV to the cipher context */
    if (!EVP_CipherInit_ex(cipher_ctx->ctx, NULL, NULL, cs->session_key, M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
-      openssl_post_errors(M_ERROR, _("OpenSSL cipher context key/IV initialization failed"));
+      OpensslPostErrors(M_ERROR, _("OpenSSL cipher context key/IV initialization failed"));
       goto err;
    }
 
@@ -1386,7 +1386,7 @@ err:
  * Returns: true on success, number of bytes output in written
  *          false on failure
  */
-bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
+bool CryptoCipherUpdate(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
 {
    if (!EVP_CipherUpdate(cipher_ctx->ctx, (unsigned char *)dest, (int *)written, (const unsigned char *)data, length)) {
       /* This really shouldn't fail */
@@ -1404,7 +1404,7 @@ bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint3
  * Returns: true on success
  *          false on failure
  */
-bool crypto_cipher_finalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
+bool CryptoCipherFinalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
 {
    if (!EVP_CipherFinal_ex(cipher_ctx->ctx, (unsigned char *)dest, (int *) written)) {
       /* This really shouldn't fail */
@@ -1417,7 +1417,7 @@ bool crypto_cipher_finalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t 
 /*
  * Free memory associated with a cipher context.
  */
-void crypto_cipher_free(CIPHER_CONTEXT *cipher_ctx)
+void CryptoCipherFree(CIPHER_CONTEXT *cipher_ctx)
 {
    delete cipher_ctx;
 }
@@ -1441,7 +1441,7 @@ static int crypto_initialized = false;
  *  Returns: 0 on success
  *           errno on failure
  */
-int init_crypto(void)
+int InitCrypto(void)
 {
    int status;
 
@@ -1489,7 +1489,7 @@ int init_crypto(void)
  *  Returns: 0 on success
  *           errno on failure
  */
-int cleanup_crypto(void)
+int CleanupCrypto(void)
 {
    /*
     * Ensure that we've actually been initialized; Doing this here decreases the
@@ -1540,15 +1540,15 @@ struct CRYPTO_dynlock_value {
  *   a NULL.  Passing a NULL causes the messages to be
  *   printed by the daemon -- not very good :-(
  */
-void openssl_post_errors(int code, const char *errstring)
+void OpensslPostErrors(int code, const char *errstring)
 {
-   openssl_post_errors(NULL, code, errstring);
+   OpensslPostErrors(NULL, code, errstring);
 }
 
 /*
  * Post all per-thread openssl errors
  */
-void openssl_post_errors(JobControlRecord *jcr, int code, const char *errstring)
+void OpensslPostErrors(JobControlRecord *jcr, int code, const char *errstring)
 {
    char buf[512];
    unsigned long sslerr;

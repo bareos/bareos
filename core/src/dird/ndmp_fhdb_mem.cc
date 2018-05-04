@@ -226,7 +226,7 @@ static inline void ndmp_fhdb_free_tree(N_TREE_ROOT *root)
    Dmsg3(100, "Total size=%u blocks=%u freed_blocks=%u\n", root->total_size, root->blocks, freed_blocks);
 
    free(root);
-   garbage_collect_memory();
+   GarbageCollectMemory();
 
    return;
 }
@@ -682,7 +682,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
          return 1;
       }
 
-      ndmp_convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      NdmpConvertFstat(fstat, nis->FileIndex, &FileType, attribs);
       attr_size = strlen(attribs.c_str()) + 1;
 
       wanted_node->attr = ndmp_fhdb_tree_alloc(fhdb_root, attr_size);
@@ -796,7 +796,7 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
           * Store the toplevel entry of the tree.
           */
          Dmsg2(100, "==> %s [%s]\n", fhdb_root->fname, fhdb_root->attr);
-         ndmp_store_attribute_record(nis->jcr, fhdb_root->fname, nis->virtual_filename,
+         NdmpStoreAttributeRecord(nis->jcr, fhdb_root->fname, nis->virtual_filename,
                                      fhdb_root->attr, fhdb_root->FileType,
                                      fhdb_root->inode, fhdb_root->Offset);
 
@@ -804,7 +804,7 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
           * Store all the other entries in the tree.
           */
          for (node = fhdb_root->first; node; node = node->next) {
-            pm_strcpy(fname, node->fname);
+            PmStrcpy(fname, node->fname);
 
             /*
              * Walk up the parent until we hit the head of the list.
@@ -812,9 +812,9 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
              * can just concatenate the two parts.
              */
             for (parent = node->parent; parent; parent = parent->parent) {
-               pm_strcpy(tmp, fname.c_str());
-               pm_strcpy(fname, parent->fname);
-               pm_strcat(fname, tmp.c_str());
+               PmStrcpy(tmp, fname.c_str());
+               PmStrcpy(fname, parent->fname);
+               PmStrcat(fname, tmp.c_str());
             }
 
             /*
@@ -828,7 +828,7 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
              */
             if (node->attr) {
                Dmsg2(100, "==> %s [%s]\n", fname.c_str(), node->attr);
-               ndmp_store_attribute_record(nis->jcr, fname.c_str(), nis->virtual_filename,
+               NdmpStoreAttributeRecord(nis->jcr, fname.c_str(), nis->virtual_filename,
                                            node->attr, node->FileType, node->inode, node->Offset);
             } else {
                Dmsg1(100, "Skipping %s because it has no attributes\n", fname.c_str());

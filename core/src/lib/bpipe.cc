@@ -74,8 +74,8 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
    /*
     * Build arguments for running program.
     */
-   tprog = get_pool_memory(PM_FNAME);
-   pm_strcpy(tprog, prog);
+   tprog = GetPoolMemory(PM_FNAME);
+   PmStrcpy(tprog, prog);
    build_argc_argv(tprog, &bargc, bargv, MAX_ARGV);
 
    /*
@@ -84,7 +84,7 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
    if (mode_write && pipe(writep) == -1) {
       save_errno = errno;
       free(bpipe);
-      free_pool_memory(tprog);
+      FreePoolMemory(tprog);
       errno = save_errno;
       return NULL;
    }
@@ -95,7 +95,7 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
          close(writep[1]);
       }
       free(bpipe);
-      free_pool_memory(tprog);
+      FreePoolMemory(tprog);
       errno = save_errno;
       return NULL;
    }
@@ -115,7 +115,7 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
          close(readp[1]);
       }
       free(bpipe);
-      free_pool_memory(tprog);
+      FreePoolMemory(tprog);
       errno = save_errno;
       return NULL;
 
@@ -164,7 +164,7 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
       break;
    }
 
-   free_pool_memory(tprog);
+   FreePoolMemory(tprog);
 
    if (mode_read) {
       close(readp[1]);                /* close unused parent fds */
@@ -189,7 +189,7 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 /*
  * Close the write pipe only
  */
-int close_wpipe(Bpipe *bpipe)
+int CloseWpipe(Bpipe *bpipe)
 {
    int status = 1;
 
@@ -209,7 +209,7 @@ int close_wpipe(Bpipe *bpipe)
  * Returns: 0 on success
  *          berrno on failure
  */
-int close_bpipe(Bpipe *bpipe)
+int CloseBpipe(Bpipe *bpipe)
 {
    int chldstatus = 0;
    int status = 0;
@@ -281,7 +281,7 @@ int close_bpipe(Bpipe *bpipe)
    }
 
    if (bpipe->timer_id) {
-      stop_child_timer(bpipe->timer_id);
+      StopChildTimer(bpipe->timer_id);
    }
 
    free(bpipe);
@@ -351,7 +351,7 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_argv)
  * Returns: 0 on success
  *          non-zero on error == berrno status
  */
-int run_program(char *prog, int wait, POOLMEM *&results)
+int RunProgram(char *prog, int wait, POOLMEM *&results)
 {
    Bpipe *bpipe;
    int stat1, stat2;
@@ -364,7 +364,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
    }
 
    results[0] = 0;
-   int len = sizeof_pool_memory(results) - 1;
+   int len = SizeofPoolMemory(results) - 1;
    fgets(results, len, bpipe->rfd);
    results[len] = 0;
 
@@ -382,17 +382,17 @@ int run_program(char *prog, int wait, POOLMEM *&results)
       if (bpipe->timer_id) {
          Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
          /*
-          * NB: I'm not sure it is really useful for run_program. Without the
-          * following lines run_program would not detect if the program was killed
+          * NB: I'm not sure it is really useful for RunProgram. Without the
+          * following lines RunProgram would not detect if the program was killed
           * by the watchdog.
           */
          if (bpipe->timer_id->killed) {
             stat1 = ETIME;
-            pm_strcpy(results, _("Program killed by BAREOS (timeout)\n"));
+            PmStrcpy(results, _("Program killed by BAREOS (timeout)\n"));
          }
       }
    }
-   stat2 = close_bpipe(bpipe);
+   stat2 = CloseBpipe(bpipe);
    stat1 = stat2 != 0 ? stat2 : stat1;
    Dmsg1(150, "Run program returning %d\n", stat1);
 
@@ -414,7 +414,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
  * Returns: 0 on success
  *          non-zero on error == berrno status
  */
-int run_program_full_output(char *prog, int wait, POOLMEM *&results)
+int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results)
 {
    Bpipe *bpipe;
    int stat1, stat2;
@@ -426,7 +426,7 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
 
    Dsm_check(200);
 
-   tmp = get_pool_memory(PM_MESSAGE);
+   tmp = GetPoolMemory(PM_MESSAGE);
    buf = (char *)malloc(bufsize+1);
 
    results[0] = 0;
@@ -443,7 +443,7 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
       buf[0] = 0;
       fgets(buf, bufsize, bpipe->rfd);
       buf[bufsize] = 0;
-      pm_strcat(tmp, buf);
+      PmStrcat(tmp, buf);
       if (feof(bpipe->rfd)) {
          stat1 = 0;
          Dmsg1(900, "Run program fgets stat=%d\n", stat1);
@@ -472,18 +472,18 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
     */
    if (bpipe->timer_id && bpipe->timer_id->killed) {
       Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
-      pm_strcpy(tmp, _("Program killed by BAREOS (timeout)\n"));
+      PmStrcpy(tmp, _("Program killed by BAREOS (timeout)\n"));
       stat1 = ETIME;
    }
 
-   pm_strcpy(results, tmp);
+   PmStrcpy(results, tmp);
    Dmsg3(1900, "resadr=0x%x reslen=%d res=%s\n", results, strlen(results), results);
-   stat2 = close_bpipe(bpipe);
+   stat2 = CloseBpipe(bpipe);
    stat1 = stat2 != 0 ? stat2 : stat1;
 
    Dmsg1(900, "Run program returning %d\n", stat1);
 bail_out:
-   free_pool_memory(tmp);
+   FreePoolMemory(tmp);
    free(buf);
    return stat1;
 }

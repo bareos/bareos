@@ -63,7 +63,7 @@ static const int debuglevel = 500;
 /*
  * This subroutine gets a big buffer.
  */
-void htable::malloc_big_buf(int size)
+void htable::MallocBigBuf(int size)
 {
    struct h_mem *hmem;
 
@@ -80,7 +80,7 @@ void htable::malloc_big_buf(int size)
 /*
  * This routine frees the whole tree.
  */
-void htable::hash_big_free()
+void htable::HashBigFree()
 {
    struct h_mem *hmem, *rel;
 
@@ -107,7 +107,7 @@ char *htable::hash_malloc(int size)
       } else {
          mb_size = extend_length / 2;
       }
-      malloc_big_buf(mb_size);
+      MallocBigBuf(mb_size);
       Dmsg1(100, "Created new big buffer of %ld bytes\n", mb_size);
    }
    mem_block->rem -= asize;
@@ -120,7 +120,7 @@ char *htable::hash_malloc(int size)
  * Create hash of key, stored in hash then
  * create and return the pseudo random bucket index
  */
-void htable::hash_index(char *key)
+void htable::HashIndex(char *key)
 {
    hash = 0;
    for (char *p = key; *p; p++) {
@@ -131,10 +131,10 @@ void htable::hash_index(char *key)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-void htable::hash_index(uint32_t key)
+void htable::HashIndex(uint32_t key)
 {
    hash = key;
 
@@ -142,10 +142,10 @@ void htable::hash_index(uint32_t key)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-void htable::hash_index(uint64_t key)
+void htable::HashIndex(uint64_t key)
 {
    hash = key;
 
@@ -153,10 +153,10 @@ void htable::hash_index(uint64_t key)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-void htable::hash_index(uint8_t *key, uint32_t keylen)
+void htable::HashIndex(uint8_t *key, uint32_t keylen)
 {
    hash = 0;
    for (uint8_t *p = key; keylen--; p++) {
@@ -167,7 +167,7 @@ void htable::hash_index(uint8_t *key, uint32_t keylen)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
 /*
@@ -215,7 +215,7 @@ void htable::init(void *item, void *link, int tsize, int nr_pages, int nr_entrie
          buffer_size = MIN_BUF_SIZE;
       }
    }
-   malloc_big_buf(buffer_size);
+   MallocBigBuf(buffer_size);
    extend_length = buffer_size;
    Dmsg1(100, "Allocated big buffer of %ld bytes\n", buffer_size);
 }
@@ -483,7 +483,7 @@ bool htable::insert(uint8_t *key, uint32_t key_len, void *item)
 
 void *htable::lookup(char *key)
 {
-   hash_index(key);
+   HashIndex(key);
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_CHAR);
       if (hash == hp->hash && bstrcmp(key, hp->key.char_key)) {
@@ -497,7 +497,7 @@ void *htable::lookup(char *key)
 
 void *htable::lookup(uint32_t key)
 {
-   hash_index(key);
+   HashIndex(key);
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_UINT32);
       if (hash == hp->hash && key == hp->key.uint32_key) {
@@ -511,7 +511,7 @@ void *htable::lookup(uint32_t key)
 
 void *htable::lookup(uint64_t key)
 {
-   hash_index(key);
+   HashIndex(key);
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_UINT64);
       if (hash == hp->hash && key == hp->key.uint64_key) {
@@ -525,7 +525,7 @@ void *htable::lookup(uint64_t key)
 
 void *htable::lookup(uint8_t *key, uint32_t key_len)
 {
-   hash_index(key, key_len);
+   HashIndex(key, key_len);
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_BINARY);
       if (hash == hp->hash && memcmp(key, hp->key.binary_key, hp->key_len) == 0) {
@@ -588,10 +588,10 @@ void *htable::first()
 /* Destroy the table and its contents */
 void htable::destroy()
 {
-   hash_big_free();
+   HashBigFree();
 
    free(table);
    table = NULL;
-   garbage_collect_memory();
+   GarbageCollectMemory();
    Dmsg0(100, "Done destroy.\n");
 }

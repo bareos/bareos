@@ -283,7 +283,7 @@ int main (int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   my_name_is(argc, argv, "bsmtp");
+   MyNameIs(argc, argv, "bsmtp");
    maxlines = 0;
 
    while ((ch = getopt(argc, argv, options)) != -1) {

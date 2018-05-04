@@ -154,7 +154,7 @@ static void cleanup()
    }
 
    if (my_config) {
-      my_config->free_resources();
+      my_config->FreeResources();
       free(my_config);
       my_config = NULL;
    }
@@ -173,9 +173,9 @@ static void init_environment(int argc, char* argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   init_stack_dump();
-   my_name_is(argc, argv, "tray-monitor");
-   init_msg(NULL, NULL);
+   InitStackDump();
+   MyNameIs(argc, argv, "tray-monitor");
+   InitMsg(NULL, NULL);
    signal(SIGINT, intHandler);
    working_directory = "/tmp";
    OSDependentInit();
@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
       PoolMem buffer;
 
       my_config = new_config_parser();
-      init_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
-      print_config_schema_json(buffer);
+      InitTmonConfig(my_config, cl.configfile, M_ERROR_TERM);
+      PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       fflush(stdout);
       exit(0);
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
    parse_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
 
    if (cl.export_config) {
-      my_config->dump_resources(prtmsg, NULL);
+      my_config->DumpResources(prtmsg, NULL);
       exit(0);
    }
 

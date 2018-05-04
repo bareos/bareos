@@ -91,7 +91,7 @@ struct BareosWinFilePacket {
    bool cmd_plugin;                   /**< set if we have a command plugin */
 };
 
-HANDLE bget_handle(BareosWinFilePacket *bfd);
+HANDLE BgetHandle(BareosWinFilePacket *bfd);
 
 #else   /* Linux/Unix systems */
 
@@ -119,16 +119,16 @@ struct BareosWinFilePacket {
 #endif
 
 DLL_IMP_EXP void binit(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool is_bopen(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool IsBopen(BareosWinFilePacket *bfd);
 DLL_IMP_EXP bool set_win32_backup(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool set_portable_backup(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool set_cmd_plugin(BareosWinFilePacket *bfd, JobControlRecord *jcr);
+DLL_IMP_EXP bool SetPortableBackup(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool SetCmdPlugin(BareosWinFilePacket *bfd, JobControlRecord *jcr);
 DLL_IMP_EXP bool have_win32_api();
-DLL_IMP_EXP bool is_portable_backup(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool is_restore_stream_supported(int stream);
+DLL_IMP_EXP bool IsPortableBackup(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool IsRestoreStreamSupported(int stream);
 DLL_IMP_EXP bool is_win32_stream(int stream);
 DLL_IMP_EXP int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
-DLL_IMP_EXP int bopen_rsrc(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+DLL_IMP_EXP int BopenRsrc(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
 DLL_IMP_EXP int bclose(BareosWinFilePacket *bfd);
 DLL_IMP_EXP ssize_t bread(BareosWinFilePacket *bfd, void *buf, size_t count);
 DLL_IMP_EXP ssize_t bwrite(BareosWinFilePacket *bfd, void *buf, size_t count);

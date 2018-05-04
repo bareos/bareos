@@ -222,20 +222,20 @@ int main (int argc, char *argv[])
    int dbtype;
    uint32_t j;
    char temp[20];
-   POOLMEM *buf = get_pool_memory(PM_FNAME);
-   POOLMEM *buf2 = get_pool_memory(PM_FNAME);
-   POOLMEM *buf3 = get_pool_memory(PM_FNAME);
+   POOLMEM *buf = GetPoolMemory(PM_FNAME);
+   POOLMEM *buf2 = GetPoolMemory(PM_FNAME);
+   POOLMEM *buf3 = GetPoolMemory(PM_FNAME);
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   init_stack_dump();
+   InitStackDump();
    pid = getpid();
 
    Pmsg0(0, "Starting cats_test tool" PLINE);
 
-   my_name_is(argc, argv, "");
-   init_msg(NULL, NULL);
+   MyNameIs(argc, argv, "");
+   InitMsg(NULL, NULL);
 
    OSDependentInit();
 
@@ -349,7 +349,7 @@ int main (int argc, char *argv[])
    backend_directories = New(alist(10, owned_by_alist));
    backend_directories->append((char *)backend_directory);
 
-   db_set_backend_dirs(backend_directories);
+   DbSetBackendDirs(backend_directories);
 #endif
 
    if (full_test) {
@@ -384,13 +384,13 @@ int main (int argc, char *argv[])
 
    /* Check if the SQL library is thread-safe */
    //db_check_backend_thread_safe();
-   ok(check_tables_version(jcr, db), "Check table version");
+   ok(CheckTablesVersion(jcr, db), "Check table version");
    ok(db_sql_query(db, "SELECT VersionId FROM Version",
                    db_int_handler, &j), "SELECT VersionId");
 
    ok(UPDATE_DB(jcr, db, (char*)"UPDATE Version SET VersionId = 1"),
       "Update VersionId");
-   nok(check_tables_version(jcr, db), "Check table version");
+   nok(CheckTablesVersion(jcr, db), "Check table version");
    Mmsg(buf, "UPDATE Version SET VersionId = %d", j);
    ok(UPDATE_DB(jcr, db, buf), "Restore VersionId");
 
@@ -446,15 +446,15 @@ int main (int argc, char *argv[])
    Mmsg(buf, "INSERT INTO %s (a) VALUES (1)", temp);
    ok(INSERT_DB(jcr, db, buf), "INSERT query");
    ok(INSERT_DB(jcr, db, buf), "INSERT query");
-   ok(sql_affected_rows(db) == 1, "Check sql_affected_rows");
+   ok(SqlAffectedRows(db) == 1, "Check SqlAffectedRows");
 
    Mmsg(buf, "INSERT INTO aaa%s (a) VALUES (1)", temp);
    nok(INSERT_DB(jcr, db, buf), "Bad INSERT query");
-   ok(sql_affected_rows(db) == 0, "Check sql_affected_rows");
+   ok(SqlAffectedRows(db) == 0, "Check SqlAffectedRows");
 
    Mmsg(buf, "UPDATE %s SET a = 2", temp);
    ok(UPDATE_DB(jcr, db, buf), "UPDATE query");
-   ok(sql_affected_rows(db) == 2, "Check sql_affected_rows");
+   ok(SqlAffectedRows(db) == 2, "Check SqlAffectedRows");
 
    Mmsg(buf, "UPDATE %s SET a = 2 WHERE a = 1", temp);
    nok(UPDATE_DB(jcr, db, buf), "Empty UPDATE query");
@@ -668,7 +668,7 @@ int main (int argc, char *argv[])
    bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), "media-%lld", pid);
    bsnprintf(mr.MediaType, sizeof(mr.MediaType), "type-%lld", pid);
 
-   /* from set_pool_dbr_defaults_in_media_dbr(&mr, &pr);  */
+   /* from SetPoolDbrDefaultsInMediaDbr(&mr, &pr);  */
    mr.PoolId = pr.PoolId;
    bstrncpy(mr.VolStatus, NT_("Append"), sizeof(mr.VolStatus));
    mr.Recycle = pr.Recycle;
@@ -702,8 +702,8 @@ int main (int argc, char *argv[])
 
    db_close_database(jcr, db);
    report();
-   free_pool_memory(buf);
-   free_pool_memory(buf2);
-   free_pool_memory(buf3);
+   FreePoolMemory(buf);
+   FreePoolMemory(buf2);
+   FreePoolMemory(buf3);
    return 0;
 }

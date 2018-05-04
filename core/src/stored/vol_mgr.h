@@ -35,11 +35,11 @@
  * Some details of how volume reservations work
  *
  * class VolumeReservationItem:
- *   set_in_use()     volume being used on current drive
- *   clear_in_use()   no longer being used.  Can be re-used or moved.
- *   set_swapping()   set volume being moved to another drive
- *   is_swapping()    volume is being moved to another drive
- *   clear_swapping() volume normal
+ *   SetInUse()     volume being used on current drive
+ *   ClearInUse()   no longer being used.  Can be re-used or moved.
+ *   SetSwapping()   set volume being moved to another drive
+ *   IsSwapping()    volume is being moved to another drive
+ *   ClearSwapping() volume normal
  *
  */
 
@@ -48,11 +48,11 @@
 
 class VolumeReservationItem;
 VolumeReservationItem *vol_walk_start();
-VolumeReservationItem *vol_walk_next(VolumeReservationItem *prev_vol);
-void vol_walk_end(VolumeReservationItem *vol);
+VolumeReservationItem *VolWalkNext(VolumeReservationItem *prev_vol);
+void VolWalkEnd(VolumeReservationItem *vol);
 VolumeReservationItem *read_vol_walk_start();
-VolumeReservationItem *read_vol_walk_next(VolumeReservationItem *prev_vol);
-void read_vol_walk_end(VolumeReservationItem *vol);
+VolumeReservationItem *ReadVolWalkNext(VolumeReservationItem *prev_vol);
+void ReadVolWalkEnd(VolumeReservationItem *vol);
 
 /**
  * Volume reservation class -- see vol_mgr.c and reserve.c
@@ -70,52 +70,52 @@ public:
    char *vol_name;                    /**< Volume name */
    Device *dev;                       /**< Pointer to device to which we are attached */
 
-   void init_mutex() { pthread_mutex_init(&mutex_, NULL); }
-   void destroy_mutex() { pthread_mutex_destroy(&mutex_); }
+   void InitMutex() { pthread_mutex_init(&mutex_, NULL); }
+   void DestroyMutex() { pthread_mutex_destroy(&mutex_); }
    void Lock() { P(mutex_); }
    void Unlock() { V(mutex_); }
-   void inc_use_count(void) {P(mutex_); use_count_++; V(mutex_); }
-   void dec_use_count(void) {P(mutex_); use_count_--; V(mutex_); }
-   int32_t use_count() const { return use_count_; }
-   bool is_swapping() const { return swapping_; }
+   void IncUseCount(void) {P(mutex_); use_count_++; V(mutex_); }
+   void DecUseCount(void) {P(mutex_); use_count_--; V(mutex_); }
+   int32_t UseCount() const { return use_count_; }
+   bool IsSwapping() const { return swapping_; }
    bool is_reading() const { return reading_; }
-   bool is_writing() const { return !reading_; }
-   void set_reading() { reading_ = true; }
+   bool IsWriting() const { return !reading_; }
+   void SetReading() { reading_ = true; }
    void clear_reading() { reading_ = false; }
-   void set_swapping() { swapping_ = true; }
-   void clear_swapping() { swapping_ = false; }
-   bool is_in_use() const { return in_use_; }
-   void set_in_use() { in_use_ = true; }
-   void clear_in_use() { in_use_ = false; }
-   void set_slot(slot_number_t slot) { slot_ = slot; }
-   void clear_slot() { slot_ = -1; }
-   slot_number_t get_slot() const { return slot_; }
-   uint32_t get_jobid() const { return JobId_; }
-   void set_jobid(uint32_t JobId) { JobId_ = JobId; }
+   void SetSwapping() { swapping_ = true; }
+   void ClearSwapping() { swapping_ = false; }
+   bool IsInUse() const { return in_use_; }
+   void SetInUse() { in_use_ = true; }
+   void ClearInUse() { in_use_ = false; }
+   void SetSlot(slot_number_t slot) { slot_ = slot; }
+   void ClearSlot() { slot_ = -1; }
+   slot_number_t GetSlot() const { return slot_; }
+   uint32_t GetJobid() const { return JobId_; }
+   void SetJobid(uint32_t JobId) { JobId_ = JobId; }
 };
 
 #define foreach_vol(vol) \
-   for (vol=vol_walk_start(); vol; (vol = vol_walk_next(vol)) )
+   for (vol=vol_walk_start(); vol; (vol = VolWalkNext(vol)) )
 
-#define endeach_vol(vol) vol_walk_end(vol)
+#define endeach_vol(vol) VolWalkEnd(vol)
 
 #define foreach_read_vol(vol) \
-   for (vol=read_vol_walk_start(); vol; (vol = read_vol_walk_next(vol)) )
+   for (vol=read_vol_walk_start(); vol; (vol = ReadVolWalkNext(vol)) )
 
-#define endeach_read_vol(vol) read_vol_walk_end(vol)
+#define endeach_read_vol(vol) ReadVolWalkEnd(vol)
 
-void init_vol_list_lock();
-void term_vol_list_lock();
+void InitVolListLock();
+void TermVolListLock();
 VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *VolumeName);
-bool free_volume(Device *dev);
-bool is_vol_list_empty();
+bool FreeVolume(Device *dev);
+bool IsVolListEmpty();
 dlist *dup_vol_list(JobControlRecord *jcr);
-void free_temp_vol_list(dlist *temp_vol_list);
-bool volume_unused(DeviceControlRecord *dcr);
-void create_volume_lists();
-void free_volume_lists();
+void FreeTempVolList(dlist *temp_vol_list);
+bool VolumeUnused(DeviceControlRecord *dcr);
+void CreateVolumeLists();
+void FreeVolumeLists();
 bool is_volume_in_use(DeviceControlRecord *dcr);
-void add_read_volume(JobControlRecord *jcr, const char *VolumeName);
-void remove_read_volume(JobControlRecord *jcr, const char *VolumeName);
+void AddReadVolume(JobControlRecord *jcr, const char *VolumeName);
+void RemoveReadVolume(JobControlRecord *jcr, const char *VolumeName);
 
 #endif

@@ -42,11 +42,11 @@
  *
  * #include "lib/breg.h"
  *
- * BareosRegex *breg = new_bregexp("!/prod!/test!");
+ * BareosRegex *breg = NewBregexp("!/prod!/test!");
  * char *filename = breg->replace("/prod/data.dat");
  *   or
  * char *filename = breg->result;
- * free_bregexp(breg);
+ * FreeBregexp(breg);
  */
 
 #define BREG_NREGS 11
@@ -71,35 +71,35 @@ public:
 
    char *return_fname(const char *fname, int len); /**< return fname as result */
    char *edit_subst(const char *fname, regmatch_t pmatch[]);
-   int compute_dest_len(const char *fname, regmatch_t pmatch[]);
-   bool extract_regexp(const char *motif);
+   int ComputeDestLen(const char *fname, regmatch_t pmatch[]);
+   bool ExtractRegexp(const char *motif);
 };
 
 /* create new BareosRegex and compile regex_t */
-BareosRegex *new_bregexp(const char *motif);
+BareosRegex *NewBregexp(const char *motif);
 
 /* launch each bregexp on filename */
 DLL_IMP_EXP int run_bregexp(alist *bregexps, const char *fname);
 
 /* free BareosRegex (and all POOLMEM) */
-DLL_IMP_EXP void free_bregexp(BareosRegex *script);
+DLL_IMP_EXP void FreeBregexp(BareosRegex *script);
 
 /* fill an alist with BareosRegex from where */
 DLL_IMP_EXP alist *get_bregexps(const char *where);
 
 /* apply every regexps from the alist */
-DLL_IMP_EXP bool apply_bregexps(const char *fname, alist *bregexps, char **result);
+DLL_IMP_EXP bool ApplyBregexps(const char *fname, alist *bregexps, char **result);
 
 /* foreach_alist free RunScript */
-DLL_IMP_EXP void free_bregexps(alist *bregexps); /* you have to free alist */
+DLL_IMP_EXP void FreeBregexps(alist *bregexps); /* you have to free alist */
 
 /* get regexp size */
-DLL_IMP_EXP int bregexp_get_build_where_size(char *strip_prefix,
+DLL_IMP_EXP int BregexpGetBuildWhereSize(char *strip_prefix,
                                  char *add_prefix,
                                  char *add_suffix);
 
 /* get a bregexp string from user arguments
- * you must allocate it with bregexp_get_build_where_size();
+ * you must allocate it with BregexpGetBuildWhereSize();
  */
 DLL_IMP_EXP char *bregexp_build_where(char *dest, int str_size,
                           char *strip_prefix,

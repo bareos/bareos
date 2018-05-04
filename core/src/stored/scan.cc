@@ -31,7 +31,7 @@
 #include "stored/stored.h"
 
 /* Forward referenced functions */
-static bool is_volume_name_legal(char *name);
+static bool IsVolumeNameLegal(char *name);
 
 
 bool Device::scan_dir_for_volume(DeviceControlRecord *dcr)
@@ -82,7 +82,7 @@ bool Device::scan_dir_for_volume(DeviceControlRecord *dcr)
 #ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
    while (1) {
       result = readdir(dp);
@@ -98,14 +98,14 @@ bool Device::scan_dir_for_volume(DeviceControlRecord *dcr)
          continue;
       }
 
-      if (!is_volume_name_legal(result->d_name)) {
+      if (!IsVolumeNameLegal(result->d_name)) {
          continue;
       }
-      pm_strcpy(fname, mount_point);
+      PmStrcpy(fname, mount_point);
       if (need_slash) {
-         pm_strcat(fname, "/");
+         PmStrcat(fname, "/");
       }
-      pm_strcat(fname, result->d_name);
+      PmStrcat(fname, result->d_name);
       if (lstat(fname.c_str(), &statp) != 0 ||
           !S_ISREG(statp.st_mode)) {
          continue;                 /* ignore directories & special files */
@@ -119,7 +119,7 @@ bool Device::scan_dir_for_volume(DeviceControlRecord *dcr)
        */
       /* Check if this is a valid Volume in the pool */
       bstrncpy(dcr->VolumeName, result->d_name, sizeof(dcr->VolumeName));
-      if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
+      if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) {
          continue;
       }
       /* This was not the volume we expected, but it is OK with
@@ -149,7 +149,7 @@ get_out:
  * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */
-static bool is_volume_name_legal(char *name)
+static bool IsVolumeNameLegal(char *name)
 {
    int len;
    const char *p;

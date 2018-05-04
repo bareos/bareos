@@ -22,21 +22,21 @@
 #ifndef BAREOS_STORED_LABEL_H_
 #define BAREOS_STORED_LABEL_H_
 
-int read_dev_volume_label(DeviceControlRecord *dcr);
-void create_volume_label(Device *dev, const char *VolName, const char *PoolName);
+int ReadDevVolumeLabel(DeviceControlRecord *dcr);
+void CreateVolumeLabel(Device *dev, const char *VolName, const char *PoolName);
 
 #define ANSI_VOL_LABEL 0
 #define ANSI_EOF_LABEL 1
 #define ANSI_EOV_LABEL 2
 
-bool write_ansi_ibm_labels(DeviceControlRecord *dcr, int type, const char *VolName);
-int read_ansi_ibm_label(DeviceControlRecord *dcr);
-bool write_session_label(DeviceControlRecord *dcr, int label);
-void dump_volume_label(Device *dev);
-void dump_label_record(Device *dev, DeviceRecord *rec, bool verbose);
-bool unser_volume_label(Device *dev, DeviceRecord *rec);
-bool unser_session_label(SESSION_LABEL *label, DeviceRecord *rec);
-bool write_new_volume_label_to_dev(DeviceControlRecord *dcr, const char *VolName,
+bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName);
+int ReadAnsiIbmLabel(DeviceControlRecord *dcr);
+bool WriteSessionLabel(DeviceControlRecord *dcr, int label);
+void DumpVolumeLabel(Device *dev);
+void DumpLabelRecord(Device *dev, DeviceRecord *rec, bool verbose);
+bool UnserVolumeLabel(Device *dev, DeviceRecord *rec);
+bool UnserSessionLabel(SESSION_LABEL *label, DeviceRecord *rec);
+bool WriteNewVolumeLabelToDev(DeviceControlRecord *dcr, const char *VolName,
                                    const char *PoolName, bool relabel);
 
 #endif // BAREOS_STORED_LABEL_H_

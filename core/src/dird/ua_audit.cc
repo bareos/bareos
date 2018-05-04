@@ -34,7 +34,7 @@
 /**
  * See if we need to audit this event.
  */
-bool UaContext::audit_event_wanted(bool audit_event_enabled)
+bool UaContext::AuditEventWanted(bool audit_event_enabled)
 {
    if (!me->audit_events) {
       return audit_event_enabled;
@@ -128,7 +128,7 @@ void UaContext::log_audit_event_acl_success(int acl, const char *item)
 /**
  * Log an audit event
  */
-void UaContext::log_audit_event_cmdline()
+void UaContext::LogAuditEventCmdline()
 {
    const char *console_name;
    const char *host;

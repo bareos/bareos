@@ -80,7 +80,7 @@ void MonitorItemThread::run()
    /* all this must be run in the same
     * context of the MonitorItemThread  */
 
-   lmgr_init_thread();
+   LmgrInitThread();
 
    if (monitor) {
       refreshTimer->start(monitor->RefreshInterval * 1000);
@@ -95,7 +95,7 @@ void MonitorItemThread::run()
       items.removeFirst();
    }
 
-   term_msg(); // this cannot be called twice, however
+   TermMsg(); // this cannot be called twice, however
 }
 
 QStringList MonitorItemThread::createRes(const cl_opts& cl)
@@ -145,7 +145,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       nitems++;
    }
 
-   StoreResource* stored;
+   StorageResource* stored;
    foreach_res(stored, R_STORAGE) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_STORAGE);
@@ -181,7 +181,7 @@ void MonitorItemThread::onRefreshItems()
    if (!isRefreshing) {
       isRefreshing = true;
       for (int i = 0; i < items.count(); i++) {
-         items[i]->get_status();
+         items[i]->GetStatus();
       }
       emit refreshItemsReady();
       isRefreshing = false;

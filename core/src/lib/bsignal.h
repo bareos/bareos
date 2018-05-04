@@ -21,7 +21,7 @@
 #ifndef BAREOS_LIB_BSIGNAL_H_
 #define BAREOS_LIB_BSIGNAL_H_
 
-DLL_IMP_EXP void init_signals(void terminate(int sig));
-DLL_IMP_EXP void init_stack_dump(void);
+DLL_IMP_EXP void InitSignals(void terminate(int sig));
+DLL_IMP_EXP void InitStackDump(void);
 
 #endif // BAREOS_LIB_BSIGNAL_H_

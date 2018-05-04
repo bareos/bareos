@@ -67,13 +67,13 @@ public:
    void init();
    void prepend(void *item);
    void append(void *item);
-   void set_prev(void *item, void *prev);
-   void set_next(void *item, void *next);
+   void SetPrev(void *item, void *prev);
+   void SetNext(void *item, void *next);
    void *get_prev(void *item);
    void *get_next(void *item);
    dlink *get_link(void *item);
-   void insert_before(void *item, void *where);
-   void insert_after(void *item, void *where);
+   void InsertBefore(void *item, void *where);
+   void InsertAfter(void *item, void *where);
    void *binary_insert(void *item, int compare(void *item1, void *item2));
    void *binary_search(void *item, int compare(void *item1, void *item2));
    void binary_insert_multiple(void *item, int compare(void *item1, void *item2));
@@ -129,12 +129,12 @@ inline dlist::dlist(void) : head(0), tail(0), loffset(0), num_items(0)
 {
 }
 
-inline void dlist::set_prev(void *item, void *prev)
+inline void dlist::SetPrev(void *item, void *prev)
 {
    ((dlink *)(((char *)item)+loffset))->prev = prev;
 }
 
-inline void dlist::set_next(void *item, void *next)
+inline void dlist::SetNext(void *item, void *next)
 {
    ((dlink *)(((char *)item)+loffset))->next = next;
 }

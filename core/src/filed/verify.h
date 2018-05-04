@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-int digest_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest);
-void do_verify(JobControlRecord *jcr);
-void do_verify_volume(JobControlRecord *jcr);
-bool calculate_and_compare_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest);
+void DoVerify(JobControlRecord *jcr);
+void DoVerifyVolume(JobControlRecord *jcr);
+bool CalculateAndCompareFileChksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
                                        const char *fname, const char *chksum);
 

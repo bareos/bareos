@@ -25,7 +25,7 @@
  */
 /**
  * @file
- * File types as returned by find_files()
+ * File types as returned by FindFiles()
  */
 
 #ifndef BAREOS_FINDLIB_FIND_H_
@@ -66,7 +66,7 @@ struct utimbuf {
 #endif
 #ifdef USE_READDIR_R
 #ifndef HAVE_READDIR_R
-DLL_IMP_EXP int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+DLL_IMP_EXP int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 #endif
 /**
@@ -131,7 +131,7 @@ struct findFOPTS {
    uint32_t Encryption_cipher;        /**< Encryption cipher forced by fileset */
    uint32_t Compress_algo;            /**< Compression algorithm. 4 letters stored as an integer */
    int Compress_level;                /**< Compression level */
-   int strip_path;                    /**< Strip path count */
+   int StripPath;                    /**< Strip path count */
    struct s_sz_matching *size_match;  /**< Perform size matching ? */
    b_fileset_shadow_type shadow_type; /**< Perform fileset shadowing check ? */
    char VerifyOpts[MAX_OPTS];         /**< Verify options */
@@ -199,8 +199,8 @@ struct CurLink {
 };
 
 /**
- * Definition of the find_files packet passed as the
- * first argument to the find_files callback subroutine.
+ * Definition of the FindFiles packet passed as the
+ * first argument to the FindFiles callback subroutine.
  */
 struct FindFilesPacket {
    char *top_fname;                   /**< Full filename before descending */
@@ -240,16 +240,16 @@ struct FindFilesPacket {
    struct s_excluded_file *excluded_paths_list;
    findFILESET *fileset;
    int (*file_save)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
-   int (*plugin_save)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
-   bool (*check_fct)(JobControlRecord *, FindFilesPacket *); /**< Optionnal user fct to check file changes */
+   int (*PluginSave)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
+   bool (*CheckFct)(JobControlRecord *, FindFilesPacket *); /**< Optionnal user fct to check file changes */
 
    /*
-    * Values set by accept_file while processing Options
+    * Values set by AcceptFile while processing Options
     */
    char flags[FOPTS_BYTES];           /**< Backup options */
    uint32_t Compress_algo;            /**< Compression algorithm. 4 letters stored as an integer */
    int Compress_level;                /**< Compression level */
-   int strip_path;                    /**< Strip path count */
+   int StripPath;                    /**< Strip path count */
    struct s_sz_matching *size_match;  /**< Perform size matching ? */
    bool cmd_plugin;                   /**< Set if we have a command plugin */
    bool opt_plugin;                   /**< Set if we have an option plugin */
@@ -272,21 +272,21 @@ struct FindFilesPacket {
 };
 
 DLL_IMP_EXP FindFilesPacket *init_find_files();
-DLL_IMP_EXP void set_find_options(FindFilesPacket *ff, bool incremental, time_t mtime);
-DLL_IMP_EXP void set_find_changed_function(FindFilesPacket *ff, bool check_fct(JobControlRecord *jcr, FindFilesPacket *ff));
-DLL_IMP_EXP int find_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool),
+DLL_IMP_EXP void SetFindOptions(FindFilesPacket *ff, bool incremental, time_t mtime);
+DLL_IMP_EXP void SetFindChangedFunction(FindFilesPacket *ff, bool CheckFct(JobControlRecord *jcr, FindFilesPacket *ff));
+DLL_IMP_EXP int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff, int file_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool),
                int plugin_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
 DLL_IMP_EXP bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
-DLL_IMP_EXP int term_find_files(FindFilesPacket *ff);
-DLL_IMP_EXP bool is_in_fileset(FindFilesPacket *ff);
-DLL_IMP_EXP bool accept_file(FindFilesPacket *ff);
+DLL_IMP_EXP int TermFindFiles(FindFilesPacket *ff);
+DLL_IMP_EXP bool IsInFileset(FindFilesPacket *ff);
+DLL_IMP_EXP bool AcceptFile(FindFilesPacket *ff);
 DLL_IMP_EXP findIncludeExcludeItem *allocate_new_incexe(void);
 DLL_IMP_EXP findIncludeExcludeItem *new_exclude(findFILESET *fileset);
 DLL_IMP_EXP findIncludeExcludeItem *new_include(findFILESET *fileset);
 DLL_IMP_EXP findIncludeExcludeItem *new_preinclude(findFILESET *fileset);
 DLL_IMP_EXP findIncludeExcludeItem *new_preexclude(findFILESET *fileset);
 DLL_IMP_EXP findFOPTS *start_options(FindFilesPacket *ff);
-DLL_IMP_EXP void new_options(FindFilesPacket *ff, findIncludeExcludeItem *incexe);
+DLL_IMP_EXP void NewOptions(FindFilesPacket *ff, findIncludeExcludeItem *incexe);
 
 
 #include "acl.h"

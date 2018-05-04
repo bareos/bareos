@@ -64,7 +64,7 @@ static void bareosUpdateTapeAlert(DeviceControlRecord *dcr, uint64_t flags);
 static DeviceRecord *bareosNewRecord(bool with_data);
 static void bareosCopyRecordState(DeviceRecord *dst, DeviceRecord *src);
 static void bareosFreeRecord(DeviceRecord *rec);
-static bool is_plugin_compatible(Plugin *plugin);
+static bool IsPluginCompatible(Plugin *plugin);
 
 /* Bareos info */
 static bsdInfo binfo = {
@@ -99,7 +99,7 @@ struct b_plugin_ctx {
    JobControlRecord *jcr;                                       /* jcr for plugin */
    bRC  rc;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
-   char events[nbytes_for_bits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
+   char events[NbytesForBits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
    Plugin *plugin;                                 /* pointer to plugin of which this is an instance off */
 };
 
@@ -114,7 +114,7 @@ static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
       return false;
    }
 
-   return bit_is_set(eventType, b_ctx->events);
+   return BitIsSet(eventType, b_ctx->events);
 }
 
 static inline bool is_plugin_disabled(bpContext *ctx)
@@ -240,7 +240,7 @@ char *edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *im
          str = ed1;
       }
       Dmsg1(1900, "add_str %s\n", str);
-      pm_strcat(omsg, (char *)str);
+      PmStrcat(omsg, (char *)str);
       Dmsg1(1800, "omsg=%s\n", omsg);
    }
    Dmsg1(800, "omsg=%s\n", omsg);
@@ -269,7 +269,7 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bsdEventType even
     * See if we should care about the return code.
     */
    if (rc) {
-      *rc = sdplug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+      *rc = SdplugFunc(ctx->plugin)->handlePluginEvent(ctx, event, value);
       switch (*rc) {
       case bRC_OK:
          break;
@@ -287,7 +287,7 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bsdEventType even
           * that moved back a position in the alist.
           */
          if (index) {
-            unload_plugin(plugin_ctx_list, ctx->plugin, *index);
+            UnloadPlugin(plugin_ctx_list, ctx->plugin, *index);
             *index = ((*index) - 1);
          }
          break;
@@ -304,7 +304,7 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bsdEventType even
          break;
       }
    } else {
-      sdplug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+      SdplugFunc(ctx->plugin)->handlePluginEvent(ctx, event, value);
    }
 
 bail_out:
@@ -314,7 +314,7 @@ bail_out:
 /**
  * Create a plugin event
  */
-bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *value, bool reverse)
+bRC GeneratePluginEvent(JobControlRecord *jcr, bsdEventType eventType, void *value, bool reverse)
 {
    int i;
    bsdEvent event;
@@ -322,12 +322,12 @@ bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *v
    bRC rc = bRC_OK;
 
    if (!sd_plugin_list) {
-      Dmsg0(debuglevel, "No bplugin_list: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No bplugin_list: GeneratePluginEvent ignored.\n");
       goto bail_out;
    }
 
    if (!jcr) {
-      Dmsg0(debuglevel, "No jcr: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No jcr: GeneratePluginEvent ignored.\n");
       goto bail_out;
    }
 
@@ -335,7 +335,7 @@ bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *v
     * Return if no plugins loaded
     */
    if (!jcr->plugin_ctx_list) {
-      Dmsg0(debuglevel, "No plugin_ctx_list: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No plugin_ctx_list: GeneratePluginEvent ignored.\n");
       goto bail_out;
    }
 
@@ -365,8 +365,8 @@ bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *v
       }
    }
 
-   if (jcr->is_job_canceled()) {
-      Dmsg0(debuglevel, "Cancel return from generate_plugin_event\n");
+   if (jcr->IsJobCanceled()) {
+      Dmsg0(debuglevel, "Cancel return from GeneratePluginEvent\n");
       rc = bRC_Cancel;
    }
 
@@ -397,14 +397,14 @@ void dump_sd_plugin(Plugin *plugin, FILE *fp)
 
 static void dump_sd_plugins(FILE *fp)
 {
-   dump_plugins(sd_plugin_list, fp);
+   DumpPlugins(sd_plugin_list, fp);
 }
 
 /**
  * This entry point is called internally by Bareos to ensure
  *  that the plugin IO calls come into this code.
  */
-void load_sd_plugins(const char *plugin_dir, alist *plugin_names)
+void LoadSdPlugins(const char *plugin_dir, alist *plugin_names)
 {
    Plugin *plugin;
    int i;
@@ -415,8 +415,8 @@ void load_sd_plugins(const char *plugin_dir, alist *plugin_names)
       return;
    }
    sd_plugin_list = New(alist(10, not_owned_by_alist));
-   if (!load_plugins((void *)&binfo, (void *)&bfuncs, sd_plugin_list,
-                     plugin_dir, plugin_names, plugin_type, is_plugin_compatible)) {
+   if (!LoadPlugins((void *)&binfo, (void *)&bfuncs, sd_plugin_list,
+                     plugin_dir, plugin_names, plugin_type, IsPluginCompatible)) {
       /*
        * Either none found, or some error
        */
@@ -435,18 +435,18 @@ void load_sd_plugins(const char *plugin_dir, alist *plugin_names)
    }
 
    Dmsg1(debuglevel, "num plugins=%d\n", sd_plugin_list->size());
-   dbg_plugin_add_hook(dump_sd_plugin);
-   dbg_print_plugin_add_hook(dump_sd_plugins);
+   DbgPluginAddHook(dump_sd_plugin);
+   DbgPrintPluginAddHook(dump_sd_plugins);
 }
 
-void unload_sd_plugins(void)
+void UnloadSdPlugins(void)
 {
-   unload_plugins(sd_plugin_list);
+   UnloadPlugins(sd_plugin_list);
    delete sd_plugin_list;
    sd_plugin_list = NULL;
 }
 
-int list_sd_plugins(PoolMem &msg)
+int ListSdPlugins(PoolMem &msg)
 {
    return list_plugins(sd_plugin_list, msg);
 }
@@ -455,10 +455,10 @@ int list_sd_plugins(PoolMem &msg)
  * Check if a plugin is compatible.  Called by the load_plugin function
  *  to allow us to verify the plugin.
  */
-static bool is_plugin_compatible(Plugin *plugin)
+static bool IsPluginCompatible(Plugin *plugin)
 {
    genpInfo *info = (genpInfo *)plugin->pinfo;
-   Dmsg0(50, "is_plugin_compatible called\n");
+   Dmsg0(50, "IsPluginCompatible called\n");
    if (debug_level >= 50) {
       dump_sd_plugin(plugin, stdin);
    }
@@ -518,7 +518,7 @@ static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugi
 
    jcr->plugin_ctx_list->append(ctx);
 
-   if (sdplug_func(plugin)->newPlugin(ctx) != bRC_OK) {
+   if (SdplugFunc(plugin)->newPlugin(ctx) != bRC_OK) {
       b_ctx->disabled = true;
    }
 
@@ -528,7 +528,7 @@ static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugi
 /**
  * Send a bsdEventNewPluginOptions event to all plugins configured in jcr->plugin_options.
  */
-void dispatch_new_plugin_options(JobControlRecord *jcr)
+void DispatchNewPluginOptions(JobControlRecord *jcr)
 {
    int i, j, len;
    Plugin *plugin;
@@ -554,7 +554,7 @@ void dispatch_new_plugin_options(JobControlRecord *jcr)
          /*
           * Make a private copy of plugin options.
           */
-         pm_strcpy(priv_plugin_options, plugin_options);
+         PmStrcpy(priv_plugin_options, plugin_options);
 
          plugin_name = priv_plugin_options.c_str();
          if (!(bp = strchr(plugin_name, ':'))) {
@@ -624,17 +624,17 @@ void dispatch_new_plugin_options(JobControlRecord *jcr)
 /**
  * Create a new instance of each plugin for this Job
  */
-void new_plugins(JobControlRecord *jcr)
+void NewPlugins(JobControlRecord *jcr)
 {
    Plugin *plugin;
    int i, num;
 
-   Dmsg0(debuglevel, "=== enter new_plugins ===\n");
+   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
    if (!sd_plugin_list) {
       Dmsg0(debuglevel, "No sd plugin list!\n");
       return;
    }
-   if (jcr->is_job_canceled()) {
+   if (jcr->IsJobCanceled()) {
       return;
    }
    /*
@@ -662,7 +662,7 @@ void new_plugins(JobControlRecord *jcr)
 /**
  * Free the plugin instances for this Job
  */
-void free_plugins(JobControlRecord *jcr)
+void FreePlugins(JobControlRecord *jcr)
 {
    bpContext *ctx;
 
@@ -675,7 +675,7 @@ void free_plugins(JobControlRecord *jcr)
       /*
        * Free the plugin instance
        */
-      sdplug_func(ctx->plugin)->freePlugin(ctx);
+      SdplugFunc(ctx->plugin)->freePlugin(ctx);
       free(ctx->bContext);                   /* Free BAREOS private context */
    }
 
@@ -825,7 +825,7 @@ static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
    Dmsg1(debuglevel, "sd-plugin: bareosSetValue var=%d\n", var);
    switch (var) {
    case bsdwVarVolumeName:
-      pm_strcpy(jcr->VolumeName, ((char *)value));
+      PmStrcpy(jcr->VolumeName, ((char *)value));
       break;
    case bsdwVarPriority:
       jcr->JobPriority = *((int *)value);
@@ -855,7 +855,7 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
       Dmsg1(debuglevel, "sd-plugin: Plugin registered event=%u\n", event);
-      set_bit(event, b_ctx->events);
+      SetBit(event, b_ctx->events);
    }
    va_end(args);
    return bRC_OK;
@@ -876,7 +876,7 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
       Dmsg1(debuglevel, "sd-plugin: Plugin unregistered event=%u\n", event);
-      clear_bit(event, b_ctx->events);
+      ClearBit(event, b_ctx->events);
    }
    va_end(args);
    return bRC_OK;
@@ -965,7 +965,7 @@ static char *bareosLookupCryptoKey(const char *VolumeName)
 
 static bool bareosUpdateVolumeInfo(DeviceControlRecord *dcr)
 {
-   return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ);
+   return dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_READ);
 }
 
 static void bareosUpdateTapeAlert(DeviceControlRecord *dcr, uint64_t flags)
@@ -973,7 +973,7 @@ static void bareosUpdateTapeAlert(DeviceControlRecord *dcr, uint64_t flags)
    utime_t now;
    now = (utime_t)time(NULL);
 
-   update_device_tapealert(dcr->device->name(), flags, now);
+   UpdateDeviceTapealert(dcr->device->name(), flags, now);
 }
 
 static DeviceRecord *bareosNewRecord(bool with_data)
@@ -983,12 +983,12 @@ static DeviceRecord *bareosNewRecord(bool with_data)
 
 static void bareosCopyRecordState(DeviceRecord *dst, DeviceRecord *src)
 {
-   copy_record_state(dst, src);
+   CopyRecordState(dst, src);
 }
 
 static void bareosFreeRecord(DeviceRecord *rec)
 {
-   free_record(rec);
+   FreeRecord(rec);
 }
 
 #ifdef TEST_PROGRAM
@@ -999,8 +999,8 @@ int main(int argc, char *argv[])
    JobControlRecord *jcr1 = &mjcr1;
    JobControlRecord *jcr2 = &mjcr2;
 
-   my_name_is(argc, argv, "plugtest");
-   init_msg(NULL, NULL);
+   MyNameIs(argc, argv, "plugtest");
+   InitMsg(NULL, NULL);
 
    OSDependentInit();
 
@@ -1009,26 +1009,26 @@ int main(int argc, char *argv[])
    } else {
       getcwd(plugin_dir, sizeof(plugin_dir)-1);
    }
-   load_sd_plugins(plugin_dir, NULL);
+   LoadSdPlugins(plugin_dir, NULL);
 
    jcr1->JobId = 111;
-   new_plugins(jcr1);
+   NewPlugins(jcr1);
 
    jcr2->JobId = 222;
-   new_plugins(jcr2);
+   NewPlugins(jcr2);
 
-   generate_plugin_event(jcr1, bsdEventJobStart, (void *)"Start Job 1");
-   generate_plugin_event(jcr1, bsdEventJobEnd);
-   generate_plugin_event(jcr2, bsdEventJobStart, (void *)"Start Job 1");
-   free_plugins(jcr1);
-   generate_plugin_event(jcr2, bsdEventJobEnd);
-   free_plugins(jcr2);
+   GeneratePluginEvent(jcr1, bsdEventJobStart, (void *)"Start Job 1");
+   GeneratePluginEvent(jcr1, bsdEventJobEnd);
+   GeneratePluginEvent(jcr2, bsdEventJobStart, (void *)"Start Job 1");
+   FreePlugins(jcr1);
+   GeneratePluginEvent(jcr2, bsdEventJobEnd);
+   FreePlugins(jcr2);
 
-   unload_sd_plugins();
+   UnloadSdPlugins();
 
-   term_msg();
-   close_memory_pool();
-   lmgr_cleanup_main();
+   TermMsg();
+   CloseMemoryPool();
+   LmgrCleanupMain();
    sm_dump(false);
    exit(0);
 }

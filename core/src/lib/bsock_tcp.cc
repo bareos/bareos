@@ -82,10 +82,10 @@ BareosSocket *BareosSocketTCP::clone()
    clone->SetTlsConnection(BareosSocket::GetTlsConnection());
 
    if (who_) {
-      clone->set_who(bstrdup(who_));
+      clone->SetWho(bstrdup(who_));
    }
    if (host_) {
-      clone->set_host(bstrdup(host_));
+      clone->SetHost(bstrdup(host_));
    }
    if (src_addr) {
       clone->src_addr = New(IPADDR(*(src_addr)));
@@ -121,7 +121,7 @@ bool BareosSocketTCP::connect(JobControlRecord * jcr, int retry_interval, utime_
    for (i = 0; !open(jcr, name, host, service, port, heart_beat, &fatal);
         i -= retry_interval) {
       berrno be;
-      if (fatal || (jcr && job_canceled(jcr))) {
+      if (fatal || (jcr && JobCanceled(jcr))) {
          goto bail_out;
       }
       Dmsg4(100, "Unable to connect to %s on %s:%d. ERR=%s\n",
@@ -145,7 +145,7 @@ bool BareosSocketTCP::connect(JobControlRecord * jcr, int retry_interval, utime_
 
 bail_out:
    if (tid) {
-      stop_thread_timer(tid);
+      StopThreadTimer(tid);
    }
    return ok;
 }
@@ -157,11 +157,11 @@ void BareosSocketTCP::fin_init(JobControlRecord * jcr, int sockfd, const char *w
                          int port, struct sockaddr *lclient_addr)
 {
    Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
-   set_who(bstrdup(who));
-   set_host(bstrdup(host));
-   set_port(port);
+   SetWho(bstrdup(who));
+   SetHost(bstrdup(host));
+   SetPort(port);
    memcpy(&client_addr, lclient_addr, sizeof(client_addr));
-   set_jcr(jcr);
+   SetJcr(jcr);
 }
 
 /*
@@ -208,9 +208,9 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
          /*
           * See if the addresses match.
           */
-         if (ipaddr->get_sockaddr_len() == next->get_sockaddr_len() &&
+         if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen() &&
              memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                    ipaddr->get_sockaddr_len()) == 0) {
+                    ipaddr->GetSockaddrLen()) == 0) {
             to_free = next;
             next = (IPADDR *)addr_list->next(next);
             addr_list->remove(to_free);
@@ -228,14 +228,14 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
    }
 
    foreach_dlist(ipaddr, addr_list) {
-      ipaddr->set_port_net(htons(port));
+      ipaddr->SetPortNet(htons(port));
       char allbuf[256 * 10];
       char curbuf[256];
       Dmsg2(100, "Current %s All %s\n",
                    ipaddr->build_address_str(curbuf, sizeof(curbuf)),
                    build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
       /* Open a TCP socket */
-      if ((sockfd = socket(ipaddr->get_family(), SOCK_STREAM, 0)) < 0) {
+      if ((sockfd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0) {
          berrno be;
          save_errno = errno;
          switch (errno) {
@@ -258,7 +258,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
          default:
             *fatal = 1;
             Pmsg3(000, _("Socket open error. proto=%d port=%d. ERR=%s\n"),
-               ipaddr->get_family(), ipaddr->get_port_host_order(), be.bstrerror());
+               ipaddr->GetFamily(), ipaddr->GetPortHostOrder(), be.bstrerror());
             break;
          }
          continue;
@@ -268,12 +268,12 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
        * Bind to the source address if it is set
        */
       if (src_addr) {
-         if (bind(sockfd, src_addr->get_sockaddr(), src_addr->get_sockaddr_len()) < 0) {
+         if (bind(sockfd, src_addr->get_sockaddr(), src_addr->GetSockaddrLen()) < 0) {
             berrno be;
             save_errno = errno;
             *fatal = 1;
             Pmsg2(000, _("Source address bind error. proto=%d. ERR=%s\n"),
-                  src_addr->get_family(), be.bstrerror() );
+                  src_addr->GetFamily(), be.bstrerror() );
             if (sockfd >= 0) {
                socketClose(sockfd);
                sockfd = -1;
@@ -290,7 +290,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
       /*
        * Connect to server
        */
-      if (::connect(sockfd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) < 0) {
+      if (::connect(sockfd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0) {
          save_errno = errno;
          if (sockfd >= 0) {
             socketClose(sockfd);
@@ -304,7 +304,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
    }
 
    if (!connected) {
-      free_addresses(addr_list);
+      FreeAddresses(addr_list);
       errno = save_errno | b_errno_win32;
       if (sockfd >= 0) {
          socketClose(sockfd);
@@ -323,7 +323,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
    }
 
    fin_init(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
-   free_addresses(addr_list);
+   FreeAddresses(addr_list);
    fd_ = sockfd;
    return true;
 }
@@ -391,7 +391,7 @@ bool BareosSocketTCP::send_packet(int32_t *hdr, int32_t pktsiz)
     * Send data packet
     */
    timer_start = watchdog_time;  /* start timer */
-   clear_timed_out();
+   ClearTimedOut();
 
    /*
     * Full I/O done in one write
@@ -460,10 +460,10 @@ bool BareosSocketTCP::send()
       return false;
    }
 
-   if (is_terminated()) {
+   if (IsTerminated()) {
       if (!suppress_error_msgs_) {
          Qmsg4(jcr_, M_ERROR, 0,  _("Socket is terminated=%d on call to %s:%s:%d\n"),
-             is_terminated(), who_, host_, port_);
+             IsTerminated(), who_, host_, port_);
       }
       return false;
    }
@@ -529,7 +529,7 @@ bool BareosSocketTCP::send()
  *    2. Signal including end of data stream
  *    3. Hard end of file
  *    4. Error
- *  Using is_bnet_stop() and is_bnet_error() you can figure this all out.
+ *  Using IsBnetStop() and IsBnetError() you can figure this all out.
  */
 int32_t BareosSocketTCP::recv()
 {
@@ -538,7 +538,7 @@ int32_t BareosSocketTCP::recv()
 
    msg[0] = 0;
    msglen = 0;
-   if (errors || is_terminated()) {
+   if (errors || IsTerminated()) {
       return BNET_HARDEOF;
    }
 
@@ -548,7 +548,7 @@ int32_t BareosSocketTCP::recv()
 
    read_seqno++;            /* bump sequence number */
    timer_start = watchdog_time;  /* set start wait time */
-   clear_timed_out();
+   ClearTimedOut();
 
    /*
     * Get data size -- in int32_t
@@ -598,7 +598,7 @@ int32_t BareosSocketTCP::recv()
          pktsiz = BNET_TERMINATE;  /* hang up */
       }
       if (pktsiz == BNET_TERMINATE) {
-         set_terminated();
+         SetTerminated();
       }
       timer_start = 0;                /* clear timer */
       b_errno = ENODATA;
@@ -610,12 +610,12 @@ int32_t BareosSocketTCP::recv()
    /*
     * Make sure the buffer is big enough + one byte for EOS
     */
-   if (pktsiz >= (int32_t) sizeof_pool_memory(msg)) {
-      msg = realloc_pool_memory(msg, pktsiz + 100);
+   if (pktsiz >= (int32_t) SizeofPoolMemory(msg)) {
+      msg = ReallocPoolMemory(msg, pktsiz + 100);
    }
 
    timer_start = watchdog_time;  /* set start wait time */
-   clear_timed_out();
+   ClearTimedOut();
 
    /*
     * Now read the actual data
@@ -665,7 +665,7 @@ get_out:
    return nbytes;                  /* return actual length of message */
 }
 
-int BareosSocketTCP::get_peer(char *buf, socklen_t buflen)
+int BareosSocketTCP::GetPeer(char *buf, socklen_t buflen)
 {
 #if !defined(HAVE_WIN32)
     if (peer_addr.sin_family == 0) {
@@ -689,7 +689,7 @@ int BareosSocketTCP::get_peer(char *buf, socklen_t buflen)
  * Returns: false on failure
  *          true  on success
  */
-bool BareosSocketTCP::set_buffer_size(uint32_t size, int rw)
+bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
 {
    uint32_t dbuf_size, start_size;
 
@@ -706,7 +706,7 @@ bool BareosSocketTCP::set_buffer_size(uint32_t size, int rw)
       dbuf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    }
    start_size = dbuf_size;
-   if ((msg = realloc_pool_memory(msg, dbuf_size + 100)) == NULL) {
+   if ((msg = ReallocPoolMemory(msg, dbuf_size + 100)) == NULL) {
       Qmsg0(get_jcr(), M_FATAL, 0, _("Could not malloc BareosSocket data buffer\n"));
       return false;
    }
@@ -763,7 +763,7 @@ bool BareosSocketTCP::set_buffer_size(uint32_t size, int rw)
  *
  * Returns previous socket flag
  */
-int BareosSocketTCP::set_nonblocking()
+int BareosSocketTCP::SetNonblocking()
 {
 #ifndef HAVE_WIN32
    int oflags;
@@ -803,7 +803,7 @@ int BareosSocketTCP::set_nonblocking()
  *
  * Returns previous socket flags
  */
-int BareosSocketTCP::set_blocking()
+int BareosSocketTCP::SetBlocking()
 {
 #ifndef HAVE_WIN32
    int oflags;
@@ -841,7 +841,7 @@ int BareosSocketTCP::set_blocking()
 /*
  * Restores socket flags
  */
-void BareosSocketTCP::restore_blocking(int flags)
+void BareosSocketTCP::RestoreBlocking(int flags)
 {
 #ifndef HAVE_WIN32
    if ((fcntl(fd_, F_SETFL, flags)) < 0) {
@@ -866,12 +866,12 @@ void BareosSocketTCP::restore_blocking(int flags)
  *          0 if timeout
  *         -1 if error
  */
-int BareosSocketTCP::wait_data(int sec, int usec)
+int BareosSocketTCP::WaitData(int sec, int usec)
 {
    int msec;
 
    msec = (sec * 1000) + (usec / 1000);
-   switch (wait_for_readable_fd(fd_, msec, true)) {
+   switch (WaitForReadableFd(fd_, msec, true)) {
    case 0:
       b_errno = 0;
       return 0;
@@ -887,12 +887,12 @@ int BareosSocketTCP::wait_data(int sec, int usec)
 /*
  * As above, but returns on interrupt
  */
-int BareosSocketTCP::wait_data_intr(int sec, int usec)
+int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 {
    int msec;
 
    msec = (sec * 1000) + (usec / 1000);
-   switch (wait_for_readable_fd(fd_, msec, false)) {
+   switch (WaitForReadableFd(fd_, msec, false)) {
    case 0:
       b_errno = 0;
       return 0;
@@ -912,7 +912,7 @@ int BareosSocketTCP::wait_data_intr(int sec, int usec)
 void BareosSocketTCP::close()
 {
    if (!cloned_) {
-      clear_locking();
+      ClearLocking();
    }
 
    if (!cloned_) {
@@ -920,10 +920,10 @@ void BareosSocketTCP::close()
        * Shutdown tls cleanly.
        */
       if (GetTlsConnection()) {
-         tls_bsock_shutdown(this);
-         free_tls();
+         TlsBsockShutdown(this);
+         FreeTls();
       }
-      if (is_timed_out()) {
+      if (IsTimedOut()) {
          shutdown(fd_, SHUT_RDWR);   /* discard any pending I/O */
       }
       socketClose(fd_);      /* normal close */
@@ -936,13 +936,13 @@ void BareosSocketTCP::close()
 void BareosSocketTCP::destroy()
 {
    if (msg) {
-      free_pool_memory(msg);
+      FreePoolMemory(msg);
       msg = NULL;
    } else {
       ASSERT(1 == 0);              /* double close */
    }
    if (errmsg) {
-      free_pool_memory(errmsg);
+      FreePoolMemory(errmsg);
       errmsg = NULL;
    }
    if (who_) {
@@ -973,7 +973,7 @@ int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
       /*
        * TLS enabled
        */
-      return (tls_bsock_readn(this, ptr, nbytes));
+      return (TlsBsockReadn(this, ptr, nbytes));
    }
 #endif /* HAVE_TLS */
 
@@ -981,7 +981,7 @@ int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
    while (nleft > 0) {
       errno = 0;
       nread = socketRead(fd_, ptr, nleft);
-      if (is_timed_out() || is_terminated()) {
+      if (IsTimedOut() || IsTerminated()) {
          return -1;
       }
 
@@ -1018,8 +1018,8 @@ int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
 
       nleft -= nread;
       ptr += nread;
-      if (use_bwlimit()) {
-         control_bwlimit(nread);
+      if (UseBwlimit()) {
+         ControlBwlimit(nread);
       }
    }
 
@@ -1034,7 +1034,7 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
 {
    int32_t nleft, nwritten;
 
-   if (is_spooling()) {
+   if (IsSpooling()) {
       nwritten = write(spool_fd_, ptr, nbytes);
       if (nwritten != nbytes) {
          berrno be;
@@ -1050,7 +1050,7 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
 #ifdef HAVE_TLS
    if (GetTlsConnection()) {
       /* TLS enabled */
-      return (tls_bsock_writen(this, ptr, nbytes));
+      return (TlsBsockWriten(this, ptr, nbytes));
    }
 #endif /* HAVE_TLS */
 
@@ -1059,7 +1059,7 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
       do {
          errno = 0;
          nwritten = socketWrite(fd_, ptr, nleft);
-         if (is_timed_out() || is_terminated()) {
+         if (IsTimedOut() || IsTerminated()) {
             return -1;
          }
 
@@ -1089,7 +1089,7 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
        * the CPU and try again.
        */
       if (nwritten == -1 && errno == EAGAIN) {
-         wait_for_writable_fd(fd_, 1, false);
+         WaitForWritableFd(fd_, 1, false);
          continue;
       }
 
@@ -1099,8 +1099,8 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
 
       nleft -= nwritten;
       ptr += nwritten;
-      if (use_bwlimit()) {
-         control_bwlimit(nwritten);
+      if (UseBwlimit()) {
+         ControlBwlimit(nwritten);
       }
    }
 

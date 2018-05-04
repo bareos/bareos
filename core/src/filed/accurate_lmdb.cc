@@ -41,10 +41,10 @@ static int debuglevel = 100;
 BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord *jcr, uint32_t number_of_files)
 {
    filenr_ = 0;
-   pay_load_ = get_pool_memory(PM_MESSAGE);
-   lmdb_name_ = get_pool_memory(PM_FNAME);
-   seen_bitmap_ = (char *)malloc(nbytes_for_bits(number_of_previous_files_));
-   clear_all_bits(number_of_previous_files_, seen_bitmap_);
+   pay_load_ = GetPoolMemory(PM_MESSAGE);
+   lmdb_name_ = GetPoolMemory(PM_FNAME);
+   seen_bitmap_ = (char *)malloc(NbytesForBits(number_of_previous_files_));
+   ClearAllBits(number_of_previous_files_, seen_bitmap_);
    db_env_ = NULL;
    db_ro_txn_ = NULL;
    db_rw_txn_ = NULL;
@@ -125,7 +125,7 @@ bail_out:
    return false;
 }
 
-bool BareosAccurateFilelistLmdb::add_file( char *fname,
+bool BareosAccurateFilelistLmdb::AddFile( char *fname,
                                            int fname_length,
                                            char *lstat,
                                            int lstat_length,
@@ -144,7 +144,7 @@ bool BareosAccurateFilelistLmdb::add_file( char *fname,
    /*
     * Make sure pay_load_ is large enough.
     */
-   pay_load_ = check_pool_memory_size(pay_load_, total_length);
+   pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
 
    /*
     * We store the total pay load as:
@@ -208,7 +208,7 @@ retry:
    return retval;
 }
 
-bool BareosAccurateFilelistLmdb::end_load()
+bool BareosAccurateFilelistLmdb::EndLoad()
 {
    int result;
 
@@ -263,7 +263,7 @@ accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(char *fname)
        * and chksum pointer to point to the actual lstat and chksum that
        * is stored behind the accurate_payload structure in the LMDB.
        */
-      pay_load_ = check_pool_memory_size(pay_load_, data.mv_size);
+      pay_load_ = CheckPoolMemorySize(pay_load_, data.mv_size);
 
       payload = (accurate_payload *)pay_load_;
       memcpy(payload, data.mv_data, data.mv_size);
@@ -312,7 +312,7 @@ bool BareosAccurateFilelistLmdb::update_payload(char *fname, accurate_payload *p
    /*
     * Make sure pay_load_ is large enough.
     */
-   pay_load_ = check_pool_memory_size(pay_load_, total_length);
+   pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
 
    /*
     * We store the total pay load as:
@@ -381,7 +381,7 @@ retry:
    return retval;
 }
 
-bool BareosAccurateFilelistLmdb::send_base_file_list()
+bool BareosAccurateFilelistLmdb::SendBaseFileList()
 {
    int result;
    int32_t LinkFIc;
@@ -415,11 +415,11 @@ bool BareosAccurateFilelistLmdb::send_base_file_list()
    if (result == 0) {
       while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
          payload = (accurate_payload *)data.mv_data;
-         if (bit_is_set(payload->filenr, seen_bitmap_)) {
+         if (BitIsSet(payload->filenr, seen_bitmap_)) {
             Dmsg1(debuglevel, "base file fname=%s\n", key.mv_data);
-            decode_stat(payload->lstat, &ff_pkt->statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
+            DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
             ff_pkt->fname = (char *)key.mv_data;
-            encode_and_send_attributes(jcr_, ff_pkt, stream);
+            EncodeAndSendAttributes(jcr_, ff_pkt, stream);
          }
       }
       mdb_cursor_close(cursor);
@@ -437,11 +437,11 @@ bool BareosAccurateFilelistLmdb::send_base_file_list()
    retval = true;
 
 bail_out:
-   term_find_files(ff_pkt);
+   TermFindFiles(ff_pkt);
    return retval;
 }
 
-bool BareosAccurateFilelistLmdb::send_deleted_list()
+bool BareosAccurateFilelistLmdb::SendDeletedList()
 {
    int result;
    int32_t LinkFIc;
@@ -477,17 +477,17 @@ bool BareosAccurateFilelistLmdb::send_deleted_list()
       while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
          payload = (accurate_payload *)data.mv_data;
 
-         if (bit_is_set(payload->filenr, seen_bitmap_) ||
+         if (BitIsSet(payload->filenr, seen_bitmap_) ||
              plugin_check_file(jcr_, (char *)key.mv_data)) {
             continue;
          }
 
          Dmsg1(debuglevel, "deleted fname=%s\n", key.mv_data);
-         decode_stat(payload->lstat, &statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
+         DecodeStat(payload->lstat, &statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = (char *)key.mv_data;
          ff_pkt->statp.st_mtime = statp.st_mtime;
          ff_pkt->statp.st_ctime = statp.st_ctime;
-         encode_and_send_attributes(jcr_, ff_pkt, stream);
+         EncodeAndSendAttributes(jcr_, ff_pkt, stream);
       }
       mdb_cursor_close(cursor);
    } else {
@@ -504,7 +504,7 @@ bool BareosAccurateFilelistLmdb::send_deleted_list()
    retval = true;
 
 bail_out:
-   term_find_files(ff_pkt);
+   TermFindFiles(ff_pkt);
    return retval;
 }
 
@@ -554,13 +554,13 @@ void BareosAccurateFilelistLmdb::destroy()
    }
 
    if (pay_load_) {
-      free_pool_memory(pay_load_);
+      FreePoolMemory(pay_load_);
       pay_load_ = NULL;
    }
 
    if (lmdb_name_) {
-      secure_erase(jcr_, lmdb_name_);
-      free_pool_memory(lmdb_name_);
+      SecureErase(jcr_, lmdb_name_);
+      FreePoolMemory(lmdb_name_);
       lmdb_name_ = NULL;
    }
 

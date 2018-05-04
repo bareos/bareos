@@ -876,7 +876,7 @@ static inline void set_string_if_null(char **destination, char *value)
 /**
  * Always set destination to value and clean any previous one.
  */
-static inline void set_string(char **destination, char *value)
+static inline void SetString(char **destination, char *value)
 {
    if (*destination) {
       free(*destination);
@@ -933,7 +933,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
        * plugin option string.
        */
       len = strlen(p_ctx->plugin_options);
-      pm_strcpy(plugin_definition, p_ctx->plugin_options);
+      PmStrcpy(plugin_definition, p_ctx->plugin_options);
 
       bp = strchr((char *)value, ':');
       if (!bp) {
@@ -946,12 +946,12 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
        * See if option string end with ':'
        */
       if (p_ctx->plugin_options[len - 1] != ':') {
-         pm_strcat(plugin_definition, (char *)bp);
+         PmStrcat(plugin_definition, (char *)bp);
       } else {
-         pm_strcat(plugin_definition, (char *)bp + 1);
+         PmStrcat(plugin_definition, (char *)bp + 1);
       }
    } else {
-      pm_strcpy(plugin_definition, (char *)value);
+      PmStrcpy(plugin_definition, (char *)value);
    }
 
    bp = strchr(plugin_definition.c_str(), ':');
@@ -1028,7 +1028,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
                if (keep_existing) {
                   set_string_if_null(str_destination, argument_value);
                } else {
-                  set_string(str_destination, argument_value);
+                  SetString(str_destination, argument_value);
                }
             }
 
@@ -1055,17 +1055,17 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
 
          if (cnt) {
             Mmsg(option, ":%s=%s", argument, argument_value);
-            pm_strcat(plugin_options, option.c_str());
+            PmStrcat(plugin_options, option.c_str());
          } else {
             Mmsg(option, "%s=%s", argument, argument_value);
-            pm_strcat(plugin_options, option.c_str());
+            PmStrcat(plugin_options, option.c_str());
          }
          cnt++;
       }
    }
 
    if (cnt > 0) {
-      pm_strcat(plugin_options, ":");
+      PmStrcat(plugin_options, ":");
    }
 
    return bRC_OK;
@@ -2059,9 +2059,9 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
    }
 
    /*
-    * Lookup the create_file() function in the python module.
+    * Lookup the CreateFile() function in the python module.
     */
-   pFunc = PyDict_GetItemString(p_ctx->pDict, "create_file"); /* Borrowed reference */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "CreateFile"); /* Borrowed reference */
    if (pFunc && PyCallable_Check(pFunc)) {
       PyRestorePacket *pRestorePacket;
       PyObject *pRetVal;
@@ -2083,7 +2083,7 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
          Py_DECREF(pRestorePacket);
       }
    } else {
-      Dmsg(ctx, debuglevel, "python-fd: Failed to find function named create_file()\n");
+      Dmsg(ctx, debuglevel, "python-fd: Failed to find function named CreateFile()\n");
    }
 
    return retval;
@@ -3432,7 +3432,7 @@ static inline const char *print_flags_bitmap(PyObject *bitmap)
          if ((flags = PyByteArray_AsString(bitmap))) {
             memset(visual_bitmap, 0, sizeof(visual_bitmap));
             for (cnt = 0; cnt <= FO_MAX; cnt++) {
-               if (bit_is_set(cnt, flags)) {
+               if (BitIsSet(cnt, flags)) {
                   visual_bitmap[cnt] = '1';
                } else {
                   visual_bitmap[cnt] = '0';

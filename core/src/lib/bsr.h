@@ -170,6 +170,6 @@ struct BootStrapRecord {
 };
 
 DLL_IMP_EXP BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
-DLL_IMP_EXP void dump_bsr(BootStrapRecord *bsr, bool recurse);
-DLL_IMP_EXP void free_bsr(BootStrapRecord *bsr);
+DLL_IMP_EXP void DumpBsr(BootStrapRecord *bsr, bool recurse);
+DLL_IMP_EXP void FreeBsr(BootStrapRecord *bsr);
 #endif

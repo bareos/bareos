@@ -193,7 +193,7 @@ TEST(dlist, dlist) {
    jcr1->buf = save_jcr->buf;
    jcr_chain->remove(save_jcr);
    free(save_jcr);
-   jcr_chain->insert_before(jcr1, next_jcr);
+   jcr_chain->InsertBefore(jcr1, next_jcr);
 
    index = 19;
    foreach_dlist(jcr, jcr_chain) {
@@ -225,7 +225,7 @@ TEST(dlist, dlist) {
    jcr->buf = save_jcr->buf;
    jcr_chain->remove(save_jcr);
    free(save_jcr);
-   jcr_chain->insert_before(jcr, next_jcr);
+   jcr_chain->InsertBefore(jcr, next_jcr);
 
    index= 0;
    foreach_dlist (jcr, jcr_chain) {

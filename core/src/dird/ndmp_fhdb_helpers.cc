@@ -46,7 +46,7 @@
  *   files are stored as they come in including the Fhinfo and Fhnode date that is needed
  *   for direct access recovery (DAR) and Directory DAR (DDAR)
  */
-void ndmp_store_attribute_record(JobControlRecord *jcr, char *fname, char *linked_fname,
+void NdmpStoreAttributeRecord(JobControlRecord *jcr, char *fname, char *linked_fname,
                                  char *attributes, int8_t FileType, uint64_t Node, uint64_t Fhinfo)
 {
    AttributesDbRecord *ar;
@@ -65,7 +65,7 @@ void ndmp_store_attribute_record(JobControlRecord *jcr, char *fname, char *linke
    ar = jcr->ar;
    if (jcr->cached_attribute) {
       Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-      if (!jcr->db->create_attributes_record(jcr, ar)) {
+      if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
          return;
       }
@@ -96,13 +96,13 @@ void ndmp_store_attribute_record(JobControlRecord *jcr, char *fname, char *linke
       jcr->ar->DeltaSeq = 0;
    }
 
-   if (!jcr->db->create_attributes_record(jcr, ar)) {
+   if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
       Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
       return;
    }
 }
 
-void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
+void NdmpConvertFstat(ndmp9_file_stat *fstat, int32_t FileIndex,
       int8_t *FileType, PoolMem &attribs)
 {
    struct stat statp;
@@ -198,6 +198,6 @@ void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs.c_str(), &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
+   EncodeStat(attribs.c_str(), &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
 }
 #endif

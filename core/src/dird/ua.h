@@ -89,10 +89,10 @@ private:
     * Methods
     */
    bool acl_access_ok(int acl, const char *item, int len, bool audit_event = false);
-   int rcode_to_acltype(int rcode);
+   int RcodeToAcltype(int rcode);
    void log_audit_event_acl_failure(int acl, const char *item);
    void log_audit_event_acl_success(int acl, const char *item);
-   void set_command_definition(ua_cmdstruct *cmdstruct) { cmddef = cmdstruct; }
+   void SetCommandDefinition(ua_cmdstruct *cmdstruct) { cmddef = cmdstruct; }
 
 public:
    /*
@@ -114,8 +114,8 @@ public:
    bool is_res_allowed(CommonResourceHeader *res);
    CommonResourceHeader *GetResWithName(int rcode, const char *name, bool audit_event = false, bool lock = true);
    PoolResource *GetPoolResWithName(const char *name, bool audit_event = true, bool lock = true);
-   StoreResource *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
-   StoreResource *GetStoreResWithId(DBId_t id, bool audit_event = true, bool lock = true);
+   StorageResource *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
+   StorageResource *GetStoreResWithId(DBId_t id, bool audit_event = true, bool lock = true);
    ClientResource *GetClientResWithName(const char *name, bool audit_event = true, bool lock = true);
    JobResource *GetJobResWithName(const char *name, bool audit_event = true, bool lock = true);
    FilesetResource *GetFileSetResWithName(const char *name, bool audit_event = true, bool lock = true);
@@ -125,17 +125,17 @@ public:
    /*
     * Audit event methods.
     */
-   bool audit_event_wanted(bool audit_event_enabled);
-   void log_audit_event_cmdline();
+   bool AuditEventWanted(bool audit_event_enabled);
+   void LogAuditEventCmdline();
 
    /*
     * The below are in ua_output.c
     */
-   void send_msg(const char *fmt, ...);
-   void error_msg(const char *fmt, ...);
-   void warning_msg(const char *fmt, ...);
-   void info_msg(const char *fmt, ...);
-   void send_cmd_usage(const char *fmt, ...);
+   void SendMsg(const char *fmt, ...);
+   void ErrorMsg(const char *fmt, ...);
+   void WarningMsg(const char *fmt, ...);
+   void InfoMsg(const char *fmt, ...);
+   void SendCmdUsage(const char *fmt, ...);
 };
 
 /*
@@ -175,7 +175,7 @@ struct RestoreContext {
    char last_jobid[20];
    POOLMEM *JobIds;                   /**< User entered string of JobIds */
    POOLMEM *BaseJobIds;               /**< Base jobids */
-   StoreResource *store;
+   StorageResource *store;
    JobResource *restore_job;
    PoolResource *pool;
    int restore_jobs;
@@ -226,7 +226,7 @@ public:
    JobResource *job;
    JobResource *verify_job;
    JobResource *previous_job;
-   UnifiedStoreResource *store;
+   UnifiedStorageResource *store;
    ClientResource *client;
    FilesetResource *fileset;
    PoolResource *pool;
@@ -250,7 +250,7 @@ public:
     * Methods
     */
    RunContext() { memset(this, 0, sizeof(RunContext));
-               store = new UnifiedStoreResource; }
+               store = new UnifiedStorageResource; }
    ~RunContext() { delete store; }
 };
 #endif

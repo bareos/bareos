@@ -71,11 +71,11 @@ static int missing_handler(void *ctx, int num_fields, char **row);
  * Called here before the job is run to do the job
  *   specific setup.
  */
-bool do_verify_init(JobControlRecord *jcr)
+bool DoVerifyInit(JobControlRecord *jcr)
 {
    int JobLevel;
 
-   if (!allow_duplicate_job(jcr)) {
+   if (!AllowDuplicateJob(jcr)) {
       return false;
    }
 
@@ -84,11 +84,11 @@ bool do_verify_init(JobControlRecord *jcr)
    case L_VERIFY_INIT:
    case L_VERIFY_CATALOG:
    case L_VERIFY_DISK_TO_CATALOG:
-      free_rstorage(jcr);
-      free_wstorage(jcr);
+      FreeRstorage(jcr);
+      FreeWstorage(jcr);
       break;
    case L_VERIFY_VOLUME_TO_CATALOG:
-      free_wstorage(jcr);
+      FreeWstorage(jcr);
       break;
    case L_VERIFY_DATA:
       break;
@@ -105,7 +105,7 @@ bool do_verify_init(JobControlRecord *jcr)
  *  Returns:  false on failure
  *            true  on success
  */
-bool do_verify(JobControlRecord *jcr)
+bool DoVerify(JobControlRecord *jcr)
 {
    int JobLevel;
    const char *level;
@@ -117,7 +117,7 @@ bool do_verify(JobControlRecord *jcr)
    JobId_t verify_jobid = 0;
    const char *Name;
 
-   free_wstorage(jcr);                   /* we don't write */
+   FreeWstorage(jcr);                   /* we don't write */
 
    memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
 
@@ -156,7 +156,7 @@ bool do_verify(JobControlRecord *jcr)
          Dmsg1(100, "Supplied jobid=%d\n", verify_jobid);
 
       } else {
-         if (!jcr->db->find_last_jobid(jcr, Name, &jr)) {
+         if (!jcr->db->FindLastJobid(jcr, Name, &jr)) {
             if (JobLevel == L_VERIFY_CATALOG) {
                Jmsg(jcr, M_FATAL, 0, _(
                        "Unable to find JobId of previous InitCatalog Job.\n"
@@ -177,7 +177,7 @@ bool do_verify(JobControlRecord *jcr)
        *   us. We use the verify_jobid that we found above.
        */
       jcr->previous_jr.JobId = verify_jobid;
-      if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+      if (!jcr->db->GetJobRecord(jcr, &jcr->previous_jr)) {
          Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), jcr->db->strerror());
          return false;
       }
@@ -204,11 +204,11 @@ bool do_verify(JobControlRecord *jcr)
        *  no files were backed up, so skip calling SD and
        *  client.
        */
-      status = create_restore_bootstrap_file(jcr);
+      status = CreateRestoreBootstrapFile(jcr);
       if (status < 0) {                      /* error */
          return false;
       } else if (status == 0) {              /* No files, nothing to do */
-         verify_cleanup(jcr, JS_Terminated); /* clean up */
+         VerifyCleanup(jcr, JS_Terminated); /* clean up */
          return true;                      /* get out */
       }
 
@@ -223,7 +223,7 @@ bool do_verify(JobControlRecord *jcr)
 
    Dmsg2(100, "ClientId=%u JobLevel=%c\n", jcr->previous_jr.ClientId, JobLevel);
 
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
@@ -240,7 +240,7 @@ bool do_verify(JobControlRecord *jcr)
        * Start conversation with Storage daemon
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
          return false;
       }
       sd = jcr->store_bsock;
@@ -248,7 +248,7 @@ bool do_verify(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
          return false;
       }
 
@@ -264,7 +264,7 @@ bool do_verify(JobControlRecord *jcr)
          /*
           * Now start a Storage daemon message thread
           */
-         if (!start_storage_daemon_message_thread(jcr)) {
+         if (!StartStorageDaemonMessageThread(jcr)) {
             return false;
          }
          Dmsg0(50, "Storage daemon connection OK\n");
@@ -274,10 +274,10 @@ bool do_verify(JobControlRecord *jcr)
        * OK, now connect to the File daemon and ask him for the files.
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
          goto bail_out;
       }
-      send_job_info(jcr);
+      SendJobInfo(jcr);
       fd = jcr->file_bsock;
 
       /*
@@ -296,10 +296,10 @@ bool do_verify(JobControlRecord *jcr)
        * OK, now connect to the File daemon and ask him for the files.
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
          goto bail_out;
       }
-      send_job_info(jcr);
+      SendJobInfo(jcr);
       fd = jcr->file_bsock;
       break;
    }
@@ -307,12 +307,12 @@ bool do_verify(JobControlRecord *jcr)
    jcr->setJobStatus(JS_Running);
 
    Dmsg0(30, ">filed: Send include list\n");
-   if (!send_include_list(jcr)) {
+   if (!SendIncludeList(jcr)) {
       goto bail_out;
    }
 
    Dmsg0(30, ">filed: Send exclude list\n");
-   if (!send_exclude_list(jcr)) {
+   if (!SendExcludeList(jcr)) {
       goto bail_out;
    }
 
@@ -334,7 +334,7 @@ bool do_verify(JobControlRecord *jcr)
 
       if (!jcr->passive_client) {
          uint32_t tls_need = 0;
-         StoreResource *store = jcr->res.rstore;
+         StorageResource *store = jcr->res.rstore;
 
          /*
           * Send Storage daemon address to the File daemon
@@ -380,7 +380,7 @@ bool do_verify(JobControlRecord *jcr)
          /*
           * Now start a Storage daemon message thread
           */
-         if (!start_storage_daemon_message_thread(jcr)) {
+         if (!StartStorageDaemonMessageThread(jcr)) {
             goto bail_out;
          }
          Dmsg0(50, "Storage daemon connection OK\n");
@@ -399,7 +399,7 @@ bool do_verify(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if (!send_runscripts_commands(jcr)) {
+   if (!SendRunscriptsCommands(jcr)) {
       goto bail_out;
    }
 
@@ -424,14 +424,14 @@ bool do_verify(JobControlRecord *jcr)
       Dmsg0(10, "Verify level=catalog\n");
       jcr->sd_msg_thread_done = true;   /* no SD msg thread, so it is done */
       jcr->SDJobStatus = JS_Terminated;
-      get_attributes_and_compare_to_catalog(jcr, jcr->previous_jr.JobId);
+      GetAttributesAndCompareToCatalog(jcr, jcr->previous_jr.JobId);
       break;
    case L_VERIFY_VOLUME_TO_CATALOG:
       /*
        * Verify Volume to catalog entries
        */
       Dmsg0(10, "Verify level=volume\n");
-      get_attributes_and_compare_to_catalog(jcr, jcr->previous_jr.JobId);
+      GetAttributesAndCompareToCatalog(jcr, jcr->previous_jr.JobId);
       break;
    case L_VERIFY_DISK_TO_CATALOG:
       /*
@@ -440,7 +440,7 @@ bool do_verify(JobControlRecord *jcr)
       Dmsg0(10, "Verify level=disk_to_catalog\n");
       jcr->sd_msg_thread_done = true;   /* no SD msg thread, so it is done */
       jcr->SDJobStatus = JS_Terminated;
-      get_attributes_and_compare_to_catalog(jcr, jcr->previous_jr.JobId);
+      GetAttributesAndCompareToCatalog(jcr, jcr->previous_jr.JobId);
       break;
    case L_VERIFY_INIT:
       /*
@@ -449,17 +449,17 @@ bool do_verify(JobControlRecord *jcr)
       Dmsg0(10, "Verify level=init\n");
       jcr->sd_msg_thread_done = true;   /* no SD msg thread, so it is done */
       jcr->SDJobStatus = JS_Terminated;
-      get_attributes_and_put_in_catalog(jcr);
-      jcr->db->end_transaction(jcr);   /* terminate any open transaction */
-      jcr->db_batch->write_batch_file_records(jcr);
+      GetAttributesAndPutInCatalog(jcr);
+      jcr->db->EndTransaction(jcr);   /* terminate any open transaction */
+      jcr->db_batch->WriteBatchFileRecords(jcr);
       break;
    default:
       Jmsg1(jcr, M_FATAL, 0, _("Unimplemented verify level %d\n"), JobLevel);
       goto bail_out;
    }
 
-   status = wait_for_job_termination(jcr);
-   verify_cleanup(jcr, status);
+   status = WaitForJobTermination(jcr);
+   VerifyCleanup(jcr, status);
    return true;
 
 bail_out:
@@ -476,17 +476,17 @@ bail_out:
 /**
  * Release resources allocated during verify.
  */
-void verify_cleanup(JobControlRecord *jcr, int TermCode)
+void VerifyCleanup(JobControlRecord *jcr, int TermCode)
 {
    int JobLevel;
    char sdt[50], edt[50];
    char ec1[30], ec2[30];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
-   const char *term_msg;
+   const char *TermMsg;
    int msg_type;
    const char *Name;
 
-// Dmsg1(100, "Enter verify_cleanup() TermCod=%d\n", TermCode);
+// Dmsg1(100, "Enter VerifyCleanup() TermCod=%d\n", TermCode);
 
    JobLevel = jcr->getJobLevel();
    Dmsg3(900, "JobLevel=%c Expected=%u JobFiles=%u\n", JobLevel,
@@ -496,38 +496,38 @@ void verify_cleanup(JobControlRecord *jcr, int TermCode)
       TermCode = JS_ErrorTerminated;
    }
 
-   update_job_end(jcr, TermCode);
+   UpdateJobEnd(jcr, TermCode);
 
-   if (job_canceled(jcr)) {
-      cancel_storage_daemon_job(jcr);
+   if (JobCanceled(jcr)) {
+      CancelStorageDaemonJob(jcr);
    }
 
    if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
-      secure_erase(jcr, jcr->RestoreBootstrap);
+      SecureErase(jcr, jcr->RestoreBootstrap);
       jcr->unlink_bsr = false;
    }
 
    msg_type = M_INFO;                 /* By default INFO message */
    switch (TermCode) {
    case JS_Terminated:
-      term_msg = _("Verify OK");
+      TermMsg = _("Verify OK");
       break;
    case JS_FatalError:
    case JS_ErrorTerminated:
-      term_msg = _("*** Verify Error ***");
+      TermMsg = _("*** Verify Error ***");
       msg_type = M_ERROR;             /* Generate error message */
       break;
    case JS_Error:
-      term_msg = _("Verify warnings");
+      TermMsg = _("Verify warnings");
       break;
    case JS_Canceled:
-      term_msg = _("Verify Canceled");
+      TermMsg = _("Verify Canceled");
       break;
    case JS_Differences:
-      term_msg = _("Verify Differences");
+      TermMsg = _("Verify Differences");
       break;
    default:
-      term_msg = term_code;
+      TermMsg = term_code;
       bsnprintf(term_code, sizeof(term_code),
                 _("Inappropriate term code: %d %c\n"), TermCode, TermCode);
       break;
@@ -540,10 +540,10 @@ void verify_cleanup(JobControlRecord *jcr, int TermCode)
       Name = "";
    }
 
-   jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
+   JobstatusToAscii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
    switch (JobLevel) {
    case L_VERIFY_VOLUME_TO_CATALOG:
-      jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
+      JobstatusToAscii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
            "  Build OS:               %s %s %s\n"
            "  JobId:                  %d\n"
@@ -577,7 +577,7 @@ void verify_cleanup(JobControlRecord *jcr, int TermCode)
            jcr->JobErrors,
            fd_term_msg,
            sd_term_msg,
-           term_msg);
+           TermMsg);
       break;
    default:
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
@@ -609,17 +609,17 @@ void verify_cleanup(JobControlRecord *jcr, int TermCode)
            edit_uint64_with_commas(jcr->JobFiles, ec1),
            jcr->JobErrors,
            fd_term_msg,
-           term_msg);
+           TermMsg);
       break;
    }
 
-   Dmsg0(100, "Leave verify_cleanup()\n");
+   Dmsg0(100, "Leave VerifyCleanup()\n");
 }
 
 /**
  * This routine is called only during a Verify
  */
-void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
+void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
 {
    BareosSocket *fd;
    int n, len;
@@ -627,7 +627,7 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
    struct stat statf;                 /* file stat */
    struct stat statc;                 /* catalog stat */
    PoolMem buf(PM_MESSAGE);
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
    int do_Digest = CRYPTO_DIGEST_NONE;
    int32_t file_index = 0;
 
@@ -647,16 +647,16 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
     *   Attributes
     *   Link name  ???
     */
-   while ((n=bget_dirmsg(fd)) >= 0 && !job_canceled(jcr)) {
+   while ((n=BgetDirmsg(fd)) >= 0 && !JobCanceled(jcr)) {
       int stream;
       char *attr, *p, *fn;
       PoolMem Opts_Digest(PM_MESSAGE);   /* Verify Opts or MD5/SHA1 digest */
 
-      if (job_canceled(jcr)) {
+      if (JobCanceled(jcr)) {
          goto bail_out;
       }
-      fname = check_pool_memory_size(fname, fd->msglen);
-      jcr->fname = check_pool_memory_size(jcr->fname, fd->msglen);
+      fname = CheckPoolMemorySize(fname, fd->msglen);
+      jcr->fname = CheckPoolMemorySize(jcr->fname, fd->msglen);
       Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
       if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream,
             fname)) != 3) {
@@ -668,13 +668,13 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
        * We read the Options or Signature into fname
        *  to prevent overrun, now copy it to proper location.
        */
-      pm_strcpy(Opts_Digest, fname);
+      PmStrcpy(Opts_Digest, fname);
       p = fd->msg;
-      skip_nonspaces(&p);             /* skip FileIndex */
-      skip_spaces(&p);
-      skip_nonspaces(&p);             /* skip Stream */
-      skip_spaces(&p);
-      skip_nonspaces(&p);             /* skip Opts_Digest */
+      SkipNonspaces(&p);             /* skip FileIndex */
+      SkipSpaces(&p);
+      SkipNonspaces(&p);             /* skip Stream */
+      SkipSpaces(&p);
+      SkipNonspaces(&p);             /* skip Opts_Digest */
       p++;                            /* skip space */
       fn = fname;
       while (*p != 0) {
@@ -694,10 +694,10 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
          jcr->JobFiles++;
          jcr->FileIndex = file_index;    /* remember attribute file_index */
          jcr->previous_jr.FileIndex = file_index;
-         decode_stat(attr, &statf, sizeof(statf), &LinkFIf);  /* decode file stat packet */
+         DecodeStat(attr, &statf, sizeof(statf), &LinkFIf);  /* decode file stat packet */
          do_Digest = CRYPTO_DIGEST_NONE;
          jcr->fn_printed = false;
-         pm_strcpy(jcr->fname, fname);  /* move filename into JobControlRecord */
+         PmStrcpy(jcr->fname, fname);  /* move filename into JobControlRecord */
 
          Dmsg2(040, "dird<filed: stream=%d %s\n", stream, jcr->fname);
          Dmsg1(020, "dird<filed: attr=%s\n", attr);
@@ -706,7 +706,7 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
           * Find equivalent record in the database
           */
          fdbr.FileId = 0;
-         if (!jcr->db->get_file_attributes_record(jcr, jcr->fname,
+         if (!jcr->db->GetFileAttributesRecord(jcr, jcr->fname,
               &jcr->previous_jr, &fdbr)) {
             Jmsg(jcr, M_INFO, 0, _("New file: %s\n"), jcr->fname);
             Dmsg1(020, _("File not in catalog: %s\n"), jcr->fname);
@@ -717,12 +717,12 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
              * mark file record as visited by stuffing the
              * current JobId, which is unique, into the MarkId field.
              */
-            jcr->db->mark_file_record(jcr, fdbr.FileId, jcr->JobId);
+            jcr->db->MarkFileRecord(jcr, fdbr.FileId, jcr->JobId);
          }
 
          Dmsg3(400, "Found %s in catalog. inx=%d Opts=%s\n",
                jcr->fname, file_index, Opts_Digest.c_str());
-         decode_stat(fdbr.LStat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
+         DecodeStat(fdbr.LStat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
          /*
           * Loop over options supplied by user and verify the
           * fields he requests.
@@ -834,7 +834,7 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
           * Got Digest Signature from Storage daemon
           *  It came across in the Opts_Digest field.
           */
-         if (crypto_digest_stream_type(stream) != CRYPTO_DIGEST_NONE) {
+         if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
             Dmsg2(400, "stream=Digest inx=%d Digest=%s\n", file_index, Opts_Digest.c_str());
             /*
              * When ever we get a digest it MUST have been
@@ -846,7 +846,7 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
                goto bail_out;
             }
             if (do_Digest != CRYPTO_DIGEST_NONE) {
-               jcr->db->escape_string(jcr, buf.c_str(), Opts_Digest.c_str(), strlen(Opts_Digest.c_str()));
+               jcr->db->EscapeString(jcr, buf.c_str(), Opts_Digest.c_str(), strlen(Opts_Digest.c_str()));
                if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
                   prt_fname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      %s differs. File=%s Cat=%s\n"),
@@ -861,7 +861,7 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
       jcr->JobFiles = file_index;
    }
 
-   if (is_bnet_error(fd)) {
+   if (IsBnetError(fd)) {
       berrno be;
       Jmsg2(jcr, M_FATAL, 0, _("dir<filed: bad attributes from filed n=%d : %s\n"),
                         n, be.bstrerror());
@@ -878,13 +878,13 @@ void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
       "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
          JobId, jcr->JobId);
    /* missing_handler is called for each file found */
-   jcr->db->sql_query(buf.c_str(), missing_handler, (void *)jcr);
+   jcr->db->SqlQuery(buf.c_str(), missing_handler, (void *)jcr);
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }
 
 bail_out:
-   free_pool_memory(fname);
+   FreePoolMemory(fname);
 }
 
 /**
@@ -897,7 +897,7 @@ static int missing_handler(void *ctx, int num_fields, char **row)
 {
    JobControlRecord *jcr = (JobControlRecord *)ctx;
 
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return 1;
    }
    if (!jcr->fn_printed) {

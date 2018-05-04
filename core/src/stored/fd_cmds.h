@@ -22,7 +22,7 @@
 #define BAREOS_STORED_FD_CMDS_H_
 
 void *handle_filed_connection(BareosSocket *fd, char *job_name);
-void run_job(JobControlRecord *jcr);
-void do_fd_commands(JobControlRecord *jcr);
+void RunJob(JobControlRecord *jcr);
+void DoFdCommands(JobControlRecord *jcr);
 
 #endif // BAREOS_STORED_FD_CMDS_H_

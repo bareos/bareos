@@ -22,7 +22,7 @@
 #define BAREOS_FINDLIB_ATTRIBS_H_
 
 DLL_IMP_EXP int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff_pkt);
-DLL_IMP_EXP bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
-DLL_IMP_EXP int select_data_stream(FindFilesPacket *ff_pkt, bool compatible);
+DLL_IMP_EXP bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
+DLL_IMP_EXP int SelectDataStream(FindFilesPacket *ff_pkt, bool compatible);
 
 #endif // BAREOS_FINDLIB_ATTRIBS_H_

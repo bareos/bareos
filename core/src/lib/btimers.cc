@@ -65,7 +65,7 @@ btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait)
    wid->wd->callback = callback_child_timer;
    wid->wd->one_shot = false;
    wid->wd->interval = wait;
-   register_watchdog(wid->wd);
+   RegisterWatchdog(wid->wd);
 
    Dmsg3(debuglevel, "Start child timer %p, pid %d for %d secs.\n", wid, pid, wait);
    return wid;
@@ -74,10 +74,10 @@ btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait)
 /*
  * Stop child timer
  */
-void stop_child_timer(btimer_t *wid)
+void StopChildTimer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Dmsg0(debuglevel, "stop_child_timer called with NULL btimer_id\n");
+      Dmsg0(debuglevel, "StopChildTimer called with NULL btimer_id\n");
       return;
    }
    Dmsg2(debuglevel, "Stop child timer %p pid %d\n", wid, wid->pid);
@@ -146,7 +146,7 @@ btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait
    wid->wd->callback = callback_thread_timer;
    wid->wd->one_shot = true;
    wid->wd->interval = wait;
-   register_watchdog(wid->wd);
+   RegisterWatchdog(wid->wd);
 
    Dmsg3(debuglevel, "Start thread timer %p tid %s for %d secs.\n",
          wid, edit_pthread(tid, ed1, sizeof(ed1)), wait);
@@ -160,7 +160,7 @@ btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t *start_bsock_timer(BareosSocket *bsock, uint32_t wait)
+btimer_t *StartBsockTimer(BareosSocket *bsock, uint32_t wait)
 {
    char ed1[50];
    btimer_t *wid;
@@ -182,7 +182,7 @@ btimer_t *start_bsock_timer(BareosSocket *bsock, uint32_t wait)
    wid->wd->callback = callback_thread_timer;
    wid->wd->one_shot = true;
    wid->wd->interval = wait;
-   register_watchdog(wid->wd);
+   RegisterWatchdog(wid->wd);
 
    Dmsg4(debuglevel, "Start bsock timer %p tid=%s for %d secs at %d\n",
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), wait, time(NULL));
@@ -193,12 +193,12 @@ btimer_t *start_bsock_timer(BareosSocket *bsock, uint32_t wait)
 /*
  * Stop bsock timer
  */
-void stop_bsock_timer(btimer_t *wid)
+void StopBsockTimer(btimer_t *wid)
 {
    char ed1[50];
 
    if (wid == NULL) {
-      Dmsg0(900, "stop_bsock_timer called with NULL btimer_id\n");
+      Dmsg0(900, "StopBsockTimer called with NULL btimer_id\n");
       return;
    }
 
@@ -211,12 +211,12 @@ void stop_bsock_timer(btimer_t *wid)
 /*
  * Stop thread timer
  */
-void stop_thread_timer(btimer_t *wid)
+void StopThreadTimer(btimer_t *wid)
 {
    char ed1[50];
 
    if (wid == NULL) {
-      Dmsg0(debuglevel, "stop_thread_timer called with NULL btimer_id\n");
+      Dmsg0(debuglevel, "StopThreadTimer called with NULL btimer_id\n");
       return;
    }
 
@@ -247,7 +247,7 @@ static void callback_thread_timer(watchdog_t *self)
    }
 
    if (wid->type == TYPE_BSOCK && wid->bsock) {
-      wid->bsock->set_timed_out();
+      wid->bsock->SetTimedOut();
    }
    pthread_kill(wid->tid, TIMEOUT_SIGNAL);
 }
@@ -275,7 +275,7 @@ static void stop_btimer(btimer_t *wid)
    if (wid == NULL) {
       Emsg0(M_ABORT, 0, _("stop_btimer called with NULL btimer_id\n"));
    }
-   unregister_watchdog(wid->wd);
+   UnregisterWatchdog(wid->wd);
    free(wid->wd);
    free(wid);
 }

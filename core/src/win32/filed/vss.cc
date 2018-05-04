@@ -136,7 +136,7 @@ bool VSSClient::InitializeForBackup(JobControlRecord *jcr)
 {
    jcr_ = jcr;
 
-   generate_plugin_event(jcr, bEventVssInitializeForBackup);
+   GeneratePluginEvent(jcr, bEventVssInitializeForBackup);
 
    return Initialize(0);
 }
@@ -146,7 +146,7 @@ bool VSSClient::InitializeForRestore(JobControlRecord *jcr)
    metadata_ = NULL;
    jcr_ = jcr;
 
-   generate_plugin_event(jcr, bEventVssInitializeForRestore);
+   GeneratePluginEvent(jcr, bEventVssInitializeForRestore);
 
    return Initialize(0, true /*=>Restore*/);
 }

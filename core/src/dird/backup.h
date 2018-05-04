@@ -22,17 +22,17 @@
 #ifndef BAREOS_DIRD_BACKUP_H_
 #define BAREOS_DIRD_BACKUP_H_
 
-int wait_for_job_termination(JobControlRecord *jcr, int timeout = 0);
-bool do_native_backup_init(JobControlRecord *jcr);
+int WaitForJobTermination(JobControlRecord *jcr, int timeout = 0);
+bool DoNativeBackupInit(JobControlRecord *jcr);
 bool do_native_backup(JobControlRecord *jcr);
-void native_backup_cleanup(JobControlRecord *jcr, int TermCode);
-void update_bootstrap_file(JobControlRecord *jcr);
-bool send_accurate_current_files(JobControlRecord *jcr);
-void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_type,
-                             const char *term_msg);
+void NativeBackupCleanup(JobControlRecord *jcr, int TermCode);
+void UpdateBootstrapFile(JobControlRecord *jcr);
+bool SendAccurateCurrentFiles(JobControlRecord *jcr);
+void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_type,
+                             const char *TermMsg);
 
-char* storage_address_to_contact(ClientResource *client, StoreResource *store);
-char* client_address_to_contact(ClientResource *client, StoreResource *store);
-char* storage_address_to_contact(StoreResource *rstore, StoreResource *wstore);
+char* StorageAddressToContact(ClientResource *client, StorageResource *store);
+char* ClientAddressToContact(ClientResource *client, StorageResource *store);
+char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore);
 
 #endif // BAREOS_DIRD_BACKUP_H_

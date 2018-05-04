@@ -90,7 +90,7 @@ static void dbg_print_bareos()
    fprintf(stderr, "Dumping: %s\n", buf);
 
    /* Print also BareosDb and RWLOCK structure
-    * Can add more info about JobControlRecord with dbg_jcr_add_hook()
+    * Can add more info about JobControlRecord with DbgJcrAddHook()
     */
    dbg_print_lock(fp);
    dbg_print_jcr(fp);
@@ -194,7 +194,7 @@ extern "C" void signal_handler(int sig)
          Pmsg2(000, "chdir to %s failed. ERR=%s\n", working_directory,  be.bstrerror());
          strcpy((char *)working_directory, "/tmp/");
       }
-      secure_erase(NULL, "./core");        /* get rid of any old core file */
+      SecureErase(NULL, "./core");        /* get rid of any old core file */
 
 #ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
       /*
@@ -294,7 +294,7 @@ extern "C" void signal_handler(int sig)
 /*
  * Init stack dump by saving main process id -- needed by debugger to attach to this program.
  */
-void init_stack_dump(void)
+void InitStackDump(void)
 {
    main_pid = getpid();               /* save main thread's pid */
 }
@@ -302,7 +302,7 @@ void init_stack_dump(void)
 /*
  * Initialize signals
  */
-void init_signals(void terminate(int sig))
+void InitSignals(void terminate(int sig))
 {
    struct sigaction sighandle;
    struct sigaction sigignore;

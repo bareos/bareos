@@ -22,6 +22,6 @@
 #ifndef BAREOS_DIRD_EXPAND_H_
 #define BAREOS_DIRD_EXPAND_H_
 
-int variable_expansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp);
+int VariableExpansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp);
 
 #endif // BAREOS_DIRD_EXPAND_H_

@@ -110,7 +110,7 @@ int db_strtime_handler(void *ctx, int num_fields, char **row)
    db_int64_ctx *lctx = (db_int64_ctx *)ctx;
 
    if (row[0]) {
-      lctx->value = str_to_utime(row[0]);
+      lctx->value = StrToUtime(row[0]);
       lctx->count++;
    }
    return 0;
@@ -145,7 +145,7 @@ static inline int db_max_connections_handler(void *ctx, int num_fields, char **r
    uint32_t index;
 
    context = (struct max_connections_context *)ctx;
-   switch (context->db->get_type_index()) {
+   switch (context->db->GetTypeIndex()) {
    case SQL_TYPE_MYSQL:
       index = 1;
       break;
@@ -174,7 +174,7 @@ bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurr
    /*
     * Without Batch insert, no need to verify max_connections
     */
-   if (!batch_insert_available())
+   if (!BatchInsertAvailable())
       return true;
 
    context.db = this;
@@ -183,8 +183,8 @@ bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurr
    /*
     * Check max_connections setting
     */
-   fill_query(query, SQL_QUERY_sql_get_max_connections);
-   if (!sql_query_with_handler(query.c_str(), db_max_connections_handler, &context)) {
+   FillQuery(query, SQL_QUERY_sql_get_max_connections);
+   if (!SqlQueryWithHandler(query.c_str(), db_max_connections_handler, &context)) {
       Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
       return false;
    }
@@ -194,7 +194,7 @@ bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurr
            _("Potential performance problem:\n"
              "max_connections=%d set for %s database \"%s\" should be larger than Director's "
              "MaxConcurrentJobs=%d\n"),
-           context.nr_connections, get_type(), get_db_name(), max_concurrent_jobs);
+           context.nr_connections, GetType(), get_db_name(), max_concurrent_jobs);
       Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
       return false;
    }
@@ -209,12 +209,12 @@ bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurr
 /*
  * Check that the tables correspond to the version we want
  */
-bool BareosDb::check_tables_version(JobControlRecord *jcr)
+bool BareosDb::CheckTablesVersion(JobControlRecord *jcr)
 {
    uint32_t bareos_db_version = 0;
    const char *query = "SELECT VersionId FROM Version";
 
-   if (!sql_query_with_handler(query, db_int_handler, (void *)&bareos_db_version)) {
+   if (!SqlQueryWithHandler(query, db_int_handler, (void *)&bareos_db_version)) {
       Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
       return false;
    }
@@ -236,9 +236,9 @@ bool BareosDb::check_tables_version(JobControlRecord *jcr)
  */
 bool BareosDb::QueryDB(const char *file, int line, JobControlRecord *jcr, const char *select_cmd)
 {
-   sql_free_result();
+   SqlFreeResult();
    Dmsg1(1000, "query: %s\n", select_cmd);
-   if (!sql_query(select_cmd, QF_STORE_RESULT)) {
+   if (!SqlQuery(select_cmd, QF_STORE_RESULT)) {
       msg_(file, line, errmsg, _("query %s failed:\n%s\n"), select_cmd, sql_strerror());
       j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
       if (verbose) {
@@ -259,7 +259,7 @@ bool BareosDb::InsertDB(const char *file, int line, JobControlRecord *jcr, const
 {
    int num_rows;
 
-   if (!sql_query(select_cmd)) {
+   if (!SqlQuery(select_cmd)) {
       msg_(file, line, errmsg,  _("insert %s failed:\n%s\n"), select_cmd, sql_strerror());
       j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
       if (verbose) {
@@ -267,7 +267,7 @@ bool BareosDb::InsertDB(const char *file, int line, JobControlRecord *jcr, const
       }
       return false;
    }
-   num_rows = sql_affected_rows();
+   num_rows = SqlAffectedRows();
    if (num_rows != 1) {
       char ed1[30];
       msg_(file, line, errmsg, _("Insertion problem: affected_rows=%s\n"),
@@ -290,7 +290,7 @@ bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const
 {
    int num_rows;
 
-   if (!sql_query(update_cmd)) {
+   if (!SqlQuery(update_cmd)) {
       msg_(file, line, errmsg, _("update %s failed:\n%s\n"), update_cmd, sql_strerror());
       j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
       if (verbose) {
@@ -300,7 +300,7 @@ bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const
    }
 
    if (nr_afr > 0) {
-      num_rows = sql_affected_rows();
+      num_rows = SqlAffectedRows();
       if (num_rows < nr_afr) {
          char ed1[30];
          msg_(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
@@ -325,7 +325,7 @@ bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const
 int BareosDb::DeleteDB(const char *file, int line, JobControlRecord *jcr, const char *delete_cmd)
 {
 
-   if (!sql_query(delete_cmd)) {
+   if (!SqlQuery(delete_cmd)) {
       msg_(file, line, errmsg, _("delete %s failed:\n%s\n"), delete_cmd, sql_strerror());
       j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
       if (verbose) {
@@ -334,7 +334,7 @@ int BareosDb::DeleteDB(const char *file, int line, JobControlRecord *jcr, const 
       return -1;
    }
    changes++;
-   return sql_affected_rows();
+   return SqlAffectedRows();
 }
 
 /**
@@ -344,19 +344,19 @@ int BareosDb::DeleteDB(const char *file, int line, JobControlRecord *jcr, const 
  * Returns: -1 on failure
  *          count on success
  */
-int BareosDb::get_sql_record_max(JobControlRecord *jcr)
+int BareosDb::GetSqlRecordMax(JobControlRecord *jcr)
 {
    SQL_ROW row;
    int retval = 0;
 
    if (QUERY_DB(jcr, cmd)) {
-      if ((row = sql_fetch_row()) == NULL) {
+      if ((row = SqlFetchRow()) == NULL) {
          Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
          retval = -1;
       } else {
          retval = str_to_int64(row[0]);
       }
-      sql_free_result();
+      SqlFreeResult();
    } else {
       Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
       retval = -1;
@@ -377,7 +377,7 @@ char *BareosDb::strerror()
  *  and filename parts. They are returned in pool memory
  *  in the mdb structure.
  */
-void BareosDb::split_path_and_file(JobControlRecord *jcr, const char *filename)
+void BareosDb::SplitPathAndFile(JobControlRecord *jcr, const char *filename)
 {
    const char *p, *f;
 
@@ -405,7 +405,7 @@ void BareosDb::split_path_and_file(JobControlRecord *jcr, const char *filename)
     */
    fnl = p - f;
    if (fnl > 0) {
-      fname = check_pool_memory_size(fname, fnl + 1);
+      fname = CheckPoolMemorySize(fname, fnl + 1);
       memcpy(fname, f, fnl);    /* copy filename */
       fname[fnl] = 0;
    } else {
@@ -415,7 +415,7 @@ void BareosDb::split_path_and_file(JobControlRecord *jcr, const char *filename)
 
    pnl = f - filename;
    if (pnl > 0) {
-      path = check_pool_memory_size(path, pnl + 1);
+      path = CheckPoolMemorySize(path, pnl + 1);
       memcpy(path, filename, pnl);
       path[pnl] = 0;
    } else {
@@ -446,17 +446,17 @@ static int max_length(int max_length)
 /**
  * List dashes as part of header for listing SQL results in a table
  */
-void BareosDb::list_dashes(OutputFormatter *send)
+void BareosDb::ListDashes(OutputFormatter *send)
 {
    int len;
    int num_fields;
    SQL_FIELD *field;
 
-   sql_field_seek(0);
+   SqlFieldSeek(0);
    send->decoration("+");
-   num_fields = sql_num_fields();
+   num_fields = SqlNumFields();
    for (int i = 0; i < num_fields; i++) {
-      field = sql_fetch_field();
+      field = SqlFetchField();
       if (!field) {
          break;
       }
@@ -472,7 +472,7 @@ void BareosDb::list_dashes(OutputFormatter *send)
 /**
  * List result handler used by queries done with db_big_sql_query()
  */
-int BareosDb::list_result(void *vctx, int nb_col, char **row)
+int BareosDb::ListResult(void *vctx, int nb_col, char **row)
 {
    JobControlRecord *jcr;
    char ewc[30];
@@ -495,13 +495,13 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
    /*
     * See if this row must be filtered.
     */
-   if (send->has_filters() && !send->filter_data(row)) {
+   if (send->HasFilters() && !send->FilterData(row)) {
       return 0;
    }
 
-   send->object_start();
+   send->ObjectStart();
 
-   num_fields = sql_num_fields();
+   num_fields = SqlNumFields();
    switch (type) {
    case NF_LIST:
    case RAW_LIST:
@@ -515,14 +515,14 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
       if (!pctx->once) {
          pctx->once = true;
 
-         Dmsg1(800, "list_result starts looking at %d fields\n", num_fields);
+         Dmsg1(800, "ListResult starts looking at %d fields\n", num_fields);
          /*
           * Determine column display widths
           */
-         sql_field_seek(0);
+         SqlFieldSeek(0);
          for (int i = 0; i < num_fields; i++) {
-            Dmsg1(800, "list_result processing field %d\n", i);
-            field = sql_fetch_field();
+            Dmsg1(800, "ListResult processing field %d\n", i);
+            field = SqlFetchField();
             if (!field) {
                break;
             }
@@ -530,8 +530,8 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
             /*
              * See if this is a hidden column.
              */
-            if (send->is_hidden_column(i)) {
-               Dmsg1(800, "list_result field %d is hidden\n", i);
+            if (send->IsHiddenColumn(i)) {
+               Dmsg1(800, "ListResult field %d is hidden\n", i);
                continue;
             }
 
@@ -541,13 +541,13 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
                   max_len = col_len;
                }
             } else {
-               if (sql_field_is_numeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
+               if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
                   field->max_length += (field->max_length - 1) / 3;
                }
                if (col_len < (int)field->max_length) {
                   col_len = field->max_length;
                }
-               if (col_len < 4 && !sql_field_is_not_null(field->flags)) {
+               if (col_len < 4 && !SqlFieldIsNotNull(field->flags)) {
                   col_len = 4;                 /* 4 = length of the word "NULL" */
                }
                field->max_length = col_len;    /* reset column info */
@@ -556,24 +556,24 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
 
          pctx->num_rows++;
 
-         Dmsg0(800, "list_result finished first loop\n");
+         Dmsg0(800, "ListResult finished first loop\n");
          if (type == VERT_LIST) {
             break;
          }
 
-         Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
+         Dmsg1(800, "ListResult starts second loop looking at %d fields\n", num_fields);
 
          /*
           * Keep the result to display the same line at the end of the table
           */
-         list_dashes(send);
+         ListDashes(send);
 
          send->decoration("|");
-         sql_field_seek(0);
+         SqlFieldSeek(0);
          for (int i = 0; i < num_fields; i++) {
-            Dmsg1(800, "list_result looking at field %d\n", i);
+            Dmsg1(800, "ListResult looking at field %d\n", i);
 
-            field = sql_fetch_field();
+            field = SqlFetchField();
             if (!field) {
                break;
             }
@@ -581,8 +581,8 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
             /*
              * See if this is a hidden column.
              */
-            if (send->is_hidden_column(i)) {
-               Dmsg1(800, "list_result field %d is hidden\n", i);
+            if (send->IsHiddenColumn(i)) {
+               Dmsg1(800, "ListResult field %d is hidden\n", i);
                continue;
             }
 
@@ -590,7 +590,7 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
             send->decoration(" %-*s |", max_len, field->name);
          }
          send->decoration("\n");
-         list_dashes(send);
+         ListDashes(send);
       }
       break;
    default:
@@ -600,10 +600,10 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
    switch (type) {
    case NF_LIST:
    case RAW_LIST:
-      Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
-      sql_field_seek(0);
+      Dmsg1(800, "ListResult starts third loop looking at %d fields\n", num_fields);
+      SqlFieldSeek(0);
       for (int i = 0; i < num_fields; i++) {
-         field = sql_fetch_field();
+         field = SqlFetchField();
          if (!field) {
             break;
          }
@@ -611,8 +611,8 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
          /*
           * See if this is a hidden column.
           */
-         if (send->is_hidden_column(i)) {
-            Dmsg1(800, "list_result field %d is hidden\n", i);
+         if (send->IsHiddenColumn(i)) {
+            Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
          }
 
@@ -621,18 +621,18 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
          } else {
             value.bsprintf("%s", row[i]);
          }
-         send->object_key_value(field->name, value.c_str(), " %s");
+         send->ObjectKeyValue(field->name, value.c_str(), " %s");
       }
       if (type != RAW_LIST) {
          send->decoration("\n");
       }
       break;
    case HORZ_LIST:
-      Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
-      sql_field_seek(0);
+      Dmsg1(800, "ListResult starts third loop looking at %d fields\n", num_fields);
+      SqlFieldSeek(0);
       send->decoration("|");
       for (int i = 0; i < num_fields; i++) {
-         field = sql_fetch_field();
+         field = SqlFetchField();
          if (!field) {
             break;
          }
@@ -640,15 +640,15 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
          /*
           * See if this is a hidden column.
           */
-         if (send->is_hidden_column(i)) {
-            Dmsg1(800, "list_result field %d is hidden\n", i);
+         if (send->IsHiddenColumn(i)) {
+            Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
          }
 
          max_len = max_length(field->max_length);
          if (row[i] == NULL) {
             value.bsprintf(" %-*s |", max_len, "NULL");
-         } else if (sql_field_is_numeric(field->type) && !jcr->gui && is_an_integer(row[i])) {
+         } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
             value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
          } else {
             value.bsprintf(" %-*s |", max_len, row[i]);
@@ -657,15 +657,15 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
          /*
           * Use value format string to send preformated value.
           */
-         send->object_key_value(field->name, row[i], value.c_str());
+         send->ObjectKeyValue(field->name, row[i], value.c_str());
       }
       send->decoration("\n");
       break;
    case VERT_LIST:
-      Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
-      sql_field_seek(0);
+      Dmsg1(800, "ListResult starts vertical list at %d fields\n", num_fields);
+      SqlFieldSeek(0);
       for (int i = 0; i < num_fields; i++) {
-         field = sql_fetch_field();
+         field = SqlFetchField();
          if (!field) {
             break;
          }
@@ -673,15 +673,15 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
          /*
           * See if this is a hidden column.
           */
-         if (send->is_hidden_column(i)) {
-            Dmsg1(800, "list_result field %d is hidden\n", i);
+         if (send->IsHiddenColumn(i)) {
+            Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
          }
 
          if (row[i] == NULL) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", "NULL");
-         } else if (sql_field_is_numeric(field->type) && !jcr->gui && is_an_integer(row[i])) {
+         } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", add_commas(row[i], ewc));
          } else {
@@ -692,24 +692,24 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
          /*
           * Use value format string to send preformated value.
           */
-         send->object_key_value(field->name, key.c_str(), row[i], value.c_str());
+         send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
       }
       send->decoration("\n");
       break;
    default:
       break;
    }
-   send->object_end();
+   send->ObjectEnd();
 
    return 0;
 }
 
-int list_result(void *vctx, int nb_col, char **row)
+int ListResult(void *vctx, int nb_col, char **row)
 {
    ListContext *pctx = (ListContext *)vctx;
    BareosDb *mdb = pctx->mdb;
 
-   return mdb->list_result(vctx, nb_col, row);
+   return mdb->ListResult(vctx, nb_col, row);
 }
 
 /**
@@ -717,7 +717,7 @@ int list_result(void *vctx, int nb_col, char **row)
  *
  * Return number of rows
  */
-int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_type type)
+int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_type type)
 {
    SQL_ROW row;
    char ewc[30];
@@ -728,13 +728,13 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
    bool filters_enabled;
    int col_len, max_len = 0;
 
-   Dmsg0(800, "list_result starts\n");
-   if (sql_num_rows() == 0) {
+   Dmsg0(800, "ListResult starts\n");
+   if (SqlNumRows() == 0) {
       send->decoration(_("No results to list.\n"));
       return 0;
    }
 
-   num_fields = sql_num_fields();
+   num_fields = SqlNumFields();
    switch (type) {
    case NF_LIST:
    case RAW_LIST:
@@ -744,15 +744,15 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
       break;
    case HORZ_LIST:
    case VERT_LIST:
-      Dmsg1(800, "list_result starts looking at %d fields\n", num_fields);
+      Dmsg1(800, "ListResult starts looking at %d fields\n", num_fields);
       /*
        * Determine column display widths
        */
-      sql_field_seek(0);
+      SqlFieldSeek(0);
       for (int i = 0; i < num_fields; i++) {
-         Dmsg1(800, "list_result processing field %d\n", i);
+         Dmsg1(800, "ListResult processing field %d\n", i);
 
-         field = sql_fetch_field();
+         field = SqlFetchField();
          if (!field) {
             break;
          }
@@ -760,8 +760,8 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
          /*
           * See if this is a hidden column.
           */
-         if (send->is_hidden_column(i)) {
-            Dmsg1(800, "list_result field %d is hidden\n", i);
+         if (send->IsHiddenColumn(i)) {
+            Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
          }
 
@@ -771,13 +771,13 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
                max_len = col_len;
             }
          } else {
-            if (sql_field_is_numeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
+            if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
                field->max_length += (field->max_length - 1) / 3;
             }
             if (col_len < (int)field->max_length) {
                col_len = field->max_length;
             }
-            if (col_len < 4 && !sql_field_is_not_null(field->flags)) {
+            if (col_len < 4 && !SqlFieldIsNotNull(field->flags)) {
                col_len = 4;                 /* 4 = length of the word "NULL" */
             }
             field->max_length = col_len;    /* reset column info */
@@ -786,31 +786,31 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
       break;
    }
 
-   Dmsg0(800, "list_result finished first loop\n");
+   Dmsg0(800, "ListResult finished first loop\n");
 
    /*
     * See if filters are enabled for this list function.
-    * We use this to shortcut for calling the filter_data() method in the
+    * We use this to shortcut for calling the FilterData() method in the
     * OutputFormatter class.
     */
-   filters_enabled = send->has_filters();
+   filters_enabled = send->HasFilters();
 
    switch (type) {
    case NF_LIST:
    case RAW_LIST:
-      Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
-      while ((row = sql_fetch_row()) != NULL) {
+      Dmsg1(800, "ListResult starts second loop looking at %d fields\n", num_fields);
+      while ((row = SqlFetchRow()) != NULL) {
          /*
           * See if we should allow this under the current filtering.
           */
-         if (filters_enabled && !send->filter_data(row)) {
+         if (filters_enabled && !send->FilterData(row)) {
             continue;
          }
 
-         send->object_start();
-         sql_field_seek(0);
+         send->ObjectStart();
+         SqlFieldSeek(0);
          for (int i = 0; i < num_fields; i++) {
-            field = sql_fetch_field();
+            field = SqlFetchField();
             if (!field) {
                break;
             }
@@ -818,8 +818,8 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
             /*
              * See if this is a hidden column.
              */
-            if (send->is_hidden_column(i)) {
-               Dmsg1(800, "list_result field %d is hidden\n", i);
+            if (send->IsHiddenColumn(i)) {
+               Dmsg1(800, "ListResult field %d is hidden\n", i);
                continue;
             }
 
@@ -828,23 +828,23 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
             } else {
                value.bsprintf("%s", row[i]);
             }
-            send->object_key_value(field->name, value.c_str(), " %s");
+            send->ObjectKeyValue(field->name, value.c_str(), " %s");
          }
          if (type != RAW_LIST) {
             send->decoration("\n");
          }
-         send->object_end();
+         send->ObjectEnd();
       }
       break;
    case HORZ_LIST:
-      Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
-      list_dashes(send);
+      Dmsg1(800, "ListResult starts second loop looking at %d fields\n", num_fields);
+      ListDashes(send);
       send->decoration("|");
-      sql_field_seek(0);
+      SqlFieldSeek(0);
       for (int i = 0; i < num_fields; i++) {
-         Dmsg1(800, "list_result looking at field %d\n", i);
+         Dmsg1(800, "ListResult looking at field %d\n", i);
 
-         field = sql_fetch_field();
+         field = SqlFetchField();
          if (!field) {
             break;
          }
@@ -852,8 +852,8 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
          /*
           * See if this is a hidden column.
           */
-         if (send->is_hidden_column(i)) {
-            Dmsg1(800, "list_result field %d is hidden\n", i);
+         if (send->IsHiddenColumn(i)) {
+            Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
          }
 
@@ -861,22 +861,22 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
          send->decoration(" %-*s |", max_len, field->name);
       }
       send->decoration("\n");
-      list_dashes(send);
+      ListDashes(send);
 
-      Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
-      while ((row = sql_fetch_row()) != NULL) {
+      Dmsg1(800, "ListResult starts third loop looking at %d fields\n", num_fields);
+      while ((row = SqlFetchRow()) != NULL) {
          /*
           * See if we should allow this under the current filtering.
           */
-         if (filters_enabled && !send->filter_data(row)) {
+         if (filters_enabled && !send->FilterData(row)) {
             continue;
          }
 
-         send->object_start();
-         sql_field_seek(0);
+         send->ObjectStart();
+         SqlFieldSeek(0);
          send->decoration("|");
          for (int i = 0; i < num_fields; i++) {
-            field = sql_fetch_field();
+            field = SqlFetchField();
             if (!field) {
                break;
             }
@@ -884,15 +884,15 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
             /*
              * See if this is a hidden column.
              */
-            if (send->is_hidden_column(i)) {
-               Dmsg1(800, "list_result field %d is hidden\n", i);
+            if (send->IsHiddenColumn(i)) {
+               Dmsg1(800, "ListResult field %d is hidden\n", i);
                continue;
             }
 
             max_len = max_length(field->max_length);
             if (row[i] == NULL) {
                value.bsprintf(" %-*s |", max_len, "NULL");
-            } else if (sql_field_is_numeric(field->type) && !jcr->gui && is_an_integer(row[i])) {
+            } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
                value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
             } else {
                value.bsprintf(" %-*s |", max_len, row[i]);
@@ -904,26 +904,26 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
             /*
              * Use value format string to send preformated value
              */
-            send->object_key_value(field->name, row[i], value.c_str());
+            send->ObjectKeyValue(field->name, row[i], value.c_str());
          }
-         send->object_end();
+         send->ObjectEnd();
       }
-      list_dashes(send);
+      ListDashes(send);
       break;
    case VERT_LIST:
-      Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
-      while ((row = sql_fetch_row()) != NULL) {
+      Dmsg1(800, "ListResult starts vertical list at %d fields\n", num_fields);
+      while ((row = SqlFetchRow()) != NULL) {
          /*
           * See if we should allow this under the current filtering.
           */
-         if (filters_enabled && !send->filter_data(row)) {
+         if (filters_enabled && !send->FilterData(row)) {
             continue;
          }
 
-         send->object_start();
-         sql_field_seek(0);
+         send->ObjectStart();
+         SqlFieldSeek(0);
          for (int i = 0; i < num_fields; i++) {
-            field = sql_fetch_field();
+            field = SqlFetchField();
             if (!field) {
                break;
             }
@@ -931,15 +931,15 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
             /*
              * See if this is a hidden column.
              */
-            if (send->is_hidden_column(i)) {
-               Dmsg1(800, "list_result field %d is hidden\n", i);
+            if (send->IsHiddenColumn(i)) {
+               Dmsg1(800, "ListResult field %d is hidden\n", i);
                continue;
             }
 
             if (row[i] == NULL) {
                key.bsprintf(" %*s: ", max_len, field->name);
                value.bsprintf("%s\n", "NULL");
-            } else if (sql_field_is_numeric(field->type) && !jcr->gui && is_an_integer(row[i])) {
+            } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
                key.bsprintf(" %*s: ", max_len, field->name);
                value.bsprintf("%s\n", add_commas(row[i], ewc));
             } else {
@@ -950,15 +950,15 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
             /*
              * Use value format string to send preformated value
              */
-            send->object_key_value(field->name, key.c_str(), row[i], value.c_str());
+            send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
          }
          send->decoration("\n");
-         send->object_end();
+         send->ObjectEnd();
       }
       break;
    }
 
-   return sql_num_rows();
+   return SqlNumRows();
 }
 
 /*
@@ -966,19 +966,19 @@ int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_t
  *
  * Return number of rows
  */
-int list_result(JobControlRecord *jcr, BareosDb *mdb, OutputFormatter *send, e_list_type type)
+int ListResult(JobControlRecord *jcr, BareosDb *mdb, OutputFormatter *send, e_list_type type)
 {
-   return mdb->list_result(jcr, send, type);
+   return mdb->ListResult(jcr, send, type);
 }
 
 /**
  * Open a new connexion to mdb catalog. This function is used by batch and accurate mode.
  */
-bool BareosDb::open_batch_connection(JobControlRecord *jcr)
+bool BareosDb::OpenBatchConnection(JobControlRecord *jcr)
 {
    bool multi_db;
 
-   multi_db = batch_insert_available();
+   multi_db = BatchInsertAvailable();
    if (!jcr->db_batch) {
       jcr->db_batch = clone_database_connection(jcr, multi_db, multi_db);
       if (!jcr->db_batch) {
@@ -990,13 +990,13 @@ bool BareosDb::open_batch_connection(JobControlRecord *jcr)
    return true;
 }
 
-void BareosDb::db_debug_print(FILE *fp)
+void BareosDb::DbDebugPrint(FILE *fp)
 {
    fprintf(fp, "BareosDb=%p db_name=%s db_user=%s connected=%s\n",
-           this, NPRTB(get_db_name()), NPRTB(get_db_user()), is_connected() ? "true" : "false");
+           this, NPRTB(get_db_name()), NPRTB(get_db_user()), IsConnected() ? "true" : "false");
    fprintf(fp, "\tcmd=\"%s\" changes=%i\n", NPRTB(cmd), changes);
 
-   print_lock_info(fp);
+   PrintLockInfo(fp);
 }
 
 /**
@@ -1004,7 +1004,7 @@ void BareosDb::db_debug_print(FILE *fp)
  * ie, after a fatal signal and before exiting the program
  * Print information about a BareosDb object.
  */
-void db_debug_print(JobControlRecord *jcr, FILE *fp)
+void DbDebugPrint(JobControlRecord *jcr, FILE *fp)
 {
    BareosDb *mdb = jcr->db;
 
@@ -1012,6 +1012,6 @@ void db_debug_print(JobControlRecord *jcr, FILE *fp)
       return;
    }
 
-   mdb->db_debug_print(fp);
+   mdb->DbDebugPrint(fp);
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

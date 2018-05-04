@@ -56,7 +56,7 @@ static bool perform_full_name_substitution(JobControlRecord *jcr, MediaDbRecord 
  * The media record must have the PoolId filled in when
  * calling this routine.
  */
-bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store)
+bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StorageResource *store)
 {
    bool retval = false;
    PoolDbRecord pr;
@@ -66,24 +66,24 @@ bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store)
    /*
     * See if we can create a new Volume
     */
-   db_lock(jcr->db);
+   DbLock(jcr->db);
    pr.PoolId = mr->PoolId;
-   if (!jcr->db->get_pool_record(jcr, &pr)) {
+   if (!jcr->db->GetPoolRecord(jcr, &pr)) {
       goto bail_out;
    }
    if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
       memset(mr, 0, sizeof(MediaDbRecord));
-      set_pool_dbr_defaults_in_media_dbr(mr, &pr);
+      SetPoolDbrDefaultsInMediaDbr(mr, &pr);
       jcr->VolumeName[0] = 0;
       bstrncpy(mr->MediaType, jcr->res.wstore->media_type, sizeof(mr->MediaType));
-      generate_plugin_event(jcr, bDirEventNewVolume); /* return void... */
-      if (jcr->VolumeName[0] && is_volume_name_legal(NULL, jcr->VolumeName)) {
+      GeneratePluginEvent(jcr, bDirEventNewVolume); /* return void... */
+      if (jcr->VolumeName[0] && IsVolumeNameLegal(NULL, jcr->VolumeName)) {
          bstrncpy(mr->VolumeName, jcr->VolumeName, sizeof(mr->VolumeName));
       } else if (pr.LabelFormat[0] && pr.LabelFormat[0] != '*') {
          /*
           * Check for special characters
           */
-         if (is_volume_name_legal(NULL, pr.LabelFormat)) {
+         if (IsVolumeNameLegal(NULL, pr.LabelFormat)) {
             /*
              * No special characters, so apply simple algorithm
              */
@@ -97,7 +97,7 @@ bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store)
             if (!perform_full_name_substitution(jcr, mr, &pr)) {
                goto bail_out;
             }
-            if (!is_volume_name_legal(NULL, mr->VolumeName)) {
+            if (!IsVolumeNameLegal(NULL, mr->VolumeName)) {
                Jmsg(jcr, M_ERROR, 0, _("Illegal character in Volume name \"%s\"\n"),
                   mr->VolumeName);
                goto bail_out;
@@ -108,9 +108,9 @@ bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store)
       }
       pr.NumVols++;
       mr->Enabled = VOL_ENABLED;
-      set_storageid_in_mr(store, mr);
-      if (jcr->db->create_media_record(jcr, mr) &&
-         jcr->db->update_pool_record(jcr, &pr)) {
+      SetStorageidInMr(store, mr);
+      if (jcr->db->CreateMediaRecord(jcr, mr) &&
+         jcr->db->UpdatePoolRecord(jcr, &pr)) {
          Jmsg(jcr, M_INFO, 0, _("Created new Volume \"%s\" in catalog.\n"), mr->VolumeName);
          Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
          retval = true;
@@ -121,7 +121,7 @@ bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store)
    }
 
 bail_out:
-   db_unlock(jcr->db);
+   DbUnlock(jcr->db);
    return retval;
 }
 
@@ -135,11 +135,11 @@ static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbR
 
    /* See if volume already exists */
    mr->VolumeName[0] = 0;
-   pm_strcpy(name, pr->LabelFormat);
+   PmStrcpy(name, pr->LabelFormat);
    ctx.value = 0;
    Mmsg(query, "SELECT MAX(MediaId) FROM Media,Pool WHERE Pool.PoolId=%s",
         edit_int64(pr->PoolId, ed1));
-   if (!jcr->db->sql_query(query.c_str(), db_int64_handler, (void *)&ctx)) {
+   if (!jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void *)&ctx)) {
       Jmsg(jcr, M_WARNING, 0, _("SQL failed, but ignored. ERR=%s\n"), jcr->db->strerror());
       ctx.value = pr->NumVols+1;
    }
@@ -150,7 +150,7 @@ static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbR
       sprintf(num, "%04d", i);
       bstrncpy(tmr.VolumeName, name.c_str(), sizeof(tmr.VolumeName));
       bstrncat(tmr.VolumeName, num, sizeof(tmr.VolumeName));
-      if (jcr->db->get_media_record(jcr, &tmr)) {
+      if (jcr->db->GetMediaRecord(jcr, &tmr)) {
          Jmsg(jcr, M_WARNING, 0,
              _("Wanted to create Volume \"%s\", but it already exists. Trying again.\n"),
              tmr.VolumeName);
@@ -173,14 +173,14 @@ static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbR
 static bool perform_full_name_substitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    bool ok = false;
-   POOLMEM *label = get_pool_memory(PM_FNAME);
+   POOLMEM *label = GetPoolMemory(PM_FNAME);
 
    jcr->NumVols = pr->NumVols;
-   if (variable_expansion(jcr, pr->LabelFormat, label)) {
+   if (VariableExpansion(jcr, pr->LabelFormat, label)) {
       bstrncpy(mr->VolumeName, label, sizeof(mr->VolumeName));
       ok = true;
    }
-   free_pool_memory(label);
+   FreePoolMemory(label);
 
    return ok;
 }

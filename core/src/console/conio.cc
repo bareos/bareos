@@ -260,17 +260,17 @@ static void asclrl(int pos, int width);
 static void asinsl();
 static void asdell();
 
-int input_line(char *string, int length);
+int InputLine(char *string, int length);
 extern "C" {
-void con_term();
+void ConTerm();
 }
 void trapctlc();
 int usrbrk();
 void clrbrk();
 
-void con_init(FILE *input)
+void ConInit(FILE *input)
 {
-   atexit(con_term);
+   atexit(ConTerm);
    rawmode(input);
    trapctlc();
 }
@@ -278,7 +278,7 @@ void con_init(FILE *input)
 /**
  * Zed control keys
  */
-void con_set_zed_keys(void)
+void ConSetZedKeys(void)
 {
    char_map[1]  = F_NXTWRD; /* ^A Next Word */
    char_map[2]  = F_SPLIT;  /* ^B Split line */
@@ -314,7 +314,7 @@ void con_set_zed_keys(void)
 
 }
 
-void con_term()
+void ConTerm()
 {
    normode();
 }

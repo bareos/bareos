@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 
-bool adjust_compression_buffers(JobControlRecord *jcr);
-bool adjust_decompression_buffers(JobControlRecord *jcr);
-bool setup_compression_context(b_ctx &bctx);
+bool AdjustCompressionBuffers(JobControlRecord *jcr);
+bool AdjustDecompressionBuffers(JobControlRecord *jcr);
+bool SetupCompressionContext(b_ctx &bctx);
 

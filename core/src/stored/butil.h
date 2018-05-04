@@ -22,10 +22,10 @@
 #ifndef BAREOS_STORED_BUTIL_H_
 #define BAREOS_STORED_BUTIL_H_
 
-void print_ls_output(const char *fname, const char *link, int type, struct stat *statp);
+void PrintLsOutput(const char *fname, const char *link, int type, struct stat *statp);
 JobControlRecord *setup_jcr(const char *name, char *dev_name,
                BootStrapRecord *bsr, DirectorResource *director, DeviceControlRecord* dcr,
                const char *VolumeName, bool readonly);
-void display_tape_error_status(JobControlRecord *jcr, Device *dev);
+void DisplayTapeErrorStatus(JobControlRecord *jcr, Device *dev);
 
 #endif // BAREOS_STORED_BUTIL_H_

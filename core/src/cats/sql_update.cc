@@ -49,19 +49,19 @@
  * -----------------------------------------------------------------------
  */
 /* Update the attributes record by adding the file digest */
-bool BareosDb::add_digest_to_file_record(JobControlRecord *jcr, FileId_t FileId, char *digest, int type)
+bool BareosDb::AddDigestToFileRecord(JobControlRecord *jcr, FileId_t FileId, char *digest, int type)
 {
    bool retval;
    char ed1[50];
    int len = strlen(digest);
 
-   db_lock(this);
-   esc_name = check_pool_memory_size(esc_name, len * 2 + 1);
-   escape_string(jcr, esc_name, digest, len);
+   DbLock(this);
+   esc_name = CheckPoolMemorySize(esc_name, len * 2 + 1);
+   EscapeString(jcr, esc_name, digest, len);
    Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%s", esc_name,
         edit_int64(FileId, ed1));
    retval = UPDATE_DB(jcr, cmd);
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -69,16 +69,16 @@ bool BareosDb::add_digest_to_file_record(JobControlRecord *jcr, FileId_t FileId,
 /* Mark the file record as being visited during database
  * verify compare. Stuff JobId into the MarkId field
  */
-bool BareosDb::mark_file_record(JobControlRecord *jcr, FileId_t FileId, JobId_t JobId)
+bool BareosDb::MarkFileRecord(JobControlRecord *jcr, FileId_t FileId, JobId_t JobId)
 {
    bool retval;
    char ed1[50], ed2[50];
 
-   db_lock(this);
+   DbLock(this);
    Mmsg(cmd, "UPDATE File SET MarkId=%s WHERE FileId=%s",
       edit_int64(JobId, ed1), edit_int64(FileId, ed2));
    retval = UPDATE_DB(jcr, cmd);
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -89,7 +89,7 @@ bool BareosDb::mark_file_record(JobControlRecord *jcr, FileId_t FileId, JobId_t 
  * Returns: false on failure
  *          true  on success
  */
-bool BareosDb::update_job_start_record(JobControlRecord *jcr, JobDbRecord *jr)
+bool BareosDb::UpdateJobStartRecord(JobControlRecord *jcr, JobDbRecord *jr)
 {
    char dt[MAX_TIME_LENGTH];
    time_t stime;
@@ -101,7 +101,7 @@ bool BareosDb::update_job_start_record(JobControlRecord *jcr, JobDbRecord *jr)
    bstrutime(dt, sizeof(dt), stime);
    JobTDate = (btime_t)stime;
 
-   db_lock(this);
+   DbLock(this);
    Mmsg(cmd, "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
 "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s WHERE JobId=%s",
       (char)(jcr->JobStatus),
@@ -114,30 +114,30 @@ bool BareosDb::update_job_start_record(JobControlRecord *jcr, JobDbRecord *jr)
 
    retval = UPDATE_DB(jcr, cmd);
    changes = 0;
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
 /**
  * Update Long term statistics with all jobs that were run before age seconds
  */
-int BareosDb::update_stats(JobControlRecord *jcr, utime_t age)
+int BareosDb::UpdateStats(JobControlRecord *jcr, utime_t age)
 {
    char ed1[30];
    int rows;
    utime_t now = (utime_t)time(NULL);
 
-   db_lock(this);
+   DbLock(this);
 
    edit_uint64(now - age, ed1);
-   fill_query(SQL_QUERY_fill_jobhisto, ed1);
+   FillQuery(SQL_QUERY_fill_jobhisto, ed1);
    if (QUERY_DB(jcr, cmd)) {
-      rows = sql_affected_rows();
+      rows = SqlAffectedRows();
    } else {
       rows = -1;
    }
 
-   db_unlock(this);
+   DbUnlock(this);
    return rows;
 }
 
@@ -147,7 +147,7 @@ int BareosDb::update_stats(JobControlRecord *jcr, utime_t age)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_job_end_record(JobControlRecord *jcr, JobDbRecord *jr)
+bool BareosDb::UpdateJobEndRecord(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval;
    char dt[MAX_TIME_LENGTH];
@@ -174,7 +174,7 @@ bool BareosDb::update_job_end_record(JobControlRecord *jcr, JobDbRecord *jr)
 
    JobTDate = ttime;
 
-   db_lock(this);
+   DbLock(this);
    Mmsg(cmd,
       "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
       "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,VolSessionId=%u,"
@@ -189,7 +189,7 @@ bool BareosDb::update_job_end_record(JobControlRecord *jcr, JobDbRecord *jr)
 
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -206,14 +206,14 @@ bool BareosDb::update_client_record(JobControlRecord *jcr, ClientDbRecord *cr)
    char esc_uname[MAX_ESCAPE_NAME_LENGTH];
    ClientDbRecord tcr;
 
-   db_lock(this);
+   DbLock(this);
    memcpy(&tcr, cr, sizeof(tcr));
-   if (!create_client_record(jcr, &tcr)) {
+   if (!CreateClientRecord(jcr, &tcr)) {
       goto bail_out;
    }
 
-   escape_string(jcr, esc_clientname, cr->Name, strlen(cr->Name));
-   escape_string(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
+   EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));
+   EscapeString(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
    Mmsg(cmd,
 "UPDATE Client SET AutoPrune=%d,FileRetention=%s,JobRetention=%s,"
 "Uname='%s' WHERE Name='%s'",
@@ -225,7 +225,7 @@ bool BareosDb::update_client_record(JobControlRecord *jcr, ClientDbRecord *cr)
    retval = UPDATE_DB(jcr, cmd);
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -234,33 +234,33 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_counter_record(JobControlRecord *jcr, CounterDbRecord *cr)
+bool BareosDb::UpdateCounterRecord(JobControlRecord *jcr, CounterDbRecord *cr)
 {
    bool retval;
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(this);
+   DbLock(this);
 
-   escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
-   fill_query(SQL_QUERY_update_counter_values,  cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
+   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
+   FillQuery(SQL_QUERY_update_counter_values,  cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
-bool BareosDb::update_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
+bool BareosDb::UpdatePoolRecord(JobControlRecord *jcr, PoolDbRecord *pr)
 {
    bool retval;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(this);
-   escape_string(jcr, esc, pr->LabelFormat, strlen(pr->LabelFormat));
+   DbLock(this);
+   EscapeString(jcr, esc, pr->LabelFormat, strlen(pr->LabelFormat));
 
    Mmsg(cmd, "SELECT count(*) from Media WHERE PoolId=%s",
       edit_int64(pr->PoolId, ed4));
-   pr->NumVols = get_sql_record_max(jcr);
+   pr->NumVols = GetSqlRecordMax(jcr);
    Dmsg1(400, "NumVols=%d\n", pr->NumVols);
 
    Mmsg(cmd,
@@ -282,7 +282,7 @@ bool BareosDb::update_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
       pr->MaxBlocksize,
       ed4);
    retval = UPDATE_DB(jcr, cmd);
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -291,12 +291,12 @@ bool BareosDb::update_storage_record(JobControlRecord *jcr, StorageDbRecord *sr)
    bool retval;
    char ed1[50];
 
-   db_lock(this);
+   DbLock(this);
    Mmsg(cmd, "UPDATE Storage SET AutoChanger=%d WHERE StorageId=%s",
       sr->AutoChanger, edit_int64(sr->StorageId, ed1));
 
    retval = UPDATE_DB(jcr, cmd);
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -307,7 +307,7 @@ bool BareosDb::update_storage_record(JobControlRecord *jcr, StorageDbRecord *sr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
+bool BareosDb::UpdateMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval;
    char dt[MAX_TIME_LENGTH];
@@ -319,9 +319,9 @@ bool BareosDb::update_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
    char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
    Dmsg1(100, "update_media: FirstWritten=%d\n", mr->FirstWritten);
-   db_lock(this);
-   escape_string(jcr, esc_medianame, mr->VolumeName, strlen(mr->VolumeName));
-   escape_string(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
+   DbLock(this);
+   EscapeString(jcr, esc_medianame, mr->VolumeName, strlen(mr->VolumeName));
+   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
 
    if (mr->set_first_written) {
       Dmsg1(400, "Set FirstWritten Vol=%s\n", mr->VolumeName);
@@ -388,9 +388,9 @@ bool BareosDb::update_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
    /*
     * Make sure InChanger is 0 for any record having the same Slot
     */
-   make_inchanger_unique(jcr, mr);
+   MakeInchangerUnique(jcr, mr);
 
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -407,9 +407,9 @@ bool BareosDb::update_media_defaults(JobControlRecord *jcr, MediaDbRecord *mr)
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(this);
+   DbLock(this);
    if (mr->VolumeName[0]) {
-      escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
+      EscapeString(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
       Mmsg(cmd, "UPDATE Media SET "
            "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
            "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
@@ -443,7 +443,7 @@ bool BareosDb::update_media_defaults(JobControlRecord *jcr, MediaDbRecord *mr)
 
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -454,7 +454,7 @@ bool BareosDb::update_media_defaults(JobControlRecord *jcr, MediaDbRecord *mr)
  *
  * This routine assumes the database is already locked.
  */
-void BareosDb::make_inchanger_unique(JobControlRecord *jcr, MediaDbRecord *mr)
+void BareosDb::MakeInchangerUnique(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    char ed1[50], ed2[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -467,7 +467,7 @@ void BareosDb::make_inchanger_unique(JobControlRecord *jcr, MediaDbRecord *mr)
                edit_int64(mr->StorageId, ed1), edit_int64(mr->MediaId, ed2));
 
        } else if (*mr->VolumeName) {
-          escape_string(jcr, esc,mr->VolumeName,strlen(mr->VolumeName));
+          EscapeString(jcr, esc,mr->VolumeName,strlen(mr->VolumeName));
           Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
                "Slot=%d AND StorageId=%s AND VolumeName!='%s'",
                mr->Slot,
@@ -490,13 +490,13 @@ void BareosDb::make_inchanger_unique(JobControlRecord *jcr, MediaDbRecord *mr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_quota_gracetime(JobControlRecord *jcr, JobDbRecord *jr)
+bool BareosDb::UpdateQuotaGracetime(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval;
    char ed1[50], ed2[50];
    time_t now = time(NULL);
 
-   db_lock(this);
+   DbLock(this);
 
    Mmsg(cmd,
  "UPDATE Quota SET GraceTime=%s WHERE ClientId='%s'",
@@ -505,7 +505,7 @@ bool BareosDb::update_quota_gracetime(JobControlRecord *jcr, JobDbRecord *jr)
 
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -516,12 +516,12 @@ bool BareosDb::update_quota_gracetime(JobControlRecord *jcr, JobDbRecord *jr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_quota_softlimit(JobControlRecord *jcr, JobDbRecord *jr)
+bool BareosDb::UpdateQuotaSoftlimit(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval;
    char ed1[50], ed2[50];
 
-   db_lock(this);
+   DbLock(this);
 
    Mmsg(cmd,
  "UPDATE Quota SET QuotaLimit=%s WHERE ClientId='%s'",
@@ -530,7 +530,7 @@ bool BareosDb::update_quota_softlimit(JobControlRecord *jcr, JobDbRecord *jr)
 
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -541,12 +541,12 @@ bool BareosDb::update_quota_softlimit(JobControlRecord *jcr, JobDbRecord *jr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::reset_quota_record(JobControlRecord *jcr, ClientDbRecord *cr)
+bool BareosDb::ResetQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cr)
 {
    bool retval;
    char ed1[50];
 
-   db_lock(this);
+   DbLock(this);
 
    Mmsg(cmd,
  "UPDATE Quota SET GraceTime='0', QuotaLimit='0' WHERE ClientId='%s'",
@@ -554,7 +554,7 @@ bool BareosDb::reset_quota_record(JobControlRecord *jcr, ClientDbRecord *cr)
 
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -565,15 +565,15 @@ bool BareosDb::reset_quota_record(JobControlRecord *jcr, ClientDbRecord *cr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem, int level)
+bool BareosDb::UpdateNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem, int level)
 {
    bool retval;
    char ed1[50], ed2[50], ed3[50];
 
-   db_lock(this);
+   DbLock(this);
 
-   esc_name = check_pool_memory_size(esc_name, strlen(filesystem) * 2 + 1);
-   escape_string(jcr, esc_name, filesystem, strlen(filesystem));
+   esc_name = CheckPoolMemorySize(esc_name, strlen(filesystem) * 2 + 1);
+   EscapeString(jcr, esc_name, filesystem, strlen(filesystem));
 
    Mmsg(cmd,
  "UPDATE NDMPLevelMap SET DumpLevel='%s' WHERE "
@@ -583,7 +583,7 @@ bool BareosDb::update_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr,
 
    retval = UPDATE_DB(jcr, cmd);
 
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }

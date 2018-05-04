@@ -54,7 +54,7 @@ htable *path_list_init()
 /*
  * Add a path to the hash when we create a directory with the replace=NEVER option
  */
-bool path_list_add(htable *path_list, uint32_t len, const char *fname)
+bool PathListAdd(htable *path_list, uint32_t len, const char *fname)
 {
    CurDir *item;
 
@@ -77,7 +77,7 @@ bool path_list_add(htable *path_list, uint32_t len, const char *fname)
    return true;
 }
 
-bool path_list_lookup(htable *path_list, const char *fname)
+bool PathListLookup(htable *path_list, const char *fname)
 {
    int len;
    bool found = false;
@@ -87,15 +87,15 @@ bool path_list_lookup(htable *path_list, const char *fname)
       return false;
    }
 
-   filename = get_pool_memory(PM_FNAME);
-   pm_strcpy(filename, fname);
+   filename = GetPoolMemory(PM_FNAME);
+   PmStrcpy(filename, fname);
 
    /*
     * Strip trailing /
     */
    len = strlen(filename);
    if (len == 0) {
-      free_pool_memory(filename);
+      FreePoolMemory(filename);
       return false;
    }
    len--;
@@ -114,7 +114,7 @@ bool path_list_lookup(htable *path_list, const char *fname)
    return found;
 }
 
-void free_path_list(htable *path_list)
+void FreePathList(htable *path_list)
 {
    path_list->destroy();
    free(path_list);

@@ -45,7 +45,7 @@ struct TlsContext {
    const char *cipher_list;
    const void *pem_userdata;
    unsigned char *dhdata;
-   bool verify_peer;
+   bool VerifyPeer;
    bool tls_enable;
    bool tls_require;
 };
@@ -101,8 +101,8 @@ TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
  *  Returns: Pointer to TLS_CONTEXT instance on success
  *           NULL on failure;
  */
-TLS_CONTEXT *new_tls_context(const char *ca_certfile,
-                             const char *ca_certdir,
+TLS_CONTEXT *new_tls_context(const char *CaCertfile,
+                             const char *CaCertdir,
                              const char *crlfile,
                              const char *certfile,
                              const char *keyfile,
@@ -110,7 +110,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              const void *pem_userdata,
                              const char *dhfile,
                              const char *cipherlist,
-                             bool verify_peer)
+                             bool VerifyPeer)
 {
    int error;
    TLS_CONTEXT *ctx;
@@ -121,7 +121,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
    ctx->pem_callback = pem_callback;
    ctx->pem_userdata = pem_userdata;
    ctx->cipher_list = cipherlist;
-   ctx->verify_peer = verify_peer;
+   ctx->VerifyPeer = VerifyPeer;
 
    error = gnutls_certificate_allocate_credentials(&ctx->gnutls_cred);
    if (error != GNUTLS_E_SUCCESS) {
@@ -135,7 +135,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
    /*
     * GNUTLS supports only a certfile not a certdir.
     */
-   if (ca_certdir && !ca_certfile) {
+   if (CaCertdir && !CaCertfile) {
       Jmsg0(NULL, M_ERROR, 0,
             _("GNUTLS doesn't support certdir use certfile instead\n"));
       goto bail_out;
@@ -144,22 +144,22 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
    /*
     * Try to load the trust file, first in PEM format and if that fails in DER format.
     */
-   if (ca_certfile) {
+   if (CaCertfile) {
       error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred,
-                                                     ca_certfile,
+                                                     CaCertfile,
                                                      GNUTLS_X509_FMT_PEM);
       if (error < GNUTLS_E_SUCCESS) {
          error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred,
-                                                        ca_certfile,
+                                                        CaCertfile,
                                                         GNUTLS_X509_FMT_DER);
          if (error < GNUTLS_E_SUCCESS) {
             Jmsg1(NULL, M_ERROR, 0,
                   _("Error loading CA certificates from %s\n"),
-                  ca_certfile);
+                  CaCertfile);
             goto bail_out;
          }
       }
-   } else if (verify_peer) {
+   } else if (VerifyPeer) {
       /*
        * At least one CA is required for peer verification
        */
@@ -239,11 +239,11 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
    return ctx;
 
 bail_out:
-   free_tls_context(ctx);
+   FreeTlsContext(ctx);
    return NULL;
 }
 
-void free_tls_context(TLS_CONTEXT *ctx)
+void FreeTlsContext(TLS_CONTEXT *ctx)
 {
    gnutls_certificate_free_credentials(ctx->gnutls_cred);
 
@@ -280,7 +280,7 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
 
 bool get_tls_verify_peer(TLS_CONTEXT *ctx)
 {
-   return (ctx) ? ctx->verify_peer : false;
+   return (ctx) ? ctx->VerifyPeer : false;
 }
 
 /*
@@ -351,7 +351,7 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
    /*
     * See if we verify the peer certificate.
     */
-   if (!tls_conn->ctx->verify_peer) {
+   if (!tls_conn->ctx->VerifyPeer) {
       return true;
    }
 
@@ -426,7 +426,7 @@ bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn
    /*
     * See if we verify the peer certificate.
     */
-   if (!tls_conn->ctx->verify_peer) {
+   if (!tls_conn->ctx->VerifyPeer) {
       return true;
    }
 
@@ -539,7 +539,7 @@ bail_out:
    return NULL;
 }
 
-void free_tls_connection(TLS_CONNECTION *tls_conn)
+void FreeTlsConnection(TLS_CONNECTION *tls_conn)
 {
    gnutls_deinit(tls_conn->gnutls_state);
    free(tls_conn);
@@ -555,12 +555,12 @@ static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
    const gnutls_datum_t *peer_cert_list;
 
    /* Ensure that socket is non-blocking */
-   flags = bsock->set_nonblocking();
+   flags = bsock->SetNonblocking();
 
    /* start timer */
    bsock->timer_start = watchdog_time;
-   bsock->clear_timed_out();
-   bsock->set_killable(false);
+   bsock->ClearTimedOut();
+   bsock->SetKillable(false);
 
    while (!done) {
       error = gnutls_handshake(tls_conn->gnutls_state);
@@ -573,9 +573,9 @@ static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
       case GNUTLS_E_AGAIN:
       case GNUTLS_E_INTERRUPTED:
          if (gnutls_record_get_direction(tls_conn->gnutls_state) == 1) {
-            wait_for_writable_fd(bsock->fd_, 10000, false);
+            WaitForWritableFd(bsock->fd_, 10000, false);
          } else {
-            wait_for_readable_fd(bsock->fd_, 10000, false);
+            WaitForReadableFd(bsock->fd_, 10000, false);
          }
          status = true;
          continue;
@@ -584,7 +584,7 @@ static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
          goto cleanup;
       }
 
-      if (bsock->is_timed_out()) {
+      if (bsock->IsTimedOut()) {
          goto cleanup;
       }
 
@@ -596,7 +596,7 @@ static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
          goto cleanup;
       }
 
-      if (tls_conn->ctx->verify_peer) {
+      if (tls_conn->ctx->VerifyPeer) {
          if (!tls_cert_verify(tls_conn)) {
             status = false;
             goto cleanup;
@@ -606,11 +606,11 @@ static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
 
 cleanup:
    /* Restore saved flags */
-   bsock->restore_blocking(flags);
+   bsock->RestoreBlocking(flags);
 
    /* Clear timer */
    bsock->timer_start = 0;
-   bsock->set_killable(true);
+   bsock->SetKillable(true);
 
    return status;
 }
@@ -635,14 +635,14 @@ bool tls_bsock_accept(BareosSocket *bsock)
    return gnutls_bsock_session_start(bsock, true);
 }
 
-void tls_bsock_shutdown(BareosSocket *bsock)
+void TlsBsockShutdown(BareosSocket *bsock)
 {
    TLS_CONNECTION *tls_conn = bsock->tls_conn;
 
    gnutls_bye(tls_conn->gnutls_state, GNUTLS_SHUT_WR);
 }
 
-/* Does all the manual labor for tls_bsock_readn() and tls_bsock_writen() */
+/* Does all the manual labor for TlsBsockReadn() and TlsBsockWriten() */
 static inline int gnutls_bsock_readwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
    TLS_CONNECTION *tls_conn = bsock->tls_conn;
@@ -652,12 +652,12 @@ static inline int gnutls_bsock_readwrite(BareosSocket *bsock, char *ptr, int nby
    int nwritten = 0;
 
    /* Ensure that socket is non-blocking */
-   flags = bsock->set_nonblocking();
+   flags = bsock->SetNonblocking();
 
    /* start timer */
    bsock->timer_start = watchdog_time;
-   bsock->clear_timed_out();
-   bsock->set_killable(false);
+   bsock->ClearTimedOut();
+   bsock->SetKillable(false);
 
    nleft = nbytes;
 
@@ -688,9 +688,9 @@ static inline int gnutls_bsock_readwrite(BareosSocket *bsock, char *ptr, int nby
          case GNUTLS_E_AGAIN:
          case GNUTLS_E_INTERRUPTED:
             if (gnutls_record_get_direction(tls_conn->gnutls_state) == 1) {
-               wait_for_writable_fd(bsock->fd_, 10000, false);
+               WaitForWritableFd(bsock->fd_, 10000, false);
             } else {
-               wait_for_readable_fd(bsock->fd_, 10000, false);
+               WaitForReadableFd(bsock->fd_, 10000, false);
             }
             break;
          default:
@@ -704,28 +704,28 @@ static inline int gnutls_bsock_readwrite(BareosSocket *bsock, char *ptr, int nby
       }
 
       /* Timeout/Termination, let's take what we can get */
-      if (bsock->is_timed_out() || bsock->is_terminated()) {
+      if (bsock->IsTimedOut() || bsock->IsTerminated()) {
          goto cleanup;
       }
    }
 
 cleanup:
    /* Restore saved flags */
-   bsock->restore_blocking(flags);
+   bsock->RestoreBlocking(flags);
 
    /* Clear timer */
    bsock->timer_start = 0;
-   bsock->set_killable(true);
+   bsock->SetKillable(true);
 
    return nbytes - nleft;
 }
 
-int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return gnutls_bsock_readwrite(bsock, ptr, nbytes, true);
 }
 
-int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return gnutls_bsock_readwrite(bsock, ptr, nbytes, false);
 }

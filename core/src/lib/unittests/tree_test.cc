@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
     FillDirectoryTree("/home/user/bareos", root, NULL);
 
-    for (node = first_tree_node(root); node; node=next_tree_node(node)) {
+    for (node = FirstTreeNode(root); node; node=NextTreeNode(node)) {
        tree_getpath(node, buf, sizeof(buf));
        Dmsg2(100, "%d: %s\n", node->FileIndex, buf);
     }
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
        Dmsg0(100, "testprogs not found.\n");
     }
 
-    free_tree((TREE_NODE *)root);
+    FreeTree((TREE_NODE *)root);
 
     return 0;
 }

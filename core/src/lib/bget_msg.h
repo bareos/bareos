@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_BGET_MSG_H_
 #define BAREOS_LIB_BGET_MSG_H_
 
-DLL_IMP_EXP int bget_msg(BareosSocket *sock);
+DLL_IMP_EXP int BgetMsg(BareosSocket *sock);
 
 #endif // BAREOS_LIB_BGET_MSG_H_

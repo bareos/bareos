@@ -48,7 +48,7 @@
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 static void do_extract(char *devname);
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 static Device *dev = NULL;
 static DeviceControlRecord *dcr;
@@ -107,12 +107,12 @@ int main (int argc, char *argv[])
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   init_stack_dump();
-   lmgr_init_thread();
+   InitStackDump();
+   LmgrInitThread();
 
    working_directory = "/tmp";
-   my_name_is(argc, argv, "bextract");
-   init_msg(NULL, NULL);              /* setup message handler */
+   MyNameIs(argc, argv, "bextract");
+   InitMsg(NULL, NULL);              /* setup message handler */
 
    OSDependentInit();
 
@@ -123,7 +123,7 @@ int main (int argc, char *argv[])
       switch (ch) {
       case 'b':                    /* bootstrap file */
          bsr = parse_bsr(NULL, optarg);
-//       dump_bsr(bsr, true);
+//       DumpBsr(bsr, true);
          break;
 
       case 'c':                    /* specify config file */
@@ -159,9 +159,9 @@ int main (int argc, char *argv[])
             exit(1);
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
-            strip_trailing_junk(line);
+            StripTrailingJunk(line);
             Dmsg1(900, "add_exclude %s\n", line);
-            add_fname_to_exclude_list(ff, line);
+            AddFnameToExcludeList(ff, line);
          }
          fclose(fd);
          break;
@@ -174,9 +174,9 @@ int main (int argc, char *argv[])
             exit(1);
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
-            strip_trailing_junk(line);
+            StripTrailingJunk(line);
             Dmsg1(900, "add_include %s\n", line);
-            add_fname_to_include_list(ff, 0, line);
+            AddFnameToIncludeList(ff, 0, line);
          }
          fclose(fd);
          got_inc = true;
@@ -223,20 +223,20 @@ int main (int argc, char *argv[])
       }
    }
 
-   load_sd_plugins(me->plugin_directory, me->plugin_names);
+   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-   read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->SDaddrs));
+   ReadCryptoCache(me->working_directory, "bareos-sd",
+                     GetFirstPortHostOrder(me->SDaddrs));
 
    if (!got_inc) {                            /* If no include file, */
-      add_fname_to_include_list(ff, 0, "/");  /*   include everything */
+      AddFnameToIncludeList(ff, 0, "/");  /*   include everything */
    }
 
    where = argv[1];
    do_extract(argv[0]);
 
    if (bsr) {
-      free_bsr(bsr);
+      FreeBsr(bsr);
    }
    if (prog_name_msg) {
       Pmsg1(000, _("%d Program Name and/or Program Data Stream records ignored.\n"),
@@ -246,8 +246,8 @@ int main (int argc, char *argv[])
       Pmsg1(000, _("%d Win32 data or Win32 gzip data stream records. Ignored.\n"),
          win32_data_msg);
    }
-   term_include_exclude_files(ff);
-   term_find_files(ff);
+   TermIncludeExcludeFiles(ff);
+   TermFindFiles(ff);
    return 0;
 }
 
@@ -357,7 +357,7 @@ static inline void pop_delayed_data_streams()
       case STREAM_XATTR_FREEBSD:
       case STREAM_XATTR_LINUX:
       case STREAM_XATTR_NETBSD:
-         parse_xattr_streams(jcr, &xattr_data,  dds->stream, dds->content, dds->content_length);
+         ParseXattrStreams(jcr, &xattr_data,  dds->stream, dds->content, dds->content_length);
          free(dds->content);
          break;
       default:
@@ -382,7 +382,7 @@ static inline void pop_delayed_data_streams()
 static void close_previous_stream(void)
 {
    pop_delayed_data_streams();
-   set_attributes(jcr, attr, &bfd);
+   SetAttributes(jcr, attr, &bfd);
 }
 
 static void do_extract(char *devname)
@@ -390,7 +390,7 @@ static void do_extract(char *devname)
    struct stat statp;
    uint32_t decompress_buf_size;
 
-   enable_backup_privileges(NULL, 1);
+   EnableBackupPrivileges(NULL, 1);
 
    dcr = New(DeviceControlRecord);
    jcr = setup_jcr("bextract", devname, bsr, director, dcr, VolumeName, true); /* read device */
@@ -420,51 +420,51 @@ static void do_extract(char *devname)
    attr = new_attr(jcr);
 
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
-   setup_decompression_buffers(jcr, &decompress_buf_size);
+   SetupDecompressionBuffers(jcr, &decompress_buf_size);
    if (decompress_buf_size > 0) {
       memset(&jcr->compress, 0, sizeof(CompressionContext));
-      jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+      jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
       jcr->compress.inflate_buffer_size = decompress_buf_size;
    }
 
-   acl_data.last_fname = get_pool_memory(PM_FNAME);
-   xattr_data.last_fname = get_pool_memory(PM_FNAME);
+   acl_data.last_fname = GetPoolMemory(PM_FNAME);
+   xattr_data.last_fname = GetPoolMemory(PM_FNAME);
 
-   read_records(dcr, record_cb, mount_next_read_volume);
+   ReadRecords(dcr, RecordCb, MountNextReadVolume);
 
    /*
     * If output file is still open, it was the last one in the
     * archive since we just hit an end of file, so close the file.
     */
-   if (is_bopen(&bfd)) {
+   if (IsBopen(&bfd)) {
       close_previous_stream();
    }
-   free_attr(attr);
+   FreeAttr(attr);
 
-   free_pool_memory(acl_data.last_fname);
-   free_pool_memory(xattr_data.last_fname);
+   FreePoolMemory(acl_data.last_fname);
+   FreePoolMemory(xattr_data.last_fname);
 
    if (delayed_streams) {
       drop_delayed_data_streams();
       delete delayed_streams;
    }
 
-   cleanup_compression(jcr);
+   CleanupCompression(jcr);
 
-   clean_device(jcr->dcr);
+   CleanDevice(jcr->dcr);
    dev->term();
-   free_dcr(dcr);
-   free_jcr(jcr);
+   FreeDcr(dcr);
+   FreeJcr(jcr);
 
    printf(_("%u files restored.\n"), num_files);
 
    return;
 }
 
-static bool store_data(BareosWinFilePacket *bfd, char *data, const int32_t length)
+static bool StoreData(BareosWinFilePacket *bfd, char *data, const int32_t length)
 {
    if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
-      set_portable_backup(bfd);
+      SetPortableBackup(bfd);
       if (!processWin32BackupAPIBlock(bfd, data, length)) {
          berrno be;
          Emsg2(M_ERROR_TERM, 0, _("Write error on %s: %s\n"),
@@ -482,9 +482,9 @@ static bool store_data(BareosWinFilePacket *bfd, char *data, const int32_t lengt
 }
 
 /*
- * Called here for each record from read_records()
+ * Called here for each record from ReadRecords()
  */
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    int status;
    JobControlRecord *jcr = dcr->jcr;
@@ -503,20 +503,20 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
        * close the output file.
        */
       if (extract) {
-         if (!is_bopen(&bfd)) {
+         if (!IsBopen(&bfd)) {
             Emsg0(M_ERROR, 0, _("Logic error output file should be open but is not.\n"));
          }
          close_previous_stream();
          extract = false;
       }
 
-      if (!unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
+      if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
          Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
       }
 
-      if (file_is_included(ff, attr->fname) && !file_is_excluded(ff, attr->fname)) {
-         attr->data_stream = decode_stat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
-         if (!is_restore_stream_supported(attr->data_stream)) {
+      if (FileIsIncluded(ff, attr->fname) && !FileIsExcluded(ff, attr->fname)) {
+         attr->data_stream = DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+         if (!IsRestoreStreamSupported(attr->data_stream)) {
             if (!non_support_data++) {
                Jmsg(jcr, M_ERROR, 0, _("%s stream not supported on this Client.\n"),
                   stream_to_ascii(attr->data_stream));
@@ -525,7 +525,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
             return true;
          }
 
-         build_attr_output_fnames(jcr, attr);
+         BuildAttrOutputFnames(jcr, attr);
 
          if (attr->type == FT_DELETED) { /* TODO: choose the right fname/ofname */
             Jmsg(jcr, M_INFO, 0, _("%s was deleted.\n"), attr->fname);
@@ -534,20 +534,20 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
          }
 
          extract = false;
-         status = create_file(jcr, attr, &bfd, REPLACE_ALWAYS);
+         status = CreateFile(jcr, attr, &bfd, REPLACE_ALWAYS);
          switch (status) {
          case CF_ERROR:
          case CF_SKIP:
             break;
          case CF_EXTRACT:
             extract = true;
-            print_ls_output(jcr, attr);
+            PrintLsOutput(jcr, attr);
             num_files++;
             fileAddr = 0;
             break;
          case CF_CREATED:
             close_previous_stream();
-            print_ls_output(jcr, attr);
+            PrintLsOutput(jcr, attr);
             num_files++;
             fileAddr = 0;
             break;
@@ -570,7 +570,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
             uint64_t faddr;
             wbuf = rec->data + OFFSET_FADDR_SIZE;
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
-            ser_begin(rec->data, OFFSET_FADDR_SIZE);
+            SerBegin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
             if (fileAddr != faddr) {
                fileAddr = faddr;
@@ -586,7 +586,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
          }
          total += wsize;
          Dmsg2(8, "Write %u bytes, total=%u\n", wsize, total);
-         store_data(&bfd, wbuf, wsize);
+         StoreData(&bfd, wbuf, wsize);
          fileAddr += wsize;
       }
       break;
@@ -607,9 +607,9 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
             wbuf = rec->data + OFFSET_FADDR_SIZE;
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
 
-            ser_begin(rec->data, OFFSET_FADDR_SIZE);
+            SerBegin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
-            ser_end(rec->data, OFFSET_FADDR_SIZE);
+            SerEnd(rec->data, OFFSET_FADDR_SIZE);
 
             if (fileAddr != faddr) {
                fileAddr = faddr;
@@ -627,9 +627,9 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
             wsize = rec->data_len;
          }
 
-         if (decompress_data(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize, false)) {
+         if (DecompressData(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize, false)) {
             Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", wsize, total);
-            store_data(&bfd, wbuf, wsize);
+            StoreData(&bfd, wbuf, wsize);
             total += wsize;
             fileAddr += wsize;
             Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, wsize);
@@ -682,7 +682,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
    case STREAM_ACL_HURD_DEFAULT_ACL:
    case STREAM_ACL_HURD_ACCESS_ACL:
       if (extract) {
-         pm_strcpy(acl_data.last_fname, attr->fname);
+         PmStrcpy(acl_data.last_fname, attr->fname);
          push_delayed_data_stream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
@@ -699,7 +699,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
    case STREAM_XATTR_LINUX:
    case STREAM_XATTR_NETBSD:
       if (extract) {
-         pm_strcpy(xattr_data.last_fname, attr->fname);
+         PmStrcpy(xattr_data.last_fname, attr->fname);
          push_delayed_data_stream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
@@ -712,7 +712,7 @@ static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
        * If extracting, weird stream (not 1 or 2), close output file anyway
        */
       if (extract) {
-         if (!is_bopen(&bfd)) {
+         if (!IsBopen(&bfd)) {
             Emsg0(M_ERROR, 0, _("Logic error output file should be open but is not.\n"));
          }
          close_previous_stream();

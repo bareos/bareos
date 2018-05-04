@@ -67,7 +67,7 @@ const bool have_xattr = false;
 int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
                      DIGEST *digest, DIGEST *signature_digest);
-bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
+bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
 static void close_vss_backup_session(JobControlRecord *jcr);
 
 /**
@@ -81,7 +81,7 @@ static void close_vss_backup_session(JobControlRecord *jcr);
  * reacts accordingly (at the moment it has nothing to do
  * except echo the heartbeat to the Director).
  */
-bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher)
+bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher)
 {
    BareosSocket *sd;
    bool ok = true;
@@ -101,7 +101,7 @@ bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_ciph
    } else {
       buf_size = 0;                   /* use default */
    }
-   if (!sd->set_buffer_size(buf_size, BNET_SETBUF_WRITE)) {
+   if (!sd->SetBufferSize(buf_size, BNET_SETBUF_WRITE)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size FD->SD.\n"));
       return false;
@@ -109,31 +109,31 @@ bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_ciph
 
    jcr->buf_size = sd->msglen;
 
-   if (!adjust_compression_buffers(jcr)) {
+   if (!AdjustCompressionBuffers(jcr)) {
       return false;
    }
 
-   if (!crypto_session_start(jcr, cipher)) {
+   if (!CryptoSessionStart(jcr, cipher)) {
       return false;
    }
 
-   set_find_options((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
+   SetFindOptions((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
 
    /**
     * In accurate mode, we overload the find_one check function
     */
    if (jcr->accurate) {
-      set_find_changed_function((FindFilesPacket *)jcr->ff, accurate_check_file);
+      SetFindChangedFunction((FindFilesPacket *)jcr->ff, accurate_check_file);
    }
 
-   start_heartbeat_monitor(jcr);
+   StartHeartbeatMonitor(jcr);
 
    if (have_acl) {
       jcr->acl_data = (acl_data_t *)malloc(sizeof(acl_data_t));
       memset(jcr->acl_data, 0, sizeof(acl_data_t));
       jcr->acl_data->u.build = (acl_build_data_t *)malloc(sizeof(acl_build_data_t));
       memset(jcr->acl_data->u.build, 0, sizeof(acl_build_data_t));
-      jcr->acl_data->u.build->content = get_pool_memory(PM_MESSAGE);
+      jcr->acl_data->u.build->content = GetPoolMemory(PM_MESSAGE);
    }
 
    if (have_xattr) {
@@ -141,13 +141,13 @@ bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_ciph
       memset(jcr->xattr_data, 0, sizeof(xattr_data_t));
       jcr->xattr_data->u.build = (xattr_build_data_t *)malloc(sizeof(xattr_build_data_t));
       memset(jcr->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
-      jcr->xattr_data->u.build->content = get_pool_memory(PM_MESSAGE);
+      jcr->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
    }
 
    /**
     * Subroutine save_file() is called for each file
     */
-   if (!find_files(jcr, (FindFilesPacket *)jcr->ff, save_file, plugin_save)) {
+   if (!FindFiles(jcr, (FindFilesPacket *)jcr->ff, save_file, PluginSave)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);
    }
@@ -163,21 +163,21 @@ bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_ciph
 
    close_vss_backup_session(jcr);
 
-   accurate_finish(jcr);              /* send deleted or base file list to SD */
+   AccurateFinish(jcr);              /* send deleted or base file list to SD */
 
-   stop_heartbeat_monitor(jcr);
+   StopHeartbeatMonitor(jcr);
 
    sd->signal(BNET_EOD);            /* end of sending data */
 
    if (have_acl && jcr->acl_data) {
-      free_pool_memory(jcr->acl_data->u.build->content);
+      FreePoolMemory(jcr->acl_data->u.build->content);
       free(jcr->acl_data->u.build);
       free(jcr->acl_data);
       jcr->acl_data = NULL;
    }
 
    if (have_xattr && jcr->xattr_data) {
-      free_pool_memory(jcr->xattr_data->u.build->content);
+      FreePoolMemory(jcr->xattr_data->u.build->content);
       free(jcr->xattr_data->u.build);
       free(jcr->xattr_data);
       jcr->xattr_data = NULL;
@@ -188,8 +188,8 @@ bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_ciph
       jcr->big_buf = NULL;
    }
 
-   cleanup_compression(jcr);
-   crypto_session_end(jcr);
+   CleanupCompression(jcr);
+   CryptoSessionEnd(jcr);
 
    Dmsg1(100, "end blast_data ok=%d\n", ok);
    return ok;
@@ -206,24 +206,24 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
    bool retval = false;
 
    if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
-      if (bopen_rsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
+      if (BopenRsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
          bsctx.ff_pkt->ff_errno = errno;
          berrno be;
          Jmsg(bsctx.jcr, M_NOTSAVED, -1,
               _("     Cannot open resource fork for \"%s\": ERR=%s.\n"),
               bsctx.ff_pkt->fname, be.bstrerror());
          bsctx.jcr->JobErrors++;
-         if (is_bopen(&bsctx.ff_pkt->bfd)) {
+         if (IsBopen(&bsctx.ff_pkt->bfd)) {
             bclose(&bsctx.ff_pkt->bfd);
          }
       } else {
          int status;
 
          memcpy(flags, bsctx.ff_pkt->flags, sizeof(flags));
-         clear_bit(FO_COMPRESS, bsctx.ff_pkt->flags);
-         clear_bit(FO_SPARSE, bsctx.ff_pkt->flags);
-         clear_bit(FO_OFFSETS, bsctx.ff_pkt->flags);
-         rsrc_stream = bit_is_set(FO_ENCRYPT, flags) ? STREAM_ENCRYPTED_MACOS_FORK_DATA :
+         ClearBit(FO_COMPRESS, bsctx.ff_pkt->flags);
+         ClearBit(FO_SPARSE, bsctx.ff_pkt->flags);
+         ClearBit(FO_OFFSETS, bsctx.ff_pkt->flags);
+         rsrc_stream = BitIsSet(FO_ENCRYPT, flags) ? STREAM_ENCRYPTED_MACOS_FORK_DATA :
                                                        STREAM_MACOS_FORK_DATA;
 
          status = send_data(bsctx.jcr, rsrc_stream, bsctx.ff_pkt,
@@ -240,13 +240,13 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
    Dmsg1(300, "Saving Finder Info for \"%s\"\n", bsctx.ff_pkt->fname);
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, STREAM_HFSPLUS_ATTRIBUTES);
    Dmsg1(300, "filed>stored:header %s", sd->msg);
-   pm_memcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
+   PmMemcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
    sd->msglen = 32;
    if (bsctx.digest) {
-      crypto_digest_update(bsctx.digest, (uint8_t *)sd->msg, sd->msglen);
+      CryptoDigestUpdate(bsctx.digest, (uint8_t *)sd->msg, sd->msglen);
    }
    if (bsctx.signing_digest) {
-      crypto_digest_update(bsctx.signing_digest, (uint8_t *)sd->msg, sd->msglen);
+      CryptoDigestUpdate(bsctx.signing_digest, (uint8_t *)sd->msg, sd->msglen);
    }
    sd->send();
    sd->signal(BNET_EOD);
@@ -278,16 +278,16 @@ static inline bool setup_encryption_digests(b_save_ctx &bsctx)
    crypto_digest_t signing_algorithm = CRYPTO_DIGEST_SHA1;
 #endif
 
-   if (bit_is_set(FO_MD5, bsctx.ff_pkt->flags)) {
+   if (BitIsSet(FO_MD5, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_MD5);
       bsctx.digest_stream = STREAM_MD5_DIGEST;
-   } else if (bit_is_set(FO_SHA1, bsctx.ff_pkt->flags)) {
+   } else if (BitIsSet(FO_SHA1, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA1);
       bsctx.digest_stream = STREAM_SHA1_DIGEST;
-   } else if (bit_is_set(FO_SHA256, bsctx.ff_pkt->flags)) {
+   } else if (BitIsSet(FO_SHA256, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA256);
       bsctx.digest_stream = STREAM_SHA256_DIGEST;
-   } else if (bit_is_set(FO_SHA512, bsctx.ff_pkt->flags)) {
+   } else if (BitIsSet(FO_SHA512, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA512);
       bsctx.digest_stream = STREAM_SHA512_DIGEST;
    }
@@ -325,7 +325,7 @@ static inline bool setup_encryption_digests(b_save_ctx &bsctx)
     * Enable encryption
     */
    if (bsctx.jcr->crypto.pki_encrypt) {
-      set_bit(FO_ENCRYPT, bsctx.ff_pkt->flags);
+      SetBit(FO_ENCRYPT, bsctx.ff_pkt->flags);
    }
    retval = true;
 
@@ -348,7 +348,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
       goto bail_out;
    }
 
-   if (!crypto_sign_add_signer(signature, bsctx.signing_digest, bsctx.jcr->crypto.pki_keypair)) {
+   if (!CryptoSignAddSigner(signature, bsctx.signing_digest, bsctx.jcr->crypto.pki_keypair)) {
       Jmsg(bsctx.jcr, M_FATAL, 0, _("An error occurred while signing the stream.\n"));
       goto bail_out;
    }
@@ -356,7 +356,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
    /*
     * Get signature size
     */
-   if (!crypto_sign_encode(signature, NULL, &size)) {
+   if (!CryptoSignEncode(signature, NULL, &size)) {
       Jmsg(bsctx.jcr, M_FATAL, 0, _("An error occurred while signing the stream.\n"));
       goto bail_out;
    }
@@ -364,8 +364,8 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
    /*
     * Grow the bsock buffer to fit our message if necessary
     */
-   if (sizeof_pool_memory(sd->msg) < (int32_t)size) {
-      sd->msg = realloc_pool_memory(sd->msg, size);
+   if (SizeofPoolMemory(sd->msg) < (int32_t)size) {
+      sd->msg = ReallocPoolMemory(sd->msg, size);
    }
 
    /*
@@ -377,7 +377,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
    /*
     * Encode signature data
     */
-   if (!crypto_sign_encode(signature, (uint8_t *)sd->msg, &size)) {
+   if (!CryptoSignEncode(signature, (uint8_t *)sd->msg, &size)) {
       Jmsg(bsctx.jcr, M_FATAL, 0, _("An error occurred while signing the stream.\n"));
       goto bail_out;
    }
@@ -389,7 +389,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
 
 bail_out:
    if (signature) {
-      crypto_sign_free(signature);
+      CryptoSignFree(signature);
    }
    return retval;
 }
@@ -411,11 +411,11 @@ static inline bool terminate_digest(b_save_ctx &bsctx)
    /*
     * Grow the bsock buffer to fit our message if necessary
     */
-   if (sizeof_pool_memory(sd->msg) < (int32_t)size) {
-      sd->msg = realloc_pool_memory(sd->msg, size);
+   if (SizeofPoolMemory(sd->msg) < (int32_t)size) {
+      sd->msg = ReallocPoolMemory(sd->msg, size);
    }
 
-   if (!crypto_digest_finalize(bsctx.digest, (uint8_t *)sd->msg, &size)) {
+   if (!CryptoDigestFinalize(bsctx.digest, (uint8_t *)sd->msg, &size)) {
       Jmsg(bsctx.jcr, M_FATAL, 0, _("An error occurred finalizing signing the stream.\n"));
       goto bail_out;
    }
@@ -424,7 +424,7 @@ static inline bool terminate_digest(b_save_ctx &bsctx)
     * Keep the checksum if this file is a hardlink
     */
    if (bsctx.ff_pkt->linked) {
-      ff_pkt_set_link_digest(bsctx.ff_pkt, bsctx.digest_stream, sd->msg, size);
+      FfPktSetLinkDigest(bsctx.ff_pkt, bsctx.digest_stream, sd->msg, size);
    }
 
    sd->msglen = size;
@@ -443,7 +443,7 @@ static inline bool do_backup_acl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    jcr->acl_data->filetype = ff_pkt->type;
    jcr->acl_data->last_fname = jcr->last_fname;
 
-   if (jcr->is_plugin()) {
+   if (jcr->IsPlugin()) {
       retval = plugin_build_acl_streams(jcr, jcr->acl_data, ff_pkt);
    } else {
       retval = build_acl_streams(jcr, jcr->acl_data, ff_pkt);
@@ -476,10 +476,10 @@ static inline bool do_backup_xattr(JobControlRecord *jcr, FindFilesPacket *ff_pk
 
    jcr->xattr_data->last_fname = jcr->last_fname;
 
-   if (jcr->is_plugin()) {
-      retval = plugin_build_xattr_streams(jcr, jcr->xattr_data, ff_pkt);
+   if (jcr->IsPlugin()) {
+      retval = PluginBuildXattrStreams(jcr, jcr->xattr_data, ff_pkt);
    } else {
-      retval = build_xattr_streams(jcr, jcr->xattr_data, ff_pkt);
+      retval = BuildXattrStreams(jcr, jcr->xattr_data, ff_pkt);
    }
 
    switch (retval) {
@@ -505,7 +505,7 @@ static inline bool do_backup_xattr(JobControlRecord *jcr, FindFilesPacket *ff_pk
 
 /**
  * Called here by find() for each file included.
- * This is a callback. The original is find_files() above.
+ * This is a callback. The original is FindFiles() above.
  *
  * Send the file and its data to the Storage daemon.
  *
@@ -525,7 +525,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
    struct save_pkt sp;          /* use by option plugin */
    BareosSocket *sd = jcr->store_bsock;
 
-   if (jcr->is_canceled() || jcr->is_incomplete()) {
+   if (jcr->IsCanceled() || jcr->IsIncomplete()) {
       return 0;
    }
 
@@ -562,7 +562,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       break;
    case FT_NOFSCHG:
       /* Suppress message for /dev filesystems */
-      if (!is_in_fileset(ff_pkt)) {
+      if (!IsInFileset(ff_pkt)) {
          Jmsg(jcr, M_INFO, 1, _("     %s is a different filesystem. Will not descend from %s into it.\n"),
               ff_pkt->fname, ff_pkt->top_fname);
       }
@@ -664,8 +664,8 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Initialize the file descriptor we use for data and other streams.
     */
    binit(&ff_pkt->bfd);
-   if (bit_is_set(FO_PORTABLE, ff_pkt->flags)) {
-      set_portable_backup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
+   if (BitIsSet(FO_PORTABLE, ff_pkt->flags)) {
+      SetPortableBackup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
    }
 
    /*
@@ -677,12 +677,12 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       /*
        * Ask the option plugin what to do with this file
        */
-      switch (plugin_option_handle_file(jcr, ff_pkt, &sp)) {
+      switch (PluginOptionHandleFile(jcr, ff_pkt, &sp)) {
       case bRC_OK:
          Dmsg2(10, "Option plugin %s will be used to backup %s\n", ff_pkt->plugin, ff_pkt->fname);
          jcr->opt_plugin = true;
          jcr->plugin_sp = &sp;
-         plugin_update_ff_pkt(ff_pkt, &sp);
+         PluginUpdateFfPkt(ff_pkt, &sp);
          do_plugin_set = true;
          break;
       case bRC_Skip:
@@ -700,17 +700,17 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       /*
        * Tell bfile that it needs to call plugin
        */
-      if (!set_cmd_plugin(&ff_pkt->bfd, jcr)) {
+      if (!SetCmdPlugin(&ff_pkt->bfd, jcr)) {
          goto bail_out;
       }
-      send_plugin_name(jcr, sd, true);      /* signal start of plugin data */
+      SendPluginName(jcr, sd, true);      /* signal start of plugin data */
       plugin_started = true;
    }
 
    /*
     * Send attributes -- must be done after binit()
     */
-   if (!encode_and_send_attributes(jcr, ff_pkt, data_stream)) {
+   if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream)) {
       goto bail_out;
    }
 
@@ -732,7 +732,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Set up the encryption context and send the session data to the SD
     */
    if (has_file_data && jcr->crypto.pki_encrypt) {
-      if (!crypto_session_send(jcr, sd)) {
+      if (!CryptoSessionSend(jcr, sd)) {
          goto bail_out;
       }
    }
@@ -753,7 +753,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
        */
       if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)) {
 #ifdef HAVE_WIN32
-         do_read = !is_portable_backup(&ff_pkt->bfd) || ff_pkt->statp.st_size > 0;
+         do_read = !IsPortableBackup(&ff_pkt->bfd) || ff_pkt->statp.st_size > 0;
 #else
          do_read = ff_pkt->statp.st_size > 0;
 #endif
@@ -761,7 +761,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
                  ff_pkt->type == FT_FIFO ||
                  ff_pkt->type == FT_REPARSE ||
                  ff_pkt->type == FT_JUNCTION ||
-                (!is_portable_backup(&ff_pkt->bfd) &&
+                (!IsPortableBackup(&ff_pkt->bfd) &&
                  ff_pkt->type == FT_DIREND)) {
          do_read = true;
       }
@@ -778,7 +778,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
          tid = NULL;
       }
 
-      noatime = bit_is_set(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
+      noatime = BitIsSet(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
       ff_pkt->bfd.reparse_point = (ff_pkt->type == FT_REPARSE ||
                                    ff_pkt->type == FT_JUNCTION);
 
@@ -790,21 +790,21 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
               ff_pkt->fname, be.bstrerror());
          jcr->JobErrors++;
          if (tid) {
-            stop_thread_timer(tid);
+            StopThreadTimer(tid);
             tid = NULL;
          }
          goto good_rtn;
       }
 
       if (tid) {
-         stop_thread_timer(tid);
+         StopThreadTimer(tid);
          tid = NULL;
       }
 
       status = send_data(jcr, data_stream, ff_pkt, bsctx.digest, bsctx.signing_digest);
 
-      if (bit_is_set(FO_CHKCHANGES, ff_pkt->flags)) {
-         has_file_changed(jcr, ff_pkt);
+      if (BitIsSet(FO_CHKCHANGES, ff_pkt->flags)) {
+         HasFileChanged(jcr, ff_pkt);
       }
 
       bclose(&ff_pkt->bfd);
@@ -820,7 +820,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
        */
       if (ff_pkt->type != FT_LNKSAVED &&
          (S_ISREG(ff_pkt->statp.st_mode) &&
-          bit_is_set(FO_HFSPLUS, ff_pkt->flags))) {
+          BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
          if (!save_rsrc_and_finder(bsctx)) {
             goto bail_out;
          }
@@ -831,7 +831,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Save ACLs when requested and available for anything not being a symlink.
     */
    if (have_acl) {
-      if (bit_is_set(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
+      if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
          if (!do_backup_acl(jcr, ff_pkt)) {
             goto bail_out;
          }
@@ -842,7 +842,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Save Extended Attributes when requested and available for all files.
     */
    if (have_xattr) {
-      if (bit_is_set(FO_XATTR, ff_pkt->flags)) {
+      if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
          if (!do_backup_xattr(jcr, ff_pkt)) {
             goto bail_out;
          }
@@ -874,7 +874,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
       sd->fsend("%ld %d 0", jcr->JobFiles, ff_pkt->digest_stream);
 
-      sd->msg = check_pool_memory_size(sd->msg, ff_pkt->digest_len);
+      sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
       memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
       sd->msglen = ff_pkt->digest_len;
       sd->send();
@@ -883,24 +883,24 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
    }
 
 good_rtn:
-   rtnstat = jcr->is_canceled() ? 0 : 1; /* good return if not canceled */
+   rtnstat = jcr->IsCanceled() ? 0 : 1; /* good return if not canceled */
 
 bail_out:
-   if (jcr->is_incomplete() || jcr->is_canceled()) {
+   if (jcr->IsIncomplete() || jcr->IsCanceled()) {
       rtnstat = 0;
    }
    if (plugin_started) {
-      send_plugin_name(jcr, sd, false); /* signal end of plugin data */
+      SendPluginName(jcr, sd, false); /* signal end of plugin data */
    }
    if (ff_pkt->opt_plugin) {
       jcr->plugin_sp = NULL;            /* sp is local to this function */
       jcr->opt_plugin = false;
    }
    if (bsctx.digest) {
-      crypto_digest_free(bsctx.digest);
+      CryptoDigestFree(bsctx.digest);
    }
    if (bsctx.signing_digest) {
-      crypto_digest_free(bsctx.signing_digest);
+      CryptoDigestFree(bsctx.signing_digest);
    }
 
    return rtnstat;
@@ -917,7 +917,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
    /*
     * Check for sparse blocks
     */
-   if (bit_is_set(FO_SPARSE, bctx->ff_pkt->flags)) {
+   if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)) {
       bool allZeros;
       ser_declare;
 
@@ -927,14 +927,14 @@ static inline bool send_data_to_sd(b_ctx *bctx)
           ((bctx->ff_pkt->type == FT_RAW ||
             bctx->ff_pkt->type == FT_FIFO) &&
           ((uint64_t)bctx->ff_pkt->statp.st_size == 0))) {
-         allZeros = is_buf_zero(bctx->rbuf, bctx->rsize);
+         allZeros = IsBufZero(bctx->rbuf, bctx->rsize);
       }
 
       if (!allZeros) {
          /*
           * Put file address as first data in buffer
           */
-         ser_begin(bctx->wbuf, OFFSET_FADDR_SIZE);
+         SerBegin(bctx->wbuf, OFFSET_FADDR_SIZE);
          ser_uint64(bctx->fileAddr); /* store fileAddr in begin of buffer */
       }
 
@@ -946,9 +946,9 @@ static inline bool send_data_to_sd(b_ctx *bctx)
       if (allZeros) {
          return true;
       }
-   } else if (bit_is_set(FO_OFFSETS, bctx->ff_pkt->flags)) {
+   } else if (BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
       ser_declare;
-      ser_begin(bctx->wbuf, OFFSET_FADDR_SIZE);
+      SerBegin(bctx->wbuf, OFFSET_FADDR_SIZE);
       ser_uint64(bctx->ff_pkt->bfd.offset); /* store offset in begin of buffer */
    }
 
@@ -963,21 +963,21 @@ static inline bool send_data_to_sd(b_ctx *bctx)
     * Update checksum if requested
     */
    if (bctx->digest) {
-      crypto_digest_update(bctx->digest, (uint8_t *)bctx->rbuf, sd->msglen);
+      CryptoDigestUpdate(bctx->digest, (uint8_t *)bctx->rbuf, sd->msglen);
    }
 
    /*
     * Update signing digest if requested
     */
    if (bctx->signing_digest) {
-      crypto_digest_update(bctx->signing_digest, (uint8_t *)bctx->rbuf, sd->msglen);
+      CryptoDigestUpdate(bctx->signing_digest, (uint8_t *)bctx->rbuf, sd->msglen);
    }
 
    /*
     * Compress the data.
     */
-   if (bit_is_set(FO_COMPRESS, bctx->ff_pkt->flags)) {
-      if (!compress_data(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
+   if (BitIsSet(FO_COMPRESS, bctx->ff_pkt->flags)) {
+      if (!CompressData(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
                          bctx->jcr->store_bsock->msglen, bctx->cbuf,
                          bctx->max_compress_len, &bctx->compress_len)) {
          return false;
@@ -992,12 +992,12 @@ static inline bool send_data_to_sd(b_ctx *bctx)
          /*
           * Complete header
           */
-         ser_begin(bctx->chead, sizeof(comp_stream_header));
+         SerBegin(bctx->chead, sizeof(comp_stream_header));
          ser_uint32(bctx->ch.magic);
          ser_uint32(bctx->compress_len);
          ser_uint16(bctx->ch.level);
          ser_uint16(bctx->ch.version);
-         ser_end(bctx->chead, sizeof(comp_stream_header));
+         SerEnd(bctx->chead, sizeof(comp_stream_header));
 
          bctx->compress_len += sizeof(comp_stream_header); /* add size of header */
       }
@@ -1010,7 +1010,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
     * Encrypt the data.
     */
    need_more_data = false;
-   if (bit_is_set(FO_ENCRYPT, bctx->ff_pkt->flags) && !encrypt_data(bctx, &need_more_data)) {
+   if (BitIsSet(FO_ENCRYPT, bctx->ff_pkt->flags) && !EncryptData(bctx, &need_more_data)) {
       if (need_more_data) {
          return true;
       }
@@ -1020,13 +1020,13 @@ static inline bool send_data_to_sd(b_ctx *bctx)
    /*
     * Send the buffer to the Storage daemon
     */
-   if (bit_is_set(FO_SPARSE, bctx->ff_pkt->flags) || bit_is_set(FO_OFFSETS, bctx->ff_pkt->flags)) {
+   if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags) || BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
       sd->msglen += OFFSET_FADDR_SIZE; /* include fileAddr in size */
    }
    sd->msg = bctx->wbuf; /* set correct write buffer */
 
    if (!sd->send()) {
-      if (!bctx->jcr->is_job_canceled()) {
+      if (!bctx->jcr->IsJobCanceled()) {
          Jmsg1(bctx->jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       return false;
@@ -1167,11 +1167,11 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
 
    Dmsg1(300, "Saving data, type=%d\n", ff_pkt->type);
 
-   if (!setup_compression_context(bctx)) {
+   if (!SetupCompressionContext(bctx)) {
       goto bail_out;
    }
 
-   if (!setup_encryption_context(bctx)) {
+   if (!SetupEncryptionContext(bctx)) {
       goto bail_out;
    }
 
@@ -1180,7 +1180,7 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
     *    <file-index> <stream> <info>
     */
    if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
-      if (!jcr->is_job_canceled()) {
+      if (!jcr->IsJobCanceled()) {
          Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       goto bail_out;
@@ -1191,7 +1191,7 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
     * Make space at beginning of buffer for fileAddr because this
     *   same buffer will be used for writing if compression is off.
     */
-   if (bit_is_set(FO_SPARSE, ff_pkt->flags) || bit_is_set(FO_OFFSETS, ff_pkt->flags)) {
+   if (BitIsSet(FO_SPARSE, ff_pkt->flags) || BitIsSet(FO_OFFSETS, ff_pkt->flags)) {
       bctx.rbuf += OFFSET_FADDR_SIZE;
       bctx.rsize -= OFFSET_FADDR_SIZE;
 #ifdef HAVE_FREEBSD_OS
@@ -1231,11 +1231,11 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
       if (jcr->JobErrors++ > 1000) { /* insanity check */
          Jmsg(jcr, M_FATAL, 0, _("Too many errors. JobErrors=%d.\n"), jcr->JobErrors);
       }
-   } else if (bit_is_set(FO_ENCRYPT, ff_pkt->flags)) {
+   } else if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
       /*
        * For encryption, we must call finalize to push out any buffered data.
        */
-      if (!crypto_cipher_finalize(bctx.cipher_ctx,
+      if (!CryptoCipherFinalize(bctx.cipher_ctx,
                                   (uint8_t *)jcr->crypto.crypto_buf,
                                   &bctx.encrypted_len)) {
          /*
@@ -1252,7 +1252,7 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
          sd->msglen = bctx.encrypted_len; /* set encrypted length */
          sd->msg = jcr->crypto.crypto_buf; /* set correct write buffer */
          if (!sd->send()) {
-            if (!jcr->is_job_canceled()) {
+            if (!jcr->IsJobCanceled()) {
                Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
             }
             goto bail_out;
@@ -1264,7 +1264,7 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
    }
 
    if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
-      if (!jcr->is_job_canceled()) {
+      if (!jcr->IsJobCanceled()) {
          Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       goto bail_out;
@@ -1274,7 +1274,7 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
     * Free the cipher context
     */
    if (bctx.cipher_ctx) {
-      crypto_cipher_free(bctx.cipher_ctx);
+      CryptoCipherFree(bctx.cipher_ctx);
    }
 
    return 1;
@@ -1284,7 +1284,7 @@ bail_out:
     * Free the cipher context
     */
    if (bctx.cipher_ctx) {
-      crypto_cipher_free(bctx.cipher_ctx);
+      CryptoCipherFree(bctx.cipher_ctx);
    }
 
    sd->msg = bctx.msgsave; /* restore bnet buffer */
@@ -1293,7 +1293,7 @@ bail_out:
    return 0;
 }
 
-bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream)
+bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream)
 {
    BareosSocket *sd = jcr->store_bsock;
    PoolMem attribs(PM_NAME),
@@ -1302,19 +1302,19 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
    int attr_stream;
    int comp_len;
    bool status;
-   int hangup = get_hangup();
+   int hangup = GetHangup();
 #ifdef FD_NO_SEND_TEST
    return true;
 #endif
 
    Dmsg1(300, "encode_and_send_attrs fname=%s\n", ff_pkt->fname);
    /** Find what data stream we will use, then encode the attributes */
-   if ((data_stream = select_data_stream(ff_pkt, me->compatible)) == STREAM_NONE) {
+   if ((data_stream = SelectDataStream(ff_pkt, me->compatible)) == STREAM_NONE) {
       /* This should not happen */
       Jmsg0(jcr, M_FATAL, 0, _("Invalid file flags, no supported data stream type.\n"));
       return false;
    }
-   encode_stat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
+   EncodeStat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
 
    /** Now possibly extend the attributes */
    if (IS_FT_OBJECT(ff_pkt->type)) {
@@ -1329,7 +1329,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
    jcr->lock();
    jcr->JobFiles++;                    /* increment number of files sent */
    ff_pkt->FileIndex = jcr->JobFiles;  /* return FileIndex */
-   pm_strcpy(jcr->last_fname, ff_pkt->fname);
+   PmStrcpy(jcr->last_fname, ff_pkt->fname);
    jcr->unlock();
 
    /*
@@ -1338,7 +1338,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
    if (hangup && (jcr->JobFiles > (uint32_t)hangup)) {
       jcr->setJobStatus(JS_Incomplete);
       Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n", hangup);
-      set_hangup(0);
+      SetHangup(0);
       return false;
    }
 
@@ -1347,7 +1347,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
     *    <file-index> <stream> <info>
     */
    if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
-      if (!jcr->is_canceled() && !jcr->is_incomplete()) {
+      if (!jcr->IsCanceled() && !jcr->IsIncomplete()) {
          Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
       }
       return false;
@@ -1379,7 +1379,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
     * slash. For a linked file, link is the link.
     */
    if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED) { /* already stripped */
-      strip_path(ff_pkt);
+      StripPath(ff_pkt);
    }
    switch (ff_pkt->type) {
    case FT_JUNCTION:
@@ -1407,7 +1407,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
           * Big object, compress it
           */
          comp_len = compressBound(ff_pkt->object_len);
-         POOLMEM *comp_obj = get_memory(comp_len);
+         POOLMEM *comp_obj = GetMemory(comp_len);
          /*
           * FIXME: check Zdeflate error
           */
@@ -1428,7 +1428,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
                         jcr->JobFiles, ff_pkt->type, ff_pkt->object_index,
                         comp_len, ff_pkt->object_len, ff_pkt->object_compression,
                         ff_pkt->fname, 0, ff_pkt->object_name, 0);
-      sd->msg = check_pool_memory_size(sd->msg, sd->msglen + comp_len + 2);
+      sd->msg = CheckPoolMemorySize(sd->msg, sd->msglen + comp_len + 2);
       memcpy(sd->msg + sd->msglen, ff_pkt->object, comp_len);
 
       /*
@@ -1437,7 +1437,7 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
       sd->msglen += comp_len + 1;
       status = sd->send();
       if (ff_pkt->object_compression) {
-         free_and_null_pool_memory(ff_pkt->object);
+         FreeAndNullPoolMemory(ff_pkt->object);
       }
       break;
    case FT_REG:
@@ -1453,11 +1453,11 @@ bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, 
    }
 
    if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED) {
-      unstrip_path(ff_pkt);
+      UnstripPath(ff_pkt);
    }
 
    Dmsg2(300, ">stored: attr len=%d: %s\n", sd->msglen, sd->msg);
-   if (!status && !jcr->is_job_canceled()) {
+   if (!status && !jcr->IsJobCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
    }
 
@@ -1517,21 +1517,21 @@ static bool do_strip(int count, char *in)
  * in handling vendor migrations where files have been restored with
  * a vendor product into a subdirectory.
  */
-void strip_path(FindFilesPacket *ff_pkt)
+void StripPath(FindFilesPacket *ff_pkt)
 {
-   if (!bit_is_set(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->strip_path <= 0) {
+   if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
       Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
       return;
    }
 
    if (!ff_pkt->fname_save) {
-     ff_pkt->fname_save = get_pool_memory(PM_FNAME);
-     ff_pkt->link_save = get_pool_memory(PM_FNAME);
+     ff_pkt->fname_save = GetPoolMemory(PM_FNAME);
+     ff_pkt->link_save = GetPoolMemory(PM_FNAME);
    }
 
-   pm_strcpy(ff_pkt->fname_save, ff_pkt->fname);
+   PmStrcpy(ff_pkt->fname_save, ff_pkt->fname);
    if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-      pm_strcpy(ff_pkt->link_save, ff_pkt->link);
+      PmStrcpy(ff_pkt->link_save, ff_pkt->link);
       Dmsg2(500, "strcpy link_save=%d link=%d\n", strlen(ff_pkt->link_save),
          strlen(ff_pkt->link));
       Dsm_check(200);
@@ -1543,8 +1543,8 @@ void strip_path(FindFilesPacket *ff_pkt)
     * back them both back. Do not strip symlinks. I.e. if either stripping
     * fails don't strip anything.
     */
-   if (!do_strip(ff_pkt->strip_path, ff_pkt->fname)) {
-      unstrip_path(ff_pkt);
+   if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
+      UnstripPath(ff_pkt);
       goto rtn;
    }
 
@@ -1552,8 +1552,8 @@ void strip_path(FindFilesPacket *ff_pkt)
     * Strip links but not symlinks
     */
    if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-      if (!do_strip(ff_pkt->strip_path, ff_pkt->link)) {
-         unstrip_path(ff_pkt);
+      if (!do_strip(ff_pkt->StripPath, ff_pkt->link)) {
+         UnstripPath(ff_pkt);
       }
    }
 
@@ -1561,9 +1561,9 @@ rtn:
    Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save, ff_pkt->fname, ff_pkt->link);
 }
 
-void unstrip_path(FindFilesPacket *ff_pkt)
+void UnstripPath(FindFilesPacket *ff_pkt)
 {
-   if (!bit_is_set(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->strip_path <= 0) {
+   if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
       return;
    }
 
@@ -1590,7 +1590,7 @@ static void close_vss_backup_session(JobControlRecord *jcr)
        * We are about to call the BackupComplete VSS method so let all plugins know
        * that by raising the bEventVssBackupComplete event.
        */
-      generate_plugin_event(jcr, bEventVssBackupComplete);
+      GeneratePluginEvent(jcr, bEventVssBackupComplete);
       if (jcr->pVSSClient->CloseBackup()) {
          /*
           * Inform user about writer states

@@ -82,12 +82,12 @@ void bnet_stop_thread_server_tcp(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
+void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
 {
    int status;
    s_sockfd *fd_ptr = NULL;
 
-   Dmsg0(100, "cleanup_bnet_thread_server_tcp: start\n");
+   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
 
    if (!sockfds->empty()) {
       /*
@@ -104,7 +104,7 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
       /*
        * Stop work queue thread
        */
-      if ((status = workq_destroy(client_wq)) != 0) {
+      if ((status = WorkqDestroy(client_wq)) != 0) {
          berrno be;
          be.set_errno(status);
          Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
@@ -112,7 +112,7 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
       }
    }
 
-   Dmsg0(100, "cleanup_bnet_thread_server_tcp: finish\n");
+   Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");
 }
 
 /**
@@ -161,9 +161,9 @@ void bnet_thread_server_tcp(dlist *addr_list,
          /*
           * See if the addresses match.
           */
-         if (ipaddr->get_sockaddr_len() == next->get_sockaddr_len() &&
+         if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen() &&
              memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                    ipaddr->get_sockaddr_len()) == 0) {
+                    ipaddr->GetSockaddrLen()) == 0) {
             to_free = next;
             next = (IPADDR *)addr_list->next(next);
             addr_list->remove(to_free);
@@ -190,12 +190,12 @@ void bnet_thread_server_tcp(dlist *addr_list,
        * Allocate on stack from -- no need to free
        */
       fd_ptr = (s_sockfd *)alloca(sizeof(s_sockfd));
-      fd_ptr->port = ipaddr->get_port_net_order();
+      fd_ptr->port = ipaddr->GetPortNetOrder();
 
       /*
        * Open a TCP socket
        */
-      for (tlog= 60; (fd_ptr->fd=socket(ipaddr->get_family(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
+      for (tlog= 60; (fd_ptr->fd=socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
          if (tlog <= 0) {
             berrno be;
             char curbuf[256];
@@ -217,7 +217,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
       }
 
       tmax = 30 * (60 / 5);        /* wait 30 minutes max */
-      for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) < 0; tlog -= 5) {
+      for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0; tlog -= 5) {
          berrno be;
          if (tlog <= 0) {
             tlog = 2 * 60;         /* Complain every 2 minutes */
@@ -242,7 +242,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
    /*
     * Start work queue thread
     */
-   if ((status = workq_init(client_wq, max_clients, handle_client_request)) != 0) {
+   if ((status = WorkqInit(client_wq, max_clients, handle_client_request)) != 0) {
       berrno be;
       be.set_errno(status);
       Emsg1(M_ABORT, 0, _("Could not init client queue: ERR=%s\n"), be.bstrerror());
@@ -330,15 +330,15 @@ void bnet_thread_server_tcp(dlist *addr_list,
                continue;
             }
 #ifdef HAVE_LIBWRAP
-            P(mutex);              /* hosts_access is not thread safe */
+            P(mutex);              /* HostsAccess is not thread safe */
             request_init(&request, RQ_DAEMON, my_name, RQ_FILE, newsockfd, 0);
             fromhost(&request);
-            if (!hosts_access(&request)) {
+            if (!HostsAccess(&request)) {
                V(mutex);
                Jmsg2(NULL, M_SECURITY, 0,
                      _("Connection from %s:%d refused by hosts.access\n"),
                      sockaddr_to_ascii(&cli_addr, buf, sizeof(buf)),
-                     sockaddr_get_port(&cli_addr));
+                     SockaddrGetPort(&cli_addr));
                close(newsockfd);
                continue;
             }
@@ -363,20 +363,20 @@ void bnet_thread_server_tcp(dlist *addr_list,
             BareosSocket *bs;
             bs = New(BareosSocketTCP);
             if (nokeepalive) {
-               bs->clear_keepalive();
+               bs->ClearKeepalive();
             }
 
             bs->fd_ = newsockfd;
-            bs->set_who(bstrdup("client"));
-            bs->set_host(bstrdup(buf));
-            bs->set_port(ntohs(fd_ptr->port));
+            bs->SetWho(bstrdup("client"));
+            bs->SetHost(bstrdup(buf));
+            bs->SetPort(ntohs(fd_ptr->port));
             memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
             memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
             /*
              * Queue client to be served
              */
-            if ((status = workq_add(client_wq, (void *)bs, NULL, 0)) != 0) {
+            if ((status = WorkqAdd(client_wq, (void *)bs, NULL, 0)) != 0) {
                berrno be;
                be.set_errno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),
@@ -386,5 +386,5 @@ void bnet_thread_server_tcp(dlist *addr_list,
       }
    }
 
-   cleanup_bnet_thread_server_tcp(sockfds, client_wq);
+   CleanupBnetThreadServerTcp(sockfds, client_wq);
 }

@@ -21,6 +21,6 @@
 #ifndef BAREOS_STORED_MOUNT_H_
 #define BAREOS_STORED_MOUNT_H_
 
-bool mount_next_read_volume(DeviceControlRecord *dcr);
+bool MountNextReadVolume(DeviceControlRecord *dcr);
 
 #endif // BAREOS_STORED_MOUNT_H_

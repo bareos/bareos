@@ -45,25 +45,25 @@
 /**
  * Submit general SQL query
  */
-bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OutputFormatter *sendit,
+bool BareosDb::ListSqlQuery(JobControlRecord *jcr, const char *query, OutputFormatter *sendit,
                           e_list_type type, bool verbose)
 {
-   return list_sql_query(jcr, query, sendit, type, "query", verbose);
+   return ListSqlQuery(jcr, query, sendit, type, "query", verbose);
 }
 
-bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OutputFormatter *sendit, e_list_type type, bool verbose)
+bool BareosDb::ListSqlQuery(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OutputFormatter *sendit, e_list_type type, bool verbose)
 {
-   return list_sql_query(jcr, query, sendit, type, "query", verbose);
+   return ListSqlQuery(jcr, query, sendit, type, "query", verbose);
 }
 
-bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OutputFormatter *sendit,
+bool BareosDb::ListSqlQuery(JobControlRecord *jcr, const char *query, OutputFormatter *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    bool retval = false;
 
-   db_lock(this);
+   DbLock(this);
 
-   if (!sql_query(query, QF_STORE_RESULT)) {
+   if (!SqlQuery(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
       if (verbose) {
          sendit->decoration(errmsg);
@@ -71,29 +71,29 @@ bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OutputFo
       goto bail_out;
    }
 
-   sendit->array_start(description);
-   list_result(jcr, sendit, type);
-   sendit->array_end(description);
-   sql_free_result();
+   sendit->ArrayStart(description);
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd(description);
+   SqlFreeResult();
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
-bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OutputFormatter *sendit,
+bool BareosDb::ListSqlQuery(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OutputFormatter *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
-   return list_sql_query(jcr, get_predefined_query(query), sendit, type, description, verbose);
+   return ListSqlQuery(jcr, get_predefined_query(query), sendit, type, description, verbose);
 }
 
-void BareosDb::list_pool_records(JobControlRecord *jcr, PoolDbRecord *pdbr, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListPoolRecords(JobControlRecord *jcr, PoolDbRecord *pdbr, OutputFormatter *sendit, e_list_type type)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(this);
-   escape_string(jcr, esc, pdbr->Name, strlen(pdbr->Name));
+   DbLock(this);
+   EscapeString(jcr, esc, pdbr->Name, strlen(pdbr->Name));
 
    if (type == VERT_LIST) {
       if (pdbr->Name[0] != 0) {
@@ -123,19 +123,19 @@ void BareosDb::list_pool_records(JobControlRecord *jcr, PoolDbRecord *pdbr, Outp
       goto bail_out;
    }
 
-   sendit->array_start("pools");
-   list_result(jcr, sendit, type);
-   sendit->array_end("pools");
+   sendit->ArrayStart("pools");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("pools");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDb::list_client_records(JobControlRecord *jcr, char *clientname, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListClientRecords(JobControlRecord *jcr, char *clientname, OutputFormatter *sendit, e_list_type type)
 {
-   db_lock(this);
+   DbLock(this);
    PoolMem clientfilter(PM_MESSAGE);
 
    if (clientname) {
@@ -154,19 +154,19 @@ void BareosDb::list_client_records(JobControlRecord *jcr, char *clientname, Outp
       goto bail_out;
    }
 
-   sendit->array_start("clients");
-   list_result(jcr, sendit, type);
-   sendit->array_end("clients");
+   sendit->ArrayStart("clients");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("clients");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 void BareosDb::list_storage_records(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type)
 {
-   db_lock(this);
+   DbLock(this);
 
    Mmsg(cmd, "SELECT StorageId,Name,AutoChanger FROM Storage");
 
@@ -174,31 +174,31 @@ void BareosDb::list_storage_records(JobControlRecord *jcr, OutputFormatter *send
       goto bail_out;
    }
 
-   sendit->array_start("storages");
-   list_result(jcr, sendit, type);
-   sendit->array_end("storages");
+   sendit->ArrayStart("storages");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("storages");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * If VolumeName is non-zero, list the record for that Volume
  *   otherwise, list the Volumes in the Pool specified by PoolId
  */
-void BareosDb::list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListMediaRecords(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
    PoolMem select(PM_MESSAGE);
    PoolMem query(PM_MESSAGE);
 
-   escape_string(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
+   EscapeString(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
 
    /*
-    * There is one case where list_media_records() is called from select_media_dbr()
+    * There is one case where ListMediaRecords() is called from SelectMediaDbr()
     * with the range argument set to NULL. To avoid problems, we set the range to
     * an empty string if range is set to NULL. Otherwise it would result in malformed
     * SQL queries.
@@ -210,17 +210,17 @@ void BareosDb::list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, co
    if (count) {
       /* NOTE: ACLs are ignored. */
       if (mdbr->VolumeName[0] != 0) {
-         fill_query(query, SQL_QUERY_list_volumes_by_name_count_1, esc);
+         FillQuery(query, SQL_QUERY_list_volumes_by_name_count_1, esc);
       } else if (mdbr->PoolId > 0) {
-         fill_query(query, SQL_QUERY_list_volumes_by_poolid_count_1, edit_int64(mdbr->PoolId, ed1));
+         FillQuery(query, SQL_QUERY_list_volumes_by_poolid_count_1, edit_int64(mdbr->PoolId, ed1));
       } else {
-         fill_query(query, SQL_QUERY_list_volumes_count_0);
+         FillQuery(query, SQL_QUERY_list_volumes_count_0);
       }
    } else {
       if (type == VERT_LIST) {
-         fill_query(select, SQL_QUERY_list_volumes_select_long_0);
+         FillQuery(select, SQL_QUERY_list_volumes_select_long_0);
       } else {
-         fill_query(select, SQL_QUERY_list_volumes_select_0);
+         FillQuery(select, SQL_QUERY_list_volumes_select_0);
       }
 
       if (mdbr->VolumeName[0] != 0) {
@@ -232,27 +232,27 @@ void BareosDb::list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, co
       }
    }
 
-   db_lock(this);
+   DbLock(this);
 
    if (!QUERY_DB(jcr, query.c_str())) {
       goto bail_out;
    }
 
-   list_result(jcr, sendit, type);
+   ListResult(jcr, sendit, type);
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 
 
-void BareosDb::list_jobmedia_records(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListJobmediaRecords(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
-   db_lock(this);
+   DbLock(this);
    if (type == VERT_LIST) {
       if (JobId > 0) {                   /* do by JobId */
          Mmsg(cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
@@ -281,18 +281,18 @@ void BareosDb::list_jobmedia_records(JobControlRecord *jcr, uint32_t JobId, Outp
       goto bail_out;
    }
 
-   sendit->array_start("jobmedia");
-   list_result(jcr, sendit, type);
-   sendit->array_end("jobmedia");
+   sendit->ArrayStart("jobmedia");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("jobmedia");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 
-void BareosDb::list_volumes_of_jobid(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListVolumesOfJobid(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -300,7 +300,7 @@ void BareosDb::list_volumes_of_jobid(JobControlRecord *jcr, uint32_t JobId, Outp
       return;
    }
 
-   db_lock(this);
+   DbLock(this);
    if (type == VERT_LIST) {
          Mmsg(cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName "
               "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
@@ -314,19 +314,19 @@ void BareosDb::list_volumes_of_jobid(JobControlRecord *jcr, uint32_t JobId, Outp
       goto bail_out;
    }
 
-   sendit->array_start("volumes");
-   list_result(jcr, sendit, type);
-   sendit->array_end("volumes");
+   sendit->ArrayStart("volumes");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("volumes");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 
 
-void BareosDb::list_copies_records(JobControlRecord *jcr, const char *range, const char *JobIds,
+void BareosDb::ListCopiesRecords(JobControlRecord *jcr, const char *range, const char *JobIds,
                                OutputFormatter *send, e_list_type type)
 {
    PoolMem str_jobids(PM_MESSAGE);
@@ -336,7 +336,7 @@ void BareosDb::list_copies_records(JobControlRecord *jcr, const char *range, con
            JobIds, JobIds);
    }
 
-   db_lock(this);
+   DbLock(this);
    Mmsg(cmd,
         "SELECT DISTINCT Job.PriorJobId AS JobId, Job.Job, "
                         "Job.JobId AS CopyJobId, Media.MediaType "
@@ -350,25 +350,25 @@ void BareosDb::list_copies_records(JobControlRecord *jcr, const char *range, con
       goto bail_out;
    }
 
-   if (sql_num_rows()) {
+   if (SqlNumRows()) {
       if (JobIds && JobIds[0]) {
          send->decoration(_("These JobIds have copies as follows:\n"));
       } else {
          send->decoration(_("The catalog contains copies as follows:\n"));
       }
 
-      send->array_start("copies");
-      list_result(jcr, send, type);
-      send->array_end("copies");
+      send->ArrayStart("copies");
+      ListResult(jcr, send, type);
+      send->ArrayEnd("copies");
    }
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDb::list_log_records(JobControlRecord *jcr, const char *clientname, const char *range,
+void BareosDb::ListLogRecords(JobControlRecord *jcr, const char *clientname, const char *range,
                             bool reverse, OutputFormatter *sendit, e_list_type type)
 {
    PoolMem client_filter(PM_MESSAGE);
@@ -409,23 +409,23 @@ void BareosDb::list_log_records(JobControlRecord *jcr, const char *clientname, c
       type = RAW_LIST;
    }
 
-   db_lock(this);
+   DbLock(this);
 
    if (!QUERY_DB(jcr, cmd)) {
       goto bail_out;
    }
 
-   sendit->array_start("log");
-   list_result(jcr, sendit, type);
-   sendit->array_end("log");
+   sendit->ArrayStart("log");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("log");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDb::list_joblog_records(JobControlRecord *jcr, uint32_t JobId, const char *range, bool count, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListJoblogRecords(JobControlRecord *jcr, uint32_t JobId, const char *range, bool count, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -433,11 +433,11 @@ void BareosDb::list_joblog_records(JobControlRecord *jcr, uint32_t JobId, const 
       return;
    }
 
-   db_lock(this);
+   DbLock(this);
    if (count) {
-      fill_query(SQL_QUERY_list_joblog_count_1, edit_int64(JobId, ed1));
+      FillQuery(SQL_QUERY_list_joblog_count_1, edit_int64(JobId, ed1));
    } else {
-      fill_query(SQL_QUERY_list_joblog_2, edit_int64(JobId, ed1), range);
+      FillQuery(SQL_QUERY_list_joblog_2, edit_int64(JobId, ed1), range);
       if (type != VERT_LIST) {
          /*
           * When something else then a vertical list is requested set the list type
@@ -453,28 +453,28 @@ void BareosDb::list_joblog_records(JobControlRecord *jcr, uint32_t JobId, const 
       goto bail_out;
    }
 
-   sendit->array_start("joblog");
-   list_result(jcr, sendit, type);
-   sendit->array_end("joblog");
+   sendit->ArrayStart("joblog");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("joblog");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * list job statistics records for certain jobid
  *
  */
-void BareosDb::list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListJobstatisticsRecords(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
    if (JobId <= 0) {
       return;
    }
-   db_lock(this);
+   DbLock(this);
       Mmsg(cmd, "SELECT DeviceId, SampleTime, JobId, JobFiles, JobBytes "
                 "FROM JobStats "
                 "WHERE JobStats.JobId=%s "
@@ -484,20 +484,20 @@ void BareosDb::list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId,
       goto bail_out;
    }
 
-   sendit->array_start("jobstats");
-   list_result(jcr, sendit, type);
-   sendit->array_end("jobstats");
+   sendit->ArrayStart("jobstats");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("jobstats");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * List Job record(s) that match JobDbRecord
  */
-void BareosDb::list_job_records(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname, int jobstatus,
+void BareosDb::ListJobRecords(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname, int jobstatus,
                             int joblevel, const char *volumename, utime_t since_time, bool last, bool count,
                             OutputFormatter *sendit, e_list_type type)
 {
@@ -510,56 +510,56 @@ void BareosDb::list_job_records(JobControlRecord *jcr, JobDbRecord *jr, const ch
 
    if (jr->JobId > 0) {
       temp.bsprintf("AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
    if (jr->Name[0] != 0) {
-      escape_string(jcr, esc, jr->Name, strlen(jr->Name));
+      EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
       temp.bsprintf( "AND Job.Name = '%s' ", esc);
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
    if (clientname) {
       temp.bsprintf("AND Client.Name = '%s' ", clientname);
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
    if (jobstatus) {
       temp.bsprintf("AND Job.JobStatus = '%c' ", jobstatus);
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
    if (joblevel) {
       temp.bsprintf("AND Job.Level = '%c' ", joblevel);
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
    if (volumename) {
       temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
    if (since_time) {
       bstrutime(dt, sizeof(dt), since_time);
       temp.bsprintf("AND Job.SchedTime > '%s' ", dt);
-      pm_strcat(selection, temp.c_str());
+      PmStrcat(selection, temp.c_str());
    }
 
-   db_lock(this);
+   DbLock(this);
 
    if (count) {
-      fill_query(SQL_QUERY_list_jobs_count, selection.c_str(), range);
+      FillQuery(SQL_QUERY_list_jobs_count, selection.c_str(), range);
    } else if (last) {
       if (type == VERT_LIST) {
-         fill_query(SQL_QUERY_list_jobs_long_last, selection.c_str(), range);
+         FillQuery(SQL_QUERY_list_jobs_long_last, selection.c_str(), range);
       } else {
-         fill_query(SQL_QUERY_list_jobs_last, selection.c_str(), range);
+         FillQuery(SQL_QUERY_list_jobs_last, selection.c_str(), range);
       }
    } else {
       if (type == VERT_LIST) {
-         fill_query(SQL_QUERY_list_jobs_long, selection.c_str(), range);
+         FillQuery(SQL_QUERY_list_jobs_long, selection.c_str(), range);
       } else {
-         fill_query(SQL_QUERY_list_jobs, selection.c_str(), range);
+         FillQuery(SQL_QUERY_list_jobs, selection.c_str(), range);
       }
    }
 
@@ -567,22 +567,22 @@ void BareosDb::list_job_records(JobControlRecord *jcr, JobDbRecord *jr, const ch
       goto bail_out;
    }
 
-   sendit->array_start("jobs");
-   list_result(jcr, sendit, type);
-   sendit->array_end("jobs");
+   sendit->ArrayStart("jobs");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("jobs");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * List Job totals
  */
-void BareosDb::list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OutputFormatter *sendit)
+void BareosDb::ListJobTotals(JobControlRecord *jcr, JobDbRecord *jr, OutputFormatter *sendit)
 {
-   db_lock(this);
+   DbLock(this);
 
    /*
     * List by Job
@@ -594,11 +594,11 @@ void BareosDb::list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OutputFor
       goto bail_out;
    }
 
-   sendit->array_start("jobs");
-   list_result(jcr, sendit, HORZ_LIST);
-   sendit->array_end("jobs");
+   sendit->ArrayStart("jobs");
+   ListResult(jcr, sendit, HORZ_LIST);
+   sendit->ArrayEnd("jobs");
 
-   sql_free_result();
+   SqlFreeResult();
 
    /*
     * Do Grand Total
@@ -610,27 +610,27 @@ void BareosDb::list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OutputFor
       goto bail_out;
    }
 
-   sendit->object_start("jobtotals");
-   list_result(jcr, sendit, HORZ_LIST);
-   sendit->object_end("jobtotals");
+   sendit->ObjectStart("jobtotals");
+   ListResult(jcr, sendit, HORZ_LIST);
+   sendit->ObjectEnd("jobtotals");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDb::list_files_for_job(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit)
+void BareosDb::ListFilesForJob(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit)
 {
    char ed1[50];
    ListContext lctx(jcr, this, sendit, NF_LIST);
 
-   db_lock(this);
+   DbLock(this);
 
    /*
     * Stupid MySQL is NON-STANDARD !
     */
-   if (get_type_index() == SQL_TYPE_MYSQL) {
+   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
       Mmsg(cmd, "SELECT CONCAT(Path.Path,Name) AS Filename "
                  "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
                  "UNION ALL "
@@ -654,29 +654,29 @@ void BareosDb::list_files_for_job(JobControlRecord *jcr, JobId_t jobid, OutputFo
            edit_int64(jobid, ed1), ed1);
    }
 
-   sendit->array_start("filenames");
-   if (!big_sql_query(cmd, ::list_result, &lctx)) {
+   sendit->ArrayStart("filenames");
+   if (!BigSqlQuery(cmd, ::ListResult, &lctx)) {
        goto bail_out;
    }
-   sendit->array_end("filenames");
+   sendit->ArrayEnd("filenames");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDb::list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit)
+void BareosDb::ListBaseFilesForJob(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit)
 {
    char ed1[50];
    ListContext lctx(jcr, this, sendit, NF_LIST);
 
-   db_lock(this);
+   DbLock(this);
 
    /*
     * Stupid MySQL is NON-STANDARD !
     */
-   if (get_type_index() == SQL_TYPE_MYSQL) {
+   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
       Mmsg(cmd,
            "SELECT CONCAT(Path.Path,File.Name) AS Filename "
            "FROM BaseFiles, File, Path "
@@ -694,34 +694,34 @@ void BareosDb::list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, Out
            edit_int64(jobid, ed1));
    }
 
-   sendit->array_start("files");
-   if (!big_sql_query(cmd, ::list_result, &lctx)) {
+   sendit->ArrayStart("files");
+   if (!BigSqlQuery(cmd, ::ListResult, &lctx)) {
        goto bail_out;
    }
-   sendit->array_end("files");
+   sendit->ArrayEnd("files");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * List fileset
  */
-void BareosDb::list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListFilesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OutputFormatter *sendit, e_list_type type)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(this);
+   DbLock(this);
    if (jr->Name[0] != 0) {
-      escape_string(jcr, esc, jr->Name, strlen(jr->Name));
+      EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
       Mmsg(cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
            "AND Job.Name='%s'%s", esc, range);
    } else if (jr->Job[0] != 0) {
-      escape_string(jcr, esc, jr->Job, strlen(jr->Job));
+      EscapeString(jcr, esc, jr->Job, strlen(jr->Job));
       Mmsg(cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
@@ -743,13 +743,13 @@ void BareosDb::list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char 
    if (!QUERY_DB(jcr, cmd)) {
       goto bail_out;
    }
-   sendit->array_start("filesets");
-   list_result(jcr, sendit, type);
-   sendit->array_end("filesets");
+   sendit->ArrayStart("filesets");
+   ListResult(jcr, sendit, type);
+   sendit->ArrayEnd("filesets");
 
-   sql_free_result();
+   SqlFreeResult();
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

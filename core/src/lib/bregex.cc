@@ -464,7 +464,7 @@ static int regexp_ansi_sequences;
 
 unsigned char re_syntax_table[256];
 
-void re_compile_initialize(void)
+void ReCompileInitialize(void)
 {
    int a;
 
@@ -562,7 +562,7 @@ int re_set_syntax(int syntax) {
    ret = regexp_syntax;
    regexp_syntax = syntax;
    re_syntax = syntax;          /* Exported copy */
-   re_compile_initialize();
+   ReCompileInitialize();
    return ret;
 }
 
@@ -699,7 +699,7 @@ static int re_do_compile_fastmap(regex_t * bufp, unsigned char *buffer, int used
    return 1;
 }
 
-void re_compile_fastmap(regex_t * bufp)
+void ReCompileFastmap(regex_t * bufp)
 {
    if (!bufp->fastmap || bufp->fastmap_accurate)
       return;
@@ -1082,7 +1082,7 @@ const char *re_compile_pattern(regex_t * bufp, unsigned char *regex)
    int size = strlen((char *)regex);
 
    if (!re_compile_initialized)
-      re_compile_initialize();
+      ReCompileInitialize();
    bufp->used = 0;
    bufp->fastmap_accurate = 0;
    bufp->uses_registers = 1;
@@ -1249,7 +1249,7 @@ const char *re_compile_pattern(regex_t * bufp, unsigned char *regex)
          }
       case Rclosepar:
          if (paren_depth <= 0)
-            goto parenthesis_error;
+            goto parenthesIsError;
          POP_LEVEL_STARTS;
          current_level = precedences[Ropenpar];
          paren_depth--;
@@ -1390,7 +1390,7 @@ const char *re_compile_pattern(regex_t * bufp, unsigned char *regex)
       beginning_context = (op == Ropenpar || op == Ror);
    }
    if (starts_base != 0)
-      goto parenthesis_error;
+      goto parenthesIsError;
 // assert(num_jumps == 0);
    ALLOC(1);
    STORE(Cend);
@@ -1411,7 +1411,7 @@ const char *re_compile_pattern(regex_t * bufp, unsigned char *regex)
    SET_FIELDS;
    return "Bad hexadecimal number";
 
- parenthesis_error:
+ parenthesIsError:
    SET_FIELDS;
    return "Badly placed parenthesis";
 
@@ -1497,7 +1497,7 @@ int regexec(regex_t *preg, const char *string, size_t nmatch,
    int len = strlen(string);
    struct re_registers regs;
 
-   status = re_search(preg, (unsigned char *)string, len, 0, len, &regs);
+   status = ReSearch(preg, (unsigned char *)string, len, 0, len, &regs);
    if (status >= 0) {
       re_registers_to_regmatch(&regs, pmatch, nmatch);
    }
@@ -1518,7 +1518,7 @@ size_t regerror(int errcode, regex_t * preg, char *errbuf, size_t errbuf_size)
 void regfree(regex_t * preg)
 {
    if (preg->lcase) {
-      free_pool_memory(preg->lcase);
+      FreePoolMemory(preg->lcase);
       preg->lcase = NULL;
    }
    if (preg->buffer) {
@@ -1527,7 +1527,7 @@ void regfree(regex_t * preg)
    }
 }
 
-int re_match(regex_t * bufp, unsigned char *string, int size, int pos,
+int ReMatch(regex_t * bufp, unsigned char *string, int size, int pos,
              regexp_registers_t old_regs)
 {
    unsigned char *code;
@@ -1923,7 +1923,7 @@ int re_match(regex_t * bufp, unsigned char *string, int size, int pos,
 #undef PREFETCH
 #undef NEXTCHAR
 
-int re_search(regex_t * bufp, unsigned char *str, int size, int pos,
+int ReSearch(regex_t * bufp, unsigned char *str, int size, int pos,
               int range, regexp_registers_t regs)
 {
    unsigned char *fastmap;
@@ -1939,9 +1939,9 @@ int re_search(regex_t * bufp, unsigned char *str, int size, int pos,
    if (bufp->cflags & REG_ICASE) { /* we must use string in lowercase */
       int len = strlen((const char *)str);
       if (!bufp->lcase) {
-         bufp->lcase = get_pool_memory(PM_FNAME);
+         bufp->lcase = GetPoolMemory(PM_FNAME);
       }
-      bufp->lcase = check_pool_memory_size(bufp->lcase, len+1);
+      bufp->lcase = CheckPoolMemorySize(bufp->lcase, len+1);
       unsigned char *dst = (unsigned char *)bufp->lcase;
       while (*string) {
          *dst++ = tolower(*string++);
@@ -1956,7 +1956,7 @@ int re_search(regex_t * bufp, unsigned char *str, int size, int pos,
    fastmap = bufp->fastmap;
    translate = bufp->translate;
    if (fastmap && !bufp->fastmap_accurate) {
-      re_compile_fastmap(bufp);
+      ReCompileFastmap(bufp);
       if (got_error)
          return -2;
    }
@@ -2016,7 +2016,7 @@ int re_search(regex_t * bufp, unsigned char *str, int size, int pos,
             continue;
       }
 //    assert(pos >= 0 && pos <= size);
-      ret = re_match(bufp, string, size, pos, regs);
+      ret = ReMatch(bufp, string, size, pos, regs);
       if (ret >= 0)
          return pos;
       if (ret == -2)

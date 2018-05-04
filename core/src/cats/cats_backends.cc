@@ -49,7 +49,7 @@
 static alist *loaded_backends = NULL;
 static alist *backend_dirs = NULL;
 
-void db_set_backend_dirs(alist *new_backend_dirs)
+void DbSetBackendDirs(alist *new_backend_dirs)
 {
    backend_dirs = new_backend_dirs;
 }
@@ -175,7 +175,7 @@ BareosDb *db_init_database(JobControlRecord *jcr,
 #endif
          dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
          if (!dl_handle) {
-            pm_strcpy(error, dlerror());
+            PmStrcpy(error, dlerror());
             Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
                  shared_library_name.c_str(), error.c_str());
             Dmsg2(100, _("Unable to load shared library: %s ERR=%s\n"),
@@ -188,7 +188,7 @@ BareosDb *db_init_database(JobControlRecord *jcr,
           */
          backend_instantiate = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
          if (backend_instantiate == NULL) {
-            pm_strcpy(error, dlerror());
+            PmStrcpy(error, dlerror());
             Jmsg(jcr, M_ERROR, 0, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
                  shared_library_name.c_str(), error.c_str());
             Dmsg2(100, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
@@ -203,7 +203,7 @@ BareosDb *db_init_database(JobControlRecord *jcr,
           */
          flush_backend = (t_flush_backend)dlsym(dl_handle, "flush_backend");
          if (flush_backend == NULL) {
-            pm_strcpy(error, dlerror());
+            PmStrcpy(error, dlerror());
             Jmsg(jcr, M_ERROR, 0, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
                  shared_library_name.c_str(), error.c_str());
             Dmsg2(100, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
@@ -258,7 +258,7 @@ BareosDb *db_init_database(JobControlRecord *jcr,
    }
 }
 
-void db_flush_backends(void)
+void DbFlushBackends(void)
 {
    backend_shared_library_t *backend_shared_library;
 
@@ -303,7 +303,7 @@ BareosDb *db_init_database(JobControlRecord *jcr,
    return NULL;
 }
 
-void db_flush_backends(void)
+void DbFlushBackends(void)
 {
 }
 #endif /* HAVE_DYNAMIC_CATS_BACKENDS */

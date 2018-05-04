@@ -38,7 +38,7 @@ static char TERM_msg[] = "2999 Terminate\n";
 #define messagelevel 500
 
 /**
- * This routine does a bnet_recv(), then if a signal was
+ * This routine does a BnetRecv(), then if a signal was
  *   sent, it handles it.  The return codes are the same as
  *   bne_recv() except the BNET_SIGNAL messages that can
  *   be handled are done so without returning.
@@ -48,7 +48,7 @@ static char TERM_msg[] = "2999 Terminate\n";
  * Returns -2 on hard end of file (BNET_HARDEOF)
  * Returns -3 on error  (BNET_ERROR)
  */
-int bget_msg(BareosSocket *sock)
+int BgetMsg(BareosSocket *sock)
 {
    int n;
    for ( ;; ) {
@@ -56,18 +56,18 @@ int bget_msg(BareosSocket *sock)
       if (n >= 0) {                  /* normal return */
          return n;
       }
-      if (is_bnet_stop(sock)) {      /* error return */
+      if (IsBnetStop(sock)) {      /* error return */
          return n;
       }
 
-      /* BNET_SIGNAL (-1) return from bnet_recv() => network signal */
+      /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
       switch (sock->msglen) {
       case BNET_EOD:               /* end of data */
          Dmsg0(messagelevel, "Got BNET_EOD\n");
          return n;
       case BNET_EOD_POLL:
          Dmsg0(messagelevel, "Got BNET_EOD_POLL\n");
-         if (sock->is_terminated()) {
+         if (sock->IsTerminated()) {
             sock->fsend(TERM_msg);
          } else {
             sock->fsend(OK_msg); /* send response */
@@ -75,11 +75,11 @@ int bget_msg(BareosSocket *sock)
          return n;                 /* end of data */
       case BNET_TERMINATE:
          Dmsg0(messagelevel, "Got BNET_TERMINATE\n");
-         sock->set_terminated();
+         sock->SetTerminated();
          return n;
       case BNET_POLL:
          Dmsg0(messagelevel, "Got BNET_POLL\n");
-         if (sock->is_terminated()) {
+         if (sock->IsTerminated()) {
             sock->fsend(TERM_msg);
          } else {
             sock->fsend(OK_msg); /* send response */
@@ -95,7 +95,7 @@ int bget_msg(BareosSocket *sock)
          sock->signal(BNET_EOD);
          break;
       default:
-         Emsg1(M_ERROR, 0, _("bget_msg: unknown signal %d\n"), sock->msglen);
+         Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"), sock->msglen);
          break;
       }
    }

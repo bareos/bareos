@@ -44,7 +44,7 @@ extern bool parse_sd_config(ConfigurationParser *config, const char *configfile,
 
 /* Forward referenced functions */
 static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
-static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 
 /* Global variables */
@@ -95,11 +95,11 @@ int main (int argc, char *argv[])
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   init_stack_dump();
+   InitStackDump();
 
-   my_name_is(argc, argv, "bcopy");
-   lmgr_init_thread();
-   init_msg(NULL, NULL);
+   MyNameIs(argc, argv, "bcopy");
+   LmgrInitThread();
+   InitMsg(NULL, NULL);
 
    while ((ch = getopt(argc, argv, "b:c:D:d:i:o:pvw:?")) != -1) {
       switch (ch) {
@@ -186,10 +186,10 @@ int main (int argc, char *argv[])
       }
    }
 
-   load_sd_plugins(me->plugin_directory, me->plugin_names);
+   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-   read_crypto_cache(me->working_directory, "bareos-sd",
-                     get_first_port_host_order(me->SDaddrs));
+   ReadCryptoCache(me->working_directory, "bareos-sd",
+                     GetFirstPortHostOrder(me->SDaddrs));
 
    /*
     * Setup and acquire input device for reading
@@ -238,15 +238,15 @@ int main (int argc, char *argv[])
    }
    out_dev->Unlock();
    if (!acquire_device_for_append(out_jcr->dcr)) {
-      free_jcr(in_jcr);
+      FreeJcr(in_jcr);
       exit(1);
    }
    out_block = out_jcr->dcr->block;
 
-   ok = read_records(in_jcr->dcr, record_cb, mount_next_read_volume);
+   ok = ReadRecords(in_jcr->dcr, RecordCb, MountNextReadVolume);
 
-   if (ok || out_dev->can_write()) {
-      if (!out_jcr->dcr->write_block_to_device()) {
+   if (ok || out_dev->CanWrite()) {
+      if (!out_jcr->dcr->WriteBlockToDevice()) {
          Pmsg0(000, _("Write of last block failed.\n"));
       }
    }
@@ -256,17 +256,17 @@ int main (int argc, char *argv[])
    in_dev->term();
    out_dev->term();
 
-   free_jcr(in_jcr);
-   free_jcr(out_jcr);
+   FreeJcr(in_jcr);
+   FreeJcr(out_jcr);
 
    return 0;
 }
 
 
 /*
- * read_records() calls back here for each record it gets
+ * ReadRecords() calls back here for each record it gets
  */
-static bool record_cb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
+static bool RecordCb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
 {
    if (list_records) {
       Pmsg5(000, _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
@@ -281,7 +281,7 @@ static bool record_cb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
       get_session_record(in_dcr->dev, rec, &sessrec);
 
       if (verbose > 1) {
-         dump_label_record(in_dcr->dev, rec, true);
+         DumpLabelRecord(in_dcr->dev, rec, true);
       }
       switch (rec->FileIndex) {
       case PRE_LABEL:
@@ -305,19 +305,19 @@ static bool record_cb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
             /* Skipping record, because does not match BootStrapRecord filter */
            return true;
         }
-         while (!write_record_to_block(out_jcr->dcr, rec)) {
-            Dmsg2(150, "!write_record_to_block data_len=%d rem=%d\n", rec->data_len,
+         while (!WriteRecordToBlock(out_jcr->dcr, rec)) {
+            Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec->data_len,
                        rec->remainder);
-            if (!out_jcr->dcr->write_block_to_device()) {
-               Dmsg2(90, "Got write_block_to_dev error on device %s: ERR=%s\n",
+            if (!out_jcr->dcr->WriteBlockToDevice()) {
+               Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                   out_dev->print_name(), out_dev->bstrerror());
                Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
                      out_dev->bstrerror());
                return false;
             }
          }
-         if (!out_jcr->dcr->write_block_to_device()) {
-            Dmsg2(90, "Got write_block_to_dev error on device %s: ERR=%s\n",
+         if (!out_jcr->dcr->WriteBlockToDevice()) {
+            Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                out_dev->print_name(), out_dev->bstrerror());
             Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
                   out_dev->bstrerror());
@@ -341,11 +341,11 @@ static bool record_cb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
       return true;
    }
    records++;
-   while (!write_record_to_block(out_jcr->dcr, rec)) {
-      Dmsg2(150, "!write_record_to_block data_len=%d rem=%d\n", rec->data_len,
+   while (!WriteRecordToBlock(out_jcr->dcr, rec)) {
+      Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec->data_len,
                  rec->remainder);
-      if (!out_jcr->dcr->write_block_to_device()) {
-         Dmsg2(90, "Got write_block_to_dev error on device %s: ERR=%s\n",
+      if (!out_jcr->dcr->WriteBlockToDevice()) {
+         Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
             out_dev->print_name(), out_dev->bstrerror());
          Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
                out_dev->bstrerror());
@@ -365,15 +365,15 @@ static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *se
       break;
    case VOL_LABEL:
       rtype = _("Volume Label");
-      unser_volume_label(dev, rec);
+      UnserVolumeLabel(dev, rec);
       break;
    case SOS_LABEL:
       rtype = _("Begin Job Session");
-      unser_session_label(sessrec, rec);
+      UnserSessionLabel(sessrec, rec);
       break;
    case EOS_LABEL:
       rtype = _("End Job Session");
-      unser_session_label(sessrec, rec);
+      UnserSessionLabel(sessrec, rec);
       break;
    case 0:
    case EOM_LABEL:

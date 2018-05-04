@@ -54,7 +54,7 @@ extern struct s_kw ReplaceOptions[];
  * Returns: false on error
  *          true if OK
  */
-static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now)
+static inline bool reRunJob(UaContext *ua, JobId_t JobId, bool yes, utime_t now)
 {
    JobDbRecord jr;
    char dt[MAX_TIME_LENGTH];
@@ -62,8 +62,8 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
 
    memset(&jr, 0, sizeof(jr));
    jr.JobId = JobId;
-   ua->send_msg("rerunning jobid %d\n", jr.JobId);
-   if (!ua->db->get_job_record(ua->jcr, &jr)) {
+   ua->SendMsg("rerunning jobid %d\n", jr.JobId);
+   if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
       Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Job record for Job rerun: ERR=%s"), ua->db->strerror());
       goto bail_out;
    }
@@ -85,19 +85,19 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
    } else {
       Mmsg(cmdline, "run job=\"%s\" level=\"%s\"", jr.Name, level_to_str(jr.JobLevel));
    }
-   pm_strcpy(ua->cmd, cmdline);
+   PmStrcpy(ua->cmd, cmdline);
 
    if (jr.ClientId) {
       ClientDbRecord cr;
 
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jr.ClientId;
-      if (!ua->db->get_client_record(ua->jcr, &cr)) {
+      if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
          Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Client record for Job rerun: ERR=%s"), ua->db->strerror());
          goto bail_out;
       }
       Mmsg(cmdline, " client=\"%s\"", cr.Name);
-      pm_strcat(ua->cmd, cmdline);
+      PmStrcat(ua->cmd, cmdline);
    }
 
    if (jr.PoolId) {
@@ -105,7 +105,7 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
 
       memset(&pr, 0, sizeof(pr));
       pr.PoolId = jr.PoolId;
-      if (!ua->db->get_pool_record(ua->jcr, &pr)) {
+      if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
          Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Pool record for Job rerun: ERR=%s"), ua->db->strerror());
          goto bail_out;
       }
@@ -121,7 +121,7 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
             job = ua->GetJobResWithName(jr.Name, false);
             if (job) {
                Mmsg(cmdline, " pool=\"%s\"", job->pool->name());
-               pm_strcat(ua->cmd, cmdline);
+               PmStrcat(ua->cmd, cmdline);
             }
          break;
       }
@@ -133,13 +133,13 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
             job = ua->GetJobResWithName(jr.Name, false);
             if (job) {
                Mmsg(cmdline, " pool=\"%s\"", job->pool->name());
-               pm_strcat(ua->cmd, cmdline);
+               PmStrcat(ua->cmd, cmdline);
             }
             break;
          }
          default:
             Mmsg(cmdline, " pool=\"%s\"", pr.Name);
-            pm_strcat(ua->cmd, cmdline);
+            PmStrcat(ua->cmd, cmdline);
             break;
          }
       }
@@ -151,13 +151,13 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
       case JT_COPY:
       case JT_MIGRATE:
          Mmsg(cmdline, " nextpool=\"%s\"", pr.Name);
-         pm_strcat(ua->cmd, cmdline);
+         PmStrcat(ua->cmd, cmdline);
          break;
       case JT_BACKUP:
          switch (jr.JobLevel) {
          case L_VIRTUAL_FULL:
             Mmsg(cmdline, " nextpool=\"%s\"", pr.Name);
-            pm_strcat(ua->cmd, cmdline);
+            PmStrcat(ua->cmd, cmdline);
 
             break;
          default:
@@ -172,26 +172,26 @@ static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now
 
       memset(&fs, 0, sizeof(fs));
       fs.FileSetId = jr.FileSetId;
-      if (!ua->db->get_fileset_record(ua->jcr, &fs)) {
+      if (!ua->db->GetFilesetRecord(ua->jcr, &fs)) {
          Jmsg(ua->jcr, M_WARNING, 0, _("Error getting FileSet record for Job rerun: ERR=%s"), ua->db->strerror());
          goto bail_out;
       }
       Mmsg(cmdline, " fileset=\"%s\"", fs.FileSet);
-      pm_strcat(ua->cmd, cmdline);
+      PmStrcat(ua->cmd, cmdline);
    }
 
    bstrutime(dt, sizeof(dt), now);
    Mmsg(cmdline, " when=\"%s\"", dt);
-   pm_strcat(ua->cmd, cmdline);
+   PmStrcat(ua->cmd, cmdline);
 
    if (yes) {
-      pm_strcat(ua->cmd, " yes");
+      PmStrcat(ua->cmd, " yes");
    }
 
    Dmsg1(100, "rerun cmdline=%s\n", ua->cmd);
 
-   parse_ua_args(ua);
-   return run_cmd(ua, ua->cmd);
+   ParseUaArgs(ua);
+   return RunCmd(ua, ua->cmd);
 
 bail_out:
    return false;
@@ -203,7 +203,7 @@ bail_out:
  * Returns: 0 on error
  *          1 if OK
  */
-bool rerun_cmd(UaContext *ua, const char *cmd)
+bool reRunCmd(UaContext *ua, const char *cmd)
 {
    int i, j, d, h, s, u;
    int days = 0;
@@ -225,7 +225,7 @@ bool rerun_cmd(UaContext *ua, const char *cmd)
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
 
-   if (!open_client_db(ua)) {
+   if (!OpenClientDb(ua)) {
       return true;
    }
 
@@ -234,11 +234,11 @@ bool rerun_cmd(UaContext *ua, const char *cmd)
    /*
     * Determine what cmdline arguments are given.
     */
-   j = find_arg_with_value(ua, NT_("jobid"));
-   d = find_arg_with_value(ua, NT_("days"));
-   h = find_arg_with_value(ua, NT_("hours"));
-   s = find_arg_with_value(ua, NT_("since_jobid"));
-   u = find_arg_with_value(ua, NT_("until_jobid"));
+   j = FindArgWithValue(ua, NT_("jobid"));
+   d = FindArgWithValue(ua, NT_("days"));
+   h = FindArgWithValue(ua, NT_("hours"));
+   s = FindArgWithValue(ua, NT_("since_jobid"));
+   u = FindArgWithValue(ua, NT_("until_jobid"));
 
    if (s > 0) {
       since_jobid = str_to_int64(ua->argv[s]);
@@ -254,22 +254,22 @@ bool rerun_cmd(UaContext *ua, const char *cmd)
       timeframe = true;
    }
 
-   if (find_arg(ua, NT_("yes")) > 0) {
+   if (FindArg(ua, NT_("yes")) > 0) {
       yes = true;
    }
 
    if (j < 0 && !timeframe && !since_jobid_given) {
-      ua->send_msg("Please specify jobid, since_jobid, hours or days\n");
+      ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
       goto bail_out;
    }
 
    if (j >= 0 && since_jobid_given) {
-      ua->send_msg("Please specify either jobid or since_jobid (and optionally until_jobid)\n");
+      ua->SendMsg("Please specify either jobid or since_jobid (and optionally until_jobid)\n");
       goto bail_out;
    }
 
    if (j >= 0 && timeframe) {
-      ua->send_msg("Please specify either jobid or timeframe\n");
+      ua->SendMsg("Please specify either jobid or timeframe\n");
       goto bail_out;
    }
 
@@ -302,20 +302,20 @@ bool rerun_cmd(UaContext *ua, const char *cmd)
          Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s' ORDER BY JobId", dt);
       }
 
-      ua->db->get_query_dbids(ua->jcr, query, ids);
+      ua->db->GetQueryDbids(ua->jcr, query, ids);
 
-      ua->send_msg("The following ids were selected for rerun:\n");
+      ua->SendMsg("The following ids were selected for rerun:\n");
       for (i = 0; i < ids.num_ids; i++) {
          if (i > 0) {
-            ua->send_msg(",%d", ids.DBId[i]);
+            ua->SendMsg(",%d", ids.DBId[i]);
          } else {
-            ua->send_msg("%d", ids.DBId[i]);
+            ua->SendMsg("%d", ids.DBId[i]);
          }
       }
-      ua->send_msg("\n");
+      ua->SendMsg("\n");
 
       if (!yes &&
-          (!get_yesno(ua, _("rerun these jobids? (yes/no): ")) || !ua->pint32_val)) {
+          (!GetYesno(ua, _("rerun these jobids? (yes/no): ")) || !ua->pint32_val)) {
          goto bail_out;
       }
       /*
@@ -327,13 +327,13 @@ bool rerun_cmd(UaContext *ua, const char *cmd)
        */
       for (i = 0; i < ids.num_ids; i++) {
          JobId = ids.DBId[i];
-         if (!rerun_job(ua, JobId, yes, now)) {
+         if (!reRunJob(ua, JobId, yes, now)) {
             goto bail_out;
          }
       }
    } else {
       JobId = str_to_int64(ua->argv[j]);
-      if (!rerun_job(ua, JobId, yes, now)) {
+      if (!reRunJob(ua, JobId, yes, now)) {
          goto bail_out;
       }
    }
@@ -355,7 +355,7 @@ bail_out:
  *          JobId if OK
  *
  */
-int do_run_cmd(UaContext *ua, const char *cmd)
+int DoRunCmd(UaContext *ua, const char *cmd)
 {
    JobControlRecord *jcr = NULL;
    RunContext rc;
@@ -363,7 +363,7 @@ int do_run_cmd(UaContext *ua, const char *cmd)
    bool valid_response;
    bool do_pool_overrides = true;
 
-   if (!open_client_db(ua)) {
+   if (!OpenClientDb(ua)) {
       return 0;
    }
 
@@ -371,17 +371,17 @@ int do_run_cmd(UaContext *ua, const char *cmd)
       return 0;
    }
 
-   if (find_arg(ua, NT_("fdcalled")) > 0) {
+   if (FindArg(ua, NT_("fdcalled")) > 0) {
       jcr->file_bsock = ua->UA_sock->clone();
       ua->quit = true;
    }
 
    /*
-    * Create JobControlRecord to run job.  NOTE!!! after this point, free_jcr() before returning.
+    * Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr() before returning.
     */
    if (!jcr) {
       jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
-      set_jcr_defaults(jcr, rc.job);
+      SetJcrDefaults(jcr, rc.job);
       jcr->unlink_bsr = ua->jcr->unlink_bsr;    /* copy unlink flag from caller */
       ua->jcr->unlink_bsr = false;
    }
@@ -410,7 +410,7 @@ try_again:
    /*
     * Run without prompting?
     */
-   if (ua->batch || find_arg(ua, NT_("yes")) > 0) {
+   if (ua->batch || FindArg(ua, NT_("yes")) > 0) {
       goto start_job;
    }
 
@@ -427,7 +427,7 @@ try_again:
       switch (jcr->getJobType()) {
       case JT_BACKUP:
          if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-            apply_pool_overrides(jcr);
+            ApplyPoolOverrides(jcr);
          }
          break;
       default:
@@ -448,7 +448,7 @@ try_again:
     * Prompt User until we have a valid response.
     */
    do {
-      if (!get_cmd(ua, _("OK to run? (yes/mod/no): "))) {
+      if (!GetCmd(ua, _("OK to run? (yes/mod/no): "))) {
          goto bail_out;
       }
 
@@ -472,7 +472,7 @@ try_again:
       }
 
       if (!valid_response) {
-         ua->warning_msg(_("Illegal response %s\n"), ua->cmd);
+         ua->WarningMsg(_("Illegal response %s\n"), ua->cmd);
       }
    } while (!valid_response);
 
@@ -481,7 +481,7 @@ try_again:
     */
    if (bstrncasecmp(ua->cmd, ".mod ", 5) ||
       (bstrncasecmp(ua->cmd, "mod ", 4) && strlen(ua->cmd) > 6)) {
-      parse_ua_args(ua);
+      ParseUaArgs(ua);
       rc.mod = true;
       if (!scan_command_line_arguments(ua, rc)) {
          return 0;
@@ -512,42 +512,42 @@ try_again:
        bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd)) ||
        bstrncasecmp(ua->cmd, _("yes"), strlen(ua->cmd))) {
       JobId_t JobId;
-      Dmsg1(800, "Calling run_job job=%x\n", jcr->res.job);
+      Dmsg1(800, "Calling RunJob job=%x\n", jcr->res.job);
 
 start_job:
       Dmsg3(100, "JobId=%u using pool %s priority=%d\n", (int)jcr->JobId,
             jcr->res.pool->name(), jcr->JobPriority);
       Dmsg1(900, "Running a job; its spool_data = %d\n", jcr->spool_data);
 
-      JobId = run_job(jcr);
+      JobId = RunJob(jcr);
 
       Dmsg4(100, "JobId=%u NewJobId=%d using pool %s priority=%d\n", (int)jcr->JobId,
             JobId, jcr->res.pool->name(), jcr->JobPriority);
 
-      free_jcr(jcr);                  /* release jcr */
+      FreeJcr(jcr);                  /* release jcr */
 
       if (JobId == 0) {
-         ua->error_msg(_("Job failed.\n"));
+         ua->ErrorMsg(_("Job failed.\n"));
       } else {
          char ed1[50];
-         ua->send->object_start("run");
-         ua->send->object_key_value("jobid", edit_int64(JobId, ed1), _("Job queued. JobId=%s\n"));
-         ua->send->object_end("run");
+         ua->send->ObjectStart("run");
+         ua->send->ObjectKeyValue("jobid", edit_int64(JobId, ed1), _("Job queued. JobId=%s\n"));
+         ua->send->ObjectEnd("run");
       }
 
       return JobId;
    }
 
 bail_out:
-   ua->send_msg(_("Job not run.\n"));
-   free_jcr(jcr);
+   ua->SendMsg(_("Job not run.\n"));
+   FreeJcr(jcr);
 
    return 0;                       /* do not run */
 }
 
-bool run_cmd(UaContext *ua, const char *cmd)
+bool RunCmd(UaContext *ua, const char *cmd)
 {
-   return (do_run_cmd(ua, ua->cmd) != 0);
+   return (DoRunCmd(ua, ua->cmd) != 0);
 }
 
 int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
@@ -558,55 +558,55 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
     * At user request modify parameters of job to be run.
     */
    if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, _("mod"), strlen(ua->cmd))) {
-      start_prompt(ua, _("Parameters to modify:\n"));
+      StartPrompt(ua, _("Parameters to modify:\n"));
 
-      add_prompt(ua, _("Level"));                   /* 0 */
-      add_prompt(ua, _("Storage"));                 /* 1 */
-      add_prompt(ua, _("Job"));                     /* 2 */
-      add_prompt(ua, _("FileSet"));                 /* 3 */
+      AddPrompt(ua, _("Level"));                   /* 0 */
+      AddPrompt(ua, _("Storage"));                 /* 1 */
+      AddPrompt(ua, _("Job"));                     /* 2 */
+      AddPrompt(ua, _("FileSet"));                 /* 3 */
       if (jcr->is_JobType(JT_RESTORE)) {
-         add_prompt(ua, _("Restore Client"));       /* 4 */
+         AddPrompt(ua, _("Restore Client"));       /* 4 */
       } else {
-         add_prompt(ua, _("Client"));               /* 4 */
+         AddPrompt(ua, _("Client"));               /* 4 */
       }
-      add_prompt(ua, _("Backup Format"));           /* 5 */
-      add_prompt(ua, _("When"));                    /* 6 */
-      add_prompt(ua, _("Priority"));                /* 7 */
+      AddPrompt(ua, _("Backup Format"));           /* 5 */
+      AddPrompt(ua, _("When"));                    /* 6 */
+      AddPrompt(ua, _("Priority"));                /* 7 */
       if (jcr->is_JobType(JT_BACKUP) ||
           jcr->is_JobType(JT_COPY) ||
           jcr->is_JobType(JT_MIGRATE) ||
           jcr->is_JobType(JT_VERIFY)) {
-         add_prompt(ua, _("Pool"));                 /* 8 */
+         AddPrompt(ua, _("Pool"));                 /* 8 */
          if (jcr->is_JobType(JT_MIGRATE) ||
              jcr->is_JobType(JT_COPY) ||
             (jcr->is_JobType(JT_BACKUP) &&
              jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
-            add_prompt(ua, _("NextPool"));          /* 9 */
+            AddPrompt(ua, _("NextPool"));          /* 9 */
             if (jcr->is_JobType(JT_BACKUP)) {
-               add_prompt(ua, _("Plugin Options")); /* 10 */
+               AddPrompt(ua, _("Plugin Options")); /* 10 */
             }
          } else if (jcr->is_JobType(JT_VERIFY)) {
-            add_prompt(ua, _("Verify Job"));        /* 9 */
+            AddPrompt(ua, _("Verify Job"));        /* 9 */
          } else if (jcr->is_JobType(JT_BACKUP)) {
-            add_prompt(ua, _("Plugin Options"));    /* 9 */
+            AddPrompt(ua, _("Plugin Options"));    /* 9 */
          }
       } else if (jcr->is_JobType(JT_RESTORE)) {
-         add_prompt(ua, _("Bootstrap"));            /* 8 */
-         add_prompt(ua, _("Where"));                /* 9 */
-         add_prompt(ua, _("File Relocation"));      /* 10 */
-         add_prompt(ua, _("Replace"));              /* 11 */
-         add_prompt(ua, _("JobId"));                /* 12 */
-         add_prompt(ua, _("Plugin Options"));       /* 13 */
+         AddPrompt(ua, _("Bootstrap"));            /* 8 */
+         AddPrompt(ua, _("Where"));                /* 9 */
+         AddPrompt(ua, _("File Relocation"));      /* 10 */
+         AddPrompt(ua, _("Replace"));              /* 11 */
+         AddPrompt(ua, _("JobId"));                /* 12 */
+         AddPrompt(ua, _("Plugin Options"));       /* 13 */
       }
 
-      switch (do_prompt(ua, "", _("Select parameter to modify"), NULL, 0)) {
+      switch (DoPrompt(ua, "", _("Select parameter to modify"), NULL, 0)) {
       case 0:
          /* Level */
          select_job_level(ua, jcr);
          switch (jcr->getJobType()) {
          case JT_BACKUP:
             if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-               apply_pool_overrides(jcr, true);
+               ApplyPoolOverrides(jcr, true);
                rc.pool = jcr->res.pool;
                rc.level_override = true;
             }
@@ -619,8 +619,8 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          /* Storage */
          rc.store->store = select_storage_resource(ua);
          if (rc.store->store) {
-            pm_strcpy(rc.store->store_source, _("user selection"));
-            set_rwstorage(jcr, rc.store);
+            PmStrcpy(rc.store->store_source, _("user selection"));
+            SetRwstorage(jcr, rc.store);
             goto try_again;
          }
          break;
@@ -629,7 +629,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          rc.job = select_job_resource(ua);
          if (rc.job) {
             jcr->res.job = rc.job;
-            set_jcr_defaults(jcr, rc.job);
+            SetJcrDefaults(jcr, rc.job);
             goto try_again;
          }
          break;
@@ -651,7 +651,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          break;
       case 5:
          /* Backup Format */
-         if (get_cmd(ua, _("Please enter Backup Format: "))) {
+         if (GetCmd(ua, _("Please enter Backup Format: "))) {
             if (jcr->backup_format) {
                free(jcr->backup_format);
                jcr->backup_format = NULL;
@@ -662,13 +662,13 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          break;
       case 6:
          /* When */
-         if (get_cmd(ua, _("Please enter desired start time as YYYY-MM-DD HH:MM:SS (return for now): "))) {
+         if (GetCmd(ua, _("Please enter desired start time as YYYY-MM-DD HH:MM:SS (return for now): "))) {
             if (ua->cmd[0] == 0) {
                jcr->sched_time = time(NULL);
             } else {
-               jcr->sched_time = str_to_utime(ua->cmd);
+               jcr->sched_time = StrToUtime(ua->cmd);
                if (jcr->sched_time == 0) {
-                  ua->send_msg(_("Invalid time, using current time.\n"));
+                  ua->SendMsg(_("Invalid time, using current time.\n"));
                   jcr->sched_time = time(NULL);
                }
             }
@@ -677,9 +677,9 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          break;
       case 7:
          /* Priority */
-         if (get_pint(ua, _("Enter new Priority: "))) {
+         if (GetPint(ua, _("Enter new Priority: "))) {
             if (!ua->pint32_val) {
-               ua->send_msg(_("Priority must be a positive integer.\n"));
+               ua->SendMsg(_("Priority must be a positive integer.\n"));
             } else {
                jcr->JobPriority = ua->pint32_val;
             }
@@ -702,7 +702,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
             }
          } else {
             /* Bootstrap */
-            if (get_cmd(ua, _("Please enter the Bootstrap file name: "))) {
+            if (GetCmd(ua, _("Please enter the Bootstrap file name: "))) {
                if (jcr->RestoreBootstrap) {
                   free(jcr->RestoreBootstrap);
                   jcr->RestoreBootstrap = NULL;
@@ -714,7 +714,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
                   fd = fopen(jcr->RestoreBootstrap, "rb");
                   if (!fd) {
                      berrno be;
-                     ua->send_msg(_("Warning cannot open %s: ERR=%s\n"),
+                     ua->SendMsg(_("Warning cannot open %s: ERR=%s\n"),
                         jcr->RestoreBootstrap, be.bstrerror());
                      free(jcr->RestoreBootstrap);
                      jcr->RestoreBootstrap = NULL;
@@ -744,7 +744,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
             }
             goto try_again;
          } else if (jcr->is_JobType(JT_RESTORE)) { /* Where */
-            if (get_cmd(ua, _("Please enter the full path prefix for restore (/ for none): "))) {
+            if (GetCmd(ua, _("Please enter the full path prefix for restore (/ for none): "))) {
                if (jcr->RegexWhere) { /* cannot use regexwhere and where */
                   free(jcr->RegexWhere);
                   jcr->RegexWhere = NULL;
@@ -760,7 +760,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
                goto try_again;
             }
          } else { /* Plugin Options */
-            if (get_cmd(ua, _("Please enter Plugin Options string: "))) {
+            if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
                if (jcr->plugin_options) {
                   free(jcr->plugin_options);
                   jcr->plugin_options = NULL;
@@ -776,7 +776,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
             select_where_regexp(ua, jcr);
             goto try_again;
          } else if (jcr->is_JobType(JT_BACKUP)) {
-            if (get_cmd(ua, _("Please enter Plugin Options string: "))) {
+            if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
                if (jcr->plugin_options) {
                   free(jcr->plugin_options);
                   jcr->plugin_options = NULL;
@@ -788,11 +788,11 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          break;
       case 11:
          /* Replace */
-         start_prompt(ua, _("Replace:\n"));
+         StartPrompt(ua, _("Replace:\n"));
          for (int i = 0; ReplaceOptions[i].name; i++) {
-            add_prompt(ua, ReplaceOptions[i].name);
+            AddPrompt(ua, ReplaceOptions[i].name);
          }
-         opt = do_prompt(ua, "", _("Select replace option"), NULL, 0);
+         opt = DoPrompt(ua, "", _("Select replace option"), NULL, 0);
          if (opt >=  0) {
             rc.replace = ReplaceOptions[opt].name;
             jcr->replace = ReplaceOptions[opt].token;
@@ -803,12 +803,12 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
          rc.jid = NULL; /* force reprompt */
          jcr->RestoreJobId = 0;
          if (jcr->RestoreBootstrap) {
-            ua->send_msg(_("You must set the bootstrap file to NULL to be able to specify a JobId.\n"));
+            ua->SendMsg(_("You must set the bootstrap file to NULL to be able to specify a JobId.\n"));
          }
          goto try_again;
       case 13:
          /* Plugin Options */
-         if (get_cmd(ua, _("Please enter Plugin Options string: "))) {
+         if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
             if (jcr->plugin_options) {
                free(jcr->plugin_options);
                jcr->plugin_options = NULL;
@@ -851,34 +851,34 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
     * overrides are ignored.
     */
    if (rc.pool_name) {
-      pm_strcpy(jcr->res.pool_source, _("command line"));
+      PmStrcpy(jcr->res.pool_source, _("command line"));
       jcr->IgnoreLevelPoolOverides = true;
    } else if (!rc.level_override && jcr->res.pool != jcr->res.job->pool) {
-      pm_strcpy(jcr->res.pool_source, _("user input"));
+      PmStrcpy(jcr->res.pool_source, _("user input"));
    }
-   set_rwstorage(jcr, rc.store);
+   SetRwstorage(jcr, rc.store);
 
    if (rc.next_pool_name) {
-      pm_strcpy(jcr->res.npool_source, _("command line"));
+      PmStrcpy(jcr->res.npool_source, _("command line"));
       jcr->res.run_next_pool_override = true;
    } else if (jcr->res.next_pool != jcr->res.pool->NextPool) {
-      pm_strcpy(jcr->res.npool_source, _("user input"));
+      PmStrcpy(jcr->res.npool_source, _("user input"));
       jcr->res.run_next_pool_override = true;
    }
 
    jcr->res.client = rc.client;
    if (jcr->res.client) {
-      pm_strcpy(jcr->client_name, rc.client->name());
+      PmStrcpy(jcr->client_name, rc.client->name());
    }
    jcr->res.fileset = rc.fileset;
    jcr->ExpectedFiles = rc.files;
 
    if (rc.catalog) {
       jcr->res.catalog = rc.catalog;
-      pm_strcpy(jcr->res.catalog_source, _("user input"));
+      PmStrcpy(jcr->res.catalog_source, _("user input"));
    }
 
-   pm_strcpy(jcr->comment, rc.comment);
+   PmStrcpy(jcr->comment, rc.comment);
 
    if (rc.where) {
       if (jcr->where) {
@@ -897,9 +897,9 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
    }
 
    if (rc.when) {
-      jcr->sched_time = str_to_utime(rc.when);
+      jcr->sched_time = StrToUtime(rc.when);
       if (jcr->sched_time == 0) {
-         ua->send_msg(_("Invalid time, using current time.\n"));
+         ua->SendMsg(_("Invalid time, using current time.\n"));
          jcr->sched_time = time(NULL);
       }
       rc.when = NULL;
@@ -929,7 +929,7 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
          }
       }
       if (!jcr->replace) {
-         ua->send_msg(_("Invalid replace option: %s\n"), rc.replace);
+         ua->SendMsg(_("Invalid replace option: %s\n"), rc.replace);
          return false;
       }
    } else if (rc.job->replace) {
@@ -946,9 +946,9 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
 
    if (rc.since) {
       if (!jcr->stime) {
-         jcr->stime = get_pool_memory(PM_MESSAGE);
+         jcr->stime = GetPoolMemory(PM_MESSAGE);
       }
-      pm_strcpy(jcr->stime, rc.since);
+      PmStrcpy(jcr->stime, rc.since);
       rc.since = NULL;
    }
 
@@ -963,7 +963,7 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
    if (jcr->is_JobType(JT_MIGRATE) ||
        jcr->is_JobType(JT_COPY) ||
       (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
-      if (!set_migration_wstorage(jcr, rc.pool, rc.next_pool,
+      if (!SetMigrationWstorage(jcr, rc.pool, rc.next_pool,
                                   _("Storage from Run NextPool override"))) {
          return false;
       }
@@ -976,8 +976,8 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
    }
 
    if (rc.level_name) {
-      if (!get_level_from_name(jcr, rc.level_name)) {
-         ua->send_msg(_("Level \"%s\" not valid.\n"), rc.level_name);
+      if (!GetLevelFromName(jcr, rc.level_name)) {
+         ua->SendMsg(_("Level \"%s\" not valid.\n"), rc.level_name);
          return false;
       }
       rc.level_name = NULL;
@@ -986,9 +986,9 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
    if (rc.jid) {
       if (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL)) {
          if (!jcr->vf_jobids) {
-            jcr->vf_jobids = get_pool_memory(PM_MESSAGE);
+            jcr->vf_jobids = GetPoolMemory(PM_MESSAGE);
          }
-         pm_strcpy(jcr->vf_jobids, rc.jid);
+         PmStrcpy(jcr->vf_jobids, rc.jid);
       } else {
          /*
           * Note, this is also MigrateJobId and a VerifyJobId
@@ -1036,28 +1036,28 @@ static void select_where_regexp(UaContext *ua, JobControlRecord *jcr)
    strip_prefix = add_suffix = rwhere = add_prefix = NULL;
 
 try_again_reg:
-   ua->send_msg(_("strip_prefix=%s add_prefix=%s add_suffix=%s\n"),
+   ua->SendMsg(_("strip_prefix=%s add_prefix=%s add_suffix=%s\n"),
                 NPRT(strip_prefix), NPRT(add_prefix), NPRT(add_suffix));
 
-   start_prompt(ua, _("This will replace your current Where value\n"));
-   add_prompt(ua, _("Strip prefix"));                /* 0 */
-   add_prompt(ua, _("Add prefix"));                  /* 1 */
-   add_prompt(ua, _("Add file suffix"));             /* 2 */
-   add_prompt(ua, _("Enter a regexp"));              /* 3 */
-   add_prompt(ua, _("Test filename manipulation"));  /* 4 */
-   add_prompt(ua, _("Use this ?"));                  /* 5 */
+   StartPrompt(ua, _("This will replace your current Where value\n"));
+   AddPrompt(ua, _("Strip prefix"));                /* 0 */
+   AddPrompt(ua, _("Add prefix"));                  /* 1 */
+   AddPrompt(ua, _("Add file suffix"));             /* 2 */
+   AddPrompt(ua, _("Enter a regexp"));              /* 3 */
+   AddPrompt(ua, _("Test filename manipulation"));  /* 4 */
+   AddPrompt(ua, _("Use this ?"));                  /* 5 */
 
-   switch (do_prompt(ua, "", _("Select parameter to modify"), NULL, 0)) {
+   switch (DoPrompt(ua, "", _("Select parameter to modify"), NULL, 0)) {
    case 0:
       /* Strip prefix */
-      if (get_cmd(ua, _("Please enter the path prefix to strip: "))) {
+      if (GetCmd(ua, _("Please enter the path prefix to strip: "))) {
          if (strip_prefix) bfree(strip_prefix);
          strip_prefix = bstrdup(ua->cmd);
       }
       goto try_again_reg;
    case 1:
       /* Add prefix */
-      if (get_cmd(ua, _("Please enter the path prefix to add (/ for none): "))) {
+      if (GetCmd(ua, _("Please enter the path prefix to add (/ for none): "))) {
          if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
             ua->cmd[0] = 0;
          }
@@ -1068,14 +1068,14 @@ try_again_reg:
       goto try_again_reg;
    case 2:
       /* Add suffix */
-      if (get_cmd(ua, _("Please enter the file suffix to add: "))) {
+      if (GetCmd(ua, _("Please enter the file suffix to add: "))) {
          if (add_suffix) bfree(add_suffix);
          add_suffix = bstrdup(ua->cmd);
       }
       goto try_again_reg;
    case 3:
       /* Add rwhere */
-      if (get_cmd(ua, _("Please enter a valid regexp (!from!to!): "))) {
+      if (GetCmd(ua, _("Please enter a valid regexp (!from!to!): "))) {
          if (rwhere) bfree(rwhere);
          rwhere = bstrdup(ua->cmd);
       }
@@ -1087,28 +1087,28 @@ try_again_reg:
 
       if (rwhere && rwhere[0] != '\0') {
          regs = get_bregexps(rwhere);
-         ua->send_msg(_("regexwhere=%s\n"), NPRT(rwhere));
+         ua->SendMsg(_("regexwhere=%s\n"), NPRT(rwhere));
       } else {
-         int len = bregexp_get_build_where_size(strip_prefix, add_prefix, add_suffix);
+         int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
          regexp = (char *) bmalloc (len * sizeof(char));
          bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
          regs = get_bregexps(regexp);
-         ua->send_msg(_("strip_prefix=%s add_prefix=%s add_suffix=%s result=%s\n"),
+         ua->SendMsg(_("strip_prefix=%s add_prefix=%s add_suffix=%s result=%s\n"),
                       NPRT(strip_prefix), NPRT(add_prefix), NPRT(add_suffix), NPRT(regexp));
 
          bfree(regexp);
       }
 
       if (!regs) {
-         ua->send_msg(_("Cannot use your regexp\n"));
+         ua->SendMsg(_("Cannot use your regexp\n"));
          goto try_again_reg;
       }
-      ua->send_msg(_("Enter a period (.) to stop this test\n"));
-      while (get_cmd(ua, _("Please enter filename to test: "))) {
-         apply_bregexps(ua->cmd, regs, &result);
-         ua->send_msg(_("%s -> %s\n"), ua->cmd, result);
+      ua->SendMsg(_("Enter a period (.) to stop this test\n"));
+      while (GetCmd(ua, _("Please enter filename to test: "))) {
+         ApplyBregexps(ua->cmd, regs, &result);
+         ua->SendMsg(_("%s -> %s\n"), ua->cmd, result);
       }
-      free_bregexps(regs);
+      FreeBregexps(regs);
       delete regs;
       goto try_again_reg;
    case 5:
@@ -1135,21 +1135,21 @@ try_again_reg:
    if (rwhere) {
       jcr->RegexWhere = bstrdup(rwhere);
    } else if (strip_prefix || add_prefix || add_suffix) {
-      int len = bregexp_get_build_where_size(strip_prefix, add_prefix, add_suffix);
+      int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
       jcr->RegexWhere = (char *) bmalloc(len*sizeof(char));
       bregexp_build_where(jcr->RegexWhere, len, strip_prefix, add_prefix, add_suffix);
    }
 
    regs = get_bregexps(jcr->RegexWhere);
    if (regs) {
-      free_bregexps(regs);
+      FreeBregexps(regs);
       delete regs;
    } else {
       if (jcr->RegexWhere) {
          bfree(jcr->RegexWhere);
          jcr->RegexWhere = NULL;
       }
-      ua->send_msg(_("Cannot use your regexp.\n"));
+      ua->SendMsg(_("Cannot use your regexp.\n"));
    }
 
 bail_out_reg:
@@ -1170,14 +1170,14 @@ bail_out_reg:
 static void select_job_level(UaContext *ua, JobControlRecord *jcr)
 {
    if (jcr->is_JobType(JT_BACKUP)) {
-      start_prompt(ua, _("Levels:\n"));
-//    add_prompt(ua, _("Base"));
-      add_prompt(ua, _("Full"));
-      add_prompt(ua, _("Incremental"));
-      add_prompt(ua, _("Differential"));
-      add_prompt(ua, _("Since"));
-      add_prompt(ua, _("VirtualFull"));
-      switch (do_prompt(ua, "", _("Select level"), NULL, 0)) {
+      StartPrompt(ua, _("Levels:\n"));
+//    AddPrompt(ua, _("Base"));
+      AddPrompt(ua, _("Full"));
+      AddPrompt(ua, _("Incremental"));
+      AddPrompt(ua, _("Differential"));
+      AddPrompt(ua, _("Since"));
+      AddPrompt(ua, _("VirtualFull"));
+      switch (DoPrompt(ua, "", _("Select level"), NULL, 0)) {
 //    case 0:
 //       jcr->JobLevel = L_BASE;
 //       break;
@@ -1200,13 +1200,13 @@ static void select_job_level(UaContext *ua, JobControlRecord *jcr)
          break;
       }
    } else if (jcr->is_JobType(JT_VERIFY)) {
-      start_prompt(ua, _("Levels:\n"));
-      add_prompt(ua, _("Initialize Catalog"));
-      add_prompt(ua, _("Verify Catalog"));
-      add_prompt(ua, _("Verify Volume to Catalog"));
-      add_prompt(ua, _("Verify Disk to Catalog"));
-      add_prompt(ua, _("Verify Volume Data (not yet implemented)"));
-      switch (do_prompt(ua, "",  _("Select level"), NULL, 0)) {
+      StartPrompt(ua, _("Levels:\n"));
+      AddPrompt(ua, _("Initialize Catalog"));
+      AddPrompt(ua, _("Verify Catalog"));
+      AddPrompt(ua, _("Verify Volume to Catalog"));
+      AddPrompt(ua, _("Verify Disk to Catalog"));
+      AddPrompt(ua, _("Verify Volume Data (not yet implemented)"));
+      switch (DoPrompt(ua, "",  _("Select level"), NULL, 0)) {
       case 0:
          jcr->setJobLevel(L_VERIFY_INIT);
          break;
@@ -1226,7 +1226,7 @@ static void select_job_level(UaContext *ua, JobControlRecord *jcr)
          break;
       }
    } else {
-      ua->warning_msg(_("Level not appropriate for this Job. Cannot be changed.\n"));
+      ua->WarningMsg(_("Level not appropriate for this Job. Cannot be changed.\n"));
    }
    return;
 }
@@ -1243,7 +1243,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
    case JT_ADMIN:
       if (ua->api) {
          ua->signal(BNET_RUN_CMD);
-         ua->send_msg("Type: Admin\n"
+         ua->SendMsg("Type: Admin\n"
                       "Title: Run Admin Job\n"
                       "JobName:  %s\n"
                       "FileSet:  %s\n"
@@ -1258,7 +1258,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                       bstrutime(dt, sizeof(dt), jcr->sched_time),
                       jcr->JobPriority);
       } else {
-         ua->send_msg(_("Run Admin Job\n"
+         ua->SendMsg(_("Run Admin Job\n"
                         "JobName:  %s\n"
                         "FileSet:  %s\n"
                         "Client:   %s\n"
@@ -1277,7 +1277,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
    case JT_ARCHIVE:
       if (ua->api) {
          ua->signal(BNET_RUN_CMD);
-         ua->send_msg("Type: Archive\n"
+         ua->SendMsg("Type: Archive\n"
                       "Title: Run Archive Job\n"
                       "JobName:  %s\n"
                       "FileSet:  %s\n"
@@ -1292,7 +1292,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                       bstrutime(dt, sizeof(dt), jcr->sched_time),
                       jcr->JobPriority);
       } else {
-         ua->send_msg(_("Run Archive Job\n"
+         ua->SendMsg(_("Run Archive Job\n"
                         "JobName:  %s\n"
                         "FileSet:  %s\n"
                         "Client:   %s\n"
@@ -1311,7 +1311,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
    case JT_CONSOLIDATE:
       if (ua->api) {
          ua->signal(BNET_RUN_CMD);
-         ua->send_msg("Type: Consolidate\n"
+         ua->SendMsg("Type: Consolidate\n"
                       "Title: Run Consolidate Job\n"
                       "JobName:  %s\n"
                       "FileSet:  %s\n"
@@ -1326,7 +1326,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                       bstrutime(dt, sizeof(dt), jcr->sched_time),
                       jcr->JobPriority);
       } else {
-         ua->send_msg(_("Run Consolidate Job\n"
+         ua->SendMsg(_("Run Consolidate Job\n"
                         "JobName:  %s\n"
                         "FileSet:  %s\n"
                         "Client:   %s\n"
@@ -1349,7 +1349,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
 
          if (ua->api) {
             ua->signal(BNET_RUN_CMD);
-            ua->send_msg("Type: Backup\n"
+            ua->SendMsg("Type: Backup\n"
                          "Title: Run Backup Job\n"
                          "JobName:  %s\n"
                          "Level:    %s\n"
@@ -1378,7 +1378,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                          jcr->plugin_options ? jcr->plugin_options : "",
                          jcr->plugin_options ? "\n" : "");
          } else {
-            ua->send_msg(_("Run Backup job\n"
+            ua->SendMsg(_("Run Backup job\n"
                            "JobName:  %s\n"
                            "Level:    %s\n"
                            "Client:   %s\n"
@@ -1417,8 +1417,8 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          } else if (jcr->RestoreJobId) { /* Display job name if jobid requested */
             memset(&jr, 0, sizeof(jr));
             jr.JobId = jcr->RestoreJobId;
-            if (!ua->db->get_job_record(jcr, &jr)) {
-               ua->error_msg(_("Could not get job record for selected JobId. ERR=%s"), ua->db->strerror());
+            if (!ua->db->GetJobRecord(jcr, &jr)) {
+               ua->ErrorMsg(_("Could not get job record for selected JobId. ERR=%s"), ua->db->strerror());
                return false;
             }
             Name = jr.Job;
@@ -1433,7 +1433,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          }
          if (ua->api) {
             ua->signal(BNET_RUN_CMD);
-            ua->send_msg("Type: Verify\n"
+            ua->SendMsg("Type: Verify\n"
                          "Title: Run Verify Job\n"
                          "JobName:     %s\n"
                          "Level:       %s\n"
@@ -1456,7 +1456,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                          bstrutime(dt, sizeof(dt), jcr->sched_time),
                          jcr->JobPriority);
          } else {
-            ua->send_msg(_("Run Verify Job\n"
+            ua->SendMsg(_("Run Verify Job\n"
                            "JobName:     %s\n"
                            "Level:       %s\n"
                            "Client:      %s\n"
@@ -1485,7 +1485,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          if (rc.jid) {
             jcr->RestoreJobId = str_to_int64(rc.jid);
          } else {
-            if (!get_pint(ua, _("Please enter a JobId for restore: "))) {
+            if (!GetPint(ua, _("Please enter a JobId for restore: "))) {
                return false;
             }
             jcr->RestoreJobId = ua->int64_val;
@@ -1498,7 +1498,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          if (jcr->RegexWhere || (job->RegexWhere && !jcr->where)) {
             if (ua->api) {
                ua->signal(BNET_RUN_CMD);
-               ua->send_msg("Type: Restore\n"
+               ua->SendMsg("Type: Restore\n"
                             "Title: Run Restore Job\n"
                             "JobName:         %s\n"
                             "Bootstrap:       %s\n"
@@ -1527,7 +1527,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                             jcr->JobPriority,
                             NPRT(jcr->plugin_options));
             } else {
-               ua->send_msg(_("Run Restore job\n"
+               ua->SendMsg(_("Run Restore job\n"
                               "JobName:         %s\n"
                               "Bootstrap:       %s\n"
                               "RegexWhere:      %s\n"
@@ -1558,7 +1558,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          } else {
             if (ua->api) {
                ua->signal(BNET_RUN_CMD);
-               ua->send_msg("Type: Restore\n"
+               ua->SendMsg("Type: Restore\n"
                             "Title: Run Restore job\n"
                             "JobName:         %s\n"
                             "Bootstrap:       %s\n"
@@ -1587,7 +1587,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
                             jcr->JobPriority,
                             NPRT(jcr->plugin_options));
             } else {
-               ua->send_msg(_("Run Restore job\n"
+               ua->SendMsg(_("Run Restore job\n"
                               "JobName:         %s\n"
                               "Bootstrap:       %s\n"
                               "Where:           %s\n"
@@ -1620,7 +1620,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
       } else {
          /* ***FIXME*** This needs to be fixed for bat */
          if (ua->api) ua->signal(BNET_RUN_CMD);
-         ua->send_msg(_("Run Restore job\n"
+         ua->SendMsg(_("Run Restore job\n"
                         "JobName:    %s\n"
                         "Bootstrap:  %s\n"),
                       job->name(),
@@ -1628,14 +1628,14 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
 
          /* RegexWhere is take before RestoreWhere */
          if (jcr->RegexWhere || (job->RegexWhere && !jcr->where)) {
-            ua->send_msg(_("RegexWhere: %s\n"),
+            ua->SendMsg(_("RegexWhere: %s\n"),
                          jcr->RegexWhere ? jcr->RegexWhere : job->RegexWhere);
          } else {
-            ua->send_msg(_("Where:      %s\n"),
+            ua->SendMsg(_("Where:      %s\n"),
                          jcr->where ? jcr->where : NPRT(job->RestoreWhere));
          }
 
-         ua->send_msg(_("Replace:         %s\n"
+         ua->SendMsg(_("Replace:         %s\n"
                         "Client:          %s\n"
                         "Format:          %s\n"
                         "Storage:         %s\n"
@@ -1667,7 +1667,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          } else {
             prt_type = _("Type: Migration\nTitle: Run Migration Job\n");
          }
-         ua->send_msg("%s"
+         ua->SendMsg("%s"
                       "JobName:       %s\n"
                       "Bootstrap:     %s\n"
                       "Read Storage:  %s\n"
@@ -1695,7 +1695,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
          } else {
             prt_type = _("Run Migration job\n");
          }
-         ua->send_msg(_("%s"
+         ua->SendMsg(_("%s"
                         "JobName:       %s\n"
                         "Bootstrap:     %s\n"
                         "Read Storage:  %s (From %s)\n"
@@ -1723,7 +1723,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
       }
       break;
    default:
-      ua->error_msg(_("Unknown Job Type=%d\n"), jcr->getJobType());
+      ua->ErrorMsg(_("Unknown Job Type=%d\n"), jcr->getJobType());
       return false;
    }
    return true;
@@ -1800,14 +1800,14 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
              * Note, yes and run have no value, so do not fail
              */
             if (!ua->argv[i] && j != YES_POS /*yes*/) {
-               ua->send_msg(_("Value missing for keyword %s\n"), ua->argk[i]);
+               ua->SendMsg(_("Value missing for keyword %s\n"), ua->argk[i]);
                return false;
             }
             Dmsg1(800, "Got keyword=%s\n", NPRT(kw[j]));
             switch (j) {
             case 0: /* job */
                if (rc.job_name) {
-                  ua->send_msg(_("Job name specified twice.\n"));
+                  ua->SendMsg(_("Job name specified twice.\n"));
                   return false;
                }
                rc.job_name = ua->argv[i];
@@ -1815,7 +1815,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 1: /* JobId */
                if (rc.jid && !rc.mod) {
-                  ua->send_msg(_("JobId specified twice.\n"));
+                  ua->SendMsg(_("JobId specified twice.\n"));
                   return false;
                }
                rc.jid = ua->argv[i];
@@ -1824,7 +1824,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
             case 2: /* client */
             case 3: /* fd */
                if (rc.client_name) {
-                  ua->send_msg(_("Client specified twice.\n"));
+                  ua->SendMsg(_("Client specified twice.\n"));
                   return false;
                }
                rc.client_name = ua->argv[i];
@@ -1832,7 +1832,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 4: /* fileset */
                if (rc.fileset_name) {
-                  ua->send_msg(_("FileSet specified twice.\n"));
+                  ua->SendMsg(_("FileSet specified twice.\n"));
                   return false;
                }
                rc.fileset_name = ua->argv[i];
@@ -1840,7 +1840,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 5: /* level */
                if (rc.level_name) {
-                  ua->send_msg(_("Level specified twice.\n"));
+                  ua->SendMsg(_("Level specified twice.\n"));
                   return false;
                }
                rc.level_name = ua->argv[i];
@@ -1849,7 +1849,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
             case 6: /* storage */
             case 7: /* sd */
                if (rc.store_name) {
-                  ua->send_msg(_("Storage specified twice.\n"));
+                  ua->SendMsg(_("Storage specified twice.\n"));
                   return false;
                }
                rc.store_name = ua->argv[i];
@@ -1857,31 +1857,31 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 8: /* regexwhere */
                 if ((rc.regexwhere || rc.where) && !rc.mod) {
-                  ua->send_msg(_("RegexWhere or Where specified twice.\n"));
+                  ua->SendMsg(_("RegexWhere or Where specified twice.\n"));
                   return false;
                }
                rc.regexwhere = ua->argv[i];
                if (!ua->acl_access_ok(Where_ACL, rc.regexwhere, true)) {
-                  ua->send_msg(_("No authorization for \"regexwhere\" specification.\n"));
+                  ua->SendMsg(_("No authorization for \"regexwhere\" specification.\n"));
                   return false;
                }
                kw_ok = true;
                break;
            case 9: /* where */
                if ((rc.where || rc.regexwhere) && !rc.mod) {
-                  ua->send_msg(_("Where or RegexWhere specified twice.\n"));
+                  ua->SendMsg(_("Where or RegexWhere specified twice.\n"));
                   return false;
                }
                rc.where = ua->argv[i];
                if (!ua->acl_access_ok(Where_ACL, rc.where, true)) {
-                  ua->send_msg(_("No authoriztion for \"where\" specification.\n"));
+                  ua->SendMsg(_("No authoriztion for \"where\" specification.\n"));
                   return false;
                }
                kw_ok = true;
                break;
             case 10: /* bootstrap */
                if (rc.bootstrap && !rc.mod) {
-                  ua->send_msg(_("Bootstrap specified twice.\n"));
+                  ua->SendMsg(_("Bootstrap specified twice.\n"));
                   return false;
                }
                rc.bootstrap = ua->argv[i];
@@ -1889,7 +1889,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 11: /* replace */
                if (rc.replace && !rc.mod) {
-                  ua->send_msg(_("Replace specified twice.\n"));
+                  ua->SendMsg(_("Replace specified twice.\n"));
                   return false;
                }
                rc.replace = ua->argv[i];
@@ -1897,7 +1897,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 12: /* When */
                if (rc.when && !rc.mod) {
-                  ua->send_msg(_("When specified twice.\n"));
+                  ua->SendMsg(_("When specified twice.\n"));
                   return false;
                }
                rc.when = ua->argv[i];
@@ -1905,12 +1905,12 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 13:  /* Priority */
                if (rc.Priority && !rc.mod) {
-                  ua->send_msg(_("Priority specified twice.\n"));
+                  ua->SendMsg(_("Priority specified twice.\n"));
                   return false;
                }
                rc.Priority = atoi(ua->argv[i]);
                if (rc.Priority <= 0) {
-                  ua->send_msg(_("Priority must be positive nonzero setting it to 10.\n"));
+                  ua->SendMsg(_("Priority must be positive nonzero setting it to 10.\n"));
                   rc.Priority = 10;
                }
                kw_ok = true;
@@ -1920,7 +1920,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 15: /* Verify Job */
                if (rc.verify_job_name) {
-                  ua->send_msg(_("Verify Job specified twice.\n"));
+                  ua->SendMsg(_("Verify Job specified twice.\n"));
                   return false;
                }
                rc.verify_job_name = ua->argv[i];
@@ -1948,7 +1948,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 21: /* Migration Job */
                if (rc.previous_job_name) {
-                  ua->send_msg(_("Migration Job specified twice.\n"));
+                  ua->SendMsg(_("Migration Job specified twice.\n"));
                   return false;
                }
                rc.previous_job_name = ua->argv[i];
@@ -1956,7 +1956,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 22: /* pool */
                if (rc.pool_name) {
-                  ua->send_msg(_("Pool specified twice.\n"));
+                  ua->SendMsg(_("Pool specified twice.\n"));
                   return false;
                }
                rc.pool_name = ua->argv[i];
@@ -1964,7 +1964,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 23: /* nextpool */
                if (rc.next_pool_name) {
-                  ua->send_msg(_("NextPool specified twice.\n"));
+                  ua->SendMsg(_("NextPool specified twice.\n"));
                   return false;
                }
                rc.next_pool_name = ua->argv[i];
@@ -1972,7 +1972,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 24: /* backupclient */
                if (rc.client_name) {
-                  ua->send_msg(_("Client specified twice.\n"));
+                  ua->SendMsg(_("Client specified twice.\n"));
                   return 0;
                }
                rc.client_name = ua->argv[i];
@@ -1980,7 +1980,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 25: /* restoreclient */
                if (rc.restore_client_name && !rc.mod) {
-                  ua->send_msg(_("Restore Client specified twice.\n"));
+                  ua->SendMsg(_("Restore Client specified twice.\n"));
                   return false;
                }
                rc.restore_client_name = ua->argv[i];
@@ -1988,26 +1988,26 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 26: /* pluginoptions */
                if (rc.plugin_options) {
-                  ua->send_msg(_("Plugin Options specified twice.\n"));
+                  ua->SendMsg(_("Plugin Options specified twice.\n"));
                   return false;
                }
                rc.plugin_options = ua->argv[i];
                if (!ua->acl_access_ok(PluginOptions_ACL, rc.plugin_options, true)) {
-                  ua->send_msg(_("No authorization for \"PluginOptions\" specification.\n"));
+                  ua->SendMsg(_("No authorization for \"PluginOptions\" specification.\n"));
                   return false;
                }
                kw_ok = true;
                break;
             case 27: /* spooldata */
                if (rc.spool_data_set) {
-                  ua->send_msg(_("Spool flag specified twice.\n"));
+                  ua->SendMsg(_("Spool flag specified twice.\n"));
                   return false;
                }
-               if (is_yesno(ua->argv[i], &rc.spool_data)) {
+               if (IsYesno(ua->argv[i], &rc.spool_data)) {
                   rc.spool_data_set = true;
                   kw_ok = true;
                } else {
-                  ua->send_msg(_("Invalid spooldata flag.\n"));
+                  ua->SendMsg(_("Invalid spooldata flag.\n"));
                }
                break;
             case 28: /* comment */
@@ -2016,31 +2016,31 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 29: /* ignoreduplicatecheck */
                if (rc.ignoreduplicatecheck_set) {
-                  ua->send_msg(_("IgnoreDuplicateCheck flag specified twice.\n"));
+                  ua->SendMsg(_("IgnoreDuplicateCheck flag specified twice.\n"));
                   return false;
                }
-               if (is_yesno(ua->argv[i], &rc.ignoreduplicatecheck)) {
+               if (IsYesno(ua->argv[i], &rc.ignoreduplicatecheck)) {
                   rc.ignoreduplicatecheck_set = true;
                   kw_ok = true;
                } else {
-                  ua->send_msg(_("Invalid ignoreduplicatecheck flag.\n"));
+                  ua->SendMsg(_("Invalid ignoreduplicatecheck flag.\n"));
                }
                break;
             case 30: /* accurate */
                if (rc.accurate_set) {
-                  ua->send_msg(_("Accurate flag specified twice.\n"));
+                  ua->SendMsg(_("Accurate flag specified twice.\n"));
                   return false;
                }
-               if (is_yesno(ua->argv[i], &rc.accurate)) {
+               if (IsYesno(ua->argv[i], &rc.accurate)) {
                   rc.accurate_set = true;
                   kw_ok = true;
                } else {
-                  ua->send_msg(_("Invalid accurate flag.\n"));
+                  ua->SendMsg(_("Invalid accurate flag.\n"));
                }
                break;
             case 31: /* backupformat */
                if (rc.backup_format && !rc.mod) {
-                  ua->send_msg(_("Backup Format specified twice.\n"));
+                  ua->SendMsg(_("Backup Format specified twice.\n"));
                   return false;
                }
                rc.backup_format = ua->argv[i];
@@ -2065,7 +2065,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
             rc.job_name = ua->argk[i];   /* use keyword as job name */
             Dmsg1(800, "Set jobname=%s\n", rc.job_name);
          } else {
-            ua->send_msg(_("Invalid keyword: %s\n"), ua->argk[i]);
+            ua->SendMsg(_("Invalid keyword: %s\n"), ua->argk[i]);
             return false;
          }
       }
@@ -2073,14 +2073,14 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
 
    Dmsg0(800, "Done scan.\n");
    if (rc.comment) {
-      if (!is_comment_legal(ua, rc.comment)) {
+      if (!IsCommentLegal(ua, rc.comment)) {
          return false;
       }
    }
    if (rc.catalog_name) {
       rc.catalog = ua->GetCatalogResWithName(rc.catalog_name);
       if (rc.catalog == NULL) {
-         ua->error_msg(_("Catalog \"%s\" not found\n"), rc.catalog_name);
+         ua->ErrorMsg(_("Catalog \"%s\" not found\n"), rc.catalog_name);
          return false;
       }
    }
@@ -2091,14 +2091,14 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       rc.job = ua->GetJobResWithName(rc.job_name);
       if (!rc.job) {
          if (*rc.job_name != 0) {
-            ua->send_msg(_("Job \"%s\" not found\n"), rc.job_name);
+            ua->SendMsg(_("Job \"%s\" not found\n"), rc.job_name);
          }
          rc.job = select_job_resource(ua);
       } else {
          Dmsg1(800, "Found job=%s\n", rc.job_name);
       }
    } else if (!rc.job) {
-      ua->send_msg(_("A job name must be specified.\n"));
+      ua->SendMsg(_("A job name must be specified.\n"));
       rc.job = select_job_resource(ua);
    }
    if (!rc.job) {
@@ -2109,7 +2109,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       rc.pool = ua->GetPoolResWithName(rc.pool_name);
       if (!rc.pool) {
          if (*rc.pool_name != 0) {
-            ua->warning_msg(_("Pool \"%s\" not found.\n"), rc.pool_name);
+            ua->WarningMsg(_("Pool \"%s\" not found.\n"), rc.pool_name);
          }
          rc.pool = select_pool_resource(ua);
       }
@@ -2125,7 +2125,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       rc.next_pool = ua->GetPoolResWithName(rc.next_pool_name);
       if (!rc.next_pool) {
          if (*rc.next_pool_name != 0) {
-            ua->warning_msg(_("Pool \"%s\" not found.\n"), rc.next_pool_name);
+            ua->WarningMsg(_("Pool \"%s\" not found.\n"), rc.next_pool_name);
          }
          rc.next_pool = select_pool_resource(ua);
       }
@@ -2138,16 +2138,16 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
 
    if (rc.store_name) {
       rc.store->store = ua->GetStoreResWithName(rc.store_name);
-      pm_strcpy(rc.store->store_source, _("command line"));
+      PmStrcpy(rc.store->store_source, _("command line"));
       if (!rc.store->store) {
          if (*rc.store_name != 0) {
-            ua->warning_msg(_("Storage \"%s\" not found.\n"), rc.store_name);
+            ua->WarningMsg(_("Storage \"%s\" not found.\n"), rc.store_name);
          }
          rc.store->store = select_storage_resource(ua);
-         pm_strcpy(rc.store->store_source, _("user selection"));
+         PmStrcpy(rc.store->store_source, _("user selection"));
       }
    } else if (!rc.store->store) {
-      get_job_storage(rc.store, rc.job, NULL); /* use default */
+      GetJobStorage(rc.store, rc.job, NULL); /* use default */
    }
 
    /*
@@ -2160,10 +2160,10 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       break;
    default:
       if (!rc.store->store) {
-         ua->error_msg(_("No storage specified.\n"));
+         ua->ErrorMsg(_("No storage specified.\n"));
          return false;
       } else if (!ua->acl_access_ok(Storage_ACL, rc.store->store->name(), true)) {
-         ua->error_msg(_("No authorization. Storage \"%s\".\n"), rc.store->store->name());
+         ua->ErrorMsg(_("No authorization. Storage \"%s\".\n"), rc.store->store->name());
          return false;
       }
       Dmsg1(800, "Using storage=%s\n", rc.store->store->name());
@@ -2174,7 +2174,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       rc.client = ua->GetClientResWithName(rc.client_name);
       if (!rc.client) {
          if (*rc.client_name != 0) {
-            ua->warning_msg(_("Client \"%s\" not found.\n"), rc.client_name);
+            ua->WarningMsg(_("Client \"%s\" not found.\n"), rc.client_name);
          }
          rc.client = select_client_resource(ua);
       }
@@ -2184,7 +2184,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
 
    if (rc.client) {
       if (!ua->acl_access_ok(Client_ACL, rc.client->name(), true)) {
-         ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
+         ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->name());
          return false;
       } else {
          Dmsg1(800, "Using client=%s\n", rc.client->name());
@@ -2195,7 +2195,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       rc.client = ua->GetClientResWithName(rc.restore_client_name);
       if (!rc.client) {
          if (*rc.restore_client_name != 0) {
-            ua->warning_msg(_("Restore Client \"%s\" not found.\n"), rc.restore_client_name);
+            ua->WarningMsg(_("Restore Client \"%s\" not found.\n"), rc.restore_client_name);
          }
          rc.client = select_client_resource(ua);
       }
@@ -2205,7 +2205,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
 
    if (rc.client) {
       if (!ua->acl_access_ok(Client_ACL, rc.client->name(), true)) {
-         ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
+         ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->name());
          return false;
       } else {
          Dmsg1(800, "Using restore client=%s\n", rc.client->name());
@@ -2215,7 +2215,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
    if (rc.fileset_name) {
       rc.fileset = ua->GetFileSetResWithName(rc.fileset_name);
       if (!rc.fileset) {
-         ua->send_msg(_("FileSet \"%s\" not found.\n"), rc.fileset_name);
+         ua->SendMsg(_("FileSet \"%s\" not found.\n"), rc.fileset_name);
          rc.fileset = select_fileset_resource(ua);
          if (!rc.fileset) {
             return false;
@@ -2228,7 +2228,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
    if (rc.verify_job_name) {
       rc.verify_job = ua->GetJobResWithName(rc.verify_job_name);
       if (!rc.verify_job) {
-         ua->send_msg(_("Verify Job \"%s\" not found.\n"), rc.verify_job_name);
+         ua->SendMsg(_("Verify Job \"%s\" not found.\n"), rc.verify_job_name);
          rc.verify_job = select_job_resource(ua);
       }
    } else if (!rc.verify_job) {
@@ -2238,7 +2238,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
    if (rc.previous_job_name) {
       rc.previous_job = ua->GetJobResWithName(rc.previous_job_name);
       if (!rc.previous_job) {
-         ua->send_msg(_("Migration Job \"%s\" not found.\n"), rc.previous_job_name);
+         ua->SendMsg(_("Migration Job \"%s\" not found.\n"), rc.previous_job_name);
          rc.previous_job = select_job_resource(ua);
       }
    } else {

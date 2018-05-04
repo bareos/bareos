@@ -124,10 +124,10 @@ int devlock::destroy()
 static void devlock_read_release(void *arg)
 {
    devlock *rwl = (devlock *)arg;
-   rwl->read_release();
+   rwl->ReadRelease();
 }
 
-void devlock::read_release()
+void devlock::ReadRelease()
 {
    r_wait--;
    pthread_mutex_unlock(&mutex);
@@ -140,10 +140,10 @@ void devlock::read_release()
 static void devlock_write_release(void *arg)
 {
    devlock *rwl = (devlock *)arg;
-   rwl->write_release();
+   rwl->WriteRelease();
 }
 
-void devlock::write_release()
+void devlock::WriteRelease()
 {
    w_wait--;
    pthread_mutex_unlock(&mutex);
@@ -248,13 +248,13 @@ int devlock::writelock(int areason, bool acan_take)
       pthread_mutex_unlock(&rwl->mutex);
       return 0;
    }
-   lmgr_pre_lock(rwl, rwl->priority, __FILE__, __LINE__);
+   LmgrPreLock(rwl, rwl->priority, __FILE__, __LINE__);
    if (rwl->w_active || rwl->r_active > 0) {
       rwl->w_wait++;                  /* indicate that we are waiting */
       pthread_cleanup_push(devlock_write_release, (void *)rwl);
       while (rwl->w_active || rwl->r_active > 0) {
          if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
-            lmgr_do_unlock(rwl);
+            LmgrDoUnlock(rwl);
             break;                    /* error, bail out */
          }
       }
@@ -264,7 +264,7 @@ int devlock::writelock(int areason, bool acan_take)
    if (status == 0) {
       rwl->w_active++;                /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
-      lmgr_post_lock();
+      LmgrPostLock();
    }
    rwl->reason = areason;
    rwl->can_take = acan_take;
@@ -296,7 +296,7 @@ int devlock::writetrylock()
    } else {
       rwl->w_active = 1;              /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
-      lmgr_do_lock(rwl, rwl->priority, __FILE__, __LINE__);
+      LmgrDoLock(rwl, rwl->priority, __FILE__, __LINE__);
    }
    status2 = pthread_mutex_unlock(&rwl->mutex);
    return (status == 0 ? status2 : status);
@@ -329,7 +329,7 @@ int devlock::writeunlock()
    if (rwl->w_active > 0) {
       status = 0;                       /* writers still active */
    } else {
-      lmgr_do_unlock(rwl);
+      LmgrDoUnlock(rwl);
       /* No more writers, awaken someone */
       if (rwl->r_wait > 0) {         /* if readers waiting */
          status = pthread_cond_broadcast(&rwl->read);

@@ -144,18 +144,18 @@ enum {
    MT_SQLQUERY
 };
 
-#define job_terminated_successfully(jcr) \
+#define JobTerminatedSuccessfully(jcr) \
   (jcr->JobStatus == JS_Terminated || \
    jcr->JobStatus == JS_Warnings \
   )
 
-#define job_canceled(jcr) \
+#define JobCanceled(jcr) \
   (jcr->JobStatus == JS_Canceled || \
    jcr->JobStatus == JS_ErrorTerminated || \
    jcr->JobStatus == JS_FatalError \
   )
 
-#define job_waiting(jcr) \
+#define JobWaiting(jcr) \
  (jcr->job_started && \
   (jcr->JobStatus == JS_WaitFD || \
    jcr->JobStatus == JS_WaitSD || \
@@ -174,7 +174,7 @@ enum {
 #define foreach_jcr(jcr) \
    for (jcr=jcr_walk_start(); jcr; (jcr=jcr_walk_next(jcr)) )
 
-#define endeach_jcr(jcr) jcr_walk_end(jcr)
+#define endeach_jcr(jcr) JcrWalkEnd(jcr)
 
 #define SD_APPEND 1
 #define SD_READ   0
@@ -218,9 +218,9 @@ struct Resources {
    JobResource *job;                           /**< Job resource */
    JobResource *verify_job;                    /**< Job resource of verify previous job */
    JobResource *previous_job;                  /**< Job resource of migration previous job */
-   StoreResource *rstore;                      /**< Selected read storage */
-   StoreResource *wstore;                      /**< Selected write storage */
-   StoreResource *pstore;                      /**< Selected paired storage (saved wstore or rstore) */
+   StorageResource *rstore;                      /**< Selected read storage */
+   StorageResource *wstore;                      /**< Selected write storage */
+   StorageResource *pstore;                      /**< Selected paired storage (saved wstore or rstore) */
    ClientResource *client;                     /**< Client resource */
    PoolResource *pool;                         /**< Pool resource = write for migration */
    PoolResource *rpool;                        /**< Read pool. Used only in migration */
@@ -297,15 +297,15 @@ public:
 
    void lock() {P(mutex); }
    void unlock() {V(mutex); }
-   void inc_use_count(void) {lock(); _use_count++; unlock(); }
-   void dec_use_count(void) {lock(); _use_count--; unlock(); }
-   int32_t use_count() const { return _use_count; }
-   void init_mutex(void) {pthread_mutex_init(&mutex, NULL); }
-   void destroy_mutex(void) {pthread_mutex_destroy(&mutex); }
-   bool is_job_canceled() { return job_canceled(this); }
-   bool is_canceled() { return job_canceled(this); }
-   bool is_terminated_ok() { return job_terminated_successfully(this); }
-   bool is_incomplete() { return JobStatus == JS_Incomplete; }
+   void IncUseCount(void) {lock(); _use_count++; unlock(); }
+   void DecUseCount(void) {lock(); _use_count--; unlock(); }
+   int32_t UseCount() const { return _use_count; }
+   void InitMutex(void) {pthread_mutex_init(&mutex, NULL); }
+   void DestroyMutex(void) {pthread_mutex_destroy(&mutex); }
+   bool IsJobCanceled() { return JobCanceled(this); }
+   bool IsCanceled() { return JobCanceled(this); }
+   bool IsTerminatedOk() { return JobTerminatedSuccessfully(this); }
+   bool IsIncomplete() { return JobStatus == JS_Incomplete; }
    bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; }
    bool is_JobType(int32_t JobType) { return JobType == JobType_; }
    bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus; }
@@ -318,12 +318,12 @@ public:
    int32_t getJobLevel() const { return JobLevel_; }
    int32_t getJobStatus() const { return JobStatus; }
    int32_t getJobProtocol() const { return Protocol_; }
-   bool no_client_used() const {
+   bool NoClientUsed() const {
       return (JobType_ == JT_MIGRATE ||
               JobType_ == JT_COPY ||
               JobLevel_ == L_VIRTUAL_FULL);
    }
-   bool is_plugin() const {
+   bool IsPlugin() const {
       return (cmd_plugin ||
               opt_plugin);
    }
@@ -333,9 +333,9 @@ public:
    bool sendJobStatus();                  /**< in lib/jcr.c */
    bool sendJobStatus(int newJobStatus);  /**< in lib/jcr.c */
    bool JobReads();                       /**< in lib/jcr.c */
-   void my_thread_send_signal(int sig);   /**< in lib/jcr.c */
-   void set_killable(bool killable);      /**< in lib/jcr.c */
-   bool is_killable() const { return my_thread_killable; }
+   void MyThreadSendSignal(int sig);   /**< in lib/jcr.c */
+   void SetKillable(bool killable);      /**< in lib/jcr.c */
+   bool IsKillable() const { return my_thread_killable; }
 
    /*
     * Global part of JobControlRecord common to all daemons
@@ -651,8 +651,8 @@ extern DLL_IMP_EXP dlist *last_jobs;
 /*
  * The following routines are found in lib/jcr.c
  */
-DLL_IMP_EXP extern int get_next_jobid_from_list(char **p, uint32_t *JobId);
-DLL_IMP_EXP extern bool init_jcr_subsystem(int timeout);
+DLL_IMP_EXP extern int GetNextJobidFromList(char **p, uint32_t *JobId);
+DLL_IMP_EXP extern bool InitJcrSubsystem(int timeout);
 DLL_IMP_EXP extern JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_id(uint32_t JobId);
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
@@ -664,15 +664,15 @@ DLL_IMP_EXP extern int DLL_IMP_EXP num_jobs_run;
 
 #ifdef DEBUG
 DLL_IMP_EXP extern void b_free_jcr(const char *file, int line, JobControlRecord *jcr);
-#define free_jcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
+#define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 #else
-extern void free_jcr(JobControlRecord *jcr);
+extern void FreeJcr(JobControlRecord *jcr);
 #endif
 
 /*
  * Used to display specific job information after a fatal signal
  */
 typedef void (dbg_jcr_hook_t)(JobControlRecord *jcr, FILE *fp);
-DLL_IMP_EXP extern void dbg_jcr_add_hook(dbg_jcr_hook_t *fct);
+DLL_IMP_EXP extern void DbgJcrAddHook(dbg_jcr_hook_t *fct);
 
 #endif /** BAREOS_INCLUDE_JCR_H_ */

@@ -115,7 +115,7 @@ ResourceItem options_items[] = {
 /**
  * determine used compression algorithms
  */
-void find_used_compressalgos(PoolMem *compressalgos, JobControlRecord *jcr)
+void FindUsedCompressalgos(PoolMem *compressalgos, JobControlRecord *jcr)
 {
    int cnt = 0;
    IncludeExcludeItem *inc;
@@ -170,7 +170,7 @@ void find_used_compressalgos(PoolMem *compressalgos, JobControlRecord *jcr)
 /**
  * Check if the configured options are valid.
  */
-static inline void is_in_permitted_set(LEX *lc, const char *set_type, const char *permitted_set)
+static inline void is_in_permitted_set(LEX *lc, const char *SetType, const char *permitted_set)
 {
    const char *p, *q;
    bool found;
@@ -186,7 +186,7 @@ static inline void is_in_permitted_set(LEX *lc, const char *set_type, const char
 
       if (!found) {
          scan_err3(lc, _("Illegal %s option %c, got option string: %s:"),
-                   set_type, *p, lc->str);
+                   SetType, *p, lc->str);
       }
    }
 }
@@ -207,7 +207,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
 
    memset(option, 0, sizeof(option));
    lc->options |= LOPT_STRING;             /* force string */
-   lex_get_token(lc, BCT_STRING);            /* expect at least one option */
+   LexGetToken(lc, BCT_STRING);            /* expect at least one option */
    if (keyword == INC_KW_VERIFY) {         /* special case */
       is_in_permitted_set(lc, _("verify"), PERMITTED_VERIFY_OPTIONS);
       bstrncat(opts, "V", optlen);         /* indicate Verify */
@@ -227,7 +227,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_STRIPPATH) { /* special case */
-      if (!is_an_integer(lc->str)) {
+      if (!IsAnInteger(lc->str)) {
          scan_err1(lc, _("Expected a strip path positive integer, got: %s:"), lc->str);
       }
       bstrncat(opts, "P", optlen);         /* indicate strip path */
@@ -235,7 +235,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_SIZE) { /* special case */
-      if (!parse_size_match(lc->str, &size_matching)) {
+      if (!ParseSizeMatch(lc->str, &size_matching)) {
          scan_err1(lc, _("Expected a parseable size, got: %s:"), lc->str);
       }
       bstrncat(opts, "z", optlen);         /* indicate size */
@@ -266,7 +266,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
     * If option terminated by comma, eat it
     */
    if (lc->ch == ',') {
-      lex_get_token(lc, BCT_ALL);      /* yes, eat comma */
+      LexGetToken(lc, BCT_ALL);      /* yes, eat comma */
    }
 }
 
@@ -281,7 +281,7 @@ static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
    const char *type;
    int newsize;
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup regex string
        */
@@ -317,7 +317,7 @@ static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
          scan_err1(lc, _("Expected a regex string, got: %s\n"), lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -326,14 +326,14 @@ static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    if (pass == 1) {
       /*
        * Pickup Base Job Name
        */
       res_incexe.current_opts->base.append(bstrdup(lc->str));
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -342,14 +342,14 @@ static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_plugin(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    if (pass == 1) {
       /*
        * Pickup plugin command
        */
       res_incexe.current_opts->plugin = bstrdup(lc->str);
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -361,7 +361,7 @@ static void store_wild(LEX *lc, ResourceItem *item, int index, int pass)
    const char *type;
    int newsize;
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /*
        * Pickup Wild-card string
@@ -396,7 +396,7 @@ static void store_wild(LEX *lc, ResourceItem *item, int index, int pass)
          scan_err1(lc, _("Expected a wild-card string, got: %s\n"), lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -406,7 +406,7 @@ static void store_fstype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup fstype string */
       switch (token) {
@@ -421,7 +421,7 @@ static void store_fstype(LEX *lc, ResourceItem *item, int index, int pass)
          scan_err1(lc, _("Expected a fstype string, got: %s\n"), lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -431,7 +431,7 @@ static void store_drivetype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup drivetype string */
       switch (token) {
@@ -446,14 +446,14 @@ static void store_drivetype(LEX *lc, ResourceItem *item, int index, int pass)
          scan_err1(lc, _("Expected a drivetype string, got: %s\n"), lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 static void store_meta(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup fstype string */
       switch (token) {
@@ -468,7 +468,7 @@ static void store_meta(LEX *lc, ResourceItem *item, int index, int pass)
          scan_err1(lc, _("Expected a meta string, got: %s\n"), lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -506,7 +506,7 @@ static void store_option(LEX *lc, ResourceItem *item, int index, int pass)
       Dmsg2(900, "new pass=%d incexe opts=%s\n", pass, res_incexe.current_opts->opts);
    }
 
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -548,7 +548,7 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
       scan_err0(lc, _("Options section not permitted in Exclude\n"));
       /* NOT REACHED */
    }
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (token != BCT_BOB) {
       scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
    }
@@ -557,7 +557,7 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
       setup_current_opts();
    }
 
-   while ((token = lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
+   while ((token = LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
       if (token == BCT_EOL) {
          continue;
       }
@@ -569,7 +569,7 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
       }
       for (i=0; options_items[i].name; i++) {
          if (bstrcasecmp(options_items[i].name, lc->str)) {
-            token = lex_get_token(lc, BCT_SKIP_EOL);
+            token = LexGetToken(lc, BCT_SKIP_EOL);
             if (token != BCT_EQUALS) {
                scan_err1(lc, _("expected an equals, got: %s"), lc->str);
             }
@@ -623,7 +623,7 @@ static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool e
    IncludeExcludeItem *incexe;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup Filename string
        */
@@ -649,7 +649,7 @@ static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool e
          scan_err1(lc, _("Expected a filename, got: %s"), lc->str);
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -667,7 +667,7 @@ static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, 
       scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
       /* NOT REACHED */
    }
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup Filename string
        */
@@ -694,7 +694,7 @@ static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, 
          /* NOT REACHED */
       }
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -710,7 +710,7 @@ static void store_excludedir(LEX *lc, ResourceItem *item, int index, int pass, b
       return;
    }
 
-   lex_get_token(lc, BCT_NAME);
+   LexGetToken(lc, BCT_NAME);
    if (pass == 1) {
       incexe = &res_incexe;
       if (incexe->ignoredir.size() == 0) {
@@ -719,7 +719,7 @@ static void store_excludedir(LEX *lc, ResourceItem *item, int index, int pass, b
       incexe->ignoredir.append(bstrdup(lc->str));
       Dmsg1(900, "Add to ignoredir_list %s\n", lc->str);
    }
-   scan_to_eol(lc);
+   ScanToEol(lc);
 }
 
 /**
@@ -742,7 +742,7 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
    }
    memset(&res_incexe, 0, sizeof(res_incexe));
    res_all->res_fs.new_include = true;
-   while ((token = lex_get_token(lc, BCT_SKIP_EOL)) != BCT_EOF) {
+   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
       if (token == BCT_EOB) {
          break;
       }
@@ -753,7 +753,7 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
          options = bstrcasecmp(lc->str, "options");
          if (bstrcasecmp(newinc_items[i].name, lc->str)) {
             if (!options) {
-               token = lex_get_token(lc, BCT_SKIP_EOL);
+               token = LexGetToken(lc, BCT_SKIP_EOL);
                if (token != BCT_EQUALS) {
                   scan_err1(lc, _("expected an equals, got: %s"), lc->str);
                }
@@ -808,9 +808,9 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
          Dmsg1(900, "num_excludes=%d\n", res_all->res_fs.num_excludes);
       }
    }
-   scan_to_eol(lc);
-   set_bit(index, res_all->hdr.item_present);
-   clear_bit(index, res_all->hdr.inherit_content);
+   ScanToEol(lc);
+   SetBit(index, res_all->hdr.item_present);
+   ClearBit(index, res_all->hdr.inherit_content);
 }
 
 /**
@@ -826,7 +826,7 @@ void store_inc(LEX *lc, ResourceItem *item, int index, int pass)
     *  new Include is followed immediately by open brace, whereas the
     *  old include has options following the Include.
     */
-   token = lex_get_token(lc, BCT_SKIP_EOL);
+   token = LexGetToken(lc, BCT_SKIP_EOL);
    if (token == BCT_BOB) {
       store_newinc(lc, item, index, pass);
       return;

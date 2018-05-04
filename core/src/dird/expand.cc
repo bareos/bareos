@@ -224,7 +224,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
    var_rc_t status = VAR_ERR_UNDEFINED_VARIABLE;
 
    buf.check_size(var_len + 1);
-   pm_memcpy(buf, var_ptr, var_len);
+   PmMemcpy(buf, var_ptr, var_len);
    (buf.c_str())[var_len] = 0;
 
    LockRes();
@@ -266,7 +266,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
                } else {
                   cr.WrapCounter[0] = 0;
                }
-               if (!jcr->db->update_counter_record(jcr, &cr)) {
+               if (!jcr->db->UpdateCounterRecord(jcr, &cr)) {
                   Jmsg(jcr, M_ERROR, 0, _("Count not update counter %s: ERR=%s\n"),
                        counter->name(), jcr->db->strerror());
                }
@@ -316,7 +316,7 @@ static var_rc_t lookup_var(var_t *ctx,
     * Look in environment
     */
    buf.check_size(var_len + 1);
-   pm_memcpy(buf, var_ptr, var_len);
+   PmMemcpy(buf, var_ptr, var_len);
    (buf.c_str())[var_len] = 0;
    Dmsg1(100, "Var=%s\n", buf.c_str());
 
@@ -426,11 +426,11 @@ static var_rc_t operate_var(var_t *var,
 
    if (op_len == 3 && bstrncmp(op_ptr, "inc", 3)) {
       buf.check_size(val_len + 1);
-      pm_memcpy(buf, arg_ptr, val_len);
+      PmMemcpy(buf, arg_ptr, val_len);
       (buf.c_str())[val_len] = 0;
       Dmsg1(100, "Arg=%s\n", buf.c_str());
 
-      pm_memcpy(buf, val_ptr, val_len);
+      PmMemcpy(buf, val_ptr, val_len);
       (buf.c_str())[val_len] = 0;
       Dmsg1(100, "Val=%s\n", buf.c_str());
 
@@ -455,7 +455,7 @@ static var_rc_t operate_var(var_t *var,
  * Returns: 0 on failure
  *          1 on success and exp has expanded input
  */
-int variable_expansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp)
+int VariableExpansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp)
 {
    var_t *var_ctx;
    var_rc_t status;
@@ -517,7 +517,7 @@ int variable_expansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp)
        goto bail_out;
    }
 
-   pm_strcpy(exp, outp);
+   PmStrcpy(exp, outp);
 
    rtn_stat = 1;
 

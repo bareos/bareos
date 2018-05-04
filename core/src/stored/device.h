@@ -22,13 +22,13 @@
 #ifndef BAREOS_STORED_DEVICE_H_
 #define BAREOS_STORED_DEVICE_H_
 
-bool open_device(DeviceControlRecord *dcr);
-bool first_open_device(DeviceControlRecord *dcr);
-bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries = 4);
-void set_start_vol_position(DeviceControlRecord *dcr);
-void set_new_volume_parameters(DeviceControlRecord *dcr);
-void set_new_file_parameters(DeviceControlRecord *dcr);
+bool OpenDevice(DeviceControlRecord *dcr);
+bool FirstOpenDevice(DeviceControlRecord *dcr);
+bool FixupDeviceBlockWriteError(DeviceControlRecord *dcr, int retries = 4);
+void SetStartVolPosition(DeviceControlRecord *dcr);
+void SetNewVolumeParameters(DeviceControlRecord *dcr);
+void SetNewFileParameters(DeviceControlRecord *dcr);
 BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceControlRecord *dcr);
-bool try_device_repositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr);
+bool TryDeviceRepositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr);
 
 #endif // BAREOS_STORED_DEVICE_H_

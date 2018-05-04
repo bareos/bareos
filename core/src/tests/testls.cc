@@ -35,7 +35,7 @@
 
 /* Dummy functions */
 int generate_job_event(JobControlRecord *jcr, const char *event) { return 1; }
-void generate_plugin_event(JobControlRecord *jcr, bEventType eventType, void *value) { }
+void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
 
 /* Global variables */
 int attrs = 0;
@@ -44,7 +44,7 @@ static JobControlRecord *jcr;
 static int num_files = 0;
 
 static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool);
-static void print_ls_output(char *fname, char *link, int type, struct stat *statp);
+static void PrintLsOutput(char *fname, char *link, int type, struct stat *statp);
 static int count_files(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
 
 static void usage()
@@ -86,7 +86,7 @@ int main(int argc, char *const *argv)
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   lmgr_init_thread();
+   LmgrInitThread();
 
    while ((ch = getopt(argc, argv, "ad:e:i:q?")) != -1) {
       switch (ch) {
@@ -130,17 +130,17 @@ int main(int argc, char *const *argv)
 
    ff = init_find_files();
    if (argc == 0 && !inc) {
-      add_fname_to_include_list(ff, 0, "/"); /* default to / */
+      AddFnameToIncludeList(ff, 0, "/"); /* default to / */
    } else {
       for (i=0; i < argc; i++) {
          if (bstrcmp(argv[i], "-")) {
              while (fgets(name, sizeof(name)-1, stdin)) {
-                strip_trailing_junk(name);
-                add_fname_to_include_list(ff, 0, name);
+                StripTrailingJunk(name);
+                AddFnameToIncludeList(ff, 0, name);
               }
               continue;
          }
-         add_fname_to_include_list(ff, 0, argv[i]);
+         AddFnameToIncludeList(ff, 0, argv[i]);
       }
    }
    if (inc) {
@@ -150,8 +150,8 @@ int main(int argc, char *const *argv)
          exit(1);
       }
       while (fgets(name, sizeof(name)-1, fd)) {
-         strip_trailing_junk(name);
-         add_fname_to_include_list(ff, 0, name);
+         StripTrailingJunk(name);
+         AddFnameToIncludeList(ff, 0, name);
       }
       fclose(fd);
    }
@@ -163,8 +163,8 @@ int main(int argc, char *const *argv)
          exit(1);
       }
       while (fgets(name, sizeof(name)-1, fd)) {
-         strip_trailing_junk(name);
-         add_fname_to_exclude_list(ff, name);
+         StripTrailingJunk(name);
+         AddFnameToExcludeList(ff, name);
       }
       fclose(fd);
    }
@@ -174,13 +174,13 @@ int main(int argc, char *const *argv)
       match_files(jcr, ff, print_file);
    }
    printf(_("Files seen = %d\n"), num_files);
-   term_include_exclude_files(ff);
-   term_find_files(ff);
+   TermIncludeExcludeFiles(ff);
+   TermFindFiles(ff);
 
-   free_jcr(jcr);
-   term_last_jobs_list();             /* free jcr chain */
-   close_memory_pool();
-   lmgr_cleanup_main();
+   FreeJcr(jcr);
+   TermLastJobsList();             /* free jcr chain */
+   CloseMemoryPool();
+   LmgrCleanupMain();
    sm_dump(false);
    exit(0);
 }
@@ -201,7 +201,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
    case FT_LNK:
    case FT_DIREND:
    case FT_SPEC:
-      print_ls_output(ff->fname, ff->link, ff->type, &ff->statp);
+      PrintLsOutput(ff->fname, ff->link, ff->type, &ff->statp);
       break;
    case FT_DIRBEGIN:
       break;
@@ -237,7 +237,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
    return 1;
 }
 
-static void print_ls_output(char *fname, char *link, int type, struct stat *statp)
+static void PrintLsOutput(char *fname, char *link, int type, struct stat *statp)
 {
    char buf[2000];
    char ec1[30];

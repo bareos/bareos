@@ -32,30 +32,30 @@
  * Some details of how volume and device reservations work
  *
  * class VolumeReservationItem:
- *   set_in_use()     volume being used on current drive
- *   clear_in_use()   no longer being used.  Can be re-used or moved.
- *   set_swapping()   set volume being moved to another drive
- *   is_swapping()    volume is being moved to another drive
- *   clear_swapping() volume normal
+ *   SetInUse()     volume being used on current drive
+ *   ClearInUse()   no longer being used.  Can be re-used or moved.
+ *   SetSwapping()   set volume being moved to another drive
+ *   IsSwapping()    volume is being moved to another drive
+ *   ClearSwapping() volume normal
  *
  * class Device:
- *   set_load()       set to load volume
- *   needs_load()     volume must be loaded (i.e. set_load done)
+ *   SetLoad()       set to load volume
+ *   needs_load()     volume must be loaded (i.e. SetLoad done)
  *   clear_load()     load done.
- *   set_unload()     set to unload volume
+ *   SetUnload()     set to unload volume
  *   needs_unload()    volume must be unloaded
- *   clear_unload()   volume unloaded
+ *   ClearUnload()   volume unloaded
  *
  *    reservations are temporary until the drive is acquired
- *   inc_reserved()   increments num of reservations
- *   dec_reserved()   decrements num of reservations
- *   num_reserved()   number of reservations
+ *   IncReserved()   increments num of reservations
+ *   DecReserved()   decrements num of reservations
+ *   NumReserved()   number of reservations
  *
  * class DeviceControlRecord:
- *   set_reserved()   sets local reserve flag and calls dev->inc_reserved()
- *   clear_reserved() clears local reserve flag and calls dev->dec_reserved()
- *   is_reserved()    returns local reserved flag
- *   unreserve_device()  much more complete unreservation
+ *   SetReserved()   sets local reserve flag and calls dev->IncReserved()
+ *   ClearReserved() clears local reserve flag and calls dev->DecReserved()
+ *   IsReserved()    returns local reserved flag
+ *   UnreserveDevice()  much more complete unreservation
  */
 
 #ifndef BAREOS_STORED_DEV_H_
@@ -70,7 +70,7 @@
 #undef DeviceControlRecord                            /* used by Bareos */
 
 /**
- * Return values from wait_for_sysop()
+ * Return values from WaitForSysop()
  */
 enum {
    W_ERROR = 1,
@@ -116,7 +116,7 @@ enum {
 };
 
 /**
- * Generic status bits returned from status_dev()
+ * Generic status bits returned from StatusDev()
  */
 enum {
    BMT_TAPE = 0,                      /**< Is tape device */
@@ -139,7 +139,7 @@ enum {
 /**
  * Make sure you have enough bits to store all above bit fields.
  */
-#define BMT_BYTES nbytes_for_bits(BMT_MAX + 1)
+#define BMT_BYTES NbytesForBits(BMT_MAX + 1)
 
 /**
  * Bits for device capabilities
@@ -182,14 +182,14 @@ enum {
 /**
  * Make sure you have enough bits to store all above bit fields.
  */
-#define CAP_BYTES nbytes_for_bits(CAP_MAX + 1)
+#define CAP_BYTES NbytesForBits(CAP_MAX + 1)
 
 /**
  * Device state bits
  */
 enum {
    ST_LABEL = 0,                      /**< Label found */
-   ST_MALLOC = 1,                     /**< Dev packet malloc'ed in init_dev() */
+   ST_MALLOC = 1,                     /**< Dev packet malloc'ed in InitDev() */
    ST_APPENDREADY = 2,                /**< Ready for Bareos append */
    ST_READREADY = 3,                  /**< Ready for Bareos read */
    ST_EOT = 4,                        /**< At end of tape */
@@ -212,7 +212,7 @@ enum {
 /**
  * Make sure you have enough bits to store all above bit fields.
  */
-#define ST_BYTES nbytes_for_bits(ST_MAX + 1)
+#define ST_BYTES NbytesForBits(ST_MAX + 1)
 
 /**
  * Volume Catalog Information structure definition
@@ -263,7 +263,7 @@ class DeviceControlRecord; /* Forward reference */
 class VolumeReservationItem; /* Forward reference */
 
 /**
- * Device specific status information either returned via Device::device_status()
+ * Device specific status information either returned via Device::DeviceStatus()
  * method of via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
  */
 typedef struct DeviceStatusTrigger {
@@ -313,7 +313,7 @@ public:
    int dev_type;                      /**< Device type */
    bool autoselect;                   /**< Autoselect in autochanger */
    bool norewindonclose;              /**< Don't rewind tape drive on close */
-   bool initiated;                    /**< Set when init_dev() called */
+   bool initiated;                    /**< Set when InitDev() called */
    int label_type;                    /**< Bareos/ANSI/IBM label types */
    drive_number_t drive;              /**< Autochanger logical drive number (base 0) */
    drive_number_t drive_index;        /**< Autochanger physical drive index (base 0) */
@@ -369,49 +369,49 @@ public:
    uint64_t DevReadBytes;
 
    /* Methods */
-   btime_t get_timer_count();         /**< Return the last timer interval (ms) */
+   btime_t GetTimerCount();         /**< Return the last timer interval (ms) */
 
-   bool has_cap(int cap) const { return bit_is_set(cap, capabilities) ; }
-   void clear_cap(int cap) { clear_bit(cap, capabilities); }
-   void set_cap(int cap) { set_bit(cap, capabilities);  }
-   bool do_checksum() const { return bit_is_set(CAP_BLOCKCHECKSUM, capabilities); }
-   bool is_autochanger() const { return bit_is_set(CAP_AUTOCHANGER, capabilities); }
-   bool requires_mount() const { return bit_is_set(CAP_REQMOUNT, capabilities); }
-   bool is_removable() const { return bit_is_set(CAP_REM, capabilities); }
-   bool is_tape() const { return (dev_type == B_TAPE_DEV); }
-   bool is_file() const { return (dev_type == B_FILE_DEV ||
+   bool HasCap(int cap) const { return BitIsSet(cap, capabilities) ; }
+   void ClearCap(int cap) { ClearBit(cap, capabilities); }
+   void SetCap(int cap) { SetBit(cap, capabilities);  }
+   bool DoChecksum() const { return BitIsSet(CAP_BLOCKCHECKSUM, capabilities); }
+   bool IsAutochanger() const { return BitIsSet(CAP_AUTOCHANGER, capabilities); }
+   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
+   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
+   bool IsTape() const { return (dev_type == B_TAPE_DEV); }
+   bool IsFile() const { return (dev_type == B_FILE_DEV ||
                                   dev_type == B_GFAPI_DEV ||
                                   dev_type == B_DROPLET_DEV ||
                                   dev_type == B_RADOS_DEV ||
                                   dev_type == B_CEPHFS_DEV ||
                                   dev_type == B_ELASTO_DEV); }
-   bool is_fifo() const { return dev_type == B_FIFO_DEV; }
-   bool is_vtl() const  { return dev_type == B_VTL_DEV; }
-   bool is_open() const { return fd_ >= 0; }
-   bool is_offline() const { return bit_is_set(ST_OFFLINE, state); }
-   bool is_labeled() const { return bit_is_set(ST_LABEL, state); }
-   bool is_mounted() const { return bit_is_set(ST_MOUNTED, state); }
-   bool is_unmountable() const { return ((is_file() && is_removable())); }
-   int num_reserved() const { return num_reserved_; }
-   bool is_part_spooled() const { return bit_is_set(ST_PART_SPOOLED, state); }
-   bool have_media() const { return bit_is_set(ST_MEDIA, state); }
-   bool is_short_block() const { return bit_is_set(ST_SHORT, state); }
-   bool is_busy() const { return bit_is_set(ST_READREADY, state) || num_writers || num_reserved(); }
-   bool at_eof() const { return bit_is_set(ST_EOF, state); }
-   bool at_eot() const { return bit_is_set(ST_EOT, state); }
-   bool at_weot() const { return bit_is_set(ST_WEOT, state); }
-   bool can_append() const { return bit_is_set(ST_APPENDREADY, state); }
-   bool is_crypto_enabled() const { return bit_is_set(ST_CRYPTOKEY, state); }
+   bool IsFifo() const { return dev_type == B_FIFO_DEV; }
+   bool IsVtl() const  { return dev_type == B_VTL_DEV; }
+   bool IsOpen() const { return fd_ >= 0; }
+   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
+   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
+   bool IsMounted() const { return BitIsSet(ST_MOUNTED, state); }
+   bool IsUnmountable() const { return ((IsFile() && IsRemovable())); }
+   int NumReserved() const { return num_reserved_; }
+   bool is_part_spooled() const { return BitIsSet(ST_PART_SPOOLED, state); }
+   bool have_media() const { return BitIsSet(ST_MEDIA, state); }
+   bool IsShortBlock() const { return BitIsSet(ST_SHORT, state); }
+   bool IsBusy() const { return BitIsSet(ST_READREADY, state) || num_writers || NumReserved(); }
+   bool AtEof() const { return BitIsSet(ST_EOF, state); }
+   bool AtEot() const { return BitIsSet(ST_EOT, state); }
+   bool AtWeot() const { return BitIsSet(ST_WEOT, state); }
+   bool CanAppend() const { return BitIsSet(ST_APPENDREADY, state); }
+   bool IsCryptoEnabled() const { return BitIsSet(ST_CRYPTOKEY, state); }
 
    /**
-    * can_write() is meant for checking at the end of a job to see
+    * CanWrite() is meant for checking at the end of a job to see
     * if we still have a tape (perhaps not if at end of tape
     * and the job is canceled).
     */
-   bool can_write() const { return is_open() && can_append() &&
-                                   is_labeled() && !at_weot(); }
-   bool can_read() const { return bit_is_set(ST_READREADY, state); }
-   bool can_steal_lock() const { return blocked_ &&
+   bool CanWrite() const { return IsOpen() && CanAppend() &&
+                                   IsLabeled() && !AtWeot(); }
+   bool CanRead() const { return BitIsSet(ST_READREADY, state); }
+   bool CanStealLock() const { return blocked_ &&
                     (blocked_ == BST_UNMOUNTED ||
                      blocked_ == BST_WAITING_FOR_SYSOP ||
                      blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); }
@@ -419,49 +419,49 @@ public:
                     (blocked_ == BST_UNMOUNTED ||
                      blocked_ == BST_WAITING_FOR_SYSOP ||
                      blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); }
-   bool must_unload() const { return unload_; }
+   bool MustUnload() const { return unload_; }
    bool must_load() const { return load_; }
    const char *strerror() const;
    const char *archive_name() const;
    const char *name() const;
    const char *print_name() const;    /**< Name for display purposes */
-   void set_eot() { set_bit(ST_EOT, state); }
-   void set_eof() { set_bit(ST_EOF, state); }
-   void set_append() { set_bit(ST_APPENDREADY, state); }
-   void set_labeled() { set_bit(ST_LABEL, state); }
-   inline void set_read() { set_bit(ST_READREADY, state); }
-   void set_offline() { set_bit(ST_OFFLINE, state); }
-   void set_mounted() { set_bit(ST_MOUNTED, state); }
-   void set_media() { set_bit(ST_MEDIA, state); }
-   void set_short_block() { set_bit(ST_SHORT, state); }
-   void set_crypto_enabled() { set_bit(ST_CRYPTOKEY, state); }
+   void SetEot() { SetBit(ST_EOT, state); }
+   void SetEof() { SetBit(ST_EOF, state); }
+   void SetAppend() { SetBit(ST_APPENDREADY, state); }
+   void SetLabeled() { SetBit(ST_LABEL, state); }
+   inline void SetRead() { SetBit(ST_READREADY, state); }
+   void set_offline() { SetBit(ST_OFFLINE, state); }
+   void SetMounted() { SetBit(ST_MOUNTED, state); }
+   void set_media() { SetBit(ST_MEDIA, state); }
+   void SetShortBlock() { SetBit(ST_SHORT, state); }
+   void SetCryptoEnabled() { SetBit(ST_CRYPTOKEY, state); }
    void set_part_spooled(int val) {
       if (val)
-         set_bit(ST_PART_SPOOLED, state);
+         SetBit(ST_PART_SPOOLED, state);
       else
-         clear_bit(ST_PART_SPOOLED, state);
+         ClearBit(ST_PART_SPOOLED, state);
    }
-   bool is_volume_to_unload() const { \
+   bool IsVolumeToUnload() const { \
       return unload_ && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; }
-   void set_load() { load_ = true; }
-   void inc_reserved() { num_reserved_++; }
-   void dec_reserved() { num_reserved_--; ASSERT(num_reserved_>=0); }
-   void clear_append() { clear_bit(ST_APPENDREADY, state); }
-   void clear_read() { clear_bit(ST_READREADY, state); }
-   void clear_labeled() { clear_bit(ST_LABEL, state); }
-   void clear_offline() { clear_bit(ST_OFFLINE, state); }
-   void clear_eot() { clear_bit(ST_EOT, state); }
-   void clear_eof() { clear_bit(ST_EOF, state); }
-   void clear_opened() { fd_ = -1; }
-   void clear_mounted() { clear_bit(ST_MOUNTED, state); }
-   void clear_media() { clear_bit(ST_MEDIA, state); }
-   void clear_short_block() { clear_bit(ST_SHORT, state); }
-   void clear_crypto_enabled() { clear_bit(ST_CRYPTOKEY, state); }
-   void clear_unload() { unload_ = false; UnloadVolName[0] = 0; }
+   void SetLoad() { load_ = true; }
+   void IncReserved() { num_reserved_++; }
+   void DecReserved() { num_reserved_--; ASSERT(num_reserved_>=0); }
+   void ClearAppend() { ClearBit(ST_APPENDREADY, state); }
+   void ClearRead() { ClearBit(ST_READREADY, state); }
+   void ClearLabeled() { ClearBit(ST_LABEL, state); }
+   void clear_offline() { ClearBit(ST_OFFLINE, state); }
+   void ClearEot() { ClearBit(ST_EOT, state); }
+   void ClearEof() { ClearBit(ST_EOF, state); }
+   void ClearOpened() { fd_ = -1; }
+   void ClearMounted() { ClearBit(ST_MOUNTED, state); }
+   void clear_media() { ClearBit(ST_MEDIA, state); }
+   void ClearShortBlock() { ClearBit(ST_SHORT, state); }
+   void ClearCryptoEnabled() { ClearBit(ST_CRYPTOKEY, state); }
+   void ClearUnload() { unload_ = false; UnloadVolName[0] = 0; }
    void clear_load() { load_ = false; }
    char *bstrerror(void) { return errmsg; }
    char *print_errmsg() { return errmsg; }
-   slot_number_t get_slot() const { return slot_; }
+   slot_number_t GetSlot() const { return slot_; }
    void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; }
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; }
    void setVolCatName(const char *name) {
@@ -471,8 +471,8 @@ public:
    char *getVolCatName() { return VolCatInfo.VolCatName; }
 
    const char *mode_to_str(int mode);
-   void set_unload();
-   void clear_volhdr();
+   void SetUnload();
+   void ClearVolhdr();
    bool close(DeviceControlRecord *dcr);
    bool open(DeviceControlRecord *dcr, int mode);
    void term();
@@ -480,17 +480,17 @@ public:
    ssize_t write(const void *buf, size_t len);
    bool mount(DeviceControlRecord *dcr, int timeout);
    bool unmount(DeviceControlRecord *dcr, int timeout);
-   void edit_mount_codes(PoolMem &omsg, const char *imsg);
-   bool offline_or_rewind();
+   void EditMountCodes(PoolMem &omsg, const char *imsg);
+   bool OfflineOrRewind();
    bool scan_dir_for_volume(DeviceControlRecord *dcr);
-   void set_slot(slot_number_t slot);
-   void clear_slot();
+   void SetSlot(slot_number_t slot);
+   void ClearSlot();
 
-   void set_blocksizes(DeviceControlRecord* dcr);
-   void set_label_blocksize(DeviceControlRecord* dcr);
+   void SetBlocksizes(DeviceControlRecord* dcr);
+   void SetLabelBlocksize(DeviceControlRecord* dcr);
 
-   uint32_t get_file() const { return file; }
-   uint32_t get_block_num() const { return block_num; }
+   uint32_t GetFile() const { return file; }
+   uint32_t GetBlockNum() const { return block_num; }
    int fd() const { return fd_; }
 
    /*
@@ -502,27 +502,27 @@ public:
    virtual bool bsf(int num) { return false; }
    virtual bool fsr(int num) { return false; }
    virtual bool bsr(int num) { return false; }
-   virtual bool load_dev() { return true; }
-   virtual void lock_door() {};
-   virtual void unlock_door() {};
+   virtual bool LoadDev() { return true; }
+   virtual void LockDoor() {};
+   virtual void UnlockDoor() {};
    virtual void clrerror(int func) {};
-   virtual void set_os_device_parameters(DeviceControlRecord *dcr) {};
-   virtual int32_t get_os_tape_file() { return -1; }
+   virtual void SetOsDeviceParameters(DeviceControlRecord *dcr) {};
+   virtual int32_t GetOsTapeFile() { return -1; }
 
    /*
     * Generic operations.
     */
-   virtual void open_device(DeviceControlRecord *dcr, int omode);
-   virtual char *status_dev();
+   virtual void OpenDevice(DeviceControlRecord *dcr, int omode);
+   virtual char *StatusDev();
    virtual bool eod(DeviceControlRecord *dcr);
-   virtual void set_ateof();
-   virtual void set_ateot();
+   virtual void SetAteof();
+   virtual void SetAteot();
    virtual bool rewind(DeviceControlRecord *dcr);
-   virtual bool update_pos(DeviceControlRecord *dcr);
+   virtual bool UpdatePos(DeviceControlRecord *dcr);
    virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
-   virtual bool mount_backend(DeviceControlRecord *dcr, int timeout) { return true; }
-   virtual bool unmount_backend(DeviceControlRecord *dcr, int timeout) { return true; }
-   virtual bool device_status(bsdDevStatTrig *dst) { return false; }
+   virtual bool MountBackend(DeviceControlRecord *dcr, int timeout) { return true; }
+   virtual bool UnmountBackend(DeviceControlRecord *dcr, int timeout) { return true; }
+   virtual bool DeviceStatus(bsdDevStatTrig *dst) { return false; }
    boffset_t lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); }
    bool truncate(DeviceControlRecord *dcr) { return d_truncate(dcr); }
 
@@ -561,18 +561,18 @@ public:
    void Lock_VolCatInfo();
    void Unlock_VolCatInfo();
 #endif
-   int init_mutex();
-   int init_acquire_mutex();
-   int init_read_acquire_mutex();
+   int InitMutex();
+   int InitAcquireMutex();
+   int InitReadAcquireMutex();
    int init_volcat_mutex();
-   void set_mutex_priorities();
+   void SetMutexPriorities();
    int next_vol_timedwait(const struct timespec *timeout);
    void dblock(int why);
    void dunblock(bool locked = false);
-   bool is_device_unmounted();
-   void set_blocked(int block) { blocked_ = block; }
+   bool IsDeviceUnmounted();
+   void SetBlocked(int block) { blocked_ = block; }
    int blocked() const { return blocked_; }
-   bool is_blocked() const { return blocked_ != BST_NOT_BLOCKED; }
+   bool IsBlocked() const { return blocked_ != BST_NOT_BLOCKED; }
    const char *print_blocked() const;
 
 protected:
@@ -669,21 +669,21 @@ public:
    /*
     * Methods
     */
-   void set_dev(Device *ndev) { dev = ndev; }
-   void set_found_in_use() { found_in_use_ = true; }
-   void set_will_write() { will_write_ = true; }
+   void SetDev(Device *ndev) { dev = ndev; }
+   void SetFoundInUse() { found_in_use_ = true; }
+   void SetWillWrite() { will_write_ = true; }
    void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; }
 
-   void clear_found_in_use() { found_in_use_ = false; }
+   void ClearFoundInUse() { found_in_use_ = false; }
    void clear_will_write() { will_write_ = false; }
 
-   bool is_reserved() const { return reserved_; }
-   bool is_dev_locked() { return dev_locked_; }
-   bool is_writing() const { return will_write_; }
+   bool IsReserved() const { return reserved_; }
+   bool IsDevLocked() { return dev_locked_; }
+   bool IsWriting() const { return will_write_; }
 
-   void inc_dev_lock() { dev_lock_++; }
-   void dec_dev_lock() { dev_lock_--; }
-   bool found_in_use() const { return found_in_use_; }
+   void IncDevLock() { dev_lock_++; }
+   void DecDevLock() { dev_lock_--; }
+   bool FoundInUse() const { return found_in_use_; }
 
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; }
    void setVolCatName(const char *name) {
@@ -696,13 +696,13 @@ public:
     * Methods in askdir.c
     */
    virtual DeviceControlRecord *get_new_spooling_dcr();
-   virtual bool dir_find_next_appendable_volume() { return true; }
-   virtual bool dir_update_volume_info(bool label, bool update_LastWritten) { return true; }
-   virtual bool dir_create_jobmedia_record(bool zero) { return true; }
-   virtual bool dir_update_file_attributes(DeviceRecord *record) { return true; }
-   virtual bool dir_ask_sysop_to_mount_volume(int mode);
-   virtual bool dir_ask_sysop_to_create_appendable_volume() { return true; }
-   virtual bool dir_get_volume_info(enum get_vol_info_rw writing);
+   virtual bool DirFindNextAppendableVolume() { return true; }
+   virtual bool DirUpdateVolumeInfo(bool label, bool update_LastWritten) { return true; }
+   virtual bool DirCreateJobmediaRecord(bool zero) { return true; }
+   virtual bool DirUpdateFileAttributes(DeviceRecord *record) { return true; }
+   virtual bool DirAskSysopToMountVolume(int mode);
+   virtual bool DirAskSysopToCreateAppendableVolume() { return true; }
+   virtual bool DirGetVolumeInfo(enum get_vol_info_rw writing);
 
    /*
     * Methods in lock.c
@@ -719,46 +719,46 @@ public:
    /*
     * Methods in record.c
     */
-   bool write_record();
+   bool WriteRecord();
 
    /*
     * Methods in reserve.c
     */
-   void clear_reserved();
-   void set_reserved();
-   void unreserve_device();
+   void ClearReserved();
+   void SetReserved();
+   void UnreserveDevice();
 
    /*
     * Methods in vol_mgr.c
     */
-   bool can_i_use_volume();
-   bool can_i_write_volume();
+   bool Can_i_use_volume();
+   bool Can_i_write_volume();
 
    /*
     * Methods in mount.c
     */
-   bool mount_next_write_volume();
-   bool mount_next_read_volume();
-   void mark_volume_in_error();
+   bool MountNextWriteVolume();
+   bool MountNextReadVolume();
+   void MarkVolumeInError();
    void mark_volume_not_inchanger();
-   int try_autolabel(bool opened);
+   int TryAutolabel(bool opened);
    bool find_a_volume();
-   bool is_suitable_volume_mounted();
+   bool IsSuitableVolumeMounted();
    bool is_eod_valid();
    int check_volume_label(bool &ask, bool &autochanger);
-   void release_volume();
-   void do_swapping(bool is_writing);
-   bool do_unload();
-   bool do_load(bool is_writing);
-   bool is_tape_position_ok();
+   void ReleaseVolume();
+   void DoSwapping(bool IsWriting);
+   bool DoUnload();
+   bool DoLoad(bool IsWriting);
+   bool IsTapePositionOk();
 
    /*
     * Methods in block.c
     */
-   bool write_block_to_device();
-   bool write_block_to_dev();
-   bool read_block_from_device(bool check_block_numbers);
-   bool read_block_from_dev(bool check_block_numbers);
+   bool WriteBlockToDevice();
+   bool WriteBlockToDev();
+   bool ReadBlockFromDevice(bool check_block_numbers);
+   bool ReadBlockFromDev(bool check_block_numbers);
 
    /*
     * Methods in label.c
@@ -776,13 +776,13 @@ public:
    /*
     * Methods overriding default implementations.
     */
-   bool dir_find_next_appendable_volume();
-   bool dir_update_volume_info(bool label, bool update_LastWritten);
-   bool dir_create_jobmedia_record(bool zero);
-   bool dir_update_file_attributes(DeviceRecord *record);
-   bool dir_ask_sysop_to_mount_volume(int mode);
-   bool dir_ask_sysop_to_create_appendable_volume();
-   bool dir_get_volume_info(enum get_vol_info_rw writing);
+   bool DirFindNextAppendableVolume();
+   bool DirUpdateVolumeInfo(bool label, bool update_LastWritten);
+   bool DirCreateJobmediaRecord(bool zero);
+   bool DirUpdateFileAttributes(DeviceRecord *record);
+   bool DirAskSysopToMountVolume(int mode);
+   bool DirAskSysopToCreateAppendableVolume();
+   bool DirGetVolumeInfo(enum get_vol_info_rw writing);
    DeviceControlRecord *get_new_spooling_dcr();
 };
 
@@ -796,23 +796,23 @@ public:
    /*
     * Methods overriding default implementations.
     */
-   bool dir_find_next_appendable_volume();
-   bool dir_create_jobmedia_record(bool zero);
-   bool dir_ask_sysop_to_mount_volume(int mode);
-   bool dir_ask_sysop_to_create_appendable_volume();
+   bool DirFindNextAppendableVolume();
+   bool DirCreateJobmediaRecord(bool zero);
+   bool DirAskSysopToMountVolume(int mode);
+   bool DirAskSysopToCreateAppendableVolume();
    DeviceControlRecord *get_new_spooling_dcr();
 };
 
-Device *init_dev(JobControlRecord *jcr, DeviceResource *device);
+Device *InitDev(JobControlRecord *jcr, DeviceResource *device);
 bool can_open_mounted_dev(Device *dev);
-bool load_dev(Device *dev);
+bool LoadDev(Device *dev);
 int write_block(Device *dev);
 void attach_jcr_to_device(Device *dev, JobControlRecord *jcr);
 void detach_jcr_from_device(Device *dev, JobControlRecord *jcr);
 JobControlRecord *next_attached_jcr(Device *dev, JobControlRecord *jcr);
-void init_device_wait_timers(DeviceControlRecord *dcr);
-void init_jcr_device_wait_timers(JobControlRecord *jcr);
-bool double_dev_wait_time(Device *dev);
+void InitDeviceWaitTimers(DeviceControlRecord *dcr);
+void InitJcrDeviceWaitTimers(JobControlRecord *jcr);
+bool DoubleDevWaitTime(Device *dev);
 
 /*
  * Get some definition of function to position to the end of the medium in MTEOM. System dependent.

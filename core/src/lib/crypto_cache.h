@@ -45,14 +45,14 @@ struct crypto_cache_entry_t {
    utime_t added;
 };
 
-DLL_IMP_EXP void read_crypto_cache(const char *dir, const char *progname, int port);
-DLL_IMP_EXP void read_crypto_cache(const char *cache_file);
-DLL_IMP_EXP void write_crypto_cache(const char *dir, const char *progname, int port);
-DLL_IMP_EXP void write_crypto_cache(const char *cache_file);
-DLL_IMP_EXP bool update_crypto_cache(const char *VolumeName, const char *EncryptionKey);
+DLL_IMP_EXP void ReadCryptoCache(const char *dir, const char *progname, int port);
+DLL_IMP_EXP void ReadCryptoCache(const char *cache_file);
+DLL_IMP_EXP void WriteCryptoCache(const char *dir, const char *progname, int port);
+DLL_IMP_EXP void WriteCryptoCache(const char *cache_file);
+DLL_IMP_EXP bool UpdateCryptoCache(const char *VolumeName, const char *EncryptionKey);
 DLL_IMP_EXP char *lookup_crypto_cache_entry(const char *VolumeName);
 DLL_IMP_EXP void dump_crypto_cache(int fd);
 DLL_IMP_EXP void reset_crypto_cache(void);
-DLL_IMP_EXP void flush_crypto_cache(void);
+DLL_IMP_EXP void FlushCryptoCache(void);
 
 #endif /* BAREOS_LIB_CRYPTO_CACHE_H_ */

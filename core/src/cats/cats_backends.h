@@ -87,9 +87,9 @@ static struct backend_interface_mapping_t {
 };
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-DLL_IMP_EXP void db_set_backend_dirs(alist *new_backend_dirs);
+DLL_IMP_EXP void DbSetBackendDirs(alist *new_backend_dirs);
 #endif
-DLL_IMP_EXP void db_flush_backends(void);
+DLL_IMP_EXP void DbFlushBackends(void);
 DLL_IMP_EXP BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,

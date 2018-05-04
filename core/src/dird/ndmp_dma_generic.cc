@@ -83,7 +83,7 @@ ndmp_backup_format_option *ndmp_lookup_backup_format_options(const char *backup_
 /**
  * Validation functions.
  */
-bool ndmp_validate_client(JobControlRecord *jcr)
+bool NdmpValidateClient(JobControlRecord *jcr)
 {
    switch (jcr->res.client->Protocol) {
    case APT_NDMPV2:
@@ -106,7 +106,7 @@ bool ndmp_validate_client(JobControlRecord *jcr)
    return true;
 }
 
-static inline bool ndmp_validate_storage(JobControlRecord *jcr, StoreResource *store)
+static inline bool NdmpValidateStorage(JobControlRecord *jcr, StorageResource *store)
 {
    switch (store->Protocol) {
    case APT_NDMPV2:
@@ -128,19 +128,19 @@ static inline bool ndmp_validate_storage(JobControlRecord *jcr, StoreResource *s
    return true;
 }
 
-bool ndmp_validate_storage(JobControlRecord *jcr)
+bool NdmpValidateStorage(JobControlRecord *jcr)
 {
-   StoreResource *store;
+   StorageResource *store;
 
    if (jcr->res.wstorage) {
       foreach_alist(store, jcr->res.wstorage) {
-         if (!ndmp_validate_storage(jcr, store)) {
+         if (!NdmpValidateStorage(jcr, store)) {
             return false;
          }
       }
    } else {
       foreach_alist(store, jcr->res.rstorage) {
-         if (!ndmp_validate_storage(jcr, store)) {
+         if (!NdmpValidateStorage(jcr, store)) {
             return false;
          }
       }
@@ -149,7 +149,7 @@ bool ndmp_validate_storage(JobControlRecord *jcr)
    return true;
 }
 
-bool ndmp_validate_job(JobControlRecord *jcr, struct ndm_job_param *job)
+bool NdmpValidateJob(JobControlRecord *jcr, struct ndm_job_param *job)
 {
    int n_err, i;
    char audit_buffer[256];
@@ -254,7 +254,7 @@ static inline bool fill_ndmp_agent_config(JobControlRecord *jcr,
 /**
  * Parse a meta-tag and convert it into a ndmp_pval
  */
-void ndmp_parse_meta_tag(struct ndm_env_table *env_tab, char *meta_tag)
+void NdmpParseMetaTag(struct ndm_env_table *env_tab, char *meta_tag)
 {
    char *p;
    ndmp9_pval pv;
@@ -284,7 +284,7 @@ void ndmp_parse_meta_tag(struct ndm_env_table *env_tab, char *meta_tag)
  * Calculate the wanted NDMP loglevel from the current debug level and
  * any configure minimum level.
  */
-int native_to_ndmp_loglevel(int NdmpLoglevel, int debuglevel, NIS *nis)
+int NativeToNdmpLoglevel(int NdmpLoglevel, int debuglevel, NIS *nis)
 {
    unsigned int level;
 
@@ -314,9 +314,9 @@ int native_to_ndmp_loglevel(int NdmpLoglevel, int debuglevel, NIS *nis)
    return level;
 }
 
-bool ndmp_build_client_job(JobControlRecord *jcr,
+bool NdmpBuildClientJob(JobControlRecord *jcr,
                            ClientResource *client,
-                           StoreResource *store,
+                           StorageResource *store,
                            int operation,
                            struct ndm_job_param *job)
 {
@@ -389,8 +389,8 @@ bail_out:
 
 
 
-bool ndmp_build_storage_job(JobControlRecord *jcr,
-                            StoreResource *store,
+bool NdmpBuildStorageJob(JobControlRecord *jcr,
+                            StorageResource *store,
                             bool init_tape,
                             bool init_robot,
                             int operation,
@@ -442,8 +442,8 @@ bail_out:
    return false;
 }
 
-bool ndmp_build_client_and_storage_job(JobControlRecord *jcr,
-                            StoreResource *store,
+bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr,
+                            StorageResource *store,
                             ClientResource *client,
                             bool init_tape,
                             bool init_robot,
@@ -454,7 +454,7 @@ bool ndmp_build_client_and_storage_job(JobControlRecord *jcr,
     * setup storage job
     * i.e. setup tape_agent and robot_agent
     */
-   if ( !ndmp_build_storage_job(jcr, store, init_tape, init_robot,
+   if ( !NdmpBuildStorageJob(jcr, store, init_tape, init_robot,
             operation, job) ) {
       goto bail_out;
    }
@@ -487,7 +487,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
    /*
     * We don't want any trailing newline in log messages.
     */
-   strip_trailing_newline(msg);
+   StripTrailingNewline(msg);
 
    /*
     * Make sure if the logging system was setup properly.
@@ -568,7 +568,7 @@ extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int le
       return;
    }
 
-   nis->ua->send_msg("%s\n", msg);
+   nis->ua->SendMsg("%s\n", msg);
 }
 
 /**
@@ -576,7 +576,7 @@ extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int le
  * operation. Callback is the above ndmp_client_status_handler which prints
  * the data to the user context.
  */
-void ndmp_do_query(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
+void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
 {
    NIS *nis;
    struct ndm_session ndmp_sess;
@@ -593,7 +593,7 @@ void ndmp_do_query(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
    ndmp_sess.param->log.deliver = ndmp_client_status_handler;
    nis = (NIS *)malloc(sizeof(NIS));
    memset(nis, 0, sizeof(NIS));
-   ndmp_sess.param->log_level = native_to_ndmp_loglevel(NdmpLoglevel, debug_level, nis);
+   ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
    nis->ua = ua;
    ndmp_sess.param->log.ctx = nis;
    ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
@@ -609,7 +609,7 @@ void ndmp_do_query(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
     * Copy the actual job to perform.
     */
    memcpy(&ndmp_sess.control_acb->job, ndmp_job, sizeof(struct ndm_job_param));
-   if (!ndmp_validate_job(ua->jcr, &ndmp_sess.control_acb->job)) {
+   if (!NdmpValidateJob(ua->jcr, &ndmp_sess.control_acb->job)) {
       goto cleanup;
    }
 
@@ -658,7 +658,7 @@ bail_out:
  * Output the status of a NDMP client. Query the DATA agent of a
  * native NDMP server to give some info.
  */
-void do_ndmp_client_status(UaContext *ua, ClientResource *client, char *cmd)
+void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
 {
    struct ndm_job_param ndmp_job;
 
@@ -676,12 +676,12 @@ void do_ndmp_client_status(UaContext *ua, ClientResource *client, char *cmd)
       return;
    }
 
-   ndmp_do_query(ua, &ndmp_job,
+   NdmpDoQuery(ua, &ndmp_job,
                  (client->ndmp_loglevel > me->ndmp_loglevel) ? client->ndmp_loglevel :
                                                                me->ndmp_loglevel);
 }
 #else
-void do_ndmp_client_status(UaContext *ua, ClientResource *client, char *cmd)
+void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

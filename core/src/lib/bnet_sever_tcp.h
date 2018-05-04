@@ -21,7 +21,7 @@
 #ifndef BAREOS_LIB_BNET_SEVER_TCP_H_
 #define BAREOS_LIB_BNET_SEVER_TCP_H_
 
-DLL_IMP_EXP void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
+DLL_IMP_EXP void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq);
 DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
                             int max_clients,
                             alist *sockfds,

@@ -37,7 +37,7 @@
  * Obviously, no zzz_dev() is allowed to call
  * a www_device() or everything falls apart.
  *
- * Concerning the routines dev->r_lock()() and block_device()
+ * Concerning the routines dev->r_lock()() and BlockDevice()
  * see the end of this module for details.  In general,
  * blocking a device leaves it in a state where all threads
  * other than the current thread block when they attempt to
@@ -79,7 +79,7 @@
  *  Returns: true  on success
  *           false on failure
  */
-bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries)
+bool FixupDeviceBlockWriteError(DeviceControlRecord *dcr, int retries)
 {
    char PrevVolName[MAX_NAME_LENGTH];
    DeviceBlock *block;
@@ -93,15 +93,15 @@ bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries)
 
    wait_time = time(NULL);
 
-   Dmsg0(100, "=== Enter fixup_device_block_write_error\n");
+   Dmsg0(100, "=== Enter FixupDeviceBlockWriteError\n");
 
    /*
     * If we are blocked at entry, unblock it, and set our own block status
     */
    if (blocked != BST_NOT_BLOCKED) {
-      unblock_device(dev);
+      UnblockDevice(dev);
    }
-   block_device(dev, BST_DOING_ACQUIRE);
+   BlockDevice(dev, BST_DOING_ACQUIRE);
 
    /* Continue unlocked, but leave BLOCKED */
    dev->Unlock();
@@ -119,19 +119,19 @@ bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries)
         edit_uint64_with_commas(dev->VolCatInfo.VolCatBlocks, b2),
         bstrftime(dt, sizeof(dt), time(NULL)));
 
-   Dmsg1(050, "set_unload dev=%s\n", dev->print_name());
-   dev->set_unload();
-   if (!dcr->mount_next_write_volume()) {
-      free_block(dcr->block);
+   Dmsg1(050, "SetUnload dev=%s\n", dev->print_name());
+   dev->SetUnload();
+   if (!dcr->MountNextWriteVolume()) {
+      FreeBlock(dcr->block);
       dcr->block = block;
       dev->Lock();
       goto bail_out;
    }
-   Dmsg2(050, "must_unload=%d dev=%s\n", dev->must_unload(), dev->print_name());
+   Dmsg2(050, "MustUnload=%d dev=%s\n", dev->MustUnload(), dev->print_name());
    dev->Lock();                     /* lock again */
 
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
-   dcr->dir_update_volume_info(false, false); /* send Volume info to Director */
+   dcr->DirUpdateVolumeInfo(false, false); /* send Volume info to Director */
 
    Jmsg(jcr, M_INFO, 0, _("New volume \"%s\" mounted on device %s at %s.\n"),
         dcr->VolumeName, dev->print_name(), bstrftime(dt, sizeof(dt), time(NULL)));
@@ -139,19 +139,19 @@ bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries)
    /*
     * If this is a new tape, the label_blk will contain the
     *  label, so write it now. If this is a previously
-    *  used tape, mount_next_write_volume() will return an
+    *  used tape, MountNextWriteVolume() will return an
     *  empty label_blk, and nothing will be written.
     */
    Dmsg0(190, "write label block to dev\n");
-   if (!dcr->write_block_to_dev()) {
+   if (!dcr->WriteBlockToDev()) {
       berrno be;
-      Pmsg1(0, _("write_block_to_device Volume label failed. ERR=%s"),
+      Pmsg1(0, _("WriteBlockToDevice Volume label failed. ERR=%s"),
             be.bstrerror(dev->dev_errno));
-      free_block(dcr->block);
+      FreeBlock(dcr->block);
       dcr->block = block;
       goto bail_out;
    }
-   free_block(dcr->block);
+   FreeBlock(dcr->block);
    dcr->block = block;
 
    /*
@@ -170,20 +170,20 @@ bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries)
       }
    }
 
-   /* Clear NewVol now because dir_get_volume_info() already done */
+   /* Clear NewVol now because DirGetVolumeInfo() already done */
    jcr->dcr->NewVol = false;
-   set_new_volume_parameters(dcr);
+   SetNewVolumeParameters(dcr);
 
    jcr->run_time += time(NULL) - wait_time; /* correct run time for mount wait */
 
    /* Write overflow block to device */
    Dmsg0(190, "Write overflow block to dev\n");
-   if (!dcr->write_block_to_dev()) {
+   if (!dcr->WriteBlockToDev()) {
       berrno be;
-      Dmsg1(0, _("write_block_to_device overflow block failed. ERR=%s"),
+      Dmsg1(0, _("WriteBlockToDevice overflow block failed. ERR=%s"),
         be.bstrerror(dev->dev_errno));
       /* Note: recursive call */
-      if (retries-- <= 0 || !fixup_device_block_write_error(dcr, retries)) {
+      if (retries-- <= 0 || !FixupDeviceBlockWriteError(dcr, retries)) {
          Jmsg2(jcr, M_FATAL, 0,
                _("Catastrophic error. Cannot write overflow block to device %s. ERR=%s"),
                dev->print_name(), be.bstrerror(dev->dev_errno));
@@ -198,18 +198,18 @@ bail_out:
     * Unblock the device, restore any entry blocked condition, then
     *   return leaving the device locked (as it was on entry).
     */
-   unblock_device(dev);
+   UnblockDevice(dev);
    if (blocked != BST_NOT_BLOCKED) {
-      block_device(dev, blocked);
+      BlockDevice(dev, blocked);
    }
    return ok;                               /* device locked */
 }
 
-void set_start_vol_position(DeviceControlRecord *dcr)
+void SetStartVolPosition(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    /* Set new start position */
-   if (dev->is_tape()) {
+   if (dev->IsTape()) {
       dcr->StartBlock = dev->block_num;
       dcr->StartFile = dev->file;
    } else {
@@ -223,13 +223,13 @@ void set_start_vol_position(DeviceControlRecord *dcr)
  *  concerning this job.  The global changes were made earlier
  *  in the dev structure.
  */
-void set_new_volume_parameters(DeviceControlRecord *dcr)
+void SetNewVolumeParameters(DeviceControlRecord *dcr)
 {
    JobControlRecord *jcr = dcr->jcr;
-   if (dcr->NewVol && !dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
+   if (dcr->NewVol && !dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) {
       Jmsg1(jcr, M_ERROR, 0, "%s", jcr->errmsg);
    }
-   set_new_file_parameters(dcr);
+   SetNewFileParameters(dcr);
    jcr->NumWriteVolumes++;
    dcr->NewVol = false;
 }
@@ -239,9 +239,9 @@ void set_new_volume_parameters(DeviceControlRecord *dcr)
  *  concerning this job.  The global changes were made earlier
  *  in the dev structure.
  */
-void set_new_file_parameters(DeviceControlRecord *dcr)
+void SetNewFileParameters(DeviceControlRecord *dcr)
 {
-   set_start_vol_position(dcr);
+   SetStartVolPosition(dcr);
 
    /* Reset indicies */
    dcr->VolFirstIndex = 0;
@@ -264,7 +264,7 @@ void set_new_file_parameters(DeviceControlRecord *dcr)
  *   Returns: false on failure
  *            true  on success
  */
-bool first_open_device(DeviceControlRecord *dcr)
+bool FirstOpenDevice(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    bool ok = true;
@@ -277,13 +277,13 @@ bool first_open_device(DeviceControlRecord *dcr)
    dev->rLock();
 
    /* Defer opening files */
-   if (!dev->is_tape()) {
+   if (!dev->IsTape()) {
       Dmsg0(129, "Device is file, deferring open.\n");
       goto bail_out;
    }
 
     int mode;
-    if (dev->has_cap(CAP_STREAM)) {
+    if (dev->HasCap(CAP_STREAM)) {
        mode = OPEN_WRITE_ONLY;
     } else {
        mode = OPEN_READ_ONLY;
@@ -304,19 +304,19 @@ bail_out:
 /**
  * Make sure device is open, if not do so
  */
-bool open_device(DeviceControlRecord *dcr)
+bool OpenDevice(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    /* Open device */
    int mode;
-   if (dev->has_cap(CAP_STREAM)) {
+   if (dev->HasCap(CAP_STREAM)) {
       mode = OPEN_WRITE_ONLY;
    } else {
       mode = OPEN_READ_WRITE;
    }
    if (!dev->open(dcr, mode)) {
       /* If polling, ignore the error */
-      if (!dev->poll && !dev->is_removable()) {
+      if (!dev->poll && !dev->IsRemovable()) {
          Jmsg2(dcr->jcr, M_FATAL, 0, _("Unable to open device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
          Pmsg2(000, _("Unable to open archive %s: ERR=%s\n"),
@@ -342,7 +342,7 @@ BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceCont
    if (jcr->bsr) {
       jcr->bsr->reposition = true;    /* force repositioning */
       bsr = find_next_bsr(jcr->bsr, dev);
-      if (get_bsr_start_addr(bsr, &file, &block) > 0) {
+      if (GetBsrStartAddr(bsr, &file, &block) > 0) {
          Jmsg(jcr, M_INFO, 0, _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
               dev->VolHdr.VolumeName, file, block);
          dev->reposition(dcr, file, block);
@@ -357,7 +357,7 @@ BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceCont
  * Returns: true  if at end of volume
  *          false otherwise
  */
-bool try_device_repositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr)
+bool TryDeviceRepositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr)
 {
    BootStrapRecord *bsr;
    Device *dev = dcr->dev;
@@ -368,10 +368,10 @@ bool try_device_repositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceCo
       Dmsg2(500, "Current position (file:block) %u:%u\n",
          dev->file, dev->block_num);
       jcr->bsr->mount_next_volume = false;
-      if (!dev->at_eot()) {
+      if (!dev->AtEot()) {
          /* Set EOT flag to force mount of next Volume */
          jcr->mount_next_volume = true;
-         dev->set_eot();
+         dev->SetEot();
       }
       rec->Block = 0;
       return true;
@@ -385,7 +385,7 @@ bool try_device_repositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceCo
       uint32_t block, file;
       /* TODO: use dev->file_addr ? */
       uint64_t dev_addr = (((uint64_t) dev->file)<<32) | dev->block_num;
-      uint64_t bsr_addr = get_bsr_start_addr(bsr, &file, &block);
+      uint64_t bsr_addr = GetBsrStartAddr(bsr, &file, &block);
 
       if (dev_addr > bsr_addr) {
          return false;

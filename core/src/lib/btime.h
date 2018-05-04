@@ -23,12 +23,12 @@
 #define BAREOS_LIB_BTIME_H_
 
 /* New btime definition -- use this */
-DLL_IMP_EXP btime_t get_current_btime(void);
-DLL_IMP_EXP time_t btime_to_unix(btime_t bt);   /* bareos time to epoch time */
-DLL_IMP_EXP utime_t btime_to_utime(btime_t bt); /* bareos time to utime_t */
+DLL_IMP_EXP btime_t GetCurrentBtime(void);
+DLL_IMP_EXP time_t BtimeToUnix(btime_t bt);   /* bareos time to epoch time */
+DLL_IMP_EXP utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 
 DLL_IMP_EXP int tm_wom(int mday, int wday);
-DLL_IMP_EXP int tm_woy(time_t stime);
+DLL_IMP_EXP int TmWoy(time_t stime);
 
 DLL_IMP_EXP void blocaltime(const time_t *time, struct tm *tm);
 DLL_IMP_EXP char *bstrutime(char *dt, int maxlen, utime_t tim);
@@ -37,7 +37,7 @@ DLL_IMP_EXP char *bstrftimes(char *dt, int maxlen, utime_t tim);
 DLL_IMP_EXP char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
 DLL_IMP_EXP char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
 DLL_IMP_EXP char *bstrftime_wd(char *dt, int maxlen, utime_t tim);
-DLL_IMP_EXP utime_t str_to_utime(const char *str);
+DLL_IMP_EXP utime_t StrToUtime(const char *str);
 
 
 /* =========================================================== */
@@ -66,17 +66,17 @@ struct date_time {
 */
 
 
-extern fdate_t date_encode(uint32_t year, uint8_t month, uint8_t day);
-extern ftime_t time_encode(uint8_t hour, uint8_t minute, uint8_t second,
+extern fdate_t DateEncode(uint32_t year, uint8_t month, uint8_t day);
+extern ftime_t TimeEncode(uint8_t hour, uint8_t minute, uint8_t second,
                           float32_t second_fraction);
 extern void date_time_encode(struct date_time *dt,
                              uint32_t year, uint8_t month, uint8_t day,
                              uint8_t hour, uint8_t minute, uint8_t second,
                              float32_t second_fraction);
 
-extern void date_decode(fdate_t date, uint32_t *year, uint8_t *month,
+extern void DateDecode(fdate_t date, uint32_t *year, uint8_t *month,
                         uint8_t *day);
-extern void time_decode(ftime_t time, uint8_t *hour, uint8_t *minute,
+extern void TimeDecode(ftime_t time, uint8_t *hour, uint8_t *minute,
                         uint8_t *second, float32_t *second_fraction);
 extern void date_time_decode(struct date_time *dt,
                              uint32_t *year, uint8_t *month, uint8_t *day,
@@ -85,9 +85,9 @@ extern void date_time_decode(struct date_time *dt,
 
 extern int date_time_compare(struct date_time *dt1, struct date_time *dt2);
 
-extern void tm_encode(struct date_time *dt, struct tm *tm);
-DLL_IMP_EXP extern void tm_decode(struct date_time *dt, struct tm *tm);
-DLL_IMP_EXP extern void get_current_time(struct date_time *dt);
+extern void TmEncode(struct date_time *dt, struct tm *tm);
+DLL_IMP_EXP extern void TmDecode(struct date_time *dt, struct tm *tm);
+DLL_IMP_EXP extern void GetCurrentTime(struct date_time *dt);
 
 
 #endif /* BAREOS_LIB_BTIME_H_ */

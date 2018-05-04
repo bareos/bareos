@@ -56,7 +56,7 @@ static dlist *wd_inactive;
  * Returns: 0 if the current thread is NOT the watchdog
  *          1 if the current thread is the watchdog
  */
-bool is_watchdog()
+bool IsWatchdog()
 {
    if (wd_is_init && pthread_equal(pthread_self(), wd_tid)) {
       return true;
@@ -71,7 +71,7 @@ bool is_watchdog()
  *  Returns: 0 on success
  *           errno on failure
  */
-int start_watchdog(void)
+int StartWatchdog(void)
 {
    int status;
    watchdog_t *dummy = NULL;
@@ -83,7 +83,7 @@ int start_watchdog(void)
    Dmsg0(800, "Initialising NicB-hacked watchdog thread\n");
    watchdog_time = time(NULL);
 
-   if ((errstat=rwl_init(&lock)) != 0) {
+   if ((errstat=RwlInit(&lock)) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize watchdog lock. ERR=%s\n"),
             be.bstrerror(errstat));
@@ -116,7 +116,7 @@ static void ping_watchdog()
  * Returns: 0 on success
  *          errno on failure
  */
-int stop_watchdog(void)
+int StopWatchdog(void)
 {
    int status;
    watchdog_t *p;
@@ -153,7 +153,7 @@ int stop_watchdog(void)
    }
    delete wd_inactive;
    wd_inactive = NULL;
-   rwl_destroy(&lock);
+   RwlDestroy(&lock);
    wd_is_init = false;
 
    return status;
@@ -164,7 +164,7 @@ watchdog_t *new_watchdog(void)
    watchdog_t *wd = (watchdog_t *)malloc(sizeof(watchdog_t));
 
    if (!wd_is_init) {
-      start_watchdog();
+      StartWatchdog();
    }
 
    if (wd == NULL) {
@@ -179,10 +179,10 @@ watchdog_t *new_watchdog(void)
    return wd;
 }
 
-bool register_watchdog(watchdog_t *wd)
+bool RegisterWatchdog(watchdog_t *wd)
 {
    if (!wd_is_init) {
-      Jmsg0(NULL, M_ABORT, 0, _("BUG! register_watchdog called before start_watchdog\n"));
+      Jmsg0(NULL, M_ABORT, 0, _("BUG! RegisterWatchdog called before StartWatchdog\n"));
    }
    if (wd->callback == NULL) {
       Jmsg1(NULL, M_ABORT, 0, _("BUG! Watchdog %p has NULL callback\n"), wd);
@@ -202,13 +202,13 @@ bool register_watchdog(watchdog_t *wd)
    return false;
 }
 
-bool unregister_watchdog(watchdog_t *wd)
+bool UnregisterWatchdog(watchdog_t *wd)
 {
    watchdog_t *p;
    bool ok = false;
 
    if (!wd_is_init) {
-      Jmsg0(NULL, M_ABORT, 0, _("BUG! unregister_watchdog_unlocked called before start_watchdog\n"));
+      Jmsg0(NULL, M_ABORT, 0, _("BUG! unregister_watchdog_unlocked called before StartWatchdog\n"));
    }
 
    wd_lock();
@@ -251,7 +251,7 @@ extern "C" void *watchdog_thread(void *arg)
    struct timezone tz;
    utime_t next_time;
 
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
    Dmsg0(800, "NicB-reworked watchdog thread entered\n");
 
    while (!quit) {
@@ -326,9 +326,9 @@ walk_list:
 static void wd_lock()
 {
    int errstat;
-   if ((errstat=rwl_writelock(&lock)) != 0) {
+   if ((errstat=RwlWritelock(&lock)) != 0) {
       berrno be;
-      Jmsg1(NULL, M_ABORT, 0, _("rwl_writelock failure. ERR=%s\n"),
+      Jmsg1(NULL, M_ABORT, 0, _("RwlWritelock failure. ERR=%s\n"),
            be.bstrerror(errstat));
    }
 }
@@ -341,9 +341,9 @@ static void wd_lock()
 static void wd_unlock()
 {
    int errstat;
-   if ((errstat=rwl_writeunlock(&lock)) != 0) {
+   if ((errstat=RwlWriteunlock(&lock)) != 0) {
       berrno be;
-      Jmsg1(NULL, M_ABORT, 0, _("rwl_writeunlock failure. ERR=%s\n"),
+      Jmsg1(NULL, M_ABORT, 0, _("RwlWriteunlock failure. ERR=%s\n"),
            be.bstrerror(errstat));
    }
 }

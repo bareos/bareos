@@ -21,14 +21,14 @@
 #include "include/bareos.h"
 #include "tls_conf.h"
 
-tls_cert_t::~tls_cert_t() {
-   if (allowed_cns) {
-      delete allowed_cns;
-      allowed_cns = nullptr;
+TlsCert::~TlsCert() {
+   if (AllowedCns) {
+      delete AllowedCns;
+      AllowedCns = nullptr;
    }
 }
 
-uint32_t tls_cert_t::GetPolicy() const {
+uint32_t TlsCert::GetPolicy() const {
    uint32_t result = TlsBase::BNET_TLS_NONE;
    if (enable) {
       result = TlsBase::BNET_TLS_ENABLED;
@@ -36,16 +36,16 @@ uint32_t tls_cert_t::GetPolicy() const {
    if (require) {
       result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
    }
-   return result << tls_cert_t::policy_offset;
+   return result << TlsCert::policy_offset;
 }
 
-tls_psk_t::~tls_psk_t() {
+TlsPsk::~TlsPsk() {
    if (cipherlist != nullptr) {
       free(cipherlist);
    }
 }
 
-uint32_t tls_psk_t::GetPolicy() const {
+uint32_t TlsPsk::GetPolicy() const {
    uint32_t result = TlsBase::BNET_TLS_NONE;
    if (enable) {
       result = TlsBase::BNET_TLS_ENABLED;
@@ -54,5 +54,5 @@ uint32_t tls_psk_t::GetPolicy() const {
       result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
    }
 
-   return result << tls_psk_t::policy_offset;
+   return result << TlsPsk::policy_offset;
 }

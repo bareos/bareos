@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_BACKUP_H_
 #define BAREOS_DIRD_NDMP_DMA_BACKUP_H_
 
-bool do_ndmp_backup_init(JobControlRecord *jcr);
+bool DoNdmpBackupInit(JobControlRecord *jcr);
 bool do_ndmp_backup(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_NDMP_DMA_BACKUP_H_

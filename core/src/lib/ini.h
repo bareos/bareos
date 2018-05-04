@@ -42,7 +42,7 @@ enum {
  * The ConfigFile object can generate a text file that describes the C
  * structure. This text format is saved as RestoreObject in the catalog.
  *
- *   struct ini_items[]  -> register_items()  -> serialize() -> RestoreObject R1
+ *   struct ini_items[]  -> RegisterItems()  -> serialize() -> RestoreObject R1
  *
  * On the Director side, at the restore time, we can analyse this text to
  * get the C structure.
@@ -138,7 +138,7 @@ public:
 
       version = 1;
       items_allocated = false;
-      edit = get_pool_memory(PM_FNAME);
+      edit = GetPoolMemory(PM_FNAME);
       sizeof_ini_items = sizeof(struct ini_items);
    }
 
@@ -147,13 +147,13 @@ public:
          lex_close_file(lc);
       }
       if (edit) {
-         free_pool_memory(edit);
+         FreePoolMemory(edit);
       }
       if (out_fname) {
          unlink(out_fname);
-         free_pool_memory(out_fname);
+         FreePoolMemory(out_fname);
       }
-      free_items();
+      FreeItems();
    }
 
    /*
@@ -164,19 +164,19 @@ public:
    /*
     * JobControlRecord needed for Jmsg
     */
-   void set_jcr(JobControlRecord *ajcr) {
+   void SetJcr(JobControlRecord *ajcr) {
       jcr = ajcr;
    }
 
    /*
     * Free malloced items such as char* or alist or items
     */
-   void free_items();
+   void FreeItems();
 
    /*
     * Clear items member
     */
-   void clear_items();
+   void ClearItems();
 
    /*
     * Dump the item table to a file (used on plugin side)
@@ -197,12 +197,12 @@ public:
    /*
     * Get item position in items list (useful when dynamic)
     */
-   int get_item(const char *name);
+   int GetItem(const char *name);
 
    /*
     * Register config file structure, if size doesn't match
     */
-   bool register_items(struct ini_items *aitems, int size) {
+   bool RegisterItems(struct ini_items *aitems, int size) {
       int i;
       if (sizeof_ini_items == size) {
          for (i = 0; aitems[i].name ; i++);

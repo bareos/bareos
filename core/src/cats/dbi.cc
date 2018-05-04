@@ -153,17 +153,17 @@ BareosDbDBI::BareosDbDBI(JobControlRecord *jcr,
       have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
-   errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
+   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
    *errmsg = 0;
-   cmd = get_pool_memory(PM_EMSG); /* get command buffer */
-   cached_path = get_pool_memory(PM_FNAME);
+   cmd = GetPoolMemory(PM_EMSG); /* get command buffer */
+   cached_path = GetPoolMemory(PM_FNAME);
    cached_path_id = 0;
    ref_count_ = 1;
-   fname = get_pool_memory(PM_FNAME);
-   path = get_pool_memory(PM_FNAME);
-   esc_name = get_pool_memory(PM_FNAME);
-   esc_path = get_pool_memory(PM_FNAME);
-   esc_obj = get_pool_memory(PM_FNAME);
+   fname = GetPoolMemory(PM_FNAME);
+   path = GetPoolMemory(PM_FNAME);
+   esc_name = GetPoolMemory(PM_FNAME);
+   esc_path = GetPoolMemory(PM_FNAME);
+   esc_obj = GetPoolMemory(PM_FNAME);
    allow_transactions_ = mult_db_connections;
    is_private_ = need_private;
    try_reconnect_ = try_reconnect;
@@ -196,7 +196,7 @@ BareosDbDBI::~BareosDbDBI()
  *
  * DO NOT close the database or delete mdb here  !!!!
  */
-bool BareosDbDBI::open_database(JobControlRecord *jcr)
+bool BareosDbDBI::OpenDatabase(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
@@ -214,7 +214,7 @@ bool BareosDbDBI::open_database(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if ((errstat=rwl_init(&lock_)) != 0) {
+   if ((errstat=RwlInit(&lock_)) != 0) {
       berrno be;
       Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
             be.bstrerror(errstat));
@@ -300,7 +300,7 @@ bool BareosDbDBI::open_database(JobControlRecord *jcr)
 
    connected_ = true;
 
-   if (!check_tables_version(jcr, this)) {
+   if (!CheckTablesVersion(jcr, this)) {
       goto bail_out;
    }
 
@@ -309,8 +309,8 @@ bool BareosDbDBI::open_database(JobControlRecord *jcr)
       /*
        * Set connection timeout to 8 days specialy for batch mode
        */
-      sql_query_without_handler("SET wait_timeout=691200");
-      sql_query_without_handler("SET interactive_timeout=691200");
+      SqlQueryWithoutHandler("SET wait_timeout=691200");
+      SqlQueryWithoutHandler("SET interactive_timeout=691200");
       break;
    case SQL_TYPE_POSTGRESQL:
       /*
@@ -318,8 +318,8 @@ bool BareosDbDBI::open_database(JobControlRecord *jcr)
        * and avoid warnings such as:
        * WARNING:  nonstandard use of \\ in a string literal
        */
-      sql_query_without_handler("SET datestyle TO 'ISO, YMD'");
-      sql_query_without_handler("SET standard_conforming_strings=on");
+      SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+      SqlQueryWithoutHandler("SET standard_conforming_strings=on");
       break;
    }
 
@@ -330,16 +330,16 @@ bail_out:
    return retval;
 }
 
-void BareosDbDBI::close_database(JobControlRecord *jcr)
+void BareosDbDBI::CloseDatabase(JobControlRecord *jcr)
 {
    if (connected_) {
-      end_transaction(jcr);
+      EndTransaction(jcr);
    }
    P(mutex);
    ref_count_--;
    if (ref_count_ == 0) {
       if (connected_) {
-         sql_free_result();
+         SqlFreeResult();
       }
       db_list->remove(this);
       if (connected_ && db_handle_) {
@@ -347,17 +347,17 @@ void BareosDbDBI::close_database(JobControlRecord *jcr)
          db_handle_ = NULL;
          instance_ = NULL;
       }
-      if (rwl_is_init(&lock_)) {
-         rwl_destroy(&lock_);
+      if (RwlIsInit(&lock_)) {
+         RwlDestroy(&lock_);
       }
-      free_pool_memory(errmsg);
-      free_pool_memory(cmd);
-      free_pool_memory(cached_path);
-      free_pool_memory(fname);
-      free_pool_memory(path);
-      free_pool_memory(esc_name);
-      free_pool_memory(esc_path);
-      free_pool_memory(esc_obj);
+      FreePoolMemory(errmsg);
+      FreePoolMemory(cmd);
+      FreePoolMemory(cached_path);
+      FreePoolMemory(fname);
+      FreePoolMemory(path);
+      FreePoolMemory(esc_name);
+      FreePoolMemory(esc_path);
+      FreePoolMemory(esc_obj);
       if (db_driver_) {
          free(db_driver_);
       }
@@ -388,11 +388,11 @@ void BareosDbDBI::close_database(JobControlRecord *jcr)
    V(mutex);
 }
 
-bool BareosDbDBI::validate_connection(void)
+bool BareosDbDBI::ValidateConnection(void)
 {
    bool retval;
 
-   db_lock(this);
+   DbLock(this);
    if (dbi_conn_ping(db_handle_) == 1) {
       retval = true;
       goto bail_out;
@@ -402,7 +402,7 @@ bool BareosDbDBI::validate_connection(void)
    }
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -417,7 +417,7 @@ bail_out:
  * We need copy the value of pointer to snew because libdbi change the
  * pointer
  */
-void BareosDbDBI::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
+void BareosDbDBI::EscapeString(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    char *inew;
    char *pnew;
@@ -457,7 +457,7 @@ char *BareosDbDBI::escape_object(JobControlRecord *jcr, char *old, int len)
       esc_obj[0] = 0;
    } else {
       new_len = dbi_conn_escape_string_copy(db_handle_, esc_obj, &pnew);
-      esc_obj = check_pool_memory_size(esc_obj, new_len+1);
+      esc_obj = CheckPoolMemorySize(esc_obj, new_len+1);
       memcpy(esc_obj, pnew, new_len);
    }
 
@@ -467,7 +467,7 @@ char *BareosDbDBI::escape_object(JobControlRecord *jcr, char *old, int len)
 /**
  * Unescape binary object so that DBI is happy
  */
-void BareosDbDBI::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
+void BareosDbDBI::UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
                                POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
@@ -475,7 +475,7 @@ void BareosDbDBI::unescape_object(JobControlRecord *jcr, char *from, int32_t exp
       *dest_len = 0;
       return;
    }
-   dest = check_pool_memory_size(dest, expected_len + 1);
+   dest = CheckPoolMemorySize(dest, expected_len + 1);
    *dest_len = expected_len;
    memcpy(dest, from, expected_len);
    dest[expected_len] = '\0';
@@ -486,10 +486,10 @@ void BareosDbDBI::unescape_object(JobControlRecord *jcr, char *from, int32_t exp
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void BareosDbDBI::start_transaction(JobControlRecord *jcr)
+void BareosDbDBI::StartTransaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
-      jcr->attr = get_pool_memory(PM_FNAME);
+      jcr->attr = GetPoolMemory(PM_FNAME);
    }
    if (!jcr->ar) {
       jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
@@ -501,19 +501,19 @@ void BareosDbDBI::start_transaction(JobControlRecord *jcr)
          return;
       }
 
-      db_lock(this);
+      DbLock(this);
       /*
        * Allow only 10,000 changes per transaction
        */
       if (transaction_ && changes > 10000) {
-         end_transaction(jcr);
+         EndTransaction(jcr);
       }
       if (!transaction_) {
-         sql_query_without_handler("BEGIN");  /* begin transaction */
+         SqlQueryWithoutHandler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start SQLite transaction\n");
          transaction_ = true;
       }
-      db_unlock(this);
+      DbUnlock(this);
       break;
    case SQL_TYPE_POSTGRESQL:
       /*
@@ -524,49 +524,49 @@ void BareosDbDBI::start_transaction(JobControlRecord *jcr)
          return;
       }
 
-      db_lock(this);
+      DbLock(this);
       /*
        * Allow only 25,000 changes per transaction
        */
       if (transaction_ && changes > 25000) {
-         end_transaction(jcr);
+         EndTransaction(jcr);
       }
       if (!transaction_) {
-         sql_query_without_handler("BEGIN");  /* begin transaction */
+         SqlQueryWithoutHandler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start PosgreSQL transaction\n");
          transaction_ = true;
       }
-      db_unlock(this);
+      DbUnlock(this);
       break;
    case SQL_TYPE_INGRES:
       if (!allow_transactions_) {
          return;
       }
 
-      db_lock(this);
+      DbLock(this);
       /*
        * Allow only 25,000 changes per transaction
        */
       if (transaction_ && changes > 25000) {
-         end_transaction(jcr);
+         EndTransaction(jcr);
       }
       if (!transaction_) {
-         sql_query_without_handler("BEGIN");  /* begin transaction */
+         SqlQueryWithoutHandler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start Ingres transaction\n");
          transaction_ = true;
       }
-      db_unlock(this);
+      DbUnlock(this);
       break;
    default:
       break;
    }
 }
 
-void BareosDbDBI::end_transaction(JobControlRecord *jcr)
+void BareosDbDBI::EndTransaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!create_attributes_record(jcr, jcr->ar)) {
+      if (!CreateAttributesRecord(jcr, jcr->ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
@@ -578,42 +578,42 @@ void BareosDbDBI::end_transaction(JobControlRecord *jcr)
          return;
       }
 
-      db_lock(this);
+      DbLock(this);
       if (transaction_) {
-         sql_query_without_handler("COMMIT"); /* end transaction */
+         SqlQueryWithoutHandler("COMMIT"); /* end transaction */
          transaction_ = false;
          Dmsg1(400, "End SQLite transaction changes=%d\n", changes);
       }
       changes = 0;
-      db_unlock(this);
+      DbUnlock(this);
       break;
    case SQL_TYPE_POSTGRESQL:
       if (!allow_transactions_) {
          return;
       }
 
-      db_lock(this);
+      DbLock(this);
       if (transaction_) {
-         sql_query_without_handler("COMMIT"); /* end transaction */
+         SqlQueryWithoutHandler("COMMIT"); /* end transaction */
          transaction_ = false;
          Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
       }
       changes = 0;
-      db_unlock(this);
+      DbUnlock(this);
       break;
    case SQL_TYPE_INGRES:
       if (!allow_transactions_) {
          return;
       }
 
-      db_lock(this);
+      DbLock(this);
       if (transaction_) {
-         sql_query_without_handler("COMMIT"); /* end transaction */
+         SqlQueryWithoutHandler("COMMIT"); /* end transaction */
          transaction_ = false;
          Dmsg1(400, "End Ingres transaction changes=%d\n", changes);
       }
       changes = 0;
-      db_unlock(this);
+      DbUnlock(this);
       break;
    default:
       break;
@@ -624,37 +624,37 @@ void BareosDbDBI::end_transaction(JobControlRecord *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool BareosDbDBI::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbDBI::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval = true;
    SQL_ROW row;
 
-   Dmsg1(500, "sql_query_with_handler starts with %s\n", query);
+   Dmsg1(500, "SqlQueryWithHandler starts with %s\n", query);
 
-   db_lock(this);
-   if (!sql_query_without_handler(query, QF_STORE_RESULT)) {
+   DbLock(this);
+   if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "sql_query_with_handler failed\n");
+      Dmsg0(500, "SqlQueryWithHandler failed\n");
       retval = false;
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
+   Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
-      Dmsg0(500, "sql_query_with_handler invoking handler\n");
-      while ((row = sql_fetch_row()) != NULL) {
-         Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
+      Dmsg0(500, "SqlQueryWithHandler invoking handler\n");
+      while ((row = SqlFetchRow()) != NULL) {
+         Dmsg0(500, "SqlQueryWithHandler SqlFetchRow worked\n");
          if (result_handler(ctx, num_fields_, row))
             break;
       }
-      sql_free_result();
+      SqlFreeResult();
    }
 
-   Dmsg0(500, "sql_query_with_handler finished\n");
+   Dmsg0(500, "SqlQueryWithHandler finished\n");
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -665,12 +665,12 @@ bail_out:
  *  Returns:  true on success
  *            false on failure
  */
-bool BareosDbDBI::sql_query_without_handler(const char *query, int flags)
+bool BareosDbDBI::SqlQueryWithoutHandler(const char *query, int flags)
 {
    bool retval = false;
    const char *dbi_errmsg;
 
-   Dmsg1(500, "sql_query_without_handler starts with %s\n", query);
+   Dmsg1(500, "SqlQueryWithoutHandler starts with %s\n", query);
 
    /*
     * We are starting a new query.  reset everything.
@@ -713,14 +713,14 @@ bool BareosDbDBI::sql_query_without_handler(const char *query, int flags)
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query_without_handler finishing\n");
+   Dmsg0(500, "SqlQueryWithoutHandler finishing\n");
    retval = true;
    goto ok_out;
 
 bail_out:
    status_ = (dbi_error_flag) dbi_conn_error(db_handle_, &dbi_errmsg);
    //dbi_conn_error(db_handle_, &dbi_errmsg);
-   Dmsg4(500, "sql_query_without_handler we failed dbi error: "
+   Dmsg4(500, "SqlQueryWithoutHandler we failed dbi error: "
                    "'%s' '%p' '%d' flag '%d''\n", dbi_errmsg, result_, result_, status_);
    dbi_result_free(result_);
    result_ = NULL;
@@ -730,11 +730,11 @@ ok_out:
    return retval;
 }
 
-void BareosDbDBI::sql_free_result(void)
+void BareosDbDBI::SqlFreeResult(void)
 {
    DbiFieldGet *f;
 
-   db_lock(this);
+   DbLock(this);
    if (result_) {
       dbi_result_free(result_);
       result_ = NULL;
@@ -760,7 +760,7 @@ void BareosDbDBI::sql_free_result(void)
       fields_ = NULL;
    }
    num_rows_ = num_fields_ = 0;
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /* dbi_getvalue
@@ -874,19 +874,19 @@ static char *dbi_getvalue(dbi_result *result, int row_number, unsigned int colum
    return buf;
 }
 
-SQL_ROW BareosDbDBI::sql_fetch_row(void)
+SQL_ROW BareosDbDBI::SqlFetchRow(void)
 {
    int j;
    SQL_ROW row = NULL; /* by default, return NULL */
 
-   Dmsg0(500, "sql_fetch_row start\n");
+   Dmsg0(500, "SqlFetchRow start\n");
    if ((!rows_ || rows_size_ < num_fields_) && num_rows_ > 0) {
       if (rows_) {
-         Dmsg0(500, "sql_fetch_row freeing space\n");
-         Dmsg2(500, "sql_fetch_row row: '%p' num_fields: '%d'\n", rows_, num_fields_);
+         Dmsg0(500, "SqlFetchRow freeing space\n");
+         Dmsg2(500, "SqlFetchRow row: '%p' num_fields: '%d'\n", rows_, num_fields_);
          if (num_rows_ != 0) {
             for (j = 0; j < num_fields_; j++) {
-               Dmsg2(500, "sql_fetch_row row '%p' '%d'\n", rows_[j], j);
+               Dmsg2(500, "SqlFetchRow row '%p' '%d'\n", rows_[j], j);
                   if (rows_[j]) {
                      free(rows_[j]);
                   }
@@ -908,7 +908,7 @@ SQL_ROW BareosDbDBI::sql_fetch_row(void)
     * If still within the result set
     */
    if (row_number_ <= num_rows_ && row_number_ != DBI_ERROR_BADPTR) {
-      Dmsg2(500, "sql_fetch_row row number '%d' is acceptable (1..%d)\n", row_number_, num_rows_);
+      Dmsg2(500, "SqlFetchRow row number '%d' is acceptable (1..%d)\n", row_number_, num_rows_);
       /*
        * Get each value from this row
        */
@@ -922,7 +922,7 @@ SQL_ROW BareosDbDBI::sql_fetch_row(void)
           * Store the pointer in queue
           */
          field_get_->value = rows_[j];
-         Dmsg4(500, "sql_fetch_row row[%d] field: '%p' in queue: '%p' has value: '%s'\n",
+         Dmsg4(500, "SqlFetchRow row[%d] field: '%p' in queue: '%p' has value: '%s'\n",
                j, rows_[j], field_get_->value, rows_[j]);
          /*
           * Insert in queue to future free
@@ -936,10 +936,10 @@ SQL_ROW BareosDbDBI::sql_fetch_row(void)
 
       row = rows_;
    } else {
-      Dmsg2(500, "sql_fetch_row row number '%d' is NOT acceptable (1..%d)\n", row_number_, num_rows_);
+      Dmsg2(500, "SqlFetchRow row number '%d' is NOT acceptable (1..%d)\n", row_number_, num_rows_);
    }
 
-   Dmsg1(500, "sql_fetch_row finishes returning %p\n", row);
+   Dmsg1(500, "SqlFetchRow finishes returning %p\n", row);
 
    return row;
 }
@@ -953,7 +953,7 @@ const char *BareosDbDBI::sql_strerror(void)
    return dbi_errmsg;
 }
 
-void BareosDbDBI::sql_data_seek(int row)
+void BareosDbDBI::SqlDataSeek(int row)
 {
    /*
     * Set the row number to be returned on the next call to sql_fetch_row
@@ -961,7 +961,7 @@ void BareosDbDBI::sql_data_seek(int row)
    row_number_ = row;
 }
 
-int BareosDbDBI::sql_affected_rows(void)
+int BareosDbDBI::SqlAffectedRows(void)
 {
 #if 0
    return dbi_result_get_numrows_affected(result);
@@ -970,7 +970,7 @@ int BareosDbDBI::sql_affected_rows(void)
 #endif
 }
 
-uint64_t BareosDbDBI::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbDBI::SqlInsertAutokeyRecord(const char *query, const char *table_name)
 {
    char sequence[30];
    uint64_t id = 0;
@@ -978,11 +978,11 @@ uint64_t BareosDbDBI::sql_insert_autokey_record(const char *query, const char *t
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (!sql_query_without_handler(query)) {
+   if (!SqlQueryWithoutHandler(query)) {
       return 0;
    }
 
-   num_rows_ = sql_affected_rows();
+   num_rows_ = SqlAffectedRows();
    if (num_rows_ != 1) {
       return 0;
    }
@@ -1050,7 +1050,7 @@ static int dbi_getisnull(dbi_result *result, int row_number, int column_number) 
    }
 }
 
-SQL_FIELD *BareosDbDBI::sql_fetch_field(void)
+SQL_FIELD *BareosDbDBI::SqlFetchField(void)
 {
    int i, j;
    int dbi_index;
@@ -1058,7 +1058,7 @@ SQL_FIELD *BareosDbDBI::sql_fetch_field(void)
    int this_length;
    char *cbuf = NULL;
 
-   Dmsg0(500, "sql_fetch_field starts\n");
+   Dmsg0(500, "SqlFetchField starts\n");
 
    if (!fields_ || fields_size_ < num_fields_) {
       if (fields_) {
@@ -1101,7 +1101,7 @@ SQL_FIELD *BareosDbDBI::sql_fetch_field(void)
          }
          fields_[i].max_length = max_length;
 
-         Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
+         Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
                fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
@@ -1112,7 +1112,7 @@ SQL_FIELD *BareosDbDBI::sql_fetch_field(void)
    return &fields_[field_number_++];
 }
 
-bool BareosDbDBI::sql_field_is_not_null(int field_type)
+bool BareosDbDBI::SqlFieldIsNotNull(int field_type)
 {
    switch (field_type) {
    case (1 << 0):
@@ -1122,7 +1122,7 @@ bool BareosDbDBI::sql_field_is_not_null(int field_type)
    }
 }
 
-bool BareosDbDBI::sql_field_is_numeric(int field_type)
+bool BareosDbDBI::SqlFieldIsNumeric(int field_type)
 {
    switch (field_type) {
    case 1:
@@ -1188,17 +1188,17 @@ static char *postgresql_copy_escape(char *dest, char *src, size_t len)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
+bool BareosDbDBI::SqlBatchStart(JobControlRecord *jcr)
 {
    bool retval = true;
    const char *query = "COPY batch FROM STDIN";
 
-   Dmsg0(500, "sql_batch_start started\n");
+   Dmsg0(500, "SqlBatchStart started\n");
 
-   db_lock(this);
+   DbLock(this);
    switch (db_type_) {
    case SQL_TYPE_MYSQL:
-      if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+      if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
                                      "FileIndex integer,"
                                      "JobId integer,"
                                      "Path blob,"
@@ -1206,13 +1206,13 @@ bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
                                      "LStat tinyblob,"
                                      "MD5 tinyblob,"
                                      "DeltaSeq smallint)")) {
-         Dmsg0(500, "sql_batch_start failed\n");
+         Dmsg0(500, "SqlBatchStart failed\n");
          goto bail_out;
       }
-      Dmsg0(500, "sql_batch_start finishing\n");
+      Dmsg0(500, "SqlBatchStart finishing\n");
       goto ok_out;
    case SQL_TYPE_POSTGRESQL:
-      if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+      if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
                                      "FileIndex int,"
                                      "JobId int,"
                                      "Path varchar,"
@@ -1220,7 +1220,7 @@ bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
                                      "LStat varchar,"
                                      "MD5 varchar,"
                                      "DeltaSeq int)")) {
-         Dmsg0(500, "sql_batch_start failed\n");
+         Dmsg0(500, "SqlBatchStart failed\n");
          goto bail_out;
       }
 
@@ -1231,10 +1231,10 @@ bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
       row_number_ = -1;
       field_number_ = -1;
 
-      sql_free_result();
+      SqlFreeResult();
 
       for (int i=0; i < 10; i++) {
-         sql_query_without_handler(query);
+         SqlQueryWithoutHandler(query);
          if (result_) {
             break;
          }
@@ -1260,10 +1260,10 @@ bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
          goto bail_out;
       }
 
-      Dmsg0(500, "sql_batch_start finishing\n");
+      Dmsg0(500, "SqlBatchStart finishing\n");
       goto ok_out;
    case SQL_TYPE_SQLITE3:
-      if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+      if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
                                      "FileIndex integer,"
                                      "JobId integer,"
                                      "Path blob,"
@@ -1271,36 +1271,36 @@ bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
                                      "LStat tinyblob,"
                                      "MD5 tinyblob,"
                                      "DeltaSeq smallint)")) {
-         Dmsg0(500, "sql_batch_start failed\n");
+         Dmsg0(500, "SqlBatchStart failed\n");
          goto bail_out;
       }
-      Dmsg0(500, "sql_batch_start finishing\n");
+      Dmsg0(500, "SqlBatchStart finishing\n");
       goto ok_out;
    }
 
 bail_out:
    Mmsg1(&errmsg, _("error starting batch mode: %s"), sql_strerror());
    status_ = (dbi_error_flag) 0;
-   sql_free_result();
+   SqlFreeResult();
    result_ = NULL;
    retval = false;
 
 ok_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
 /**
  * Set error to something to abort operation
  */
-bool BareosDbDBI::sql_batch_end(JobControlRecord *jcr, const char *error)
+bool BareosDbDBI::SqlBatchEnd(JobControlRecord *jcr, const char *error)
 {
    int res = 0;
    int count = 30;
    int (*custom_function)(void*, const char*) = NULL;
    dbi_conn_t *myconn = (dbi_conn_t *)(db_handle_);
 
-   Dmsg0(500, "sql_batch_start started\n");
+   Dmsg0(500, "SqlBatchStart started\n");
 
    switch (db_type_) {
    case SQL_TYPE_MYSQL:
@@ -1329,7 +1329,7 @@ bool BareosDbDBI::sql_batch_end(JobControlRecord *jcr, const char *error)
       break;
    }
 
-   Dmsg0(500, "sql_batch_start finishing\n");
+   Dmsg0(500, "SqlBatchStart finishing\n");
 
    return true;
 }
@@ -1339,7 +1339,7 @@ bool BareosDbDBI::sql_batch_end(JobControlRecord *jcr, const char *error)
  * In near future is better split in small functions
  * and refactory.
  */
-bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
+bool BareosDbDBI::SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    int res;
    int count=30;
@@ -1350,10 +1350,10 @@ bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar
    char *digest;
    char ed1[50];
 
-   Dmsg0(500, "sql_batch_start started \n");
+   Dmsg0(500, "SqlBatchStart started \n");
 
-   esc_name = check_pool_memory_size(esc_name, fnl*2+1);
-   esc_path = check_pool_memory_size(esc_path, pnl*2+1);
+   esc_name = CheckPoolMemorySize(esc_name, fnl*2+1);
+   esc_path = CheckPoolMemorySize(esc_path, pnl*2+1);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       *digest = '\0';
@@ -1370,13 +1370,13 @@ bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar
                       ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                       esc_name, ar->attr, digest, ar->DeltaSeq);
 
-      if (!sql_query_without_handler(cmd))
+      if (!SqlQueryWithoutHandler(cmd))
       {
-         Dmsg0(500, "sql_batch_start failed\n");
+         Dmsg0(500, "SqlBatchStart failed\n");
          goto bail_out;
       }
 
-      Dmsg0(500, "sql_batch_start finishing\n");
+      Dmsg0(500, "SqlBatchStart finishing\n");
 
       return true;
       break;
@@ -1391,7 +1391,7 @@ bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar
        * libdbi don't support CopyData and we need call a postgresql
        * specific function to do this work
        */
-      Dmsg2(500, "sql_batch_insert :\n %s \ncmd_size: %d",cmd, len);
+      Dmsg2(500, "SqlBatchInsert :\n %s \ncmd_size: %d",cmd, len);
       custom_function = (custom_function_insert_t)dbi_driver_specific_function(dbi_conn_get_driver(myconn),"PQputCopyData");
       if (custom_function != NULL) {
          do {
@@ -1405,18 +1405,18 @@ bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar
          }
 
          if (res <= 0) {
-            Dmsg0(500, "sql_batch_insert failed\n");
+            Dmsg0(500, "SqlBatchInsert failed\n");
             goto bail_out;
          }
 
-         Dmsg0(500, "sql_batch_insert finishing\n");
+         Dmsg0(500, "SqlBatchInsert finishing\n");
          return true;
       } else {
          /*
           * Ensure to detect a PQerror
           */
          custom_function_error = (custom_function_error_t)dbi_driver_specific_function(dbi_conn_get_driver(myconn), "PQerrorMessage");
-         Dmsg1(500, "sql_batch_insert failed\n PQerrorMessage: %s", (*custom_function_error)(myconn->connection));
+         Dmsg1(500, "SqlBatchInsert failed\n PQerrorMessage: %s", (*custom_function_error)(myconn->connection));
          goto bail_out;
       }
       break;
@@ -1428,13 +1428,13 @@ bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar
                       ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                       esc_name, ar->attr, digest, ar->DeltaSeq);
 
-      if (!sql_query_without_handler(cmd))
+      if (!SqlQueryWithoutHandler(cmd))
       {
-         Dmsg0(500, "sql_batch_insert failed\n");
+         Dmsg0(500, "SqlBatchInsert failed\n");
          goto bail_out;
       }
 
-      Dmsg0(500, "sql_batch_insert finishing\n");
+      Dmsg0(500, "SqlBatchInsert finishing\n");
 
       return true;
       break;
@@ -1443,7 +1443,7 @@ bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar
 bail_out:
    Mmsg1(&errmsg, _("error inserting batch mode: %s"), sql_strerror());
    status_ = (dbi_error_flag) 0;
-   sql_free_result();
+   SqlFreeResult();
    return false;
 }
 
@@ -1504,13 +1504,13 @@ BareosDb *db_init_database(JobControlRecord *jcr,
     */
    if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
-         if (mdb->is_private()) {
+         if (mdb->IsPrivate()) {
             continue;
          }
 
-         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->MatchDatabase(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
-            mdb->increment_refcount();
+            mdb->IncrementRefcount();
             goto bail_out;
          }
       }
@@ -1538,7 +1538,7 @@ bail_out:
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void CATS_IMP_EXP flush_backend(void)
 #else
-void db_flush_backends(void)
+void DbFlushBackends(void)
 #endif
 {
 }

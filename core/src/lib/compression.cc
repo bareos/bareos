@@ -113,7 +113,7 @@ static inline void non_compatible_compression_algorithm(JobControlRecord *jcr, u
         cmprs_algo_to_text(compression_algorithm));
 }
 
-bool setup_compression_buffers(JobControlRecord *jcr,
+bool SetupCompressionBuffers(JobControlRecord *jcr,
                                bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size)
@@ -273,7 +273,7 @@ bool setup_compression_buffers(JobControlRecord *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JobControlRecord *jcr, uint32_t *decompress_buf_size)
+bool SetupDecompressionBuffers(JobControlRecord *jcr, uint32_t *decompress_buf_size)
 {
    uint32_t compress_buf_size;
 
@@ -412,7 +412,7 @@ static bool compress_with_fastlz(JobControlRecord *jcr,
 }
 #endif
 
-bool compress_data(JobControlRecord *jcr,
+bool CompressData(JobControlRecord *jcr,
                    uint32_t compression_algorithm,
                    char *rbuf,
                    uint32_t rsize,
@@ -504,7 +504,7 @@ static bool decompress_with_zlib(JobControlRecord *jcr,
        * The buffer size is too small, try with a bigger one
        */
       jcr->compress.inflate_buffer_size = jcr->compress.inflate_buffer_size + (jcr->compress.inflate_buffer_size >> 1);
-      jcr->compress.inflate_buffer = check_pool_memory_size(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
+      jcr->compress.inflate_buffer = CheckPoolMemorySize(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
       if (sparse && want_data_stream) {
          wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
@@ -567,7 +567,7 @@ static bool decompress_with_lzo(JobControlRecord *jcr,
        * The buffer size is too small, try with a bigger one
        */
       jcr->compress.inflate_buffer_size = jcr->compress.inflate_buffer_size + (jcr->compress.inflate_buffer_size >> 1);
-      jcr->compress.inflate_buffer = check_pool_memory_size(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
+      jcr->compress.inflate_buffer = CheckPoolMemorySize(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
       if (sparse && want_data_stream) {
          compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
@@ -655,7 +655,7 @@ static bool decompress_with_fastlz(JobControlRecord *jcr,
           * The buffer size is too small, try with a bigger one
           */
          jcr->compress.inflate_buffer_size = jcr->compress.inflate_buffer_size + (jcr->compress.inflate_buffer_size >> 1);
-         jcr->compress.inflate_buffer = check_pool_memory_size(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
+         jcr->compress.inflate_buffer = CheckPoolMemorySize(jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
          if (sparse && want_data_stream) {
             stream.next_out = (Bytef *)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
             stream.avail_out = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
@@ -695,14 +695,14 @@ cleanup:
 }
 #endif
 
-bool decompress_data(JobControlRecord *jcr,
+bool DecompressData(JobControlRecord *jcr,
                      const char *last_fname,
                      int32_t stream,
                      char **data,
                      uint32_t *length,
                      bool want_data_stream)
 {
-   Dmsg1(400, "Stream found in decompress_data(): %d\n", stream);
+   Dmsg1(400, "Stream found in DecompressData(): %d\n", stream);
    switch (stream) {
    case STREAM_COMPRESSED_DATA:
    case STREAM_SPARSE_COMPRESSED_DATA:
@@ -716,12 +716,12 @@ bool decompress_data(JobControlRecord *jcr,
        * Read compress header
        */
       unser_declare;
-      unser_begin(*data, sizeof(comp_stream_header));
+      UnserBegin(*data, sizeof(comp_stream_header));
       unser_uint32(comp_magic);
       unser_uint32(comp_len);
       unser_uint16(comp_level);
       unser_uint16(comp_version);
-      unser_end(*data, sizeof(comp_stream_header));
+      UnserEnd(*data, sizeof(comp_stream_header));
       Dmsg4(400, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n",
             comp_magic, comp_len, comp_level, comp_version);
 
@@ -796,15 +796,15 @@ bool decompress_data(JobControlRecord *jcr,
    }
 }
 
-void cleanup_compression(JobControlRecord *jcr)
+void CleanupCompression(JobControlRecord *jcr)
 {
    if (jcr->compress.deflate_buffer) {
-      free_pool_memory(jcr->compress.deflate_buffer);
+      FreePoolMemory(jcr->compress.deflate_buffer);
       jcr->compress.deflate_buffer = NULL;
    }
 
    if (jcr->compress.inflate_buffer) {
-      free_pool_memory(jcr->compress.inflate_buffer);
+      FreePoolMemory(jcr->compress.inflate_buffer);
       jcr->compress.inflate_buffer = NULL;
    }
 
@@ -840,7 +840,7 @@ const char *cmprs_algo_to_text(uint32_t compression_algorithm)
    return "Unknown";
 }
 
-bool setup_compression_buffers(JobControlRecord *jcr,
+bool SetupCompressionBuffers(JobControlRecord *jcr,
                                bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size)
@@ -848,13 +848,13 @@ bool setup_compression_buffers(JobControlRecord *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JobControlRecord *jcr, uint32_t *decompress_buf_size)
+bool SetupDecompressionBuffers(JobControlRecord *jcr, uint32_t *decompress_buf_size)
 {
    *decompress_buf_size = 0;
    return true;
 }
 
-bool compress_data(JobControlRecord *jcr,
+bool CompressData(JobControlRecord *jcr,
                    uint32_t compression_algorithm,
                    char *rbuf,
                    uint32_t rsize,
@@ -865,7 +865,7 @@ bool compress_data(JobControlRecord *jcr,
    return true;
 }
 
-bool decompress_data(JobControlRecord *jcr,
+bool DecompressData(JobControlRecord *jcr,
                      const char *last_fname,
                      int32_t stream,
                      char **data,
@@ -876,7 +876,7 @@ bool decompress_data(JobControlRecord *jcr,
    return false;
 }
 
-void cleanup_compression(JobControlRecord *jcr)
+void CleanupCompression(JobControlRecord *jcr)
 {
 }
 #endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */

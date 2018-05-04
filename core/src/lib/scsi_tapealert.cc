@@ -43,7 +43,7 @@ static inline void set_2_byte_value(unsigned char *field, int value)
    field[1] = (unsigned char)(value & 0x00ff);
 }
 
-bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags)
+bool GetTapealertFlags(int fd, const char *device_name, uint64_t *flags)
 {
    LOG_SCSI_CDB cdb;
    TAPEALERT_PAGE_BUFFER cmd_page;
@@ -66,7 +66,7 @@ bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags)
    /*
     * Retrieve the tapealert status.
     */
-   if (!recv_scsi_cmd_page(fd, device_name,
+   if (!RecvScsiCmdPage(fd, device_name,
                           (void *)&cdb, cdb_len,
                           (void *)&cmd_page, cmd_page_len)) {
       return false;
@@ -102,7 +102,7 @@ bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags)
             for (int j = 0; tapealert_mappings[j].alert_msg; j++) {
                if (result_index == tapealert_mappings[j].flag) {
                   Dmsg2(100, "TapeAlert [%d] set ==> %s\n", result_index, tapealert_mappings[j].alert_msg);
-                  set_bit(result_index, (char *)flags);
+                  SetBit(result_index, (char *)flags);
                }
             }
          }
@@ -114,7 +114,7 @@ bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags)
    return false;
 }
 #else
-bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags)
+bool GetTapealertFlags(int fd, const char *device_name, uint64_t *flags)
 {
    *flags = 0;
    return false;

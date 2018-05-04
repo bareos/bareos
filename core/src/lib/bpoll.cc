@@ -38,7 +38,7 @@
  *            0 if timeout
  *           -1 if error
  */
-int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
+int WaitForReadableFd(int fd, int msec, bool ignore_interupts)
 {
    struct pollfd pfds[1];
    int events;
@@ -82,7 +82,7 @@ int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
  *            0 if timeout
  *           -1 if error
  */
-int wait_for_writable_fd(int fd, int msec, bool ignore_interupts)
+int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
 {
    struct pollfd pfds[1];
    int events;
@@ -123,7 +123,7 @@ int wait_for_writable_fd(int fd, int msec, bool ignore_interupts)
  *            0 if timeout
  *           -1 if error
  */
-int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
+int WaitForReadableFd(int fd, int msec, bool ignore_interupts)
 {
    fd_set fdset;
    struct timeval tv;
@@ -153,7 +153,7 @@ int wait_for_readable_fd(int fd, int msec, bool ignore_interupts)
  *            0 if timeout
  *           -1 if error
  */
-int wait_for_writable_fd(int fd, int msec, bool ignore_interupts)
+int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
 {
 #if defined(HAVE_WIN32)
    return 1;

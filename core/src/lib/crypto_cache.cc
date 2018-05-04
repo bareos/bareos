@@ -40,7 +40,7 @@ static s_crypto_cache_hdr crypto_cache_hdr = {
 /*
  * Read the content of the crypto cache from the filesystem.
  */
-void read_crypto_cache(const char *cache_file)
+void ReadCryptoCache(const char *cache_file)
 {
    int fd, cnt;
    ssize_t status;
@@ -115,7 +115,7 @@ bail_out:
    }
 
    if (!ok) {
-      secure_erase(NULL, cache_file);
+      SecureErase(NULL, cache_file);
       if (cached_crypto_keys) {
          cached_crypto_keys->destroy();
          delete cached_crypto_keys;
@@ -125,19 +125,19 @@ bail_out:
 
 }
 
-void read_crypto_cache(const char *dir, const char *progname, int port)
+void ReadCryptoCache(const char *dir, const char *progname, int port)
 {
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
 
    Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
-   read_crypto_cache(fname);
-   free_pool_memory(fname);
+   ReadCryptoCache(fname);
+   FreePoolMemory(fname);
 }
 
 /*
  * Write the content of the crypto cache to the filesystem.
  */
-void write_crypto_cache(const char *cache_file)
+void WriteCryptoCache(const char *cache_file)
 {
    int fd;
    bool ok = false;
@@ -152,7 +152,7 @@ void write_crypto_cache(const char *cache_file)
     */
    P(crypto_cache_lock);
 
-   secure_erase(NULL, cache_file);
+   SecureErase(NULL, cache_file);
    if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
       berrno be;
 
@@ -185,19 +185,19 @@ bail_out:
    }
 
    if (!ok) {
-      secure_erase(NULL, cache_file);
+      SecureErase(NULL, cache_file);
    }
 
    V(crypto_cache_lock);
 }
 
-void write_crypto_cache(const char *dir, const char *progname, int port)
+void WriteCryptoCache(const char *dir, const char *progname, int port)
 {
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
+   POOLMEM *fname = GetPoolMemory(PM_FNAME);
 
    Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
-   write_crypto_cache(fname);
-   free_pool_memory(fname);
+   WriteCryptoCache(fname);
+   FreePoolMemory(fname);
 }
 
 /*
@@ -207,7 +207,7 @@ void write_crypto_cache(const char *dir, const char *progname, int port)
  * Returns: true - cache was updated with new data.
  *          false - cache was not updated with new data.
  */
-bool update_crypto_cache(const char *VolumeName, const char *EncryptionKey)
+bool UpdateCryptoCache(const char *VolumeName, const char *EncryptionKey)
 {
    time_t now;
    bool found;
@@ -396,7 +396,7 @@ void reset_crypto_cache(void)
 /*
  * Flush the date from the internal cache.
  */
-void flush_crypto_cache(void)
+void FlushCryptoCache(void)
 {
    if (!cached_crypto_keys) {
       return;

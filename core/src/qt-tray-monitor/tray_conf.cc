@@ -168,7 +168,7 @@ static ResourceTable resources[] = {
    { "Monitor", mon_items, R_MONITOR, sizeof(MonitorResource), [] (void *res){ return new((MonitorResource *) res) MonitorResource(); } },
    { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
    { "Client", cli_items, R_CLIENT, sizeof(ClientResource), [] (void *res){ return new((ClientResource *) res) ClientResource(); } },
-   { "Storage", store_items, R_STORAGE, sizeof(StoreResource), [] (void *res){ return new((StoreResource *) res) StoreResource(); } },
+   { "Storage", store_items, R_STORAGE, sizeof(StorageResource), [] (void *res){ return new((StorageResource *) res) StorageResource(); } },
    { "ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource) },
    { NULL, NULL, 0, 0 }
 };
@@ -195,7 +195,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *soc
    switch (type) {
       default:
          resclass = (BareosResource *)reshdr;
-         resclass->print_config(buf);
+         resclass->PrintConfig(buf);
          break;
    }
    sendit(sock, "%s", buf.c_str());
@@ -212,7 +212,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *soc
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(CommonResourceHeader *sres, int type)
+void FreeResource(CommonResourceHeader *sres, int type)
 {
    CommonResourceHeader *nres; /* next resource if linked */
    UnionOfResources *res = (UnionOfResources *)sres;
@@ -261,7 +261,7 @@ void free_resource(CommonResourceHeader *sres, int type)
       }
       break;
    default:
-      printf(_("Unknown resource type %d in free_resource.\n"), type);
+      printf(_("Unknown resource type %d in FreeResource.\n"), type);
    }
 
    /*
@@ -271,7 +271,7 @@ void free_resource(CommonResourceHeader *sres, int type)
       free(res);
    }
    if (nres) {
-      free_resource(nres, type);
+      FreeResource(nres, type);
    }
 }
 
@@ -293,7 +293,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
     */
    for (i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
-         if (!bit_is_set(i, res_all.res_monitor.hdr.item_present)) {
+         if (!BitIsSet(i, res_all.res_monitor.hdr.item_present)) {
                Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                   items[i].name, resources[rindex].name);
          }
@@ -372,7 +372,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
    return (error == 0);
 }
 
-void init_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code)
+void InitTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -387,25 +387,25 @@ void init_tmon_config(ConfigurationParser *config, const char *configfile, int e
                 R_LAST,
                 resources,
                 res_head);
-   config->set_default_config_filename(CONFIG_FILE);
-   config->set_config_include_dir("tray-monitor.d");
+   config->SetDefaultConfigFilename(CONFIG_FILE);
+   config->SetConfigIncludeDir("tray-monitor.d");
 }
 
 bool parse_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
-   init_tmon_config(config, configfile, exit_code);
-   return config->parse_config();
+   InitTmonConfig(config, configfile, exit_code);
+   return config->ParseConfig();
 }
 
 /*
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool print_config_schema_json(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem &buffer)
 {
    ResourceTable *resources = my_config->resources_;
 
-   initialize_json();
+   InitializeJson();
 
    json_t *json = json_object();
    json_object_set_new(json, "format-version", json_integer(2));
@@ -425,15 +425,15 @@ bool print_config_schema_json(PoolMem &buffer)
       json_object_set(bareos_tray_monitor, resource.name, json_items(resource.items));
    }
 
-   pm_strcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
    json_decref(json);
 
    return true;
 }
 #else
-bool print_config_schema_json(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem &buffer)
 {
-   pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
    return false;
 }
 #endif

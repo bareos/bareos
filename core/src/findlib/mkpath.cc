@@ -80,7 +80,7 @@ static bool makedir(JobControlRecord *jcr, char *path, mode_t mode, int *created
          jcr->path_list = path_list_init();
       }
 
-      path_list_add(jcr->path_list, strlen(path), path);
+      PathListAdd(jcr->path_list, strlen(path), path);
    }
 
    *created = true;
@@ -148,7 +148,7 @@ bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mo
    len = strlen(apath);
    path = (char *)alloca(len+1);
    bstrncpy(path, apath, len+1);
-   strip_trailing_slashes(path);
+   StripTrailingSlashes(path);
    /*
     * Now for one of the complexities. If we are not running as root,
     * then if the parent_mode does not have wx user perms, or we are

@@ -31,15 +31,15 @@ DLL_IMP_EXP char *add_commas(char *val, char *buf);
 DLL_IMP_EXP char *edit_uint64(uint64_t val, char *buf);
 DLL_IMP_EXP char *edit_int64(int64_t val, char *buf);
 DLL_IMP_EXP char *edit_int64_with_commas(int64_t val, char *buf);
-DLL_IMP_EXP bool duration_to_utime(char *str, utime_t *value);
+DLL_IMP_EXP bool DurationToUtime(char *str, utime_t *value);
 DLL_IMP_EXP bool size_to_uint64(char *str, uint64_t *value);
 DLL_IMP_EXP bool speed_to_uint64(char *str, uint64_t *value);
 DLL_IMP_EXP char *edit_utime(utime_t val, char *buf, int buf_len);
 DLL_IMP_EXP char *edit_pthread(pthread_t val, char *buf, int buf_len);
-DLL_IMP_EXP bool is_a_number(const char *num);
-DLL_IMP_EXP bool is_a_number_list(const char *n);
-DLL_IMP_EXP bool is_an_integer(const char *n);
-DLL_IMP_EXP bool is_name_valid(const char *name, POOLMEM *&msg);
-DLL_IMP_EXP bool is_name_valid(const char *name);
+DLL_IMP_EXP bool Is_a_number(const char *num);
+DLL_IMP_EXP bool Is_a_number_list(const char *n);
+DLL_IMP_EXP bool IsAnInteger(const char *n);
+DLL_IMP_EXP bool IsNameValid(const char *name, POOLMEM *&msg);
+DLL_IMP_EXP bool IsNameValid(const char *name);
 
 #endif // BAREOS_LIB_EDIT_H_

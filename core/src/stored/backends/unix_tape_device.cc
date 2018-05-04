@@ -57,7 +57,7 @@ unix_tape_device::~unix_tape_device()
 
 unix_tape_device::unix_tape_device()
 {
-   set_cap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
+   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

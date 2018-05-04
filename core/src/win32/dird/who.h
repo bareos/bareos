@@ -27,5 +27,5 @@
 #define APP_DESC "Bareos Director Service"
 #define SERVICE_DESC "Provides bareos director services."
 
-#define terminate_app(x) terminate_dird(x)
-extern void terminate_dird(int sig);
+#define TerminateApp(x) TerminateDird(x)
+extern void TerminateDird(int sig);

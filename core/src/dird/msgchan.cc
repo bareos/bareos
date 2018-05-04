@@ -90,16 +90,16 @@ bool update_device_res(JobControlRecord *jcr, DeviceResource *dev)
 {
    PoolMem device_name;
    BareosSocket *sd;
-   if (!connect_to_storage_daemon(jcr, 5, 30, false)) {
+   if (!ConnectToStorageDaemon(jcr, 5, 30, false)) {
       return false;
    }
    sd = jcr->store_bsock;
-   pm_strcpy(device_name, dev->name());
-   bash_spaces(device_name);
+   PmStrcpy(device_name, dev->name());
+   BashSpaces(device_name);
    sd->fsend(query_device, device_name.c_str());
    Dmsg1(100, ">stored: %s\n", sd->msg);
    /* The data is returned through Device_update */
-   if (bget_dirmsg(sd) <= 0) {
+   if (BgetDirmsg(sd) <= 0) {
       return false;
    }
    return true;
@@ -139,7 +139,7 @@ static inline bool send_bootstrap_file_to_sd(JobControlRecord *jcr, BareosSocket
    sd->signal(BNET_EOD);
    fclose(bs);
    if (jcr->unlink_bsr) {
-      secure_erase(jcr, jcr->RestoreBootstrap);
+      SecureErase(jcr, jcr->RestoreBootstrap);
       jcr->unlink_bsr = false;
    }
    return true;
@@ -147,10 +147,10 @@ static inline bool send_bootstrap_file_to_sd(JobControlRecord *jcr, BareosSocket
 
 /** Start a job with the Storage daemon
  */
-bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstore, bool send_bsr)
+bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, bool send_bsr)
 {
    bool ok = true;
-   StoreResource *storage;
+   StorageResource *storage;
    char auth_key[100];
    const char *fileset_md5;
    PoolMem store_name, device_name, pool_name, pool_type, media_type, backup_format;
@@ -164,7 +164,7 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
    /*
     * Before actually starting a new Job on the SD make sure we send any specific plugin options for this Job.
     */
-   if (!do_storage_plugin_options(jcr)) {
+   if (!DoStoragePluginOptions(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Plugin Options command: %s\n"), sd->msg);
       return false;
    }
@@ -172,25 +172,25 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
    /*
     * Now send JobId and permissions, and get back the authorization key.
     */
-   pm_strcpy(job_name, jcr->res.job->name());
-   bash_spaces(job_name);
+   PmStrcpy(job_name, jcr->res.job->name());
+   BashSpaces(job_name);
 
    if (jcr->res.client) {
-      pm_strcpy(client_name, jcr->res.client->name());
+      PmStrcpy(client_name, jcr->res.client->name());
    } else {
-      pm_strcpy(client_name, "**None**");
+      PmStrcpy(client_name, "**None**");
    }
-   bash_spaces(client_name);
+   BashSpaces(client_name);
 
    if (jcr->res.fileset) {
-      pm_strcpy(fileset_name, jcr->res.fileset->name());
+      PmStrcpy(fileset_name, jcr->res.fileset->name());
    } else {
-      pm_strcpy(fileset_name, "**None**");
+      PmStrcpy(fileset_name, "**None**");
    }
-   bash_spaces(fileset_name);
+   BashSpaces(fileset_name);
 
-   pm_strcpy(backup_format, jcr->backup_format);
-   bash_spaces(backup_format);
+   PmStrcpy(backup_format, jcr->backup_format);
+   BashSpaces(backup_format);
 
    if (jcr->res.fileset && jcr->res.fileset->MD5[0] == 0) {
       bstrncpy(jcr->res.fileset->MD5, "**Dummy**", sizeof(jcr->res.fileset->MD5));
@@ -217,7 +217,7 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
    /*
     * Retrieve available quota 0 bytes means dont perform the check
     */
-   remainingquota = fetch_remaining_quotas(jcr);
+   remainingquota = FetchRemainingQuotas(jcr);
    Dmsg1(50,"Remainingquota: %llu\n", remainingquota);
 
    sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job,
@@ -230,7 +230,7 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
              jcr->getJobProtocol(), backup_format.c_str());
 
    Dmsg1(100, ">stored: %s", sd->msg);
-   if (bget_dirmsg(sd) > 0) {
+   if (BgetDirmsg(sd) > 0) {
       Dmsg1(100, "<stored: %s", sd->msg);
       if (sscanf(sd->msg, OK_job, &jcr->VolSessionId,
                  &jcr->VolSessionTime, &auth_key) != 3) {
@@ -238,7 +238,7 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
          Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Job command: %s\n"), sd->msg);
          return false;
       } else {
-         bfree_and_null(jcr->sd_auth_key);
+         BfreeAndNull(jcr->sd_auth_key);
          jcr->sd_auth_key = bstrdup(auth_key);
          Dmsg1(150, "sd_auth_key=%s\n", jcr->sd_auth_key);
       }
@@ -257,7 +257,7 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
     * request sd to reply the secure erase cmd
     * or "*None*" if not set
     */
-   if(!send_secure_erase_req_to_sd(jcr)) {
+   if(!SendSecureEraseReqToSd(jcr)) {
       Dmsg1(400,"Unexpected %s Secure Erase Reply\n","SD");
    }
 
@@ -275,35 +275,35 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
       /* For the moment, only migrate, copy and vbackup have rpool */
       if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
          (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
-         pm_strcpy(pool_type, jcr->res.rpool->pool_type);
-         pm_strcpy(pool_name, jcr->res.rpool->name());
+         PmStrcpy(pool_type, jcr->res.rpool->pool_type);
+         PmStrcpy(pool_name, jcr->res.rpool->name());
       } else {
-         pm_strcpy(pool_type, jcr->res.pool->pool_type);
-         pm_strcpy(pool_name, jcr->res.pool->name());
+         PmStrcpy(pool_type, jcr->res.pool->pool_type);
+         PmStrcpy(pool_name, jcr->res.pool->name());
       }
-      bash_spaces(pool_type);
-      bash_spaces(pool_name);
+      BashSpaces(pool_type);
+      BashSpaces(pool_name);
       foreach_alist(storage, rstore) {
          Dmsg1(100, "Rstore=%s\n", storage->name());
-         pm_strcpy(store_name, storage->name());
-         bash_spaces(store_name);
-         pm_strcpy(media_type, storage->media_type);
-         bash_spaces(media_type);
+         PmStrcpy(store_name, storage->name());
+         BashSpaces(store_name);
+         PmStrcpy(media_type, storage->media_type);
+         BashSpaces(media_type);
          sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
          Dmsg1(100, "rstore >stored: %s", sd->msg);
          DeviceResource *dev;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
-            pm_strcpy(device_name, dev->name());
-            bash_spaces(device_name);
+            PmStrcpy(device_name, dev->name());
+            BashSpaces(device_name);
             sd->fsend(use_device, device_name.c_str());
             Dmsg1(100, ">stored: %s", sd->msg);
          }
          sd->signal(BNET_EOD);           /* end of Devices */
       }
       sd->signal(BNET_EOD);              /* end of Storages */
-      if (bget_dirmsg(sd) > 0) {
+      if (BgetDirmsg(sd) > 0) {
          Dmsg1(100, "<stored: %s", sd->msg);
          /* ****FIXME**** save actual device name */
          ok = sscanf(sd->msg, OK_device, device_name.c_str()) == 1;
@@ -317,15 +317,15 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
 
    /* Do write side of storage daemon */
    if (ok && wstore) {
-      pm_strcpy(pool_type, jcr->res.pool->pool_type);
-      pm_strcpy(pool_name, jcr->res.pool->name());
-      bash_spaces(pool_type);
-      bash_spaces(pool_name);
+      PmStrcpy(pool_type, jcr->res.pool->pool_type);
+      PmStrcpy(pool_name, jcr->res.pool->name());
+      BashSpaces(pool_type);
+      BashSpaces(pool_name);
       foreach_alist(storage, wstore) {
-         pm_strcpy(store_name, storage->name());
-         bash_spaces(store_name);
-         pm_strcpy(media_type, storage->media_type);
-         bash_spaces(media_type);
+         PmStrcpy(store_name, storage->name());
+         BashSpaces(store_name);
+         PmStrcpy(media_type, storage->media_type);
+         BashSpaces(media_type);
          sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
@@ -333,15 +333,15 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
          DeviceResource *dev;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
-            pm_strcpy(device_name, dev->name());
-            bash_spaces(device_name);
+            PmStrcpy(device_name, dev->name());
+            BashSpaces(device_name);
             sd->fsend(use_device, device_name.c_str());
             Dmsg1(100, ">stored: %s", sd->msg);
          }
          sd->signal(BNET_EOD);           /* end of Devices */
       }
       sd->signal(BNET_EOD);              /* end of Storages */
-      if (bget_dirmsg(sd) > 0) {
+      if (BgetDirmsg(sd) > 0) {
          Dmsg1(100, "<stored: %s", sd->msg);
          /* ****FIXME**** save actual device name */
          ok = sscanf(sd->msg, OK_device, device_name.c_str()) == 1;
@@ -355,7 +355,7 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
    if (!ok) {
       PoolMem err_msg;
       if (sd->msg[0]) {
-         pm_strcpy(err_msg, sd->msg); /* save message */
+         PmStrcpy(err_msg, sd->msg); /* save message */
          Jmsg(jcr, M_FATAL, 0, _("\n"
               "     Storage daemon didn't accept Device \"%s\" because:\n     %s"),
               device_name.c_str(), err_msg.c_str()/* sd->msg */);
@@ -371,12 +371,12 @@ bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstor
 /** Start a thread to handle Storage daemon messages and
  *  Catalog requests.
  */
-bool start_storage_daemon_message_thread(JobControlRecord *jcr)
+bool StartStorageDaemonMessageThread(JobControlRecord *jcr)
 {
    int status;
    pthread_t thid;
 
-   jcr->inc_use_count();              /* mark in use by msg thread */
+   jcr->IncUseCount();              /* mark in use by msg thread */
    jcr->sd_msg_thread_done = false;
    jcr->SD_msg_chan_started = false;
    Dmsg0(100, "Start SD msg_thread.\n");
@@ -387,11 +387,11 @@ bool start_storage_daemon_message_thread(JobControlRecord *jcr)
    /* Wait for thread to start */
    while (!jcr->SD_msg_chan_started) {
       bmicrosleep(0, 50);
-      if (job_canceled(jcr) || jcr->sd_msg_thread_done) {
+      if (JobCanceled(jcr) || jcr->sd_msg_thread_done) {
          return false;
       }
    }
-   Dmsg1(100, "SD msg_thread started. use=%d\n", jcr->use_count());
+   Dmsg1(100, "SD msg_thread started. use=%d\n", jcr->UseCount());
    return true;
 }
 
@@ -399,16 +399,16 @@ extern "C" void msg_thread_cleanup(void *arg)
 {
    JobControlRecord *jcr = (JobControlRecord *)arg;
 
-   jcr->db->end_transaction(jcr);           /* terminate any open transaction */
+   jcr->db->EndTransaction(jcr);           /* terminate any open transaction */
    jcr->lock();
    jcr->sd_msg_thread_done = true;
    jcr->SD_msg_chan_started = false;
    jcr->unlock();
    pthread_cond_broadcast(&jcr->nextrun_ready); /* wakeup any waiting threads */
    pthread_cond_broadcast(&jcr->term_wait); /* wakeup any waiting threads */
-   Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId, jcr->use_count());
-   jcr->db->thread_cleanup();               /* remove thread specific data */
-   free_jcr(jcr);                           /* release jcr */
+   Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId, jcr->UseCount());
+   jcr->db->ThreadCleanup();               /* remove thread specific data */
+   FreeJcr(jcr);                           /* release jcr */
 }
 
 /** Handle the message channel (i.e. requests from the
@@ -427,7 +427,7 @@ extern "C" void *msg_thread(void *arg)
    uint64_t JobBytes;
 
    pthread_detach(pthread_self());
-   set_jcr_in_tsd(jcr);
+   SetJcrInTsd(jcr);
    jcr->SD_msg_chan = pthread_self();
    jcr->SD_msg_chan_started = true;
    pthread_cleanup_push(msg_thread_cleanup, arg);
@@ -438,7 +438,7 @@ extern "C" void *msg_thread(void *arg)
     */
    Dmsg0(100, "Start msg_thread loop\n");
    n = 0;
-   while (!job_canceled(jcr) && (n=bget_dirmsg(sd)) >= 0) {
+   while (!JobCanceled(jcr) && (n=BgetDirmsg(sd)) >= 0) {
       Dmsg1(400, "<stored: %s", sd->msg);
       /*
        * Check for "3000 OK Job Authorization="
@@ -471,7 +471,7 @@ extern "C" void *msg_thread(void *arg)
          jcr->SDErrors = JobErrors;
          break;
       }
-      Dmsg1(400, "end loop use=%d\n", jcr->use_count());
+      Dmsg1(400, "end loop use=%d\n", jcr->UseCount());
    }
    if (n == BNET_HARDEOF) {
       /*
@@ -480,14 +480,14 @@ extern "C" void *msg_thread(void *arg)
        */
       Qmsg(jcr, M_ERROR, 0, _("Director's comm line to SD dropped.\n"));
    }
-   if (is_bnet_error(sd)) {
+   if (IsBnetError(sd)) {
       jcr->SDJobStatus = JS_ErrorTerminated;
    }
    pthread_cleanup_pop(1);            /* remove and execute the handler */
    return NULL;
 }
 
-void wait_for_storage_daemon_termination(JobControlRecord *jcr)
+void WaitForStorageDaemonTermination(JobControlRecord *jcr)
 {
    int cancel_count = 0;
    /* Now wait for Storage daemon to terminate our message thread */
@@ -503,11 +503,11 @@ void wait_for_storage_daemon_termination(JobControlRecord *jcr)
       P(mutex);
       pthread_cond_timedwait(&jcr->term_wait, &mutex, &timeout);
       V(mutex);
-      if (jcr->is_canceled()) {
+      if (jcr->IsCanceled()) {
          if (jcr->SD_msg_chan_started) {
-            jcr->store_bsock->set_timed_out();
-            jcr->store_bsock->set_terminated();
-            sd_msg_thread_send_signal(jcr, TIMEOUT_SIGNAL);
+            jcr->store_bsock->SetTimedOut();
+            jcr->store_bsock->SetTerminated();
+            SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
          }
          cancel_count++;
       }
@@ -531,7 +531,7 @@ extern "C" void *device_thread(void *arg)
    pthread_detach(pthread_self());
    jcr = new_control_jcr("*DeviceInit*", JT_SYSTEM);
    for (i=0; i < MAX_TRIES; i++) {
-      if (!connect_to_storage_daemon(jcr, 10, 30, true)) {
+      if (!ConnectToStorageDaemon(jcr, 10, 30, true)) {
          Dmsg0(900, "Failed connecting to SD.\n");
          continue;
       }
@@ -550,7 +550,7 @@ extern "C" void *device_thread(void *arg)
       break;
 
    }
-   free_jcr(jcr);
+   FreeJcr(jcr);
    return NULL;
 }
 

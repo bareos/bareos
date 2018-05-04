@@ -33,7 +33,7 @@
  *
  * Basic tasks done here:
  *    Handle network signals (signals).
- *       Signals always have return status 0 from bnet_recv() and
+ *       Signals always have return status 0 from BnetRecv() and
  *       a zero or negative message length.
  *    Pass appropriate messages back to the caller (responses).
  *       Responses always have a digit as the first character.
@@ -89,7 +89,7 @@ static void set_jcr_sd_job_status(JobControlRecord *jcr, int SDJobStatus)
          break;
    }
 
-   if (job_waiting(jcr)) {
+   if (JobWaiting(jcr)) {
       set_waittime = false;
    }
 
@@ -143,7 +143,7 @@ static void set_jcr_sd_job_status(JobControlRecord *jcr, int SDJobStatus)
  *    is a *rare* case where a jcr is not really needed.
  *
  */
-int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
+int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
 {
    int32_t n = BNET_TERMINATE;
    char Job[MAX_NAME_LENGTH];
@@ -153,15 +153,15 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
    JobControlRecord *jcr = bs->jcr();
    char *msg;
 
-   for ( ; !bs->is_stop() && !bs->is_timed_out(); ) {
+   for ( ; !bs->IsStop() && !bs->IsTimedOut(); ) {
       n = bs->recv();
-      Dmsg2(200, "bget_dirmsg %d: %s\n", n, bs->msg);
+      Dmsg2(200, "BgetDirmsg %d: %s\n", n, bs->msg);
 
-      if (bs->is_stop() || bs->is_timed_out()) {
+      if (bs->IsStop() || bs->IsTimedOut()) {
          return n;                    /* error or terminate */
       }
       if (n == BNET_SIGNAL) {          /* handle signal */
-         /* BNET_SIGNAL (-1) return from bnet_recv() => network signal */
+         /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
          switch (bs->msglen) {
          case BNET_EOD:            /* end of data */
             return n;
@@ -169,7 +169,7 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
             bs->fsend(OK_msg);/* send response */
             return n;              /* end of data */
          case BNET_TERMINATE:
-            bs->set_terminated();
+            bs->SetTerminated();
             return n;
          case BNET_POLL:
             bs->fsend(OK_msg); /* send response */
@@ -187,10 +187,10 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
             break;
          case BNET_BTIME:             /* send BAREOS time */
             char ed1[50];
-            bs->fsend("btime %s\n", edit_uint64(get_current_btime(),ed1));
+            bs->fsend("btime %s\n", edit_uint64(GetCurrentBtime(),ed1));
             break;
          default:
-            Jmsg1(jcr, M_WARNING, 0, _("bget_dirmsg: unknown bnet signal %d\n"), bs->msglen);
+            Jmsg1(jcr, M_WARNING, 0, _("BgetDirmsg: unknown bnet signal %d\n"), bs->msglen);
             return n;
          }
          continue;
@@ -242,15 +242,15 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
             continue;
          }
          Dmsg1(900, "Got msg: %s\n", bs->msg);
-         skip_spaces(&msg);
-         skip_nonspaces(&msg);        /* skip type=nnn */
-         skip_spaces(&msg);
-         skip_nonspaces(&msg);        /* skip level=nnn */
+         SkipSpaces(&msg);
+         SkipNonspaces(&msg);        /* skip type=nnn */
+         SkipSpaces(&msg);
+         SkipNonspaces(&msg);        /* skip level=nnn */
          if (*msg == ' ') {
             msg++;                    /* skip leading space */
          }
          Dmsg1(900, "Dispatch msg: %s", msg);
-         dispatch_message(jcr, type, mtime, msg);
+         DispatchMessage(jcr, type, mtime, msg);
          continue;
       }
       /*
@@ -259,12 +259,12 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
        */
       if (bs->msg[0] == 'C') {        /* Catalog request */
          Dmsg2(900, "Catalog req jcr 0x%x: %s", jcr, bs->msg);
-         catalog_request(jcr, bs);
+         CatalogRequest(jcr, bs);
          continue;
       }
       if (bs->msg[0] == 'U') {        /* SD sending attributes */
          Dmsg2(900, "Catalog upd jcr 0x%x: %s", jcr, bs->msg);
-         catalog_update(jcr, bs);
+         CatalogUpdate(jcr, bs);
          continue;
       }
       if (bs->msg[0] == 'B') {        /* SD sending file spool attributes */
@@ -275,8 +275,8 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
             Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
             continue;
          }
-         unbash_spaces(filename);
-         if (despool_attributes_from_file(jcr, filename)) {
+         UnbashSpaces(filename);
+         if (DespoolAttributesFromFile(jcr, filename)) {
             bs->fsend("1000 OK BlastAttr\n");
          } else {
             bs->fsend("1990 ERROR BlastAttr\n");
@@ -285,7 +285,7 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
       }
       if (bs->msg[0] == 'M') {        /* Mount request */
          Dmsg1(900, "Mount req: %s", bs->msg);
-         mount_request(jcr, bs, msg);
+         MountRequest(jcr, bs, msg);
          continue;
       }
       if (bs->msg[0] == 'S') {       /* Status change */
@@ -322,14 +322,14 @@ int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
              &dev_write_bytes) != 19) {
             Emsg1(M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          } else {
-            unbash_spaces(dev_name);
+            UnbashSpaces(dev_name);
             dev = (Device *)GetResWithName(R_DEVICE, dev_name.c_str());
             if (!dev) {
                continue;
             }
-            unbash_spaces(changer_name);
-            unbash_spaces(media_type);
-            unbash_spaces(volume_name);
+            UnbashSpaces(changer_name);
+            UnbashSpaces(media_type);
+            UnbashSpaces(volume_name);
             bstrncpy(dev->ChangerName, changer_name.c_str(), sizeof(dev->ChangerName));
             bstrncpy(dev->MediaType, media_type.c_str(), sizeof(dev->MediaType));
             bstrncpy(dev->VolumeName, volume_name.c_str(), sizeof(dev->VolumeName));
@@ -366,10 +366,10 @@ static char *find_msg_start(char *msg)
 {
    char *p = msg;
 
-   skip_nonspaces(&p);                /* skip message type */
-   skip_spaces(&p);
-   skip_nonspaces(&p);                /* skip Job */
-   skip_spaces(&p);                   /* after spaces come the message */
+   SkipNonspaces(&p);                /* skip message type */
+   SkipSpaces(&p);
+   SkipNonspaces(&p);                /* skip Job */
+   SkipSpaces(&p);                   /* after spaces come the message */
    return p;
 }
 
@@ -384,10 +384,10 @@ bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *c
 {
    int n;
 
-   if (is_bnet_error(bs)) {
+   if (IsBnetError(bs)) {
       return false;
    }
-   if ((n = bget_dirmsg(bs)) >= 0) {
+   if ((n = BgetDirmsg(bs)) >= 0) {
       if (bstrcmp(bs->msg, resp)) {
          return true;
       }

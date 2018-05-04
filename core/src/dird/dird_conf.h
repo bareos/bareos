@@ -98,7 +98,7 @@ class RunScriptResource;
 /*
  * Print configuration file schema in json format
  */
-bool print_config_schema_json(PoolMem &buff);
+bool PrintConfigSchemaJson(PoolMem &buff);
 
 /*
  *   Director Resource
@@ -282,7 +282,7 @@ public:
 /**
  * Store Resource
  */
-class StoreResource : public TlsResource {
+class StorageResource : public TlsResource {
 public:
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
@@ -305,15 +305,15 @@ public:
    utime_t heartbeat_interval;        /**< Interval to send heartbeats */
    utime_t cache_status_interval;     /**< Interval to cache the vol_list in the rss */
    runtime_storage_status_t *rss;     /**< Runtime Storage Status */
-   StoreResource *paired_storage;          /**< Paired storage configuration item for protocols like NDMP */
+   StorageResource *paired_storage;          /**< Paired storage configuration item for protocols like NDMP */
 
    /* Methods */
    char *dev_name() const;
 
-   StoreResource() : TlsResource() {}
+   StorageResource() : TlsResource() {}
 };
 
-inline char *StoreResource::dev_name() const
+inline char *StorageResource::dev_name() const
 {
    DeviceResource *dev = (DeviceResource *)device->first();
    return dev->name();
@@ -324,33 +324,33 @@ inline char *StoreResource::dev_name() const
  * storage pointer and the text of where the pointer was
  * found.
  */
-class UnifiedStoreResource {
+class UnifiedStorageResource {
 public:
-   StoreResource *store;
+   StorageResource *store;
    POOLMEM *store_source;
 
    /* Methods */
-   UnifiedStoreResource() { store = NULL; store_source = get_pool_memory(PM_MESSAGE);
+   UnifiedStorageResource() { store = NULL; store_source = GetPoolMemory(PM_MESSAGE);
               *store_source = 0; }
-   ~UnifiedStoreResource() { destroy(); }
+   ~UnifiedStorageResource() { destroy(); }
    void set_source(const char *where);
    void destroy();
 };
 
-inline void UnifiedStoreResource::destroy()
+inline void UnifiedStorageResource::destroy()
 {
    if (store_source) {
-      free_pool_memory(store_source);
+      FreePoolMemory(store_source);
       store_source = NULL;
    }
 }
 
-inline void UnifiedStoreResource::set_source(const char *where)
+inline void UnifiedStorageResource::set_source(const char *where)
 {
    if (!store_source) {
-      store_source = get_pool_memory(PM_MESSAGE);
+      store_source = GetPoolMemory(PM_MESSAGE);
    }
-   pm_strcpy(store_source, where);
+   PmStrcpy(store_source, where);
 }
 
 /**
@@ -506,7 +506,7 @@ public:
    bool enable_vss;                   /**< Enable Volume Shadow Copy */
 
    /* Methods */
-   bool print_config(PoolMem& buf, bool hide_sensitive_data = false, bool verbose = false);
+   bool PrintConfig(PoolMem& buf, bool hide_sensitive_data = false, bool verbose = false);
 
    FilesetResource() : BareosResource() {}
 };
@@ -599,19 +599,19 @@ public:
    PoolResource *inc_pool;                 /**< Incr Pool override */
    PoolResource *diff_pool;                /**< Diff Pool override */
    PoolResource *next_pool;                /**< Next Pool override */
-   StoreResource *storage;                 /**< Storage override */
+   StorageResource *storage;                 /**< Storage override */
    MessagesResource *msgs;                     /**< Messages override */
    char *since;
    uint32_t level_no;
    uint32_t minute;                   /* minute to run job */
    time_t last_run;                   /* last time run */
    time_t next_run;                   /* next time to run */
-   char hour[nbytes_for_bits(24 + 1)];  /* bit set for each hour */
-   char mday[nbytes_for_bits(31 + 1)];  /* bit set for each day of month */
-   char month[nbytes_for_bits(12 + 1)]; /* bit set for each month */
-   char wday[nbytes_for_bits(7 + 1)];   /* bit set for each day of the week */
-   char wom[nbytes_for_bits(5 + 1)];    /* week of month */
-   char woy[nbytes_for_bits(54 + 1)];   /* week of year */
+   char hour[NbytesForBits(24 + 1)];  /* bit set for each hour */
+   char mday[NbytesForBits(31 + 1)];  /* bit set for each day of month */
+   char month[NbytesForBits(12 + 1)]; /* bit set for each month */
+   char wday[NbytesForBits(7 + 1)];   /* bit set for each day of the week */
+   char wom[NbytesForBits(5 + 1)];    /* week of month */
+   char woy[NbytesForBits(54 + 1)];   /* week of year */
    bool last_set;                       /* last week of month */
 
    RunResource() : BareosResource() {}
@@ -626,7 +626,7 @@ union UnionOfResources {
    ConsoleResource res_con;
    ProfileResource res_profile;
    ClientResource res_client;
-   StoreResource res_store;
+   StorageResource res_store;
    CatalogResource res_cat;
    JobResource res_job;
    FilesetResource res_fs;
@@ -646,9 +646,9 @@ union UnionOfResources {
    ~UnionOfResources() {}
 };
 
-void init_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
-bool propagate_jobdefs(int res_type, JobResource *res);
-bool validate_resource(int type, ResourceItem *items, BareosResource *res);
+void InitDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+bool PropagateJobdefs(int res_type, JobResource *res);
+bool ValidateResource(int type, ResourceItem *items, BareosResource *res);
 
 bool print_datatype_schema_json(PoolMem &buffer, int level, const int type,
                                 ResourceItem items[], const bool last = false);
@@ -659,7 +659,7 @@ const char *auth_protocol_to_str(uint32_t auth_protocol);
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JobControlRecord *jcr, const char*);
 const char *get_configure_usage_string();
-void destroy_configure_usage_string();
-bool populate_defs();
+void DestroyConfigureUsageString();
+bool PopulateDefs();
 
 #endif // BAREOS_DIRD_DIRD_CONF_H_

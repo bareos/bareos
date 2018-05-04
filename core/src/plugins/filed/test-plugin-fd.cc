@@ -204,7 +204,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
    if (p_ctx->buf) {
-      free_pool_memory(p_ctx->buf);
+      FreePoolMemory(p_ctx->buf);
    }
    if (p_ctx->cmd) {
       free(p_ctx->cmd);                  /* free any allocated command string */
@@ -271,7 +271,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       rop = (restore_object_pkt *)value;
       Dmsg(ctx, debuglevel, "Get RestoreObject len=%d JobId=%d oname=%s type=%d data=%.127s\n",
            rop->object_len, rop->JobId, rop->object_name, rop->object_type, rop->object);
-      q = get_pool_memory(PM_FNAME);
+      q = GetPoolMemory(PM_FNAME);
 
       bfuncs->getBareosValue(ctx, bVarWorkingDir, &working);
       Mmsg(q, "%s/restore.%d", working, _nb++);
@@ -280,14 +280,14 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          fclose(fp);
       }
 
-      free_pool_memory(q);
+      FreePoolMemory(q);
 
       if (!strcmp(rop->object_name, INI_RESTORE_OBJECT_NAME)) {
          ConfigFile ini;
          if (!ini.dump_string(rop->object, rop->object_len)) {
             break;
          }
-         ini.register_items(test_items, sizeof(struct ini_items));
+         ini.RegisterItems(test_items, sizeof(struct ini_items));
          if (ini.parse(ini.out_fname)) {
             Jmsg(ctx, M_INFO, "string1 = %s\n", ini.items[0].val.strval);
          } else {
@@ -567,7 +567,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       sp->type = FT_RESTORE_FIRST;
 
       static int _nb=0;
-      POOLMEM *q = get_pool_memory(PM_FNAME);
+      POOLMEM *q = GetPoolMemory(PM_FNAME);
       char *working;
       FILE *fp;
 
@@ -577,14 +577,14 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
          fwrite(sp->object, sp->object_len, 1, fp);
          fclose(fp);
       }
-      free_pool_memory(q);
+      FreePoolMemory(q);
 
    } else if (p_ctx->nb_obj == 1) {
       ConfigFile ini;
 
-      p_ctx->buf = get_pool_memory(PM_BSOCK);
+      p_ctx->buf = GetPoolMemory(PM_BSOCK);
       Dmsg(ctx, debuglevel, "p_ctx->buf = 0x%x\n", p_ctx->buf);
-      ini.register_items(test_items, sizeof(struct ini_items));
+      ini.RegisterItems(test_items, sizeof(struct ini_items));
 
       sp->object_name = (char*)INI_RESTORE_OBJECT_NAME;
       sp->object_len = ini.serialize(p_ctx->buf);

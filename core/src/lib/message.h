@@ -100,7 +100,7 @@ enum {
 };
 
 #define M_MAX M_AUDIT                 /* keep this updated ! */
-#define NR_MSG_TYPES nbytes_for_bits(M_MAX + 1)
+#define NR_MSG_TYPES NbytesForBits(M_MAX + 1)
 
 /**
  * Define message destination structure
@@ -166,9 +166,9 @@ extern "C" {
 
 DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
 DLL_IMP_EXP void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
-DLL_IMP_EXP bool get_trace(void);
+DLL_IMP_EXP bool GetTrace(void);
 DLL_IMP_EXP const char *get_basename(const char *pathname);
-DLL_IMP_EXP void set_log_timestamp_format(const char *format);
+DLL_IMP_EXP void SetLogTimestampFormat(const char *format);
 
 typedef bool (*db_log_insert_func)(JobControlRecord *jcr, utime_t mtime, char *msg);
 extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;
@@ -189,23 +189,23 @@ extern DLL_IMP_EXP int console_msg_pending;
 extern DLL_IMP_EXP FILE *con_fd;       /* Console file descriptor */
 extern DLL_IMP_EXP brwlock_t con_lock; /* Console lock structure */
 
-DLL_IMP_EXP void my_name_is(int argc, char *argv[], const char *name);
-DLL_IMP_EXP void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback = NULL);
-DLL_IMP_EXP void term_msg(void);
-DLL_IMP_EXP void close_msg(JobControlRecord *jcr);
-DLL_IMP_EXP void add_msg_dest(MessagesResource *msg, int dest, int type,
+DLL_IMP_EXP void MyNameIs(int argc, char *argv[], const char *name);
+DLL_IMP_EXP void InitMsg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback = NULL);
+DLL_IMP_EXP void TermMsg(void);
+DLL_IMP_EXP void CloseMsg(JobControlRecord *jcr);
+DLL_IMP_EXP void AddMsgDest(MessagesResource *msg, int dest, int type,
                   char *where, char *mail_cmd, char *timestamp_format);
-DLL_IMP_EXP void rem_msg_dest(MessagesResource *msg, int dest, int type, char *where);
+DLL_IMP_EXP void RemMsgDest(MessagesResource *msg, int dest, int type, char *where);
 DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *buf);
-DLL_IMP_EXP void init_console_msg(const char *wd);
-DLL_IMP_EXP void free_msgs_res(MessagesResource *msgs);
-DLL_IMP_EXP void dequeue_messages(JobControlRecord *jcr);
-DLL_IMP_EXP void set_trace(int trace_flag);
-DLL_IMP_EXP bool get_trace(void);
-DLL_IMP_EXP void set_hangup(int hangup_value);
-DLL_IMP_EXP bool get_hangup(void);
-DLL_IMP_EXP void set_timestamp(int timestamp_flag);
-DLL_IMP_EXP bool get_timestamp(void);
-DLL_IMP_EXP void set_db_type(const char *name);
+DLL_IMP_EXP void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *buf);
+DLL_IMP_EXP void InitConsoleMsg(const char *wd);
+DLL_IMP_EXP void FreeMsgsRes(MessagesResource *msgs);
+DLL_IMP_EXP void DequeueMessages(JobControlRecord *jcr);
+DLL_IMP_EXP void SetTrace(int trace_flag);
+DLL_IMP_EXP bool GetTrace(void);
+DLL_IMP_EXP void SetHangup(int hangup_value);
+DLL_IMP_EXP bool GetHangup(void);
+DLL_IMP_EXP void SetTimestamp(int timestamp_flag);
+DLL_IMP_EXP bool GetTimestamp(void);
+DLL_IMP_EXP void SetDbType(const char *name);
 DLL_IMP_EXP void register_message_callback(void msg_callback(int type, char *msg));

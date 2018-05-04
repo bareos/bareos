@@ -70,7 +70,7 @@ extern void fromhost();                 /* get/validate client host info */
 #define fromhost sock_host              /* no TLI support needed */
 #endif
 
-extern int hosts_access(struct request_info *); /* access control */
+extern int HostsAccess(struct request_info *); /* access control */
 extern void shell_cmd();                /* execute shell command */
 extern char *percent_x();               /* do %<char> expansion */
 extern void rfc931();                   /* client name from RFC 931 daemon */
@@ -78,7 +78,7 @@ extern void clean_exit();               /* clean up and exit */
 extern void refuse();                   /* clean up and exit */
 extern char *xgets();                   /* fgets() on steroids */
 extern char *split_at();                /* strchr() and split */
-extern unsigned long dot_quad_addr();   /* restricted inet_addr() */
+extern unsigned long dot_quad_addr();   /* restricted InetAddr() */
 
 /* Global variables. */
 
@@ -166,7 +166,7 @@ extern struct tcpd_context tcpd_context;
 
  /*
   * While processing access control rules, error conditions are handled by
-  * jumping back into the hosts_access() routine. This is cleaner than
+  * jumping back into the HostsAccess() routine. This is cleaner than
   * checking the return value of each and every silly little function. The
   * (-1) returns are here because zero is already taken by longjmp().
   */
@@ -187,8 +187,8 @@ extern int dry_run;                     /* verification flag */
 
 /* Bug workarounds. */
 
-#ifdef INET_ADDR_BUG                    /* inet_addr() returns struct */
-#define inet_addr fix_inet_addr
+#ifdef INET_ADDR_BUG                    /* InetAddr() returns struct */
+#define InetAddr fix_inet_addr
 extern long fix_inet_addr();
 #endif
 

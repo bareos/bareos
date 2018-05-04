@@ -22,13 +22,13 @@
 #ifndef BAREOS_DIRD_UA_DB_H_
 #define BAREOS_DIRD_UA_DB_H_
 
-bool open_client_db(UaContext *ua, bool use_private = false);
-bool open_db(UaContext *ua, bool use_private = false);
-void close_db(UaContext *ua);
-int create_pool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_op op);
-void set_pool_dbr_defaults_in_media_dbr(MediaDbRecord *mr, PoolDbRecord *pr);
-bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool);
-void set_pooldbr_from_poolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op);
+bool OpenClientDb(UaContext *ua, bool use_private = false);
+bool OpenDb(UaContext *ua, bool use_private = false);
+void CloseDb(UaContext *ua);
+int CreatePool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_op op);
+void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord *mr, PoolDbRecord *pr);
+bool SetPooldbrReferences(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool);
+void SetPooldbrFromPoolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op);
 int update_pool_references(JobControlRecord *jcr, BareosDb *db, PoolResource *pool);
 
 #endif // BAREOS_DIRD_UA_DB_H_

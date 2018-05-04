@@ -85,7 +85,7 @@ static inline bool validate_client(JobControlRecord *jcr)
 /**
  * if both FD and SD have LanAddress set, use the storages' LanAddress to connect to.
  */
-char* storage_address_to_contact(ClientResource *client, StoreResource *store)
+char* StorageAddressToContact(ClientResource *client, StorageResource *store)
 {
    if (store->lanaddress && client->lanaddress) {
       return store->lanaddress;
@@ -98,7 +98,7 @@ char* storage_address_to_contact(ClientResource *client, StoreResource *store)
  * if both FD and SD have LanAddress set, use the clients' LanAddress to connect to.
  *
  */
-char* client_address_to_contact(ClientResource *client, StoreResource *store)
+char* ClientAddressToContact(ClientResource *client, StorageResource *store)
 {
    if (store->lanaddress && client->lanaddress) {
       return client->lanaddress;
@@ -112,7 +112,7 @@ char* client_address_to_contact(ClientResource *client, StoreResource *store)
  * use wstores' LanAddress to connect to.
  *
  */
-char* storage_address_to_contact(StoreResource *rstore, StoreResource *wstore)
+char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore)
 {
    if (rstore->lanaddress && wstore->lanaddress) {
       return wstore->lanaddress;
@@ -123,7 +123,7 @@ char* storage_address_to_contact(StoreResource *rstore, StoreResource *wstore)
 
 static inline bool validate_storage(JobControlRecord *jcr)
 {
-   StoreResource *store;
+   StorageResource *store;
 
    foreach_alist(store, jcr->res.wstorage) {
       switch (store->Protocol) {
@@ -142,15 +142,15 @@ static inline bool validate_storage(JobControlRecord *jcr)
 /*
  * Called here before the job is run to do the job specific setup.
  */
-bool do_native_backup_init(JobControlRecord *jcr)
+bool DoNativeBackupInit(JobControlRecord *jcr)
 {
-   free_rstorage(jcr);                   /* we don't read so release */
+   FreeRstorage(jcr);                   /* we don't read so release */
 
-   if (!allow_duplicate_job(jcr)) {
+   if (!AllowDuplicateJob(jcr)) {
       return false;
    }
 
-   jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->res.pool->name());
+   jcr->jr.PoolId = GetOrCreatePoolRecord(jcr, jcr->res.pool->name());
    if (jcr->jr.PoolId == 0) {
       return false;
    }
@@ -158,7 +158,7 @@ bool do_native_backup_init(JobControlRecord *jcr)
    /*
     * If pool storage specified, use it instead of job storage
     */
-   copy_wstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
+   CopyWstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
    if (!jcr->res.wstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
       return false;
@@ -171,7 +171,7 @@ bool do_native_backup_init(JobControlRecord *jcr)
       return false;
    }
 
-   create_clones(jcr);                /* run any clone jobs */
+   CreateClones(jcr);                /* run any clone jobs */
 
    return true;
 }
@@ -195,13 +195,13 @@ static bool get_base_jobids(JobControlRecord *jcr, db_list_ctx *jobids)
 
    foreach_alist(job, jcr->res.job->base) {
       bstrncpy(jr.Name, job->name(), sizeof(jr.Name));
-      jcr->db->get_base_jobid(jcr, &jr, &id);
+      jcr->db->GetBaseJobid(jcr, &jr, &id);
 
       if (id) {
          if (jobids->count) {
-            pm_strcat(jobids->list, ",");
+            PmStrcat(jobids->list, ",");
          }
-         pm_strcat(jobids->list, edit_uint64(id, str_jobid));
+         PmStrcat(jobids->list, edit_uint64(id, str_jobid));
          jobids->count++;
       }
    }
@@ -218,7 +218,7 @@ static int accurate_list_handler(void *ctx, int num_fields, char **row)
 {
    JobControlRecord *jcr = (JobControlRecord *)ctx;
 
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return 1;
    }
 
@@ -308,7 +308,7 @@ static bool is_checksum_needed_by_fileset(JobControlRecord *jcr)
  *    ...
  *    DIR -> FD : EOD
  */
-bool send_accurate_current_files(JobControlRecord *jcr)
+bool SendAccurateCurrentFiles(JobControlRecord *jcr)
 {
    PoolMem buf;
    db_list_ctx jobids;
@@ -317,7 +317,7 @@ bool send_accurate_current_files(JobControlRecord *jcr)
    /*
     * In base level, no previous job is used and no restart incomplete jobs
     */
-   if (jcr->is_canceled() || jcr->is_JobLevel(L_BASE)) {
+   if (jcr->IsCanceled() || jcr->is_JobLevel(L_BASE)) {
       return true;
    }
 
@@ -339,7 +339,7 @@ bool send_accurate_current_files(JobControlRecord *jcr)
       /*
        * For Incr/Diff level, we search for older jobs
        */
-      jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids);
+      jcr->db->AccurateGetJobids(jcr, &jcr->jr, &jobids);
 
       /*
        * We are in Incr/Diff, but no Full to build the accurate list...
@@ -362,30 +362,30 @@ bool send_accurate_current_files(JobControlRecord *jcr)
     * To be able to allocate the right size for htable
     */
    Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)", jobids.list);
-   jcr->db->sql_query(buf.c_str(), db_list_handler, &nb);
+   jcr->db->SqlQuery(buf.c_str(), db_list_handler, &nb);
    Dmsg2(200, "jobids=%s nb=%s\n", jobids.list, nb.list);
    jcr->file_bsock->fsend("accurate files=%s\n", nb.list);
 
    if (jcr->HasBase) {
       jcr->nb_base_files = str_to_int64(nb.list);
-      if (!jcr->db->create_base_file_list(jcr, jobids.list)){
-         Jmsg(jcr, M_FATAL, 0, "error in jcr->db->create_base_file_list:%s\n"
+      if (!jcr->db->CreateBaseFileList(jcr, jobids.list)){
+         Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n"
               ,jcr->db->strerror());
          return false;
       }
-      if (!jcr->db->get_base_file_list(jcr, jcr->use_accurate_chksum,
+      if (!jcr->db->GetBaseFileList(jcr, jcr->use_accurate_chksum,
                                   accurate_list_handler, (void *)jcr)) {
-         Jmsg(jcr, M_FATAL, 0, "error in jcr->db->get_base_file_list:%s\n"
+         Jmsg(jcr, M_FATAL, 0, "error in jcr->db->GetBaseFileList:%s\n"
               ,jcr->db->strerror());
          return false;
       }
    } else {
-      if (!jcr->db->open_batch_connection(jcr)) {
+      if (!jcr->db->OpenBatchConnection(jcr)) {
          Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
          return false;  /* Fail */
       }
 
-      jcr->db_batch->get_file_list(jcr, jobids.list, jcr->use_accurate_chksum,
+      jcr->db_batch->GetFileList(jcr, jobids.list, jcr->use_accurate_chksum,
                                    false /* no delta */, accurate_list_handler, (void *)jcr);
    }
 
@@ -405,7 +405,7 @@ bool do_native_backup(JobControlRecord *jcr)
    uint32_t tls_need = 0;
    BareosSocket *fd = NULL;
    BareosSocket *sd = NULL;
-   StoreResource *store = NULL;
+   StorageResource *store = NULL;
    ClientResource *client = NULL;
    char ed1[100];
    db_int64_ctx job;
@@ -417,17 +417,17 @@ bool do_native_backup(JobControlRecord *jcr)
 
    jcr->setJobStatus(JS_Running);
    Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->jr.JobId, jcr->jr.JobLevel);
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
 
-   if (check_hardquotas(jcr)) {
+   if (CheckHardquotas(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Quota Exceeded. Job terminated.\n"));
       return false;
    }
 
-   if (check_softquotas(jcr)) {
+   if (CheckSoftquotas(jcr)) {
       Dmsg0(10, "Quota exceeded\n");
       Jmsg(jcr, M_FATAL, 0, _("Soft Quota exceeded / Grace Time expired. Job terminated.\n"));
       return false;
@@ -444,7 +444,7 @@ bool do_native_backup(JobControlRecord *jcr)
    /*
     * Start conversation with Storage daemon
     */
-   if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
       return false;
    }
    sd = jcr->store_bsock;
@@ -452,7 +452,7 @@ bool do_native_backup(JobControlRecord *jcr)
    /*
     * Now start a job with the Storage daemon
     */
-   if (!start_storage_daemon_job(jcr, NULL, jcr->res.wstorage)) {
+   if (!StartStorageDaemonJob(jcr, NULL, jcr->res.wstorage)) {
       return false;
    }
 
@@ -475,9 +475,9 @@ bool do_native_backup(JobControlRecord *jcr)
        * Now start a Storage daemon message thread.  Note,
        * this thread is used to provide the catalog services
        * for the backup job, including inserting the attributes
-       * into the catalog.  See catalog_update() in catreq.c
+       * into the catalog.  See CatalogUpdate() in catreq.c
        */
-      if (!start_storage_daemon_message_thread(jcr)) {
+      if (!StartStorageDaemonMessageThread(jcr)) {
          return false;
       }
 
@@ -485,11 +485,11 @@ bool do_native_backup(JobControlRecord *jcr)
    }
 
    jcr->setJobStatus(JS_WaitFD);
-   if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
+   if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
       goto bail_out;
    }
    Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
-   send_job_info(jcr);
+   SendJobInfo(jcr);
    fd = jcr->file_bsock;
 
    /*
@@ -505,23 +505,23 @@ bool do_native_backup(JobControlRecord *jcr)
 
    jcr->setJobStatus(JS_Running);
 
-   if (!send_level_command(jcr)) {
+   if (!SendLevelCommand(jcr)) {
       goto bail_out;
    }
 
-   if (!send_include_list(jcr)) {
+   if (!SendIncludeList(jcr)) {
       goto bail_out;
    }
 
-   if (!send_exclude_list(jcr)) {
+   if (!SendExcludeList(jcr)) {
       goto bail_out;
    }
 
-   if (!send_previous_restore_objects(jcr)) {
+   if (!SendPreviousRestoreObjects(jcr)) {
       goto bail_out;
    }
 
-   if (!send_secure_erase_req_to_fd(jcr)) {
+   if (!SendSecureEraseReqToFd(jcr)) {
       Dmsg1(500,"Unexpected %s secure erase\n","client");
    }
 
@@ -532,7 +532,7 @@ bool do_native_backup(JobControlRecord *jcr)
    }
 
    if (jcr->max_bandwidth > 0) {
-      send_bwlimit_to_fd(jcr, jcr->Job); /* Old clients don't have this command */
+      SendBwlimitToFd(jcr, jcr->Job); /* Old clients don't have this command */
    }
 
    client = jcr->res.client;
@@ -556,7 +556,7 @@ bool do_native_backup(JobControlRecord *jcr)
 
       tls_need = GetNeedFromConfiguration(client);
 
-      connection_target_address = storage_address_to_contact(client, store);
+      connection_target_address = StorageAddressToContact(client, store);
 
       fd->fsend(storaddrcmd, connection_target_address, store->SDDport, tls_need);
       if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
@@ -570,7 +570,7 @@ bool do_native_backup(JobControlRecord *jcr)
 
       tls_need = GetNeedFromConfiguration(me);
 
-      connection_target_address = client_address_to_contact(client, store);
+      connection_target_address = ClientAddressToContact(client, store);
 
       /*
        * Tell the SD to connect to the FD.
@@ -593,9 +593,9 @@ bool do_native_backup(JobControlRecord *jcr)
        * Now start a Storage daemon message thread.  Note,
        * this thread is used to provide the catalog services
        * for the backup job, including inserting the attributes
-       * into the catalog.  See catalog_update() in catreq.c
+       * into the catalog.  See CatalogUpdate() in catreq.c
        */
-      if (!start_storage_daemon_message_thread(jcr)) {
+      if (!StartStorageDaemonMessageThread(jcr)) {
          return false;
       }
 
@@ -610,7 +610,7 @@ bool do_native_backup(JobControlRecord *jcr)
    /*
     * Send and run the RunBefore
     */
-   if (!send_runscripts_commands(jcr)) {
+   if (!SendRunscriptsCommands(jcr)) {
       goto bail_out;
    }
 
@@ -626,7 +626,7 @@ bool do_native_backup(JobControlRecord *jcr)
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
@@ -634,7 +634,7 @@ bool do_native_backup(JobControlRecord *jcr)
     * If backup is in accurate mode, we send the list of
     * all files to FD.
     */
-   if (!send_accurate_current_files(jcr)) {
+   if (!SendAccurateCurrentFiles(jcr)) {
       goto bail_out;     /* error */
    }
 
@@ -650,10 +650,10 @@ bool do_native_backup(JobControlRecord *jcr)
    /*
     * Pickup Job termination data
     */
-   status = wait_for_job_termination(jcr);
-   jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
+   status = WaitForJobTermination(jcr);
+   jcr->db_batch->WriteBatchFileRecords(jcr); /* used by bulk batch file insert */
 
-   if (jcr->HasBase && !jcr->db->commit_base_file_attributes_record(jcr))  {
+   if (jcr->HasBase && !jcr->db->CommitBaseFileAttributesRecord(jcr))  {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
@@ -661,10 +661,10 @@ bool do_native_backup(JobControlRecord *jcr)
     * Check softquotas after job did run.
     * If quota is exceeded now, set the GraceTime.
     */
-   check_softquotas(jcr);
+   CheckSoftquotas(jcr);
 
    if (status == JS_Terminated) {
-      native_backup_cleanup(jcr, status);
+      NativeBackupCleanup(jcr, status);
       return true;
    }
 
@@ -680,7 +680,7 @@ close_fd:
 
 bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
-   wait_for_job_termination(jcr, me->FDConnectTimeout);
+   WaitForJobTermination(jcr, me->FDConnectTimeout);
 
    return false;
 }
@@ -692,7 +692,7 @@ bail_out:
  *
  * Also used by restore.c
  */
-int wait_for_job_termination(JobControlRecord *jcr, int timeout)
+int WaitForJobTermination(JobControlRecord *jcr, int timeout)
 {
    int32_t n = 0;
    BareosSocket *fd = jcr->file_bsock;
@@ -709,13 +709,13 @@ int wait_for_job_termination(JobControlRecord *jcr, int timeout)
 
    if (fd) {
       if (timeout) {
-         tid = start_bsock_timer(fd, timeout); /* TODO: New timeout directive??? */
+         tid = StartBsockTimer(fd, timeout); /* TODO: New timeout directive??? */
       }
 
       /*
        * Wait for Client to terminate
        */
-      while ((n = bget_dirmsg(fd)) >= 0) {
+      while ((n = BgetDirmsg(fd)) >= 0) {
          if (!fd_ok &&
              sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
                      &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7) {
@@ -726,19 +726,19 @@ int wait_for_job_termination(JobControlRecord *jcr, int timeout)
             Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Job message: %s\n"),
                  fd->msg);
          }
-         if (job_canceled(jcr)) {
+         if (JobCanceled(jcr)) {
             break;
          }
       }
       if (tid) {
-         stop_bsock_timer(tid);
+         StopBsockTimer(tid);
       }
 
-      if (is_bnet_error(fd)) {
+      if (IsBnetError(fd)) {
          int i = 0;
          Jmsg(jcr, M_FATAL, 0, _("Network error with FD during %s: ERR=%s\n"),
               job_type_to_str(jcr->getJobType()), fd->bstrerror());
-         while (i++ < 10 && jcr->res.job->RescheduleIncompleteJobs && jcr->is_canceled()) {
+         while (i++ < 10 && jcr->res.job->RescheduleIncompleteJobs && jcr->IsCanceled()) {
             bmicrosleep(3, 0);
          }
 
@@ -749,18 +749,18 @@ int wait_for_job_termination(JobControlRecord *jcr, int timeout)
    /*
     * Force cancel in SD if failing, but not for Incomplete jobs so that we let the SD despool.
     */
-   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->is_canceled(), fd_ok, jcr->FDJobStatus,
+   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(), fd_ok, jcr->FDJobStatus,
         jcr->JobStatus, jcr->SDJobStatus);
-   if (jcr->is_canceled() || (!jcr->res.job->RescheduleIncompleteJobs && !fd_ok)) {
+   if (jcr->IsCanceled() || (!jcr->res.job->RescheduleIncompleteJobs && !fd_ok)) {
       Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok, jcr->FDJobStatus,
            jcr->JobStatus, jcr->SDJobStatus);
-      cancel_storage_daemon_job(jcr);
+      CancelStorageDaemonJob(jcr);
    }
 
    /*
     * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
     */
-   wait_for_storage_daemon_termination(jcr);
+   WaitForStorageDaemonTermination(jcr);
 
    /*
     * Return values from FD
@@ -783,7 +783,7 @@ int wait_for_job_termination(JobControlRecord *jcr, int timeout)
    /*
     * Return the first error status we find Dir, FD, or SD
     */
-   if (!fd_ok || is_bnet_error(fd)) { /* if fd not set, that use !fd_ok */
+   if (!fd_ok || IsBnetError(fd)) { /* if fd not set, that use !fd_ok */
       jcr->FDJobStatus = JS_ErrorTerminated;
    }
    if (jcr->JobStatus != JS_Terminated) {
@@ -798,9 +798,9 @@ int wait_for_job_termination(JobControlRecord *jcr, int timeout)
 /*
  * Release resources allocated during backup.
  */
-void native_backup_cleanup(JobControlRecord *jcr, int TermCode)
+void NativeBackupCleanup(JobControlRecord *jcr, int TermCode)
 {
-   const char *term_msg;
+   const char *TermMsg;
    char term_code[100];
    int msg_type = M_INFO;
    ClientDbRecord cr;
@@ -813,33 +813,33 @@ void native_backup_cleanup(JobControlRecord *jcr, int TermCode)
       TermCode = JS_Warnings;
    }
 
-   update_job_end(jcr, TermCode);
+   UpdateJobEnd(jcr, TermCode);
 
-   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+   if (!jcr->db->GetJobRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
-   if (!jcr->db->get_client_record(jcr, &cr)) {
+   if (!jcr->db->GetClientRecord(jcr, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"), jcr->db->strerror());
    }
 
-   update_bootstrap_file(jcr);
+   UpdateBootstrapFile(jcr);
 
    switch (jcr->JobStatus) {
       case JS_Terminated:
-         term_msg = _("Backup OK");
+         TermMsg = _("Backup OK");
          break;
       case JS_Incomplete:
-         term_msg = _("Backup failed -- incomplete");
+         TermMsg = _("Backup failed -- incomplete");
          break;
       case JS_Warnings:
-         term_msg = _("Backup OK -- with warnings");
+         TermMsg = _("Backup OK -- with warnings");
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-         term_msg = _("*** Backup Error ***");
+         TermMsg = _("*** Backup Error ***");
          msg_type = M_ERROR;          /* Generate error message */
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
@@ -849,7 +849,7 @@ void native_backup_cleanup(JobControlRecord *jcr, int TermCode)
          }
          break;
       case JS_Canceled:
-         term_msg = _("Backup Canceled");
+         TermMsg = _("Backup Canceled");
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
             if (jcr->SD_msg_chan_started) {
@@ -858,22 +858,22 @@ void native_backup_cleanup(JobControlRecord *jcr, int TermCode)
          }
          break;
       default:
-         term_msg = term_code;
+         TermMsg = term_code;
          sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
          break;
    }
 
-   generate_backup_summary(jcr, &cr, msg_type, term_msg);
+   GenerateBackupSummary(jcr, &cr, msg_type, TermMsg);
 
    Dmsg0(100, "Leave backup_cleanup()\n");
 }
 
-void update_bootstrap_file(JobControlRecord *jcr)
+void UpdateBootstrapFile(JobControlRecord *jcr)
 {
    /*
     * Now update the bootstrap file if any
     */
-   if (jcr->is_terminated_ok() &&
+   if (jcr->IsTerminatedOk() &&
        jcr->jr.JobBytes &&
        jcr->res.job->WriteBootstrap) {
       FILE *fd;
@@ -882,7 +882,7 @@ void update_bootstrap_file(JobControlRecord *jcr)
       Bpipe *bpipe = NULL;
       VolumeParameters *VolParams = NULL;
       char edt[50], ed1[50], ed2[50];
-      POOLMEM *fname = get_pool_memory(PM_FNAME);
+      POOLMEM *fname = GetPoolMemory(PM_FNAME);
 
       fname = edit_job_codes(jcr, fname, jcr->res.job->WriteBootstrap, "");
       if (*fname == '|') {
@@ -894,7 +894,7 @@ void update_bootstrap_file(JobControlRecord *jcr)
          fd = fopen(fname, jcr->is_JobLevel(L_FULL)?"w+b":"a+b");
       }
       if (fd) {
-         VolCount = jcr->db->get_job_volume_parameters(jcr, jcr->JobId, &VolParams);
+         VolCount = jcr->db->GetJobVolumeParameters(jcr, jcr->JobId, &VolParams);
          if (VolCount == 0) {
             Jmsg(jcr, M_ERROR, 0, _("Could not get Job Volume Parameters to "
                  "update Bootstrap file. ERR=%s\n"), jcr->db->strerror());
@@ -926,7 +926,7 @@ void update_bootstrap_file(JobControlRecord *jcr)
             free(VolParams);
          }
          if (got_pipe) {
-            close_bpipe(bpipe);
+            CloseBpipe(bpipe);
          } else {
             fclose(fd);
          }
@@ -936,18 +936,18 @@ void update_bootstrap_file(JobControlRecord *jcr)
               "%s: ERR=%s\n"), fname, be.bstrerror());
          jcr->setJobStatus(JS_ErrorTerminated);
       }
-      free_pool_memory(fname);
+      FreePoolMemory(fname);
    }
 }
 
 /*
  * Generic function which generates a backup summary message.
  * Used by:
- *    - native_backup_cleanup e.g. normal backups
- *    - native_vbackup_cleanup e.g. virtual backups
- *    - ndmp_backup_cleanup e.g. NDMP backups
+ *    - NativeBackupCleanup e.g. normal backups
+ *    - NativeVbackupCleanup e.g. virtual backups
+ *    - NdmpBackupCleanup e.g. NDMP backups
  */
-void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_type, const char *term_msg)
+void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_type, const char *TermMsg)
 {
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
@@ -980,14 +980,14 @@ void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_
       kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
    }
 
-   if (!jcr->db->get_job_volume_names(jcr, jcr->jr.JobId, jcr->VolumeName)) {
+   if (!jcr->db->GetJobVolumeNames(jcr, jcr->jr.JobId, jcr->VolumeName)) {
       /*
        * Note, if the job has erred, most likely it did not write any
        * tape, so suppress this "error" message since in that case
        * it is normal.  Or look at it the other way, only for a
        * normal exit should we complain about this error.
        */
-      if (jcr->is_terminated_ok() && jcr->jr.JobBytes) {
+      if (jcr->IsTerminatedOk() && jcr->jr.JobBytes) {
          Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
       }
       jcr->VolumeName[0] = 0;         /* none */
@@ -1004,7 +1004,7 @@ void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_
          p = jcr->VolumeName;     /* no |, take full name */
       }
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
-      if (!jcr->db->get_media_record(jcr, &mr)) {
+      if (!jcr->db->GetMediaRecord(jcr, &mr)) {
          Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
               mr.VolumeName, jcr->db->strerror());
       }
@@ -1018,12 +1018,12 @@ void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_
          bstrncpy(compress, "None", sizeof(compress));
       } else {
          bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
-         find_used_compressalgos(&compress_algo_list, jcr);
+         FindUsedCompressalgos(&compress_algo_list, jcr);
       }
    }
 
-   jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-   jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
+   JobstatusToAscii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
+   JobstatusToAscii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
    switch (jcr->getJobProtocol()) {
    case PT_NDMP_BAREOS:
@@ -1160,15 +1160,15 @@ void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_
 
          if (me->secure_erase_cmdline) {
             Mmsg(temp,"  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);
-            pm_strcat(secure_erase_status, temp.c_str());
+            PmStrcat(secure_erase_status, temp.c_str());
          }
          if (!bstrcmp(jcr->FDSecureEraseCmd, "*None*")) {
             Mmsg(temp, "  FD  Secure Erase Cmd:   %s\n", jcr->FDSecureEraseCmd);
-            pm_strcat(secure_erase_status, temp.c_str());
+            PmStrcat(secure_erase_status, temp.c_str());
          }
          if (!bstrcmp(jcr->SDSecureEraseCmd, "*None*")) {
             Mmsg(temp, "  SD  Secure Erase Cmd:   %s\n", jcr->SDSecureEraseCmd);
-            pm_strcat(secure_erase_status, temp.c_str());
+            PmStrcat(secure_erase_status, temp.c_str());
          }
       }
       break;
@@ -1228,5 +1228,5 @@ void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_
         edit_uint64_with_suffix(mr.VolBytes, ec8),
         daemon_status.c_str(),
         secure_erase_status.c_str(),
-        term_msg);
+        TermMsg);
 }

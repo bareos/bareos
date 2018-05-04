@@ -58,11 +58,11 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
     */
    LockRes();
    jcr->res.job = (JobResource *)GetNextRes(R_JOB, NULL);
-   set_jcr_defaults(jcr, jcr->res.job);
+   SetJcrDefaults(jcr, jcr->res.job);
    UnlockRes();
 
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
-   create_unique_job_name(jcr, base_name);
+   CreateUniqueJobName(jcr, base_name);
    jcr->sched_time = jcr->start_time;
    jcr->setJobType(job_type);
    jcr->setJobLevel(L_NONE);
@@ -87,9 +87,9 @@ void *handle_UA_client_request(BareosSocket *user)
 
    ua = new_ua_context(jcr);
    ua->UA_sock = user;
-   set_jcr_in_tsd(INVALID_JCR);
+   SetJcrInTsd(INVALID_JCR);
 
-   if (!authenticate_user_agent(ua)) {
+   if (!AuthenticateUserAgent(ua)) {
       goto getout;
    }
 
@@ -100,17 +100,17 @@ void *handle_UA_client_request(BareosSocket *user)
 
       status = user->recv();
       if (status >= 0) {
-         pm_strcpy(ua->cmd, ua->UA_sock->msg);
-         parse_ua_args(ua);
-         do_a_command(ua);
+         PmStrcpy(ua->cmd, ua->UA_sock->msg);
+         ParseUaArgs(ua);
+         Do_a_command(ua);
 
-         dequeue_messages(ua->jcr);
+         DequeueMessages(ua->jcr);
 
          if (!ua->quit) {
             if (console_msg_pending && ua->acl_access_ok(Command_ACL, "messages")) {
                if (ua->auto_display_messages) {
-                  pm_strcpy(ua->cmd, "messages");
-                  dot_messages_cmd(ua, ua->cmd);
+                  PmStrcpy(ua->cmd, "messages");
+                  DotMessagesCmd(ua, ua->cmd);
                   ua->user_notified_msg_pending = false;
                } else if (!ua->gui && !ua->user_notified_msg_pending && console_msg_pending) {
                   if (ua->api) {
@@ -125,7 +125,7 @@ void *handle_UA_client_request(BareosSocket *user)
                user->signal(BNET_EOD); /* send end of command */
             }
          }
-      } else if (is_bnet_stop(user)) {
+      } else if (IsBnetStop(user)) {
          ua->quit = true;
       } else { /* signal */
          user->signal(BNET_POLL);
@@ -133,9 +133,9 @@ void *handle_UA_client_request(BareosSocket *user)
    }
 
 getout:
-   close_db(ua);
-   free_ua_context(ua);
-   free_jcr(jcr);
+   CloseDb(ua);
+   FreeUaContext(ua);
+   FreeJcr(jcr);
    user->close();
    delete user;
 
@@ -157,9 +157,9 @@ UaContext *new_ua_context(JobControlRecord *jcr)
    memset(ua, 0, sizeof(UaContext));
    ua->jcr = jcr;
    ua->db = jcr->db;
-   ua->cmd = get_pool_memory(PM_FNAME);
-   ua->args = get_pool_memory(PM_FNAME);
-   ua->errmsg = get_pool_memory(PM_FNAME);
+   ua->cmd = GetPoolMemory(PM_FNAME);
+   ua->args = GetPoolMemory(PM_FNAME);
+   ua->errmsg = GetPoolMemory(PM_FNAME);
    ua->verbose = true;
    ua->automount = true;
    ua->send = New(OutputFormatter(printit, ua, filterit, ua));
@@ -167,19 +167,19 @@ UaContext *new_ua_context(JobControlRecord *jcr)
    return ua;
 }
 
-void free_ua_context(UaContext *ua)
+void FreeUaContext(UaContext *ua)
 {
    if (ua->guid) {
-      free_guid_list(ua->guid);
+      FreeGuidList(ua->guid);
    }
    if (ua->cmd) {
-      free_pool_memory(ua->cmd);
+      FreePoolMemory(ua->cmd);
    }
    if (ua->args) {
-      free_pool_memory(ua->args);
+      FreePoolMemory(ua->args);
    }
    if (ua->errmsg) {
-      free_pool_memory(ua->errmsg);
+      FreePoolMemory(ua->errmsg);
    }
    if (ua->prompt) {
       free(ua->prompt);

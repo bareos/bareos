@@ -19,5 +19,5 @@
    02110-1301, USA.
 */
 
-int make_estimate(JobControlRecord *jcr);
+int MakeEstimate(JobControlRecord *jcr);
 

@@ -23,7 +23,7 @@
 DLL_IMP_EXP int db_int64_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP int db_strtime_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP int db_list_handler(void *ctx, int num_fields, char **row);
-DLL_IMP_EXP void db_debug_print(JobControlRecord *jcr, FILE *fp);
+DLL_IMP_EXP void DbDebugPrint(JobControlRecord *jcr, FILE *fp);
 DLL_IMP_EXP int db_int_handler(void *ctx, int num_fields, char **row);
 
 #endif // BAREOS_CATS_SQL_H_

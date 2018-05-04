@@ -22,25 +22,25 @@
 #ifndef BAREOS_DIRD_SD_CMDS_H_
 #define BAREOS_DIRD_SD_CMDS_H_
 
-bool connect_to_storage_daemon(JobControlRecord *jcr, int retry_interval,
+bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
                                int max_retry_time, bool verbose);
 BareosSocket *open_sd_bsock(UaContext *ua);
-void close_sd_bsock(UaContext *ua);
+void CloseSdBsock(UaContext *ua);
 char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t drive);
-dlist *native_get_vol_list(UaContext *ua, StoreResource *store, bool listall, bool scan);
-slot_number_t native_get_num_slots(UaContext *ua, StoreResource *store);
-drive_number_t native_get_num_drives(UaContext *ua, StoreResource *store);
-bool cancel_storage_daemon_job(UaContext *ua, StoreResource *store, char *JobId);
-bool cancel_storage_daemon_job(UaContext *ua, JobControlRecord *jcr, bool interactive = true);
-void cancel_storage_daemon_job(JobControlRecord *jcr);
-void do_native_storage_status(UaContext *ua, StoreResource *store, char *cmd);
-bool native_transfer_volume(UaContext *ua, StoreResource *store,
+dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bool scan);
+slot_number_t NativeGetNumSlots(UaContext *ua, StorageResource *store);
+drive_number_t NativeGetNumDrives(UaContext *ua, StorageResource *store);
+bool CancelStorageDaemonJob(UaContext *ua, StorageResource *store, char *JobId);
+bool CancelStorageDaemonJob(UaContext *ua, JobControlRecord *jcr, bool interactive = true);
+void CancelStorageDaemonJob(JobControlRecord *jcr);
+void DoNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd);
+bool NativeTransferVolume(UaContext *ua, StorageResource *store,
                             slot_number_t src_slot, slot_number_t dst_slot);
-bool native_autochanger_volume_operation(UaContext *ua, StoreResource *store, const char *operation,
+bool NativeAutochangerVolumeOperation(UaContext *ua, StorageResource *store, const char *operation,
                                          drive_number_t drive, slot_number_t slot);
 bool send_bwlimit_to_sd(JobControlRecord *jcr, const char *Job);
-bool send_secure_erase_req_to_sd(JobControlRecord *jcr);
-bool do_storage_resolve(UaContext *ua, StoreResource *store);
-bool do_storage_plugin_options(JobControlRecord *jcr);
+bool SendSecureEraseReqToSd(JobControlRecord *jcr);
+bool DoStorageResolve(UaContext *ua, StorageResource *store);
+bool DoStoragePluginOptions(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_SD_CMDS_H_

@@ -47,7 +47,7 @@ void strip_leading_space(char *str)
 /*
  * Strip any trailing junk from the command
  */
-void strip_trailing_junk(char *cmd)
+void StripTrailingJunk(char *cmd)
 {
    char *p;
 
@@ -63,7 +63,7 @@ void strip_trailing_junk(char *cmd)
 /*
  * Strip any trailing newline characters from the string
  */
-void strip_trailing_newline(char *cmd)
+void StripTrailingNewline(char *cmd)
 {
    char *p;
 
@@ -76,7 +76,7 @@ void strip_trailing_newline(char *cmd)
 /*
  * Strip any trailing slashes from a directory path
  */
-void strip_trailing_slashes(char *dir)
+void StripTrailingSlashes(char *dir)
 {
    char *p;
 
@@ -95,7 +95,7 @@ void strip_trailing_slashes(char *dir)
  *           1 on success
  *           new address in passed parameter
  */
-bool skip_spaces(char **msg)
+bool SkipSpaces(char **msg)
 {
    char *p = *msg;
    if (!p) {
@@ -114,7 +114,7 @@ bool skip_spaces(char **msg)
  *           1 on success
  *           new address in passed parameter
  */
-bool skip_nonspaces(char **msg)
+bool SkipNonspaces(char **msg)
 {
    char *p = *msg;
 
@@ -229,12 +229,12 @@ char *next_arg(char **s)
  *  argk[2] = arg3
  *  argv[2] =
  */
-int parse_args(POOLMEM *cmd, POOLMEM *&args, int *argc,
+int ParseArgs(POOLMEM *cmd, POOLMEM *&args, int *argc,
                char **argk, char **argv, int max_args)
 {
    char *p;
 
-   parse_args_only(cmd, args, argc, argk, argv, max_args);
+   ParseArgsOnly(cmd, args, argc, argk, argv, max_args);
 
    /* Separate keyword and value */
    for (int i=0; i < *argc; i++) {
@@ -276,13 +276,13 @@ int parse_args(POOLMEM *cmd, POOLMEM *&args, int *argc,
  *  argk[2] = arg3
  *  argv[2] =
  */
-int parse_args_only(POOLMEM *cmd, POOLMEM *&args, int *argc,
+int ParseArgsOnly(POOLMEM *cmd, POOLMEM *&args, int *argc,
                     char **argk, char **argv, int max_args)
 {
    char *p, *n;
 
-   pm_strcpy(args, cmd);
-   strip_trailing_junk(args);
+   PmStrcpy(args, cmd);
+   StripTrailingJunk(args);
    p = args;
    *argc = 0;
    /*
@@ -304,7 +304,7 @@ int parse_args_only(POOLMEM *cmd, POOLMEM *&args, int *argc,
  * Given a full filename, split it into its path and filename parts.
  * They are returned in pool memory in the arguments provided.
  */
-void split_path_and_filename(const char *fname,
+void SplitPathAndFilename(const char *fname,
                              POOLMEM *&path, int *pnl,
                              POOLMEM *&file, int *fnl)
 {
@@ -338,14 +338,14 @@ void split_path_and_filename(const char *fname,
    Dmsg2(200, "after strip len=%d f=%s\n", len, f);
    *fnl = fname - f + len;
    if (*fnl > 0) {
-      file = check_pool_memory_size(file, *fnl + 1);
+      file = CheckPoolMemorySize(file, *fnl + 1);
       memcpy(file, f, *fnl);          /* copy filename */
    }
    file[*fnl] = '\0';
 
    *pnl = f - fname;
    if (*pnl > 0) {
-      path = check_pool_memory_size(path, *pnl + 1);
+      path = CheckPoolMemorySize(path, *pnl + 1);
       memcpy(path, fname, *pnl);
    }
    path[*pnl] = '\0';

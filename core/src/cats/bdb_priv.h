@@ -38,7 +38,7 @@ protected:
    int rows_size_;                   /**< Size of malloced rows */
    int fields_size_;                 /**< Size of malloced fields */
    int row_number_;                  /**< Row number from xx_data_seek */
-   int field_number_;                /**< Field number from sql_field_seek */
+   int field_number_;                /**< Field number from SqlFieldSeek */
    SQL_ROW rows_;                    /**< Defined rows */
    SQL_FIELD *fields_;               /**< Defined fields */
    bool allow_transactions_;         /**< Transactions allowed ? */
@@ -48,23 +48,23 @@ private:
    /*
     * Methods
     */
-   int sql_num_rows(void) { return num_rows_; }
-   void sql_field_seek(int field) { field_number_ = field; }
-   int sql_num_fields(void) { return num_fields_; }
-   virtual void sql_free_result(void) = 0;
-   virtual SQL_ROW sql_fetch_row(void) = 0;
-   virtual bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
-   virtual bool sql_query_without_handler(const char *query, int flags = 0) = 0;
+   int SqlNumRows(void) { return num_rows_; }
+   void SqlFieldSeek(int field) { field_number_ = field; }
+   int SqlNumFields(void) { return num_fields_; }
+   virtual void SqlFreeResult(void) = 0;
+   virtual SQL_ROW SqlFetchRow(void) = 0;
+   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
+   virtual bool SqlQueryWithoutHandler(const char *query, int flags = 0) = 0;
    virtual const char *sql_strerror(void) = 0;
-   virtual void sql_data_seek(int row) = 0;
-   virtual int sql_affected_rows(void) = 0;
-   virtual uint64_t sql_insert_autokey_record(const char *query, const char *table_name) = 0;
-   virtual SQL_FIELD *sql_fetch_field(void) = 0;
-   virtual bool sql_field_is_not_null(int field_type) = 0;
-   virtual bool sql_field_is_numeric(int field_type) = 0;
-   virtual bool sql_batch_start(JobControlRecord *jcr) = 0;
-   virtual bool sql_batch_end(JobControlRecord *jcr, const char *error) = 0;
-   virtual bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar) = 0;
+   virtual void SqlDataSeek(int row) = 0;
+   virtual int SqlAffectedRows(void) = 0;
+   virtual uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name) = 0;
+   virtual SQL_FIELD *SqlFetchField(void) = 0;
+   virtual bool SqlFieldIsNotNull(int field_type) = 0;
+   virtual bool SqlFieldIsNumeric(int field_type) = 0;
+   virtual bool SqlBatchStart(JobControlRecord *jcr) = 0;
+   virtual bool SqlBatchEnd(JobControlRecord *jcr, const char *error) = 0;
+   virtual bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar) = 0;
 
 public:
    /*

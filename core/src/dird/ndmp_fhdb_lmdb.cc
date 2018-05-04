@@ -92,7 +92,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog *ixlog, int tagc, char *raw
        */
       length = strlen(raw_name);
       total_length = sizeof(struct fhdb_payload) + length + 2;
-      fhdb_state->pay_load = check_pool_memory_size(fhdb_state->pay_load, total_length);
+      fhdb_state->pay_load = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
       payload = (struct fhdb_payload *)fhdb_state->pay_load;
       payload->node = node;
       payload->dir_node = dir_node;
@@ -178,7 +178,7 @@ retry_get:
          /*
           * Make a copy of the current pay_load.
           */
-         fhdb_state->pay_load = check_pool_memory_size(fhdb_state->pay_load, data.mv_size);
+         fhdb_state->pay_load = CheckPoolMemorySize(fhdb_state->pay_load, data.mv_size);
          memcpy(fhdb_state->pay_load, data.mv_data, data.mv_size);
          payload = (struct fhdb_payload *)fhdb_state->pay_load;
 
@@ -312,7 +312,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog *ixlog, int tagc,
        * Make sure fhdb_state->pay_load is large enough.
        */
       total_length = sizeof(struct fhdb_payload);
-      fhdb_state->pay_load = check_pool_memory_size(fhdb_state->pay_load, total_length);
+      fhdb_state->pay_load = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
       payload = (struct fhdb_payload *)fhdb_state->pay_load;
 
       fhdb_state->root_node = root_node;
@@ -398,9 +398,9 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
       fhdb_state = (struct fhdb_state *)malloc(sizeof(struct fhdb_state));
       memset(fhdb_state, 0, sizeof(struct fhdb_state));
 
-      fhdb_state->lmdb_name = get_pool_memory(PM_FNAME);
-      fhdb_state->pay_load = get_pool_memory(PM_MESSAGE);
-      fhdb_state->path = get_pool_memory(PM_FNAME);
+      fhdb_state->lmdb_name = GetPoolMemory(PM_FNAME);
+      fhdb_state->pay_load = GetPoolMemory(PM_MESSAGE);
+      fhdb_state->path = GetPoolMemory(PM_FNAME);
 
       result = mdb_env_create(&fhdb_state->db_env);
       if (result) {
@@ -470,9 +470,9 @@ bail_out:
          mdb_env_close(fhdb_state->db_env);
       }
 
-      free_pool_memory(fhdb_state->lmdb_name);
-      free_pool_memory(fhdb_state->pay_load);
-      free_pool_memory(fhdb_state->path);
+      FreePoolMemory(fhdb_state->lmdb_name);
+      FreePoolMemory(fhdb_state->pay_load);
+      FreePoolMemory(fhdb_state->path);
 
       return;
    }
@@ -518,10 +518,10 @@ void ndmp_fhdb_lmdb_unregister(struct ndmlog *ixlog)
          mdb_env_close(fhdb_state->db_env);
       }
 
-      free_pool_memory(fhdb_state->pay_load);
-      free_pool_memory(fhdb_state->path);
-      secure_erase(nis->jcr, fhdb_state->lmdb_name);
-      free_pool_memory(fhdb_state->lmdb_name);
+      FreePoolMemory(fhdb_state->pay_load);
+      FreePoolMemory(fhdb_state->path);
+      SecureErase(nis->jcr, fhdb_state->lmdb_name);
+      FreePoolMemory(fhdb_state->lmdb_name);
 
       free(fhdb_state);
    }
@@ -538,7 +538,7 @@ static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
 
    Dmsg1(100, "calculate_path for node %llu\n", node);
 
-   pm_strcpy(fhdb_state->path, "");
+   PmStrcpy(fhdb_state->path, "");
    while (!result && !root_node_reached) {
       rkey.mv_data = &node;
       rkey.mv_size = sizeof(node);
@@ -548,10 +548,10 @@ static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
          case 0:
             payload = (struct fhdb_payload *)rdata.mv_data;
             if (node != fhdb_state->root_node) {
-               pm_strcpy(temp, "/");
-               pm_strcat(temp, payload->namebuffer);
-               pm_strcat(temp, fhdb_state->path);
-               pm_strcpy(fhdb_state->path, temp.c_str());
+               PmStrcpy(temp, "/");
+               PmStrcat(temp, payload->namebuffer);
+               PmStrcat(temp, fhdb_state->path);
+               PmStrcpy(fhdb_state->path, temp.c_str());
                node = payload->dir_node;
             } else {
                /*
@@ -606,24 +606,24 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
 
          if (ndmp_fstat.node.valid == NDMP9_VALIDITY_VALID) {
             calculate_path(payload->dir_node, fhdb_state);
-            ndmp_convert_fstat(&ndmp_fstat, nis->FileIndex, &FileType, attribs);
+            NdmpConvertFstat(&ndmp_fstat, nis->FileIndex, &FileType, attribs);
 
-            pm_strcpy(full_path, nis->filesystem);
-            pm_strcat(full_path, fhdb_state->path);
-            pm_strcat(full_path, "/");
-            pm_strcat(full_path, payload->namebuffer);
+            PmStrcpy(full_path, nis->filesystem);
+            PmStrcat(full_path, fhdb_state->path);
+            PmStrcat(full_path, "/");
+            PmStrcat(full_path, payload->namebuffer);
 
             if (FileType == FT_DIREND) {
                /*
-                * split_path_and_filename() expects directories to end with a '/'
+                * SplitPathAndFilename() expects directories to end with a '/'
                 * so append '/' if full_path does not already end with '/'
                 */
                if ( full_path.c_str()[strlen(full_path.c_str()) - 1] != '/' ) {
                   Dmsg1(100, ("appending / to %s \n"), full_path.c_str());
-                  pm_strcat(full_path, "/");
+                  PmStrcat(full_path, "/");
                }
             }
-            ndmp_store_attribute_record(nis->jcr, full_path.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
+            NdmpStoreAttributeRecord(nis->jcr, full_path.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
                                         0, (ndmp_fstat.fh_info.valid == NDMP9_VALIDITY_VALID) ? ndmp_fstat.fh_info.value : 0);
          } else {
             Dmsg1(100, "skipping node %lu because it has no valid node data\n", node);

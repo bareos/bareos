@@ -436,7 +436,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          Dmsg(ctx, debuglevel, "bpipe-fd: Logic error: NULL FD on bpipe close\n");
          return bRC_Error;
       }
-      io->status = close_bpipe(p_ctx->pfd);
+      io->status = CloseBpipe(p_ctx->pfd);
       if (io->status) {
          Jmsg(ctx, M_FATAL, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
          Dmsg(ctx, debuglevel, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
@@ -656,7 +656,7 @@ static inline void set_string_if_null(char **destination, char *value)
 /**
  * Always set destination to value and clean any previous one.
  */
-static inline void set_string(char **destination, char *value)
+static inline void SetString(char **destination, char *value)
 {
    if (*destination) {
       free(*destination);
@@ -792,7 +792,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                /*
                 * Overwrite any existing value.
                 */
-               set_string(str_destination, argument);
+               SetString(str_destination, argument);
             }
          }
       } else {
@@ -828,7 +828,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
 
                switch (plugin_arguments[i].type) {
                case argument_file:
-                  if (!path_contains_directory(argument_value)){
+                  if (!PathContainsDirectory(argument_value)){
                      Jmsg(ctx, M_FATAL, 
                            "bpipe-fd: file argument (%s) must contain a directory structure. Please fix your plugin definition\n",
                            argument_value);
@@ -859,7 +859,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                      /*
                       * Overwrite any existing value.
                       */
-                     set_string(str_destination, argument_value);
+                     SetString(str_destination, argument_value);
                   }
                }
 

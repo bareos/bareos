@@ -55,7 +55,7 @@ static bool same_label_names(char *bareos_name, char *ansi_name);
  *    VOL_NAME_ERROR    Wrong name in VOL1 record
  *    VOL_LABEL_ERROR   Probably an ANSI label, but something wrong
  */
-int read_ansi_ibm_label(DeviceControlRecord *dcr)
+int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
 {
    Device * volatile dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -69,7 +69,7 @@ int read_ansi_ibm_label(DeviceControlRecord *dcr)
     * If tape read the following EOF mark, on disk do not read.
     */
    Dmsg0(100, "Read ansi label.\n");
-   if (!dev->is_tape()) {
+   if (!dev->IsTape()) {
       return VOL_OK;
    }
 
@@ -95,13 +95,13 @@ int read_ansi_ibm_label(DeviceControlRecord *dcr)
       }
 
       if (status == 0) {
-         if (dev->at_eof()) {
-            dev->set_eot();           /* second eof, set eot bit */
+         if (dev->AtEof()) {
+            dev->SetEot();           /* second eof, set eot bit */
             Dmsg0(100, "EOM on ANSI label\n");
             Mmsg0(jcr->errmsg, _("Insane! End of tape while reading ANSI label.\n"));
             return VOL_LABEL_ERROR;   /* at EOM this shouldn't happen */
          } else {
-            dev->set_ateof();        /* set eof state */
+            dev->SetAteof();        /* set eof state */
          }
       }
 
@@ -140,7 +140,7 @@ int read_ansi_ibm_label(DeviceControlRecord *dcr)
                char *p = &label[4];
                char *q;
 
-               free_volume(dev);
+               FreeVolume(dev);
 
                /*
                 * Store new Volume name
@@ -290,7 +290,7 @@ static const char *labels[] = {"HDR", "EOF", "EOV"};
  * Returns:  true of OK
  *           false if error
  */
-bool write_ansi_ibm_labels(DeviceControlRecord *dcr, int type, const char *VolName)
+bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -334,9 +334,9 @@ bool write_ansi_ibm_labels(DeviceControlRecord *dcr, int type, const char *VolNa
       ansi_volname[6]='\0';     /* only for debug */
 
       if (type == ANSI_VOL_LABEL) {
-         ser_begin(label, sizeof(label));
-         ser_bytes("VOL1", 4);
-         ser_bytes(ansi_volname, 6);
+         SerBegin(label, sizeof(label));
+         SerBytes("VOL1", 4);
+         SerBytes(ansi_volname, 6);
 
          /*
           * Write VOL1 label
@@ -360,22 +360,22 @@ bool write_ansi_ibm_labels(DeviceControlRecord *dcr, int type, const char *VolNa
        * Now construct HDR1 label
        */
       memset(label, ' ', sizeof(label));
-      ser_begin(label, sizeof(label));
-      ser_bytes(labels[type], 3);
-      ser_bytes("1", 1);
+      SerBegin(label, sizeof(label));
+      SerBytes(labels[type], 3);
+      SerBytes("1", 1);
       if (me->compatible) {
-         ser_bytes("BACULA.DATA", 11);            /* Filename field */
+         SerBytes("BACULA.DATA", 11);            /* Filename field */
       } else {
-         ser_bytes("BAREOS.DATA", 11);            /* Filename field */
+         SerBytes("BAREOS.DATA", 11);            /* Filename field */
       }
-      ser_begin(&label[21], sizeof(label)-21); /* fileset field */
-      ser_bytes(ansi_volname, 6);              /* write Vol Ser No. */
-      ser_begin(&label[27], sizeof(label)-27);
-      ser_bytes("00010001000100", 14);  /* File section, File seq no, Generation no */
+      SerBegin(&label[21], sizeof(label)-21); /* fileset field */
+      SerBytes(ansi_volname, 6);              /* write Vol Ser No. */
+      SerBegin(&label[27], sizeof(label)-27);
+      SerBytes("00010001000100", 14);  /* File section, File seq no, Generation no */
       now = time(NULL);
-      ser_bytes(ansi_date(now, date), 6); /* current date */
-      ser_bytes(ansi_date(now - 24 * 3600, date), 6); /* created yesterday */
-      ser_bytes(" 000000Bareos              ", 27);
+      SerBytes(ansi_date(now, date), 6); /* current date */
+      SerBytes(ansi_date(now - 24 * 3600, date), 6); /* created yesterday */
+      SerBytes(" 000000Bareos              ", 27);
 
       /*
        * Write HDR1 label
@@ -410,9 +410,9 @@ bool write_ansi_ibm_labels(DeviceControlRecord *dcr, int type, const char *VolNa
        * Now construct HDR2 label
        */
       memset(label, ' ', sizeof(label));
-      ser_begin(label, sizeof(label));
-      ser_bytes(labels[type], 3);
-      ser_bytes("2D3200032000", 12);
+      SerBegin(label, sizeof(label));
+      SerBytes(labels[type], 3);
+      SerBytes("2D3200032000", 12);
 
       /*
        * Write HDR2 label

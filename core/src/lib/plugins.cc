@@ -43,7 +43,7 @@
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
 #ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 #ifndef RTLD_NOW
@@ -127,7 +127,7 @@ static bool load_a_plugin(void *binfo,
                           const char *plugin_name,
                           const char *type,
                           alist *plugin_list,
-                          bool is_plugin_compatible(Plugin *plugin))
+                          bool IsPluginCompatible(Plugin *plugin))
 {
    t_loadPlugin loadPlugin;
    Plugin *plugin = NULL;
@@ -187,9 +187,9 @@ static bool load_a_plugin(void *binfo,
       return false;
    }
 
-   if (!is_plugin_compatible) {
+   if (!IsPluginCompatible) {
       Dmsg0(50, "Plugin compatibility pointer not set.\n");
-   } else if (!is_plugin_compatible(plugin)) {
+   } else if (!IsPluginCompatible(plugin)) {
       close_plugin(plugin);
 
       return false;
@@ -205,13 +205,13 @@ static bool load_a_plugin(void *binfo,
  * Or when plugin_names is give it has a list of plugins
  * to load from the specified directory.
  */
-bool load_plugins(void *binfo,
+bool LoadPlugins(void *binfo,
                   void *bfuncs,
                   alist *plugin_list,
                   const char *plugin_dir,
                   alist *plugin_names,
                   const char *type,
-                  bool is_plugin_compatible(Plugin *plugin))
+                  bool IsPluginCompatible(Plugin *plugin))
 {
    struct stat statp;
    bool found = false;
@@ -219,7 +219,7 @@ bool load_plugins(void *binfo,
    bool need_slash = false;
    int len;
 
-   Dmsg0(debuglevel, "load_plugins\n");
+   Dmsg0(debuglevel, "LoadPlugins\n");
 
    len = strlen(plugin_dir);
    if (len > 0) {
@@ -255,7 +255,7 @@ bool load_plugins(void *binfo,
           * Try to load the plugin and resolve the wanted symbols.
           */
          if (load_a_plugin(binfo, bfuncs, fname.c_str(), plugin_name.c_str(), type,
-                           plugin_list, is_plugin_compatible)) {
+                           plugin_list, IsPluginCompatible)) {
             found = true;
          }
       }
@@ -283,7 +283,7 @@ bool load_plugins(void *binfo,
 #ifdef USE_READDIR_R
       entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
       while (1) {
-         if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+         if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
       while (1) {
          result = readdir(dp);
@@ -309,11 +309,11 @@ bool load_plugins(void *binfo,
          }
          Dmsg2(debuglevel, "Found plugin: name=%s len=%d\n", result->d_name, len);
 
-         pm_strcpy(fname, plugin_dir);
+         PmStrcpy(fname, plugin_dir);
          if (need_slash) {
-            pm_strcat(fname, "/");
+            PmStrcat(fname, "/");
          }
-         pm_strcat(fname, result->d_name);
+         PmStrcat(fname, result->d_name);
 
          /*
           * Make sure the plugin exists and is a regular file.
@@ -326,7 +326,7 @@ bool load_plugins(void *binfo,
           * Try to load the plugin and resolve the wanted symbols.
           */
          if (load_a_plugin(binfo, bfuncs, fname.c_str(), result->d_name, type,
-                           plugin_list, is_plugin_compatible)) {
+                           plugin_list, IsPluginCompatible)) {
             found = true;
          }
       }
@@ -348,7 +348,7 @@ bail_out:
 /*
  * Unload all the loaded plugins
  */
-void unload_plugins(alist *plugin_list)
+void UnloadPlugins(alist *plugin_list)
 {
    int i;
    Plugin *plugin;
@@ -369,7 +369,7 @@ void unload_plugins(alist *plugin_list)
    }
 }
 
-void unload_plugin(alist *plugin_list, Plugin *plugin, int index)
+void UnloadPlugin(alist *plugin_list, Plugin *plugin, int index)
 {
    /*
     * Shut it down and unload it
@@ -389,41 +389,41 @@ int list_plugins(alist *plugin_list, PoolMem &msg)
    Plugin *plugin;
 
    if (plugin_list && plugin_list->size() > 0) {
-      pm_strcpy(msg, "Plugin Info:\n");
+      PmStrcpy(msg, "Plugin Info:\n");
       foreach_alist_index(i, plugin, plugin_list) {
-         pm_strcat(msg, " Plugin     : ");
-         len = pm_strcat(msg, plugin->file);
+         PmStrcat(msg, " Plugin     : ");
+         len = PmStrcat(msg, plugin->file);
          if (plugin->pinfo) {
             genpInfo *info = (genpInfo *)plugin->pinfo;
-            pm_strcat(msg, "\n");
-            pm_strcat(msg, " Description: ");
-            pm_strcat(msg, NPRT(info->plugin_description));
-            pm_strcat(msg, "\n");
+            PmStrcat(msg, "\n");
+            PmStrcat(msg, " Description: ");
+            PmStrcat(msg, NPRT(info->plugin_description));
+            PmStrcat(msg, "\n");
 
-            pm_strcat(msg, " Version    : ");
-            pm_strcat(msg, NPRT(info->plugin_version));
-            pm_strcat(msg, ", Date: ");
-            pm_strcat(msg, NPRT(info->plugin_date));
-            pm_strcat(msg, "\n");
+            PmStrcat(msg, " Version    : ");
+            PmStrcat(msg, NPRT(info->plugin_version));
+            PmStrcat(msg, ", Date: ");
+            PmStrcat(msg, NPRT(info->plugin_date));
+            PmStrcat(msg, "\n");
 
-            pm_strcat(msg, " Author     : ");
-            pm_strcat(msg, NPRT(info->plugin_author));
-            pm_strcat(msg, "\n");
+            PmStrcat(msg, " Author     : ");
+            PmStrcat(msg, NPRT(info->plugin_author));
+            PmStrcat(msg, "\n");
 
-            pm_strcat(msg, " License    : ");
-            pm_strcat(msg, NPRT(info->plugin_license));
-            pm_strcat(msg, "\n");
+            PmStrcat(msg, " License    : ");
+            PmStrcat(msg, NPRT(info->plugin_license));
+            PmStrcat(msg, "\n");
 
             if (info->plugin_usage) {
-               pm_strcat(msg, " Usage      : ");
-               pm_strcat(msg, info->plugin_usage);
-               pm_strcat(msg, "\n");
+               PmStrcat(msg, " Usage      : ");
+               PmStrcat(msg, info->plugin_usage);
+               PmStrcat(msg, "\n");
             }
 
-            pm_strcat(msg, "\n");
+            PmStrcat(msg, "\n");
          }
       }
-      len = pm_strcat(msg, "\n");
+      len = PmStrcat(msg, "\n");
    }
 
    return len;
@@ -439,18 +439,18 @@ static dbg_plugin_hook_t *dbg_plugin_hooks[DBG_MAX_HOOK];
 static dbg_print_plugin_hook_t *dbg_print_plugin_hook = NULL;
 static int dbg_plugin_hook_count = 0;
 
-void dbg_plugin_add_hook(dbg_plugin_hook_t *fct)
+void DbgPluginAddHook(dbg_plugin_hook_t *fct)
 {
    ASSERT(dbg_plugin_hook_count < DBG_MAX_HOOK);
    dbg_plugin_hooks[dbg_plugin_hook_count++] = fct;
 }
 
-void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct)
+void DbgPrintPluginAddHook(dbg_print_plugin_hook_t *fct)
 {
    dbg_print_plugin_hook = fct;
 }
 
-void dump_plugins(alist *plugin_list, FILE *fp)
+void DumpPlugins(alist *plugin_list, FILE *fp)
 {
    int i;
    Plugin *plugin;

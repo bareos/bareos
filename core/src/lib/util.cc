@@ -37,7 +37,7 @@
  * Escape special characters in bareos configuration strings
  * needed for dumping config strings
  */
-void escape_string(PoolMem &snew, char *old, int len)
+void EscapeString(PoolMem &snew, char *old, int len)
 {
    char *n, *o;
 
@@ -80,7 +80,7 @@ void escape_string(PoolMem &snew, char *old, int len)
 /*
  * Return true of buffer has all zero bytes
  */
-bool is_buf_zero(char *buf, int len)
+bool IsBufZero(char *buf, int len)
 {
    uint64_t *ip;
    char *p;
@@ -129,7 +129,7 @@ void lcase(char *str)
  * Convert spaces to non-space character.
  * This makes scanf of fields containing spaces easier.
  */
-void bash_spaces(char *str)
+void BashSpaces(char *str)
 {
    while (*str) {
       if (*str == ' ')
@@ -142,7 +142,7 @@ void bash_spaces(char *str)
  * Convert spaces to non-space character.
  * This makes scanf of fields containing spaces easier.
  */
-void bash_spaces(PoolMem &pm)
+void BashSpaces(PoolMem &pm)
 {
    char *str = pm.c_str();
    while (*str) {
@@ -156,7 +156,7 @@ void bash_spaces(PoolMem &pm)
 /*
  * Convert non-space characters (0x1) back into spaces
  */
-void unbash_spaces(char *str)
+void UnbashSpaces(char *str)
 {
    while (*str) {
      if (*str == 0x1)
@@ -168,7 +168,7 @@ void unbash_spaces(char *str)
 /*
  * Convert non-space characters (0x1) back into spaces
  */
-void unbash_spaces(PoolMem &pm)
+void UnbashSpaces(PoolMem &pm)
 {
    char *str = pm.c_str();
    while (*str) {
@@ -199,7 +199,7 @@ void unbash_spaces(PoolMem &pm)
  *                 ->line2
  *                 ->line3
  */
-const char *indent_multiline_string(PoolMem &resultbuffer,
+const char *IndentMultilineString(PoolMem &resultbuffer,
                                     const char *multilinestring,
                                     const char *separator)
 {
@@ -268,7 +268,7 @@ char *encode_time(utime_t utime, char *buf)
    return buf+n;
 }
 
-bool convert_timeout_to_timespec(timespec &timeout, int timeout_in_seconds)
+bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds)
 {
    struct timeval tv;
    struct timezone tz;
@@ -283,7 +283,7 @@ bool convert_timeout_to_timespec(timespec &timeout, int timeout_in_seconds)
 /*
  * Convert a JobStatus code into a human readable form
  */
-void jobstatus_to_ascii(int JobStatus, char *msg, int maxlen)
+void JobstatusToAscii(int JobStatus, char *msg, int maxlen)
 {
    const char *jobstat;
    char buf[100];
@@ -421,7 +421,7 @@ void jobstatus_to_ascii_gui(int JobStatus, char *msg, int maxlen)
    if (cnv) {
       bstrncpy(msg, cnv, maxlen);
    } else {
-     jobstatus_to_ascii(JobStatus, msg, maxlen);
+     JobstatusToAscii(JobStatus, msg, maxlen);
    }
 }
 
@@ -519,10 +519,10 @@ const char *job_type_to_str(int type)
 char *action_on_purge_to_string(int aop, PoolMem &ret)
 {
    if (aop & ON_PURGE_TRUNCATE) {
-      pm_strcpy(ret, _("Truncate"));
+      PmStrcpy(ret, _("Truncate"));
    }
    if (!aop) {
-      pm_strcpy(ret, _("None"));
+      PmStrcpy(ret, _("None"));
    }
    return ret.c_str();
 }
@@ -635,7 +635,7 @@ char *encode_mode(mode_t mode, char *buf)
 }
 
 #if defined(HAVE_WIN32)
-int do_shell_expansion(char *name, int name_len)
+int DoShellExpansion(char *name, int name_len)
 {
    char *src = bstrdup(name);
 
@@ -646,7 +646,7 @@ int do_shell_expansion(char *name, int name_len)
    return 1;
 }
 #else
-int do_shell_expansion(char *name, int name_len)
+int DoShellExpansion(char *name, int name_len)
 {
    static char meta[] = "~\\$[]*?`'<>\"";
    bool found = false;
@@ -667,29 +667,29 @@ int do_shell_expansion(char *name, int name_len)
       }
    }
    if (found) {
-      cmd = get_pool_memory(PM_FNAME);
-      line = get_pool_memory(PM_FNAME);
+      cmd = GetPoolMemory(PM_FNAME);
+      line = GetPoolMemory(PM_FNAME);
       /*
        * Look for shell
        */
       if ((shellcmd = getenv("SHELL")) == NULL) {
          shellcmd = "/bin/sh";
       }
-      pm_strcpy(cmd, shellcmd);
-      pm_strcat(cmd, " -c \"echo ");
-      pm_strcat(cmd, name);
-      pm_strcat(cmd, "\"");
+      PmStrcpy(cmd, shellcmd);
+      PmStrcat(cmd, " -c \"echo ");
+      PmStrcat(cmd, name);
+      PmStrcat(cmd, "\"");
       Dmsg1(400, "Send: %s\n", cmd);
       if ((bpipe = open_bpipe(cmd, 0, "r"))) {
          bfgets(line, bpipe->rfd);
-         strip_trailing_junk(line);
-         status = close_bpipe(bpipe);
+         StripTrailingJunk(line);
+         status = CloseBpipe(bpipe);
          Dmsg2(400, "status=%d got: %s\n", status, line);
       } else {
          status = 1;                    /* error */
       }
-      free_pool_memory(cmd);
-      free_pool_memory(line);
+      FreePoolMemory(cmd);
+      FreePoolMemory(line);
       if (status == 0) {
          bstrncpy(name, line, name_len);
       }
@@ -706,7 +706,7 @@ int do_shell_expansion(char *name, int name_len)
  *
  *  from SpeakFreely by John Walker
  */
-void make_session_key(char *key, char *seed, int mode)
+void MakeSessionKey(char *key, char *seed, int mode)
 {
    int j, k;
    MD5_CTX md5c;
@@ -983,14 +983,14 @@ POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const cha
          str = add;
       }
       Dmsg1(1200, "add_str %s\n", str);
-      pm_strcat(omsg, str);
+      PmStrcat(omsg, str);
       Dmsg1(1200, "omsg=%s\n", omsg);
    }
 
    return omsg;
 }
 
-void set_working_directory(char *wd)
+void SetWorkingDirectory(char *wd)
 {
    struct stat stat_buf;
 

@@ -22,7 +22,7 @@
  * Kern Sibbald, August 2007
  */
 
-#define log_error_message(msg) LogLastErrorMsg((msg), __FILE__, __LINE__)
+#define LogErrorMessage(msg) LogLastErrorMsg((msg), __FILE__, __LINE__)
 
 DLL_IMP_EXP extern int BareosAppMain();
 DLL_IMP_EXP extern void LogLastErrorMsg(const char *msg, const char *fname, int lineno);

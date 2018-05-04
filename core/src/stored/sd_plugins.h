@@ -154,21 +154,21 @@ typedef struct s_sdbareosFuncs {
    bool (*UpdateVolumeInfo)(DeviceControlRecord *dcr);
    void (*UpdateTapeAlert)(DeviceControlRecord *dcr, uint64_t flags);
    DeviceRecord *(*new_record)(bool with_data);
-   void (*copy_record_state)(DeviceRecord *dst, DeviceRecord *src);
-   void (*free_record)(DeviceRecord *rec);
+   void (*CopyRecordState)(DeviceRecord *dst, DeviceRecord *src);
+   void (*FreeRecord)(DeviceRecord *rec);
 } bsdFuncs;
 
 /*
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef STORAGE_DAEMON
-void load_sd_plugins(const char *plugin_dir, alist *plugin_names);
-void unload_sd_plugins(void);
-int list_sd_plugins(PoolMem &msg);
-void dispatch_new_plugin_options(JobControlRecord *jcr);
-void new_plugins(JobControlRecord *jcr);
-void free_plugins(JobControlRecord *jcr);
-bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType event,
+void LoadSdPlugins(const char *plugin_dir, alist *plugin_names);
+void UnloadSdPlugins(void);
+int ListSdPlugins(PoolMem &msg);
+void DispatchNewPluginOptions(JobControlRecord *jcr);
+void NewPlugins(JobControlRecord *jcr);
+void FreePlugins(JobControlRecord *jcr);
+bRC GeneratePluginEvent(JobControlRecord *jcr, bsdEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 
@@ -197,7 +197,7 @@ typedef struct s_sdpluginFuncs {
    bRC (*handlePluginEvent)(bpContext *ctx, bsdEvent *event, void *value);
 } psdFuncs;
 
-#define sdplug_func(plugin) ((psdFuncs *)(plugin->pfuncs))
+#define SdplugFunc(plugin) ((psdFuncs *)(plugin->pfuncs))
 #define sdplug_info(plugin) ((genpInfo *)(plugin->pinfo))
 
 #ifdef __cplusplus

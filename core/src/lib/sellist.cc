@@ -66,12 +66,12 @@ int64_t sellist::next()
       if (h) {
          hsave = *h;
          *h++ = 0;
-         if (!is_an_integer(h)) {
+         if (!IsAnInteger(h)) {
             errmsg = _("Range end is not integer.\n");
             goto bail_out;
          }
-         skip_spaces(&p);
-         if (!is_an_integer(p)) {
+         SkipSpaces(&p);
+         if (!IsAnInteger(p)) {
             errmsg = _("Range start is not an integer.\n");
             goto bail_out;
          }
@@ -83,8 +83,8 @@ int64_t sellist::next()
          }
       } else {
          hsave = 0;
-         skip_spaces(&p);
-         if (!is_an_integer(p)) {
+         SkipSpaces(&p);
+         if (!IsAnInteger(p)) {
             errmsg = _("Input value is not an integer.\n");
             goto bail_out;
          }
@@ -122,7 +122,7 @@ bail_out:
  *   returns false on error in string
  *   returns true if OK
  */
-bool sellist::set_string(char *string, bool scan=true)
+bool sellist::SetString(char *string, bool scan=true)
 {
    /*
     * Copy string, because we write into it,

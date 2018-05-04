@@ -23,7 +23,7 @@
 #define BAREOS_DIRD_SCHEDULER_H_
 
 JobControlRecord *wait_for_next_job(char *one_shot_job_to_run);
-bool is_doy_in_last_week(int year, int doy);
-void term_scheduler();
+bool IsDoyInLastWeek(int year, int doy);
+void TermScheduler();
 
 #endif // BAREOS_DIRD_SCHEDULER_H_

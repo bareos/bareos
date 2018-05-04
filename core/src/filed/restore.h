@@ -47,11 +47,11 @@ struct r_ctx {
    BareosWinFilePacket bfd;                          /* File content */
    uint64_t fileAddr;                  /* file write address */
    uint32_t size;                      /* Size of file */
-   char flags[FOPTS_BYTES];            /* Options for extract_data() */
+   char flags[FOPTS_BYTES];            /* Options for ExtractData() */
    BareosWinFilePacket forkbfd;                      /* Alternative data stream */
    uint64_t fork_addr;                 /* Write address for alternative stream */
    int64_t fork_size;                  /* Size of alternate stream */
-   char fork_flags[FOPTS_BYTES];       /* Options for extract_data() */
+   char fork_flags[FOPTS_BYTES];       /* Options for ExtractData() */
    int32_t type;                       /* file type FT_ */
    Attributes *attr;                         /* Pointer to attributes */
    bool extract;                       /* set when extracting */
@@ -63,10 +63,10 @@ struct r_ctx {
    RestoreCipherContext fork_cipher_ctx; /* Cryptographic restore context (if any) for alternative stream */
 };
 
-void do_restore(JobControlRecord *jcr);
-void free_session(r_ctx &rctx);
+void DoRestore(JobControlRecord *jcr);
+void FreeSession(r_ctx &rctx);
 int do_file_digest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
-bool sparse_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char **data, uint32_t *length);
-bool store_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length, bool win32_decomp);
+bool SparseData(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char **data, uint32_t *length);
+bool StoreData(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length, bool win32_decomp);
 
 #endif

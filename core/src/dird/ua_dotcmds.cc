@@ -94,13 +94,13 @@ bool dot_authorized_cmd(UaContext *ua, const char *cmd)
       }
    }
 
-   ua->send->object_start(".authorized");
+   ua->send->ObjectStart(".authorized");
    if (retval) {
-      ua->send->object_key_value_bool("authorized", retval, "authorized\n");
+      ua->send->ObjectKeyValueBool("authorized", retval, "authorized\n");
    } else {
-      ua->send->object_key_value_bool("authorized", retval, "not authorized\n");
+      ua->send->ObjectKeyValueBool("authorized", retval, "not authorized\n");
    }
-   ua->send->object_end(".authorized");
+   ua->send->ObjectEnd(".authorized");
 
    return retval;
 }
@@ -109,17 +109,17 @@ bool dot_bvfs_update_cmd(UaContext *ua, const char *cmd)
 {
    int pos;
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return 1;
    }
-   pos = find_arg_with_value(ua, "jobid");
-   if (pos != -1 && is_a_number_list(ua->argv[pos])) {
-      if (!ua->db->bvfs_update_path_hierarchy_cache(ua->jcr, ua->argv[pos])) {
-         ua->error_msg("ERROR: BVFS reported a problem for %s\n", ua->argv[pos]);
+   pos = FindArgWithValue(ua, "jobid");
+   if (pos != -1 && Is_a_number_list(ua->argv[pos])) {
+      if (!ua->db->BvfsUpdatePathHierarchyCache(ua->jcr, ua->argv[pos])) {
+         ua->ErrorMsg("ERROR: BVFS reported a problem for %s\n", ua->argv[pos]);
       }
    } else {
       /* update cache for all jobids */
-      ua->db->bvfs_update_cache(ua->jcr);
+      ua->db->BvfsUpdateCache(ua->jcr);
    }
 
    return true;
@@ -127,17 +127,17 @@ bool dot_bvfs_update_cmd(UaContext *ua, const char *cmd)
 
 bool dot_bvfs_clear_cache_cmd(UaContext *ua, const char *cmd)
 {
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return 1;
    }
 
-   int pos = find_arg(ua, "yes");
+   int pos = FindArg(ua, "yes");
    if (pos != -1) {
       Bvfs fs(ua->jcr, ua->db);
       fs.clear_cache();
-      ua->info_msg("OK\n");
+      ua->InfoMsg("OK\n");
    } else {
-      ua->error_msg("Can't find 'yes' argument\n");
+      ua->ErrorMsg("Can't find 'yes' argument\n");
    }
 
    return true;
@@ -149,21 +149,21 @@ static int bvfs_stat(UaContext *ua, char *lstat, int32_t *LinkFI)
    char en1[30], en2[30];
 
    memset(&statp, 0, sizeof(struct stat));
-   decode_stat(lstat, &statp, sizeof(statp), LinkFI);
+   DecodeStat(lstat, &statp, sizeof(statp), LinkFI);
 
-   ua->send->object_start("stat");
-   ua->send->object_key_value("dev", statp.st_dev);
-   ua->send->object_key_value("ino", statp.st_ino);
-   ua->send->object_key_value("mode", statp.st_mode);
-   ua->send->object_key_value("nlink", statp.st_nlink);
-   ua->send->object_key_value("user", ua->guid->uid_to_name(statp.st_uid, en1, sizeof(en1)));
-   ua->send->object_key_value("group", ua->guid->gid_to_name(statp.st_gid, en2, sizeof(en2)));
-   ua->send->object_key_value("rdev", statp.st_rdev);
-   ua->send->object_key_value("size", statp.st_size);
-   ua->send->object_key_value("atime", statp.st_atime);
-   ua->send->object_key_value("mtime", statp.st_mtime);
-   ua->send->object_key_value("ctime", statp.st_ctime);
-   ua->send->object_end("stat");
+   ua->send->ObjectStart("stat");
+   ua->send->ObjectKeyValue("dev", statp.st_dev);
+   ua->send->ObjectKeyValue("ino", statp.st_ino);
+   ua->send->ObjectKeyValue("mode", statp.st_mode);
+   ua->send->ObjectKeyValue("nlink", statp.st_nlink);
+   ua->send->ObjectKeyValue("user", ua->guid->uid_to_name(statp.st_uid, en1, sizeof(en1)));
+   ua->send->ObjectKeyValue("group", ua->guid->gid_to_name(statp.st_gid, en2, sizeof(en2)));
+   ua->send->ObjectKeyValue("rdev", statp.st_rdev);
+   ua->send->ObjectKeyValue("size", statp.st_size);
+   ua->send->ObjectKeyValue("atime", statp.st_atime);
+   ua->send->ObjectKeyValue("mtime", statp.st_mtime);
+   ua->send->ObjectKeyValue("ctime", statp.st_ctime);
+   ua->send->ObjectEnd("stat");
 
    return 0;
 }
@@ -182,50 +182,50 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    /*
     * We need to deal with non existant path
     */
-   if (!fileid || !is_a_number(fileid)) {
+   if (!fileid || !Is_a_number(fileid)) {
       lstat = empty;
       jobid = zero;
       fileid = zero;
    }
 
    Dmsg1(100, "type=%s\n", row[0]);
-   if (bvfs_is_dir(row)) {
+   if (BvfsIsDir(row)) {
       char *path = bvfs_basename_dir(row[BVFS_Name]);
 
-      ua->send->object_start();
-      ua->send->object_key_value("Type", row[BVFS_Type]);
-      ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
-      ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
-      ua->send->object_key_value("lstat", lstat, "%s\t");
-      ua->send->object_key_value("Name", path, "%s\n");
-      ua->send->object_key_value("Fullpath", row[BVFS_Name]);
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("Type", row[BVFS_Type]);
+      ua->send->ObjectKeyValue("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
+      ua->send->ObjectKeyValue("FileId", str_to_uint64(fileid), "%lld\t");
+      ua->send->ObjectKeyValue("JobId", str_to_uint64(jobid), "%lld\t");
+      ua->send->ObjectKeyValue("lstat", lstat, "%s\t");
+      ua->send->ObjectKeyValue("Name", path, "%s\n");
+      ua->send->ObjectKeyValue("Fullpath", row[BVFS_Name]);
       bvfs_stat(ua, lstat, &LinkFI);
-      ua->send->object_key_value("LinkFileIndex", LinkFI);
-      ua->send->object_end();
-  } else if (bvfs_is_version(row)) {
-      ua->send->object_start();
-      ua->send->object_key_value("Type", row[BVFS_Type]);
-      ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
-      ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
-      ua->send->object_key_value("lstat", lstat, "%s\t");
-      ua->send->object_key_value("MD5", row[BVFS_Md5], "%s\t");
-      ua->send->object_key_value("VolumeName", row[BVFS_VolName], "%s\t");
-      ua->send->object_key_value("VolumeInChanger", str_to_uint64(row[BVFS_VolInchanger]), "%lld\n");
+      ua->send->ObjectKeyValue("LinkFileIndex", LinkFI);
+      ua->send->ObjectEnd();
+  } else if (BvfsIsVersion(row)) {
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("Type", row[BVFS_Type]);
+      ua->send->ObjectKeyValue("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
+      ua->send->ObjectKeyValue("FileId", str_to_uint64(fileid), "%lld\t");
+      ua->send->ObjectKeyValue("JobId", str_to_uint64(jobid), "%lld\t");
+      ua->send->ObjectKeyValue("lstat", lstat, "%s\t");
+      ua->send->ObjectKeyValue("MD5", row[BVFS_Md5], "%s\t");
+      ua->send->ObjectKeyValue("VolumeName", row[BVFS_VolName], "%s\t");
+      ua->send->ObjectKeyValue("VolumeInChanger", str_to_uint64(row[BVFS_VolInchanger]), "%lld\n");
       bvfs_stat(ua, lstat, &LinkFI);
-      ua->send->object_end();
-   } else if (bvfs_is_file(row)) {
-      ua->send->object_start();
-      ua->send->object_key_value("Type", row[BVFS_Type]);
-      ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
-      ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
-      ua->send->object_key_value("lstat", lstat, "%s\t");
-      ua->send->object_key_value("Name", row[BVFS_Name], "%s\n");
+      ua->send->ObjectEnd();
+   } else if (BvfsIsFile(row)) {
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("Type", row[BVFS_Type]);
+      ua->send->ObjectKeyValue("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
+      ua->send->ObjectKeyValue("FileId", str_to_uint64(fileid), "%lld\t");
+      ua->send->ObjectKeyValue("JobId", str_to_uint64(jobid), "%lld\t");
+      ua->send->ObjectKeyValue("lstat", lstat, "%s\t");
+      ua->send->ObjectKeyValue("Name", row[BVFS_Name], "%s\n");
       bvfs_stat(ua, lstat, &LinkFI);
-      ua->send->object_key_value("LinkFileIndex", LinkFI);
-      ua->send->object_end();
+      ua->send->ObjectKeyValue("LinkFileIndex", LinkFI);
+      ua->send->ObjectEnd();
    }
 
    return 0;
@@ -271,7 +271,7 @@ static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jo
 
    for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("pathid"))) {
-         if (ua->argv[i] && is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && Is_a_number(ua->argv[i])) {
             *pathid = str_to_int64(ua->argv[i]);
          }
       }
@@ -281,19 +281,19 @@ static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jo
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
-         if (ua->argv[i] && is_a_number_list(ua->argv[i])) {
+         if (ua->argv[i] && Is_a_number_list(ua->argv[i])) {
             *jobid = ua->argv[i];
          }
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("limit"))) {
-         if (ua->argv[i] && is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && Is_a_number(ua->argv[i])) {
             *limit = str_to_int64(ua->argv[i]);
          }
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("offset"))) {
-         if (ua->argv[i] && is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && Is_a_number(ua->argv[i])) {
             *offset = str_to_int64(ua->argv[i]);
          }
       }
@@ -303,7 +303,7 @@ static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jo
       return false;
    }
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return false;
    }
 
@@ -324,14 +324,14 @@ static inline bool bvfs_validate_jobid(UaContext *ua, const char *jobid, bool au
    memset(&jr, 0, sizeof(jr));
    jr.JobId = str_to_int64(jobid);
 
-   if (ua->db->get_job_record(ua->jcr, &jr)) {
+   if (ua->db->GetJobRecord(ua->jcr, &jr)) {
       if (!ua->acl_access_ok(Job_ACL, jr.Name, audit_event)) {
          goto bail_out;
       }
 
       if (jr.ClientId) {
          cr.ClientId = jr.ClientId;
-         if (ua->db->get_client_record(ua->jcr, &cr)) {
+         if (ua->db->GetClientRecord(ua->jcr, &cr)) {
             if (!ua->acl_access_ok(Client_ACL, cr.Name, audit_event)) {
                goto bail_out;
             }
@@ -355,8 +355,8 @@ static bool bvfs_validate_jobids(UaContext *ua, const char *jobids, PoolMem &fil
    char *cur_id, *bp;
    PoolMem temp(PM_FNAME);
 
-   pm_strcpy(temp, jobids);
-   pm_strcpy(filtered_jobids, "");
+   PmStrcpy(temp, jobids);
+   PmStrcpy(filtered_jobids, "");
 
    cur_id = temp.c_str();
    while (cur_id && strlen(cur_id)) {
@@ -370,10 +370,10 @@ static bool bvfs_validate_jobids(UaContext *ua, const char *jobids, PoolMem &fil
        */
       if (bvfs_validate_jobid(ua, cur_id, audit_event)) {
          if (!cnt) {
-            pm_strcpy(filtered_jobids, cur_id);
+            PmStrcpy(filtered_jobids, cur_id);
          } else {
-            pm_strcat(filtered_jobids, ",");
-            pm_strcat(filtered_jobids, cur_id);
+            PmStrcat(filtered_jobids, ",");
+            PmStrcat(filtered_jobids, cur_id);
          }
          cnt++;
       } else {
@@ -393,12 +393,12 @@ bool dot_bvfs_cleanup_cmd(UaContext *ua, const char *cmd)
 {
    int i;
 
-   if ((i = find_arg_with_value(ua, "path")) < 0) {
-      ua->error_msg("Can't find path argument\n");
+   if ((i = FindArgWithValue(ua, "path")) < 0) {
+      ua->ErrorMsg("Can't find path argument\n");
       return false;             /* not enough param */
    }
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return false;
    }
 
@@ -423,32 +423,32 @@ bool dot_bvfs_restore_cmd(UaContext *ua, const char *cmd)
 
    fileid = dirid = hardlink = empty;
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
-      ua->error_msg("Can't find jobid, pathid or path argument\n");
+      ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
    if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
+      ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
 
    Bvfs fs(ua->jcr, ua->db);
    fs.set_jobids(filtered_jobids.c_str());
 
-   if ((i = find_arg_with_value(ua, "fileid")) >= 0) {
+   if ((i = FindArgWithValue(ua, "fileid")) >= 0) {
       fileid = ua->argv[i];
    }
-   if ((i = find_arg_with_value(ua, "dirid")) >= 0) {
+   if ((i = FindArgWithValue(ua, "dirid")) >= 0) {
       dirid = ua->argv[i];
    }
-   if ((i = find_arg_with_value(ua, "hardlink")) >= 0) {
+   if ((i = FindArgWithValue(ua, "hardlink")) >= 0) {
       hardlink = ua->argv[i];
    }
 
    if (fs.compute_restore_list(fileid, dirid, hardlink, path)) {
-      ua->send_msg("OK\n");
+      ua->SendMsg("OK\n");
    } else {
-      ua->error_msg("Can't create restore list\n");
+      ua->ErrorMsg("Can't create restore list\n");
    }
 
    return true;
@@ -468,16 +468,16 @@ bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
    PoolMem filtered_jobids(PM_FNAME);
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
-      ua->error_msg("Can't find jobid, pathid or path argument\n");
+      ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
    if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
+      ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
 
-   if ((i = find_arg_with_value(ua, "pattern")) >= 0) {
+   if ((i = FindArgWithValue(ua, "pattern")) >= 0) {
       pattern = ua->argv[i];
    }
 
@@ -493,16 +493,16 @@ bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
       fs.set_pattern(pattern);
    }
    if (pathid) {
-      fs.ch_dir(pathid);
+      fs.ChDir(pathid);
    } else {
-      fs.ch_dir(path);
+      fs.ChDir(path);
    }
 
    fs.set_offset(offset);
 
-   ua->send->array_start("files");
+   ua->send->ArrayStart("files");
    fs.ls_files();
-   ua->send->array_end("files");
+   ua->send->ArrayEnd("files");
 
    return true;
 }
@@ -520,12 +520,12 @@ bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
    PoolMem filtered_jobids(PM_FNAME);
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
-      ua->error_msg("Can't find jobid, pathid or path argument\n");
+      ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return true;              /* not enough param */
    }
 
    if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
+      ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
 
@@ -537,9 +537,9 @@ bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
    fs.set_jobids(filtered_jobids.c_str());
 
    if (pathid) {
-      fs.ch_dir(pathid);
+      fs.ChDir(pathid);
    } else {
-      if (!fs.ch_dir(path)) {
+      if (!fs.ChDir(path)) {
          /* path could not be found. Giving up. */
          return false;
       }
@@ -549,9 +549,9 @@ bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
    fs.set_offset(offset);
    fs.set_limit(limit);
 
-   ua->send->array_start("directories");
+   ua->send->ArrayStart("directories");
    fs.ls_dirs();
-   ua->send->array_end("directories");
+   ua->send->ArrayEnd("directories");
 
    return true;
 }
@@ -570,17 +570,17 @@ bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd)
    bool copies = false, versions = false;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
-      ua->error_msg("Can't find jobid, pathid or path argument\n");
+      ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
    if (!bvfs_parse_arg_version(ua, &client, &fname, &versions, &copies)) {
-      ua->error_msg("Can't find client or fname argument\n");
+      ua->ErrorMsg("Can't find client or fname argument\n");
       return false;              /* not enough param */
    }
 
    if (!ua->acl_access_ok(Client_ACL, client)) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
+      ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
 
@@ -594,13 +594,13 @@ bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd)
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_limit(limit);
    fs.set_offset(offset);
-   ua->send->array_start("versions");
+   ua->send->ArrayStart("versions");
    if (pathid) {
-      fs.get_all_file_versions(pathid, fname, client);
+      fs.GetAllFileVersions(pathid, fname, client);
    } else {
-      fs.get_all_file_versions(path, fname, client);
+      fs.GetAllFileVersions(path, fname, client);
    }
-   ua->send->array_end("versions");
+   ua->send->ArrayEnd("versions");
 
    return true;
 }
@@ -623,23 +623,23 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
    db_list_ctx jobids, tempids;
    PoolMem filtered_jobids(PM_FNAME);
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return true;
    }
 
    memset(&jr, 0, sizeof(jr));
 
-   if ((pos = find_arg_with_value(ua, "ujobid")) >= 0) {
+   if ((pos = FindArgWithValue(ua, "ujobid")) >= 0) {
       bstrncpy(jr.Job, ua->argv[pos], sizeof(jr.Job));
-   } else if ((pos = find_arg_with_value(ua, "jobid")) >= 0) {
+   } else if ((pos = FindArgWithValue(ua, "jobid")) >= 0) {
       jr.JobId = str_to_int64(ua->argv[pos]);
    } else {
-      ua->error_msg(_("Can't find ujobid or jobid argument\n"));
+      ua->ErrorMsg(_("Can't find ujobid or jobid argument\n"));
       return false;
    }
 
-   if (!ua->db->get_job_record(ua->jcr, &jr)) {
-      ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+   if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
                     ua->argv[pos], ua->db->strerror());
       return false;
    }
@@ -655,9 +655,9 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
       /*
        * If we have the "all" option, we do a search on all defined fileset for this client
        */
-      if (find_arg(ua, "all") > 0) {
-         ua->db->fill_query(query, BareosDb::SQL_QUERY_uar_sel_filesetid, edit_int64(jr.ClientId, ed1));
-         ua->db->get_query_dbids(ua->jcr, query, ids);
+      if (FindArg(ua, "all") > 0) {
+         ua->db->FillQuery(query, BareosDb::SQL_QUERY_uar_sel_filesetid, edit_int64(jr.ClientId, ed1));
+         ua->db->GetQueryDbids(ua->jcr, query, ids);
       } else {
          ids.num_ids = 1;
          ids.DBId[0] = jr.FileSetId;
@@ -675,7 +675,7 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
           * Lookup the FileSet.
           */
          fs.FileSetId = ids.DBId[i];
-         if (!ua->db->get_fileset_record(ua->jcr, &fs)) {
+         if (!ua->db->GetFilesetRecord(ua->jcr, &fs)) {
             continue;
          }
 
@@ -690,7 +690,7 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
           * Lookup the actual JobIds for the given fileset.
           */
          jr.FileSetId = fs.FileSetId;
-         if (!ua->db->accurate_get_jobids(ua->jcr, &jr, &tempids)) {
+         if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &tempids)) {
             return true;
          }
          jobids.add(tempids);
@@ -702,7 +702,7 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
    case API_MODE_JSON: {
       char *cur_id, *bp;
 
-      ua->send->array_start("jobids");
+      ua->send->ArrayStart("jobids");
       cur_id = filtered_jobids.c_str();
       while (cur_id && strlen(cur_id)) {
          bp = strchr(cur_id, ',');
@@ -710,17 +710,17 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
             *bp++ = '\0';
          }
 
-         ua->send->object_start();
-         ua->send->object_key_value("id", cur_id, "%s\n");
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("id", cur_id, "%s\n");
+         ua->send->ObjectEnd();
 
          cur_id = bp;
       }
-      ua->send->array_end("jobids");
+      ua->send->ArrayEnd("jobids");
       break;
    }
    default:
-      ua->send_msg("%s\n", filtered_jobids.c_str());
+      ua->SendMsg("%s\n", filtered_jobids.c_str());
       break;
    }
 
@@ -736,18 +736,18 @@ bool dot_getmsgs_cmd(UaContext *ua, const char *cmd)
 }
 
 #ifdef DEVELOPER
-static void do_storage_cmd(UaContext *ua, StoreResource *store, const char *cmd)
+static void do_storage_cmd(UaContext *ua, StorageResource *store, const char *cmd)
 {
    BareosSocket *sd;
    JobControlRecord *jcr = ua->jcr;
-   UnifiedStoreResource lstore;
+   UnifiedStorageResource lstore;
 
    lstore.store = store;
-   pm_strcpy(lstore.store_source, _("unknown source"));
-   set_wstorage(jcr, &lstore);
+   PmStrcpy(lstore.store_source, _("unknown source"));
+   SetWstorage(jcr, &lstore);
 
    if (!(sd = open_sd_bsock(ua))) {
-      ua->error_msg(_("Could not open SD socket.\n"));
+      ua->ErrorMsg(_("Could not open SD socket.\n"));
       return;
    }
 
@@ -755,10 +755,10 @@ static void do_storage_cmd(UaContext *ua, StoreResource *store, const char *cmd)
    sd = jcr->store_bsock;
    sd->fsend("%s", cmd);
    if (sd->recv() >= 0) {
-      ua->send_msg("%s", sd->msg);
+      ua->SendMsg("%s", sd->msg);
    }
 
-   close_sd_bsock(ua);
+   CloseSdBsock(ua);
    return;
 }
 
@@ -770,17 +770,17 @@ static void do_client_cmd(UaContext *ua, ClientResource *client, const char *cmd
 
    ua->jcr->res.client = client;
    /* Try to connect for 15 seconds */
-   ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
+   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"),
       client->name(), client->address, client->FDport);
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, false)) {
-      ua->error_msg(_("Failed to connect to Client.\n"));
+   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+      ua->ErrorMsg(_("Failed to connect to Client.\n"));
       return;
    }
    Dmsg0(120, "Connected to file daemon\n");
    fd = ua->jcr->file_bsock;
    fd->fsend("%s", cmd);
    if (fd->recv() >= 0) {
-      ua->send_msg("%s", fd->msg);
+      ua->SendMsg("%s", fd->msg);
    }
    fd->signal(BNET_TERMINATE);
    fd->close();
@@ -800,13 +800,13 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
    bool dir = false;
    bool result = true;
    const char *remote_cmd;
-   StoreResource *store = NULL;
+   StorageResource *store = NULL;
    ClientResource *client = NULL;
    bool do_deadlock = false;
    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
    if (strncmp(ua->argk[0], ".die", 4) == 0) {
-      if (find_arg(ua, "deadlock") > 0) {
+      if (FindArg(ua, "deadlock") > 0) {
          do_deadlock = true;
          remote_cmd = ".die deadlock";
       } else {
@@ -819,7 +819,7 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
    } else if (strncmp(ua->argk[0], ".exit", 5) == 0) {
       remote_cmd = "exit";
    } else {
-      ua->error_msg(_("Unknown command: %s\n"), ua->argk[0]);
+      ua->ErrorMsg(_("Unknown command: %s\n"), ua->argk[0]);
       return true;
    }
 
@@ -860,11 +860,11 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
        * We didn't find an appropriate keyword above, so
        * prompt the user.
        */
-      start_prompt(ua, _("Available daemons are: \n"));
-      add_prompt(ua, _("Director"));
-      add_prompt(ua, _("Storage"));
-      add_prompt(ua, _("Client"));
-      switch(do_prompt(ua, "", _("Select daemon type to make die"), NULL, 0)) {
+      StartPrompt(ua, _("Available daemons are: \n"));
+      AddPrompt(ua, _("Director"));
+      AddPrompt(ua, _("Storage"));
+      AddPrompt(ua, _("Client"));
+      switch(DoPrompt(ua, "", _("Select daemon type to make die"), NULL, 0)) {
       case 0:                         /* Director */
          dir=true;
          break;
@@ -884,7 +884,7 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         ua->warning_msg(_("Storage has non-native protocol.\n"));
+         ua->WarningMsg(_("Storage has non-native protocol.\n"));
          break;
       default:
          do_storage_cmd(ua, store, remote_cmd);
@@ -899,11 +899,11 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
    if (dir) {
       if (strncmp(remote_cmd, ".die", 4) == 0) {
          if (do_deadlock) {
-            ua->send_msg(_("The Director will generate a deadlock.\n"));
+            ua->SendMsg(_("The Director will generate a deadlock.\n"));
             P(mutex);
             P(mutex);
          }
-         ua->send_msg(_("The Director will segment fault.\n"));
+         ua->SendMsg(_("The Director will segment fault.\n"));
          a = jcr->JobId; /* ref NULL pointer */
          jcr->JobId = 1000; /* another ref NULL pointer */
          jcr->JobId = a;
@@ -914,9 +914,9 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
       } else if (strncmp(remote_cmd, "sm_check", 8) == 0) {
          result = sm_check_rtn(__FILE__, __LINE__, true);
          if (result) {
-            ua->send_msg("memory: OK\n");
+            ua->SendMsg("memory: OK\n");
          } else {
-            ua->error_msg("Memory managing problems detected.\n");
+            ua->ErrorMsg("Memory managing problems detected.\n");
          }
       } else if (strncmp(remote_cmd, ".exit", 5) == 0) {
          quit_cmd(ua, cmd);
@@ -931,7 +931,7 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
  */
 bool dot_admin_cmds(UaContext *ua, const char *cmd)
 {
-   ua->error_msg(_("Unknown command: %s\n"), ua->argk[0]);
+   ua->ErrorMsg(_("Unknown command: %s\n"), ua->argk[0]);
    return true;
 }
 #endif
@@ -941,15 +941,15 @@ bool dot_jobdefs_cmd(UaContext *ua, const char *cmd)
    JobResource *jobdefs;
 
    LockRes();
-   ua->send->array_start("jobdefs");
+   ua->send->ArrayStart("jobdefs");
    foreach_res(jobdefs, R_JOBDEFS) {
       if (ua->acl_access_ok(Job_ACL, jobdefs->name())) {
-         ua->send->object_start();
-         ua->send->object_key_value("name", jobdefs->name(), "%s\n");
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("name", jobdefs->name(), "%s\n");
+         ua->send->ObjectEnd();
       }
    }
-   ua->send->array_end("jobdefs");
+   ua->send->ArrayEnd("jobdefs");
    UnlockRes();
 
    return true;
@@ -967,15 +967,15 @@ bool dot_jobs_cmd(UaContext *ua, const char *cmd)
    bool disabled;
    uint32_t type = 0;
 
-   if ((pos = find_arg_with_value(ua, "type")) >= 0) {
+   if ((pos = FindArgWithValue(ua, "type")) >= 0) {
       type = ua->argv[pos][0];
    }
 
-   enabled = find_arg(ua, NT_("enabled")) >= 0;
-   disabled = find_arg(ua, NT_("disabled")) >= 0;
+   enabled = FindArg(ua, NT_("enabled")) >= 0;
+   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
    LockRes();
-   ua->send->array_start("jobs");
+   ua->send->ArrayStart("jobs");
    foreach_res(job, R_JOB) {
       if (!type || type == job->JobType) {
          if (ua->acl_access_ok(Job_ACL, job->name())) {
@@ -986,14 +986,14 @@ bool dot_jobs_cmd(UaContext *ua, const char *cmd)
                continue;
             }
 
-            ua->send->object_start();
-            ua->send->object_key_value("name", job->name(), "%s\n");
-            ua->send->object_key_value_bool("enabled", job->enabled);
-            ua->send->object_end();
+            ua->send->ObjectStart();
+            ua->send->ObjectKeyValue("name", job->name(), "%s\n");
+            ua->send->ObjectKeyValueBool("enabled", job->enabled);
+            ua->send->ObjectEnd();
          }
       }
    }
-   ua->send->array_end("jobs");
+   ua->send->ArrayEnd("jobs");
    UnlockRes();
 
    return true;
@@ -1009,20 +1009,20 @@ bool dot_jobstatus_cmd(UaContext *ua, const char *cmd)
       if (strlen(ua->argv[0]) == 1) {
          Mmsg(where, "WHERE JobStatus = '%c' ", ua->argv[0][0]);
       } else {
-         ua->error_msg(_("Unknown JobStatus '%s'. JobStatus must be a single character.\n"), ua->argv[0]);
+         ua->ErrorMsg(_("Unknown JobStatus '%s'. JobStatus must be a single character.\n"), ua->argv[0]);
          return false;
       }
    }
 
-   ua->db->fill_query(select, BareosDb::SQL_QUERY_get_jobstatus_details, where.c_str());
+   ua->db->FillQuery(select, BareosDb::SQL_QUERY_get_jobstatus_details, where.c_str());
 
-   if (!open_client_db(ua)) {
+   if (!OpenClientDb(ua)) {
       return false;
    }
 
-   ua->send->array_start("jobstatus");
-   retval = ua->db->list_sql_query(ua->jcr, select.c_str(), ua->send, HORZ_LIST, false);
-   ua->send->array_end("jobstatus");
+   ua->send->ArrayStart("jobstatus");
+   retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST, false);
+   ua->send->ArrayEnd("jobstatus");
 
    return retval;
 }
@@ -1032,15 +1032,15 @@ bool dot_filesets_cmd(UaContext *ua, const char *cmd)
    FilesetResource *fs;
 
    LockRes();
-   ua->send->array_start("filesets");
+   ua->send->ArrayStart("filesets");
    foreach_res(fs, R_FILESET) {
       if (ua->acl_access_ok(FileSet_ACL, fs->name())) {
-         ua->send->object_start();
-         ua->send->object_key_value("name", fs->name(), "%s\n");
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("name", fs->name(), "%s\n");
+         ua->send->ObjectEnd();
       }
    }
-   ua->send->array_end("filesets");
+   ua->send->ArrayEnd("filesets");
    UnlockRes();
 
    return true;
@@ -1051,15 +1051,15 @@ bool dot_catalogs_cmd(UaContext *ua, const char *cmd)
    CatalogResource *cat;
 
    LockRes();
-   ua->send->array_start("catalogs");
+   ua->send->ArrayStart("catalogs");
    foreach_res(cat, R_CATALOG) {
       if (ua->acl_access_ok(Catalog_ACL, cat->name())) {
-         ua->send->object_start();
-         ua->send->object_key_value("name", cat->name(), "%s\n");
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("name", cat->name(), "%s\n");
+         ua->send->ObjectEnd();
       }
    }
-   ua->send->array_end("catalogs");
+   ua->send->ArrayEnd("catalogs");
    UnlockRes();
 
    return true;
@@ -1071,11 +1071,11 @@ bool dot_clients_cmd(UaContext *ua, const char *cmd)
    bool disabled;
    ClientResource *client;
 
-   enabled = find_arg(ua, NT_("enabled")) >= 0;
-   disabled = find_arg(ua, NT_("disabled")) >= 0;
+   enabled = FindArg(ua, NT_("enabled")) >= 0;
+   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
    LockRes();
-   ua->send->array_start("clients");
+   ua->send->ArrayStart("clients");
    foreach_res(client, R_CLIENT) {
       if (ua->acl_access_ok(Client_ACL, client->name())) {
          if (enabled && !client->enabled) {
@@ -1085,13 +1085,13 @@ bool dot_clients_cmd(UaContext *ua, const char *cmd)
             continue;
          }
 
-         ua->send->object_start();
-         ua->send->object_key_value("name", client->name(), "%s\n");
-         ua->send->object_key_value_bool("enabled", client->enabled);
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("name", client->name(), "%s\n");
+         ua->send->ObjectKeyValueBool("enabled", client->enabled);
+         ua->send->ObjectEnd();
       }
    }
-   ua->send->array_end("clients");
+   ua->send->ArrayEnd("clients");
    UnlockRes();
 
    return true;
@@ -1102,13 +1102,13 @@ bool dot_consoles_cmd(UaContext *ua, const char *cmd)
    ConsoleResource *console;
 
    LockRes();
-   ua->send->array_start("consoles");
+   ua->send->ArrayStart("consoles");
    foreach_res(console, R_CONSOLE) {
-      ua->send->object_start();
-      ua->send->object_key_value("name", console->name(), "%s\n");
-      ua->send->object_end();
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", console->name(), "%s\n");
+      ua->send->ObjectEnd();
    }
-   ua->send->array_end("consoles");
+   ua->send->ArrayEnd("consoles");
    UnlockRes();
 
    return true;
@@ -1119,13 +1119,13 @@ bool dot_msgs_cmd(UaContext *ua, const char *cmd)
    MessagesResource *msgs = NULL;
 
    LockRes();
-   ua->send->array_start("messages");
+   ua->send->ArrayStart("messages");
    foreach_res(msgs, R_MSGS) {
-      ua->send->object_start();
-      ua->send->object_key_value("text", msgs->name(), "%s\n");
-      ua->send->object_end();
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("text", msgs->name(), "%s\n");
+      ua->send->ObjectEnd();
    }
-   ua->send->array_end("messages");
+   ua->send->ArrayEnd("messages");
    UnlockRes();
 
    return true;
@@ -1136,7 +1136,7 @@ bool dot_pools_cmd(UaContext *ua, const char *cmd)
    int pos, length;
    PoolResource *pool;
 
-   pos = find_arg_with_value(ua, "type");
+   pos = FindArgWithValue(ua, "type");
    if (pos >= 0) {
       length = strlen(ua->argv[pos]);
    } else {
@@ -1144,17 +1144,17 @@ bool dot_pools_cmd(UaContext *ua, const char *cmd)
    }
 
    LockRes();
-   ua->send->array_start("pools");
+   ua->send->ArrayStart("pools");
    foreach_res(pool, R_POOL) {
       if (ua->acl_access_ok(Pool_ACL, pool->name())) {
          if (pos == -1 || bstrncasecmp(pool->pool_type, ua->argv[pos], length)) {
-            ua->send->object_start();
-            ua->send->object_key_value("name", pool->name(), "%s\n");
-            ua->send->object_end();
+            ua->send->ObjectStart();
+            ua->send->ObjectKeyValue("name", pool->name(), "%s\n");
+            ua->send->ObjectEnd();
          }
       }
    }
-   ua->send->array_end("pools");
+   ua->send->ArrayEnd("pools");
    UnlockRes();
 
    return true;
@@ -1164,13 +1164,13 @@ bool dot_storage_cmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
-   StoreResource *store;
+   StorageResource *store;
 
-   enabled = find_arg(ua, NT_("enabled")) >= 0;
-   disabled = find_arg(ua, NT_("disabled")) >= 0;
+   enabled = FindArg(ua, NT_("enabled")) >= 0;
+   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
    LockRes();
-   ua->send->array_start("storages");
+   ua->send->ArrayStart("storages");
    foreach_res(store, R_STORAGE) {
       if (ua->acl_access_ok(Storage_ACL, store->name())) {
          if (enabled && !store->enabled) {
@@ -1180,13 +1180,13 @@ bool dot_storage_cmd(UaContext *ua, const char *cmd)
             continue;
          }
 
-         ua->send->object_start();
-         ua->send->object_key_value("name", store->name(), "%s\n");
-         ua->send->object_key_value_bool("enabled", store->enabled);
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("name", store->name(), "%s\n");
+         ua->send->ObjectKeyValueBool("enabled", store->enabled);
+         ua->send->ObjectEnd();
       }
    }
-   ua->send->array_end("storages");
+   ua->send->ArrayEnd("storages");
    UnlockRes();
 
    return true;
@@ -1197,13 +1197,13 @@ bool dot_profiles_cmd(UaContext *ua, const char *cmd)
    ProfileResource *profile;
 
    LockRes();
-   ua->send->array_start("profiles");
+   ua->send->ArrayStart("profiles");
    foreach_res(profile, R_PROFILE) {
-      ua->send->object_start();
-      ua->send->object_key_value("name", profile->name(), "%s\n");
-      ua->send->object_end();
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", profile->name(), "%s\n");
+      ua->send->ObjectEnd();
    }
-   ua->send->array_end("profiles");
+   ua->send->ArrayEnd("profiles");
    UnlockRes();
 
    return true;
@@ -1211,26 +1211,26 @@ bool dot_profiles_cmd(UaContext *ua, const char *cmd)
 
 bool dot_aop_cmd(UaContext *ua, const char *cmd)
 {
-   ua->send->array_start("actiononpurge");
+   ua->send->ArrayStart("actiononpurge");
    for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
-      ua->send->object_start();
-      ua->send->object_key_value("name", ActionOnPurgeOptions[i].name, "%s\n");
-      ua->send->object_end();
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", ActionOnPurgeOptions[i].name, "%s\n");
+      ua->send->ObjectEnd();
    }
-   ua->send->array_end("actiononpurge");
+   ua->send->ArrayEnd("actiononpurge");
 
    return true;
 }
 
 bool dot_types_cmd(UaContext *ua, const char *cmd)
 {
-   ua->send->array_start("jobtypes");
+   ua->send->ArrayStart("jobtypes");
    for (int i = 0; jobtypes[i].type_name; i++) {
-      ua->send->object_start();
-      ua->send->object_key_value("name", jobtypes[i].type_name, "%s\n");
-      ua->send->object_end();
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", jobtypes[i].type_name, "%s\n");
+      ua->send->ObjectEnd();
    }
-   ua->send->array_end("jobtypes");
+   ua->send->ArrayEnd("jobtypes");
 
    return true;
 }
@@ -1257,11 +1257,11 @@ bool dot_api_cmd(UaContext *ua, const char *cmd)
       } else if (bstrcasecmp(ua->argk[1], "json") || bstrcasecmp(ua->argk[1], "2")) {
          ua->api = API_MODE_JSON;
          ua->batch = true;
-         if ((ua->argc == 3) && (find_arg_with_value(ua, "compact") == 2)) {
+         if ((ua->argc == 3) && (FindArgWithValue(ua, "compact") == 2)) {
             if (bstrcasecmp(ua->argv[2], "yes")) {
-               ua->send->set_compact(true);
+               ua->send->SetCompact(true);
             } else {
-               ua->send->set_compact(false);
+               ua->send->SetCompact(false);
             }
          }
       } else {
@@ -1271,8 +1271,8 @@ bool dot_api_cmd(UaContext *ua, const char *cmd)
       return false;
    }
 
-   ua->send->set_mode(ua->api);
-   ua->send->object_key_value("api", "%s: ", ua->api, "%d\n");
+   ua->send->SetMode(ua->api);
+   ua->send->ObjectKeyValue("api", "%s: ", ua->api, "%d\n");
 
    return true;
 }
@@ -1288,16 +1288,16 @@ static int sql_handler(void *ctx, int num_field, char **row)
    }
    for (int i = 0; num_field--; i++) {
       if (i == 0) {
-         pm_strcpy(rows, NPRT(row[0]));
+         PmStrcpy(rows, NPRT(row[0]));
       } else {
-         pm_strcat(rows, NPRT(row[i]));
+         PmStrcat(rows, NPRT(row[i]));
       }
-      pm_strcat(rows, "\t");
+      PmStrcat(rows, "\t");
    }
    if (!rows.c_str() || !*rows.c_str()) {
-      ua->send_msg("\t");
+      ua->SendMsg("\t");
    } else {
-      ua->send_msg("%s", rows.c_str());
+      ua->SendMsg("%s", rows.c_str());
    }
    return 0;
 }
@@ -1307,13 +1307,13 @@ bool dot_sql_cmd(UaContext *ua, const char *cmd)
    int pos;
    bool retval = false;
 
-   if (!open_client_db(ua, true)) {
+   if (!OpenClientDb(ua, true)) {
       return false;
    }
 
-   pos = find_arg_with_value(ua, "query");
+   pos = FindArgWithValue(ua, "query");
    if (pos < 0) {
-      ua->error_msg(_("query keyword not found.\n"));
+      ua->ErrorMsg(_("query keyword not found.\n"));
       return false;
    }
 
@@ -1322,19 +1322,19 @@ bool dot_sql_cmd(UaContext *ua, const char *cmd)
       /*
        * BAT uses the ".sql" command and expects this format
        */
-      retval = ua->db->sql_query(ua->argv[pos], sql_handler, (void *)ua);
+      retval = ua->db->SqlQuery(ua->argv[pos], sql_handler, (void *)ua);
       break;
    default:
       /*
        * General format
        */
-      retval = ua->db->list_sql_query(ua->jcr, ua->argv[pos], ua->send, HORZ_LIST, false);
+      retval = ua->db->ListSqlQuery(ua->jcr, ua->argv[pos], ua->send, HORZ_LIST, false);
       break;
    }
 
    if (!retval) {
       Dmsg1(100, "Query failed: ERR=%s", ua->db->strerror());
-      ua->error_msg(_("Query failed: %s. ERR=%s"), ua->cmd, ua->db->strerror());
+      ua->ErrorMsg(_("Query failed: %s. ERR=%s"), ua->cmd, ua->db->strerror());
    }
 
    return retval;
@@ -1344,39 +1344,39 @@ static int one_handler(void *ctx, int num_field, char **row)
 {
    UaContext *ua = (UaContext *)ctx;
 
-   ua->send->object_start();
-   ua->send->object_key_value("name", row[0], "%s\n");
-   ua->send->object_end();
+   ua->send->ObjectStart();
+   ua->send->ObjectKeyValue("name", row[0], "%s\n");
+   ua->send->ObjectEnd();
 
    return 0;
 }
 
 bool dot_mediatypes_cmd(UaContext *ua, const char *cmd)
 {
-   if (!open_client_db(ua)) {
+   if (!OpenClientDb(ua)) {
       return true;
    }
 
-   ua->send->array_start("mediatypes");
-   if (!ua->db->sql_query("SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType", one_handler, (void *)ua)) {
-      ua->error_msg(_("List MediaType failed: ERR=%s\n"), ua->db->strerror());
+   ua->send->ArrayStart("mediatypes");
+   if (!ua->db->SqlQuery("SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType", one_handler, (void *)ua)) {
+      ua->ErrorMsg(_("List MediaType failed: ERR=%s\n"), ua->db->strerror());
    }
-   ua->send->array_end("mediatypes");
+   ua->send->ArrayEnd("mediatypes");
 
    return true;
 }
 
 bool dot_media_cmd(UaContext *ua, const char *cmd)
 {
-   if (!open_client_db(ua)) {
+   if (!OpenClientDb(ua)) {
       return true;
    }
 
-   ua->send->array_start("media");
-   if (!ua->db->sql_query("SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName", one_handler, (void *)ua)) {
-      ua->error_msg(_("List Media failed: ERR=%s\n"), ua->db->strerror());
+   ua->send->ArrayStart("media");
+   if (!ua->db->SqlQuery("SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName", one_handler, (void *)ua)) {
+      ua->ErrorMsg(_("List Media failed: ERR=%s\n"), ua->db->strerror());
    }
-   ua->send->array_end("media");
+   ua->send->ArrayEnd("media");
 
    return true;
 }
@@ -1387,11 +1387,11 @@ bool dot_schedule_cmd(UaContext *ua, const char *cmd)
    bool disabled;
    ScheduleResource *sched;
 
-   enabled = find_arg(ua, NT_("enabled")) >= 0;
-   disabled = find_arg(ua, NT_("disabled")) >= 0;
+   enabled = FindArg(ua, NT_("enabled")) >= 0;
+   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
    LockRes();
-   ua->send->array_start("schedules");
+   ua->send->ArrayStart("schedules");
    foreach_res(sched, R_SCHEDULE) {
       if (ua->acl_access_ok(Schedule_ACL, sched->name())) {
          if (enabled && !sched->enabled) {
@@ -1401,13 +1401,13 @@ bool dot_schedule_cmd(UaContext *ua, const char *cmd)
             continue;
          }
 
-         ua->send->object_start();
-         ua->send->object_key_value("name", sched->hdr.name, "%s\n");
-         ua->send->object_key_value_bool("enabled", sched->enabled);
-         ua->send->object_end();
+         ua->send->ObjectStart();
+         ua->send->ObjectKeyValue("name", sched->hdr.name, "%s\n");
+         ua->send->ObjectKeyValueBool("enabled", sched->enabled);
+         ua->send->ObjectEnd();
       }
    }
-   ua->send->array_end("schedules");
+   ua->send->ArrayEnd("schedules");
    UnlockRes();
 
    return true;
@@ -1415,15 +1415,15 @@ bool dot_schedule_cmd(UaContext *ua, const char *cmd)
 
 bool dot_locations_cmd(UaContext *ua, const char *cmd)
 {
-   if (!open_client_db(ua)) {
+   if (!OpenClientDb(ua)) {
       return true;
    }
 
-   ua->send->array_start("locations");
-   if (!ua->db->sql_query( "SELECT DISTINCT Location FROM Location ORDER BY Location", one_handler, (void *)ua)) {
-      ua->error_msg(_("List Location failed: ERR=%s\n"), ua->db->strerror());
+   ua->send->ArrayStart("locations");
+   if (!ua->db->SqlQuery( "SELECT DISTINCT Location FROM Location ORDER BY Location", one_handler, (void *)ua)) {
+      ua->ErrorMsg(_("List Location failed: ERR=%s\n"), ua->db->strerror());
    }
-   ua->send->array_end("locations");
+   ua->send->ArrayEnd("locations");
 
    return true;
 }
@@ -1433,15 +1433,15 @@ bool dot_levels_cmd(UaContext *ua, const char *cmd)
    /*
     * Note some levels are blank, which means none is needed
     */
-   ua->send->array_start("levels");
+   ua->send->ArrayStart("levels");
    if (ua->argc == 1) {
       for (int i = 0; joblevels[i].level_name; i++) {
          if (joblevels[i].level_name[0] != ' ') {
-            ua->send->object_start();
-            ua->send->object_key_value("name", joblevels[i].level_name, "%s\n");
-            ua->send->object_key_value("level", joblevels[i].level);
-            ua->send->object_key_value("jobtype", joblevels[i].job_type);
-            ua->send->object_end();
+            ua->send->ObjectStart();
+            ua->send->ObjectKeyValue("name", joblevels[i].level_name, "%s\n");
+            ua->send->ObjectKeyValue("level", joblevels[i].level);
+            ua->send->ObjectKeyValue("jobtype", joblevels[i].job_type);
+            ua->send->ObjectEnd();
          }
       }
    } else if (ua->argc == 2) {
@@ -1459,28 +1459,28 @@ bool dot_levels_cmd(UaContext *ua, const char *cmd)
 
       for (int i = 0; joblevels[i].level_name; i++) {
          if ((joblevels[i].job_type == jobtype) && (joblevels[i].level_name[0] != ' ')) {
-            ua->send->object_start();
-            ua->send->object_key_value("name", joblevels[i].level_name, "%s\n");
-            ua->send->object_key_value("level", joblevels[i].level);
-            ua->send->object_key_value("jobtype", joblevels[i].job_type);
-            ua->send->object_end();
+            ua->send->ObjectStart();
+            ua->send->ObjectKeyValue("name", joblevels[i].level_name, "%s\n");
+            ua->send->ObjectKeyValue("level", joblevels[i].level);
+            ua->send->ObjectKeyValue("jobtype", joblevels[i].job_type);
+            ua->send->ObjectEnd();
          }
       }
    }
-   ua->send->array_end("levels");
+   ua->send->ArrayEnd("levels");
 
    return true;
 }
 
 bool dot_volstatus_cmd(UaContext *ua, const char *cmd)
 {
-   ua->send->array_start("volstatus");
+   ua->send->ArrayStart("volstatus");
    for (int i = 0; VolumeStatus[i].name; i++) {
-      ua->send->object_start();
-      ua->send->object_key_value("name", VolumeStatus[i].name, "%s\n");
-      ua->send->object_end();
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", VolumeStatus[i].name, "%s\n");
+      ua->send->ObjectEnd();
    }
-   ua->send->array_end("volstatus");
+   ua->send->ArrayEnd("volstatus");
 
    return true;
 }
@@ -1493,8 +1493,8 @@ bool dot_defaults_cmd(UaContext *ua, const char *cmd)
    char ed1[50];
    int pos = 0;
 
-   ua->send->object_start("defaults");
-   if ((pos = find_arg_with_value(ua, "job")) >= 0) {
+   ua->send->ObjectStart("defaults");
+   if ((pos = FindArgWithValue(ua, "job")) >= 0) {
       JobResource *job;
 
       /*
@@ -1502,38 +1502,38 @@ bool dot_defaults_cmd(UaContext *ua, const char *cmd)
        */
       job = ua->GetJobResWithName(ua->argv[pos]);
       if (job) {
-         UnifiedStoreResource store;
+         UnifiedStorageResource store;
 
          /*
           * BAT parses the result of this command message by message,
           * instead of looking for a separator.
-          * Therefore the send_buffer() function is called after each line.
+          * Therefore the SendBuffer() function is called after each line.
           */
-         ua->send->object_key_value("job", "%s=", job->name(), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("pool", "%s=", job->pool->name(), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("messages", "%s=", job->messages->name(), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("client", "%s=", ((job->client) ? job->client->name() : _("*None*")), "%s\n");
-         ua->send->send_buffer();
-         get_job_storage(&store, job, NULL);
-         ua->send->object_key_value("storage", "%s=", store.store->name(), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("level", "%s=", level_to_str(job->JobLevel), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("type", "%s=", job_type_to_str(job->JobType), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("fileset", "%s=", ((job->fileset) ? job->fileset->name() : _("*None*")), "%s\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("enabled", "%s=", job->enabled, "%d\n");
-         ua->send->send_buffer();
-         ua->send->object_key_value("catalog", "%s=", ((job->client) ? job->client->catalog->name() : _("*None*")), "%s\n");
-         ua->send->send_buffer();
+         ua->send->ObjectKeyValue("job", "%s=", job->name(), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("pool", "%s=", job->pool->name(), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("messages", "%s=", job->messages->name(), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("client", "%s=", ((job->client) ? job->client->name() : _("*None*")), "%s\n");
+         ua->send->SendBuffer();
+         GetJobStorage(&store, job, NULL);
+         ua->send->ObjectKeyValue("storage", "%s=", store.store->name(), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("level", "%s=", level_to_str(job->JobLevel), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("type", "%s=", job_type_to_str(job->JobType), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("fileset", "%s=", ((job->fileset) ? job->fileset->name() : _("*None*")), "%s\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("enabled", "%s=", job->enabled, "%d\n");
+         ua->send->SendBuffer();
+         ua->send->ObjectKeyValue("catalog", "%s=", ((job->client) ? job->client->catalog->name() : _("*None*")), "%s\n");
+         ua->send->SendBuffer();
       }
-   } else if ((pos = find_arg_with_value(ua, "client")) >= 0) {
+   } else if ((pos = FindArgWithValue(ua, "client")) >= 0) {
       ClientResource *client;
 
       /*
@@ -1541,17 +1541,17 @@ bool dot_defaults_cmd(UaContext *ua, const char *cmd)
        */
       client = ua->GetClientResWithName(ua->argv[pos]);
       if (client) {
-         ua->send->object_key_value("client", "%s=", client->name(), "%s\n");
-         ua->send->object_key_value("address", "%s=", client->address, "%s\n");
-         ua->send->object_key_value("port", "%s=", client->FDport, "%d\n");
-         ua->send->object_key_value("file_retention", "%s=", edit_uint64(client->FileRetention, ed1), "%s\n");
-         ua->send->object_key_value("job_retention", "%s=", edit_uint64(client->JobRetention, ed1), "%s\n");
-         ua->send->object_key_value("autoprune", "%s=", client->AutoPrune, "%d\n");
-         ua->send->object_key_value("enabled", "%s=", client->enabled, "%d\n");
-         ua->send->object_key_value("catalog", "%s=", client->catalog->name(), "%s\n");
+         ua->send->ObjectKeyValue("client", "%s=", client->name(), "%s\n");
+         ua->send->ObjectKeyValue("address", "%s=", client->address, "%s\n");
+         ua->send->ObjectKeyValue("port", "%s=", client->FDport, "%d\n");
+         ua->send->ObjectKeyValue("file_retention", "%s=", edit_uint64(client->FileRetention, ed1), "%s\n");
+         ua->send->ObjectKeyValue("job_retention", "%s=", edit_uint64(client->JobRetention, ed1), "%s\n");
+         ua->send->ObjectKeyValue("autoprune", "%s=", client->AutoPrune, "%d\n");
+         ua->send->ObjectKeyValue("enabled", "%s=", client->enabled, "%d\n");
+         ua->send->ObjectKeyValue("catalog", "%s=", client->catalog->name(), "%s\n");
       }
-   } else if ((pos = find_arg_with_value(ua, "storage")) >= 0) {
-      StoreResource *storage;
+   } else if ((pos = FindArgWithValue(ua, "storage")) >= 0) {
+      StorageResource *storage;
 
       /*
        * Storage defaults
@@ -1561,11 +1561,11 @@ bool dot_defaults_cmd(UaContext *ua, const char *cmd)
          DeviceResource *device;
          PoolMem devices;
 
-         ua->send->object_key_value("storage", "%s=", storage->name(), "%s\n");
-         ua->send->object_key_value("address", "%s=", storage->address, "%s\n");
-         ua->send->object_key_value("port", "%s=", storage->SDport, "%d\n");
-         ua->send->object_key_value("enabled", "%s=", storage->enabled, "%d\n");
-         ua->send->object_key_value("media_type", "%s=", storage->media_type, "%s\n");
+         ua->send->ObjectKeyValue("storage", "%s=", storage->name(), "%s\n");
+         ua->send->ObjectKeyValue("address", "%s=", storage->address, "%s\n");
+         ua->send->ObjectKeyValue("port", "%s=", storage->SDport, "%d\n");
+         ua->send->ObjectKeyValue("enabled", "%s=", storage->enabled, "%d\n");
+         ua->send->ObjectKeyValue("media_type", "%s=", storage->media_type, "%s\n");
 
          device = (DeviceResource *)storage->device->first();
          if (device) {
@@ -1576,10 +1576,10 @@ bool dot_defaults_cmd(UaContext *ua, const char *cmd)
                   devices.strcat(device->name());
                }
             }
-            ua->send->object_key_value("device", "%s=", devices.c_str(), "%s\n");
+            ua->send->ObjectKeyValue("device", "%s=", devices.c_str(), "%s\n");
          }
       }
-   } else if ((pos = find_arg_with_value(ua, "pool")) >= 0) {
+   } else if ((pos = FindArgWithValue(ua, "pool")) >= 0) {
       PoolResource *pool;
 
       /*
@@ -1587,28 +1587,28 @@ bool dot_defaults_cmd(UaContext *ua, const char *cmd)
        */
       pool = ua->GetPoolResWithName(ua->argv[pos]);
       if (pool) {
-         ua->send->object_key_value("pool", "%s=", pool->name(), "%s\n");
-         ua->send->object_key_value("pool_type", "%s=", pool->pool_type, "%s\n");
-         ua->send->object_key_value("label_format", "%s=", (pool->label_format?pool->label_format:""), "%s\n");
-         ua->send->object_key_value("use_volume_once", "%s=", pool->use_volume_once, "%d\n");
-         ua->send->object_key_value("purge_oldest_volume=", "%s=", pool->purge_oldest_volume, "%d\n");
-         ua->send->object_key_value("recycle_oldest_volume", "%s=", pool->recycle_oldest_volume, "%d\n");
-         ua->send->object_key_value("max_volumes", "%s=", pool->max_volumes, "%d\n");
-         ua->send->object_key_value("vol_retention", "%s=", edit_uint64(pool->VolRetention, ed1), "%s\n");
-         ua->send->object_key_value("vol_use_duration", "%s=", edit_uint64(pool->VolUseDuration, ed1), "%s\n");
-         ua->send->object_key_value("max_vol_jobs", "%s=", pool->MaxVolJobs, "%d\n");
-         ua->send->object_key_value("max_vol_files", "%s=", pool->MaxVolFiles, "%d\n");
-         ua->send->object_key_value("max_vol_bytes", "%s=", edit_uint64(pool->MaxVolBytes, ed1), "%s\n");
-         ua->send->object_key_value("auto_prune", "%s=", pool->AutoPrune, "%d\n");
-         ua->send->object_key_value("recycle", "%s=", pool->Recycle, "%d\n");
-         ua->send->object_key_value("file_retention", "%s=", edit_uint64(pool->FileRetention, ed1), "%s\n");
-         ua->send->object_key_value("job_retention", "%s=", edit_uint64(pool->JobRetention, ed1), "%s\n");
+         ua->send->ObjectKeyValue("pool", "%s=", pool->name(), "%s\n");
+         ua->send->ObjectKeyValue("pool_type", "%s=", pool->pool_type, "%s\n");
+         ua->send->ObjectKeyValue("label_format", "%s=", (pool->label_format?pool->label_format:""), "%s\n");
+         ua->send->ObjectKeyValue("use_volume_once", "%s=", pool->use_volume_once, "%d\n");
+         ua->send->ObjectKeyValue("purge_oldest_volume=", "%s=", pool->purge_oldest_volume, "%d\n");
+         ua->send->ObjectKeyValue("recycle_oldest_volume", "%s=", pool->recycle_oldest_volume, "%d\n");
+         ua->send->ObjectKeyValue("max_volumes", "%s=", pool->max_volumes, "%d\n");
+         ua->send->ObjectKeyValue("vol_retention", "%s=", edit_uint64(pool->VolRetention, ed1), "%s\n");
+         ua->send->ObjectKeyValue("vol_use_duration", "%s=", edit_uint64(pool->VolUseDuration, ed1), "%s\n");
+         ua->send->ObjectKeyValue("max_vol_jobs", "%s=", pool->MaxVolJobs, "%d\n");
+         ua->send->ObjectKeyValue("max_vol_files", "%s=", pool->MaxVolFiles, "%d\n");
+         ua->send->ObjectKeyValue("max_vol_bytes", "%s=", edit_uint64(pool->MaxVolBytes, ed1), "%s\n");
+         ua->send->ObjectKeyValue("auto_prune", "%s=", pool->AutoPrune, "%d\n");
+         ua->send->ObjectKeyValue("recycle", "%s=", pool->Recycle, "%d\n");
+         ua->send->ObjectKeyValue("file_retention", "%s=", edit_uint64(pool->FileRetention, ed1), "%s\n");
+         ua->send->ObjectKeyValue("job_retention", "%s=", edit_uint64(pool->JobRetention, ed1), "%s\n");
       }
    } else {
-      ua->send_msg(".defaults command requires a parameter.\n");
+      ua->SendMsg(".defaults command requires a parameter.\n");
       return false;
    }
-   ua->send->object_end("defaults");
+   ua->send->ObjectEnd("defaults");
 
    return true;
 }

@@ -83,8 +83,8 @@ static int send_volume_info_to_storage_daemon(JobControlRecord *jcr, BareosSocke
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
 
    jcr->MediaId = mr->MediaId;
-   pm_strcpy(jcr->VolumeName, mr->VolumeName);
-   bash_spaces(mr->VolumeName);
+   PmStrcpy(jcr->VolumeName, mr->VolumeName);
+   BashSpaces(mr->VolumeName);
    status = sd->fsend(OK_media, mr->VolumeName, mr->VolJobs,
       mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
       mr->VolMounts, mr->VolErrors, mr->VolWrites,
@@ -98,12 +98,12 @@ static int send_volume_info_to_storage_daemon(JobControlRecord *jcr, BareosSocke
       mr->LabelType,
       edit_uint64(mr->MediaId, ed6),
       mr->EncrKey, mr->MinBlocksize, mr->MaxBlocksize);
-   unbash_spaces(mr->VolumeName);
+   UnbashSpaces(mr->VolumeName);
    Dmsg2(100, "Vol Info for %s: %s", jcr->Job, sd->msg);
    return status;
 }
 
-void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
+void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
 {
    MediaDbRecord mr, sdmr;
    JobMediaDbRecord jm;
@@ -128,11 +128,11 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
     */
    Dmsg1(100, "catreq %s", bs->msg);
    if (!jcr->db) {
-      omsg = get_memory(bs->msglen + 1);
-      pm_strcpy(omsg, bs->msg);
+      omsg = GetMemory(bs->msglen + 1);
+      PmStrcpy(omsg, bs->msg);
       bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request; DB not open: %s"), omsg);
-      free_memory(omsg);
+      FreeMemory(omsg);
 
       return;
    }
@@ -144,13 +144,13 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
    if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType, unwanted_volumes.c_str()) == 5) {
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
-      unbash_spaces(pr.Name);
-      ok = jcr->db->get_pool_record(jcr, &pr);
+      UnbashSpaces(pr.Name);
+      ok = jcr->db->GetPoolRecord(jcr, &pr);
       if (ok) {
          mr.PoolId = pr.PoolId;
-         set_storageid_in_mr(jcr->res.wstore, &mr);
+         SetStorageidInMr(jcr->res.wstore, &mr);
          mr.ScratchPoolId = pr.ScratchPoolId;
-         ok = find_next_volume_for_append(jcr, &mr, index, unwanted_volumes.c_str(), fnv_create_vol, fnv_prune);
+         ok = FindNextVolumeForAppend(jcr, &mr, index, unwanted_volumes.c_str(), fnv_create_vol, fnv_prune);
          Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
       }
 
@@ -172,8 +172,8 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
       /*
        * Find the Volume
        */
-      unbash_spaces(mr.VolumeName);
-      if (jcr->db->get_media_record(jcr, &mr)) {
+      UnbashSpaces(mr.VolumeName);
+      if (jcr->db->GetMediaRecord(jcr, &mr)) {
          const char *reason = NULL;           /* detailed reason for rejection */
          /*
           * If we are reading, accept any volume (reason == NULL)
@@ -196,7 +196,7 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
                 * Now try recycling if necessary
                 *   reason set non-NULL if we cannot use it
                 */
-               check_if_volume_valid_or_recyclable(jcr, &mr, &reason);
+               CheckIfVolumeValidOrRecyclable(jcr, &mr, &reason);
             }
          }
 
@@ -228,11 +228,11 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
        * of a Storage daemon Job Session, when labeling/relabeling a
        * Volume, or when an EOF mark is written.
        */
-      db_lock(jcr->db);
+      DbLock(jcr->db);
       Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName, mr.VolStatus, sdmr.VolStatus);
       bstrncpy(mr.VolumeName, sdmr.VolumeName, sizeof(mr.VolumeName)); /* copy Volume name */
-      unbash_spaces(mr.VolumeName);
-      if (!jcr->db->get_media_record(jcr, &mr)) {
+      UnbashSpaces(mr.VolumeName);
+      if (!jcr->db->GetMediaRecord(jcr, &mr)) {
          Jmsg(jcr, M_ERROR, 0, _("Unable to get Media record for Volume %s: ERR=%s\n"), mr.VolumeName, jcr->db->strerror());
          bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"), mr.VolumeName, jcr->db->strerror());
          goto bail_out;
@@ -295,12 +295,12 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
          /*
           * Update StorageId after write
           */
-         set_storageid_in_mr(jcr->res.wstore, &mr);
+         SetStorageidInMr(jcr->res.wstore, &mr);
       } else {
          /*
           * Nothing written, reset same StorageId
           */
-         set_storageid_in_mr(NULL, &mr);
+         SetStorageidInMr(NULL, &mr);
       }
 
       /*
@@ -319,23 +319,23 @@ void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
       mr.VolReadTime  = sdmr.VolReadTime;
       mr.VolWriteTime = sdmr.VolWriteTime;
 
-      Dmsg2(400, "update_media_record. Stat=%s Vol=%s\n", mr.VolStatus, mr.VolumeName);
+      Dmsg2(400, "UpdateMediaRecord. Stat=%s Vol=%s\n", mr.VolStatus, mr.VolumeName);
 
       /*
        * Update the database, then before sending the response to the SD,
        * check if the Volume has expired.
        */
-      if (!jcr->db->update_media_record(jcr, &mr)) {
+      if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
          Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"), jcr->db->strerror());
          bs->fsend(_("1993 Update Media error\n"));
          Dmsg0(400, "send error\n");
       } else {
-         (void)has_volume_expired(jcr, &mr);
+         (void)HasVolumeExpired(jcr, &mr);
          send_volume_info_to_storage_daemon(jcr, bs, &mr);
       }
 
 bail_out:
-      db_unlock(jcr->db);
+      DbUnlock(jcr->db);
 
       Dmsg1(400, ">CatReq response: %s", bs->msg);
       Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);
@@ -354,7 +354,7 @@ bail_out:
       jm.MediaId = MediaId;
       Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
             jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
-      if (!jcr->db->create_jobmedia_record(jcr, &jm)) {
+      if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
          Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"), jcr->db->strerror());
          bs->fsend(_("1992 Create JobMedia error\n"));
       } else {
@@ -362,11 +362,11 @@ bail_out:
          bs->fsend(OK_create);
       }
    } else {
-      omsg = get_memory(bs->msglen + 1);
-      pm_strcpy(omsg, bs->msg);
+      omsg = GetMemory(bs->msglen + 1);
+      PmStrcpy(omsg, bs->msg);
       bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request: %s"), omsg);
-      free_memory(omsg);
+      FreeMemory(omsg);
    }
 
    Dmsg1(400, ">CatReq response: %s", bs->msg);
@@ -395,7 +395,7 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
    /*
     * Start transaction allocates jcr->attr and jcr->ar if needed
     */
-   jcr->db->start_transaction(jcr);   /* start transaction if not already open */
+   jcr->db->StartTransaction(jcr);   /* start transaction if not already open */
    ar = jcr->ar;
 
    /*
@@ -404,23 +404,23 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
     * jcr->attr or jcr->ar
     */
    p = msg;
-   skip_nonspaces(&p);                /* UpdCat */
-   skip_spaces(&p);
-   skip_nonspaces(&p);                /* Job=nnn */
-   skip_spaces(&p);
-   skip_nonspaces(&p);                /* "FileAttributes" */
+   SkipNonspaces(&p);                /* UpdCat */
+   SkipSpaces(&p);
+   SkipNonspaces(&p);                /* Job=nnn */
+   SkipSpaces(&p);
+   SkipNonspaces(&p);                /* "FileAttributes" */
    p += 1;
 
    /*
     * The following "SD header" fields are serialized
     */
-   unser_begin(p, 0);
+   UnserBegin(p, 0);
    unser_uint32(VolSessionId);        /* VolSessionId */
    unser_uint32(VolSessionTime);      /* VolSessionTime */
    unser_int32(FileIndex);            /* FileIndex */
    unser_int32(Stream);               /* Stream */
    unser_uint32(reclen);              /* Record length */
-   p += unser_length(p);              /* Raw record follows */
+   p += UnserLength(p);              /* Raw record follows */
 
    /**
     * At this point p points to the raw record, which varies according
@@ -464,7 +464,7 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
    case STREAM_UNIX_ATTRIBUTES_EX:
       if (jcr->cached_attribute) {
          Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-         if (!jcr->db->create_attributes_record(jcr, ar)) {
+         if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
             Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
          }
          jcr->cached_attribute = false;
@@ -473,14 +473,14 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
       /*
        * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
        */
-      jcr->attr = check_pool_memory_size(jcr->attr, msglen);
+      jcr->attr = CheckPoolMemorySize(jcr->attr, msglen);
       memcpy(jcr->attr, msg, msglen);
       p = jcr->attr - msg + p;         /* point p into jcr->attr */
-      skip_nonspaces(&p);              /* skip FileIndex */
-      skip_spaces(&p);
+      SkipNonspaces(&p);              /* skip FileIndex */
+      SkipSpaces(&p);
       ar->FileType = str_to_int32(p);
-      skip_nonspaces(&p);              /* skip FileType */
-      skip_spaces(&p);
+      SkipNonspaces(&p);              /* skip FileType */
+      SkipSpaces(&p);
       fname = p;
       len = strlen(fname);             /* length before attributes */
       attr = &fname[len+1];
@@ -545,23 +545,23 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
 
       Dmsg1(100, "Robj=%s\n", p);
 
-      skip_nonspaces(&p);                  /* skip FileIndex */
-      skip_spaces(&p);
+      SkipNonspaces(&p);                  /* skip FileIndex */
+      SkipSpaces(&p);
       ro.FileType = str_to_int32(p);        /* FileType */
-      skip_nonspaces(&p);
-      skip_spaces(&p);
+      SkipNonspaces(&p);
+      SkipSpaces(&p);
       ro.object_index = str_to_int32(p);    /* Object Index */
-      skip_nonspaces(&p);
-      skip_spaces(&p);
+      SkipNonspaces(&p);
+      SkipSpaces(&p);
       ro.object_len = str_to_int32(p);      /* object length possibly compressed */
-      skip_nonspaces(&p);
-      skip_spaces(&p);
+      SkipNonspaces(&p);
+      SkipSpaces(&p);
       ro.object_full_len = str_to_int32(p); /* uncompressed object length */
-      skip_nonspaces(&p);
-      skip_spaces(&p);
+      SkipNonspaces(&p);
+      SkipSpaces(&p);
       ro.object_compression = str_to_int32(p); /* compression */
-      skip_nonspaces(&p);
-      skip_spaces(&p);
+      SkipNonspaces(&p);
+      SkipSpaces(&p);
 
       ro.plugin_name = p;                      /* point to plugin name */
       len = strlen(ro.plugin_name);
@@ -577,13 +577,13 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
       /*
        * Store it.
        */
-      if (!jcr->db->create_restore_object_record(jcr, &ro)) {
+      if (!jcr->db->CreateRestoreObjectRecord(jcr, &ro)) {
          Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"), jcr->db->strerror());
       }
       break;
    }
    default:
-      if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
+      if (CryptoDigestStreamType(Stream) != CRYPTO_DIGEST_NONE) {
          fname = p;
          if (ar->FileIndex != FileIndex) {
             Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"),
@@ -634,12 +634,12 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
                /*
                 * Update BaseFile table
                 */
-               if (!jcr->db->create_attributes_record(jcr, ar)) {
+               if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
                   Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"), jcr->db->strerror());
                }
                jcr->cached_attribute = false;
             } else {
-               if (!jcr->db->add_digest_to_file_record(jcr, ar->FileId, digestbuf, type)) {
+               if (!jcr->db->AddDigestToFileRecord(jcr, ar->FileId, digestbuf, type)) {
                   Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"), jcr->db->strerror());
                }
             }
@@ -652,30 +652,30 @@ static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
 /**
  * Update File Attributes in the catalog with data sent by the Storage daemon.
  */
-void catalog_update(JobControlRecord *jcr, BareosSocket *bs)
+void CatalogUpdate(JobControlRecord *jcr, BareosSocket *bs)
 {
    if (!jcr->res.pool->catalog_files) {
       return;                         /* user disabled cataloging */
    }
 
-   if (jcr->is_job_canceled()) {
+   if (jcr->IsJobCanceled()) {
       goto bail_out;
    }
 
    if (!jcr->db) {
-      POOLMEM *omsg = get_memory(bs->msglen+1);
-      pm_strcpy(omsg, bs->msg);
+      POOLMEM *omsg = GetMemory(bs->msglen+1);
+      PmStrcpy(omsg, bs->msg);
       bs->fsend(_("1994 Invalid Catalog Update: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog Update; DB not open: %s"), omsg);
-      free_memory(omsg);
+      FreeMemory(omsg);
       goto bail_out;
    }
 
    update_attribute(jcr, bs->msg, bs->msglen);
 
 bail_out:
-   if (jcr->is_job_canceled()) {
-      cancel_storage_daemon_job(jcr);
+   if (jcr->IsJobCanceled()) {
+      CancelStorageDaemonJob(jcr);
    }
 }
 
@@ -684,7 +684,7 @@ bail_out:
  * the storage daemon spool file. We receive the filename and
  * we try to read it.
  */
-bool despool_attributes_from_file(JobControlRecord *jcr, const char *file)
+bool DespoolAttributesFromFile(JobControlRecord *jcr, const char *file)
 {
    bool retval = false;
    int32_t pktsiz;
@@ -692,17 +692,17 @@ bool despool_attributes_from_file(JobControlRecord *jcr, const char *file)
    ssize_t size = 0;
    int32_t msglen;                    /* message length */
    int spool_fd = -1;
-   POOLMEM *msg = get_pool_memory(PM_MESSAGE);
+   POOLMEM *msg = GetPoolMemory(PM_MESSAGE);
 
-   Dmsg0(100, "Begin despool_attributes_from_file\n");
+   Dmsg0(100, "Begin DespoolAttributesFromFile\n");
 
-   if (jcr->is_job_canceled() || !jcr->res.pool->catalog_files || !jcr->db) {
+   if (jcr->IsJobCanceled() || !jcr->res.pool->catalog_files || !jcr->db) {
       goto bail_out;                  /* user disabled cataloging */
    }
 
    spool_fd = open(file, O_RDONLY | O_BINARY);
    if (spool_fd == -1) {
-      Dmsg0(100, "cancel despool_attributes_from_file\n");
+      Dmsg0(100, "cancel DespoolAttributesFromFile\n");
       /* send an error message */
       goto bail_out;
    }
@@ -719,8 +719,8 @@ bool despool_attributes_from_file(JobControlRecord *jcr, const char *file)
         /*
          * check for msglen + \0
          */
-         if ((msglen + 1) > (int32_t) sizeof_pool_memory(msg)) {
-            msg = realloc_pool_memory(msg, msglen + 1);
+         if ((msglen + 1) > (int32_t) SizeofPoolMemory(msg)) {
+            msg = ReallocPoolMemory(msg, msglen + 1);
          }
          nbytes = read(spool_fd, msg, msglen);
          if (nbytes != (size_t) msglen) {
@@ -733,9 +733,9 @@ bool despool_attributes_from_file(JobControlRecord *jcr, const char *file)
          size += nbytes;
       }
 
-      if (!jcr->is_job_canceled()) {
+      if (!jcr->IsJobCanceled()) {
          update_attribute(jcr, msg, msglen);
-         if (jcr->is_job_canceled()) {
+         if (jcr->IsJobCanceled()) {
             goto bail_out;
          }
       }
@@ -748,11 +748,11 @@ bail_out:
       close(spool_fd);
    }
 
-   if (jcr->is_job_canceled()) {
-      cancel_storage_daemon_job(jcr);
+   if (jcr->IsJobCanceled()) {
+      CancelStorageDaemonJob(jcr);
    }
 
-   free_pool_memory(msg);
-   Dmsg1(100, "End despool_attributes_from_file retval=%i\n", retval);
+   FreePoolMemory(msg);
+   Dmsg1(100, "End DespoolAttributesFromFile retval=%i\n", retval);
    return retval;
 }

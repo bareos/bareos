@@ -107,7 +107,7 @@ static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
    bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
    va_end(arg_ptr);
 
-   dispatch_message(NULL, M_ABORT, 0, buf);
+   DispatchMessage(NULL, M_ABORT, 0, buf);
 
    char *p = 0;
    p[0] = 0;                    /* Generate segmentation violation */

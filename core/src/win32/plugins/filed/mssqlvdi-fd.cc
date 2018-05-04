@@ -274,7 +274,7 @@ static bRC newPlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-   if (!initialize_com_security()) {
+   if (!InitializeComSecurity()) {
       return bRC_Error;
    }
 
@@ -585,7 +585,7 @@ static inline void set_string_if_null(char **destination, char *value)
 /**
  * Always set destination to value and clean any previous one.
  */
-static inline void set_string(char **destination, char *value)
+static inline void SetString(char **destination, char *value)
 {
    if (*destination) {
       free(*destination);
@@ -719,7 +719,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                if (keep_existing) {
                   set_string_if_null(str_destination, argument_value);
                } else {
-                  set_string(str_destination, argument_value);
+                  SetString(str_destination, argument_value);
                }
             }
 
@@ -884,7 +884,7 @@ static bool adoGetErrors(bpContext *ctx, _ADOConnection *adoConnection, PoolMem 
    /*
     * Loop over all error and append them into one big error string.
     */
-   pm_strcpy(ado_errorstr, "");
+   PmStrcpy(ado_errorstr, "");
    for (long i = 0; i < errCount; i++ ) {
       ADOError *adoError;
       BSTR pDescription = NULL;
@@ -908,8 +908,8 @@ static bool adoGetErrors(bpContext *ctx, _ADOConnection *adoConnection, PoolMem 
       description = BSTR_2_str(pDescription);
       if (description) {
          Dmsg(ctx, debuglevel, "adoGetErrors: ADO error %s\n", description);
-         pm_strcat(ado_errorstr, description);
-         pm_strcat(ado_errorstr, "\n");
+         PmStrcat(ado_errorstr, description);
+         PmStrcat(ado_errorstr, "\n");
          free(description);
       }
 
@@ -1135,9 +1135,9 @@ static void set_ado_connect_string(bpContext *ctx)
 
       Mmsg(temp, ";User Id=%s;Password=%s;",
             p_ctx->username, p_ctx->password);
-      pm_strcat(ado_connect_string, temp.c_str());
+      PmStrcat(ado_connect_string, temp.c_str());
    } else {
-      pm_strcat(ado_connect_string, ";Integrated Security=SSPI;");
+      PmStrcat(ado_connect_string, ";Integrated Security=SSPI;");
    }
 
    Dmsg(ctx, debuglevel, "set_ado_connect_string: ADO Connect String '%s'\n", ado_connect_string.c_str());
@@ -1168,7 +1168,7 @@ static inline void perform_ado_backup(bpContext *ctx)
 
    set_ado_connect_string(ctx);
 
-   vdsname = get_pool_memory(PM_NAME);
+   vdsname = GetPoolMemory(PM_NAME);
    wchar_2_UTF8(vdsname, p_ctx->vdsname);
 
    switch (p_ctx->backup_level) {
@@ -1204,14 +1204,14 @@ static inline void perform_ado_backup(bpContext *ctx)
    Dmsg(ctx, debuglevel, "perform_ado_backup: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
-   free_pool_memory(vdsname);
+   FreePoolMemory(vdsname);
 }
 
 /**
  * Generate a valid connect string and the restore command we should execute
  * in the separate database controlling thread.
  */
-static inline void perform_ado_restore(bpContext *ctx)
+static inline void perform_aDoRestore(bpContext *ctx)
 {
    PoolMem ado_query(PM_NAME),
             temp(PM_NAME);
@@ -1227,7 +1227,7 @@ static inline void perform_ado_restore(bpContext *ctx)
 
    set_ado_connect_string(ctx);
 
-   vdsname = get_pool_memory(PM_NAME);
+   vdsname = GetPoolMemory(PM_NAME);
    wchar_2_UTF8(vdsname, p_ctx->vdsname);
 
    switch (p_ctx->backup_level) {
@@ -1258,7 +1258,7 @@ static inline void perform_ado_restore(bpContext *ctx)
     */
    if (p_ctx->stopbeforemark) {
       Mmsg(temp, ", STOPBEFOREMARK = '%s'", p_ctx->stopbeforemark);
-      pm_strcat(ado_query, temp.c_str());
+      PmStrcat(ado_query, temp.c_str());
    }
 
    /*
@@ -1266,7 +1266,7 @@ static inline void perform_ado_restore(bpContext *ctx)
     */
    if (p_ctx->stopatmark) {
       Mmsg(temp, ", STOPATMARK = '%s'", p_ctx->stopatmark);
-      pm_strcat(ado_query, temp.c_str());
+      PmStrcat(ado_query, temp.c_str());
    }
 
    /*
@@ -1274,20 +1274,20 @@ static inline void perform_ado_restore(bpContext *ctx)
     */
    if (p_ctx->stopat) {
       Mmsg(temp, ", STOPAT = '%s'", p_ctx->stopat);
-      pm_strcat(ado_query, temp.c_str());
+      PmStrcat(ado_query, temp.c_str());
    }
 
    /*
     * See if we need to insert the REPLACE option.
     */
    if (p_ctx->ForceReplace) {
-      pm_strcat(ado_query, ", REPLACE");
+      PmStrcat(ado_query, ", REPLACE");
    }
 
-   Dmsg(ctx, debuglevel, "perform_ado_restore: ADO Query '%s'\n", ado_query.c_str());
+   Dmsg(ctx, debuglevel, "perform_aDoRestore: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
-   free_pool_memory(vdsname);
+   FreePoolMemory(vdsname);
 }
 
 /**
@@ -1436,10 +1436,10 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
    } else {
       POOLMEM *instance_name;
 
-      instance_name = get_pool_memory(PM_NAME);
+      instance_name = GetPoolMemory(PM_NAME);
       UTF8_2_wchar(instance_name, p_ctx->instance);
       hr = p_ctx->VDIDeviceSet->CreateEx((LPCWSTR)instance_name, p_ctx->vdsname, &p_ctx->VDIConfig);
-      free_pool_memory(instance_name);
+      FreePoolMemory(instance_name);
    }
    if (!SUCCEEDED(hr)) {
       comReportError(ctx, hr);
@@ -1450,7 +1450,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
     * Setup the right backup or restore cmdline and connect info.
     */
    if (io->flags & (O_CREAT | O_WRONLY)) {
-      perform_ado_restore(ctx);
+      perform_aDoRestore(ctx);
    } else {
       perform_ado_backup(ctx);
    }

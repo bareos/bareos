@@ -106,7 +106,7 @@ static inline void setup_statistics()
    job_statistics = New(dlist(job_stats, &job_stats->link));
 }
 
-void update_device_tapealert(const char *devname, uint64_t flags, utime_t now)
+void UpdateDeviceTapealert(const char *devname, uint64_t flags, utime_t now)
 {
    bool found = false;
    struct device_statistics *dev_stats = NULL;
@@ -237,7 +237,7 @@ static inline void update_device_statistics(const char *devname, Device *dev, ut
          dev_stat->VolCatBlocks);
 }
 
-void update_job_statistics(JobControlRecord *jcr, utime_t now)
+void UpdateJobStatistics(JobControlRecord *jcr, utime_t now)
 {
    bool found = false;
    struct job_statistics *job_stats = NULL;
@@ -385,14 +385,14 @@ void *statistics_thread_runner(void *arg)
           * Loop over all running Jobs in the Storage Daemon.
           */
          foreach_jcr(jcr) {
-            update_job_statistics(jcr, now);
+            UpdateJobStatistics(jcr, now);
          }
          endeach_jcr(jcr);
       }
 
       /*
        * Wait for a next run. Normally this waits exactly me->stats_collect_interval seconds.
-       * It can be interrupted when signaled by the stop_statistics_thread() function.
+       * It can be interrupted when signaled by the StopStatisticsThread() function.
        */
       gettimeofday(&tv, &tz);
       timeout.tv_nsec = tv.tv_usec * 1000;
@@ -411,7 +411,7 @@ void *statistics_thread_runner(void *arg)
    return NULL;
 }
 
-int start_statistics_thread(void)
+int StartStatisticsThread(void)
 {
    int status;
 
@@ -450,7 +450,7 @@ int start_statistics_thread(void)
    return 0;
 }
 
-void stop_statistics_thread()
+void StopStatisticsThread()
 {
    if (!statistics_initialized) {
       return;
@@ -484,8 +484,8 @@ bool stats_cmd(JobControlRecord *jcr)
                 * If the entry was already collected no need to do it again.
                 */
                if (!dev_stat->collected) {
-                  pm_strcpy(dev_tmp, dev_stats->DevName);
-                  bash_spaces(dev_tmp);
+                  PmStrcpy(dev_tmp, dev_stats->DevName);
+                  BashSpaces(dev_tmp);
                   Mmsg(msg, DevStats, dev_stat->timestamp, dev_tmp.c_str(),
                        dev_stat->DevReadBytes, dev_stat->DevWriteBytes,
                        dev_stat->spool_size, dev_stat->num_waiting,
@@ -520,8 +520,8 @@ bool stats_cmd(JobControlRecord *jcr)
 
             tape_alert = (struct device_tapealert *)dev_stats->tapealerts->first();
             while (tape_alert) {
-               pm_strcpy(dev_tmp, dev_stats->DevName);
-               bash_spaces(dev_tmp);
+               PmStrcpy(dev_tmp, dev_stats->DevName);
+               BashSpaces(dev_tmp);
                Mmsg(msg, TapeAlerts, tape_alert->timestamp, dev_tmp.c_str(), tape_alert->flags);
                Dmsg1(100, ">dird: %s", msg.c_str());
                dir->fsend(msg.c_str());
@@ -554,8 +554,8 @@ bool stats_cmd(JobControlRecord *jcr)
                 * If the entry was already collected no need to do it again.
                 */
                if (!job_stat->collected) {
-                  pm_strcpy(dev_tmp, job_stat->DevName);
-                  bash_spaces(dev_tmp);
+                  PmStrcpy(dev_tmp, job_stat->DevName);
+                  BashSpaces(dev_tmp);
                   Mmsg(msg, JobStats, job_stat->timestamp, job_stats->JobId,
                        job_stat->JobFiles, job_stat->JobBytes, dev_tmp.c_str());
                   Dmsg1(100, ">dird: %s", msg.c_str());

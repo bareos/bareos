@@ -350,7 +350,7 @@ static bRC do_set_scsi_encryption_key(void *value)
        * Check if encryption key is needed for reading this volume.
        */
       P(crypto_operation_mutex);
-      if (!need_scsi_crypto_key(dev->fd(), dev->dev_name, true)) {
+      if (!NeedScsiCryptoKey(dev->fd(), dev->dev_name, true)) {
          V(crypto_operation_mutex);
          Dmsg0(debuglevel, "scsicrypto-sd: No encryption key needed!\n");
          return bRC_OK;
@@ -386,7 +386,7 @@ static bRC do_set_scsi_encryption_key(void *value)
          memcpy(WrappedVolEncrKey, VolEncrKey, MAX_NAME_LENGTH);
          memset(VolEncrKey, 0, MAX_NAME_LENGTH);
 
-         if (aes_unwrap((unsigned char *)director->keyencrkey.value,
+         if (AesUnwrap((unsigned char *)director->keyencrkey.value,
                         DEFAULT_PASSPHRASE_LENGTH / 8,
                         (unsigned char *)WrappedVolEncrKey,
                         (unsigned char *)VolEncrKey) != 0) {
@@ -401,8 +401,8 @@ static bRC do_set_scsi_encryption_key(void *value)
    Dmsg1(debuglevel, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
 
    P(crypto_operation_mutex);
-   if (set_scsi_encryption_key(dev->fd(), dev->dev_name, VolEncrKey)) {
-      dev->set_crypto_enabled();
+   if (SetScsiEncryptionKey(dev->fd(), dev->dev_name, VolEncrKey)) {
+      dev->SetCryptoEnabled();
       V(crypto_operation_mutex);
       return bRC_OK;
    } else {
@@ -449,14 +449,14 @@ static bRC do_clear_scsi_encryption_key(void *value)
     * See if we need to query the drive or use the tracked encryption status of the stored.
     */
    if (device->query_crypto_status) {
-      need_to_clear = is_scsi_encryption_enabled(dev->fd(), dev->dev_name);
+      need_to_clear = IsScsiEncryptionEnabled(dev->fd(), dev->dev_name);
    } else {
-      need_to_clear = dev->is_crypto_enabled();
+      need_to_clear = dev->IsCryptoEnabled();
    }
    if (need_to_clear) {
       Dmsg0(debuglevel, "scsicrypto-sd: Clearing crypto key\n");
-      if (clear_scsi_encryption_key(dev->fd(), dev->dev_name)) {
-         dev->clear_crypto_enabled();
+      if (ClearScsiEncryptionKey(dev->fd(), dev->dev_name)) {
+         dev->ClearCryptoEnabled();
          V(crypto_operation_mutex);
          return bRC_OK;
       } else {
@@ -511,14 +511,14 @@ static bRC handle_read_error(void *value)
           */
          if (device->query_crypto_status) {
             P(crypto_operation_mutex);
-            if (need_scsi_crypto_key(dev->fd(), dev->dev_name, false)) {
+            if (NeedScsiCryptoKey(dev->fd(), dev->dev_name, false)) {
                decryption_needed = true;
             } else {
                decryption_needed = false;
             }
             V(crypto_operation_mutex);
          } else {
-            decryption_needed = dev->is_crypto_enabled();
+            decryption_needed = dev->IsCryptoEnabled();
          }
 
          /*
@@ -558,7 +558,7 @@ static bRC send_device_encryption_status(void *value)
     */
    if (dst->device->drive_crypto_enabled) {
       P(crypto_operation_mutex);
-      dst->status_length = get_scsi_drive_encryption_status(dst->device->dev->fd(),
+      dst->status_length = GetScsiDriveEncryptionStatus(dst->device->dev->fd(),
                                                             dst->device->dev->dev_name,
                                                             dst->status, 4);
       V(crypto_operation_mutex);
@@ -583,7 +583,7 @@ static bRC send_volume_encryption_status(void *value)
     */
    if (dst->device->drive_crypto_enabled) {
       P(crypto_operation_mutex);
-      dst->status_length = get_scsi_volume_encryption_status(dst->device->dev->fd(),
+      dst->status_length = GetScsiVolumeEncryptionStatus(dst->device->dev->fd(),
                                                              dst->device->dev->dev_name,
                                                              dst->status, 4);
       V(crypto_operation_mutex);

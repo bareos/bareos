@@ -57,21 +57,21 @@ typedef struct s_rwsteal_tag {
    { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, \
      PTHREAD_COND_INITIALIZER, RWLOCK_VALID, 0, 0, 0, 0 }
 
-#define rwl_writelock(x)     rwl_writelock_p((x), __FILE__, __LINE__)
+#define RwlWritelock(x)     RwlWritelock_p((x), __FILE__, __LINE__)
 
 /**
  * read/write lock prototypes
  */
-DLL_IMP_EXP extern int rwl_init(brwlock_t *rwl, int priority = 0);
-DLL_IMP_EXP extern int rwl_destroy(brwlock_t *rwl);
-DLL_IMP_EXP extern bool rwl_is_init(brwlock_t *rwl);
-DLL_IMP_EXP extern int rwl_readlock(brwlock_t *rwl);
-DLL_IMP_EXP extern int rwl_readtrylock(brwlock_t *rwl);
-DLL_IMP_EXP extern int rwl_readunlock(brwlock_t *rwl);
-DLL_IMP_EXP extern int rwl_writelock_p(brwlock_t *rwl,
+DLL_IMP_EXP extern int RwlInit(brwlock_t *rwl, int priority = 0);
+DLL_IMP_EXP extern int RwlDestroy(brwlock_t *rwl);
+DLL_IMP_EXP extern bool RwlIsInit(brwlock_t *rwl);
+DLL_IMP_EXP extern int RwlReadlock(brwlock_t *rwl);
+DLL_IMP_EXP extern int RwlReadtrylock(brwlock_t *rwl);
+DLL_IMP_EXP extern int RwlReadunlock(brwlock_t *rwl);
+DLL_IMP_EXP extern int RwlWritelock_p(brwlock_t *rwl,
                            const char *file = "*unknown*",
                            int line = 0);
-DLL_IMP_EXP extern int rwl_writetrylock(brwlock_t *rwl);
-DLL_IMP_EXP extern int rwl_writeunlock(brwlock_t *rwl);
+DLL_IMP_EXP extern int RwlWritetrylock(brwlock_t *rwl);
+DLL_IMP_EXP extern int RwlWriteunlock(brwlock_t *rwl);
 
 #endif /* BAREOS_LIB_RWLOCK_H_ */

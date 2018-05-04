@@ -47,7 +47,7 @@ static int const debuglevel = 50;   /* debug level */
 /**
  * Set storage id if possible
  */
-void set_storageid_in_mr(StoreResource *store, MediaDbRecord *mr)
+void SetStorageidInMr(StorageResource *store, MediaDbRecord *mr)
 {
    if (store != NULL) {
       mr->StorageId = store->StorageId;
@@ -67,13 +67,13 @@ void set_storageid_in_mr(StoreResource *store, MediaDbRecord *mr)
  *  create -- whether or not to create a new volume
  *  prune -- whether or not to prune volumes
  */
-int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int index,
+int FindNextVolumeForAppend(JobControlRecord *jcr, MediaDbRecord *mr, int index,
                                 const char *unwanted_volumes, bool create, bool prune)
 {
    int retry = 0;
    bool ok;
    bool InChanger;
-   StoreResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.wstore;
 
    bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
    Dmsg3(debuglevel, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
@@ -87,15 +87,15 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
    /*
     * Find the Next Volume for Append
     */
-   db_lock(jcr->db);
+   DbLock(jcr->db);
    while (1) {
       /*
        *  1. Look for volume with "Append" status.
        */
-      set_storageid_in_mr(store, mr);
+      SetStorageidInMr(store, mr);
 
       bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
-      ok = jcr->db->find_next_volume(jcr, index, InChanger, mr, unwanted_volumes);
+      ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
       if (!ok) {
          /*
           * No volume found, apply algorithm
@@ -106,33 +106,33 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
          /*
           * 2. Try finding a recycled volume
           */
-         ok = find_recycled_volume(jcr, InChanger, mr, store, unwanted_volumes);
-         set_storageid_in_mr(store, mr);
-         Dmsg2(debuglevel, "find_recycled_volume ok=%d FW=%d\n", ok, mr->FirstWritten);
+         ok = FindRecycledVolume(jcr, InChanger, mr, store, unwanted_volumes);
+         SetStorageidInMr(store, mr);
+         Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%d\n", ok, mr->FirstWritten);
          if (!ok) {
             /*
              * 3. Try recycling any purged volume
              */
-            ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store, unwanted_volumes);
-            set_storageid_in_mr(store, mr);
+            ok = RecycleOldestPurgedVolume(jcr, InChanger, mr, store, unwanted_volumes);
+            SetStorageidInMr(store, mr);
             if (!ok) {
                /*
                 * 4. Try pruning Volumes
                 */
                if (prune) {
-                  Dmsg0(debuglevel, "Call prune_volumes\n");
-                  prune_volumes(jcr, InChanger, mr, store);
+                  Dmsg0(debuglevel, "Call PruneVolumes\n");
+                  PruneVolumes(jcr, InChanger, mr, store);
                }
-               ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store, unwanted_volumes);
-               set_storageid_in_mr(store, mr);  /* put StorageId in new record */
+               ok = RecycleOldestPurgedVolume(jcr, InChanger, mr, store, unwanted_volumes);
+               SetStorageidInMr(store, mr);  /* put StorageId in new record */
                if (!ok && create) {
                   Dmsg4(debuglevel, "after prune volumes_vol ok=%d index=%d InChanger=%d Vstat=%s\n",
                         ok, index, InChanger, mr->VolStatus);
                   /*
                    * 5. Try pulling a volume from the Scratch pool
                    */
-                  ok = get_scratch_volume(jcr, InChanger, mr, store);
-                  set_storageid_in_mr(store, mr);  /* put StorageId in new record */
+                  ok = GetScratchVolume(jcr, InChanger, mr, store);
+                  SetStorageidInMr(store, mr);  /* put StorageId in new record */
                   Dmsg4(debuglevel, "after get scratch volume ok=%d index=%d InChanger=%d Vstat=%s\n",
                         ok, index, InChanger, mr->VolStatus);
                }
@@ -165,9 +165,9 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
             /*
              * Find oldest volume to recycle
              */
-            set_storageid_in_mr(store, mr);
-            ok = jcr->db->find_next_volume(jcr, -1, InChanger, mr, unwanted_volumes);
-            set_storageid_in_mr(store, mr);
+            SetStorageidInMr(store, mr);
+            ok = jcr->db->FindNextVolume(jcr, -1, InChanger, mr, unwanted_volumes);
+            SetStorageidInMr(store, mr);
             Dmsg1(debuglevel, "Find oldest=%d Volume\n", ok);
             if (ok && prune) {
                UaContext *ua;
@@ -178,18 +178,18 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
                ua = new_ua_context(jcr);
                if (jcr->res.pool->purge_oldest_volume && create) {
                   Jmsg(jcr, M_INFO, 0, _("Purging oldest volume \"%s\"\n"), mr->VolumeName);
-                  ok = purge_jobs_from_volume(ua, mr);
+                  ok = PurgeJobsFromVolume(ua, mr);
                } else if (jcr->res.pool->recycle_oldest_volume) {
                   /*
                    * 8. Try recycling the oldest volume
                    */
                   Jmsg(jcr, M_INFO, 0, _("Pruning oldest volume \"%s\"\n"), mr->VolumeName);
-                  ok = prune_volume(ua, mr);
+                  ok = PruneVolume(ua, mr);
                }
-               free_ua_context(ua);
+               FreeUaContext(ua);
 
                if (ok) {
-                  ok = recycle_volume(jcr, mr);
+                  ok = RecycleVolume(jcr, mr);
                   Dmsg1(debuglevel, "Recycle after purge oldest=%d\n", ok);
                }
             }
@@ -201,7 +201,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
          /*
           * If we can use the volume, check if it is expired
           */
-         if (bstrcmp(mr->VolStatus, "Append") && has_volume_expired(jcr, mr)) {
+         if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
             if (retry++ < 200) {            /* sanity check */
                continue;                    /* try again from the top */
             } else {
@@ -213,7 +213,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
       break;
    }
 
-   db_unlock(jcr->db);
+   DbUnlock(jcr->db);
    Dmsg1(debuglevel, "return ok=%d find_next_vol\n", ok);
 
    return ok;
@@ -223,7 +223,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
  * Check if any time limits or use limits have expired if so,
  * set the VolStatus appropriately.
  */
-bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr)
+bool HasVolumeExpired(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool expired = false;
    char ed1[50];
@@ -285,8 +285,8 @@ bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr)
        * Need to update media
        */
       Dmsg1(debuglevel, "Vol=%s has expired update media record\n", mr->VolumeName);
-      set_storageid_in_mr(NULL, mr);
-      if (!jcr->db->update_media_record(jcr, mr)) {
+      SetStorageidInMr(NULL, mr);
+      if (!jcr->db->UpdateMediaRecord(jcr, mr)) {
          Jmsg(jcr, M_ERROR, 0, _("Catalog error updating volume \"%s\". ERR=%s"),
               mr->VolumeName, jcr->db->strerror());
       }
@@ -302,7 +302,7 @@ bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr)
  * Returns: on failure - reason = NULL
  *          on success - reason - pointer to reason
  */
-void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason)
+void CheckIfVolumeValidOrRecyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason)
 {
    int ok;
 
@@ -311,7 +311,7 @@ void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *m
    /*
     * Check if a duration or limit has expired
     */
-   if (bstrcmp(mr->VolStatus, "Append") && has_volume_expired(jcr, mr)) {
+   if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
       *reason = _("volume has expired");
       /*
        * Keep going because we may be able to recycle volume
@@ -331,7 +331,7 @@ void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *m
     * Check if the Volume is already marked for recycling
     */
    if (bstrcmp(mr->VolStatus, "Purged")) {
-      if (recycle_volume(jcr, mr)) {
+      if (RecycleVolume(jcr, mr)) {
          Jmsg(jcr, M_INFO, 0, _("Recycled current volume \"%s\"\n"), mr->VolumeName);
          *reason = NULL;
          return;
@@ -372,14 +372,14 @@ void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *m
       UaContext *ua;
 
       ua = new_ua_context(jcr);
-      ok = prune_volume(ua, mr);
-      free_ua_context(ua);
+      ok = PruneVolume(ua, mr);
+      FreeUaContext(ua);
 
       if (ok) {
          /*
           * If fully purged, recycle current volume
           */
-         if (recycle_volume(jcr, mr)) {
+         if (RecycleVolume(jcr, mr)) {
             Jmsg(jcr, M_INFO, 0, _("Recycled current volume \"%s\"\n"), mr->VolumeName);
             *reason = NULL;
          } else {
@@ -396,7 +396,7 @@ void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *m
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StoreResource *store)
+bool GetScratchVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StorageResource *store)
 {
    MediaDbRecord smr;                        /* for searching scratch pool */
    PoolDbRecord spr, pr;
@@ -411,7 +411,7 @@ bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr
    /*
     * Get Pool record for Scratch Pool
     * choose between ScratchPoolId and Scratch
-    * get_pool_record will first try ScratchPoolId,
+    * GetPoolRecord will first try ScratchPoolId,
     * and then try the pool named Scratch
     */
    memset(&smr, 0, sizeof(smr));
@@ -419,7 +419,7 @@ bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr
 
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
    spr.PoolId = mr->ScratchPoolId;
-   if (jcr->db->get_pool_record(jcr, &spr)) {
+   if (jcr->db->GetPoolRecord(jcr, &spr)) {
       smr.PoolId = spr.PoolId;
       if (InChanger) {
          smr.StorageId = mr->StorageId;  /* want only Scratch Volumes in changer */
@@ -432,12 +432,12 @@ bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr
        * If we do not find a valid Scratch volume, try recycling any existing purged volumes,
        * then try to take the oldest volume.
        */
-      set_storageid_in_mr(store, &smr);  /* put StorageId in new record */
-      if (jcr->db->find_next_volume(jcr, 1, InChanger, &smr, NULL)) {
+      SetStorageidInMr(store, &smr);  /* put StorageId in new record */
+      if (jcr->db->FindNextVolume(jcr, 1, InChanger, &smr, NULL)) {
          found = true;
-      } else if (find_recycled_volume(jcr, InChanger, &smr, store, NULL)) {
+      } else if (FindRecycledVolume(jcr, InChanger, &smr, store, NULL)) {
          found = true;
-      } else if (recycle_oldest_purged_volume(jcr, InChanger, &smr, store, NULL)) {
+      } else if (RecycleOldestPurgedVolume(jcr, InChanger, &smr, store, NULL)) {
          found = true;
       }
 
@@ -450,7 +450,7 @@ bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr
          memset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->res.pool->name(), sizeof(pr.Name));
 
-         if (!jcr->db->get_pool_record(jcr, &pr)) {
+         if (!jcr->db->GetPoolRecord(jcr, &pr)) {
             Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
@@ -465,21 +465,21 @@ bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr
          }
 
          memcpy(mr, &smr, sizeof(MediaDbRecord));
-         set_storageid_in_mr(store, mr);
+         SetStorageidInMr(store, mr);
 
          /*
           * Set default parameters from current pool
           */
-         set_pool_dbr_defaults_in_media_dbr(mr, &pr);
+         SetPoolDbrDefaultsInMediaDbr(mr, &pr);
 
          /*
-          * set_pool_dbr_defaults_in_media_dbr set VolStatus to Append, we could have Recycled media,
+          * SetPoolDbrDefaultsInMediaDbr set VolStatus to Append, we could have Recycled media,
           * also, we retain the old RecyclePoolId.
           */
          bstrncpy(mr->VolStatus, smr.VolStatus, sizeof(smr.VolStatus));
          mr->RecyclePoolId = smr.RecyclePoolId;
 
-         if (!jcr->db->update_media_record(jcr, mr)) {
+         if (!jcr->db->UpdateMediaRecord(jcr, mr)) {
             Jmsg(jcr, M_WARNING, 0, _("Failed to move Scratch Volume. ERR=%s\n"), jcr->db->strerror());
             goto bail_out;
          }

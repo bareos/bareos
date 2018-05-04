@@ -76,9 +76,9 @@ static struct backend_interface_mapping_t {
 };
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-void sd_set_backend_dirs(alist *new_backend_dirs);
+void SdSetBackendDirs(alist *new_backend_dirs);
 Device *init_backend_dev(JobControlRecord *jcr, int device_type);
-void dev_flush_backends();
+void DevFlushBackends();
 #endif
 
 #endif /* __SD_DYNAMIC_H_ */

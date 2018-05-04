@@ -22,6 +22,6 @@
 JobControlRecord *create_new_director_session(BareosSocket *dir);
 void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir);
 void *handle_director_connection(BareosSocket *dir);
-bool start_connect_to_director_threads();
-bool stop_connect_to_director_threads(bool wait=false);
+bool StartConnectToDirectorThreads();
+bool StopConnectToDirectorThreads(bool wait=false);
 

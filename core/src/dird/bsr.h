@@ -47,7 +47,7 @@ struct RestoreBootstrapRecordFileIndex {
  *  The restore bsr is a chain of BootStrapRecord records (linked by next).
  *  Each BootStrapRecord represents a single JobId, and within it, it
  *    contains a linked list of file indexes for that JobId.
- *    The complete_bsr() routine, will then add all the volumes
+ *    The CompleteBsr() routine, will then add all the volumes
  *    on which the Job is stored to the BootStrapRecord.
  */
 struct RestoreBootstrapRecord {
@@ -76,18 +76,18 @@ struct bootstrap_info
 #include "dird/ua.h"
 
 RestoreBootstrapRecord *new_bsr();
-DLL_IMP_EXP void free_bsr(RestoreBootstrapRecord *bsr);
-bool complete_bsr(UaContext *ua, RestoreBootstrapRecord *bsr);
-uint32_t write_bsr_file(UaContext *ua, RestoreContext &rx);
-void display_bsr_info(UaContext *ua, RestoreContext &rx);
-uint32_t write_bsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer);
-void add_findex(RestoreBootstrapRecord *bsr, uint32_t JobId, int32_t findex);
+DLL_IMP_EXP void FreeBsr(RestoreBootstrapRecord *bsr);
+bool CompleteBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
+uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx);
+void DisplayBsrInfo(UaContext *ua, RestoreContext &rx);
+uint32_t WriteBsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer);
+void AddFindex(RestoreBootstrapRecord *bsr, uint32_t JobId, int32_t findex);
 void add_findex_all(RestoreBootstrapRecord *bsr, uint32_t JobId);
 RestoreBootstrapRecordFileIndex *new_findex();
-void make_unique_restore_filename(UaContext *ua, POOLMEM *&fname);
-void print_bsr(UaContext *ua, RestoreContext &rx);
-bool open_bootstrap_file(JobControlRecord *jcr, bootstrap_info &info);
-bool send_bootstrap_file(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info &info);
-void close_bootstrap_file(bootstrap_info &info);
+void MakeUniqueRestoreFilename(UaContext *ua, POOLMEM *&fname);
+void PrintBsr(UaContext *ua, RestoreContext &rx);
+bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info);
+bool SendBootstrapFile(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info &info);
+void CloseBootstrapFile(bootstrap_info &info);
 
 #endif // BAREOS_DIRD_BSR_H_

@@ -140,7 +140,7 @@ class TlsConnection {
 
       if (!bio) {
          /* Not likely, but never say never */
-         openssl_post_errors(M_FATAL, _("Error creating file descriptor-based BIO"));
+         OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
          throw;
       }
 
@@ -150,7 +150,7 @@ class TlsConnection {
       openssl_ = SSL_new(tls_ctx_->openssl);
       if (openssl_ == NULL) {
          /* Not likely, but never say never */
-         openssl_post_errors(M_FATAL, _("Error creating new SSL object"));
+         OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
 
          BIO_free(bio);
          SSL_free(openssl_);
@@ -572,7 +572,7 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist) 
    ctx->openssl = SSL_CTX_new(SSLv23_method());
 #endif
    if (!ctx->openssl) {
-      openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
+      OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
       throw std::runtime_error(_("Error initializing SSL context"));
    }
 
@@ -631,12 +631,12 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
  * Returns: Pointer to TLS_CONTEXT instance on success
  *          NULL on failure;
  */
-static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, const char *ca_certdir,
+static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
                              const char *crlfile, const char *certfile,
                              const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata, const char *dhfile,
-                             const char *cipherlist, bool verify_peer) {
+                             const char *cipherlist, bool VerifyPeer) {
    BIO *bio;
    DH *dh;
 
@@ -652,7 +652,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    ctx->openssl = SSL_CTX_new(SSLv23_method());
 #endif
    if (!ctx->openssl) {
-      openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
+      OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
       throw std::runtime_error(_("Error initializing SSL context"));
    }
 
@@ -685,12 +685,12 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    /*
     * Set certificate verification paths. This requires that at least one value be non-NULL
     */
-   if (ca_certfile || ca_certdir) {
-      if (!SSL_CTX_load_verify_locations(ctx->openssl, ca_certfile, ca_certdir)) {
-         openssl_post_errors(M_FATAL, _("Error loading certificate verification stores"));
+   if (CaCertfile || CaCertdir) {
+      if (!SSL_CTX_load_verify_locations(ctx->openssl, CaCertfile, CaCertdir)) {
+         OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
          throw std::runtime_error(_("Error loading certificate verification stores"));
       }
-   } else if (verify_peer) {
+   } else if (VerifyPeer) {
       /* At least one CA is required for peer verification */
       Jmsg0(NULL, M_ERROR, 0, _("Either a certificate file or a directory must be"
                          " specified as a verification store\n"));
@@ -708,18 +708,18 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
 
       store = SSL_CTX_get_cert_store(ctx->openssl);
       if (!store) {
-         openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
+         OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
          throw std::runtime_error(_("Error loading revocation list file"));
       }
 
       lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
       if (!lookup) {
-         openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
+         OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
          throw std::runtime_error(_("Error loading revocation list file"));
       }
 
       if (!load_new_crl_file(lookup, (char *)crlfile)) {
-         openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
+         OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
          throw std::runtime_error(_("Error loading revocation list file"));
       }
 
@@ -733,7 +733,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
     */
    if (certfile) {
       if (!SSL_CTX_use_certificate_chain_file(ctx->openssl, certfile)) {
-         openssl_post_errors(M_FATAL, _("Error loading certificate file"));
+         OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
          throw std::runtime_error(_("Error loading certificate file"));
       }
    }
@@ -743,7 +743,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
     */
    if (keyfile) {
       if (!SSL_CTX_use_PrivateKey_file(ctx->openssl, keyfile, SSL_FILETYPE_PEM)) {
-         openssl_post_errors(M_FATAL, _("Error loading private key"));
+         OpensslPostErrors(M_FATAL, _("Error loading private key"));
          throw std::runtime_error(_("Error loading private key"));
       }
    }
@@ -753,17 +753,17 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
     */
    if (dhfile) {
       if (!(bio = BIO_new_file(dhfile, "r"))) {
-         openssl_post_errors(M_FATAL, _("Unable to open DH parameters file"));
+         OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
          throw std::runtime_error(_("Unable to open DH parameters file"));
       }
       dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
       BIO_free(bio);
       if (!dh) {
-         openssl_post_errors(M_FATAL, _("Unable to load DH parameters from specified file"));
+         OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
          throw std::runtime_error(_("Unable to load DH parameters from specified file"));
       }
       if (!SSL_CTX_set_tmp_dh(ctx->openssl, dh)) {
-         openssl_post_errors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
+         OpensslPostErrors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
          DH_free(dh);
          throw std::runtime_error(_("Failed to set TLS Diffie-Hellman parameters"));
       }
@@ -787,7 +787,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    /*
     * Verify Peer Certificate
     */
-   if (verify_peer) {
+   if (VerifyPeer) {
       /*
        * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
        */
@@ -803,10 +803,10 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    return ctx;
 }
 
-std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateClientContext(
+std::shared_ptr<TLS_CONTEXT> TlsCert::CreateClientContext(
     std::shared_ptr<PskCredentials> /* credentials */) const {
-   return new_tls_context((!ca_certfile || ca_certfile->empty()) ? nullptr : ca_certfile->c_str(),
-                          (!ca_certdir || ca_certdir->empty()) ? nullptr : ca_certdir->c_str(),
+   return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
+                          (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
                           (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
                           (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
                           (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
@@ -814,13 +814,13 @@ std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateClientContext(
                           (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
                           nullptr,
                           (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
-                          verify_peer);
+                          VerifyPeer);
 }
 
-std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateServerContext(
+std::shared_ptr<TLS_CONTEXT> TlsCert::CreateServerContext(
     std::shared_ptr<PskCredentials> /* credentials */) const {
-   return new_tls_context((!ca_certfile || ca_certfile->empty()) ? nullptr : ca_certfile->c_str(),
-                          (!ca_certdir || ca_certdir->empty()) ? nullptr : ca_certdir->c_str(),
+   return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
+                          (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
                           (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
                           (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
                           (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
@@ -828,31 +828,31 @@ std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateServerContext(
                           (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
                           nullptr,
                           (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
-                          verify_peer);
+                          VerifyPeer);
 }
 
-bool tls_cert_t::enabled(u_int32_t policy) {
-   return ((policy >> tls_cert_t::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
+bool TlsCert::enabled(u_int32_t policy) {
+   return ((policy >> TlsCert::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
 }
 
-bool tls_cert_t::required(u_int32_t policy) {
-   return ((policy >> tls_cert_t::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
+bool TlsCert::required(u_int32_t policy) {
+   return ((policy >> TlsCert::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
-bool tls_psk_t::enabled(u_int32_t policy) {
-   return ((policy >> tls_psk_t::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
+bool TlsPsk::enabled(u_int32_t policy) {
+   return ((policy >> TlsPsk::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
 }
 
-bool tls_psk_t::required(u_int32_t policy) {
-   return ((policy >> tls_psk_t::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
+bool TlsPsk::required(u_int32_t policy) {
+   return ((policy >> TlsPsk::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
-std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateClientContext(
+std::shared_ptr<TLS_CONTEXT> TlsPsk::CreateClientContext(
     std::shared_ptr<PskCredentials> credentials) const {
    return new_tls_psk_client_context(cipherlist, credentials);
 }
 
-std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateServerContext(
+std::shared_ptr<TLS_CONTEXT> TlsPsk::CreateServerContext(
     std::shared_ptr<PskCredentials> credentials) const {
    return new_tls_psk_server_context(cipherlist, credentials);
 }
@@ -860,7 +860,7 @@ std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateServerContext(
 /*
  * Free TLS_CONTEXT instance
  */
-void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx) {
+void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx) {
    psk_server_credentials.erase(ctx->openssl);
    psk_client_credentials.erase(ctx->openssl);
    SSL_CTX_free(ctx->openssl);
@@ -872,7 +872,7 @@ void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx) {
  * if this is a connection belonging to a job (jcr != NULL)
  *
  */
-void tls_log_conninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
+void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
    if (tls_conn == nullptr) {
       Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
    } else {
@@ -1080,7 +1080,7 @@ TLS_CONNECTION *new_tls_connection(std::shared_ptr<TlsContext> tls_ctx,
 /*
  * Free TLS_CONNECTION instance
  */
-void free_tls_connection(TLS_CONNECTION *tls_conn)
+void FreeTlsConnection(TLS_CONNECTION *tls_conn)
 {
    if (tls_conn != nullptr) {
       delete tls_conn;
@@ -1096,12 +1096,12 @@ static inline bool openssl_bsock_session_start(BareosSocket *bsock, bool server)
    bool status = true;
 
    /* Ensure that socket is non-blocking */
-   flags = bsock->set_nonblocking();
+   flags = bsock->SetNonblocking();
 
    /* start timer */
    bsock->timer_start = watchdog_time;
-   bsock->clear_timed_out();
-   bsock->set_killable(false);
+   bsock->ClearTimedOut();
+   bsock->SetKillable(false);
 
    for (;;) {
       if (server) {
@@ -1117,33 +1117,33 @@ static inline bool openssl_bsock_session_start(BareosSocket *bsock, bool server)
          goto cleanup;
       case SSL_ERROR_ZERO_RETURN:
          /* TLS connection was cleanly shut down */
-         openssl_post_errors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
+         OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
          status = false;
          goto cleanup;
       case SSL_ERROR_WANT_READ:
-         wait_for_readable_fd(bsock->fd_, 10000, false);
+         WaitForReadableFd(bsock->fd_, 10000, false);
          break;
       case SSL_ERROR_WANT_WRITE:
-         wait_for_writable_fd(bsock->fd_, 10000, false);
+         WaitForWritableFd(bsock->fd_, 10000, false);
          break;
       default:
          /* Socket Error Occurred */
-         openssl_post_errors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
+         OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
          status = false;
          goto cleanup;
       }
 
-      if (bsock->is_timed_out()) {
+      if (bsock->IsTimedOut()) {
          goto cleanup;
       }
    }
 
 cleanup:
    /* Restore saved flags */
-   bsock->restore_blocking(flags);
+   bsock->RestoreBlocking(flags);
    /* Clear timer */
    bsock->timer_start = 0;
-   bsock->set_killable(true);
+   bsock->SetKillable(true);
 
    return status;
 }
@@ -1171,7 +1171,7 @@ bool tls_bsock_accept(BareosSocket *bsock)
 /*
  * Shutdown TLS_CONNECTION instance
  */
-void tls_bsock_shutdown(BareosSocket *bsock)
+void TlsBsockShutdown(BareosSocket *bsock)
 {
    /*
     * SSL_shutdown must be called twice to fully complete the process -
@@ -1190,16 +1190,16 @@ void tls_bsock_shutdown(BareosSocket *bsock)
    btimer_t *tid;
 
    /* Set socket blocking for shutdown */
-   bsock->set_blocking();
+   bsock->SetBlocking();
 
-   tid = start_bsock_timer(bsock, 60 * 2);
+   tid = StartBsockTimer(bsock, 60 * 2);
    err = SSL_shutdown(tls_conn->GetSsl());
-   stop_bsock_timer(tid);
+   StopBsockTimer(tid);
    if (err == 0) {
       /* Complete shutdown */
-      tid = start_bsock_timer(bsock, 60 * 2);
+      tid = StartBsockTimer(bsock, 60 * 2);
       err = SSL_shutdown(tls_conn->GetSsl());
-      stop_bsock_timer(tid);
+      StopBsockTimer(tid);
    }
 
    switch (SSL_get_error(tls_conn->GetSsl(), err)) {
@@ -1207,16 +1207,16 @@ void tls_bsock_shutdown(BareosSocket *bsock)
       break;
    case SSL_ERROR_ZERO_RETURN:
       /* TLS connection was shut down on us via a TLS protocol-level closure */
-      openssl_post_errors(bsock->get_jcr(), M_ERROR, _("TLS shutdown failure."));
+      OpensslPostErrors(bsock->get_jcr(), M_ERROR, _("TLS shutdown failure."));
       break;
    default:
       /* Socket Error Occurred */
-      openssl_post_errors(bsock->get_jcr(), M_ERROR, _("TLS shutdown failure."));
+      OpensslPostErrors(bsock->get_jcr(), M_ERROR, _("TLS shutdown failure."));
       break;
    }
 }
 
-/* Does all the manual labor for tls_bsock_readn() and tls_bsock_writen() */
+/* Does all the manual labor for TlsBsockReadn() and TlsBsockWriten() */
 static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
     TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
@@ -1225,12 +1225,12 @@ static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nb
    int nwritten = 0;
 
    /* Ensure that socket is non-blocking */
-   flags = bsock->set_nonblocking();
+   flags = bsock->SetNonblocking();
 
    /* start timer */
    bsock->timer_start = watchdog_time;
-   bsock->clear_timed_out();
-   bsock->set_killable(false);
+   bsock->ClearTimedOut();
+   bsock->SetKillable(false);
 
    nleft = nbytes;
 
@@ -1259,20 +1259,20 @@ static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nb
                continue;
             }
          }
-         openssl_post_errors(bsock->get_jcr(), M_FATAL, _("TLS read/write failure."));
+         OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("TLS read/write failure."));
          goto cleanup;
       case SSL_ERROR_WANT_READ:
-         wait_for_readable_fd(bsock->fd_, 10000, false);
+         WaitForReadableFd(bsock->fd_, 10000, false);
          break;
       case SSL_ERROR_WANT_WRITE:
-         wait_for_writable_fd(bsock->fd_, 10000, false);
+         WaitForWritableFd(bsock->fd_, 10000, false);
          break;
       case SSL_ERROR_ZERO_RETURN:
          /* TLS connection was cleanly shut down */
          /* Fall through wanted */
       default:
          /* Socket Error Occured */
-         openssl_post_errors(bsock->get_jcr(), M_FATAL, _("TLS read/write failure."));
+         OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("TLS read/write failure."));
          goto cleanup;
       }
 
@@ -1282,28 +1282,28 @@ static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nb
       }
 
       /* Timeout/Termination, let's take what we can get */
-      if (bsock->is_timed_out() || bsock->is_terminated()) {
+      if (bsock->IsTimedOut() || bsock->IsTerminated()) {
          goto cleanup;
       }
    }
 
 cleanup:
    /* Restore saved flags */
-   bsock->restore_blocking(flags);
+   bsock->RestoreBlocking(flags);
 
    /* Clear timer */
    bsock->timer_start = 0;
-   bsock->set_killable(true);
+   bsock->SetKillable(true);
 
    return nbytes - nleft;
 }
 
-int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return openssl_bsock_readwrite(bsock, ptr, nbytes, true);
 }
 
-int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return openssl_bsock_readwrite(bsock, ptr, nbytes, false);
 }

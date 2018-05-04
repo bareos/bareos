@@ -22,8 +22,8 @@
 #ifndef BAREOS_DIRD_QUOTA_H_
 #define BAREOS_DIRD_QUOTA_H_
 
-uint64_t fetch_remaining_quotas(JobControlRecord *jcr);
-bool check_hardquotas(JobControlRecord *jcr);
-bool check_softquotas(JobControlRecord *jcr);
+uint64_t FetchRemainingQuotas(JobControlRecord *jcr);
+bool CheckHardquotas(JobControlRecord *jcr);
+bool CheckSoftquotas(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_QUOTA_H_

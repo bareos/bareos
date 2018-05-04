@@ -46,10 +46,10 @@ TEST(junction, junction) {
 
    FILE* f;
 
-   POOLMEM *szJunctionW = get_pool_memory(PM_FNAME);
-   POOLMEM *szTargetW = get_pool_memory(PM_FNAME);
-   POOLMEM *szTestFileW = get_pool_memory(PM_FNAME);
-   POOLMEM *s = get_pool_memory(PM_FNAME);
+   POOLMEM *szJunctionW = GetPoolMemory(PM_FNAME);
+   POOLMEM *szTargetW = GetPoolMemory(PM_FNAME);
+   POOLMEM *szTestFileW = GetPoolMemory(PM_FNAME);
+   POOLMEM *s = GetPoolMemory(PM_FNAME);
 
    const char *szJunction = "C:\\junction_with_öüäß";
    const char *szTarget = "C:\\öäüß";

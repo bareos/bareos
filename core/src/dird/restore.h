@@ -23,8 +23,8 @@
 #define BAREOS_DIRD_RESTORE_H_
 
 bool do_native_restore(JobControlRecord *jcr);
-bool do_native_restore_init(JobControlRecord *jcr);
-void native_restore_cleanup(JobControlRecord *jcr, int TermCode);
-void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *term_msg);
+bool DoNativeRestoreInit(JobControlRecord *jcr);
+void NativeRestoreCleanup(JobControlRecord *jcr, int TermCode);
+void GenerateRestoreSummary(JobControlRecord *jcr, int msg_type, const char *TermMsg);
 
 #endif // BAREOS_DIRD_RESTORE_H_

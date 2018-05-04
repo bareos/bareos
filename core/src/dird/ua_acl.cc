@@ -220,7 +220,7 @@ bool UaContext::acl_access_ok(int acl, const char *item, int len, bool audit_eve
    case PluginOptions_ACL:
       break;
    default:
-      if (!is_name_valid(item)) {
+      if (!IsNameValid(item)) {
          Dmsg1(1400, "Access denied for item=%s\n", item);
          goto bail_out;
       }
@@ -312,7 +312,7 @@ bool UaContext::acl_no_restrictions(int acl)
    return false;
 }
 
-int UaContext::rcode_to_acltype(int rcode)
+int UaContext::RcodeToAcltype(int rcode)
 {
    int acl = -1;
 
@@ -353,7 +353,7 @@ bool UaContext::is_res_allowed(CommonResourceHeader *res)
 {
    int acl;
 
-   acl = rcode_to_acltype(res->rcode);
+   acl = RcodeToAcltype(res->rcode);
    if (acl == -1) {
       /*
        * For all resources for which we don't know an explicit mapping
@@ -373,7 +373,7 @@ CommonResourceHeader *UaContext::GetResWithName(int rcode, const char *name, boo
 {
    int acl;
 
-   acl = rcode_to_acltype(rcode);
+   acl = RcodeToAcltype(rcode);
    if (acl == -1) {
       /*
        * For all resources for which we don't know an explicit mapping
@@ -400,18 +400,18 @@ PoolResource *UaContext::GetPoolResWithName(const char *name, bool audit_event, 
    return (PoolResource *)GetResWithName(R_POOL, name, audit_event, lock);
 }
 
-StoreResource *UaContext::GetStoreResWithName(const char *name, bool audit_event, bool lock)
+StorageResource *UaContext::GetStoreResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (StoreResource *)GetResWithName(R_STORAGE, name, audit_event, lock);
+   return (StorageResource *)GetResWithName(R_STORAGE, name, audit_event, lock);
 }
 
-StoreResource *UaContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
+StorageResource *UaContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
 {
    StorageDbRecord storage_dbr;
    memset(&storage_dbr, 0, sizeof(storage_dbr));
 
    storage_dbr.StorageId = id;
-   if (db->get_storage_record(jcr, &storage_dbr)) {
+   if (db->GetStorageRecord(jcr, &storage_dbr)) {
       return GetStoreResWithName(storage_dbr.Name, audit_event, lock);
    }
    return NULL;

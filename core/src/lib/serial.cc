@@ -117,9 +117,9 @@ void serial_uint64(uint8_t * * const ptr, const uint64_t v)
 }
 
 
-/*  serial_btime  --  Serialise an btime_t 64 bit integer.  */
+/*  SerialBtime  --  Serialise an btime_t 64 bit integer.  */
 
-void serial_btime(uint8_t * * const ptr, const btime_t v)
+void SerialBtime(uint8_t * * const ptr, const btime_t v)
 {
     if (bigendian()) {
         memcpy(*ptr, &v, sizeof(btime_t));
@@ -162,7 +162,7 @@ void serial_float64(uint8_t * * const ptr, const float64_t v)
     *ptr += sizeof(float64_t);
 }
 
-void serial_string(uint8_t * * const ptr, const char * const str)
+void SerialString(uint8_t * * const ptr, const char * const str)
 {
    int i;
    char *dest = (char *)*ptr;
@@ -243,9 +243,9 @@ uint64_t unserial_uint64(uint8_t * * const ptr)
     return v;
 }
 
-/*  unserial_btime  --  Unserialise a btime_t 64 bit integer.  */
+/*  UnserialBtime  --  Unserialise a btime_t 64 bit integer.  */
 
-btime_t unserial_btime(uint8_t * * const ptr)
+btime_t UnserialBtime(uint8_t * * const ptr)
 {
     btime_t v;
 
@@ -296,7 +296,7 @@ float64_t unserial_float64(uint8_t * * const ptr)
     return v;
 }
 
-void unserial_string(uint8_t * * const ptr, char * const str, int max)
+void UnserialString(uint8_t * * const ptr, char * const str, int max)
 {
    int i;
    char *src = (char*)(*ptr);

@@ -72,7 +72,7 @@ TEST(base64, base64) {
       berrno be;
       printf("Cannot stat %s: %s\n", fname, be.bstrerror(errno));
    }
-   encode_stat(where, &statp, sizeof(statp), 0, 0);
+   EncodeStat(where, &statp, sizeof(statp), 0, 0);
 
    //printf("Encoded stat=%s\n", where);
 
@@ -100,7 +100,7 @@ TEST(base64, base64) {
 
    //printf("%s: len=%d val=%s\n", fname, strlen(where), where);
 
-   decode_stat(where, &statn, sizeof(statn), &j);
+   DecodeStat(where, &statn, sizeof(statn), &j);
 
    EXPECT_FALSE(
          statp.st_dev != statn.st_dev ||

@@ -21,8 +21,8 @@
 
 #ifndef BAREOS_DIRD_ARCHIVE_H_
 #define BAREOS_DIRD_ARCHIVE_H_
-bool do_archive_init(JobControlRecord *jcr);
+bool DoArchiveInit(JobControlRecord *jcr);
 bool do_archive(JobControlRecord *jcr);
-void archive_cleanup(JobControlRecord *jcr, int TermCode);
+void ArchiveCleanup(JobControlRecord *jcr, int TermCode);
 
 #endif // BAREOS_DIRD_ARCHIVE_H_

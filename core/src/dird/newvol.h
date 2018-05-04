@@ -22,6 +22,6 @@
 #ifndef BAREOS_DIRD_NEWVOL_H_
 #define BAREOS_DIRD_NEWVOL_H_
 
-bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store);
+bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StorageResource *store);
 
 #endif // BAREOS_DIRD_NEWVOL_H_

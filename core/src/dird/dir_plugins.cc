@@ -51,7 +51,7 @@ static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
 static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...);
-static bool is_plugin_compatible(Plugin *plugin);
+static bool IsPluginCompatible(Plugin *plugin);
 
 /* BAREOS info */
 static bDirInfo binfo = {
@@ -79,7 +79,7 @@ struct b_plugin_ctx {
    JobControlRecord *jcr;                                        /* jcr for plugin */
    bRC  rc;                                         /* last return code */
    bool disabled;                                   /* set if plugin disabled */
-   char events[nbytes_for_bits(DIR_NR_EVENTS + 1)]; /* enabled events bitmask */
+   char events[NbytesForBits(DIR_NR_EVENTS + 1)]; /* enabled events bitmask */
    Plugin *plugin;                                  /* pointer to plugin of which this is an instance off */
 };
 
@@ -93,7 +93,7 @@ static inline bool is_event_enabled(bpContext *ctx, bDirEventType eventType)
    if (!b_ctx) {
       return false;
    }
-   return bit_is_set(eventType, b_ctx->events);
+   return BitIsSet(eventType, b_ctx->events);
 }
 
 static inline bool is_plugin_disabled(bpContext *ctx)
@@ -156,7 +156,7 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bDirEventType eve
     * See if we should care about the return code.
     */
    if (rc) {
-      *rc = dirplug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+      *rc = DirplugFunc(ctx->plugin)->handlePluginEvent(ctx, event, value);
       switch (*rc) {
       case bRC_OK:
          break;
@@ -174,7 +174,7 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bDirEventType eve
           * that moved back a position in the alist.
           */
          if (index) {
-            unload_plugin(plugin_ctx_list, ctx->plugin, *index);
+            UnloadPlugin(plugin_ctx_list, ctx->plugin, *index);
             *index = ((*index) - 1);
          }
          break;
@@ -191,7 +191,7 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bDirEventType eve
          break;
       }
    } else {
-      dirplug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+      DirplugFunc(ctx->plugin)->handlePluginEvent(ctx, event, value);
    }
 
 bail_out:
@@ -201,7 +201,7 @@ bail_out:
 /*
  * Create a plugin event
  */
-bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType eventType, void *value, bool reverse)
+bRC GeneratePluginEvent(JobControlRecord *jcr, bDirEventType eventType, void *value, bool reverse)
 {
    int i;
    bDirEvent event;
@@ -209,12 +209,12 @@ bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType eventType, void *
    bRC rc = bRC_OK;
 
    if (!dird_plugin_list) {
-      Dmsg0(debuglevel, "No bplugin_list: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No bplugin_list: GeneratePluginEvent ignored.\n");
       goto bail_out;
    }
 
    if (!jcr) {
-      Dmsg0(debuglevel, "No jcr: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No jcr: GeneratePluginEvent ignored.\n");
       goto bail_out;
    }
 
@@ -222,7 +222,7 @@ bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType eventType, void *
     * Return if no plugins loaded
     */
    if (!jcr->plugin_ctx_list) {
-      Dmsg0(debuglevel, "No plugin_ctx_list: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No plugin_ctx_list: GeneratePluginEvent ignored.\n");
       goto bail_out;
    }
 
@@ -252,8 +252,8 @@ bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType eventType, void *
       }
    }
 
-   if (jcr->is_job_canceled()) {
-      Dmsg0(debuglevel, "Cancel return from generate_plugin_event\n");
+   if (jcr->IsJobCanceled()) {
+      Dmsg0(debuglevel, "Cancel return from GeneratePluginEvent\n");
       rc = bRC_Cancel;
    }
 
@@ -284,14 +284,14 @@ void dump_dir_plugin(Plugin *plugin, FILE *fp)
 
 static void dump_dir_plugins(FILE *fp)
 {
-   dump_plugins(dird_plugin_list, fp);
+   DumpPlugins(dird_plugin_list, fp);
 }
 
 /**
  * This entry point is called internally by BAREOS to ensure
  *  that the plugin IO calls come into this code.
  */
-void load_dir_plugins(const char *plugin_dir, alist *plugin_names)
+void LoadDirPlugins(const char *plugin_dir, alist *plugin_names)
 {
    Plugin *plugin;
    int i;
@@ -303,8 +303,8 @@ void load_dir_plugins(const char *plugin_dir, alist *plugin_names)
    }
 
    dird_plugin_list = New(alist(10, not_owned_by_alist));
-   if (!load_plugins((void *)&binfo, (void *)&bfuncs, dird_plugin_list,
-                     plugin_dir, plugin_names, plugin_type, is_plugin_compatible)) {
+   if (!LoadPlugins((void *)&binfo, (void *)&bfuncs, dird_plugin_list,
+                     plugin_dir, plugin_names, plugin_type, IsPluginCompatible)) {
       /* Either none found, or some error */
       if (dird_plugin_list->size() == 0) {
          delete dird_plugin_list;
@@ -322,18 +322,18 @@ void load_dir_plugins(const char *plugin_dir, alist *plugin_names)
    }
 
    Dmsg1(debuglevel, "num plugins=%d\n", dird_plugin_list->size());
-   dbg_plugin_add_hook(dump_dir_plugin);
-   dbg_print_plugin_add_hook(dump_dir_plugins);
+   DbgPluginAddHook(dump_dir_plugin);
+   DbgPrintPluginAddHook(dump_dir_plugins);
 }
 
-void unload_dir_plugins(void)
+void UnloadDirPlugins(void)
 {
-   unload_plugins(dird_plugin_list);
+   UnloadPlugins(dird_plugin_list);
    delete dird_plugin_list;
    dird_plugin_list = NULL;
 }
 
-int list_dir_plugins(PoolMem &msg)
+int ListDirPlugins(PoolMem &msg)
 {
    return list_plugins(dird_plugin_list, msg);
 }
@@ -342,11 +342,11 @@ int list_dir_plugins(PoolMem &msg)
  * Check if a plugin is compatible.  Called by the load_plugin function
  *  to allow us to verify the plugin.
  */
-static bool is_plugin_compatible(Plugin *plugin)
+static bool IsPluginCompatible(Plugin *plugin)
 {
    genpInfo *info = (genpInfo *)plugin->pinfo;
 
-   Dmsg0(50, "is_plugin_compatible called\n");
+   Dmsg0(50, "IsPluginCompatible called\n");
    if (debug_level >= 50) {
       dump_dir_plugin(plugin, stdin);
    }
@@ -406,7 +406,7 @@ static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugi
 
    jcr->plugin_ctx_list->append(ctx);
 
-   if (dirplug_func(plugin)->newPlugin(ctx) != bRC_OK) {
+   if (DirplugFunc(plugin)->newPlugin(ctx) != bRC_OK) {
       b_ctx->disabled = true;
    }
 
@@ -417,7 +417,7 @@ static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugi
  * Send a bDirEventNewPluginOptions event to all plugins configured in
  * jcr->res.Job.DirPluginOptions
  */
-void dispatch_new_plugin_options(JobControlRecord *jcr)
+void DispatchNewPluginOptions(JobControlRecord *jcr)
 {
    int i, j, len;
    Plugin *plugin;
@@ -444,7 +444,7 @@ void dispatch_new_plugin_options(JobControlRecord *jcr)
          /*
           * Make a private copy of plugin options.
           */
-         pm_strcpy(priv_plugin_options, plugin_options);
+         PmStrcpy(priv_plugin_options, plugin_options);
 
          plugin_name = priv_plugin_options.c_str();
          if (!(bp = strchr(plugin_name, ':'))) {
@@ -514,17 +514,17 @@ void dispatch_new_plugin_options(JobControlRecord *jcr)
 /**
  * Create a new instance of each plugin for this Job
  */
-void new_plugins(JobControlRecord *jcr)
+void NewPlugins(JobControlRecord *jcr)
 {
    int i, num;
    Plugin *plugin;
 
-   Dmsg0(debuglevel, "=== enter new_plugins ===\n");
+   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
    if (!dird_plugin_list) {
       Dmsg0(debuglevel, "No dir plugin list!\n");
       return;
    }
-   if (jcr->is_job_canceled()) {
+   if (jcr->IsJobCanceled()) {
       return;
    }
 
@@ -546,7 +546,7 @@ void new_plugins(JobControlRecord *jcr)
 /**
  * Free the plugin instances for this Job
  */
-void free_plugins(JobControlRecord *jcr)
+void FreePlugins(JobControlRecord *jcr)
 {
    bpContext *ctx;
 
@@ -559,7 +559,7 @@ void free_plugins(JobControlRecord *jcr)
       /*
        * Free the plugin instance
        */
-      dirplug_func(ctx->plugin)->freePlugin(ctx);
+      DirplugFunc(ctx->plugin)->freePlugin(ctx);
       free(ctx->bContext);                   /* Free BAREOS private context */
    }
 
@@ -628,7 +628,7 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
 
          memset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->res.pool->hdr.name, sizeof(pr.Name));
-         if (!jcr->db->get_pool_record(jcr, &pr)) {
+         if (!jcr->db->GetPoolRecord(jcr, &pr)) {
             retval = bRC_Error;
          }
          *((int *)value) = pr.NumVols;
@@ -757,7 +757,7 @@ static bRC bareosSetValue(bpContext *ctx, bwDirVariable var, void *value)
    Dmsg1(debuglevel, "dir-plugin: bareosSetValue var=%d\n", var);
    switch (var) {
    case bwDirVarVolumeName:
-      pm_strcpy(jcr->VolumeName, ((char *)value));
+      PmStrcpy(jcr->VolumeName, ((char *)value));
       break;
    case bwDirVarPriority:
       jcr->JobPriority = *((int *)value);
@@ -787,7 +787,7 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
       Dmsg1(debuglevel, "dir-plugin: Plugin registered event=%u\n", event);
-      set_bit(event, b_ctx->events);
+      SetBit(event, b_ctx->events);
    }
    va_end(args);
 
@@ -809,7 +809,7 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
       Dmsg1(debuglevel, "dir-plugin: Plugin unregistered event=%u\n", event);
-      clear_bit(event, b_ctx->events);
+      ClearBit(event, b_ctx->events);
    }
    va_end(args);
 
@@ -900,8 +900,8 @@ int main(int argc, char *argv[])
    JobControlRecord *jcr1 = &mjcr1;
    JobControlRecord *jcr2 = &mjcr2;
 
-   my_name_is(argc, argv, "plugtest");
-   init_msg(NULL, NULL);
+   MyNameIs(argc, argv, "plugtest");
+   InitMsg(NULL, NULL);
 
    OSDependentInit();
 
@@ -910,26 +910,26 @@ int main(int argc, char *argv[])
    } else {
       getcwd(plugin_dir, sizeof(plugin_dir)-1);
    }
-   load_dir_plugins(plugin_dir, NULL);
+   LoadDirPlugins(plugin_dir, NULL);
 
    jcr1->JobId = 111;
-   new_plugins(jcr1);
+   NewPlugins(jcr1);
 
    jcr2->JobId = 222;
-   new_plugins(jcr2);
+   NewPlugins(jcr2);
 
-   generate_plugin_event(jcr1, bDirEventJobStart, (void *)"Start Job 1");
-   generate_plugin_event(jcr1, bDirEventJobEnd);
-   generate_plugin_event(jcr2, bDirEventJobStart, (void *)"Start Job 1");
-   free_plugins(jcr1);
-   generate_plugin_event(jcr2, bDirEventJobEnd);
-   free_plugins(jcr2);
+   GeneratePluginEvent(jcr1, bDirEventJobStart, (void *)"Start Job 1");
+   GeneratePluginEvent(jcr1, bDirEventJobEnd);
+   GeneratePluginEvent(jcr2, bDirEventJobStart, (void *)"Start Job 1");
+   FreePlugins(jcr1);
+   GeneratePluginEvent(jcr2, bDirEventJobEnd);
+   FreePlugins(jcr2);
 
-   unload_dir_plugins();
+   UnloadDirPlugins();
 
-   term_msg();
-   close_memory_pool();
-   lmgr_cleanup_main();
+   TermMsg();
+   CloseMemoryPool();
+   LmgrCleanupMain();
    sm_dump(false);
    exit(0);
 }

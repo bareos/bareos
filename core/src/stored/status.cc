@@ -71,7 +71,7 @@ static const char *level_to_str(int level);
 /**
  * Status command from Director
  */
-static void output_status(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
+static void OutputStatus(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
 {
    int len;
    PoolMem msg(PM_MESSAGE);
@@ -105,13 +105,13 @@ static void output_status(JobControlRecord *jcr, StatusPacket *sp, const char *d
 
    list_volumes(sp, devicenames);
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n\n");
+      len = PmStrcpy(msg, "====\n\n");
       sendit(msg, len, sp);
    }
 
-   list_spool_stats(sendit, (void *)sp);
+   ListSpoolStats(sendit, (void *)sp);
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n\n");
+      len = PmStrcpy(msg, "====\n\n");
       sendit(msg, len, sp);
    }
 }
@@ -130,7 +130,7 @@ static void list_resources(StatusPacket *sp)
    dump_resource(R_DEVICE, resources[R_DEVICE - my_config->r_first_], sp, false);
 
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n\n");
+      len = PmStrcpy(msg, "====\n\n");
       sendit(msg, len, sp);
    }
 #endif
@@ -171,7 +171,7 @@ static bool need_to_list_device(const char *devicenames, const char *devicename)
    /*
     * Make a local copy that we can split on ','
     */
-   pm_strcpy(namelist, devicenames);
+   PmStrcpy(namelist, devicenames);
 
    /*
     * See if devicename is in the list.
@@ -233,15 +233,15 @@ static void trigger_device_status_hook(JobControlRecord *jcr,
    bsdDevStatTrig dst;
 
    dst.device = device;
-   dst.status = get_pool_memory(PM_MESSAGE);
+   dst.status = GetPoolMemory(PM_MESSAGE);
    dst.status_length = 0;
 
-   if (generate_plugin_event(jcr, eventType, &dst) == bRC_OK) {
+   if (GeneratePluginEvent(jcr, eventType, &dst) == bRC_OK) {
       if (dst.status_length > 0) {
          sendit(dst.status, dst.status_length, sp);
       }
    }
-   free_pool_memory(dst.status);
+   FreePoolMemory(dst.status);
 }
 
 /*
@@ -253,15 +253,15 @@ static void get_device_specific_status(DeviceResource *device,
    bsdDevStatTrig dst;
 
    dst.device = device;
-   dst.status = get_pool_memory(PM_MESSAGE);
+   dst.status = GetPoolMemory(PM_MESSAGE);
    dst.status_length = 0;
 
-   if (device->dev->device_status(&dst)) {
+   if (device->dev->DeviceStatus(&dst)) {
       if (dst.status_length > 0) {
          sendit(dst.status, dst.status_length, sp);
       }
    }
-   free_pool_memory(dst.status);
+   FreePoolMemory(dst.status);
 }
 
 static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
@@ -307,8 +307,8 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
       }
 
       dev = device->dev;
-      if (dev && dev->is_open()) {
-         if (dev->is_labeled()) {
+      if (dev && dev->IsOpen()) {
+         if (dev->IsLabeled()) {
             const char *state;
 
             switch (dev->blocked()) {
@@ -355,7 +355,7 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
 
          send_blocked_status(dev, sp);
 
-         if (dev->can_append()) {
+         if (dev->CanAppend()) {
             bpb = dev->VolCatInfo.VolCatBlocks;
             if (bpb <= 0) {
                bpb = 1;
@@ -403,13 +403,13 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
       }
 
       if (!sp->api) {
-         len = pm_strcpy(msg, "==\n");
+         len = PmStrcpy(msg, "==\n");
          sendit(msg, len, sp);
       }
    }
 
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n\n");
+      len = PmStrcpy(msg, "====\n\n");
       sendit(msg, len, sp);
    }
 }
@@ -434,12 +434,12 @@ static void list_volumes(StatusPacket *sp, const char *devicenames)
          len = Mmsg(msg, "%s on device %s\n", vol->vol_name, dev->print_name());
          sendit(msg.c_str(), len, sp);
          len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d\n",
-                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
-                    vol->is_in_use());
+                    dev->CanRead() ? 1 : 0, dev->num_writers, dev->NumReserved(),
+                    vol->IsInUse());
          sendit(msg.c_str(), len, sp);
       } else {
          len = Mmsg(msg, "Volume %s no device. volinuse= %d\n",
-                    vol->vol_name, vol->is_in_use());
+                    vol->vol_name, vol->IsInUse());
          sendit(msg.c_str(), len, sp);
       }
    }
@@ -456,12 +456,12 @@ static void list_volumes(StatusPacket *sp, const char *devicenames)
          len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name, dev->print_name());
          sendit(msg.c_str(), len, sp);
          len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%d\n",
-                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
-                    vol->is_in_use(), vol->get_jobid());
+                    dev->CanRead() ? 1 : 0, dev->num_writers, dev->NumReserved(),
+                    vol->IsInUse(), vol->GetJobid());
          sendit(msg.c_str(), len, sp);
       } else {
          len = Mmsg(msg, "Read Volume: %s no device. volinuse= %d\n",
-                    vol->vol_name, vol->is_in_use());
+                    vol->vol_name, vol->IsInUse());
          sendit(msg.c_str(), len, sp);
       }
    }
@@ -485,7 +485,7 @@ static void list_status_header(StatusPacket *sp)
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
 
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d.\n"),
-              dt, num_jobs_run, job_count());
+              dt, num_jobs_run, JobCount());
    sendit(msg, len, sp);
 
 #if defined(HAVE_WIN32)
@@ -554,7 +554,7 @@ static void list_status_header(StatusPacket *sp)
       sendit(msg, len, sp);
    }
 
-   len = list_sd_plugins(msg);
+   len = ListSdPlugins(msg);
    if (len > 0) {
       sendit(msg.c_str(), len, sp);
    }
@@ -626,12 +626,12 @@ static void send_blocked_status(Device *dev, StatusPacket *sp)
    /*
     * Send autochanger slot status
     */
-   if (dev->is_autochanger()) {
-      if (dev->get_slot() > 0) {
+   if (dev->IsAutochanger()) {
+      if (dev->GetSlot() > 0) {
          len = Mmsg(msg, _("    Slot %hd %s loaded in drive %hd.\n"),
-                    dev->get_slot(), dev->is_open() ? "is" : "was last", dev->drive);
+                    dev->GetSlot(), dev->IsOpen() ? "is" : "was last", dev->drive);
          sendit(msg, len, sp);
-      } else if (dev->get_slot() <= 0) {
+      } else if (dev->GetSlot() <= 0) {
          len = Mmsg(msg, _("    Drive %hd is not loaded.\n"), dev->drive);
          sendit(msg, len, sp);
       }
@@ -653,18 +653,18 @@ static void send_device_status(Device *dev, StatusPacket *sp)
       sendit(msg, len, sp);
 
       len = Mmsg(msg, "  %sEOF %sBSR %sBSF %sFSR %sFSF %sEOM %sREM %sRACCESS %sAUTOMOUNT %sLABEL %sANONVOLS %sALWAYSOPEN\n",
-                 dev->has_cap(CAP_EOF) ? "" : "!",
-                 dev->has_cap(CAP_BSR) ? "" : "!",
-                 dev->has_cap(CAP_BSF) ? "" : "!",
-                 dev->has_cap(CAP_FSR) ? "" : "!",
-                 dev->has_cap(CAP_FSF) ? "" : "!",
-                 dev->has_cap(CAP_EOM) ? "" : "!",
-                 dev->has_cap(CAP_REM) ? "" : "!",
-                 dev->has_cap(CAP_RACCESS) ? "" : "!",
-                 dev->has_cap(CAP_AUTOMOUNT) ? "" : "!",
-                 dev->has_cap(CAP_LABEL) ? "" : "!",
-                 dev->has_cap(CAP_ANONVOLS) ? "" : "!",
-                 dev->has_cap(CAP_ALWAYSOPEN) ? "" : "!");
+                 dev->HasCap(CAP_EOF) ? "" : "!",
+                 dev->HasCap(CAP_BSR) ? "" : "!",
+                 dev->HasCap(CAP_BSF) ? "" : "!",
+                 dev->HasCap(CAP_FSR) ? "" : "!",
+                 dev->HasCap(CAP_FSF) ? "" : "!",
+                 dev->HasCap(CAP_EOM) ? "" : "!",
+                 dev->HasCap(CAP_REM) ? "" : "!",
+                 dev->HasCap(CAP_RACCESS) ? "" : "!",
+                 dev->HasCap(CAP_AUTOMOUNT) ? "" : "!",
+                 dev->HasCap(CAP_LABEL) ? "" : "!",
+                 dev->HasCap(CAP_ANONVOLS) ? "" : "!",
+                 dev->HasCap(CAP_ALWAYSOPEN) ? "" : "!");
       sendit(msg, len, sp);
    }
 
@@ -672,22 +672,22 @@ static void send_device_status(Device *dev, StatusPacket *sp)
    sendit(msg, len, sp);
 
    len = Mmsg(msg, "  %sOPENED %sTAPE %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF %sNEXTVOL %sSHORT %sMOUNTED\n",
-      dev->is_open() ? "" : "!",
-      dev->is_tape() ? "" : "!",
-      dev->is_labeled() ? "" : "!",
-      bit_is_set(ST_MALLOC, dev->state) ? "" : "!",
-      dev->can_append() ? "" : "!",
-      dev->can_read() ? "" : "!",
-      dev->at_eot() ? "" : "!",
-      bit_is_set(ST_WEOT, dev->state) ? "" : "!",
-      dev->at_eof() ? "" : "!",
-      bit_is_set(ST_NEXTVOL, dev->state) ? "" : "!",
-      bit_is_set(ST_SHORT, dev->state) ? "" : "!",
-      bit_is_set(ST_MOUNTED, dev->state) ? "" : "!");
+      dev->IsOpen() ? "" : "!",
+      dev->IsTape() ? "" : "!",
+      dev->IsLabeled() ? "" : "!",
+      BitIsSet(ST_MALLOC, dev->state) ? "" : "!",
+      dev->CanAppend() ? "" : "!",
+      dev->CanRead() ? "" : "!",
+      dev->AtEot() ? "" : "!",
+      BitIsSet(ST_WEOT, dev->state) ? "" : "!",
+      dev->AtEof() ? "" : "!",
+      BitIsSet(ST_NEXTVOL, dev->state) ? "" : "!",
+      BitIsSet(ST_SHORT, dev->state) ? "" : "!",
+      BitIsSet(ST_MOUNTED, dev->state) ? "" : "!");
    sendit(msg, len, sp);
 
    len = Mmsg(msg, _("  num_writers=%d reserves=%d block=%d\n"), dev->num_writers,
-              dev->num_reserved(), dev->blocked());
+              dev->NumReserved(), dev->blocked());
    sendit(msg, len, sp);
 
    len = Mmsg(msg, _("Attached Jobs: "));
@@ -828,7 +828,7 @@ static void list_running_jobs(StatusPacket *sp)
    }
 
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n");
+      len = PmStrcpy(msg, "====\n");
       sendit(msg, len, sp);
    }
 }
@@ -881,7 +881,7 @@ static void list_jobs_waiting_on_reservation(StatusPacket *sp)
    endeach_jcr(jcr);
 
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n");
+      len = PmStrcpy(msg, "====\n");
       sendit(msg, len, sp);
    }
 }
@@ -895,24 +895,24 @@ static void list_terminated_jobs(StatusPacket *sp)
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
    if (!sp->api) {
-      len = pm_strcpy(msg, _("\nTerminated Jobs:\n"));
+      len = PmStrcpy(msg, _("\nTerminated Jobs:\n"));
       sendit(msg, len, sp);
    }
 
    if (last_jobs->size() == 0) {
       if (!sp->api) {
-         len = pm_strcpy(msg, "====\n");
+         len = PmStrcpy(msg, "====\n");
          sendit(msg, len, sp);
       }
       return;
    }
 
-   lock_last_jobs_list();
+   LockLastJobsList();
 
    if (!sp->api) {
-      len = pm_strcpy(msg, _(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
+      len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
       sendit(msg, len, sp);
-      len = pm_strcpy(msg, _("===================================================================\n"));
+      len = PmStrcpy(msg, _("===================================================================\n"));
       sendit(msg, len, sp);
    }
 
@@ -985,10 +985,10 @@ static void list_terminated_jobs(StatusPacket *sp)
       sendit(msg, len, sp);
    }
 
-   unlock_last_jobs_list();
+   UnlockLastJobsList();
 
    if (!sp->api) {
-      len = pm_strcpy(msg, "====\n");
+      len = PmStrcpy(msg, "====\n");
       sendit(msg, len, sp);
    }
 }
@@ -1087,16 +1087,16 @@ bool status_cmd(JobControlRecord *jcr)
    sp.bs = dir;
    devicenames.check_size(dir->msglen);
    if (sscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
-      pm_strcpy(jcr->errmsg, dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 No arg in status command: %s\n"), jcr->errmsg);
       dir->signal(BNET_EOD);
 
       return false;
    }
-   unbash_spaces(devicenames);
+   UnbashSpaces(devicenames);
 
    dir->fsend("\n");
-   output_status(jcr, &sp, devicenames.c_str());
+   OutputStatus(jcr, &sp, devicenames.c_str());
    dir->signal(BNET_EOD);
 
    return true;
@@ -1116,13 +1116,13 @@ bool dotstatus_cmd(JobControlRecord *jcr)
    sp.bs = dir;
    cmd.check_size(dir->msglen);
    if (sscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
-      pm_strcpy(jcr->errmsg, dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 No arg in .status command: %s\n"), jcr->errmsg);
       dir->signal(BNET_EOD);
 
       return false;
    }
-   unbash_spaces(cmd);
+   UnbashSpaces(cmd);
 
    Dmsg1(200, "cmd=%s\n", cmd.c_str());
 
@@ -1157,7 +1157,7 @@ bool dotstatus_cmd(JobControlRecord *jcr)
        list_volumes(&sp, NULL);
    } else if (bstrcasecmp(cmd.c_str(), "spooling")) {
        sp.api = true;
-       list_spool_stats(sendit, &sp);
+       ListSpoolStats(sendit, &sp);
    } else if (bstrcasecmp(cmd.c_str(), "terminated")) {
        sp.api = true;
        list_terminated_jobs(&sp);
@@ -1165,7 +1165,7 @@ bool dotstatus_cmd(JobControlRecord *jcr)
        sp.api = true;
        list_resources(&sp);
    } else {
-      pm_strcpy(jcr->errmsg, dir->msg);
+      PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 Unknown arg in .status command: %s\n"), jcr->errmsg);
       dir->signal(BNET_EOD);
       return false;

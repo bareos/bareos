@@ -119,7 +119,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
 
-static inline int native_to_ndmp_loglevel(int debuglevel, NIS *nis)
+static inline int NativeToNdmpLoglevel(int debuglevel, NIS *nis)
 {
    unsigned int level;
 
@@ -165,7 +165,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
    /*
     * We don't want any trailing newline in log messages.
     */
-   strip_trailing_newline(msg);
+   StripTrailingNewline(msg);
 
    /*
     * Make sure if the logging system was setup properly.
@@ -349,12 +349,12 @@ static inline bool bndmp_write_data_to_block(JobControlRecord *jcr,
    dcr->rec->data = data;
    dcr->rec->data_len = data_length;
 
-   if (!dcr->write_record()) {
+   if (!dcr->WriteRecord()) {
       goto bail_out;
    }
 
    if (stream == STREAM_UNIX_ATTRIBUTES) {
-      dcr->dir_update_file_attributes(dcr->rec);
+      dcr->DirUpdateFileAttributes(dcr->rec);
    }
 
    retval = true;
@@ -387,8 +387,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord *jcr,
       /*
        * See if there are any records left to process.
        */
-      if (!is_block_empty(rctx->rec)) {
-         if (!read_next_record_from_block(dcr, rctx, &done)) {
+      if (!IsBlockEmpty(rctx->rec)) {
+         if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
             /*
              * When the done flag is set to true we are done reading all
              * records or end of block read next block.
@@ -399,8 +399,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord *jcr,
          /*
           * Read the next block into our buffers.
           */
-         if (!read_next_block_from_device(dcr, &rctx->sessrec,
-                                          NULL, mount_next_read_volume, &ok)) {
+         if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec,
+                                          NULL, MountNextReadVolume, &ok)) {
             return false;
          }
 
@@ -410,14 +410,14 @@ static inline bool bndmp_read_data_from_block(JobControlRecord *jcr,
          if (!rctx->rec ||
               rctx->rec->VolSessionId != dcr->block->VolSessionId ||
               rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
-            read_context_set_record(dcr, rctx);
+            ReadContextSetRecord(dcr, rctx);
          }
 
          rctx->records_processed = 0;
-         clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
+         ClearAllBits(REC_STATE_MAX, rctx->rec->state_bits);
          rctx->lastFileIndex = READ_NO_FILEINDEX;
 
-         if (!read_next_record_from_block(dcr, rctx, &done)) {
+         if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
             /*
              * When the done flag is set to true we are done reading all
              * records or end of block read next block.
@@ -499,7 +499,7 @@ static inline bool bndmp_create_virtual_file(JobControlRecord *jcr, char *filena
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex, STREAM_UNIX_ATTRIBUTES);
+   EncodeStat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex, STREAM_UNIX_ATTRIBUTES);
 
    /*
     * Generate a file attributes stream.
@@ -549,7 +549,7 @@ static inline JobControlRecord *get_jcr_by_security_key(char *security_key)
 
    foreach_jcr(jcr) {
       if (bstrcmp(jcr->sd_auth_key, security_key)) {
-         jcr->inc_use_count();
+         jcr->IncUseCount();
          break;
       }
    }
@@ -611,7 +611,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
     * the same job) and we should end up with the same binding.
     */
    if (handle->jcr) {
-      free_jcr(handle->jcr);
+      FreeJcr(handle->jcr);
    }
    handle->jcr = jcr;
 
@@ -653,7 +653,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
       /*
        * Setup internal system for writing data.
        */
-      Dmsg1(100, "Start append data. res=%d\n", dcr->dev->num_reserved());
+      Dmsg1(100, "Start append data. res=%d\n", dcr->dev->NumReserved());
 
       /*
        * One NDMP backup Job can be one or more save sessions so we keep
@@ -670,7 +670,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
          /*
           * Let any SD plugin know now its time to setup the record translation infra.
           */
-         if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+         if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
             goto bail_out;
          }
 
@@ -692,14 +692,14 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
           * attribute spooling.
           */
 
-         if (!begin_data_spool(dcr) ) {
+         if (!BeginDataSpool(dcr) ) {
             goto bail_out;
          }
 
          /*
           * Write Begin Session Record
           */
-         if (!write_session_label(dcr, SOS_LABEL)) {
+         if (!WriteSessionLabel(dcr, SOS_LABEL)) {
             Jmsg1(jcr, M_FATAL, 0,
                   _("Write session label failed. ERR=%s\n"),
                   dcr->dev->bstrerror());
@@ -753,14 +753,14 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
          /*
           * Ready device for reading
           */
-         if (!acquire_device_for_read(dcr)) {
+         if (!AcquireDeviceForRead(dcr)) {
             goto bail_out;
          }
 
          /*
           * Let any SD plugin know now its time to setup the record translation infra.
           */
-         if (generate_plugin_event(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
+         if (GeneratePluginEvent(jcr, bsdEventSetupRecordTranslation, dcr) != bRC_OK) {
             goto bail_out;
          }
 
@@ -788,17 +788,17 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
          /*
           * Read the first block and setup record processing.
           */
-         if (!read_next_block_from_device(dcr, &rctx->sessrec,
-                                          NULL, mount_next_read_volume, &ok)) {
+         if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec,
+                                          NULL, MountNextReadVolume, &ok)) {
             Jmsg1(jcr, M_FATAL, 0,
                   _("Read session label failed. ERR=%s\n"),
                   dcr->dev->bstrerror());
             goto bail_out;
          }
 
-         read_context_set_record(dcr, rctx);
+         ReadContextSetRecord(dcr, rctx);
          rctx->records_processed = 0;
-         clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
+         ClearAllBits(REC_STATE_MAX, rctx->rec->state_bits);
          rctx->lastFileIndex = READ_NO_FILEINDEX;
       }
    }
@@ -1026,7 +1026,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session *sess,
    return err;
 }
 
-static inline void register_callback_hooks(struct ndm_session *sess)
+static inline void RegisterCallbackHooks(struct ndm_session *sess)
 {
    struct ndm_auth_callbacks auth_callbacks;
    struct ndm_tape_simulator_callbacks tape_callbacks;
@@ -1050,13 +1050,13 @@ static inline void register_callback_hooks(struct ndm_session *sess)
    ndmos_tape_register_callbacks(sess, &tape_callbacks);
 }
 
-static inline void unregister_callback_hooks(struct ndm_session *sess)
+static inline void UnregisterCallbackHooks(struct ndm_session *sess)
 {
    ndmos_tape_unregister_callbacks(sess);
    ndmos_auth_unregister_callbacks(sess);
 }
 
-void end_of_ndmp_backup(JobControlRecord *jcr)
+void EndOfNdmpBackup(JobControlRecord *jcr)
 {
    DeviceControlRecord *dcr = jcr->dcr;
    char ec[50];
@@ -1080,14 +1080,14 @@ void end_of_ndmp_backup(JobControlRecord *jcr)
        * Check if we can still write. This may not be the case
        *  if we are at the end of the tape or we got a fatal I/O error.
        */
-      if (dcr->dev && dcr->dev->can_write()) {
+      if (dcr->dev && dcr->dev->CanWrite()) {
          Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
 
-         if (!write_session_label(dcr, EOS_LABEL)) {
+         if (!WriteSessionLabel(dcr, EOS_LABEL)) {
             /*
              * Print only if JobStatus JS_Terminated and not cancelled to avoid spurious messages
              */
-            if (jcr->is_JobStatus(JS_Terminated) && !jcr->is_job_canceled()) {
+            if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
                Jmsg1(jcr, M_FATAL, 0,
                      _("Error writing end session label. ERR=%s\n"),
                      dcr->dev->bstrerror());
@@ -1100,11 +1100,11 @@ void end_of_ndmp_backup(JobControlRecord *jcr)
          /*
           * Flush out final partial block of this session
           */
-         if (!dcr->write_block_to_device()) {
+         if (!dcr->WriteBlockToDevice()) {
             /*
              * Print only if JobStatus JS_Terminated and not cancelled to avoid spurious messages
              */
-            if (jcr->is_JobStatus(JS_Terminated) && !jcr->is_job_canceled()) {
+            if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
                Jmsg2(jcr, M_FATAL, 0,
                      _("Fatal append error on device %s: ERR=%s\n"),
                      dcr->dev->print_name(), dcr->dev->bstrerror());
@@ -1117,37 +1117,37 @@ void end_of_ndmp_backup(JobControlRecord *jcr)
          /*
           * Note: if commit is OK, the device will remain blocked
           */
-         commit_data_spool(dcr);
+         CommitDataSpool(dcr);
       } else {
-         discard_data_spool(dcr);
+         DiscardDataSpool(dcr);
       }
 
       /*
        * Release the device -- and send final Vol info to DIR and unlock it.
        */
       if (jcr->acquired_storage) {
-         release_device(dcr);
+         ReleaseDevice(dcr);
          jcr->acquired_storage = false;
       } else {
-         dcr->unreserve_device();
+         dcr->UnreserveDevice();
       }
    }
 
    jcr->sendJobStatus();              /* update director */
 }
 
-void end_of_ndmp_restore(JobControlRecord *jcr)
+void EndOfNdmpRestore(JobControlRecord *jcr)
 {
    if (jcr->rctx) {
-      free_read_context(jcr->rctx);
+      FreeReadContext(jcr->rctx);
       jcr->rctx = NULL;
    }
 
    if (jcr->acquired_storage) {
-      release_device(jcr->read_dcr);
+      ReleaseDevice(jcr->read_dcr);
       jcr->acquired_storage = false;
    } else {
-      jcr->read_dcr->unreserve_device();
+      jcr->read_dcr->UnreserveDevice();
    }
 }
 
@@ -1177,10 +1177,10 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    sess->param->log.deliver = ndmp_loghandler;
    nis = (NIS *)malloc(sizeof(NIS));
    sess->param->log.ctx = nis;
-   sess->param->log_level = native_to_ndmp_loglevel(debug_level, nis);
+   sess->param->log_level = NativeToNdmpLoglevel(debug_level, nis);
    sess->param->log_tag = bstrdup("SD-NDMP");
 
-   register_callback_hooks(sess);
+   RegisterCallbackHooks(sess);
 
    /*
     * We duplicate some of the code from the ndma server session handling available
@@ -1251,7 +1251,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    ndma_session_decommission(sess);
 
 bail_out:
-   unregister_callback_hooks(sess);
+   UnregisterCallbackHooks(sess);
 
    free(sess->param->log.ctx);
    free(sess->param->log_tag);
@@ -1260,7 +1260,7 @@ bail_out:
 
    close(handle->fd);
    if (handle->jcr) {
-      free_jcr(handle->jcr);
+      FreeJcr(handle->jcr);
    }
    free(handle);
 
@@ -1315,9 +1315,9 @@ extern "C" void *ndmp_thread_server(void *arg)
         ipaddr = (IPADDR *)ntsa->addr_list->next(ipaddr)) {
       for (next = (IPADDR *)ntsa->addr_list->next(ipaddr); next;
            next = (IPADDR *)ntsa->addr_list->next(next)) {
-         if (ipaddr->get_sockaddr_len() == next->get_sockaddr_len() &&
+         if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen() &&
              memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                    ipaddr->get_sockaddr_len()) == 0) {
+                    ipaddr->GetSockaddrLen()) == 0) {
             ntsa->addr_list->remove(next);
          }
       }
@@ -1334,12 +1334,12 @@ extern "C" void *ndmp_thread_server(void *arg)
        * Allocate on stack from -- no need to free
        */
       fd_ptr = (s_sockfd *)alloca(sizeof(s_sockfd));
-      fd_ptr->port = ipaddr->get_port_net_order();
+      fd_ptr->port = ipaddr->GetPortNetOrder();
 
       /*
        * Open a TCP socket
        */
-      for (tlog= 60; (fd_ptr->fd = socket(ipaddr->get_family(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
+      for (tlog= 60; (fd_ptr->fd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
          if (tlog <= 0) {
             berrno be;
             char curbuf[256];
@@ -1364,7 +1364,7 @@ extern "C" void *ndmp_thread_server(void *arg)
       }
 
       tmax = 30 * (60 / 5);    /* wait 30 minutes max */
-      for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) < 0; tlog -= 5) {
+      for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0; tlog -= 5) {
          berrno be;
          if (tlog <= 0) {
             tlog = 2 * 60;         /* Complain every 2 minutes */
@@ -1389,7 +1389,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    /*
     * Start work queue thread
     */
-   if ((status = workq_init(ntsa->client_wq, ntsa->max_clients, handle_ndmp_client_request)) != 0) {
+   if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, handle_ndmp_client_request)) != 0) {
       berrno be;
       be.set_errno(status);
       Emsg1(M_ABORT, 0,
@@ -1466,15 +1466,15 @@ extern "C" void *ndmp_thread_server(void *arg)
                continue;
             }
 #ifdef HAVE_LIBWRAP
-            P(mutex);              /* hosts_access is not thread safe */
+            P(mutex);              /* HostsAccess is not thread safe */
             request_init(&request, RQ_DAEMON, my_name, RQ_FILE, new_sockfd, 0);
             fromhost(&request);
-            if (!hosts_access(&request)) {
+            if (!HostsAccess(&request)) {
                V(mutex);
                Jmsg2(NULL, M_SECURITY, 0,
                      _("Connection from %s:%d refused by hosts.access\n"),
                      sockaddr_to_ascii(&cli_addr, buf, sizeof(buf)),
-                     sockaddr_get_port(&cli_addr));
+                     SockaddrGetPort(&cli_addr));
                close(new_sockfd);
                continue;
             }
@@ -1510,7 +1510,7 @@ extern "C" void *ndmp_thread_server(void *arg)
             /*
              * Queue client to be served
              */
-            if ((status = workq_add(ntsa->client_wq, (void *)new_handle, NULL, 0)) != 0) {
+            if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL, 0)) != 0) {
                berrno be;
                be.set_errno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to ndmp client queue: ERR=%s\n"),
@@ -1532,7 +1532,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    /*
     * Stop work queue thread
     */
-   if ((status = workq_destroy(ntsa->client_wq)) != 0) {
+   if ((status = WorkqDestroy(ntsa->client_wq)) != 0) {
       berrno be;
       be.set_errno(status);
       Emsg1(M_FATAL, 0,
@@ -1561,7 +1561,7 @@ int start_ndmp_thread_server(dlist *addr_list, int max_clients)
    return 0;
 }
 
-void stop_ndmp_thread_server()
+void StopNdmpThreadServer()
 {
    if (!ndmp_initialized) {
       return;
@@ -1573,11 +1573,11 @@ void stop_ndmp_thread_server()
    }
 }
 #else
-void end_of_ndmp_backup(JobControlRecord *jcr)
+void EndOfNdmpBackup(JobControlRecord *jcr)
 {
 }
 
-void end_of_ndmp_restore(JobControlRecord *jcr)
+void EndOfNdmpRestore(JobControlRecord *jcr)
 {
 }
 #endif /* HAVE_NDMP */

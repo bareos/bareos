@@ -34,8 +34,8 @@ TLS_CONTEXT *new_tls_context(const char *cipherlist) {
    return nullptr;
 }
 
-TLS_CONTEXT *new_tls_context(const char *ca_certfile,
-                             const char *ca_certdir,
+TLS_CONTEXT *new_tls_context(const char *CaCertfile,
+                             const char *CaCertdir,
                              const char *crlfile,
                              const char *certfile,
                              const char *keyfile,
@@ -43,14 +43,14 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              const void *pem_userdata,
                              const char *dhfile,
                              const char *cipherlist,
-                             bool verify_peer) {
+                             bool VerifyPeer) {
    return nullptr;
 }
 
 /**
  * Get connection info and log it into joblog
  */
-void tls_log_conninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
+void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
    Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
 }
 
@@ -90,7 +90,7 @@ std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateServerContext(
    return nullptr;
 }
 
-void free_tls_context(TLS_CONTEXT *ctx) {
+void FreeTlsContext(TLS_CONTEXT *ctx) {
 }
 
 bool get_tls_require(TLS_CONTEXT *ctx) {
@@ -115,9 +115,9 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server) {
    return NULL;
 }
 
-void free_tls_connection(TLS_CONNECTION *tls_conn) {
+void FreeTlsConnection(TLS_CONNECTION *tls_conn) {
 }
 
-void tls_bsock_shutdown(BareosSocket *bsock) {
+void TlsBsockShutdown(BareosSocket *bsock) {
 }
 #endif /* HAVE_TLS */

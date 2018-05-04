@@ -37,7 +37,7 @@
  * Private grow list function. Used to insure that
  *   at least one more "slot" is available.
  */
-void alist::grow_list()
+void alist::GrowList()
 {
    if (items == NULL) {
       if (num_grow == 0) {
@@ -93,7 +93,7 @@ void *alist::prev()
  * prepend an item to the list -- i.e. add to beginning
  */
 void alist::prepend(void *item) {
-   grow_list();
+   GrowList();
    if (num_items == 0) {
       items[num_items++] = item;
       return;
@@ -110,7 +110,7 @@ void alist::prepend(void *item) {
  * Append an item to the list
  */
 void alist::append(void *item) {
-   grow_list();
+   GrowList();
    items[num_items++] = item;
 }
 

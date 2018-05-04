@@ -66,7 +66,7 @@ struct del_ctx {
    int tot_ids;                       /**< total to process */
 };
 
-/* Flags for find_next_volume_for_append() */
+/* Flags for FindNextVolumeForAppend() */
 enum {
   fnv_create_vol = true,
   fnv_no_create_vol = false,

@@ -217,7 +217,7 @@ static bool get_modifier(char *str, char *num, int num_len, char *mod, int mod_l
 {
    int i, len, num_begin, num_end, mod_begin, mod_end;
 
-   strip_trailing_junk(str);
+   StripTrailingJunk(str);
    len = strlen(str);
 
    for (i = 0; i < len; i++) {
@@ -270,7 +270,7 @@ static bool get_modifier(char *str, char *num, int num_len, char *mod, int mod_l
    bstrncpy(num, &str[num_begin], num_len);
    bstrncpy(mod, &str[mod_begin], mod_len);
 
-   if (!is_a_number(num)) {
+   if (!Is_a_number(num)) {
       return false;
    }
 
@@ -285,7 +285,7 @@ static bool get_modifier(char *str, char *num, int num_len, char *mod, int mod_l
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool duration_to_utime(char *str, utime_t *value)
+bool DurationToUtime(char *str, utime_t *value)
 {
    int i, mod_len;
    double val, total = 0.0;
@@ -515,7 +515,7 @@ bool speed_to_uint64(char *str, uint64_t *value)
  * Check if specified string is a number or not.
  * Taken from SQLite, cool, thanks.
  */
-bool is_a_number(const char *n)
+bool Is_a_number(const char *n)
 {
    bool digit_seen = false;
 
@@ -545,7 +545,7 @@ bool is_a_number(const char *n)
 /*
  * Check if specified string is a list of numbers or not
  */
-bool is_a_number_list(const char *n)
+bool Is_a_number_list(const char *n)
 {
    bool previous_digit = false;
    bool digit_seen = false;
@@ -568,7 +568,7 @@ bool is_a_number_list(const char *n)
 /*
  * Check if the specified string is an integer
  */
-bool is_an_integer(const char *n)
+bool IsAnInteger(const char *n)
 {
    bool digit_seen = false;
    while (B_ISDIGIT(*n)) {
@@ -584,7 +584,7 @@ bool is_an_integer(const char *n)
  * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */
-bool is_name_valid(const char *name, POOLMEM *&msg)
+bool IsNameValid(const char *name, POOLMEM *&msg)
 {
    int len;
    const char *p;
@@ -634,14 +634,14 @@ bool is_name_valid(const char *name, POOLMEM *&msg)
    return true;
 }
 
-bool is_name_valid(const char *name)
+bool IsNameValid(const char *name)
 {
    bool retval;
-   POOLMEM *msg = get_pool_memory(PM_NAME);
+   POOLMEM *msg = GetPoolMemory(PM_NAME);
 
-   retval = is_name_valid(name, msg);
+   retval = IsNameValid(name, msg);
 
-   free_pool_memory(msg);
+   FreePoolMemory(msg);
 
    return retval;
 }

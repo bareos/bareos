@@ -44,30 +44,30 @@ private:
    /*
     * Methods.
     */
-   bool open_database(JobControlRecord *jcr);
-   void close_database(JobControlRecord *jcr);
-   bool validate_connection(void);
-   void thread_cleanup(void);
-   void escape_string(JobControlRecord *jcr, char *snew, char *old, int len);
+   bool OpenDatabase(JobControlRecord *jcr);
+   void CloseDatabase(JobControlRecord *jcr);
+   bool ValidateConnection(void);
+   void ThreadCleanup(void);
+   void EscapeString(JobControlRecord *jcr, char *snew, char *old, int len);
    char *escape_object(JobControlRecord *jcr, char *old, int len);
-   void unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
+   void UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
                         POOLMEM *&dest, int32_t *len);
-   void start_transaction(JobControlRecord *jcr);
-   void end_transaction(JobControlRecord *jcr);
-   bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
-   bool sql_query_without_handler(const char *query, int flags = 0);
-   void sql_free_result(void);
-   SQL_ROW sql_fetch_row(void);
+   void StartTransaction(JobControlRecord *jcr);
+   void EndTransaction(JobControlRecord *jcr);
+   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool SqlQueryWithoutHandler(const char *query, int flags = 0);
+   void SqlFreeResult(void);
+   SQL_ROW SqlFetchRow(void);
    const char *sql_strerror(void);
-   void sql_data_seek(int row);
-   int sql_affected_rows(void);
-   uint64_t sql_insert_autokey_record(const char *query, const char *table_name);
-   SQL_FIELD *sql_fetch_field(void);
-   bool sql_field_is_not_null(int field_type);
-   bool sql_field_is_numeric(int field_type);
-   bool sql_batch_start(JobControlRecord *jcr);
-   bool sql_batch_end(JobControlRecord *jcr, const char *error);
-   bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar);
+   void SqlDataSeek(int row);
+   int SqlAffectedRows(void);
+   uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name);
+   SQL_FIELD *SqlFetchField(void);
+   bool SqlFieldIsNotNull(int field_type);
+   bool SqlFieldIsNumeric(int field_type);
+   bool SqlBatchStart(JobControlRecord *jcr);
+   bool SqlBatchEnd(JobControlRecord *jcr, const char *error);
+   bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar);
 
 public:
    /*

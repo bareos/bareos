@@ -44,11 +44,11 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JobControlRecord *jcr
    CurFile *elt = NULL;
    file_list_ = (htable *)malloc(sizeof(htable));
    file_list_->init(elt, &elt->link, number_of_previous_files_);
-   seen_bitmap_ = (char *)malloc(nbytes_for_bits(number_of_previous_files_));
-   clear_all_bits(number_of_previous_files_, seen_bitmap_);
+   seen_bitmap_ = (char *)malloc(NbytesForBits(number_of_previous_files_));
+   ClearAllBits(number_of_previous_files_, seen_bitmap_);
 }
 
-bool BareosAccurateFilelistHtable::add_file( char *fname,
+bool BareosAccurateFilelistHtable::AddFile( char *fname,
                                              int fname_length,
                                              char *lstat,
                                              int lstat_length,
@@ -90,7 +90,7 @@ bool BareosAccurateFilelistHtable::add_file( char *fname,
    return retval;
 }
 
-bool BareosAccurateFilelistHtable::end_load()
+bool BareosAccurateFilelistHtable::EndLoad()
 {
    /*
     * Nothing to do.
@@ -114,7 +114,7 @@ bool BareosAccurateFilelistHtable::update_payload(char *fname, accurate_payload 
    return true;
 }
 
-bool BareosAccurateFilelistHtable::send_base_file_list()
+bool BareosAccurateFilelistHtable::SendBaseFileList()
 {
    CurFile *elt;
    FindFilesPacket *ff_pkt;
@@ -134,20 +134,20 @@ bool BareosAccurateFilelistHtable::send_base_file_list()
    ff_pkt->type = FT_BASE;
 
    foreach_htable(elt, file_list_) {
-      if (bit_is_set(elt->payload.filenr, seen_bitmap_)) {
+      if (BitIsSet(elt->payload.filenr, seen_bitmap_)) {
          Dmsg1(debuglevel, "base file fname=%s\n", elt->fname);
-         decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
+         DecodeStat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = elt->fname;
          ff_pkt->statp = statp;
-         encode_and_send_attributes(jcr_, ff_pkt, stream);
+         EncodeAndSendAttributes(jcr_, ff_pkt, stream);
       }
    }
 
-   term_find_files(ff_pkt);
+   TermFindFiles(ff_pkt);
    return true;
 }
 
-bool BareosAccurateFilelistHtable::send_deleted_list()
+bool BareosAccurateFilelistHtable::SendDeletedList()
 {
    CurFile *elt;
    FindFilesPacket *ff_pkt;
@@ -163,19 +163,19 @@ bool BareosAccurateFilelistHtable::send_deleted_list()
    ff_pkt->type = FT_DELETED;
 
    foreach_htable(elt, file_list_) {
-      if (bit_is_set(elt->payload.filenr, seen_bitmap_) ||
+      if (BitIsSet(elt->payload.filenr, seen_bitmap_) ||
           plugin_check_file(jcr_, elt->fname)) {
          continue;
       }
       Dmsg1(debuglevel, "deleted fname=%s\n", elt->fname);
       ff_pkt->fname = elt->fname;
-      decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
+      DecodeStat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
       ff_pkt->statp.st_mtime = statp.st_mtime;
       ff_pkt->statp.st_ctime = statp.st_ctime;
-      encode_and_send_attributes(jcr_, ff_pkt, stream);
+      EncodeAndSendAttributes(jcr_, ff_pkt, stream);
    }
 
-   term_find_files(ff_pkt);
+   TermFindFiles(ff_pkt);
    return true;
 }
 

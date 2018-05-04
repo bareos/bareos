@@ -362,15 +362,15 @@ static bRC newPlugin(bpContext *ctx)
     * - The link target of a symbolic link.
     * - The list of xattrs.
     */
-   p_ctx->next_filename = get_pool_memory(PM_FNAME);
-   p_ctx->link_target = get_pool_memory(PM_FNAME);
-   p_ctx->xattr_list = get_pool_memory(PM_MESSAGE);
+   p_ctx->next_filename = GetPoolMemory(PM_FNAME);
+   p_ctx->link_target = GetPoolMemory(PM_FNAME);
+   p_ctx->xattr_list = GetPoolMemory(PM_MESSAGE);
 
    /*
     * Resize all buffers for PATH like names to GLFS_PATH_MAX.
     */
-   p_ctx->next_filename = check_pool_memory_size(p_ctx->next_filename, GLFS_PATH_MAX);
-   p_ctx->link_target = check_pool_memory_size(p_ctx->link_target, GLFS_PATH_MAX);
+   p_ctx->next_filename = CheckPoolMemorySize(p_ctx->next_filename, GLFS_PATH_MAX);
+   p_ctx->link_target = CheckPoolMemorySize(p_ctx->link_target, GLFS_PATH_MAX);
 
    /*
     * Only register the events we are really interested in.
@@ -405,7 +405,7 @@ static bRC freePlugin(bpContext *ctx)
    }
 
    if (p_ctx->path_list) {
-      free_path_list(p_ctx->path_list);
+      FreePathList(p_ctx->path_list);
       p_ctx->path_list = NULL;
    }
 
@@ -421,17 +421,17 @@ static bRC freePlugin(bpContext *ctx)
 
 #ifndef HAVE_GLFS_READDIRPLUS
    if (p_ctx->dirent_buffer) {
-      free_pool_memory(p_ctx->dirent_buffer);
+      FreePoolMemory(p_ctx->dirent_buffer);
    }
 #endif
 
    if (p_ctx->cwd) {
-      free_pool_memory(p_ctx->cwd);
+      FreePoolMemory(p_ctx->cwd);
    }
 
-   free_pool_memory(p_ctx->xattr_list);
-   free_pool_memory(p_ctx->link_target);
-   free_pool_memory(p_ctx->next_filename);
+   FreePoolMemory(p_ctx->xattr_list);
+   FreePoolMemory(p_ctx->link_target);
+   FreePoolMemory(p_ctx->next_filename);
 
    if (p_ctx->basedir) {
       free(p_ctx->basedir);
@@ -581,7 +581,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
             /*
              * Save where we are in the tree.
              */
-            glfs_getcwd(p_ctx->glfs, p_ctx->cwd, sizeof_pool_memory(p_ctx->cwd));
+            glfs_getcwd(p_ctx->glfs, p_ctx->cwd, SizeofPoolMemory(p_ctx->cwd));
 
             /*
              * Pop the previous directory handle and continue processing that.
@@ -633,7 +633,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          /*
           * Strip the newline.
           */
-         strip_trailing_junk(p_ctx->next_filename);
+         StripTrailingJunk(p_ctx->next_filename);
 
          /*
           * Lookup mapping to see what type of entry we are processing.
@@ -732,7 +732,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
             p_ctx->gdir = NULL;
             p_ctx->type = FT_DIREND;
 
-            pm_strcpy(p_ctx->next_filename, p_ctx->cwd);
+            PmStrcpy(p_ctx->next_filename, p_ctx->cwd);
 
             Dmsg(ctx, debuglevel, "gfapi-fd: next file to backup %s\n", p_ctx->next_filename);
 
@@ -761,7 +761,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       case S_IFLNK:
          p_ctx->type = FT_LNK;
          status = glfs_readlink(p_ctx->glfs, p_ctx->next_filename,
-                                p_ctx->link_target, sizeof_pool_memory(p_ctx->link_target));
+                                p_ctx->link_target, SizeofPoolMemory(p_ctx->link_target));
          if (status < 0) {
             berrno be;
 
@@ -836,7 +836,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    /*
     * Save the current flags used to save the next file.
     */
-   copy_bits(FO_MAX, sp->flags, p_ctx->flags);
+   CopyBits(FO_MAX, sp->flags, p_ctx->flags);
 
    switch (p_ctx->type) {
    case FT_DIRBEGIN:
@@ -847,7 +847,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
        * See if we are recursing if so we open the directory and process it.
        * We also open the directory when it is the toplevel e.g. when p_ctx->gdir == NULL.
        */
-      if (p_ctx->crawl_fs && (!p_ctx->gdir || !bit_is_set(FO_NO_RECURSION, p_ctx->flags))) {
+      if (p_ctx->crawl_fs && (!p_ctx->gdir || !BitIsSet(FO_NO_RECURSION, p_ctx->flags))) {
          /*
           * Change into the directory and process all entries in it.
           */
@@ -897,7 +897,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
                   glfs_chdir(p_ctx->glfs, "..");
                }
             } else {
-               glfs_getcwd(p_ctx->glfs, p_ctx->cwd, sizeof_pool_memory(p_ctx->cwd));
+               glfs_getcwd(p_ctx->glfs, p_ctx->cwd, SizeofPoolMemory(p_ctx->cwd));
             }
          }
       }
@@ -998,7 +998,7 @@ static bRC endBackupFile(bpContext *ctx)
    /*
     * See if we need to fix the utimes.
     */
-   if (bit_is_set(FO_NOATIME, p_ctx->flags)) {
+   if (BitIsSet(FO_NOATIME, p_ctx->flags)) {
       struct timespec times[2];
 
       times[0].tv_sec = p_ctx->statp.st_atime;
@@ -1047,7 +1047,7 @@ static inline void set_string_if_null(char **destination, char *value)
 /**
  * Always set destination to value and clean any previous one.
  */
-static inline void set_string(char **destination, char *value)
+static inline void SetString(char **destination, char *value)
 {
    if (*destination) {
       free(*destination);
@@ -1178,7 +1178,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                if (keep_existing) {
                   set_string_if_null(str_destination, argument_value);
                } else {
-                  set_string(str_destination, argument_value);
+                  SetString(str_destination, argument_value);
                }
             }
 
@@ -1219,7 +1219,7 @@ static inline bool gfapi_makedirs(plugin_ctx *p_ctx, const char *directory)
    bool retval = false;
    PoolMem new_directory(PM_FNAME);
 
-   pm_strcpy(new_directory, directory);
+   PmStrcpy(new_directory, directory);
    len = strlen(new_directory.c_str());
 
    /*
@@ -1256,7 +1256,7 @@ static inline bool gfapi_makedirs(plugin_ctx *p_ctx, const char *directory)
                   if (!p_ctx->path_list) {
                      p_ctx->path_list = path_list_init();
                   }
-                  path_list_add(p_ctx->path_list, strlen(directory), directory);
+                  PathListAdd(p_ctx->path_list, strlen(directory), directory);
                   retval = true;
                }
             }
@@ -1646,15 +1646,15 @@ static bRC setup_backup(bpContext *ctx, void *value)
        * - The current working dir.
        * - For the older glfs_readdirplus_r() function an dirent hold buffer.
        */
-      p_ctx->cwd = get_pool_memory(PM_FNAME);
-      p_ctx->cwd = check_pool_memory_size(p_ctx->cwd, GLFS_PATH_MAX);
+      p_ctx->cwd = GetPoolMemory(PM_FNAME);
+      p_ctx->cwd = CheckPoolMemorySize(p_ctx->cwd, GLFS_PATH_MAX);
 #ifndef HAVE_GLFS_READDIRPLUS
-      p_ctx->dirent_buffer = get_pool_memory(PM_FNAME);
+      p_ctx->dirent_buffer = GetPoolMemory(PM_FNAME);
 
       /*
        * Resize the dirent buffer to 512 bytes which should be enough to hold any dirent.
        */
-      p_ctx->dirent_buffer = check_pool_memory_size(p_ctx->dirent_buffer, 512);
+      p_ctx->dirent_buffer = CheckPoolMemorySize(p_ctx->dirent_buffer, 512);
 #endif
 
       /*
@@ -1672,9 +1672,9 @@ static bRC setup_backup(bpContext *ctx, void *value)
        */
       p_ctx->type = FT_DIRBEGIN;
       if (p_ctx->basedir && strlen(p_ctx->basedir) > 0) {
-         pm_strcpy(p_ctx->next_filename, p_ctx->basedir);
+         PmStrcpy(p_ctx->next_filename, p_ctx->basedir);
       } else {
-         pm_strcpy(p_ctx->next_filename, "/");
+         PmStrcpy(p_ctx->next_filename, "/");
       }
 
       retval = bRC_OK;
@@ -1889,7 +1889,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          /*
           * Set attributes if we created this directory
           */
-         if (rp->type == FT_DIREND && path_list_lookup(p_ctx->path_list, rp->ofname)) {
+         if (rp->type == FT_DIREND && PathListLookup(p_ctx->path_list, rp->ofname)) {
             break;
          }
          Jmsg(ctx, M_INFO, 0, _("gfapi-fd: File skipped. Already exists: %s\n"), rp->ofname);
@@ -1929,7 +1929,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          PoolMem parent_dir(PM_FNAME);
          char *bp;
 
-         pm_strcpy(parent_dir, rp->ofname);
+         PmStrcpy(parent_dir, rp->ofname);
          bp = strrchr(parent_dir.c_str(), '/');
          if (bp) {
             *bp = '\0';
@@ -2095,22 +2095,22 @@ static inline uint32_t serialize_acl_stream(PoolMem *buf, uint32_t expected_seri
    buf->check_size(offset + expected_serialize_len + 10);
 
    buffer = buf->c_str() + offset;
-   ser_begin(buffer, expected_serialize_len + 10);
+   SerBegin(buffer, expected_serialize_len + 10);
 
    /*
     * Encode the ACL name including the \0
     */
    ser_uint32(acl_name_length + 1);
-   ser_bytes(acl_name, acl_name_length + 1);
+   SerBytes(acl_name, acl_name_length + 1);
 
    /*
     * Encode the actual ACL data as stored as XATTR.
     */
    ser_uint32(xattr_value_length);
-   ser_bytes(xattr_value, xattr_value_length);
+   SerBytes(xattr_value, xattr_value_length);
 
-   ser_end(buffer, expected_serialize_len + 10);
-   content_length = ser_length(buffer);
+   SerEnd(buffer, expected_serialize_len + 10);
+   content_length = SerLength(buffer);
 
    return offset + content_length;
 }
@@ -2134,7 +2134,7 @@ static bRC getAcl(bpContext *ctx, acl_pkt *ap)
    for (int cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
       skip_xattr = false;
       while (1) {
-         current_size = xattr_value.max_size();
+         current_size = xattr_value.MaxSize();
          xattr_value_length = glfs_lgetxattr(p_ctx->glfs, ap->fname, xattr_acl_skiplist[cnt],
                                              xattr_value.c_str(), current_size);
          if (xattr_value_length < 0) {
@@ -2220,15 +2220,15 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap)
       return bRC_Error;
    }
 
-   unser_begin(ap->content, ap->content_length);
-   while (unser_length(ap->content) < ap->content_length) {
+   UnserBegin(ap->content, ap->content_length);
+   while (UnserLength(ap->content) < ap->content_length) {
       unser_uint32(acl_name_length);
 
       /*
        * Decode the ACL name including the \0
        */
       acl_name.check_size(acl_name_length);
-      unser_bytes(acl_name.c_str(), acl_name_length);
+      UnserBytes(acl_name.c_str(), acl_name_length);
 
       unser_uint32(xattr_value_length);
 
@@ -2236,7 +2236,7 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap)
        * Decode the actual ACL data as stored as XATTR.
        */
       xattr_value.check_size(xattr_value_length);
-      unser_bytes(xattr_value.c_str(), xattr_value_length);
+      UnserBytes(xattr_value.c_str(), xattr_value_length);
 
       status = glfs_lsetxattr(p_ctx->glfs, ap->fname, acl_name.c_str(),
                               xattr_value.c_str(), xattr_value_length, 0);
@@ -2248,7 +2248,7 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap)
       }
    }
 
-   unser_end(ap->content, ap->content_length);
+   UnserEnd(ap->content, ap->content_length);
 
    return bRC_OK;
 }
@@ -2271,7 +2271,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
     */
    if (!p_ctx->processing_xattr) {
       while (1) {
-         current_size = sizeof_pool_memory(p_ctx->xattr_list);
+         current_size = SizeofPoolMemory(p_ctx->xattr_list);
          status = glfs_llistxattr(p_ctx->glfs, xp->fname, p_ctx->xattr_list, current_size);
          if (status < 0) {
             berrno be;
@@ -2290,7 +2290,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
                /*
                 * Not enough room in buffer double its size and retry.
                 */
-               p_ctx->xattr_list = check_pool_memory_size(p_ctx->xattr_list, current_size * 2);
+               p_ctx->xattr_list = CheckPoolMemorySize(p_ctx->xattr_list, current_size * 2);
                continue;
             default:
                Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_llistxattr(%s) failed: %s\n", xp->fname, be.bstrerror());
@@ -2317,7 +2317,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
        * We add an extra \0 at the end so we have an unique terminator
        * to know when we hit the end of the list.
        */
-      p_ctx->xattr_list = check_pool_memory_size(p_ctx->xattr_list, status + 1);
+      p_ctx->xattr_list = CheckPoolMemorySize(p_ctx->xattr_list, status + 1);
       p_ctx->xattr_list[status] = '\0';
       p_ctx->next_xattr_name = p_ctx->xattr_list;
       p_ctx->processing_xattr = true;
@@ -2330,7 +2330,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
        * don't store the extended attribute with the same info.
        */
       skip_xattr = false;
-      if (bit_is_set(FO_ACL, p_ctx->flags)) {
+      if (BitIsSet(FO_ACL, p_ctx->flags)) {
          for (int cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
             if (bstrcmp(p_ctx->next_xattr_name, xattr_acl_skiplist[cnt])) {
                skip_xattr = true;
@@ -2340,7 +2340,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
       }
 
       if (!skip_xattr) {
-         current_size = xattr_value.max_size();
+         current_size = xattr_value.MaxSize();
          xattr_value_length = glfs_lgetxattr(p_ctx->glfs, xp->fname, p_ctx->next_xattr_name,
                                              xattr_value.c_str(), current_size);
          if (xattr_value_length < 0) {

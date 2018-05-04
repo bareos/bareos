@@ -38,8 +38,8 @@ public:
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
-   int tape_op(struct mtop *mt_com);
-   int tape_get(struct mtget *mt_com);
-   int tape_pos(struct mtpos *mt_com);
+   int TapeOp(struct mtop *mt_com);
+   int TapeGet(struct mtget *mt_com);
+   int TapePos(struct mtpos *mt_com);
 };
 #endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_ */

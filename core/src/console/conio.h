@@ -21,14 +21,14 @@
 
 #ifndef BAREOS_CONSOLE_CONIO_H_
 #define BAREOS_CONSOLE_CONIO_H_
-extern int  input_line(char *line, int len);
-extern void con_init(FILE *input);
+extern int  InputLine(char *line, int len);
+extern void ConInit(FILE *input);
 
 extern "C" {
-extern void con_term();
+extern void ConTerm();
 }
 
-extern void con_set_zed_keys();
+extern void ConSetZedKeys();
 extern void t_sendl(char *buf, int len);
 extern void t_send(char *buf);
 extern void t_char(char c);

@@ -5,6 +5,6 @@ class MonitorResource;
 class MonitorItem;
 class JobControlRecord;
 
-bool authenticate_with_daemon(MonitorItem *item, JobControlRecord *jcr);
+bool AuthenticateWithDaemon(MonitorItem *item, JobControlRecord *jcr);
 
 #endif // AUTHENTICATE_H_INCLUDED

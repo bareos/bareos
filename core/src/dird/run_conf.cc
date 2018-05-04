@@ -131,12 +131,12 @@ static void set_defaults()
 {
    have_hour = have_mday = have_wday = have_month = have_wom = have_woy = false;
    have_at = false;
-   set_bits(0, 23, lrun.hour);
-   set_bits(0, 30, lrun.mday);
-   set_bits(0, 6,  lrun.wday);
-   set_bits(0, 11, lrun.month);
-   set_bits(0, 4,  lrun.wom);
-   set_bits(0, 53, lrun.woy);
+   SetBits(0, 23, lrun.hour);
+   SetBits(0, 30, lrun.mday);
+   SetBits(0, 6,  lrun.wday);
+   SetBits(0, 11, lrun.month);
+   SetBits(0, 4,  lrun.wom);
+   SetBits(0, 53, lrun.woy);
 }
 
 /**
@@ -195,17 +195,17 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
     */
    for (found = true; found; ) {
       found = false;
-      token = lex_get_token(lc, BCT_NAME);
+      token = LexGetToken(lc, BCT_NAME);
       for (i = 0; !found && RunFields[i].name; i++) {
          if (bstrcasecmp(lc->str, RunFields[i].name)) {
             found = true;
-            if (lex_get_token(lc, BCT_ALL) != BCT_EQUALS) {
+            if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
                scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
                /* NOT REACHED */
             }
             switch (RunFields[i].token) {
             case 's':                 /* Data spooling */
-               token = lex_get_token(lc, BCT_NAME);
+               token = LexGetToken(lc, BCT_NAME);
                if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
                   lrun.spool_data = true;
                   lrun.spool_data_set = true;
@@ -217,7 +217,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'L':                 /* Level */
-               token = lex_get_token(lc, BCT_NAME);
+               token = LexGetToken(lc, BCT_NAME);
                for (j = 0; joblevels[j].level_name; j++) {
                   if (bstrcasecmp(lc->str, joblevels[j].level_name)) {
                      lrun.level = joblevels[j].level;
@@ -232,7 +232,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'p':                 /* Priority */
-               token = lex_get_token(lc, BCT_PINT32);
+               token = LexGetToken(lc, BCT_PINT32);
                if (pass == 2) {
                   lrun.Priority = lc->u.pint32_val;
                }
@@ -243,7 +243,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             case 'i':                 /* IncPool */
             case 'd':                 /* DiffPool */
             case 'n':                 /* NextPool */
-               token = lex_get_token(lc, BCT_NAME);
+               token = LexGetToken(lc, BCT_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_POOL, lc->str);
                   if (res == NULL) {
@@ -274,7 +274,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'S':                 /* Storage */
-               token = lex_get_token(lc, BCT_NAME);
+               token = LexGetToken(lc, BCT_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_STORAGE, lc->str);
                   if (res == NULL) {
@@ -282,11 +282,11 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                                 lc->str);
                      /* NOT REACHED */
                   }
-                  lrun.storage = (StoreResource *)res;
+                  lrun.storage = (StorageResource *)res;
                }
                break;
             case 'M':                 /* Messages */
-               token = lex_get_token(lc, BCT_NAME);
+               token = LexGetToken(lc, BCT_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_MSGS, lc->str);
                   if (res == NULL) {
@@ -298,8 +298,8 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'm':                 /* Max run sched time */
-               token = lex_get_token(lc, BCT_QUOTED_STRING);
-               if (!duration_to_utime(lc->str, &utime)) {
+               token = LexGetToken(lc, BCT_QUOTED_STRING);
+               if (!DurationToUtime(lc->str, &utime)) {
                   scan_err1(lc, _("expected a time period, got: %s"), lc->str);
                   return;
                }
@@ -307,7 +307,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                lrun.MaxRunSchedTime_set = true;
                break;
             case 'a':                 /* Accurate */
-               token = lex_get_token(lc, BCT_NAME);
+               token = LexGetToken(lc, BCT_NAME);
                if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
                   lrun.accurate = true;
                   lrun.accurate_set = true;
@@ -349,7 +349,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
    state = s_none;
    set_defaults();
 
-   for (; token != BCT_EOL; (token = lex_get_token(lc, BCT_ALL))) {
+   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
       int len;
       bool pm = false;
       bool am = false;
@@ -376,7 +376,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             break;
          }
          if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W') &&
-             is_an_integer(lc->str+1)) {
+             IsAnInteger(lc->str+1)) {
             code = atoi(lc->str+1);
             if (code < 0 || code > 53) {
                scan_err0(lc, _("Week number out of range (0-53)"));
@@ -413,38 +413,38 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
          continue;
       case s_mday:                    /* Day of month */
          if (!have_mday) {
-            clear_bits(0, 30, lrun.mday);
+            ClearBits(0, 30, lrun.mday);
             have_mday = true;
          }
-         set_bit(code, lrun.mday);
+         SetBit(code, lrun.mday);
          break;
       case s_month:                   /* Month of year */
          if (!have_month) {
-            clear_bits(0, 11, lrun.month);
+            ClearBits(0, 11, lrun.month);
             have_month = true;
          }
-         set_bit(code, lrun.month);
+         SetBit(code, lrun.month);
          break;
       case s_wday:                    /* Week day */
          if (!have_wday) {
-            clear_bits(0, 6, lrun.wday);
+            ClearBits(0, 6, lrun.wday);
             have_wday = true;
          }
-         set_bit(code, lrun.wday);
+         SetBit(code, lrun.wday);
          break;
       case s_wom:                     /* Week of month 1st, ... */
          if (!have_wom) {
-            clear_bits(0, 4, lrun.wom);
+            ClearBits(0, 4, lrun.wom);
             have_wom = true;
          }
-         set_bit(code, lrun.wom);
+         SetBit(code, lrun.wom);
          break;
       case s_woy:
          if (!have_woy) {
-            clear_bits(0, 53, lrun.woy);
+            ClearBits(0, 53, lrun.woy);
             have_woy = true;
          }
-         set_bit(code, lrun.woy);
+         SetBit(code, lrun.woy);
          break;
       case s_time:                    /* Time */
          if (!have_at) {
@@ -452,7 +452,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             /* NOT REACHED */
          }
          if (!have_hour) {
-            clear_bits(0, 23, lrun.hour);
+            ClearBits(0, 23, lrun.hour);
          }
 //       Dmsg1(000, "s_time=%s\n", lc->str);
          p = strchr(lc->str, ':');
@@ -498,7 +498,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             scan_err0(lc, _("Bad time specification."));
             /* NOT REACHED */
          }
-         set_bit(code, lrun.hour);
+         SetBit(code, lrun.hour);
          lrun.minute = code2;
          have_hour = true;
          break;
@@ -508,7 +508,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
       case s_last:
          lrun.last_set = true;
          if (!have_wom) {
-            clear_bits(0, 4, lrun.wom);
+            ClearBits(0, 4, lrun.wom);
             have_wom = true;
          }
          break;
@@ -519,7 +519,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
          }
          *p++ = 0;                 /* Separate two halves */
 
-         if (is_an_integer(lc->str) && is_an_integer(p)) {
+         if (IsAnInteger(lc->str) && IsAnInteger(p)) {
             /*
              * Check for day modulo specification.
              */
@@ -532,7 +532,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                scan_err0(lc, _("Bad day specification, offset must always be <= than modulo."));
             }
             if (!have_mday) {
-               clear_bits(0, 30, lrun.mday);
+               ClearBits(0, 30, lrun.mday);
                have_mday = true;
             }
             /*
@@ -540,14 +540,14 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
              */
             for (i = 0; i < 31; i++) {
                if (i % code2 == 0) {
-                  set_bit(i + code, lrun.mday);
+                  SetBit(i + code, lrun.mday);
                }
             }
          } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
                    (lc->str[0] == 'w' || lc->str[0] == 'W') &&
                    (p[0] == 'w' || p[0] == 'W') &&
-                    is_an_integer(lc->str + 1) &&
-                    is_an_integer(p + 1)) {
+                    IsAnInteger(lc->str + 1) &&
+                    IsAnInteger(p + 1)) {
             /*
              * Check for week modulo specification.
              */
@@ -560,7 +560,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                scan_err0(lc, _("Bad week number specification in modulo, offset must always be <= than modulo."));
             }
             if (!have_woy) {
-               clear_bits(0, 53, lrun.woy);
+               ClearBits(0, 53, lrun.woy);
                have_woy = true;
             }
             /*
@@ -568,7 +568,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
              */
             for (i = 0; i < 54; i++) {
                if (i % code2 == 0) {
-                  set_bit(i + code - 1, lrun.woy);
+                  SetBit(i + code - 1, lrun.woy);
                }
             }
          } else {
@@ -582,7 +582,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
          }
          *p++ = 0;                    /* Separate two halves */
 
-         if (is_an_integer(lc->str) && is_an_integer(p)) {
+         if (IsAnInteger(lc->str) && IsAnInteger(p)) {
             /*
              * Check for day range.
              */
@@ -592,20 +592,20 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                scan_err0(lc, _("Bad day range specification."));
             }
             if (!have_mday) {
-               clear_bits(0, 30, lrun.mday);
+               ClearBits(0, 30, lrun.mday);
                have_mday = true;
             }
             if (code < code2) {
-               set_bits(code, code2, lrun.mday);
+               SetBits(code, code2, lrun.mday);
             } else {
-               set_bits(code, 30, lrun.mday);
-               set_bits(0, code2, lrun.mday);
+               SetBits(code, 30, lrun.mday);
+               SetBits(0, code2, lrun.mday);
             }
          } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
                    (lc->str[0] == 'w' || lc->str[0] == 'W') &&
                    (p[0] == 'w' || p[0] == 'W') &&
-                    is_an_integer(lc->str + 1) &&
-                    is_an_integer(p + 1)) {
+                    IsAnInteger(lc->str + 1) &&
+                    IsAnInteger(p + 1)) {
             /*
              * Check for week of year range.
              */
@@ -615,14 +615,14 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                scan_err0(lc, _("Week number out of range (0-53)"));
             }
             if (!have_woy) {
-               clear_bits(0, 53, lrun.woy);
+               ClearBits(0, 53, lrun.woy);
                have_woy = true;
             }
             if (code < code2) {
-               set_bits(code, code2, lrun.woy);
+               SetBits(code, code2, lrun.woy);
             } else {
-               set_bits(code, 53, lrun.woy);
-               set_bits(0, code2, lrun.woy);
+               SetBits(code, 53, lrun.woy);
+               SetBits(0, code2, lrun.woy);
             }
          } else {
             /*
@@ -660,63 +660,63 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             }
             if (state == s_wday) {
                if (!have_wday) {
-                  clear_bits(0, 6, lrun.wday);
+                  ClearBits(0, 6, lrun.wday);
                   have_wday = true;
                }
                if (code < code2) {
-                  set_bits(code, code2, lrun.wday);
+                  SetBits(code, code2, lrun.wday);
                } else {
-                  set_bits(code, 6, lrun.wday);
-                  set_bits(0, code2, lrun.wday);
+                  SetBits(code, 6, lrun.wday);
+                  SetBits(0, code2, lrun.wday);
                }
             } else if (state == s_month) {
                if (!have_month) {
-                  clear_bits(0, 11, lrun.month);
+                  ClearBits(0, 11, lrun.month);
                   have_month = true;
                }
                if (code < code2) {
-                  set_bits(code, code2, lrun.month);
+                  SetBits(code, code2, lrun.month);
                } else {
                   /*
                    * This is a bit odd, but we accept it anyway
                    */
-                  set_bits(code, 11, lrun.month);
-                  set_bits(0, code2, lrun.month);
+                  SetBits(code, 11, lrun.month);
+                  SetBits(0, code2, lrun.month);
                }
             } else {
                /*
                 * Must be position
                 */
                if (!have_wom) {
-                  clear_bits(0, 4, lrun.wom);
+                  ClearBits(0, 4, lrun.wom);
                   have_wom = true;
                }
                if (code < code2) {
-                  set_bits(code, code2, lrun.wom);
+                  SetBits(code, code2, lrun.wom);
                } else {
-                  set_bits(code, 4, lrun.wom);
-                  set_bits(0, code2, lrun.wom);
+                  SetBits(code, 4, lrun.wom);
+                  SetBits(0, code2, lrun.wom);
                }
             }
          }
          break;
       case s_hourly:
          have_hour = true;
-         set_bits(0, 23, lrun.hour);
+         SetBits(0, 23, lrun.hour);
          break;
       case s_weekly:
          have_mday = have_wom = have_woy = true;
-         set_bits(0, 30, lrun.mday);
-         set_bits(0, 4,  lrun.wom);
-         set_bits(0, 53, lrun.woy);
+         SetBits(0, 30, lrun.mday);
+         SetBits(0, 4,  lrun.wom);
+         SetBits(0, 53, lrun.woy);
          break;
       case s_daily:
          have_mday = true;
-         set_bits(0, 6, lrun.wday);
+         SetBits(0, 6, lrun.wday);
          break;
       case s_monthly:
          have_month = true;
-         set_bits(0, 11, lrun.month);
+         SetBits(0, 11, lrun.month);
          break;
       default:
          scan_err0(lc, _("Unexpected run state\n"));
@@ -747,6 +747,6 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
    }
 
    lc->options = options;                /* Restore scanner options */
-   set_bit(index, res_all->res_sch.hdr.item_present);
-   clear_bit(index, res_all->hdr.inherit_content);
+   SetBit(index, res_all->res_sch.hdr.item_present);
+   ClearBit(index, res_all->hdr.inherit_content);
 }

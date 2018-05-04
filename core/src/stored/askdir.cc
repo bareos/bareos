@@ -90,30 +90,30 @@ bool StorageDaemonDeviceControlRecord::dir_update_device(JobControlRecord *jcr, 
    DeviceResource *device = dev->device;
    bool ok;
 
-   pm_strcpy(dev_name, device->name());
-   bash_spaces(dev_name);
-   if (dev->is_labeled()) {
-      pm_strcpy(VolumeName, dev->VolHdr.VolumeName);
+   PmStrcpy(dev_name, device->name());
+   BashSpaces(dev_name);
+   if (dev->IsLabeled()) {
+      PmStrcpy(VolumeName, dev->VolHdr.VolumeName);
    } else {
-      pm_strcpy(VolumeName, "*");
+      PmStrcpy(VolumeName, "*");
    }
-   bash_spaces(VolumeName);
-   pm_strcpy(MediaType, device->media_type);
-   bash_spaces(MediaType);
+   BashSpaces(VolumeName);
+   PmStrcpy(MediaType, device->media_type);
+   BashSpaces(MediaType);
    if (device->changer_res) {
-      pm_strcpy(ChangerName, device->changer_res->name());
-      bash_spaces(ChangerName);
+      PmStrcpy(ChangerName, device->changer_res->name());
+      BashSpaces(ChangerName);
    } else {
-      pm_strcpy(ChangerName, "*");
+      PmStrcpy(ChangerName, "*");
    }
    ok = dir->fsend(Device_update,
                    jcr->Job,
                    dev_name.c_str(),
-                   dev->can_append() != 0,
-                   dev->can_read() != 0, dev->num_writers,
-                   dev->is_open() != 0, dev->is_labeled() != 0,
-                   dev->is_offline() != 0, dev->reserved_device,
-                   dev->is_tape() ? 100000 : 1,
+                   dev->CanAppend() != 0,
+                   dev->CanRead() != 0, dev->num_writers,
+                   dev->IsOpen() != 0, dev->IsLabeled() != 0,
+                   dev->IsOffline() != 0, dev->reserved_device,
+                   dev->IsTape() ? 100000 : 1,
                    dev->autoselect, 0,
                    ChangerName.c_str(), MediaType.c_str(), VolumeName.c_str());
    Dmsg1(debuglevel, ">dird: %s", dir->msg);
@@ -128,17 +128,17 @@ bool StorageDaemonDeviceControlRecord::dir_update_changer(JobControlRecord *jcr,
    DeviceResource *device;
    bool ok;
 
-   pm_strcpy(dev_name, changer->name());
-   bash_spaces(dev_name);
+   PmStrcpy(dev_name, changer->name());
+   BashSpaces(dev_name);
    device = (DeviceResource *)changer->device->first();
-   pm_strcpy(MediaType, device->media_type);
-   bash_spaces(MediaType);
+   PmStrcpy(MediaType, device->media_type);
+   BashSpaces(MediaType);
    /* This is mostly to indicate that we are here */
    ok = dir->fsend(Device_update,
                    jcr->Job,
                    dev_name.c_str(),         /* Changer name */
                    0, 0, 0,                  /* append, read, num_writers */
-                   0, 0, 0,                  /* is_open, is_labeled, offline */
+                   0, 0, 0,                  /* IsOpen, IsLabeled, offline */
                    0, 0,                     /* reserved, max_writers */
                    0,                        /* Autoselect */
                    changer->device->size(),  /* Number of devices */
@@ -154,9 +154,9 @@ bool StorageDaemonDeviceControlRecord::dir_update_changer(JobControlRecord *jcr,
 
 /**
  * Common routine for:
- *   dir_get_volume_info()
+ *   DirGetVolumeInfo()
  * and
- *   dir_find_next_appendable_volume()
+ *   DirFindNextAppendableVolume()
  *
  *  NOTE!!! All calls to this routine must be protected by
  *          locking vol_info_mutex before calling it so that
@@ -176,8 +176,8 @@ static bool do_get_volume_info(DeviceControlRecord *dcr)
 
     dcr->setVolCatInfo(false);
     if (dir->recv() <= 0) {
-       Dmsg0(debuglevel, "getvolname error bnet_recv\n");
-       Mmsg(jcr->errmsg, _("Network error on bnet_recv in req_vol_info.\n"));
+       Dmsg0(debuglevel, "getvolname error BnetRecv\n");
+       Mmsg(jcr->errmsg, _("Network error on BnetRecv in req_vol_info.\n"));
        return false;
     }
     memset(&vol, 0, sizeof(vol));
@@ -201,7 +201,7 @@ static bool do_get_volume_info(DeviceControlRecord *dcr)
     }
     vol.InChanger = InChanger;        /* bool in structure */
     vol.is_valid = true;
-    unbash_spaces(vol.VolCatName);
+    UnbashSpaces(vol.VolCatName);
     bstrncpy(dcr->VolumeName, vol.VolCatName, sizeof(dcr->VolumeName));
     dcr->VolCatInfo = vol;            /* structure assignment */
 
@@ -209,9 +209,9 @@ static bool do_get_volume_info(DeviceControlRecord *dcr)
      * If we received a new crypto key update the cache and write out the new cache on a change.
      */
     if (*vol.VolEncrKey) {
-       if (update_crypto_cache(vol.VolCatName, vol.VolEncrKey)) {
-          write_crypto_cache(me->working_directory, "bareos-sd",
-                             get_first_port_host_order(me->SDaddrs));
+       if (UpdateCryptoCache(vol.VolCatName, vol.VolEncrKey)) {
+          WriteCryptoCache(me->working_directory, "bareos-sd",
+                             GetFirstPortHostOrder(me->SDaddrs));
        }
     }
 
@@ -242,18 +242,18 @@ static bool do_get_volume_info(DeviceControlRecord *dcr)
  *
  * Volume information returned in dcr->VolCatInfo
  */
-bool StorageDaemonDeviceControlRecord::dir_get_volume_info(enum get_vol_info_rw writing)
+bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw writing)
 {
    bool ok;
    BareosSocket *dir = jcr->dir_bsock;
 
    P(vol_info_mutex);
    setVolCatName(VolumeName);
-   bash_spaces(getVolCatName());
+   BashSpaces(getVolCatName());
    dir->fsend(Get_Vol_Info, jcr->Job, getVolCatName(),
               (writing == GET_VOL_INFO_FOR_WRITE) ? 1 : 0);
    Dmsg1(debuglevel, ">dird %s", dir->msg);
-   unbash_spaces(getVolCatName());
+   UnbashSpaces(getVolCatName());
    ok = do_get_volume_info(this);
    V(vol_info_mutex);
 
@@ -266,54 +266,54 @@ bool StorageDaemonDeviceControlRecord::dir_get_volume_info(enum get_vol_info_rw 
  * Returns: true  on success dcr->VolumeName is volume
  *                reserve_volume() called on Volume name
  *          false on failure dcr->VolumeName[0] == 0
- *                also sets dcr->found_in_use if at least one
+ *                also sets dcr->FoundInUse if at least one
  *                in use volume was found.
  *
  * Volume information returned in dcr
  */
-bool StorageDaemonDeviceControlRecord::dir_find_next_appendable_volume()
+bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
 {
     bool retval;
     BareosSocket *dir = jcr->dir_bsock;
     PoolMem unwanted_volumes(PM_MESSAGE);
 
-    Dmsg2(debuglevel, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n", is_reserved(), VolumeName);
+    Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n", IsReserved(), VolumeName);
 
     /*
      * Try the twenty oldest or most available volumes. Note,
      * the most available could already be mounted on another
      * drive, so we continue looking for a not in use Volume.
      */
-    lock_volumes();
+    LockVolumes();
     P(vol_info_mutex);
-    clear_found_in_use();
+    ClearFoundInUse();
 
-    pm_strcpy(unwanted_volumes, "");
+    PmStrcpy(unwanted_volumes, "");
     for (int vol_index = 1; vol_index < 20; vol_index++) {
-       bash_spaces(media_type);
-       bash_spaces(pool_name);
-       bash_spaces(unwanted_volumes.c_str());
+       BashSpaces(media_type);
+       BashSpaces(pool_name);
+       BashSpaces(unwanted_volumes.c_str());
        dir->fsend(Find_media, jcr->Job, vol_index, pool_name, media_type, unwanted_volumes.c_str());
-       unbash_spaces(media_type);
-       unbash_spaces(pool_name);
-       unbash_spaces(unwanted_volumes.c_str());
+       UnbashSpaces(media_type);
+       UnbashSpaces(pool_name);
+       UnbashSpaces(unwanted_volumes.c_str());
        Dmsg1(debuglevel, ">dird %s", dir->msg);
 
        if (do_get_volume_info(this)) {
           if (vol_index == 1) {
-             pm_strcpy(unwanted_volumes, VolumeName);
+             PmStrcpy(unwanted_volumes, VolumeName);
           } else {
-             pm_strcat(unwanted_volumes, ",");
-             pm_strcat(unwanted_volumes, VolumeName);
+             PmStrcat(unwanted_volumes, ",");
+             PmStrcat(unwanted_volumes, VolumeName);
           }
 
-          if (can_i_write_volume()) {
+          if (Can_i_write_volume()) {
              Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n", VolumeName);
              if (reserve_volume(this, VolumeName) == NULL) {
                 Dmsg2(debuglevel, "Could not reserve volume %s on %s\n", VolumeName, dev->print_name());
                 continue;
              }
-             Dmsg1(debuglevel, "dir_find_next_appendable_volume return true. vol=%s\n", VolumeName);
+             Dmsg1(debuglevel, "DirFindNextAppendableVolume return true. vol=%s\n", VolumeName);
              retval = true;
              goto get_out;
           } else {
@@ -322,7 +322,7 @@ bool StorageDaemonDeviceControlRecord::dir_find_next_appendable_volume()
              /*
               * If volume is not usable, it is in use by someone else
               */
-             set_found_in_use();
+             SetFoundInUse();
              continue;
           }
        }
@@ -334,7 +334,7 @@ bool StorageDaemonDeviceControlRecord::dir_find_next_appendable_volume()
 
 get_out:
     V(vol_info_mutex);
-    unlock_volumes();
+    UnlockVolumes();
 
     return retval;
 }
@@ -344,7 +344,7 @@ get_out:
  * back to the director. The information comes from the
  * dev record.
  */
-bool StorageDaemonDeviceControlRecord::dir_update_volume_info(bool label, bool update_LastWritten)
+bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool update_LastWritten)
 {
    BareosSocket *dir = jcr->dir_bsock;
    VolumeCatalogInfo *vol = &dev->VolCatInfo;
@@ -381,8 +381,8 @@ bool StorageDaemonDeviceControlRecord::dir_update_volume_info(bool label, bool u
 // if (update_LastWritten) {
       vol->VolLastWritten = time(NULL);
 // }
-   pm_strcpy(volume_name, vol->VolCatName);
-   bash_spaces(volume_name);
+   PmStrcpy(volume_name, vol->VolCatName);
+   BashSpaces(volume_name);
    InChanger = vol->InChanger;
    dir->fsend(Update_media, jcr->Job,
               volume_name.c_str(), vol->VolCatJobs, vol->VolCatFiles,
@@ -400,7 +400,7 @@ bool StorageDaemonDeviceControlRecord::dir_update_volume_info(bool label, bool u
    /*
     * Do not lock device here because it may be locked from label
     */
-   if (!jcr->is_canceled()) {
+   if (!jcr->IsCanceled()) {
       if (!do_get_volume_info(this)) {
          Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
          Dmsg2(debuglevel, _("Didn't get vol info vol=%s: ERR=%s"),
@@ -424,7 +424,7 @@ bail_out:
 /**
  * After writing a Volume, create the JobMedia record.
  */
-bool StorageDaemonDeviceControlRecord::dir_create_jobmedia_record(bool zero)
+bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
 {
    BareosSocket *dir = jcr->dir_bsock;
    char ed1[50];
@@ -467,7 +467,7 @@ bool StorageDaemonDeviceControlRecord::dir_create_jobmedia_record(bool zero)
    Dmsg1(debuglevel, ">dird %s", dir->msg);
 
    if (dir->recv() <= 0) {
-      Dmsg0(debuglevel, "create_jobmedia error bnet_recv\n");
+      Dmsg0(debuglevel, "create_jobmedia error BnetRecv\n");
       Jmsg(jcr, M_FATAL, 0, _("Error creating JobMedia record: ERR=%s\n"),
            dir->bstrerror());
       return false;
@@ -501,7 +501,7 @@ bool StorageDaemonDeviceControlRecord::dir_create_jobmedia_record(bool zero)
  *
  * Now Restore Objects pass through here STREAM_RESTORE_OBJECT
  */
-bool StorageDaemonDeviceControlRecord::dir_update_file_attributes(DeviceRecord *record)
+bool StorageDaemonDeviceControlRecord::DirUpdateFileAttributes(DeviceRecord *record)
 {
    BareosSocket *dir = jcr->dir_bsock;
    ser_declare;
@@ -510,18 +510,18 @@ bool StorageDaemonDeviceControlRecord::dir_update_file_attributes(DeviceRecord *
    return true;
 #endif
 
-   dir->msg = check_pool_memory_size(dir->msg, sizeof(FileAttributes) +
+   dir->msg = CheckPoolMemorySize(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + sizeof(DeviceRecord) + record->data_len + 1);
    dir->msglen = bsnprintf(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + 1, FileAttributes, jcr->Job);
-   ser_begin(dir->msg + dir->msglen, 0);
+   SerBegin(dir->msg + dir->msglen, 0);
    ser_uint32(record->VolSessionId);
    ser_uint32(record->VolSessionTime);
    ser_int32(record->FileIndex);
    ser_int32(record->Stream);
    ser_uint32(record->data_len);
-   ser_bytes(record->data, record->data_len);
-   dir->msglen = ser_length(dir->msg);
+   SerBytes(record->data, record->data_len);
+   dir->msglen = SerLength(dir->msg);
    Dmsg1(1800, ">dird %s", dir->msg);    /* Attributes */
 
    return dir->send();
@@ -546,26 +546,26 @@ bool StorageDaemonDeviceControlRecord::dir_update_file_attributes(DeviceRecord *
  * actually be mounted. The calling routine must read it and
  * verify the label.
  */
-bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_create_appendable_volume()
+bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
 {
    int status = W_TIMEOUT;
    bool got_vol = false;
 
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return false;
    }
 
-   Dmsg0(debuglevel, "enter dir_ask_sysop_to_create_appendable_volume\n");
+   Dmsg0(debuglevel, "enter DirAskSysopToCreateAppendableVolume\n");
    ASSERT(dev->blocked());
    for ( ;; ) {
-      if (job_canceled(jcr)) {
+      if (JobCanceled(jcr)) {
          Mmsg(dev->errmsg,
               _("Job %s canceled while waiting for mount on Storage Device \"%s\".\n"),
               jcr->Job, dev->print_name());
          Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
          return false;
       }
-      got_vol = dir_find_next_appendable_volume();   /* get suggested volume */
+      got_vol = DirFindNextAppendableVolume();   /* get suggested volume */
       if (got_vol) {
          goto get_out;
       } else {
@@ -587,15 +587,15 @@ bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_create_appendable_volume
 
       jcr->sendJobStatus(JS_WaitMedia);
 
-      status = wait_for_sysop(this);
-      Dmsg1(debuglevel, "Back from wait_for_sysop status=%d\n", status);
+      status = WaitForSysop(this);
+      Dmsg1(debuglevel, "Back from WaitForSysop status=%d\n", status);
       if (dev->poll) {
          Dmsg1(debuglevel, "Poll timeout in create append vol on device %s\n", dev->print_name());
          continue;
       }
 
       if (status == W_TIMEOUT) {
-         if (!double_dev_wait_time(dev)) {
+         if (!DoubleDevWaitTime(dev)) {
             Mmsg(dev->errmsg, _("Max time exceeded waiting to mount Storage Device %s for Job %s\n"),
                dev->print_name(), jcr->Job);
             Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
@@ -632,18 +632,18 @@ get_out:
  *
  * Note, must create dev->errmsg on error return.
  */
-bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_mount_volume(int mode)
+bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
 {
    int status = W_TIMEOUT;
 
-   Dmsg0(debuglevel, "enter dir_ask_sysop_to_mount_volume\n");
+   Dmsg0(debuglevel, "enter DirAskSysopToMountVolume\n");
    if (!VolumeName[0]) {
       Mmsg0(dev->errmsg, _("Cannot request another volume: no volume name given.\n"));
       return false;
    }
    ASSERT(dev->blocked());
    while (1) {
-      if (job_canceled(jcr)) {
+      if (JobCanceled(jcr)) {
          Mmsg(dev->errmsg, _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
               jcr->Job, dev->print_name());
          return false;
@@ -677,8 +677,8 @@ bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_mount_volume(int mode)
 
       jcr->sendJobStatus(JS_WaitMount);
 
-      status = wait_for_sysop(this);         /* wait on device */
-      Dmsg1(debuglevel, "Back from wait_for_sysop status=%d\n", status);
+      status = WaitForSysop(this);         /* wait on device */
+      Dmsg1(debuglevel, "Back from WaitForSysop status=%d\n", status);
       if (dev->poll) {
          Dmsg1(debuglevel, "Poll timeout in mount vol on device %s\n", dev->print_name());
          Dmsg1(debuglevel, "Blocked=%s\n", dev->print_blocked());
@@ -686,7 +686,7 @@ bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_mount_volume(int mode)
       }
 
       if (status == W_TIMEOUT) {
-         if (!double_dev_wait_time(dev)) {
+         if (!DoubleDevWaitTime(dev)) {
             Mmsg(dev->errmsg, _("Max time exceeded waiting to mount Storage Device %s for Job %s\n"),
                dev->print_name(), jcr->Job);
             Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
@@ -708,7 +708,7 @@ bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_mount_volume(int mode)
 
 get_out:
    jcr->sendJobStatus(JS_Running);
-   Dmsg0(debuglevel, "leave dir_ask_sysop_to_mount_volume\n");
+   Dmsg0(debuglevel, "leave DirAskSysopToMountVolume\n");
    return true;
 }
 
@@ -724,7 +724,7 @@ DeviceControlRecord *StorageDaemonDeviceControlRecord::get_new_spooling_dcr()
 /**
  * Dummy methods for everything but SD and BTAPE.
  */
-bool DeviceControlRecord::dir_ask_sysop_to_mount_volume(int /*mode*/)
+bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)
 {
    fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
            VolumeName, dev->print_name());
@@ -733,9 +733,9 @@ bool DeviceControlRecord::dir_ask_sysop_to_mount_volume(int /*mode*/)
    return true;
 }
 
-bool DeviceControlRecord::dir_get_volume_info(enum get_vol_info_rw writing)
+bool DeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw writing)
 {
-   Dmsg0(100, "Fake dir_get_volume_info\n");
+   Dmsg0(100, "Fake DirGetVolumeInfo\n");
    setVolCatName(VolumeName);
    Dmsg1(500, "Vol=%s\n", getVolCatName());
    return 1;

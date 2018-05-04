@@ -377,7 +377,7 @@ elasto_device::~elasto_device()
       free(elasto_configstring_);
    }
 
-   free_pool_memory(virtual_filename_);
+   FreePoolMemory(virtual_filename_);
 }
 
 elasto_device::elasto_device()
@@ -387,8 +387,8 @@ elasto_device::elasto_device()
    basedir_ = NULL;
    insecure_http_ = false;
    efh_ = NULL;
-   virtual_filename_ = get_pool_memory(PM_FNAME);
-   set_cap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
+   virtual_filename_ = GetPoolMemory(PM_FNAME);
+   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

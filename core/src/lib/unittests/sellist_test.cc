@@ -49,7 +49,7 @@ void test_sellist(void **state) {
    int i;
    int c;
 
-   sl.set_string(str1, true);
+   sl.SetString(str1, true);
 
    msg = sl.get_errmsg();
 
@@ -68,7 +68,7 @@ void test_sellist(void **state) {
 
    assert_null(msg);
 
-   sl.set_string(str2, true);
+   sl.SetString(str2, true);
    c = 0;
    while ((i=sl.next()) >= 0) {
       assert_int_equal(i, resarray2[c]);

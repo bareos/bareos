@@ -111,7 +111,7 @@ JobControlRecord *wait_for_next_job(char *one_shot_job_to_run)
          }
          Dmsg1(5, "Found one_shot_job_to_run %s\n", one_shot_job_to_run);
          jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
-         set_jcr_defaults(jcr, job);
+         SetJcrDefaults(jcr, job);
          return jcr;
       }
    }
@@ -151,7 +151,7 @@ again:
    for (;;) {
       time_t twait;
       /* discard scheduled queue and rebuild with new schedule objects. */
-      lock_jobs();
+      LockJobs();
       if (schedules_invalidated) {
           dump_job(next_job, "Invalidated job");
           free(next_job);
@@ -162,10 +162,10 @@ again:
               free(next_job);
           }
           schedules_invalidated = false;
-          unlock_jobs();
+          UnlockJobs();
           goto again;
       }
-      unlock_jobs();
+      UnlockJobs();
       prev = now = time(NULL);
       twait = next_job->runtime - now;
       if (twait <= 0) {               /* time to run it */
@@ -195,14 +195,14 @@ again:
    if (!job->enabled ||
        (job->schedule && !job->schedule->enabled) ||
        (job->client && !job->client->enabled)) {
-      free_jcr(jcr);
+      FreeJcr(jcr);
       goto again;                     /* ignore this job */
    }
 
    run->last_run = now;               /* mark as run now */
 
    ASSERT(job);
-   set_jcr_defaults(jcr, job);
+   SetJcrDefaults(jcr, job);
    if (run->level) {
       jcr->setJobLevel(run->level);  /* override run level */
    }
@@ -238,10 +238,10 @@ again:
    }
 
    if (run->storage) {
-      UnifiedStoreResource store;
+      UnifiedStorageResource store;
       store.store = run->storage;
-      pm_strcpy(store.store_source, _("run override"));
-      set_rwstorage(jcr, &store); /* override storage */
+      PmStrcpy(store.store_source, _("run override"));
+      SetRwstorage(jcr, &store); /* override storage */
    }
 
    if (run->msgs) {
@@ -271,7 +271,7 @@ again:
 /**
  * Shutdown the scheduler
  */
-void term_scheduler()
+void TermScheduler()
 {
    if (jobs_to_run) {
       delete jobs_to_run;
@@ -283,7 +283,7 @@ void term_scheduler()
  * depending if the year is leap year or not, the doy of the last day of the month
  * is varying one day.
  */
-bool is_doy_in_last_week(int year, int doy)
+bool IsDoyInLastWeek(int year, int doy)
 {
    int i;
    int *last_dom;
@@ -337,13 +337,13 @@ static void find_runs()
    wday = tm.tm_wday;
    month = tm.tm_mon;
    wom = mday / 7;
-   woy = tm_woy(now);                 /* get week of year */
+   woy = TmWoy(now);                 /* get week of year */
    yday = tm.tm_yday;                 /* get day of year */
 
    Dmsg8(debuglevel, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
          now, hour, month, mday, wday, wom, woy, yday);
 
-   is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
+   is_last_week = IsDoyInLastWeek(tm.tm_year + 1900 , yday);
 
    /*
     * Compute values for next hour from now.
@@ -357,13 +357,13 @@ static void find_runs()
    nh_wday = tm.tm_wday;
    nh_month = tm.tm_mon;
    nh_wom = nh_mday / 7;
-   nh_woy = tm_woy(next_hour);        /* get week of year */
+   nh_woy = TmWoy(next_hour);        /* get week of year */
    nh_yday = tm.tm_yday;              /* get day of year */
 
    Dmsg8(debuglevel, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
          next_hour, nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
 
-   nh_is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , nh_yday);
+   nh_is_last_week = IsDoyInLastWeek(tm.tm_year + 1900 , nh_yday);
 
    /*
     * Loop through all jobs
@@ -389,39 +389,39 @@ static void find_runs()
          Dmsg7(000, "run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
             hour, month, mday, wday, wom, woy, yday);
          Dmsg6(000, "bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
-               bit_is_set(hour, run->hour),
-               bit_is_set(month, run->month),
-               bit_is_set(mday, run->mday),
-               bit_is_set(wday, run->wday),
-               bit_is_set(wom, run->wom),
-               bit_is_set(woy, run->woy));
+               BitIsSet(hour, run->hour),
+               BitIsSet(month, run->month),
+               BitIsSet(mday, run->mday),
+               BitIsSet(wday, run->wday),
+               BitIsSet(wom, run->wom),
+               BitIsSet(woy, run->woy));
 
          Dmsg7(000, "nh_run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
                nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
          Dmsg6(000, "nh_bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
-               bit_is_set(nh_hour, run->hour),
-               bit_is_set(nh_month, run->month),
-               bit_is_set(nh_mday, run->mday),
-               bit_is_set(nh_wday, run->wday),
-               bit_is_set(nh_wom, run->wom),
-               bit_is_set(nh_woy, run->woy));
+               BitIsSet(nh_hour, run->hour),
+               BitIsSet(nh_month, run->month),
+               BitIsSet(nh_mday, run->mday),
+               BitIsSet(nh_wday, run->wday),
+               BitIsSet(nh_wom, run->wom),
+               BitIsSet(nh_woy, run->woy));
          Dmsg2(000, "run->last_set:%d, is_last_week:%d\n", run->last_set, is_last_week);
          Dmsg2(000, "run->last_set:%d, nh_is_last_week:%d\n", run->last_set, nh_is_last_week);
 #endif
 
-         run_now = bit_is_set(hour, run->hour) &&
-                   bit_is_set(mday, run->mday) &&
-                   bit_is_set(wday, run->wday) &&
-                   bit_is_set(month, run->month) &&
-                  (bit_is_set(wom, run->wom) || (run->last_set && is_last_week)) &&
-                   bit_is_set(woy, run->woy);
+         run_now = BitIsSet(hour, run->hour) &&
+                   BitIsSet(mday, run->mday) &&
+                   BitIsSet(wday, run->wday) &&
+                   BitIsSet(month, run->month) &&
+                  (BitIsSet(wom, run->wom) || (run->last_set && is_last_week)) &&
+                   BitIsSet(woy, run->woy);
 
-         run_nh = bit_is_set(nh_hour, run->hour) &&
-                  bit_is_set(nh_mday, run->mday) &&
-                  bit_is_set(nh_wday, run->wday) &&
-                  bit_is_set(nh_month, run->month) &&
-                 (bit_is_set(nh_wom, run->wom) || (run->last_set && nh_is_last_week)) &&
-                  bit_is_set(nh_woy, run->woy);
+         run_nh = BitIsSet(nh_hour, run->hour) &&
+                  BitIsSet(nh_mday, run->mday) &&
+                  BitIsSet(nh_wday, run->wday) &&
+                  BitIsSet(nh_month, run->month) &&
+                 (BitIsSet(nh_wom, run->wom) || (run->last_set && nh_is_last_week)) &&
+                  BitIsSet(nh_woy, run->woy);
 
          Dmsg3(debuglevel, "run@%p: run_now=%d run_nh=%d\n", run, run_now, run_nh);
 
@@ -482,7 +482,7 @@ static void add_job(JobResource *job, RunResource *run, time_t now, time_t runti
    foreach_dlist(ji, jobs_to_run) {
       if (ji->runtime > je->runtime ||
           (ji->runtime == je->runtime && ji->Priority > je->Priority)) {
-         jobs_to_run->insert_before(je, ji);
+         jobs_to_run->InsertBefore(je, ji);
          dump_job(je, _("Inserted job"));
          inserted = true;
          break;

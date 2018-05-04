@@ -22,15 +22,15 @@
 #define BAREOS_LIB_COMPRESSION_H_
 
 DLL_IMP_EXP const char *cmprs_algo_to_text(uint32_t compression_algorithm);
-DLL_IMP_EXP bool setup_compression_buffers(JobControlRecord *jcr, bool compatible,
+DLL_IMP_EXP bool SetupCompressionBuffers(JobControlRecord *jcr, bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size);
-DLL_IMP_EXP bool setup_decompression_buffers(JobControlRecord *jcr, uint32_t *decompress_buf_size);
-DLL_IMP_EXP bool compress_data(JobControlRecord *jcr, uint32_t compression_algorithm, char *rbuf,
+DLL_IMP_EXP bool SetupDecompressionBuffers(JobControlRecord *jcr, uint32_t *decompress_buf_size);
+DLL_IMP_EXP bool CompressData(JobControlRecord *jcr, uint32_t compression_algorithm, char *rbuf,
                    uint32_t rsize, unsigned char *cbuf,
                    uint32_t max_compress_len, uint32_t *compress_len);
-DLL_IMP_EXP bool decompress_data(JobControlRecord *jcr, const char *last_fname, int32_t stream,
+DLL_IMP_EXP bool DecompressData(JobControlRecord *jcr, const char *last_fname, int32_t stream,
                      char **data, uint32_t *length, bool want_data_stream);
-DLL_IMP_EXP void cleanup_compression(JobControlRecord *jcr);
+DLL_IMP_EXP void CleanupCompression(JobControlRecord *jcr);
 
 #endif // BAREOS_LIB_COMPRESSION_H_

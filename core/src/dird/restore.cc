@@ -113,9 +113,9 @@ static void build_restore_command(JobControlRecord *jcr, PoolMem &ret)
 
    jcr->prefix_links = jcr->res.job->PrefixLinks;
 
-   bash_spaces(where);
+   BashSpaces(where);
    Mmsg(ret, cmd, replace, jcr->prefix_links, where);
-   unbash_spaces(where);
+   UnbashSpaces(where);
 }
 
 /**
@@ -130,7 +130,7 @@ static void build_restore_command(JobControlRecord *jcr, PoolMem &ret)
  */
 static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
 {
-   StoreResource *store;
+   StorageResource *store;
    ClientResource *client;
    bootstrap_info info;
    BareosSocket *fd = NULL;
@@ -148,7 +148,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
    /*
     * Open the bootstrap file
     */
-   if (!open_bootstrap_file(jcr, info)) {
+   if (!OpenBootstrapFile(jcr, info)) {
       goto bail_out;
    }
 
@@ -157,7 +157,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
     */
    jcr->passive_client = client->passive;
    while (!feof(info.bs)) {
-      if (!select_next_rstore(jcr, info)) {
+      if (!SelectNextRstore(jcr, info)) {
          goto bail_out;
       }
       store = jcr->res.rstore;
@@ -174,7 +174,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Start conversation with Storage daemon
        */
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
          goto bail_out;
       }
       sd = jcr->store_bsock;
@@ -182,7 +182,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, NULL)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL)) {
          goto bail_out;
       }
 
@@ -193,13 +193,13 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
          jcr->setJobStatus(JS_WaitFD);
          jcr->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
 
-         if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
+         if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
             goto bail_out;
          }
-         send_job_info(jcr);
+         SendJobInfo(jcr);
          fd = jcr->file_bsock;
 
-         if (!send_secure_erase_req_to_fd(jcr)) {
+         if (!SendSecureEraseReqToFd(jcr)) {
             Dmsg1(500,"Unexpected %s secure erase\n","client");
          }
 
@@ -220,7 +220,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Send the bootstrap file -- what Volumes/files to restore
        */
-      if (!send_bootstrap_file(jcr, sd, info) ||
+      if (!SendBootstrapFile(jcr, sd, info) ||
           !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
          goto bail_out;
       }
@@ -243,7 +243,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
          /*
           * Now start a Storage daemon message thread
           */
-         if (!start_storage_daemon_message_thread(jcr)) {
+         if (!StartStorageDaemonMessageThread(jcr)) {
             goto bail_out;
          }
          Dmsg0(50, "Storage daemon connection OK\n");
@@ -262,7 +262,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
           */
             tls_need = GetNeedFromConfiguration(store);
 
-         connection_target_address = storage_address_to_contact(client, store);
+         connection_target_address = StorageAddressToContact(client, store);
 
          fd->fsend(storaddrcmd, connection_target_address,
                    store->SDDport, tls_need, jcr->sd_auth_key);
@@ -291,7 +291,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
           */
             tls_need = GetNeedFromConfiguration(client);
 
-         connection_target_address = client_address_to_contact(client, store);
+         connection_target_address = ClientAddressToContact(client, store);
          /*
           * Tell the SD to connect to the FD.
           */
@@ -310,7 +310,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
          /*
           * Now start a Storage daemon message thread
           */
-         if (!start_storage_daemon_message_thread(jcr)) {
+         if (!StartStorageDaemonMessageThread(jcr)) {
             goto bail_out;
          }
          Dmsg0(50, "Storage daemon connection OK\n");
@@ -326,7 +326,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
        */
       if (first_time) {
          first_time = false;
-         if (!send_runscripts_commands(jcr)) {
+         if (!SendRunscriptsCommands(jcr)) {
             goto bail_out;
          }
 
@@ -369,7 +369,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
          if (!response(jcr, fd, OKstoreend, "Store end", DISPLAY_ERROR)) {
             goto bail_out;
          }
-         wait_for_storage_daemon_termination(jcr);
+         WaitForStorageDaemonTermination(jcr);
       }
    } /* the whole boostrap has been send */
 
@@ -377,7 +377,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
       fd->fsend("endrestore");
    }
 
-   close_bootstrap_file(info);
+   CloseBootstrapFile(info);
    return true;
 
 bail_out:
@@ -388,7 +388,7 @@ bail_out:
       jcr->file_bsock = NULL;
    }
 
-   close_bootstrap_file(info);
+   CloseBootstrapFile(info);
    return false;
 }
 
@@ -398,9 +398,9 @@ bail_out:
  *  Returns:  false on failure
  *            true on success
  */
-bool do_native_restore_init(JobControlRecord *jcr)
+bool DoNativeRestoreInit(JobControlRecord *jcr)
 {
-   free_wstorage(jcr);                /* we don't write */
+   FreeWstorage(jcr);                /* we don't write */
 
    return true;
 }
@@ -418,7 +418,7 @@ bool do_native_restore(JobControlRecord *jcr)
 
    memset(&rjr, 0, sizeof(rjr));
    jcr->jr.JobLevel = L_FULL;         /* Full restore */
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
@@ -448,50 +448,50 @@ bool do_native_restore(JobControlRecord *jcr)
    /*
     * Wait for Job Termination
     */
-   status = wait_for_job_termination(jcr);
-   native_restore_cleanup(jcr, status);
+   status = WaitForJobTermination(jcr);
+   NativeRestoreCleanup(jcr, status);
    return true;
 
 bail_out:
-   native_restore_cleanup(jcr, JS_ErrorTerminated);
+   NativeRestoreCleanup(jcr, JS_ErrorTerminated);
    return false;
 }
 
 /**
  * Release resources allocated during restore.
  */
-void native_restore_cleanup(JobControlRecord *jcr, int TermCode)
+void NativeRestoreCleanup(JobControlRecord *jcr, int TermCode)
 {
    char term_code[100];
-   const char *term_msg;
+   const char *TermMsg;
    int msg_type = M_INFO;
 
-   Dmsg0(20, "In native_restore_cleanup\n");
-   update_job_end(jcr, TermCode);
+   Dmsg0(20, "In NativeRestoreCleanup\n");
+   UpdateJobEnd(jcr, TermCode);
 
    if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
-      secure_erase(jcr, jcr->RestoreBootstrap);
+      SecureErase(jcr, jcr->RestoreBootstrap);
       jcr->unlink_bsr = false;
    }
 
-   if (job_canceled(jcr)) {
-      cancel_storage_daemon_job(jcr);
+   if (JobCanceled(jcr)) {
+      CancelStorageDaemonJob(jcr);
    }
 
    switch (TermCode) {
    case JS_Terminated:
       if (jcr->ExpectedFiles > jcr->jr.JobFiles) {
-         term_msg = _("Restore OK -- warning file count mismatch");
+         TermMsg = _("Restore OK -- warning file count mismatch");
       } else {
-         term_msg = _("Restore OK");
+         TermMsg = _("Restore OK");
       }
       break;
    case JS_Warnings:
-         term_msg = _("Restore OK -- with warnings");
+         TermMsg = _("Restore OK -- with warnings");
          break;
    case JS_FatalError:
    case JS_ErrorTerminated:
-      term_msg = _("*** Restore Error ***");
+      TermMsg = _("*** Restore Error ***");
       msg_type = M_ERROR;          /* Generate error message */
       if (jcr->store_bsock) {
          jcr->store_bsock->signal(BNET_TERMINATE);
@@ -501,7 +501,7 @@ void native_restore_cleanup(JobControlRecord *jcr, int TermCode)
       }
       break;
    case JS_Canceled:
-      term_msg = _("Restore Canceled");
+      TermMsg = _("Restore Canceled");
       if (jcr->store_bsock) {
          jcr->store_bsock->signal(BNET_TERMINATE);
          if (jcr->SD_msg_chan_started) {
@@ -510,23 +510,23 @@ void native_restore_cleanup(JobControlRecord *jcr, int TermCode)
       }
       break;
    default:
-      term_msg = term_code;
+      TermMsg = term_code;
       sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
       break;
    }
 
-   generate_restore_summary(jcr, msg_type, term_msg);
+   GenerateRestoreSummary(jcr, msg_type, TermMsg);
 
-   Dmsg0(20, "Leaving native_restore_cleanup\n");
+   Dmsg0(20, "Leaving NativeRestoreCleanup\n");
 }
 
 /*
  * Generic function which generates a restore summary message.
  * Used by:
- *    - native_restore_cleanup e.g. normal restores
- *    - ndmp_restore_cleanup e.g. NDMP restores
+ *    - NativeRestoreCleanup e.g. normal restores
+ *    - NdmpRestoreCleanup e.g. NDMP restores
  */
-void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *term_msg)
+void GenerateRestoreSummary(JobControlRecord *jcr, int msg_type, const char *TermMsg)
 {
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], elapsed[50];
@@ -547,8 +547,8 @@ void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *t
       kbps = 0;
    }
 
-   jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-   jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
+   JobstatusToAscii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
+   JobstatusToAscii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
    switch (jcr->getJobProtocol()) {
    case PT_NDMP_BAREOS:
@@ -580,20 +580,20 @@ void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *t
            edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
            (float)kbps,
            sd_term_msg,
-           term_msg);
+           TermMsg);
       break;
    default:
       if (me->secure_erase_cmdline) {
          Mmsg(temp,"  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);
-         pm_strcat(secure_erase_status, temp.c_str());
+         PmStrcat(secure_erase_status, temp.c_str());
       }
       if (!bstrcmp(jcr->FDSecureEraseCmd, "*None*")) {
          Mmsg(temp,"  FD  Secure Erase Cmd:   %s\n", jcr->FDSecureEraseCmd);
-         pm_strcat(secure_erase_status, temp.c_str());
+         PmStrcat(secure_erase_status, temp.c_str());
       }
       if (!bstrcmp(jcr->SDSecureEraseCmd, "*None*")) {
          Mmsg(temp,"  SD  Secure Erase Cmd:   %s\n", jcr->SDSecureEraseCmd);
-         pm_strcat(secure_erase_status, temp.c_str());
+         PmStrcat(secure_erase_status, temp.c_str());
       }
 
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
@@ -629,7 +629,7 @@ void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *t
            fd_term_msg,
            sd_term_msg,
            secure_erase_status.c_str(),
-           term_msg);
+           TermMsg);
       break;
    }
 }

@@ -58,7 +58,7 @@ bool Connection::check(int timeout_data)
    /*
     * Returns: 1 if data available, 0 if timeout, -1 if error
     */
-   data_available = socket_->wait_data_intr(timeout_data);
+   data_available = socket_->WaitDataIntr(timeout_data);
 
    /*
     * Use lock to prevent that data is read for job thread.
@@ -71,7 +71,7 @@ bool Connection::check(int timeout_data)
          ok = false;
       }
 
-      if (socket_->is_error()) {
+      if (socket_->IsError()) {
          ok = false;
       }
    }
@@ -200,7 +200,7 @@ Connection *ConnectionPool::get_connection(const char *name, int timeout_in_seco
 {
    struct timespec timeout;
 
-   convert_timeout_to_timespec(timeout, timeout_in_seconds);
+   ConvertTimeoutToTimespec(timeout, timeout_in_seconds);
    return get_connection(name, timeout);
 }
 
@@ -217,7 +217,7 @@ Connection *ConnectionPool::get_connection(const char *name, timespec &timeout)
       connection = get_connection(name);
       if (!connection) {
          Dmsg0(120, "waiting for new connections.\n");
-         errstat = wait_for_new_connection(timeout);
+         errstat = WaitForNewConnection(timeout);
          if (errstat == ETIMEDOUT) {
             Dmsg0(120, "timeout while waiting for new connections.\n");
          }
@@ -227,7 +227,7 @@ Connection *ConnectionPool::get_connection(const char *name, timespec &timeout)
    return connection;
 }
 
-int ConnectionPool::wait_for_new_connection(timespec &timeout)
+int ConnectionPool::WaitForNewConnection(timespec &timeout)
 {
    int errstat;
 
@@ -266,7 +266,7 @@ Connection *ConnectionPool::remove(const char *name, int timeout_in_seconds)
    Connection *connection = NULL;
    struct timespec timeout;
 
-   convert_timeout_to_timespec(timeout, timeout_in_seconds);
+   ConvertTimeoutToTimespec(timeout, timeout_in_seconds);
 
    Dmsg2(120, "waiting for connection from client %s. Timeout: %ds.\n", name, timeout_in_seconds);
 

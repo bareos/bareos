@@ -102,17 +102,17 @@ BareosDbSqlite::BareosDbSqlite(JobControlRecord *jcr,
       have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
-   errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
+   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
    *errmsg = 0;
-   cmd = get_pool_memory(PM_EMSG);    /* get command buffer */
-   cached_path = get_pool_memory(PM_FNAME);
+   cmd = GetPoolMemory(PM_EMSG);    /* get command buffer */
+   cached_path = GetPoolMemory(PM_FNAME);
    cached_path_id = 0;
    ref_count_ = 1;
-   fname = get_pool_memory(PM_FNAME);
-   path = get_pool_memory(PM_FNAME);
-   esc_name = get_pool_memory(PM_FNAME);
-   esc_path = get_pool_memory(PM_FNAME);
-   esc_obj  = get_pool_memory(PM_FNAME);
+   fname = GetPoolMemory(PM_FNAME);
+   path = GetPoolMemory(PM_FNAME);
+   esc_name = GetPoolMemory(PM_FNAME);
+   esc_path = GetPoolMemory(PM_FNAME);
+   esc_obj  = GetPoolMemory(PM_FNAME);
    allow_transactions_ = mult_db_connections;
    is_private_ = need_private;
    try_reconnect_ = try_reconnect;
@@ -147,7 +147,7 @@ BareosDbSqlite::~BareosDbSqlite()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool BareosDbSqlite::open_database(JobControlRecord *jcr)
+bool BareosDbSqlite::OpenDatabase(JobControlRecord *jcr)
 {
    bool retval = false;
    char *db_path;
@@ -163,7 +163,7 @@ bool BareosDbSqlite::open_database(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if ((errstat=rwl_init(&lock_)) != 0) {
+   if ((errstat=RwlInit(&lock_)) != 0) {
       berrno be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
@@ -214,10 +214,10 @@ bool BareosDbSqlite::open_database(JobControlRecord *jcr)
    sqlite3_busy_handler(db_handle_, sqlite_busy_handler, NULL);
 
 #if defined(SQLITE3_INIT_QUERY)
-   sql_query_without_handler(SQLITE3_INIT_QUERY);
+   SqlQueryWithoutHandler(SQLITE3_INIT_QUERY);
 #endif
 
-   if (!check_tables_version(jcr)) {
+   if (!CheckTablesVersion(jcr)) {
       goto bail_out;
    }
 
@@ -228,32 +228,32 @@ bail_out:
    return retval;
 }
 
-void BareosDbSqlite::close_database(JobControlRecord *jcr)
+void BareosDbSqlite::CloseDatabase(JobControlRecord *jcr)
 {
    if (connected_) {
-      end_transaction(jcr);
+      EndTransaction(jcr);
    }
    P(mutex);
    ref_count_--;
    if (ref_count_ == 0) {
       if (connected_) {
-         sql_free_result();
+         SqlFreeResult();
       }
       db_list->remove(this);
       if (connected_ && db_handle_) {
          sqlite3_close(db_handle_);
       }
-      if (rwl_is_init(&lock_)) {
-         rwl_destroy(&lock_);
+      if (RwlIsInit(&lock_)) {
+         RwlDestroy(&lock_);
       }
-      free_pool_memory(errmsg);
-      free_pool_memory(cmd);
-      free_pool_memory(cached_path);
-      free_pool_memory(fname);
-      free_pool_memory(path);
-      free_pool_memory(esc_name);
-      free_pool_memory(esc_path);
-      free_pool_memory(esc_obj);
+      FreePoolMemory(errmsg);
+      FreePoolMemory(cmd);
+      FreePoolMemory(cached_path);
+      FreePoolMemory(fname);
+      FreePoolMemory(path);
+      FreePoolMemory(esc_name);
+      FreePoolMemory(esc_path);
+      FreePoolMemory(esc_obj);
       if (db_driver_) {
          free(db_driver_);
       }
@@ -269,13 +269,13 @@ void BareosDbSqlite::close_database(JobControlRecord *jcr)
    V(mutex);
 }
 
-bool BareosDbSqlite::validate_connection(void)
+bool BareosDbSqlite::ValidateConnection(void)
 {
    bool retval;
 
-   db_lock(this);
-   if (sql_query_without_handler("SELECT 1", true)) {
-      sql_free_result();
+   DbLock(this);
+   if (SqlQueryWithoutHandler("SELECT 1", true)) {
+      SqlFreeResult();
       retval = true;
       goto bail_out;
    } else {
@@ -284,11 +284,11 @@ bool BareosDbSqlite::validate_connection(void)
    }
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
-void BareosDbSqlite::thread_cleanup(void)
+void BareosDbSqlite::ThreadCleanup(void)
 {
    sqlite3_thread_cleanup();
 }
@@ -298,10 +298,10 @@ void BareosDbSqlite::thread_cleanup(void)
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void BareosDbSqlite::start_transaction(JobControlRecord *jcr)
+void BareosDbSqlite::StartTransaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
-      jcr->attr = get_pool_memory(PM_FNAME);
+      jcr->attr = GetPoolMemory(PM_FNAME);
    }
 
    if (!jcr->ar) {
@@ -313,26 +313,26 @@ void BareosDbSqlite::start_transaction(JobControlRecord *jcr)
       return;
    }
 
-   db_lock(this);
+   DbLock(this);
    /*
     * Allow only 10,000 changes per transaction
     */
    if (transaction_ && changes > 10000) {
-      end_transaction(jcr);
+      EndTransaction(jcr);
    }
    if (!transaction_) {
-      sql_query_without_handler("BEGIN");  /* begin transaction */
+      SqlQueryWithoutHandler("BEGIN");  /* begin transaction */
       Dmsg0(400, "Start SQLite transaction\n");
       transaction_ = true;
    }
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-void BareosDbSqlite::end_transaction(JobControlRecord *jcr)
+void BareosDbSqlite::EndTransaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!create_attributes_record(jcr, jcr->ar)) {
+      if (!CreateAttributesRecord(jcr, jcr->ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
@@ -342,14 +342,14 @@ void BareosDbSqlite::end_transaction(JobControlRecord *jcr)
       return;
    }
 
-   db_lock(this);
+   DbLock(this);
    if (transaction_) {
-      sql_query_without_handler("COMMIT"); /* end transaction */
+      SqlQueryWithoutHandler("COMMIT"); /* end transaction */
       transaction_ = false;
       Dmsg1(400, "End SQLite transaction changes=%d\n", changes);
    }
    changes = 0;
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 struct rh_data {
@@ -367,11 +367,11 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
    struct rh_data *rh_data = (struct rh_data *)arh_data;
 
    /*
-    * The sql_query_with_handler doesn't have access to results_,
+    * The SqlQueryWithHandler doesn't have access to results_,
     * so if we wan't to get fields information, we need to use col_names
     */
    if (!rh_data->initialized) {
-      rh_data->mdb->set_column_names(col_names, num_fields);
+      rh_data->mdb->SetColumnNames(col_names, num_fields);
       rh_data->initialized = true;
    }
    if (rh_data->result_handler) {
@@ -385,20 +385,20 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool BareosDbSqlite::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbSqlite::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval = false;
    int status;
    struct rh_data rh_data;
 
-   Dmsg1(500, "sql_query_with_handler starts with '%s'\n", query);
+   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
-   db_lock(this);
+   DbLock(this);
    if (lowlevel_errmsg_) {
       sqlite3_free(lowlevel_errmsg_);
       lowlevel_errmsg_ = NULL;
    }
-   sql_free_result();
+   SqlFreeResult();
 
    rh_data.ctx = ctx;
    rh_data.mdb = this;
@@ -410,29 +410,29 @@ bool BareosDbSqlite::sql_query_with_handler(const char *query, DB_RESULT_HANDLER
 
    if (status != SQLITE_OK) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "sql_query_with_handler finished\n");
+      Dmsg0(500, "SqlQueryWithHandler finished\n");
       goto bail_out;
    }
    Dmsg0(500, "db_sql_query finished\n");
-   sql_free_result();
+   SqlFreeResult();
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
 /**
  * Submit a sqlite query and retrieve all the data
  */
-bool BareosDbSqlite::sql_query_without_handler(const char *query, int flags)
+bool BareosDbSqlite::SqlQueryWithoutHandler(const char *query, int flags)
 {
    int status;
    bool retval = false;
 
-   Dmsg1(500, "sql_query_without_handler starts with '%s'\n", query);
+   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
-   sql_free_result();
+   SqlFreeResult();
    if (lowlevel_errmsg_) {
       sqlite3_free(lowlevel_errmsg_);
       lowlevel_errmsg_ = NULL;
@@ -444,17 +444,17 @@ bool BareosDbSqlite::sql_query_without_handler(const char *query, int flags)
    row_number_ = 0;               /* no row fetched */
    if (status != 0) {                   /* something went wrong */
       num_rows_ = num_fields_ = 0;
-      Dmsg0(500, "sql_query_without_handler finished\n");
+      Dmsg0(500, "SqlQueryWithoutHandler finished\n");
    } else {
-      Dmsg0(500, "sql_query_without_handler finished\n");
+      Dmsg0(500, "SqlQueryWithoutHandler finished\n");
       retval = true;
    }
    return retval;
 }
 
-void BareosDbSqlite::sql_free_result(void)
+void BareosDbSqlite::SqlFreeResult(void)
 {
-   db_lock(this);
+   DbLock(this);
    if (fields_) {
       free(fields_);
       fields_ = NULL;
@@ -465,13 +465,13 @@ void BareosDbSqlite::sql_free_result(void)
    }
    col_names_ = NULL;
    num_rows_ = num_fields_ = 0;
-   db_unlock(this);
+   DbUnlock(this);
 }
 
 /**
  * Fetch one row at a time
  */
-SQL_ROW BareosDbSqlite::sql_fetch_row(void)
+SQL_ROW BareosDbSqlite::SqlFetchRow(void)
 {
    if (!result_ || (row_number_ >= num_rows_)) {
       return NULL;
@@ -485,7 +485,7 @@ const char *BareosDbSqlite::sql_strerror(void)
    return lowlevel_errmsg_ ? lowlevel_errmsg_ : "unknown";
 }
 
-void BareosDbSqlite::sql_data_seek(int row)
+void BareosDbSqlite::SqlDataSeek(int row)
 {
    /*
     * Set the row number to be returned on the next call to sql_fetch_row
@@ -493,21 +493,21 @@ void BareosDbSqlite::sql_data_seek(int row)
    row_number_ = row;
 }
 
-int BareosDbSqlite::sql_affected_rows(void)
+int BareosDbSqlite::SqlAffectedRows(void)
 {
    return sqlite3_changes(db_handle_);
 }
 
-uint64_t BareosDbSqlite::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbSqlite::SqlInsertAutokeyRecord(const char *query, const char *table_name)
 {
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (!sql_query_without_handler(query)) {
+   if (!SqlQueryWithoutHandler(query)) {
       return 0;
    }
 
-   num_rows_ = sql_affected_rows();
+   num_rows_ = SqlAffectedRows();
    if (num_rows_ != 1) {
       return 0;
    }
@@ -517,7 +517,7 @@ uint64_t BareosDbSqlite::sql_insert_autokey_record(const char *query, const char
    return sqlite3_last_insert_rowid(db_handle_);
 }
 
-SQL_FIELD *BareosDbSqlite::sql_fetch_field(void)
+SQL_FIELD *BareosDbSqlite::SqlFetchField(void)
 {
    int i, j, len;
 
@@ -540,7 +540,7 @@ SQL_FIELD *BareosDbSqlite::sql_fetch_field(void)
       }
    }
 
-   /* We are after a sql_query() that stores the result in results_ */
+   /* We are after a SqlQuery() that stores the result in results_ */
    if (!fields_ || fields_size_ < num_fields_) {
       if (fields_) {
          free(fields_);
@@ -567,7 +567,7 @@ SQL_FIELD *BareosDbSqlite::sql_fetch_field(void)
          fields_[i].type = 0;
          fields_[i].flags = 1;        /* not null */
 
-         Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
+         Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
                fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
@@ -578,7 +578,7 @@ SQL_FIELD *BareosDbSqlite::sql_fetch_field(void)
    return &fields_[field_number_++];
 }
 
-bool BareosDbSqlite::sql_field_is_not_null(int field_type)
+bool BareosDbSqlite::SqlFieldIsNotNull(int field_type)
 {
    switch (field_type) {
    case 1:
@@ -588,7 +588,7 @@ bool BareosDbSqlite::sql_field_is_not_null(int field_type)
    }
 }
 
-bool BareosDbSqlite::sql_field_is_numeric(int field_type)
+bool BareosDbSqlite::SqlFieldIsNumeric(int field_type)
 {
    switch (field_type) {
    case 1:
@@ -602,12 +602,12 @@ bool BareosDbSqlite::sql_field_is_numeric(int field_type)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::sql_batch_start(JobControlRecord *jcr)
+bool BareosDbSqlite::SqlBatchStart(JobControlRecord *jcr)
 {
    bool retval;
 
-   db_lock(this);
-   retval = sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+   DbLock(this);
+   retval = SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
                                       "FileIndex integer,"
                                       "JobId integer,"
                                       "Path blob,"
@@ -619,7 +619,7 @@ bool BareosDbSqlite::sql_batch_start(JobControlRecord *jcr)
                                       "Fhnode TEXT "
                                       ")"
          );
-   db_unlock(this);
+   DbUnlock(this);
 
    return retval;
 }
@@ -629,7 +629,7 @@ bool BareosDbSqlite::sql_batch_start(JobControlRecord *jcr)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::sql_batch_end(JobControlRecord *jcr, const char *error)
+bool BareosDbSqlite::SqlBatchEnd(JobControlRecord *jcr, const char *error)
 {
    status_ = 0;
 
@@ -640,16 +640,16 @@ bool BareosDbSqlite::sql_batch_end(JobControlRecord *jcr, const char *error)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbSqlite::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
+bool BareosDbSqlite::SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    const char *digest;
    char ed1[50], ed2[50], ed3[50];
 
-   esc_name = check_pool_memory_size(esc_name, fnl*2+1);
-   escape_string(jcr, esc_name, fname, fnl);
+   esc_name = CheckPoolMemorySize(esc_name, fnl*2+1);
+   EscapeString(jcr, esc_name, fname, fnl);
 
-   esc_path = check_pool_memory_size(esc_path, pnl*2+1);
-   escape_string(jcr, esc_path, path, pnl);
+   esc_path = CheckPoolMemorySize(esc_path, pnl*2+1);
+   EscapeString(jcr, esc_path, path, pnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = "0";
@@ -664,7 +664,7 @@ bool BareosDbSqlite::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord 
         edit_uint64(ar->Fhinfo,ed2),
         edit_uint64(ar->Fhnode,ed3));
 
-   return sql_query_without_handler(cmd);
+   return SqlQueryWithoutHandler(cmd);
 }
 
 /**
@@ -710,13 +710,13 @@ BareosDb *db_init_database(JobControlRecord *jcr,
     */
    if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
-         if (mdb->is_private()) {
+         if (mdb->IsPrivate()) {
             continue;
          }
 
-         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->MatchDatabase(db_driver, db_name, db_address, db_port)) {
             Dmsg1(300, "DB REopen %s\n", db_name);
-            mdb->increment_refcount();
+            mdb->IncrementRefcount();
             goto bail_out;
          }
       }
@@ -745,7 +745,7 @@ bail_out:
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void CATS_IMP_EXP flush_backend(void)
 #else
-void db_flush_backends(void)
+void DbFlushBackends(void)
 #endif
 {
 }

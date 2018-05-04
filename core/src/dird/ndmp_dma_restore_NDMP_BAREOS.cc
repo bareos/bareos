@@ -62,19 +62,19 @@ static inline char *lookup_fileindex(JobControlRecord *jcr, int32_t FileIndex)
    TREE_NODE *node, *parent;
    PoolMem restore_pathname, tmp;
 
-   node = first_tree_node(jcr->restore_tree_root);
+   node = FirstTreeNode(jcr->restore_tree_root);
    while (node) {
       /*
        * See if this is the wanted FileIndex.
        */
       if (node->FileIndex == FileIndex) {
-         pm_strcpy(restore_pathname, node->fname);
+         PmStrcpy(restore_pathname, node->fname);
 
          /*
           * Walk up the parent until we hit the head of the list.
           */
          for (parent = node->parent; parent; parent = parent->parent) {
-            pm_strcpy(tmp, restore_pathname.c_str());
+            PmStrcpy(tmp, restore_pathname.c_str());
             Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
          }
 
@@ -83,7 +83,7 @@ static inline char *lookup_fileindex(JobControlRecord *jcr, int32_t FileIndex)
          }
       }
 
-      node = next_tree_node(node);
+      node = NextTreeNode(node);
    }
 
    return NULL;
@@ -128,7 +128,7 @@ static inline char *lookup_fileindex(JobControlRecord *jcr, int32_t FileIndex)
  * If intermediate directories that lead to the path name to
  * recover do not exist, the server should create them.
  */
-static inline void add_to_namelist(struct ndm_job_param *job,
+static inline void AddToNamelist(struct ndm_job_param *job,
                                    char *filename,
                                    const char *restore_prefix,
                                    char *name,
@@ -144,7 +144,7 @@ static inline void add_to_namelist(struct ndm_job_param *job,
     * See if the filename is an absolute pathname.
     */
    if (*filename == '\0') {
-      pm_strcpy(destination_path, restore_prefix);
+      PmStrcpy(destination_path, restore_prefix);
    } else if (*filename == '/') {
       Mmsg(destination_path, "%s%s", restore_prefix, filename);
    } else {
@@ -171,19 +171,19 @@ static inline int set_files_to_restore(JobControlRecord *jcr, struct ndm_job_par
    TREE_NODE *node, *parent;
    PoolMem restore_pathname, tmp;
 
-   node = first_tree_node(jcr->restore_tree_root);
+   node = FirstTreeNode(jcr->restore_tree_root);
    while (node) {
       /*
        * See if this is the wanted FileIndex and the user asked to extract it.
        */
       if (node->FileIndex == FileIndex && node->extract) {
-         pm_strcpy(restore_pathname, node->fname);
+         PmStrcpy(restore_pathname, node->fname);
 
          /*
           * Walk up the parent until we hit the head of the list.
           */
          for (parent = node->parent; parent; parent = parent->parent) {
-            pm_strcpy(tmp, restore_pathname.c_str());
+            PmStrcpy(tmp, restore_pathname.c_str());
             Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
          }
 
@@ -196,11 +196,11 @@ static inline int set_files_to_restore(JobControlRecord *jcr, struct ndm_job_par
              */
             len = strlen(ndmp_filesystem);
             if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, len)) {
-               add_to_namelist(job,  restore_pathname.c_str() + len, restore_prefix,
+               AddToNamelist(job,  restore_pathname.c_str() + len, restore_prefix,
                                (char *)"", (char *)"",
                                NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
             } else {
-               add_to_namelist(job,  restore_pathname.c_str(), restore_prefix,
+               AddToNamelist(job,  restore_pathname.c_str(), restore_prefix,
                                (char *)"", (char *)"",
                                NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
             }
@@ -208,7 +208,7 @@ static inline int set_files_to_restore(JobControlRecord *jcr, struct ndm_job_par
          }
       }
 
-      node = next_tree_node(node);
+      node = NextTreeNode(node);
    }
 
    return cnt;
@@ -265,7 +265,7 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
    /*
     * Lookup the environment stack saved during the backup so we can restore it.
     */
-   if (!jcr->db->get_ndmp_environment_string(jcr, &jcr->jr, ndmp_env_handler, &job->env_tab)) {
+   if (!jcr->db->GetNdmpEnvironmentString(jcr, &jcr->jr, ndmp_env_handler, &job->env_tab)) {
       /*
        * Fallback code try to build a environment stack that is good enough to
        * restore this NDMP backup. This is used when the data is not available in
@@ -335,7 +335,7 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
                 * Parse all specific META tags for this option block.
                 */
                for (l = 0; l < fo->meta.size(); l++) {
-                  ndmp_parse_meta_tag(&job->env_tab, (char *)fo->meta.get(l));
+                  NdmpParseMetaTag(&job->env_tab, (char *)fo->meta.get(l));
                }
             }
          }
@@ -366,17 +366,17 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
           * Use the restore_prefix as an absolute restore prefix.
           * We skip the leading ^ that is the trigger for absolute restores.
           */
-         pm_strcpy(destination_path, restore_prefix + 1);
+         PmStrcpy(destination_path, restore_prefix + 1);
          break;
       default:
          /*
           * Use the restore_prefix as an relative restore prefix.
           */
          if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-            pm_strcpy(destination_path, ndmp_filesystem);
+            PmStrcpy(destination_path, ndmp_filesystem);
          } else {
-            pm_strcpy(destination_path, ndmp_filesystem);
-            pm_strcat(destination_path, restore_prefix);
+            PmStrcpy(destination_path, ndmp_filesystem);
+            PmStrcat(destination_path, restore_prefix);
          }
       }
    } else {
@@ -384,12 +384,12 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
          /*
           * Use the original pathname as restore prefix.
           */
-         pm_strcpy(destination_path, ndmp_filesystem);
+         PmStrcpy(destination_path, ndmp_filesystem);
       } else {
          /*
           * Use the restore_prefix as an absolute restore prefix.
           */
-         pm_strcpy(destination_path, restore_prefix);
+         PmStrcpy(destination_path, restore_prefix);
       }
    }
 
@@ -403,7 +403,7 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
          /*
           * There is no specific filename selected so restore everything.
           */
-         add_to_namelist(job, (char *)"", destination_path.c_str(),
+         AddToNamelist(job, (char *)"", destination_path.c_str(),
                          (char *)"", (char *)"",
                          NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
       }
@@ -427,9 +427,9 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
 /**
  * Setup a NDMP restore session.
  */
-bool do_ndmp_restore_init(JobControlRecord *jcr)
+bool DoNdmpRestoreInit(JobControlRecord *jcr)
 {
-   free_wstorage(jcr);                /* we don't write */
+   FreeWstorage(jcr);                /* we don't write */
 
    if (!jcr->restore_tree_root) {
       Jmsg(jcr, M_FATAL, 0, _("Cannot NDMP restore without a file selection.\n"));
@@ -448,18 +448,18 @@ static inline int ndmp_wait_for_job_termination(JobControlRecord *jcr)
     * so that we let the SD despool.
     */
    Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n",
-         jcr->is_canceled(), jcr->FDJobStatus,
+         jcr->IsCanceled(), jcr->FDJobStatus,
          jcr->JobStatus, jcr->SDJobStatus);
-   if (jcr->is_canceled() || (!jcr->res.job->RescheduleIncompleteJobs)) {
+   if (jcr->IsCanceled() || (!jcr->res.job->RescheduleIncompleteJobs)) {
       Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n",
             jcr->FDJobStatus, jcr->JobStatus, jcr->SDJobStatus);
-      cancel_storage_daemon_job(jcr);
+      CancelStorageDaemonJob(jcr);
    }
 
    /*
     * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
     */
-   wait_for_storage_daemon_termination(jcr);
+   WaitForStorageDaemonTermination(jcr);
 
    jcr->FDJobStatus = JS_Terminated;
    if (jcr->JobStatus != JS_Terminated) {
@@ -514,7 +514,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
    /*
     * Setup all paired read storage.
     */
-   set_paired_storage(jcr);
+   SetPairedStorage(jcr);
    if (!jcr->res.pstore) {
       Jmsg(jcr, M_FATAL, 0,
            _("Read storage %s doesn't point to storage definition with paired storage option.\n"),
@@ -525,7 +525,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
    /*
     * Open the bootstrap file
     */
-   if (!open_bootstrap_file(jcr, info)) {
+   if (!OpenBootstrapFile(jcr, info)) {
       goto bail_out;
    }
 
@@ -537,7 +537,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
     */
    bsr = jcr->bsr;
    while (!feof(info.bs)) {
-      if (!select_next_rstore(jcr, info)) {
+      if (!SelectNextRstore(jcr, info)) {
          goto cleanup;
       }
 
@@ -546,7 +546,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
        * and reuse the job definition for each separate sub-restore we perform as
        * part of the whole job. We only free the env_table between every sub-restore.
        */
-      if (!ndmp_build_client_job(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_EXTRACT, &ndmp_job)) {
+      if (!NdmpBuildClientJob(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_EXTRACT, &ndmp_job)) {
          goto cleanup;
       }
 
@@ -562,7 +562,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Start conversation with Storage daemon
        */
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
          goto cleanup;
       }
       sd = jcr->store_bsock;
@@ -570,7 +570,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, NULL)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL)) {
          goto cleanup;
       }
 
@@ -579,7 +579,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Send the bootstrap file -- what Volumes/files to restore
        */
-      if (!send_bootstrap_file(jcr, sd, info) ||
+      if (!SendBootstrapFile(jcr, sd, info) ||
             !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
          goto cleanup;
       }
@@ -591,7 +591,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
       /*
        * Now start a Storage daemon message thread
        */
-      if (!start_storage_daemon_message_thread(jcr)) {
+      if (!StartStorageDaemonMessageThread(jcr)) {
          goto cleanup;
       }
       Dmsg0(50, "Storage daemon connection OK\n");
@@ -684,7 +684,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
             ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
             memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
             ndmp_sess.param->log.deliver = ndmp_loghandler;
-            ndmp_sess.param->log_level = native_to_ndmp_loglevel(NdmpLoglevel, debug_level, nis);
+            ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
             nis->jcr = jcr;
             ndmp_sess.param->log.ctx = nis;
             ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
@@ -711,8 +711,8 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
             }
 
             ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
-            if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
-               Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_validate_job\n"));
+            if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) {
+               Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpValidateJob\n"));
                goto cleanup_ndmp;
             }
 
@@ -746,8 +746,8 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
             /*
              * See if there were any errors during the restore.
              */
-            if (!extract_post_restore_stats(jcr, &ndmp_sess)) {
-               Jmsg(jcr, M_ERROR, 0, _("ERROR in extract_post_restore_stats\n"));
+            if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
+               Jmsg(jcr, M_ERROR, 0, _("ERROR in ExtractPostRestoreStats\n"));
                goto cleanup_ndmp;
             }
 
@@ -800,7 +800,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
        * Tell the storage daemon we are done.
        */
       jcr->store_bsock->fsend("finish");
-      wait_for_storage_daemon_termination(jcr);
+      WaitForStorageDaemonTermination(jcr);
    }
 
    /*
@@ -837,11 +837,11 @@ cleanup:
    if (nis) {
       free(nis);
    }
-   free_paired_storage(jcr);
-   close_bootstrap_file(info);
+   FreePairedStorage(jcr);
+   CloseBootstrapFile(info);
 
 bail_out:
-   free_tree(jcr->restore_tree_root);
+   FreeTree(jcr->restore_tree_root);
    jcr->restore_tree_root = NULL;
    return retval;
 }
@@ -857,7 +857,7 @@ bool do_ndmp_restore(JobControlRecord *jcr)
 
    memset(&rjr, 0, sizeof(rjr));
    jcr->jr.JobLevel = L_FULL;         /* Full restore */
-   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
@@ -868,7 +868,7 @@ bool do_ndmp_restore(JobControlRecord *jcr)
    /*
     * Validate the Job to have a NDMP client.
     */
-   if (!ndmp_validate_client(jcr)) {
+   if (!NdmpValidateClient(jcr)) {
       return false;
    }
 
@@ -895,7 +895,7 @@ bool do_ndmp_restore(JobControlRecord *jcr)
     * Wait for Job Termination
     */
    status = ndmp_wait_for_job_termination(jcr);
-   ndmp_restore_cleanup(jcr, status);
+   NdmpRestoreCleanup(jcr, status);
    return true;
 
 bail_out:
@@ -904,7 +904,7 @@ bail_out:
 
 #else /* HAVE_NDMP */
 
-bool do_ndmp_restore_init(JobControlRecord *jcr)
+bool DoNdmpRestoreInit(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

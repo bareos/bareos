@@ -86,7 +86,7 @@ public:
    bool docmd(const char* command);
    void connectToMainWindow(QObject* mainWindow);
    void get_list(const char *cmd, QStringList &lst);
-   void get_status();
+   void GetStatus();
 
    Rescode type() const;
    void* resource() const;
@@ -126,7 +126,7 @@ class MonitorItemPrivate
       { }
 
    Rescode type; /* R_DIRECTOR, R_CLIENT or R_STORAGE */
-   void* resource; /* DirectorResource*, ClientResource* or StoreResource* */
+   void* resource; /* DirectorResource*, ClientResource* or StorageResource* */
    BareosSocket* DSock;
    int connectTimeout;
 

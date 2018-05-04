@@ -59,11 +59,11 @@ static void handle_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL 
       break;
    case VOL_LABEL:
       rtype = _("Volume Label");
-      unser_volume_label(dev, rec);
+      UnserVolumeLabel(dev, rec);
       break;
    case SOS_LABEL:
       rtype = _("Begin Session");
-      unser_session_label(sessrec, rec);
+      UnserSessionLabel(sessrec, rec);
       break;
    case EOS_LABEL:
       rtype = _("End Session");
@@ -85,23 +85,23 @@ static char *rec_state_bits_to_str(DeviceRecord *rec)
    static char buf[200];
 
    buf[0] = 0;
-   if (bit_is_set(REC_NO_HEADER, rec->state_bits)) {
+   if (BitIsSet(REC_NO_HEADER, rec->state_bits)) {
       bstrncat(buf, _("Nohdr,"), sizeof(buf));
    }
 
-   if (is_partial_record(rec)) {
+   if (IsPartialRecord(rec)) {
       bstrncat(buf, _("partial,"), sizeof(buf));
    }
 
-   if (bit_is_set(REC_BLOCK_EMPTY, rec->state_bits)) {
+   if (BitIsSet(REC_BLOCK_EMPTY, rec->state_bits)) {
       bstrncat(buf, _("empty,"), sizeof(buf));
    }
 
-   if (bit_is_set(REC_NO_MATCH, rec->state_bits)) {
+   if (BitIsSet(REC_NO_MATCH, rec->state_bits)) {
       bstrncat(buf, _("Nomatch,"), sizeof(buf));
    }
 
-   if (bit_is_set(REC_CONTINUATION, rec->state_bits)) {
+   if (BitIsSet(REC_CONTINUATION, rec->state_bits)) {
       bstrncat(buf, _("cont,"), sizeof(buf));
    }
 
@@ -130,7 +130,7 @@ READ_CTX *new_read_context(void)
 /**
  * Free a read context which contains accumulated data from a read session.
  */
-void free_read_context(READ_CTX *rctx)
+void FreeReadContext(READ_CTX *rctx)
 {
    DeviceRecord *rec;
 
@@ -140,7 +140,7 @@ void free_read_context(READ_CTX *rctx)
    while (!rctx->recs->empty()) {
       rec = (DeviceRecord *)rctx->recs->first();
       rctx->recs->remove(rec);
-      free_record(rec);
+      FreeRecord(rec);
    }
    delete rctx->recs;
 
@@ -152,7 +152,7 @@ void free_read_context(READ_CTX *rctx)
  * Reuse an already existing record when available in the linked
  * list or allocate a fresh one and prepend it in the linked list.
  */
-void read_context_set_record(DeviceControlRecord *dcr, READ_CTX *rctx)
+void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx)
 {
    DeviceRecord *rec;
    bool found = false;
@@ -186,9 +186,9 @@ void read_context_set_record(DeviceControlRecord *dcr, READ_CTX *rctx)
  *
  * Any fatal error sets the status bool to false.
  */
-bool read_next_block_from_device(DeviceControlRecord *dcr,
+bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
                                  SESSION_LABEL *sessrec,
-                                 bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec),
+                                 bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                                  bool mount_cb(DeviceControlRecord *dcr),
                                  bool *status)
 {
@@ -196,15 +196,15 @@ bool read_next_block_from_device(DeviceControlRecord *dcr,
    DeviceRecord *trec;
 
    while (1) {
-      if (!dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
-         if (dcr->dev->at_eot()) {
+      if (!dcr->ReadBlockFromDevice(CHECK_BLOCK_NUMBERS)) {
+         if (dcr->dev->AtEot()) {
             Jmsg(jcr, M_INFO, 0, _("End of Volume at file %u on device %s, Volume \"%s\"\n"),
                  dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
 
-            volume_unused(dcr);       /* mark volume unused */
+            VolumeUnused(dcr);       /* mark volume unused */
             if (!mount_cb(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("End of all volumes.\n"));
-               if (record_cb) {
+               if (RecordCb) {
                   /*
                    * Create EOT Label so that Media record may
                    *  be properly updated because this is the last
@@ -213,12 +213,12 @@ bool read_next_block_from_device(DeviceControlRecord *dcr,
                   trec = new_record();
                   trec->FileIndex = EOT_LABEL;
                   trec->File = dcr->dev->file;
-                  *status = record_cb(dcr, trec);
+                  *status = RecordCb(dcr, trec);
                   if (jcr->mount_next_volume) {
                      jcr->mount_next_volume = false;
-                     dcr->dev->clear_eot();
+                     dcr->dev->ClearEot();
                   }
-                  free_record(trec);
+                  FreeRecord(trec);
                }
                return false;
             }
@@ -229,33 +229,33 @@ bool read_next_block_from_device(DeviceControlRecord *dcr,
              *  and pass it off to the callback routine, then continue
              *  most likely reading the previous record.
              */
-            dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK);
+            dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
             trec = new_record();
-            read_record_from_block(dcr, trec);
+            ReadRecordFromBlock(dcr, trec);
             handle_session_record(dcr->dev, trec, sessrec);
-            if (record_cb) {
-               record_cb(dcr, trec);
+            if (RecordCb) {
+               RecordCb(dcr, trec);
             }
 
-            free_record(trec);
+            FreeRecord(trec);
             position_device_to_first_file(jcr, dcr);
 
             /*
              * After reading label, we must read first data block
              */
             continue;
-         } else if (dcr->dev->at_eof()) {
+         } else if (dcr->dev->AtEof()) {
             Dmsg3(200, "End of file %u on device %s, Volume \"%s\"\n",
                   dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
             continue;
-         } else if (dcr->dev->is_short_block()) {
+         } else if (dcr->dev->IsShortBlock()) {
             Jmsg1(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
             continue;
          } else {
             /*
              * I/O error or strange end of tape
              */
-            display_tape_error_status(jcr, dcr->dev);
+            DisplayTapeErrorStatus(jcr, dcr->dev);
             if (forge_on || jcr->ignore_label_errors) {
                dcr->dev->fsr(1);           /* try skipping bad record */
                Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
@@ -279,7 +279,7 @@ bool read_next_block_from_device(DeviceControlRecord *dcr,
  *
  * When we are done processing all records the done bool is set to true.
  */
-bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool *done)
+bool ReadNextRecordFromBlock(DeviceControlRecord *dcr, READ_CTX *rctx, bool *done)
 {
    JobControlRecord *jcr = dcr->jcr;
    Device *dev = dcr->dev;
@@ -287,7 +287,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
    DeviceRecord *rec = rctx->rec;
 
    while (1) {
-      if (!read_record_from_block(dcr, rec)) {
+      if (!ReadRecordFromBlock(dcr, rec)) {
          Dmsg3(400, "!read-break. state_bits=%s blk=%d rem=%d\n",
                rec_state_bits_to_str(rec), block->BlockNumber, rec->remainder);
          return false;
@@ -322,7 +322,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
             /*
              * We just check block FI and FT not FileIndex
              */
-            rec->match_stat = match_bsr_block(jcr->bsr, dcr->block);
+            rec->match_stat = MatchBsrBlock(jcr->bsr, dcr->block);
          } else {
             rec->match_stat = 0;
          }
@@ -334,17 +334,17 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
        * Apply BootStrapRecord filter
        */
       if (jcr->bsr) {
-         rec->match_stat = match_bsr(jcr->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
+         rec->match_stat = MatchBsr(jcr->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
          if (rec->match_stat == -1) {        /* no more possible matches */
             *done = true;                    /* all items found, stop */
             Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file, dev->block_num);
             return false;
          } else if (rec->match_stat == 0) {  /* no match */
-            Dmsg4(debuglevel, "BootStrapRecord no match: clear rem=%d FI=%d before set_eof pos %u:%u\n",
+            Dmsg4(debuglevel, "BootStrapRecord no match: clear rem=%d FI=%d before SetEof pos %u:%u\n",
                rec->remainder, rec->FileIndex, dev->file, dev->block_num);
             rec->remainder = 0;
-            clear_bit(REC_PARTIAL_RECORD, rec->state_bits);
-            if (try_device_repositioning(jcr, rec, dcr)) {
+            ClearBit(REC_PARTIAL_RECORD, rec->state_bits);
+            if (TryDeviceRepositioning(jcr, rec, dcr)) {
                return false;
             }
             continue;                        /* we don't want record, read next one */
@@ -353,7 +353,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
 
       dcr->VolLastIndex = rec->FileIndex;    /* let caller know where we are */
 
-      if (is_partial_record(rec)) {
+      if (IsPartialRecord(rec)) {
          Dmsg6(debuglevel, "Partial, break. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
                rctx->records_processed, rec_state_bits_to_str(rec), block->BlockNumber, rec->VolSessionId,
                rec->VolSessionTime, rec->FileIndex);
@@ -361,7 +361,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
       }
 
       if (rctx->lastFileIndex != READ_NO_FILEINDEX && rctx->lastFileIndex != rec->FileIndex) {
-         if (is_this_bsr_done(jcr->bsr, rec) && try_device_repositioning(jcr, rec, dcr)) {
+         if (IsThisBsrDone(jcr->bsr, rec) && TryDeviceRepositioning(jcr, rec, dcr)) {
             Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file, dev->block_num);
             return false;
          }
@@ -381,8 +381,8 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
  *
  * You must not change any values in the DeviceRecord packet
  */
-bool read_records(DeviceControlRecord *dcr,
-                  bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec),
+bool ReadRecords(DeviceControlRecord *dcr,
+                  bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                   bool mount_cb(DeviceControlRecord *dcr))
 {
    JobControlRecord *jcr = dcr->jcr;
@@ -395,7 +395,7 @@ bool read_records(DeviceControlRecord *dcr,
    jcr->mount_next_volume = false;
 
    while (ok && !done) {
-      if (job_canceled(jcr)) {
+      if (JobCanceled(jcr)) {
          ok = false;
          break;
       }
@@ -403,7 +403,7 @@ bool read_records(DeviceControlRecord *dcr,
       /*
        * Read the next block into our buffers.
        */
-      if (!read_next_block_from_device(dcr, &rctx->sessrec, record_cb, mount_cb, &ok)) {
+      if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, RecordCb, mount_cb, &ok)) {
          break;
       }
 
@@ -411,8 +411,8 @@ bool read_records(DeviceControlRecord *dcr,
       /*
        * This does not stop when file/block are too big
        */
-      if (!match_bsr_block(jcr->bsr, block)) {
-         if (try_device_repositioning(jcr, rctx->rec, dcr)) {
+      if (!MatchBsrBlock(jcr->bsr, block)) {
+         if (TryDeviceRepositioning(jcr, rctx->rec, dcr)) {
             break;                    /* get next volume */
          }
          continue;                    /* skip this record */
@@ -425,23 +425,23 @@ bool read_records(DeviceControlRecord *dcr,
       if (!rctx->rec ||
           rctx->rec->VolSessionId != dcr->block->VolSessionId ||
           rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
-         read_context_set_record(dcr, rctx);
+         ReadContextSetRecord(dcr, rctx);
       }
 
       Dmsg3(debuglevel, "Before read rec loop. stat=%s blk=%d rem=%d\n",
             rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber, rctx->rec->remainder);
 
       rctx->records_processed = 0;
-      clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
+      ClearAllBits(REC_STATE_MAX, rctx->rec->state_bits);
       rctx->lastFileIndex = READ_NO_FILEINDEX;
-      Dmsg1(debuglevel, "Block %s empty\n", is_block_empty(rctx->rec) ? "is" : "NOT");
+      Dmsg1(debuglevel, "Block %s empty\n", IsBlockEmpty(rctx->rec) ? "is" : "NOT");
 
       /*
        * Process the block and read all records in the block and send
        * them to the defined callback.
        */
-      while (ok && !is_block_empty(rctx->rec)) {
-         if (!read_next_record_from_block(dcr, rctx, &done)) {
+      while (ok && !IsBlockEmpty(rctx->rec)) {
+         if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
             break;
          }
 
@@ -450,7 +450,7 @@ bool read_records(DeviceControlRecord *dcr,
              * Note, we pass *all* labels to the callback routine. If
              *  he wants to know if they matched the bsr, then he must
              *  check the match_stat in the record */
-            ok = record_cb(dcr, rctx->rec);
+            ok = RecordCb(dcr, rctx->rec);
          } else {
             DeviceRecord *rec;
 
@@ -465,10 +465,10 @@ bool read_records(DeviceControlRecord *dcr,
             dcr->after_rec = NULL;
 
             /*
-             * We want the plugins to be called in reverse order so we give the generate_plugin_event()
+             * We want the plugins to be called in reverse order so we give the GeneratePluginEvent()
              * the reverse argument so it knows that we want the plugins to be called in that order.
              */
-            if (generate_plugin_event(jcr, bsdEventReadRecordTranslation, dcr, true) != bRC_OK) {
+            if (GeneratePluginEvent(jcr, bsdEventReadRecordTranslation, dcr, true) != bRC_OK) {
                ok = false;
                continue;
             }
@@ -479,7 +479,7 @@ bool read_records(DeviceControlRecord *dcr,
              * we just point the rec pointer to same DeviceRecord as in the before_rec pointer.
              */
             rec = (dcr->after_rec) ? dcr->after_rec : dcr->before_rec;
-            ok = record_cb(dcr, rec);
+            ok = RecordCb(dcr, rec);
 
 #if 0
             /*
@@ -487,10 +487,10 @@ bool read_records(DeviceControlRecord *dcr,
              *  finished the current bsr, and if so, repositioning will
              *  be turned on.
              */
-            if (crypto_digest_stream_type(rec->Stream) != CRYPTO_DIGEST_NONE) {
+            if (CryptoDigestStreamType(rec->Stream) != CRYPTO_DIGEST_NONE) {
                Dmsg3(debuglevel, "=== Have digest FI=%u before bsr check pos %u:%u\n",
                      rec->FileIndex, dev->file, dev->block_num);
-               if (is_this_bsr_done(jcr->bsr, rec) && try_repositioning(jcr, rec, dcr)) {
+               if (IsThisBsrDone(jcr->bsr, rec) && try_repositioning(jcr, rec, dcr)) {
                   Dmsg1(debuglevel, "==== BootStrapRecord done at FI=%d\n", rec->FileIndex);
                   Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n",
                         dev->file, dev->block_num);
@@ -506,7 +506,7 @@ bool read_records(DeviceControlRecord *dcr,
              * back to the original DeviceRecord.
              */
             if (dcr->after_rec) {
-               free_record(dcr->after_rec);
+               FreeRecord(dcr->after_rec);
                dcr->after_rec = NULL;
             }
          }
@@ -515,8 +515,8 @@ bool read_records(DeviceControlRecord *dcr,
    }
 // Dmsg2(debuglevel, "Position=(file:block) %u:%u\n", dcr->dev->file, dcr->dev->block_num);
 
-   free_read_context(rctx);
-   print_block_read_errors(jcr, dcr->block);
+   FreeReadContext(rctx);
+   PrintBlockReadErrors(jcr, dcr->block);
 
    return ok;
 }

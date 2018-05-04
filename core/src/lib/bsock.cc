@@ -48,27 +48,27 @@ DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration) {
 TlsBase *SelectTlsFromPolicy(
    TlsResource *tls_configuration, uint32_t remote_policy) {
 
-   if ((tls_configuration->tls_cert.require && tls_cert_t::enabled(remote_policy))
-      || (tls_configuration->tls_cert.enable && tls_cert_t::required(remote_policy))) {
+   if ((tls_configuration->tls_cert.require && TlsCert::enabled(remote_policy))
+      || (tls_configuration->tls_cert.enable && TlsCert::required(remote_policy))) {
       Dmsg0(100, "SelectTlsFromPolicy: take required cert\n");
 
       // one requires the other accepts cert
       return &(tls_configuration->tls_cert);
    }
-   if ((tls_configuration->tls_psk.require && tls_psk_t::enabled(remote_policy))
-      || (tls_configuration->tls_psk.enable && tls_psk_t::required(remote_policy))) {
+   if ((tls_configuration->tls_psk.require && TlsPsk::enabled(remote_policy))
+      || (tls_configuration->tls_psk.enable && TlsPsk::required(remote_policy))) {
 
       Dmsg0(100, "SelectTlsFromPolicy: take required  psk\n");
       // one requires the other accepts psk
       return &(tls_configuration->tls_psk);
    }
-   if (tls_configuration->tls_cert.enable && tls_cert_t::enabled(remote_policy)) {
+   if (tls_configuration->tls_cert.enable && TlsCert::enabled(remote_policy)) {
 
       Dmsg0(100, "SelectTlsFromPolicy: take cert\n");
       // both accept cert
       return &(tls_configuration->tls_cert);
    }
-   if (tls_configuration->tls_psk.enable && tls_psk_t::enabled(remote_policy)) {
+   if (tls_configuration->tls_psk.enable && TlsPsk::enabled(remote_policy)) {
 
       Dmsg0(100, "SelectTlsFromPolicy: take psk\n");
       // both accept psk
@@ -84,21 +84,21 @@ BareosSocket::BareosSocket() : tls_conn(nullptr) {
    Dmsg0(100, "Contruct BareosSocket\n");
    fd_            = -1;
    spool_fd_      = -1;
-   msg             = get_pool_memory(PM_BSOCK);
-   errmsg          = get_pool_memory(PM_MESSAGE);
+   msg             = GetPoolMemory(PM_BSOCK);
+   errmsg          = GetPoolMemory(PM_MESSAGE);
    blocking_      = true;
    use_keepalive_ = true;
 }
 
 BareosSocket::~BareosSocket() {
    Dmsg0(100, "Destruct BareosSocket\n");
-   // free_tls();
+   // FreeTls();
 }
 
-void BareosSocket::free_tls()
+void BareosSocket::FreeTls()
 {
    if (tls_conn != nullptr) {
-      free_tls_connection(tls_conn);
+      FreeTlsConnection(tls_conn);
       tls_conn = nullptr;
    }
 }
@@ -106,7 +106,7 @@ void BareosSocket::free_tls()
 /**
  * Copy the address from the configuration dlist that gets passed in
  */
-void BareosSocket::set_source_address(dlist *src_addr_list)
+void BareosSocket::SetSourceAddress(dlist *src_addr_list)
 {
    char allbuf[256 * 10];
    IPADDR *addr = NULL;
@@ -131,7 +131,7 @@ void BareosSocket::set_source_address(dlist *src_addr_list)
 /**
  * Force read/write to use locking
  */
-bool BareosSocket::set_locking()
+bool BareosSocket::SetLocking()
 {
    int status;
    if (use_locking_) {
@@ -147,7 +147,7 @@ bool BareosSocket::set_locking()
    return true;
 }
 
-void BareosSocket::clear_locking()
+void BareosSocket::ClearLocking()
 {
    if (!use_locking_) {
       return;
@@ -193,8 +193,8 @@ bool BareosSocket::despool(void update_attr_spool_size(ssize_t size), ssize_t ts
       size += sizeof(int32_t);
       msglen = ntohl(pktsiz);
       if (msglen > 0) {
-         if (msglen > (int32_t)sizeof_pool_memory(msg)) {
-            msg = realloc_pool_memory(msg, msglen + 1);
+         if (msglen > (int32_t)SizeofPoolMemory(msg)) {
+            msg = ReallocPoolMemory(msg, msglen + 1);
          }
 
          nbytes = read(spool_fd_, msg, msglen);
@@ -214,7 +214,7 @@ bool BareosSocket::despool(void update_attr_spool_size(ssize_t size), ssize_t ts
       }
 
       send();
-      if (jcr && job_canceled(jcr)) {
+      if (jcr && JobCanceled(jcr)) {
          return false;
       }
    }
@@ -231,9 +231,9 @@ const char *BareosSocket::bstrerror()
 {
    berrno be;
    if (errmsg == NULL) {
-      errmsg = get_pool_memory(PM_MESSAGE);
+      errmsg = GetPoolMemory(PM_MESSAGE);
    }
-   pm_strcpy(errmsg, be.bstrerror(b_errno));
+   PmStrcpy(errmsg, be.bstrerror(b_errno));
    return errmsg;
 }
 
@@ -247,7 +247,7 @@ bool BareosSocket::fsend(const char *fmt, ...)
    va_list arg_ptr;
    int maxlen;
 
-   if (errors || is_terminated()) {
+   if (errors || IsTerminated()) {
       return false;
    }
    /* This probably won't work, but we vsnprintf, then if we
@@ -256,22 +256,22 @@ bool BareosSocket::fsend(const char *fmt, ...)
     * get a bigger buffer and try again.
     */
    for (;;) {
-      maxlen = sizeof_pool_memory(msg) - 1;
+      maxlen = SizeofPoolMemory(msg) - 1;
       va_start(arg_ptr, fmt);
       msglen = bvsnprintf(msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (msglen >= 0 && msglen < (maxlen - 5)) {
          break;
       }
-      msg = realloc_pool_memory(msg, maxlen + maxlen / 2);
+      msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
    }
    return send();
 }
 
-void BareosSocket::set_killable(bool killable)
+void BareosSocket::SetKillable(bool killable)
 {
    if (jcr_) {
-      jcr_->set_killable(killable);
+      jcr_->SetKillable(killable);
    }
 }
 
@@ -286,7 +286,7 @@ static char OKhello[] =
 /**
  * Authenticate with Director
  */
-bool BareosSocket::authenticate_with_director(JobControlRecord *jcr,
+bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
                                        const char *identity,
                                        s_password &password,
                                        char *response,
@@ -301,28 +301,28 @@ bool BareosSocket::authenticate_with_director(JobControlRecord *jcr,
     * Send my name to the Director then do authentication
     */
    bstrncpy(bashed_name, identity, sizeof(bashed_name));
-   bash_spaces(bashed_name);
+   BashSpaces(bashed_name);
 
    /*
     * Timeout Hello after 5 mins
     */
-   dir->start_timer(60 * 5);
+   dir->StartTimer(60 * 5);
    dir->fsend(hello, bashed_name);
 
-   if (!authenticate_outbound_connection(jcr, "Director", identity, password, tls_configuration)) {
+   if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_configuration)) {
       goto bail_out;
    }
 
    Dmsg1(6, ">dird: %s", dir->msg);
    if (dir->recv() <= 0) {
-      dir->stop_timer();
+      dir->StopTimer();
       bsnprintf(response, response_len, _("Bad response to Hello command: ERR=%s\n"
                                           "The Director at \"%s:%d\" is probably not running.\n"),
                 dir->bstrerror(), dir->host(), dir->port());
       return false;
    }
 
-   dir->stop_timer();
+   dir->StopTimer();
    Dmsg1(10, "<dird: %s", dir->msg);
    if (!bstrncmp(dir->msg, OKhello, sizeof(OKhello) - 1)) {
       bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"),
@@ -335,7 +335,7 @@ bool BareosSocket::authenticate_with_director(JobControlRecord *jcr,
    return true;
 
 bail_out:
-   dir->stop_timer();
+   dir->StopTimer();
    bsnprintf(response, response_len, _("Authorization problem with Director at \"%s:%d\"\n"
                                        "Most likely the passwords do not agree.\n"
                                        "If you are using TLS, there may have been a certificate "
@@ -368,7 +368,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
    alist *verify_list = NULL;
    TlsBase * selected_local_tls = nullptr;
 
-   if (jcr && job_canceled(jcr)) {
+   if (jcr && JobCanceled(jcr)) {
       Dmsg0(debuglevel, "Failed, because job is canceled.\n");
       auth_success = false; /* force quick exit */
       goto auth_fatal;
@@ -387,7 +387,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
    /*
     * Timeout Hello after 10 min
     */
-   tid = start_bsock_timer(this, AUTH_TIMEOUT);
+   tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
    /*
     * See if we initiate the challenge or respond to a challenge.
@@ -438,7 +438,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
       goto auth_fatal;
    }
 
-   if (jcr && job_canceled(jcr)) {
+   if (jcr && JobCanceled(jcr)) {
       Dmsg0(debuglevel, "Failed, because job is canceled.\n");
       auth_success = false; /* force quick exit */
       goto auth_fatal;
@@ -462,7 +462,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
          if (jcr) {
             jcr->tls_ctx = tls_ctx;
          }
-         if (!bnet_tls_server(tls_ctx, this, verify_list)) {
+         if (!BnetTlsServer(tls_ctx, this, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
             Dmsg0(debuglevel, "TLS negotiation failed.\n");
             auth_success = false;
@@ -474,7 +474,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
          if (jcr) {
             jcr->tls_ctx = tls_ctx;
          }
-         if (!bnet_tls_client(tls_ctx,
+         if (!BnetTlsClient(tls_ctx,
                               this,
                               selected_local_tls->GetVerifyPeer(),
                               selected_local_tls->GetVerifyList())) {
@@ -486,19 +486,19 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
       }
 
       if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
-         free_tls();          /* yes, shutdown tls */
+         FreeTls();          /* yes, shutdown tls */
       }
    }
    if (!initiated_by_remote) {
 #ifdef HAVE_OPENSSL
-      tls_log_conninfo(jcr, GetTlsConnection(), host(), port(), who());
+      TlsLogConninfo(jcr, GetTlsConnection(), host(), port(), who());
 #else
-      tls_log_conninfo(jcr, GetTlsConnection(), host(), port(), who());
+      TlsLogConninfo(jcr, GetTlsConnection(), host(), port(), who());
 #endif
    }
 auth_fatal:
    if (tid) {
-      stop_bsock_timer(tid);
+      StopBsockTimer(tid);
       tid = NULL;
    }
 
@@ -509,7 +509,7 @@ auth_fatal:
    return auth_success;
 }
 
-bool BareosSocket::authenticate_outbound_connection(
+bool BareosSocket::AuthenticateOutboundConnection(
    JobControlRecord *jcr,
    const char *what,
    const char *identity,
@@ -518,7 +518,7 @@ bool BareosSocket::authenticate_outbound_connection(
    return two_way_authenticate(jcr, what, identity, password, tls_configuration, false);
 }
 
-bool BareosSocket::authenticate_inbound_connection(
+bool BareosSocket::AuthenticateInboundConnection(
    JobControlRecord *jcr,
    const char *what,
    const char *identity,
@@ -531,7 +531,7 @@ bool BareosSocket::authenticate_inbound_connection(
 /**
  * Try to limit the bandwidth of a network connection
  */
-void BareosSocket::control_bwlimit(int bytes)
+void BareosSocket::ControlBwlimit(int bytes)
 {
    btime_t now, temp;
    int64_t usec_sleep;
@@ -546,7 +546,7 @@ void BareosSocket::control_bwlimit(int bytes)
    /*
     * See if this is the first time we enter here.
     */
-   now = get_current_btime();
+   now = GetCurrentBtime();
    if (last_tick_ == 0) {
       nb_bytes_ = bytes;
       last_tick_ = now;
@@ -572,7 +572,7 @@ void BareosSocket::control_bwlimit(int bytes)
    nb_bytes_ += bytes;
    last_tick_ = now;
    if (debug_level >= 400) {
-      Dmsg3(400, "control_bwlimit: now = %lld, since = %lld, nb_bytes = %d\n", now, temp, nb_bytes_);
+      Dmsg3(400, "ControlBwlimit: now = %lld, since = %lld, nb_bytes = %d\n", now, temp, nb_bytes_);
    }
 
    /*
@@ -604,7 +604,7 @@ void BareosSocket::control_bwlimit(int bytes)
    usec_sleep = (int64_t)(nb_bytes_ /((double)bwlimit_ / 1000000.0));
    if (usec_sleep > 100) {
       if (debug_level >= 400) {
-         Dmsg1(400, "control_bwlimit: sleeping for %lld usecs\n", usec_sleep);
+         Dmsg1(400, "ControlBwlimit: sleeping for %lld usecs\n", usec_sleep);
       }
 
       /*
@@ -612,7 +612,7 @@ void BareosSocket::control_bwlimit(int bytes)
        */
       while (1) {
          bmicrosleep(0, usec_sleep);
-         now = get_current_btime();
+         now = GetCurrentBtime();
 
          /*
           * See if we slept enough or that bmicrosleep() returned early.

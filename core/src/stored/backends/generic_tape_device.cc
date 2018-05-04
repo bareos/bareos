@@ -39,7 +39,7 @@
 /**
  * Open a tape device
  */
-void generic_tape_device::open_device(DeviceControlRecord *dcr, int omode)
+void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
 {
    file_size = 0;
    int timeout = max_open_wait;
@@ -52,7 +52,7 @@ void generic_tape_device::open_device(DeviceControlRecord *dcr, int omode)
 
    Dmsg0(100, "Open dev: device is tape\n");
 
-   get_autochanger_loaded_slot(dcr);
+   GetAutochangerLoadedSlot(dcr);
 
    open_mode = omode;
    set_mode(omode);
@@ -100,7 +100,7 @@ void generic_tape_device::open_device(DeviceControlRecord *dcr, int omode)
             berrno be;
             dev_errno = errno;           /* set error status from rewind */
             d_close(fd_);
-            clear_opened();
+            ClearOpened();
             Dmsg2(100, "Rewind error on %s close: ERR=%s\n", prt_name, be.bstrerror(dev_errno));
             /*
              * If we get busy, device is probably rewinding, try again
@@ -122,8 +122,8 @@ void generic_tape_device::open_device(DeviceControlRecord *dcr, int omode)
                break;
             }
             dev_errno = 0;
-            lock_door();
-            set_os_device_parameters(dcr);       /* do system dependent stuff */
+            LockDoor();
+            SetOsDeviceParameters(dcr);       /* do system dependent stuff */
             break;                               /* Successfully opened and rewound */
          }
       }
@@ -138,7 +138,7 @@ void generic_tape_device::open_device(DeviceControlRecord *dcr, int omode)
    }
 #endif
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       berrno be;
       Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
             prt_name, be.bstrerror(dev_errno));
@@ -171,22 +171,22 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
 #endif
 
    Dmsg0(100, "Enter eod\n");
-   if (at_eot()) {
+   if (AtEot()) {
       return true;
    }
 
-   clear_eof();         /* remove EOF flag */
+   ClearEof();         /* remove EOF flag */
    block_num = file = 0;
    file_size = 0;
    file_addr = 0;
 
 #ifdef MTEOM
-   if (has_cap(CAP_FASTFSF) && !has_cap(CAP_EOM)) {
+   if (HasCap(CAP_FASTFSF) && !HasCap(CAP_EOM)) {
       Dmsg0(100,"Using FAST FSF for EOM\n");
       /*
        * If unknown position, rewind
        */
-      if (get_os_tape_file() < 0) {
+      if (GetOsTapeFile() < 0) {
         if (!rewind(NULL)) {
           Dmsg0(100, "Rewind error\n");
           return false;
@@ -202,8 +202,8 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
       }
    }
 
-   if (has_cap(CAP_MTIOCGET) && (has_cap(CAP_FASTFSF) || has_cap(CAP_EOM))) {
-      if (has_cap(CAP_EOM)) {
+   if (HasCap(CAP_MTIOCGET) && (HasCap(CAP_FASTFSF) || HasCap(CAP_EOM))) {
+      if (HasCap(CAP_EOM)) {
          Dmsg0(100,"Using EOM for EOM\n");
          mt_com.mt_op = MTEOM;
          mt_com.mt_count = 1;
@@ -213,13 +213,13 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
          berrno be;
          clrerror(mt_com.mt_op);
          Dmsg1(50, "ioctl error: %s\n", be.bstrerror());
-         update_pos(dcr);
+         UpdatePos(dcr);
          Mmsg2(errmsg, _("ioctl MTEOM error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
          Dmsg0(100, errmsg);
          return false;
       }
 
-      os_file = get_os_tape_file();
+      os_file = GetOsTapeFile();
       if (os_file < 0) {
          berrno be;
          clrerror(-1);
@@ -228,7 +228,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
          return false;
       }
       Dmsg1(100, "EOD file=%d\n", os_file);
-      set_ateof();
+      SetAteof();
       file = os_file;
    } else {
 #endif
@@ -244,7 +244,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
        * Move file by file to the end of the tape
        */
       int file_num;
-      for (file_num=file; !at_eot(); file_num++) {
+      for (file_num=file; !AtEot(); file_num++) {
          Dmsg0(200, "eod: doing fsf 1\n");
          if (!fsf(1)) {
             Dmsg0(100, "fsf error.\n");
@@ -253,10 +253,10 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
          /*
           * Avoid infinite loop by ensuring we advance.
           */
-         if (!at_eot() && file_num == (int)file) {
+         if (!AtEot() && file_num == (int)file) {
             Dmsg1(100, "fsf did not advance from file %d\n", file_num);
-            set_ateof();
-            os_file = get_os_tape_file();
+            SetAteof();
+            os_file = GetOsTapeFile();
             if (os_file >= 0) {
                Dmsg2(100, "Adjust file from %d to %d\n", file_num, os_file);
                file = os_file;
@@ -272,7 +272,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
     * Some drivers leave us after second EOF when doing MTEOM, so we must backup
     * so that appending overwrites the second EOF.
     */
-   if (has_cap(CAP_BSFATEOM)) {
+   if (HasCap(CAP_BSFATEOM)) {
       /*
        * Backup over EOF
        */
@@ -281,7 +281,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
       /*
        * If BSF worked and fileno is known (not -1), set file
        */
-      os_file = get_os_tape_file();
+      os_file = GetOsTapeFile();
       if (os_file >= 0) {
          Dmsg2(100, "BSFATEOF adjust file from %d to %d\n", file , os_file);
          file = os_file;
@@ -289,7 +289,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
          file++;                       /* wing it -- not correct on all OSes */
       }
    } else {
-      update_pos(dcr);                 /* update position */
+      UpdatePos(dcr);                 /* update position */
    }
    Dmsg1(200, "EOD dev->file=%d\n", file);
 
@@ -299,9 +299,9 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
 /**
  * Called to indicate that we have just read an EOF from the device.
  */
-void generic_tape_device::set_ateof()
+void generic_tape_device::SetAteof()
 {
-   set_eof();
+   SetEof();
    file++;
    file_addr = 0;
    file_size = 0;
@@ -311,15 +311,15 @@ void generic_tape_device::set_ateof()
 /**
  * Called to indicate we are now at the end of the volume, and writing is not possible.
  */
-void generic_tape_device::set_ateot()
+void generic_tape_device::SetAteot()
 {
    /*
     * Make volume effectively read-only
     */
-   set_bit(ST_EOF, state);
-   set_bit(ST_EOT, state);
-   set_bit(ST_WEOT, state);
-   clear_append();
+   SetBit(ST_EOF, state);
+   SetBit(ST_EOT, state);
+   SetBit(ST_WEOT, state);
+   ClearAppend();
 }
 
 /**
@@ -335,16 +335,16 @@ bool generic_tape_device::offline()
    /*
     * Remove EOF/EOT flags.
     */
-   clear_bit(ST_APPENDREADY, state);
-   clear_bit(ST_READREADY, state);
-   clear_bit(ST_EOT, state);
-   clear_bit(ST_EOF, state);
-   clear_bit(ST_WEOT, state);
+   ClearBit(ST_APPENDREADY, state);
+   ClearBit(ST_READREADY, state);
+   ClearBit(ST_EOT, state);
+   ClearBit(ST_EOF, state);
+   ClearBit(ST_WEOT, state);
 
    block_num = file = 0;
    file_size = 0;
    file_addr = 0;
-   unlock_door();
+   UnlockDoor();
    mt_com.mt_op = MTOFFL;
    mt_com.mt_count = 1;
 
@@ -371,7 +371,7 @@ bool generic_tape_device::weof(int num)
    int status;
    Dmsg1(129, "=== weof_dev=%s\n", prt_name);
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to weof_dev. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
@@ -379,14 +379,14 @@ bool generic_tape_device::weof(int num)
    }
    file_size = 0;
 
-   if (!can_append()) {
+   if (!CanAppend()) {
       Mmsg0(errmsg, _("Attempt to WEOF on non-appendable Volume\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
-   clear_eof();
-   clear_eot();
+   ClearEof();
+   ClearEot();
    mt_com.mt_op = MTWEOF;
    mt_com.mt_count = num;
    status = d_ioctl(fd_, MTIOCTOP, (char *)&mt_com);
@@ -418,20 +418,20 @@ bool generic_tape_device::fsf(int num)
    struct mtop mt_com;
    int status = 0;
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to fsf. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
-   if (at_eot()) {
+   if (AtEot()) {
       dev_errno = 0;
       Mmsg1(errmsg, _("Device %s at End of Tape.\n"), prt_name);
       return false;
    }
 
-   if (at_eof()) {
+   if (AtEof()) {
       Dmsg0(200, "ST_EOF set on entry to FSF\n");
    }
 
@@ -445,20 +445,20 @@ bool generic_tape_device::fsf(int num)
     * the SCSI driver will ensure that we do not
     * forward space past the end of the medium.
     */
-   if (has_cap(CAP_FSF) && has_cap(CAP_MTIOCGET) && has_cap(CAP_FASTFSF)) {
+   if (HasCap(CAP_FSF) && HasCap(CAP_MTIOCGET) && HasCap(CAP_FASTFSF)) {
       int my_errno = 0;
       mt_com.mt_op = MTFSF;
       mt_com.mt_count = num;
       status = d_ioctl(fd_, MTIOCTOP, (char *)&mt_com);
       if (status < 0) {
          my_errno = errno;            /* save errno */
-      } else if ((os_file=get_os_tape_file()) < 0) {
+      } else if ((os_file=GetOsTapeFile()) < 0) {
          my_errno = errno;            /* save errno */
       }
       if (my_errno != 0) {
          berrno be;
 
-         set_eot();
+         SetEot();
          Dmsg0(200, "Set ST_EOT\n");
          clrerror(mt_com.mt_op);
          Mmsg2(errmsg, _("ioctl MTFSF error on %s. ERR=%s.\n"), prt_name, be.bstrerror(my_errno));
@@ -467,7 +467,7 @@ bool generic_tape_device::fsf(int num)
       }
 
       Dmsg1(200, "fsf file=%d\n", os_file);
-      set_ateof();
+      SetAteof();
       file = os_file;
       return true;
 
@@ -478,7 +478,7 @@ bool generic_tape_device::fsf(int num)
     * is the only way we can be sure that we don't read
     * two consecutive EOF marks, which means End of Data.
     */
-   } else if (has_cap(CAP_FSF)) {
+   } else if (HasCap(CAP_FSF)) {
       POOLMEM *rbuf;
       int rbuf_len;
       Dmsg0(200, "FSF has cap_fsf\n");
@@ -487,10 +487,10 @@ bool generic_tape_device::fsf(int num)
       } else {
          rbuf_len = max_block_size;
       }
-      rbuf = get_memory(rbuf_len);
+      rbuf = GetMemory(rbuf_len);
       mt_com.mt_op = MTFSF;
       mt_com.mt_count = 1;
-      while (num-- && !at_eot()) {
+      while (num-- && !AtEot()) {
          Dmsg0(100, "Doing read before fsf\n");
          if ((status = this->read((char *)rbuf, rbuf_len)) < 0) {
             if (errno == ENOMEM) {     /* tape record exceeds buf len */
@@ -498,17 +498,17 @@ bool generic_tape_device::fsf(int num)
             /*
              * On IBM drives, they return ENOSPC at EOM instead of EOF status
              */
-            } else if (at_eof() && errno == ENOSPC) {
+            } else if (AtEof() && errno == ENOSPC) {
                status = 0;
-            } else if (has_cap(CAP_IOERRATEOM) && at_eof() && errno == EIO) {
-               if (has_cap(CAP_IBMLINTAPE)) {
+            } else if (HasCap(CAP_IOERRATEOM) && AtEof() && errno == EIO) {
+               if (HasCap(CAP_IBMLINTAPE)) {
                   Dmsg0(100, "Got EIO on read, checking lin_tape sense data\n");
-                  if (check_scsi_at_eod(fd_)) {
+                  if (CheckScsiAtEod(fd_)) {
                      Dmsg0(100, "Sense data confirms it's EOD\n");
                      status = 0;
                   } else {
                      Dmsg0(100, "Not at EOD, might be a real error. Check sense trace from lin_taped logs.\n");
-                     set_eot();
+                     SetEot();
                      clrerror(-1);
                      Mmsg1(errmsg, _("read error on %s. ERR=Input/Output error.\n"), prt_name);
                      break;
@@ -520,7 +520,7 @@ bool generic_tape_device::fsf(int num)
             } else {
                berrno be;
 
-               set_eot();
+               SetEot();
                clrerror(-1);
                Dmsg2(100, "Set ST_EOT read errno=%d. ERR=%s\n", dev_errno, be.bstrerror());
                Mmsg2(errmsg, _("read error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
@@ -533,17 +533,17 @@ bool generic_tape_device::fsf(int num)
             /*
              * Two reads of zero means end of tape
              */
-            if (at_eof()) {
-               set_eot();
+            if (AtEof()) {
+               SetEot();
                Dmsg0(100, "Set ST_EOT\n");
                break;
             } else {
-               set_ateof();
+               SetAteof();
                continue;
             }
          } else {                        /* Got data */
-            clear_eot();
-            clear_eof();
+            ClearEot();
+            ClearEof();
          }
 
          Dmsg0(100, "Doing MTFSF\n");
@@ -551,27 +551,27 @@ bool generic_tape_device::fsf(int num)
          if (status < 0) {                 /* error => EOT */
             berrno be;
 
-            set_eot();
+            SetEot();
             Dmsg0(100, "Set ST_EOT\n");
             clrerror(mt_com.mt_op);
             Mmsg2(errmsg, _("ioctl MTFSF error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
             Dmsg0(100, "Got < 0 for MTFSF\n");
             Dmsg1(100, "%s", errmsg);
          } else {
-            set_ateof();
+            SetAteof();
          }
       }
-      free_memory(rbuf);
+      FreeMemory(rbuf);
 
    /*
     * No FSF, so use FSR to simulate it
     */
    } else {
       Dmsg0(200, "Doing FSR for FSF\n");
-      while (num-- && !at_eot()) {
+      while (num-- && !AtEot()) {
          fsr(INT32_MAX);    /* returns -1 on EOF or EOT */
       }
-      if (at_eot()) {
+      if (AtEot()) {
          dev_errno = 0;
          Mmsg1(errmsg, _("Device %s at End of Tape.\n"), prt_name);
          status = -1;
@@ -580,10 +580,10 @@ bool generic_tape_device::fsf(int num)
       }
    }
    Dmsg1(200, "Return %d from FSF\n", status);
-   if (at_eof()) {
+   if (AtEof()) {
       Dmsg0(200, "ST_EOF set on exit FSF\n");
    }
-   if (at_eot()) {
+   if (AtEot()) {
       Dmsg0(200, "ST_EOT set on exit FSF\n");
    }
    Dmsg1(200, "Return from FSF file=%d\n", file);
@@ -602,7 +602,7 @@ bool generic_tape_device::bsf(int num)
    struct mtop mt_com;
    int status;
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to bsf. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
@@ -610,8 +610,8 @@ bool generic_tape_device::bsf(int num)
    }
 
    Dmsg0(100, "bsf\n");
-   clear_eot();
-   clear_eof();
+   ClearEot();
+   ClearEof();
    file -= num;
    file_addr = 0;
    file_size = 0;
@@ -632,7 +632,7 @@ bool generic_tape_device::bsf(int num)
 static inline bool dev_get_os_pos(Device *dev, struct mtget *mt_stat)
 {
    Dmsg0(100, "dev_get_os_pos\n");
-   return dev->has_cap(CAP_MTIOCGET) &&
+   return dev->HasCap(CAP_MTIOCGET) &&
           dev->d_ioctl(dev->fd(), MTIOCGET, (char *)mt_stat) == 0 &&
           mt_stat->mt_fileno >= 0;
 }
@@ -648,14 +648,14 @@ bool generic_tape_device::fsr(int num)
    struct mtop mt_com;
    int status;
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to fsr. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
-   if (!has_cap(CAP_FSR)) {
+   if (!HasCap(CAP_FSR)) {
       Mmsg1(errmsg, _("ioctl MTFSR not permitted on %s.\n"), prt_name);
       return false;
    }
@@ -666,7 +666,7 @@ bool generic_tape_device::fsr(int num)
 
    status = d_ioctl(fd_, MTIOCTOP, (char *)&mt_com);
    if (status == 0) {
-      clear_eof();
+      ClearEof();
       block_num += num;
    } else {
       berrno be;
@@ -680,10 +680,10 @@ bool generic_tape_device::fsr(int num)
          file = mt_stat.mt_fileno;
          block_num = mt_stat.mt_blkno;
       } else {
-         if (at_eof()) {
-            set_eot();
+         if (AtEof()) {
+            SetEot();
          } else {
-            set_ateof();
+            SetAteof();
          }
       }
       Mmsg3(errmsg, _("ioctl MTFSR %d error on %s. ERR=%s.\n"), num, prt_name, be.bstrerror());
@@ -703,22 +703,22 @@ bool generic_tape_device::bsr(int num)
    struct mtop mt_com;
    int status;
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to bsr_dev. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
-   if (!has_cap(CAP_BSR)) {
+   if (!HasCap(CAP_BSR)) {
       Mmsg1(errmsg, _("ioctl MTBSR not permitted on %s.\n"), prt_name);
       return false;
    }
 
    Dmsg0(100, "bsr_dev\n");
    block_num -= num;
-   clear_eof();
-   clear_eot();
+   ClearEof();
+   ClearEot();
    mt_com.mt_op = MTBSR;
    mt_com.mt_count = num;
 
@@ -739,7 +739,7 @@ bool generic_tape_device::bsr(int num)
  * Returns: true  on success
  *          false on failure
  */
-bool generic_tape_device::load_dev()
+bool generic_tape_device::LoadDev()
 {
 #ifdef MTLOAD
    struct mtop mt_com;
@@ -747,7 +747,7 @@ bool generic_tape_device::load_dev()
 
    if (fd_ < 0) {
       dev_errno = EBADF;
-      Mmsg0(errmsg, _("Bad call to load_dev. Device not open\n"));
+      Mmsg0(errmsg, _("Bad call to LoadDev. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
@@ -775,7 +775,7 @@ bool generic_tape_device::load_dev()
 #endif
 }
 
-void generic_tape_device::lock_door()
+void generic_tape_device::LockDoor()
 {
 #ifdef MTLOCK
    struct mtop mt_com;
@@ -788,7 +788,7 @@ void generic_tape_device::lock_door()
 #endif
 }
 
-void generic_tape_device::unlock_door()
+void generic_tape_device::UnlockDoor()
 {
 #ifdef MTUNLOCK
    struct mtop mt_com;
@@ -872,29 +872,29 @@ void generic_tape_device::clrerror(int func)
          break;                  /* ignore message printed later */
       case MTWEOF:
          msg = "WTWEOF";
-         clear_cap(CAP_EOF);     /* turn off feature */
+         ClearCap(CAP_EOF);     /* turn off feature */
          break;
 #ifdef MTEOM
       case MTEOM:
          msg = "WTEOM";
-         clear_cap(CAP_EOM);     /* turn off feature */
+         ClearCap(CAP_EOM);     /* turn off feature */
          break;
 #endif
       case MTFSF:
          msg = "MTFSF";
-         clear_cap(CAP_FSF);     /* turn off feature */
+         ClearCap(CAP_FSF);     /* turn off feature */
          break;
       case MTBSF:
          msg = "MTBSF";
-         clear_cap(CAP_BSF);     /* turn off feature */
+         ClearCap(CAP_BSF);     /* turn off feature */
          break;
       case MTFSR:
          msg = "MTFSR";
-         clear_cap(CAP_FSR);     /* turn off feature */
+         ClearCap(CAP_FSR);     /* turn off feature */
          break;
       case MTBSR:
          msg = "MTBSR";
-         clear_cap(CAP_BSR);     /* turn off feature */
+         ClearCap(CAP_BSR);     /* turn off feature */
          break;
       case MTREW:
          msg = "MTREW";
@@ -978,7 +978,7 @@ void generic_tape_device::clrerror(int func)
    /*
     * On some systems such as NetBSD, this clears all errors
     */
-   get_os_tape_file();
+   GetOsTapeFile();
 
    /*
     * OS specific clear function.
@@ -986,7 +986,7 @@ void generic_tape_device::clrerror(int func)
    os_clrerror(this);
 }
 
-void generic_tape_device::set_os_device_parameters(DeviceControlRecord *dcr)
+void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
 
@@ -997,7 +997,7 @@ void generic_tape_device::set_os_device_parameters(DeviceControlRecord *dcr)
 #if defined(HAVE_LINUX_OS) || defined(HAVE_WIN32)
    struct mtop mt_com;
 
-   Dmsg0(100, "In set_os_device_parameters\n");
+   Dmsg0(100, "In SetOsDeviceParameters\n");
 #if defined(MTSETBLK)
    if (dev->min_block_size == dev->max_block_size &&
        dev->min_block_size == 0) {    /* variable block mode */
@@ -1013,10 +1013,10 @@ void generic_tape_device::set_os_device_parameters(DeviceControlRecord *dcr)
    if (getuid() == 0) {          /* Only root can do this */
       mt_com.mt_op = MTSETDRVBUFFER;
       mt_com.mt_count = MT_ST_CLEARBOOLEANS;
-      if (!dev->has_cap(CAP_TWOEOF)) {
+      if (!dev->HasCap(CAP_TWOEOF)) {
          mt_com.mt_count |= MT_ST_TWO_FM;
       }
-      if (dev->has_cap(CAP_EOM)) {
+      if (dev->HasCap(CAP_EOM)) {
          mt_com.mt_count |= MT_ST_FAST_MTEOM;
       }
       Dmsg0(100, "MTSETDRVBUFFER\n");
@@ -1059,7 +1059,7 @@ void generic_tape_device::set_os_device_parameters(DeviceControlRecord *dcr)
    }
 #if defined(MTIOCSETEOTMODEL)
    uint32_t neof;
-   if (dev->has_cap(CAP_TWOEOF)) {
+   if (dev->HasCap(CAP_TWOEOF)) {
       neof = 2;
    } else {
       neof = 1;
@@ -1092,11 +1092,11 @@ void generic_tape_device::set_os_device_parameters(DeviceControlRecord *dcr)
 /**
  * Returns file position on tape or -1
  */
-int32_t generic_tape_device::get_os_tape_file()
+int32_t generic_tape_device::GetOsTapeFile()
 {
    struct mtget mt_stat;
 
-   if (has_cap(CAP_MTIOCGET) &&
+   if (HasCap(CAP_MTIOCGET) &&
        d_ioctl(fd_, MTIOCGET, (char *)&mt_stat) == 0) {
       return mt_stat.mt_fileno;
    }
@@ -1116,14 +1116,14 @@ bool generic_tape_device::rewind(DeviceControlRecord *dcr)
    unsigned int i;
    bool first = true;
 
-   Dmsg3(400, "rewind res=%d fd=%d %s\n", num_reserved(), fd_, prt_name);
+   Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd_, prt_name);
 
    /*
     * Remove EOF/EOT flags.
     */
-   clear_bit(ST_EOT, state);
-   clear_bit(ST_EOF, state);
-   clear_bit(ST_WEOT, state);
+   ClearBit(ST_EOT, state);
+   ClearBit(ST_EOF, state);
+   ClearBit(ST_WEOT, state);
 
    block_num = file = 0;
    file_size = 0;
@@ -1157,7 +1157,7 @@ bool generic_tape_device::rewind(DeviceControlRecord *dcr)
          if (first && dcr) {
             int oo_mode = open_mode;
             d_close(fd_);
-            clear_opened();
+            ClearOpened();
             open(dcr, oo_mode);
             if (fd_ < 0) {
                return false;
@@ -1205,8 +1205,8 @@ static bool do_mount(DeviceControlRecord *dcr, int mount, int dotimeout)
       icmd = device->unmount_command;
    }
 
-   dcr->dev->edit_mount_codes(ocmd, icmd);
-   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), dcr->dev->is_mounted());
+   dcr->dev->EditMountCodes(ocmd, icmd);
+   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), dcr->dev->IsMounted());
 
    if (dotimeout) {
       /* Try at most 10 times to (un)mount the device. This should perhaps be configurable. */
@@ -1214,11 +1214,11 @@ static bool do_mount(DeviceControlRecord *dcr, int mount, int dotimeout)
    } else {
       tries = 1;
    }
-   results = get_memory(4000);
+   results = GetMemory(4000);
 
    /* If busy retry each second */
    Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-   while ((status = run_program_full_output(ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
+   while ((status = RunProgramFullOutput(ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
       if (tries-- > 0) {
          continue;
       }
@@ -1228,36 +1228,36 @@ static bool do_mount(DeviceControlRecord *dcr, int mount, int dotimeout)
       Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
            dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
-      free_pool_memory(results);
+      FreePoolMemory(results);
       Dmsg0(200, "============ mount=0\n");
       Dsm_check(200);
       return false;
    }
 
-   free_pool_memory(results);
+   FreePoolMemory(results);
    Dmsg1(200, "============ mount=%d\n", mount);
    return true;
 }
 
-char *generic_tape_device::status_dev()
+char *generic_tape_device::StatusDev()
 {
    struct mtget mt_stat;
    char *status;
 
    status = (char *)malloc(BMT_BYTES);
-   clear_all_bits(BMT_MAX, status);
+   ClearAllBits(BMT_MAX, status);
 
-   if (bit_is_set(ST_EOT, state) || bit_is_set(ST_WEOT, state)) {
-      set_bit(BMT_EOD, status);
+   if (BitIsSet(ST_EOT, state) || BitIsSet(ST_WEOT, state)) {
+      SetBit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
 
-   if (bit_is_set(ST_EOF, state)) {
-      set_bit(BMT_EOF, status);
+   if (BitIsSet(ST_EOF, state)) {
+      SetBit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
 
-   set_bit(BMT_TAPE, status);
+   SetBit(BMT_TAPE, status);
    Pmsg0(-20,_(" Bareos status:"));
    Pmsg2(-20,_(" file=%d block=%d\n"), file, block_num);
    if (d_ioctl(fd_, MTIOCGET, (char *)&mt_stat) < 0) {
@@ -1272,77 +1272,77 @@ char *generic_tape_device::status_dev()
 
 #if defined(HAVE_LINUX_OS)
    if (GMT_EOF(mt_stat.mt_gstat)) {
-      set_bit(BMT_EOF, status);
+      SetBit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
    if (GMT_BOT(mt_stat.mt_gstat)) {
-      set_bit(BMT_BOT, status);
+      SetBit(BMT_BOT, status);
       Pmsg0(-20, " BOT");
    }
    if (GMT_EOT(mt_stat.mt_gstat)) {
-      set_bit(BMT_EOT, status);
+      SetBit(BMT_EOT, status);
       Pmsg0(-20, " EOT");
    }
    if (GMT_SM(mt_stat.mt_gstat)) {
-      set_bit(BMT_SM, status);
+      SetBit(BMT_SM, status);
       Pmsg0(-20, " SM");
    }
    if (GMT_EOD(mt_stat.mt_gstat)) {
-      set_bit(BMT_EOD, status);
+      SetBit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
    if (GMT_WR_PROT(mt_stat.mt_gstat)) {
-      set_bit(BMT_WR_PROT, status);
+      SetBit(BMT_WR_PROT, status);
       Pmsg0(-20, " WR_PROT");
    }
    if (GMT_ONLINE(mt_stat.mt_gstat)) {
-      set_bit(BMT_ONLINE, status);
+      SetBit(BMT_ONLINE, status);
       Pmsg0(-20, " ONLINE");
    }
    if (GMT_DR_OPEN(mt_stat.mt_gstat)) {
-      set_bit(BMT_DR_OPEN, status);
+      SetBit(BMT_DR_OPEN, status);
       Pmsg0(-20, " DR_OPEN");
    }
    if (GMT_IM_REP_EN(mt_stat.mt_gstat)) {
-      set_bit(BMT_IM_REP_EN, status);
+      SetBit(BMT_IM_REP_EN, status);
       Pmsg0(-20, " IM_REP_EN");
    }
 #elif defined(HAVE_WIN32)
    if (GMT_EOF(mt_stat.mt_gstat)) {
-      set_bit(BMT_EOF, status);
+      SetBit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
    if (GMT_BOT(mt_stat.mt_gstat)) {
-      set_bit(BMT_BOT, status);
+      SetBit(BMT_BOT, status);
       Pmsg0(-20, " BOT");
    }
    if (GMT_EOT(mt_stat.mt_gstat)) {
-      set_bit(BMT_EOT, status);
+      SetBit(BMT_EOT, status);
       Pmsg0(-20, " EOT");
    }
    if (GMT_EOD(mt_stat.mt_gstat)) {
-      set_bit(BMT_EOD, status);
+      SetBit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
    if (GMT_WR_PROT(mt_stat.mt_gstat)) {
-      set_bit(BMT_WR_PROT, status);
+      SetBit(BMT_WR_PROT, status);
       Pmsg0(-20, " WR_PROT");
    }
    if (GMT_ONLINE(mt_stat.mt_gstat)) {
-      set_bit(BMT_ONLINE, status);
+      SetBit(BMT_ONLINE, status);
       Pmsg0(-20, " ONLINE");
    }
    if (GMT_DR_OPEN(mt_stat.mt_gstat)) {
-      set_bit(BMT_DR_OPEN, status);
+      SetBit(BMT_DR_OPEN, status);
       Pmsg0(-20, " DR_OPEN");
    }
    if (GMT_IM_REP_EN(mt_stat.mt_gstat)) {
-      set_bit(BMT_IM_REP_EN, status);
+      SetBit(BMT_IM_REP_EN, status);
       Pmsg0(-20, " IM_REP_EN");
    }
 #endif /* HAVE_LINUX_OS || HAVE_WIN32 */
 
-   if (has_cap(CAP_MTIOCGET)) {
+   if (HasCap(CAP_MTIOCGET)) {
       Pmsg2(-20, _(" file=%d block=%d\n"), mt_stat.mt_fileno, mt_stat.mt_blkno);
    } else {
       Pmsg2(-20, _(" file=%d block=%d\n"), -1, -1);
@@ -1357,7 +1357,7 @@ char *generic_tape_device::status_dev()
  * Returns: true  on succes
  *          false on error
  */
-bool generic_tape_device::update_pos(DeviceControlRecord *dcr)
+bool generic_tape_device::UpdatePos(DeviceControlRecord *dcr)
 {
    return true;
 }
@@ -1396,7 +1396,7 @@ bool generic_tape_device::reposition(DeviceControlRecord *dcr, uint32_t rfile, u
       Dmsg2(100, "wanted_blk=%d at_blk=%d\n", rblock, block_num);
    }
 
-   if (has_cap(CAP_POSITIONBLOCKS) && rblock > block_num) {
+   if (HasCap(CAP_POSITIONBLOCKS) && rblock > block_num) {
       /*
        * Ignore errors as Bareos can read to the correct block.
        */
@@ -1404,7 +1404,7 @@ bool generic_tape_device::reposition(DeviceControlRecord *dcr, uint32_t rfile, u
       return fsr(rblock-block_num);
    } else {
       while (rblock > block_num) {
-         if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+         if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
             berrno be;
             dev_errno = errno;
             Dmsg2(30, "Failed to find requested block on %s: ERR=%s", prt_name, be.bstrerror());
@@ -1423,11 +1423,11 @@ bool generic_tape_device::reposition(DeviceControlRecord *dcr, uint32_t rfile, u
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool generic_tape_device::mount_backend(DeviceControlRecord *dcr, int timeout)
+bool generic_tape_device::MountBackend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
-   if (requires_mount() && device->mount_command) {
+   if (RequiresMount() && device->mount_command) {
       retval = do_mount(dcr, true, timeout);
    }
 
@@ -1440,11 +1440,11 @@ bool generic_tape_device::mount_backend(DeviceControlRecord *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool generic_tape_device::unmount_backend(DeviceControlRecord *dcr, int timeout)
+bool generic_tape_device::UnmountBackend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
-   if (requires_mount() && device->unmount_command) {
+   if (RequiresMount() && device->unmount_command) {
       retval = do_mount(dcr, false, timeout);
    }
 

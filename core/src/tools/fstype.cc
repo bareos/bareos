@@ -94,7 +94,7 @@ main (int argc, char *const *argv)
       }
    }
 
-   flush_mntent_cache();
+   FlushMntentCache();
 
    exit(status);
 }

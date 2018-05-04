@@ -211,20 +211,20 @@ int main(int argc, char *const *argv)
    }
 
    OSDependentInit();
-   init_msg(NULL, NULL);
+   InitMsg(NULL, NULL);
 
    if (dump_cache) {
       /*
        * Load any keys currently in the cache.
        */
-      read_crypto_cache(cache_file);
+      ReadCryptoCache(cache_file);
 
       /*
        * Dump the content of the cache.
        */
       dump_crypto_cache(1);
 
-      flush_crypto_cache();
+      FlushCryptoCache();
       goto bail_out;
    }
 
@@ -235,7 +235,7 @@ int main(int argc, char *const *argv)
       /*
        * Load any keys currently in the cache.
        */
-      read_crypto_cache(cache_file);
+      ReadCryptoCache(cache_file);
 
       /*
        * Read new entries from stdin and parse them to update
@@ -246,7 +246,7 @@ int main(int argc, char *const *argv)
 
       memset(new_cache_entry, 0, sizeof(new_cache_entry));
       while (read(1, new_cache_entry, sizeof(new_cache_entry)) > 0) {
-         strip_trailing_junk(new_cache_entry);
+         StripTrailingJunk(new_cache_entry);
 
          /*
           * Try to parse the entry.
@@ -258,16 +258,16 @@ int main(int argc, char *const *argv)
          }
 
          *EncrKey++ = '\0';
-         update_crypto_cache(VolumeName, EncrKey);
+         UpdateCryptoCache(VolumeName, EncrKey);
          memset(new_cache_entry, 0, sizeof(new_cache_entry));
       }
 
       /*
        * Write out the new cache entries.
        */
-      write_crypto_cache(cache_file);
+      WriteCryptoCache(cache_file);
 
-      flush_crypto_cache();
+      FlushCryptoCache();
       goto bail_out;
    }
 
@@ -275,7 +275,7 @@ int main(int argc, char *const *argv)
       /*
        * Load any keys currently in the cache.
        */
-      read_crypto_cache(cache_file);
+      ReadCryptoCache(cache_file);
 
       /*
        * Reset all entries.
@@ -285,9 +285,9 @@ int main(int argc, char *const *argv)
       /*
        * Write out the new cache entries.
        */
-      write_crypto_cache(cache_file);
+      WriteCryptoCache(cache_file);
 
-      flush_crypto_cache();
+      FlushCryptoCache();
       goto bail_out;
    }
 
@@ -315,7 +315,7 @@ int main(int argc, char *const *argv)
       if (kfd > 0) {
          close(kfd);
       }
-      strip_trailing_junk(wrapdata);
+      StripTrailingJunk(wrapdata);
       Dmsg1(10, "Wrapped keydata = %s\n", wrapdata);
    }
 
@@ -344,7 +344,7 @@ int main(int argc, char *const *argv)
          length = DEFAULT_PASSPHRASE_LENGTH + 8;
          wrapped_passphrase = (char *)malloc(length);
          memset(wrapped_passphrase, 0, length);
-         aes_wrap((unsigned char *)wrapdata,
+         AesWrap((unsigned char *)wrapdata,
                   DEFAULT_PASSPHRASE_LENGTH / 8,
                   (unsigned char *)passphrase,
                   (unsigned char *)wrapped_passphrase);
@@ -417,7 +417,7 @@ int main(int argc, char *const *argv)
       if (kfd > 0) {
          close(kfd);
       }
-      strip_trailing_junk(keydata);
+      StripTrailingJunk(keydata);
       Dmsg1(10, "Keydata = %s\n", keydata);
 
       /*
@@ -448,7 +448,7 @@ int main(int argc, char *const *argv)
          passphrase = (char *)malloc(length);
          memset(passphrase, 0, length);
 
-         if (aes_unwrap((unsigned char *)wrapdata,
+         if (AesUnwrap((unsigned char *)wrapdata,
                         length / 8,
                         (unsigned char *)wrapped_passphrase,
                         (unsigned char *)passphrase) == -1) {
@@ -491,7 +491,7 @@ int main(int argc, char *const *argv)
     * Clear the loaded encryption key of the given drive.
     */
    if (clear_encryption) {
-      if (clear_scsi_encryption_key(-1, argv[0])) {
+      if (ClearScsiEncryptionKey(-1, argv[0])) {
          goto bail_out;
       } else {
          retval = 1;
@@ -503,14 +503,14 @@ int main(int argc, char *const *argv)
     * Get the drive encryption status of the given drive.
     */
    if (drive_encryption_status) {
-      POOLMEM *encryption_status = get_pool_memory(PM_MESSAGE);
+      POOLMEM *encryption_status = GetPoolMemory(PM_MESSAGE);
 
-      if (get_scsi_drive_encryption_status(-1, argv[0], encryption_status, 0)) {
+      if (GetScsiDriveEncryptionStatus(-1, argv[0], encryption_status, 0)) {
          fprintf(stdout, "%s", encryption_status);
-         free_pool_memory(encryption_status);
+         FreePoolMemory(encryption_status);
       } else {
          retval = 1;
-         free_pool_memory(encryption_status);
+         FreePoolMemory(encryption_status);
          goto bail_out;
       }
    }
@@ -539,9 +539,9 @@ int main(int argc, char *const *argv)
       if (kfd > 0) {
          close(kfd);
       }
-      strip_trailing_junk(keydata);
+      StripTrailingJunk(keydata);
 
-      if (set_scsi_encryption_key(-1, argv[0], keydata)) {
+      if (SetScsiEncryptionKey(-1, argv[0], keydata)) {
          goto bail_out;
       } else {
          retval = 1;
@@ -553,14 +553,14 @@ int main(int argc, char *const *argv)
     * Get the volume encryption status of volume currently loaded in the given drive.
     */
    if (volume_encryption_status) {
-      POOLMEM *encryption_status = get_pool_memory(PM_MESSAGE);
+      POOLMEM *encryption_status = GetPoolMemory(PM_MESSAGE);
 
-      if (get_scsi_volume_encryption_status(-1, argv[0], encryption_status, 0)) {
+      if (GetScsiVolumeEncryptionStatus(-1, argv[0], encryption_status, 0)) {
          fprintf(stdout, "%s", encryption_status);
-         free_pool_memory(encryption_status);
+         FreePoolMemory(encryption_status);
       } else {
          retval = 1;
-         free_pool_memory(encryption_status);
+         FreePoolMemory(encryption_status);
          goto bail_out;
       }
    }

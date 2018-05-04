@@ -27,5 +27,5 @@
 #define APP_DESC "Bareos Storage Service"
 #define SERVICE_DESC "Provides bareos storage services."
 
-#define terminate_app(x) terminate_stored(x)
-extern void terminate_stored(int sig);
+#define TerminateApp(x) TerminateStored(x)
+extern void TerminateStored(int sig);

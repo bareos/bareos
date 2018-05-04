@@ -270,7 +270,7 @@ static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
    bool retval = false;
    PoolMem new_directory(PM_FNAME);
 
-   pm_strcpy(new_directory, directory);
+   PmStrcpy(new_directory, directory);
    len = strlen(new_directory.c_str());
 
    /*
@@ -618,7 +618,7 @@ gfapi_device::~gfapi_device()
       gfapi_configstring_ = NULL;
    }
 
-   free_pool_memory(virtual_filename_);
+   FreePoolMemory(virtual_filename_);
 }
 
 gfapi_device::gfapi_device()
@@ -631,7 +631,7 @@ gfapi_device::gfapi_device()
    serverport_ = 0;
    glfs_ = NULL;
    gfd_ = NULL;
-   virtual_filename_ = get_pool_memory(PM_FNAME);
+   virtual_filename_ = GetPoolMemory(PM_FNAME);
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

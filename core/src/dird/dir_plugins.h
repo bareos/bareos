@@ -149,13 +149,13 @@ typedef struct s_dirbareosFuncs {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef DIRECTOR_DAEMON
-void load_dir_plugins(const char *plugin_dir, alist *plugin_names);
-void unload_dir_plugins(void);
-int list_dir_plugins(PoolMem &msg);
-void dispatch_new_plugin_options(JobControlRecord *jcr);
-void new_plugins(JobControlRecord *jcr);
-void free_plugins(JobControlRecord *jcr);
-bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType event,
+void LoadDirPlugins(const char *plugin_dir, alist *plugin_names);
+void UnloadDirPlugins(void);
+int ListDirPlugins(PoolMem &msg);
+void DispatchNewPluginOptions(JobControlRecord *jcr);
+void NewPlugins(JobControlRecord *jcr);
+void FreePlugins(JobControlRecord *jcr);
+bRC GeneratePluginEvent(JobControlRecord *jcr, bDirEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 
@@ -180,7 +180,7 @@ typedef struct s_dirpluginFuncs {
    bRC (*handlePluginEvent)(bpContext *ctx, bDirEvent *event, void *value);
 } pDirFuncs;
 
-#define dirplug_func(plugin) ((pDirFuncs *)(plugin->pfuncs))
+#define DirplugFunc(plugin) ((pDirFuncs *)(plugin->pfuncs))
 #define dirplug_info(plugin) ((genpInfo *)(plugin->pinfo))
 
 #ifdef __cplusplus

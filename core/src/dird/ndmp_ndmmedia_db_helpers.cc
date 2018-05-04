@@ -114,7 +114,7 @@ void ndmmedia_from_bareos_db_records(ndmmedia *media, MediaDbRecord *mr, JobMedi
 }
 
 
-bool store_ndmmedia_info_in_database(ndmmedia *media, JobControlRecord  *jcr)
+bool StoreNdmmediaInfoInDatabase(ndmmedia *media, JobControlRecord  *jcr)
 {
    JobMediaDbRecord jm;
    MediaDbRecord mr;
@@ -126,7 +126,7 @@ bool store_ndmmedia_info_in_database(ndmmedia *media, JobControlRecord  *jcr)
     * get media record by name
     */
    bstrncpy(mr.VolumeName, media->label, NDMMEDIA_LABEL_MAX);
-   if (!jcr->db->get_media_record(jcr, &mr)){
+   if (!jcr->db->GetMediaRecord(jcr, &mr)){
       Jmsg(jcr, M_FATAL, 0, _("Catalog error getting Media record for Medium %s: %s"),
                               mr.VolumeName,  jcr->db->strerror());
       return false;
@@ -143,12 +143,12 @@ bool store_ndmmedia_info_in_database(ndmmedia *media, JobControlRecord  *jcr)
     */
    jm.MediaId = mr.MediaId;
    jm.JobId = jcr->JobId;
-   if (!jcr->db->create_jobmedia_record(jcr, &jm)) {
+   if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
       Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"), jcr->db->strerror());
       return false;
    }
 
-   if (!jcr->db->update_media_record(jcr, &mr)){
+   if (!jcr->db->UpdateMediaRecord(jcr, &mr)){
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record for Medium %s: %s"),
                               mr.VolumeName,  jcr->db->strerror());
       return false;
@@ -161,7 +161,7 @@ bool store_ndmmedia_info_in_database(ndmmedia *media, JobControlRecord  *jcr)
 /*
  * get ndmmedia from database for certain job
  */
-bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JobControlRecord  *jcr)
+bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *jcr)
 {
 
    JobMediaDbRecord jm;
@@ -185,7 +185,7 @@ bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JobControlRecor
   /*
    *  TODO: what happens with multiple IDs?
    */
-   if (! get_next_jobid_from_list(&p, &restoreJobId) ) {
+   if (! GetNextJobidFromList(&p, &restoreJobId) ) {
       Jmsg(jcr, M_FATAL, 0, _("Error getting next jobid from list\n"));
    }
    if (restoreJobId == 0) {
@@ -194,7 +194,7 @@ bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JobControlRecor
    /*
     * Get Media for certain job
     */
-   VolCount = jcr->db->get_job_volume_parameters(jcr,
+   VolCount = jcr->db->GetJobVolumeParameters(jcr,
                                            restoreJobId,
                                            &VolParams);
 

@@ -52,7 +52,7 @@ const int debuglevel = 3400;
 /* External variables we reference */
 
 /* External referenced functions */
-void free_bregexps(alist *bregexps);
+void FreeBregexps(alist *bregexps);
 
 /* Forward referenced functions */
 extern "C" void timeout_handler(int sig);
@@ -92,17 +92,17 @@ static pthread_once_t key_once = PTHREAD_ONCE_INIT;
 
 static char Job_status[]     = "Status Job=%s JobStatus=%d\n";
 
-void lock_jobs()
+void LockJobs()
 {
    P(job_start_mutex);
 }
 
-void unlock_jobs()
+void UnlockJobs()
 {
    V(job_start_mutex);
 }
 
-void init_last_jobs_list()
+void InitLastJobsList()
 {
    JobControlRecord *jcr = NULL;
    struct s_last_job *job_entry = NULL;
@@ -114,10 +114,10 @@ void init_last_jobs_list()
    }
 }
 
-void term_last_jobs_list()
+void TermLastJobsList()
 {
    if (last_jobs) {
-      lock_last_jobs_list();
+      LockLastJobsList();
       while (!last_jobs->empty()) {
          void *je = last_jobs->first();
          last_jobs->remove(je);
@@ -125,7 +125,7 @@ void term_last_jobs_list()
       }
       delete last_jobs;
       last_jobs = NULL;
-      unlock_last_jobs_list();
+      UnlockLastJobsList();
    }
    if (jcrs) {
       delete jcrs;
@@ -133,7 +133,7 @@ void term_last_jobs_list()
    }
 }
 
-bool read_last_jobs_list(int fd, uint64_t addr)
+bool ReadLastJobsList(int fd, uint64_t addr)
 {
    struct s_last_job *je, job;
    uint32_t num;
@@ -150,7 +150,7 @@ bool read_last_jobs_list(int fd, uint64_t addr)
    if (num > 4 * max_last_jobs) {  /* sanity check */
       return false;
    }
-   lock_last_jobs_list();
+   LockLastJobsList();
    for ( ; num; num--) {
       if (read(fd, &job, sizeof(job)) != sizeof(job)) {
          berrno be;
@@ -162,7 +162,7 @@ bool read_last_jobs_list(int fd, uint64_t addr)
          je = (struct s_last_job *)malloc(sizeof(struct s_last_job));
          memcpy((char *)je, (char *)&job, sizeof(job));
          if (!last_jobs) {
-            init_last_jobs_list();
+            InitLastJobsList();
          }
          last_jobs->append(je);
          if (last_jobs->size() > max_last_jobs) {
@@ -172,11 +172,11 @@ bool read_last_jobs_list(int fd, uint64_t addr)
          }
       }
    }
-   unlock_last_jobs_list();
+   UnlockLastJobsList();
    return ok;
 }
 
-uint64_t write_last_jobs_list(int fd, uint64_t addr)
+uint64_t WriteLastJobsList(int fd, uint64_t addr)
 {
    struct s_last_job *je;
    uint32_t num;
@@ -187,7 +187,7 @@ uint64_t write_last_jobs_list(int fd, uint64_t addr)
       return 0;
    }
    if (last_jobs) {
-      lock_last_jobs_list();
+      LockLastJobsList();
       /*
        * First record is number of entires
        */
@@ -204,7 +204,7 @@ uint64_t write_last_jobs_list(int fd, uint64_t addr)
             goto bail_out;
          }
       }
-      unlock_last_jobs_list();
+      UnlockLastJobsList();
    }
 
    /*
@@ -217,16 +217,16 @@ uint64_t write_last_jobs_list(int fd, uint64_t addr)
    return status;
 
 bail_out:
-   unlock_last_jobs_list();
+   UnlockLastJobsList();
    return 0;
 }
 
-void lock_last_jobs_list()
+void LockLastJobsList()
 {
    P(last_jobs_mutex);
 }
 
-void unlock_last_jobs_list()
+void UnlockLastJobsList()
 {
    V(last_jobs_mutex);
 }
@@ -307,7 +307,7 @@ bool JobControlRecord::JobReads()
 /*
  * Push a job_callback_item onto the job end callback stack.
  */
-void register_job_end_callback(JobControlRecord *jcr, void job_end_cb(JobControlRecord *jcr, void *), void *ctx)
+void RegisterJobEndCallback(JobControlRecord *jcr, void job_end_cb(JobControlRecord *jcr, void *), void *ctx)
 {
    job_callback_item *item;
 
@@ -414,13 +414,13 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    jcr->sched_time = time(NULL);
    jcr->initial_sched_time = jcr->sched_time;
    jcr->daemon_free_jcr = daemon_free_jcr;    /* plug daemon free routine */
-   jcr->init_mutex();
-   jcr->inc_use_count();
-   jcr->VolumeName = get_pool_memory(PM_FNAME);
+   jcr->InitMutex();
+   jcr->IncUseCount();
+   jcr->VolumeName = GetPoolMemory(PM_FNAME);
    jcr->VolumeName[0] = 0;
-   jcr->errmsg = get_pool_memory(PM_MESSAGE);
+   jcr->errmsg = GetPoolMemory(PM_MESSAGE);
    jcr->errmsg[0] = 0;
-   jcr->comment = get_pool_memory(PM_FNAME);
+   jcr->comment = GetPoolMemory(PM_FNAME);
    jcr->comment[0] = 0;
 
    /*
@@ -440,16 +440,16 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
     * Locking jobs is a global lock that is needed
     * so that the Director can stop new jobs from being
     * added to the jcr chain while it processes a new
-    * conf file and does the register_job_end_callback().
+    * conf file and does the RegisterJobEndCallback().
     */
-   lock_jobs();
+   LockJobs();
    lock_jcr_chain();
    if (!jcrs) {
       jcrs = New(dlist(jcr, &jcr->link));
    }
    jcrs->append(jcr);
    unlock_jcr_chain();
-   unlock_jobs();
+   UnlockJobs();
 
    return jcr;
 }
@@ -485,10 +485,10 @@ static void free_common_jcr(JobControlRecord *jcr)
    /*
     * Uses jcr lock/unlock
     */
-   remove_jcr_from_tsd(jcr);
-   jcr->set_killable(false);
+   RemoveJcrFromTsd(jcr);
+   jcr->SetKillable(false);
 
-   jcr->destroy_mutex();
+   jcr->DestroyMutex();
 
    if (jcr->msg_queue) {
       delete jcr->msg_queue;
@@ -497,12 +497,12 @@ static void free_common_jcr(JobControlRecord *jcr)
    }
 
    if (jcr->client_name) {
-      free_pool_memory(jcr->client_name);
+      FreePoolMemory(jcr->client_name);
       jcr->client_name = NULL;
    }
 
    if (jcr->attr) {
-      free_pool_memory(jcr->attr);
+      FreePoolMemory(jcr->attr);
       jcr->attr = NULL;
    }
 
@@ -512,7 +512,7 @@ static void free_common_jcr(JobControlRecord *jcr)
    }
 
    if (jcr->VolumeName) {
-      free_pool_memory(jcr->VolumeName);
+      FreePoolMemory(jcr->VolumeName);
       jcr->VolumeName = NULL;
    }
 
@@ -523,7 +523,7 @@ static void free_common_jcr(JobControlRecord *jcr)
    }
 
    if (jcr->errmsg) {
-      free_pool_memory(jcr->errmsg);
+      FreePoolMemory(jcr->errmsg);
       jcr->errmsg = NULL;
    }
 
@@ -538,24 +538,24 @@ static void free_common_jcr(JobControlRecord *jcr)
    }
 
    if (jcr->where_bregexp) {
-      free_bregexps(jcr->where_bregexp);
+      FreeBregexps(jcr->where_bregexp);
       delete jcr->where_bregexp;
       jcr->where_bregexp = NULL;
    }
 
    if (jcr->cached_path) {
-      free_pool_memory(jcr->cached_path);
+      FreePoolMemory(jcr->cached_path);
       jcr->cached_path = NULL;
       jcr->cached_pnl = 0;
    }
 
    if (jcr->id_list) {
-      free_guid_list(jcr->id_list);
+      FreeGuidList(jcr->id_list);
       jcr->id_list = NULL;
    }
 
    if (jcr->comment) {
-      free_pool_memory(jcr->comment);
+      FreePoolMemory(jcr->comment);
       jcr->comment = NULL;
    }
 
@@ -570,41 +570,41 @@ void b_free_jcr(const char *file, int line, JobControlRecord *jcr)
 {
    struct s_last_job *je;
 
-   Dmsg3(debuglevel, "Enter free_jcr jid=%u from %s:%d\n", jcr->JobId, file, line);
+   Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file, line);
 
 #else
 
-void free_jcr(JobControlRecord *jcr)
+void FreeJcr(JobControlRecord *jcr)
 {
    struct s_last_job *je;
 
-   Dmsg3(debuglevel, "Enter free_jcr jid=%u use_count=%d Job=%s\n",
-         jcr->JobId, jcr->use_count(), jcr->Job);
+   Dmsg3(debuglevel, "Enter FreeJcr jid=%u UseCount=%d Job=%s\n",
+         jcr->JobId, jcr->UseCount(), jcr->Job);
 
 #endif
 
    lock_jcr_chain();
-   jcr->dec_use_count();              /* decrement use count */
-   if (jcr->use_count() < 0) {
-      Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord use_count=%d JobId=%d\n"),
-         jcr->use_count(), jcr->JobId);
+   jcr->DecUseCount();              /* decrement use count */
+   if (jcr->UseCount() < 0) {
+      Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
+         jcr->UseCount(), jcr->JobId);
    }
    if (jcr->JobId > 0) {
-      Dmsg3(debuglevel, "Dec free_jcr jid=%u use_count=%d Job=%s\n",
-         jcr->JobId, jcr->use_count(), jcr->Job);
+      Dmsg3(debuglevel, "Dec FreeJcr jid=%u UseCount=%d Job=%s\n",
+         jcr->JobId, jcr->UseCount(), jcr->Job);
    }
-   if (jcr->use_count() > 0) {          /* if in use */
+   if (jcr->UseCount() > 0) {          /* if in use */
       unlock_jcr_chain();
       return;
    }
    if (jcr->JobId > 0) {
-      Dmsg3(debuglevel, "remove jcr jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+      Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
    }
    remove_jcr(jcr);                   /* remove Jcr from chain */
    unlock_jcr_chain();
 
-   dequeue_messages(jcr);
+   DequeueMessages(jcr);
    call_job_end_callbacks(jcr);                  /* call registered callbacks */
 
    Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
@@ -623,7 +623,7 @@ void free_jcr(JobControlRecord *jcr)
        * Keep list of last jobs, but not Console where JobId==0
        */
       if (jcr->JobId > 0) {
-         lock_last_jobs_list();
+         LockLastJobsList();
          num_jobs_run++;
          je = (struct s_last_job *)malloc(sizeof(struct s_last_job));
          memset(je, 0, sizeof(struct s_last_job));  /* zero in case unset fields */
@@ -641,7 +641,7 @@ void free_jcr(JobControlRecord *jcr)
          je->end_time = time(NULL);
 
          if (!last_jobs) {
-            init_last_jobs_list();
+            InitLastJobsList();
          }
          last_jobs->append(je);
          if (last_jobs->size() > max_last_jobs) {
@@ -649,25 +649,25 @@ void free_jcr(JobControlRecord *jcr)
             last_jobs->remove(je);
             free(je);
          }
-         unlock_last_jobs_list();
+         UnlockLastJobsList();
       }
       break;
    default:
       break;
    }
 
-   close_msg(jcr);                    /* close messages for this job */
+   CloseMsg(jcr);                    /* close messages for this job */
 
    if (jcr->daemon_free_jcr) {
       jcr->daemon_free_jcr(jcr);      /* call daemon free routine */
    }
 
    free_common_jcr(jcr);
-   close_msg(NULL);                   /* flush any daemon messages */
-   Dmsg0(debuglevel, "Exit free_jcr\n");
+   CloseMsg(NULL);                   /* flush any daemon messages */
+   Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
 
-void JobControlRecord::set_killable(bool killable)
+void JobControlRecord::SetKillable(bool killable)
 {
    lock();
 
@@ -681,14 +681,14 @@ void JobControlRecord::set_killable(bool killable)
    unlock();
 }
 
-void JobControlRecord::my_thread_send_signal(int sig)
+void JobControlRecord::MyThreadSendSignal(int sig)
 {
    lock();
 
-   if (is_killable() && !pthread_equal(my_thread_id, pthread_self())) {
+   if (IsKillable() && !pthread_equal(my_thread_id, pthread_self())) {
       Dmsg1(800, "Send kill to jid=%d\n", JobId);
       pthread_kill(my_thread_id, sig);
-   } else if (!is_killable()) {
+   } else if (!IsKillable()) {
       Dmsg1(10, "Warning, can't send kill to jid=%d\n", JobId);
    }
 
@@ -698,19 +698,19 @@ void JobControlRecord::my_thread_send_signal(int sig)
 /*
  * Remove jcr from thread specific data, but but make sure it is us who are attached.
  */
-void remove_jcr_from_tsd(JobControlRecord *jcr)
+void RemoveJcrFromTsd(JobControlRecord *jcr)
 {
    JobControlRecord *tjcr = get_jcr_from_tsd();
 
    if (tjcr == jcr) {
-      set_jcr_in_tsd(INVALID_JCR);
+      SetJcrInTsd(INVALID_JCR);
    }
 }
 
 /*
  * Put this jcr in the thread specifc data
  */
-void set_jcr_in_tsd(JobControlRecord *jcr)
+void SetJcrInTsd(JobControlRecord *jcr)
 {
    int status;
 
@@ -742,7 +742,7 @@ JobControlRecord *get_jcr_from_tsd()
 /*
  * Find which JobId corresponds to the current thread
  */
-uint32_t get_jobid_from_tsd()
+uint32_t GetJobidFromTsd()
 {
    JobControlRecord *jcr = (JobControlRecord *)pthread_getspecific(jcr_key);
    uint32_t JobId = 0;
@@ -766,9 +766,9 @@ JobControlRecord *get_jcr_by_id(uint32_t JobId)
 
    foreach_jcr(jcr) {
       if (jcr->JobId == JobId) {
-         jcr->inc_use_count();
-         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         jcr->IncUseCount();
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
          break;
       }
    }
@@ -783,7 +783,7 @@ JobControlRecord *get_jcr_by_id(uint32_t JobId)
  * Returns: JobId on success
  *          0 on failure
  */
-uint32_t get_jobid_from_tid(pthread_t tid)
+uint32_t GetJobidFromTid(pthread_t tid)
 {
    JobControlRecord *jcr = NULL;
    bool found = false;
@@ -816,9 +816,9 @@ JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
    foreach_jcr(jcr) {
       if (jcr->VolSessionId == SessionId &&
           jcr->VolSessionTime == SessionTime) {
-         jcr->inc_use_count();
-         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         jcr->IncUseCount();
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
          break;
       }
    }
@@ -846,9 +846,9 @@ JobControlRecord *get_jcr_by_partial_name(char *Job)
    len = strlen(Job);
    foreach_jcr(jcr) {
       if (bstrncmp(Job, jcr->Job, len)) {
-         jcr->inc_use_count();
-         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         jcr->IncUseCount();
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
          break;
       }
    }
@@ -874,9 +874,9 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
 
    foreach_jcr(jcr) {
       if (bstrcmp(jcr->Job, Job)) {
-         jcr->inc_use_count();
-         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         jcr->IncUseCount();
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
          break;
       }
    }
@@ -1037,7 +1037,7 @@ void JobControlRecord::setJobStatus(int newJobStatus)
 
    if (oldJobStatus != JobStatus) {
       Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus, newJobStatus);
-//    generate_plugin_event(this, bEventStatusChange, NULL);
+//    GeneratePluginEvent(this, bEventStatusChange, NULL);
    }
 }
 
@@ -1088,7 +1088,7 @@ static void unlock_jcr_chain()
  * in that case, the last jcr referenced must be explicitly
  * released with:
  *
- * free_jcr(jcr);
+ * FreeJcr(jcr);
  */
 JobControlRecord *jcr_walk_start()
 {
@@ -1096,10 +1096,10 @@ JobControlRecord *jcr_walk_start()
    lock_jcr_chain();
    jcr = (JobControlRecord *)jcrs->first();
    if (jcr) {
-      jcr->inc_use_count();
+      jcr->IncUseCount();
       if (jcr->JobId > 0) {
-         Dmsg3(debuglevel, "Inc walk_start jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         Dmsg3(debuglevel, "Inc walk_start jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       }
    }
    unlock_jcr_chain();
@@ -1116,15 +1116,15 @@ JobControlRecord *jcr_walk_next(JobControlRecord *prev_jcr)
    lock_jcr_chain();
    jcr = (JobControlRecord *)jcrs->next(prev_jcr);
    if (jcr) {
-      jcr->inc_use_count();
+      jcr->IncUseCount();
       if (jcr->JobId > 0) {
-         Dmsg3(debuglevel, "Inc walk_next jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         Dmsg3(debuglevel, "Inc walk_next jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       }
    }
    unlock_jcr_chain();
    if (prev_jcr) {
-      free_jcr(prev_jcr);
+      FreeJcr(prev_jcr);
    }
    return jcr;
 }
@@ -1132,21 +1132,21 @@ JobControlRecord *jcr_walk_next(JobControlRecord *prev_jcr)
 /*
  * Release last jcr referenced
  */
-void jcr_walk_end(JobControlRecord *jcr)
+void JcrWalkEnd(JobControlRecord *jcr)
 {
    if (jcr) {
       if (jcr->JobId > 0) {
-         Dmsg3(debuglevel, "Free walk_end jid=%u use_count=%d Job=%s\n",
-            jcr->JobId, jcr->use_count(), jcr->Job);
+         Dmsg3(debuglevel, "Free walk_end jid=%u UseCount=%d Job=%s\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job);
       }
-      free_jcr(jcr);
+      FreeJcr(jcr);
    }
 }
 
 /*
  * Return number of Jobs
  */
-int job_count()
+int JobCount()
 {
    JobControlRecord *jcr;
    int count = 0;
@@ -1166,7 +1166,7 @@ int job_count()
  * Setup to call the timeout check routine every 30 seconds
  * This routine will check any timers that have been enabled.
  */
-bool init_jcr_subsystem(int timeout)
+bool InitJcrSubsystem(int timeout)
 {
    watchdog_t *wd = new_watchdog();
 
@@ -1176,7 +1176,7 @@ bool init_jcr_subsystem(int timeout)
                          if only with a #define */
    wd->callback = jcr_timeout_check;
 
-   register_watchdog(wd);
+   RegisterWatchdog(wd);
 
    return true;
 }
@@ -1202,11 +1202,11 @@ static void jcr_timeout_check(watchdog_t *self)
          timer_start = bs->timer_start;
          if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
             bs->timer_start = 0;      /* turn off timer */
-            bs->set_timed_out();
+            bs->SetTimedOut();
             Qmsg(jcr, M_ERROR, 0, _(
                  "Watchdog sending kill after %d secs to thread stalled reading Storage daemon.\n"),
                  watchdog_time - timer_start);
-            jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+            jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
          }
       }
       bs = jcr->file_bsock;
@@ -1214,11 +1214,11 @@ static void jcr_timeout_check(watchdog_t *self)
          timer_start = bs->timer_start;
          if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
             bs->timer_start = 0;      /* turn off timer */
-            bs->set_timed_out();
+            bs->SetTimedOut();
             Qmsg(jcr, M_ERROR, 0, _(
                  "Watchdog sending kill after %d secs to thread stalled reading File daemon.\n"),
                  watchdog_time - timer_start);
-            jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+            jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
          }
       }
       bs = jcr->dir_bsock;
@@ -1226,11 +1226,11 @@ static void jcr_timeout_check(watchdog_t *self)
          timer_start = bs->timer_start;
          if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
             bs->timer_start = 0;      /* turn off timer */
-            bs->set_timed_out();
+            bs->SetTimedOut();
             Qmsg(jcr, M_ERROR, 0, _(
                  "Watchdog sending kill after %d secs to thread stalled reading Director.\n"),
                  watchdog_time - timer_start);
-            jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+            jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
          }
       }
    }
@@ -1247,7 +1247,7 @@ static void jcr_timeout_check(watchdog_t *self)
  *   0 if no more JobIds are in list
  *  -1 there is an error
  */
-int get_next_jobid_from_list(char **p, uint32_t *JobId)
+int GetNextJobidFromList(char **p, uint32_t *JobId)
 {
    const int maxlen = 30;
    char jobid[maxlen+1];
@@ -1266,7 +1266,7 @@ int get_next_jobid_from_list(char **p, uint32_t *JobId)
    }
    if (jobid[0] == 0) {
       return 0;
-   } else if (!is_a_number(jobid)) {
+   } else if (!Is_a_number(jobid)) {
       return -1;                      /* error */
    }
    *p = q;
@@ -1290,7 +1290,7 @@ extern "C" void timeout_handler(int sig)
 static dbg_jcr_hook_t *dbg_jcr_hooks[MAX_DBG_HOOK];
 static int dbg_jcr_handler_count;
 
-void dbg_jcr_add_hook(dbg_jcr_hook_t *hook)
+void DbgJcrAddHook(dbg_jcr_hook_t *hook)
 {
    ASSERT(dbg_jcr_handler_count < MAX_DBG_HOOK);
    dbg_jcr_hooks[dbg_jcr_handler_count++] = hook;
@@ -1317,8 +1317,8 @@ void dbg_print_jcr(FILE *fp)
               (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
       fprintf(fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
               edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)),
-              jcr->is_killable(), (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
-      fprintf(fp, "\tuse_count=%i\n", jcr->use_count());
+              jcr->IsKillable(), (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
+      fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
       fprintf(fp, "\tJobType=%c JobLevel=%c\n",
               jcr->getJobType(), jcr->getJobLevel());
       bstrftime(buf1, sizeof(buf1), jcr->sched_time);

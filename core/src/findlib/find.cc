@@ -60,7 +60,7 @@ FindFilesPacket *init_find_files()
   ff = (FindFilesPacket *)bmalloc(sizeof(FindFilesPacket));
   memset(ff, 0, sizeof(FindFilesPacket));
 
-  ff->sys_fname = get_pool_memory(PM_FNAME);
+  ff->sys_fname = GetPoolMemory(PM_FNAME);
 
    /* Get system path and filename maximum lengths */
    path_max = pathconf(".", _PC_PATH_MAX);
@@ -80,22 +80,22 @@ FindFilesPacket *init_find_files()
 }
 
 /**
- * Set find_files options. For the moment, we only
+ * Set FindFiles options. For the moment, we only
  * provide for full/incremental saves, and setting
  * of save_time. For additional options, see above
  */
-void set_find_options(FindFilesPacket *ff, bool incremental, time_t save_time)
+void SetFindOptions(FindFilesPacket *ff, bool incremental, time_t save_time)
 {
-  Dmsg0(debuglevel, "Enter set_find_options()\n");
+  Dmsg0(debuglevel, "Enter SetFindOptions()\n");
   ff->incremental = incremental;
   ff->save_time = save_time;
-  Dmsg0(debuglevel, "Leave set_find_options()\n");
+  Dmsg0(debuglevel, "Leave SetFindOptions()\n");
 }
 
-void set_find_changed_function(FindFilesPacket *ff, bool check_fct(JobControlRecord *jcr, FindFilesPacket *ff))
+void SetFindChangedFunction(FindFilesPacket *ff, bool CheckFct(JobControlRecord *jcr, FindFilesPacket *ff))
 {
-   Dmsg0(debuglevel, "Enter set_find_changed_function()\n");
-   ff->check_fct = check_fct;
+   Dmsg0(debuglevel, "Enter SetFindChangedFunction()\n");
+   ff->CheckFct = CheckFct;
 }
 
 /**
@@ -104,12 +104,12 @@ void set_find_changed_function(FindFilesPacket *ff, bool check_fct(JobControlRec
  * will be passed back to the callback subroutine as the last
  * argument.
  */
-int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
+int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff,
                int file_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
-               int plugin_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level))
+               int PluginSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level))
 {
    ff->file_save = file_save;
-   ff->plugin_save = plugin_save;
+   ff->PluginSave = PluginSave;
 
    /* This is the new way */
    findFILESET *fileset = ff->fileset;
@@ -120,7 +120,7 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
        * at this place flags options are "concatenated" accross Include {} blocks
        * (not only Options{} blocks inside a Include{})
        */
-      clear_all_bits(FO_MAX, ff->flags);
+      ClearAllBits(FO_MAX, ff->flags);
       for (i = 0; i < fileset->include_list.size(); i++) {
          dlistString *node;
          findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
@@ -142,10 +142,10 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
             findFOPTS *fo;
 
             fo = (findFOPTS *)incexe->opts_list.get(j);
-            copy_bits(FO_MAX, fo->flags, ff->flags);
+            CopyBits(FO_MAX, fo->flags, ff->flags);
             ff->Compress_algo = fo->Compress_algo;
             ff->Compress_level = fo->Compress_level;
-            ff->strip_path = fo->strip_path;
+            ff->StripPath = fo->StripPath;
             ff->size_match = fo->size_match;
             ff->fstypes = fo->fstype;
             ff->drivetypes = fo->drivetype;
@@ -169,10 +169,10 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
 
             Dmsg1(debuglevel, "F %s\n", fname);
             ff->top_fname = fname;
-            if (find_one_file(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
+            if (FindOneFile(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
                return 0;                  /* error return */
             }
-            if (job_canceled(jcr)) {
+            if (JobCanceled(jcr)) {
                return 0;
             }
          }
@@ -180,16 +180,16 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
          foreach_dlist(node, &incexe->plugin_list) {
             char *fname = node->c_str();
 
-            if (!plugin_save) {
+            if (!PluginSave) {
                Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
                return 0;
             }
             Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
             ff->top_fname = fname;
             ff->cmd_plugin = true;
-            plugin_save(jcr, ff, true);
+            PluginSave(jcr, ff, true);
             ff->cmd_plugin = false;
-            if (job_canceled(jcr)) {
+            if (JobCanceled(jcr)) {
                return 0;
             }
          }
@@ -202,7 +202,7 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
  * Test if the currently selected directory (in ff->fname) is
  * explicitly in the Include list or explicitly in the Exclude list.
  */
-bool is_in_fileset(FindFilesPacket *ff)
+bool IsInFileset(FindFilesPacket *ff)
 {
    int i;
    char *fname;
@@ -236,7 +236,7 @@ bool is_in_fileset(FindFilesPacket *ff)
    return false;
 }
 
-bool accept_file(FindFilesPacket *ff)
+bool AcceptFile(FindFilesPacket *ff)
 {
    int i, j, k;
    int fnm_flags;
@@ -245,8 +245,8 @@ bool accept_file(FindFilesPacket *ff)
    findIncludeExcludeItem *incexe = fileset->incexe;
    int (*match_func)(const char *pattern, const char *string, int flags);
 
-   Dmsg1(debuglevel, "enter accept_file: fname=%s\n", ff->fname);
-   if (bit_is_set(FO_ENHANCEDWILD, ff->flags)) {
+   Dmsg1(debuglevel, "enter AcceptFile: fname=%s\n", ff->fname);
+   if (BitIsSet(FO_ENHANCEDWILD, ff->flags)) {
       match_func = fnmatch;
       if ((basename = last_path_separator(ff->fname)) != NULL)
          basename++;
@@ -261,19 +261,19 @@ bool accept_file(FindFilesPacket *ff)
       findFOPTS *fo;
 
       fo = (findFOPTS *)incexe->opts_list.get(j);
-      copy_bits(FO_MAX, fo->flags, ff->flags);
+      CopyBits(FO_MAX, fo->flags, ff->flags);
       ff->Compress_algo = fo->Compress_algo;
       ff->Compress_level = fo->Compress_level;
       ff->fstypes = fo->fstype;
       ff->drivetypes = fo->drivetype;
 
-      fnm_flags = bit_is_set(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0;
-      fnm_flags |= bit_is_set(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0;
+      fnm_flags = BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0;
+      fnm_flags |= BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0;
 
       if (S_ISDIR(ff->statp.st_mode)) {
          for (k = 0; k < fo->wilddir.size(); k++) {
             if (match_func((char *)fo->wilddir.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+               if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                   Dmsg2(debuglevel, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k), ff->fname);
                   return false;       /* reject dir */
                }
@@ -283,7 +283,7 @@ bool accept_file(FindFilesPacket *ff)
       } else {
          for (k = 0; k < fo->wildfile.size(); k++) {
             if (match_func((char *)fo->wildfile.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+               if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                   Dmsg2(debuglevel, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k), ff->fname);
                   return false;       /* reject file */
                }
@@ -293,7 +293,7 @@ bool accept_file(FindFilesPacket *ff)
 
          for (k = 0; k < fo->wildbase.size(); k++) {
             if (match_func((char *)fo->wildbase.get(k), basename, fnmode | fnm_flags) == 0) {
-               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+               if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                   Dmsg2(debuglevel, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k), basename);
                   return false;       /* reject file */
                }
@@ -304,7 +304,7 @@ bool accept_file(FindFilesPacket *ff)
 
       for (k = 0; k < fo->wild.size(); k++) {
          if (match_func((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-            if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+            if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                Dmsg2(debuglevel, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k), ff->fname);
                return false;          /* reject file */
             }
@@ -315,7 +315,7 @@ bool accept_file(FindFilesPacket *ff)
       if (S_ISDIR(ff->statp.st_mode)) {
          for (k = 0; k < fo->regexdir.size(); k++) {
             if (regexec((regex_t *)fo->regexdir.get(k), ff->fname, 0, NULL,  0) == 0) {
-               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+               if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -324,7 +324,7 @@ bool accept_file(FindFilesPacket *ff)
       } else {
          for (k = 0; k < fo->regexfile.size(); k++) {
             if (regexec((regex_t *)fo->regexfile.get(k), ff->fname, 0, NULL,  0) == 0) {
-               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+               if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -334,7 +334,7 @@ bool accept_file(FindFilesPacket *ff)
 
       for (k = 0; k < fo->regex.size(); k++) {
          if (regexec((regex_t *)fo->regex.get(k), ff->fname, 0, NULL,  0) == 0) {
-            if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+            if (BitIsSet(FO_EXCLUDE, ff->flags)) {
                return false;          /* reject file */
             }
             return true;              /* accept file */
@@ -344,7 +344,7 @@ bool accept_file(FindFilesPacket *ff)
       /*
        * If we have an empty Options clause with exclude, then exclude the file
        */
-      if (bit_is_set(FO_EXCLUDE, ff->flags) &&
+      if (BitIsSet(FO_EXCLUDE, ff->flags) &&
           fo->regex.size() == 0 && fo->wild.size() == 0 &&
           fo->regexdir.size() == 0 && fo->wilddir.size() == 0 &&
           fo->regexfile.size() == 0 && fo->wildfile.size() == 0 &&
@@ -363,7 +363,7 @@ bool accept_file(FindFilesPacket *ff)
 
       for (j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         fnm_flags = bit_is_set(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
+         fnm_flags = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
          for (k = 0; k < fo->wild.size(); k++) {
             if (fnmatch((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                Dmsg1(debuglevel, "Reject wild1: %s\n", ff->fname);
@@ -372,7 +372,7 @@ bool accept_file(FindFilesPacket *ff)
          }
       }
       fnm_flags = (incexe->current_opts != NULL &&
-                   bit_is_set(FO_IGNORECASE, incexe->current_opts->flags)) ? FNM_CASEFOLD : 0;
+                   BitIsSet(FO_IGNORECASE, incexe->current_opts->flags)) ? FNM_CASEFOLD : 0;
       foreach_dlist(node, &incexe->name_list) {
          char *fname = node->c_str();
 
@@ -421,7 +421,7 @@ static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_lev
    case FT_DIRNOCHG:
    case FT_REPARSE:
    case FT_JUNCTION:
-      if (accept_file(ff)) {
+      if (AcceptFile(ff)) {
          return ff->file_save(jcr, ff, top_level);
       } else {
          Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
@@ -435,24 +435,24 @@ static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_lev
 }
 
 /**
- * Terminate find_files() and release all allocated memory
+ * Terminate FindFiles() and release all allocated memory
  */
-int term_find_files(FindFilesPacket *ff)
+int TermFindFiles(FindFilesPacket *ff)
 {
    int hard_links = 0;
 
    if (ff) {
-      free_pool_memory(ff->sys_fname);
+      FreePoolMemory(ff->sys_fname);
       if (ff->fname_save) {
-         free_pool_memory(ff->fname_save);
+         FreePoolMemory(ff->fname_save);
       }
       if (ff->link_save) {
-         free_pool_memory(ff->link_save);
+         FreePoolMemory(ff->link_save);
       }
       if (ff->ignoredir_fname) {
-         free_pool_memory(ff->ignoredir_fname);
+         FreePoolMemory(ff->ignoredir_fname);
       }
-      hard_links = term_find_one(ff);
+      hard_links = TermFindOne(ff);
       free(ff);
    }
 
@@ -562,7 +562,7 @@ findFOPTS *start_options(FindFilesPacket *ff)
 /**
  * Used by plugins to define a new options block
  */
-void new_options(FindFilesPacket *ff, findIncludeExcludeItem *incexe)
+void NewOptions(FindFilesPacket *ff, findIncludeExcludeItem *incexe)
 {
    findFOPTS *fo;
 

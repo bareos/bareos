@@ -21,7 +21,7 @@
 #ifndef BAREOS_STORED_SOCKET_SERVER_H_
 #define BAREOS_STORED_SOCKET_SERVER_H_
 
-void start_socket_server(dlist *addrs);
-void stop_socket_server();
+void StartSocketServer(dlist *addrs);
+void StopSocketServer();
 
 #endif // BAREOS_STORED_SOCKET_SERVER_H_

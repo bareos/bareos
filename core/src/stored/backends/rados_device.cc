@@ -340,7 +340,7 @@ bail_out:
 /**
  * Read some data from an object at a given offset.
  */
-ssize_t rados_device::read_object_data(boffset_t offset, char *buffer, size_t count)
+ssize_t rados_device::ReadObjectData(boffset_t offset, char *buffer, size_t count)
 {
 #ifdef HAVE_RADOS_STRIPER
    if (stripe_volume_) {
@@ -361,7 +361,7 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
    if (ctx_) {
       size_t nr_read = 0;
 
-      nr_read = read_object_data(offset_, (char *)buffer, count);
+      nr_read = ReadObjectData(offset_, (char *)buffer, count);
       if (nr_read >= 0) {
          offset_ += nr_read;
       } else {
@@ -380,7 +380,7 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
  * Write some data to an object at a given offset.
  * Seems the API changed everything earlier then 0.69 returns bytes written.
  */
-ssize_t rados_device::write_object_data(boffset_t offset, char *buffer, size_t count)
+ssize_t rados_device::WriteObjectData(boffset_t offset, char *buffer, size_t count)
 {
 #if LIBRADOS_VERSION_CODE <= 17408
    return = rados_write(ctx_, virtual_filename_, buffer, count, offset);
@@ -414,7 +414,7 @@ ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
    if (ctx_) {
       size_t nr_written = 0;
 
-      nr_written = write_object_data(offset_, (char *)buffer, count);
+      nr_written = WriteObjectData(offset_, (char *)buffer, count);
       if (nr_written >= 0) {
          offset_ += nr_written;
       }
@@ -454,7 +454,7 @@ int rados_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 }
 
 #ifdef HAVE_RADOS_STRIPER
-ssize_t rados_device::striper_volume_size()
+ssize_t rados_device::StriperVolumeSize()
 {
    uint64_t object_size;
    time_t object_mtime;
@@ -467,7 +467,7 @@ ssize_t rados_device::striper_volume_size()
 }
 #endif
 
-ssize_t rados_device::volume_size()
+ssize_t rados_device::VolumeSize()
 {
    uint64_t object_size;
    time_t object_mtime;
@@ -493,12 +493,12 @@ boffset_t rados_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int 
 
 #ifdef HAVE_RADOS_STRIPER
       if (stripe_volume_) {
-         filesize = striper_volume_size();
+         filesize = StriperVolumeSize();
       } else {
-         filesize = volume_size();
+         filesize = VolumeSize();
       }
 #else
-      filesize = volume_size();
+      filesize = VolumeSize();
 #endif
 
       if (filesize >= 0) {
@@ -631,7 +631,7 @@ rados_device::~rados_device()
       free(rados_configstring_);
    }
 
-   free_pool_memory(virtual_filename_);
+   FreePoolMemory(virtual_filename_);
 }
 
 rados_device::rados_device()
@@ -654,7 +654,7 @@ rados_device::rados_device()
    object_size_ = 4194304;
    striper_ = NULL;
 #endif
-   virtual_filename_ = get_pool_memory(PM_FNAME);
+   virtual_filename_ = GetPoolMemory(PM_FNAME);
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

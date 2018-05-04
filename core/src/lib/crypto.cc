@@ -148,7 +148,7 @@ const char *crypto_digest_name(crypto_digest_t type)
  * Given a stream type, returns the associated
  * crypto_digest_t value.
  */
-crypto_digest_t crypto_digest_stream_type(int stream)
+crypto_digest_t CryptoDigestStreamType(int stream)
 {
    switch (stream) {
    case STREAM_MD5_DIGEST:

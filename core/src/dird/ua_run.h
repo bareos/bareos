@@ -24,8 +24,8 @@
 
 #include "dird/ua.h"
 
-bool rerun_cmd(UaContext *ua, const char *cmd);
-bool run_cmd(UaContext *ua, const char *cmd);
-int do_run_cmd(UaContext *ua, const char *cmd);
+bool reRunCmd(UaContext *ua, const char *cmd);
+bool RunCmd(UaContext *ua, const char *cmd);
+int DoRunCmd(UaContext *ua, const char *cmd);
 
 #endif // BAREOS_DIRD_UA_RUN_H_

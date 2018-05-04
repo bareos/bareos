@@ -36,5 +36,5 @@ public:
 
 DLL_IMP_EXP Bpipe *open_bpipe(char *prog, int wait, const char *mode,
                   bool dup_stderr = true);
-DLL_IMP_EXP int close_wpipe(Bpipe *bpipe);
-DLL_IMP_EXP int close_bpipe(Bpipe *bpipe);
+DLL_IMP_EXP int CloseWpipe(Bpipe *bpipe);
+DLL_IMP_EXP int CloseBpipe(Bpipe *bpipe);

@@ -499,7 +499,7 @@ static void repopulate_mntent_cache(void)
 /**
  * Flush the current content from the cache.
  */
-void flush_mntent_cache(void)
+void FlushMntentCache(void)
 {
    mntent_cache_entry_t *mce;
 
@@ -525,7 +525,7 @@ void flush_mntent_cache(void)
  * Release a mntent mapping reference returned
  * by a successfull call to find_mntent_mapping.
  */
-void release_mntent_mapping(mntent_cache_entry_t *mce)
+void ReleaseMntentMapping(mntent_cache_entry_t *mce)
 {
    /**
     * Lock the cache.

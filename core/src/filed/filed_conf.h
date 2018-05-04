@@ -118,5 +118,5 @@ union UnionOfResources {
    ~UnionOfResources() {}
 };
 
-void init_fd_config(ConfigurationParser *config, const char *configfile, int exit_code);
-bool print_config_schema_json(PoolMem &buffer);
+void InitFdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+bool PrintConfigSchemaJson(PoolMem &buffer);

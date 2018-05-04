@@ -45,8 +45,8 @@ TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
  *  Returns: Pointer to TLS_CONTEXT instance on success
  *           NULL on failure;
  */
-TLS_CONTEXT *new_tls_context(const char *ca_certfile,
-                             const char *ca_certdir,
+TLS_CONTEXT *new_tls_context(const char *CaCertfile,
+                             const char *CaCertdir,
                              const char *crlfile,
                              const char *certfile,
                              const char *keyfile,
@@ -54,12 +54,12 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              const void *pem_userdata,
                              const char *dhfile,
                              const char *cipherlist,
-                             bool verify_peer)
+                             bool VerifyPeer)
 {
    return NULL;
 }
 
-void free_tls_context(TLS_CONTEXT *ctx)
+void FreeTlsContext(TLS_CONTEXT *ctx)
 {
 }
 
@@ -89,7 +89,7 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
 
 bool get_tls_verify_peer(TLS_CONTEXT *ctx)
 {
-   return (ctx) ? ctx->verify_peer : false;
+   return (ctx) ? ctx->VerifyPeer : false;
 }
 
 /*
@@ -125,7 +125,7 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
       return NULL;
 }
 
-void free_tls_connection(TLS_CONNECTION *tls_conn)
+void FreeTlsConnection(TLS_CONNECTION *tls_conn)
 {
 }
 
@@ -149,16 +149,16 @@ bool tls_bsock_accept(BareosSocket *bsock)
    return false;
 }
 
-void tls_bsock_shutdown(BareosSocket *bsock)
+void TlsBsockShutdown(BareosSocket *bsock)
 {
 }
 
-int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return -1;
 }
 
-int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes)
+int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return -1;
 }

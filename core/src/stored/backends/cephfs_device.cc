@@ -349,7 +349,7 @@ cephfs_device::~cephfs_device()
       cephfs_configstring_ = NULL;
    }
 
-   free_pool_memory(virtual_filename_);
+   FreePoolMemory(virtual_filename_);
 }
 
 cephfs_device::cephfs_device()
@@ -358,7 +358,7 @@ cephfs_device::cephfs_device()
    cephfs_conffile_ = NULL;
    basedir_ = NULL;
    cmount_ = NULL;
-   virtual_filename_ = get_pool_memory(PM_FNAME);
+   virtual_filename_ = GetPoolMemory(PM_FNAME);
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

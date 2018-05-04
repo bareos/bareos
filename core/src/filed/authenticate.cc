@@ -86,7 +86,7 @@ static inline void authenticate_failed(JobControlRecord *jcr, PoolMem &message)
  * Basic tasks done here:
  * We read Director's initial message and authorize him.
  */
-bool authenticate_director(JobControlRecord *jcr)
+bool AuthenticateDirector(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
 
@@ -96,7 +96,7 @@ bool authenticate_director(JobControlRecord *jcr)
 
    if (dir->msglen < 25 || dir->msglen > 500) {
       char addr[64];
-      char *who = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
+      char *who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"), who, dir->msglen);
       authenticate_failed(jcr, errormsg);
       return false;
@@ -104,19 +104,19 @@ bool authenticate_director(JobControlRecord *jcr)
 
    if (sscanf(dir->msg, "Hello Director %s calling", dirname.check_size(dir->msglen)) != 1) {
       char addr[64];
-      char *who     = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
+      char *who     = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       dir->msg[100] = 0;
       errormsg.bsprintf(_("Bad Hello command from Director at %s: %s\n"), who, dir->msg);
       authenticate_failed(jcr, errormsg);
       return false;
    }
 
-   unbash_spaces(dirname.c_str());
+   UnbashSpaces(dirname.c_str());
    director = (DirectorResource *)GetResWithName(R_DIRECTOR, dirname.c_str());
 
    if (!director) {
       char addr[64];
-      char *who = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
+      char *who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       errormsg.bsprintf(
           _("Connection from unknown Director %s at %s rejected.\n"), dirname.c_str(), who);
       authenticate_failed(jcr, errormsg);
@@ -129,7 +129,7 @@ bool authenticate_director(JobControlRecord *jcr)
       return false;
    }
 
-   if (!dir->authenticate_inbound_connection(
+   if (!dir->AuthenticateInboundConnection(
            jcr, "Director", dirname.c_str(), director->password, director)) {
       dir->fsend("%s", Dir_sorry);
       errormsg.bsprintf(_("Unable to authenticate Director %s.\n"), dirname.c_str());
@@ -145,15 +145,15 @@ bool authenticate_director(JobControlRecord *jcr)
 /**
  * Authenticate with a remote director.
  */
-bool authenticate_with_director(JobControlRecord *jcr, DirectorResource *director) {
-   return jcr->dir_bsock->authenticate_outbound_connection(
+bool AuthenticateWithDirector(JobControlRecord *jcr, DirectorResource *director) {
+   return jcr->dir_bsock->AuthenticateOutboundConnection(
       jcr, "Director", me->name(), director->password, director);
 }
 
 /**
  * Authenticate a remote storage daemon.
  */
-bool authenticate_storagedaemon(JobControlRecord *jcr)
+bool AuthenticateStoragedaemon(JobControlRecord *jcr)
 {
    bool result = false;
    BareosSocket *sd = jcr->store_bsock;
@@ -161,7 +161,7 @@ bool authenticate_storagedaemon(JobControlRecord *jcr)
 
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
-   result = sd->authenticate_inbound_connection(jcr, "Storage daemon", jcr->client_name, password, me);
+   result = sd->AuthenticateInboundConnection(jcr, "Storage daemon", jcr->client_name, password, me);
 
    /*
     * Destroy session key
@@ -177,7 +177,7 @@ bool authenticate_storagedaemon(JobControlRecord *jcr)
 /**
  * Authenticate with a remote storage daemon.
  */
-bool authenticate_with_storagedaemon(JobControlRecord *jcr)
+bool AuthenticateWithStoragedaemon(JobControlRecord *jcr)
 {
    bool result = false;
    BareosSocket *sd = jcr->store_bsock;
@@ -185,7 +185,7 @@ bool authenticate_with_storagedaemon(JobControlRecord *jcr)
 
    password.encoding = p_encoding_md5;
    password.value    = jcr->sd_auth_key;
-   result = sd->authenticate_outbound_connection(
+   result = sd->AuthenticateOutboundConnection(
       jcr, "Storage daemon", (char *) jcr->client_name, password, me);
 
    /*

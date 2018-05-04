@@ -62,7 +62,7 @@ static char Dir_sorry[] =
 /**
  * Authenticate with a remote Storage daemon
  */
-bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *store)
+bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store)
 {
    BareosSocket *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
@@ -72,7 +72,7 @@ bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *stor
     * Send my name to the Storage daemon then do authentication
     */
    bstrncpy(dirname, me->hdr.name, sizeof(dirname));
-   bash_spaces(dirname);
+   BashSpaces(dirname);
 
    if (!sd->fsend(hello, dirname)) {
       Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
@@ -80,7 +80,7 @@ bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *stor
       return false;
    }
 
-   auth_success = sd->authenticate_outbound_connection(
+   auth_success = sd->AuthenticateOutboundConnection(
        jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {
       Dmsg2(debuglevel,
@@ -119,7 +119,7 @@ bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *stor
 /**
  * Authenticate with a remote File daemon
  */
-bool authenticate_with_file_daemon(JobControlRecord *jcr)
+bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
    ClientResource *client = jcr->res.client;
@@ -137,7 +137,7 @@ bool authenticate_with_file_daemon(JobControlRecord *jcr)
     * Send my name to the File daemon then do authentication
     */
    bstrncpy(dirname, me->name(), sizeof(dirname));
-   bash_spaces(dirname);
+   BashSpaces(dirname);
 
    if (!fd->fsend(hello, dirname)) {
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
@@ -147,7 +147,7 @@ bool authenticate_with_file_daemon(JobControlRecord *jcr)
    Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
 auth_success =
-    fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, client);
+    fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password, client);
 
 if (!auth_success) {
    Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
@@ -191,16 +191,16 @@ if (!auth_success) {
 /**
  * Authenticate File daemon connection
  */
-bool authenticate_file_daemon(BareosSocket *fd, char *client_name)
+bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
 {
    ClientResource *client;
    bool auth_success = false;
 
-   unbash_spaces(client_name);
+   UnbashSpaces(client_name);
    client = (ClientResource *)GetResWithName(R_CLIENT, client_name);
    if (client) {
-      if (is_connect_from_client_allowed(client)) {
-         auth_success = fd->authenticate_inbound_connection(
+      if (IsConnectFromClientAllowed(client)) {
+         auth_success = fd->AuthenticateInboundConnection(
              NULL, "File Daemon", client_name, client->password, client);
       }
    }
@@ -241,7 +241,7 @@ static inline bool count_console_connections()
 /**
  * Authenticate user agent.
  */
-bool authenticate_user_agent(UaContext *uac)
+bool AuthenticateUserAgent(UaContext *uac)
 {
    char name[MAX_NAME_LENGTH];
    ConsoleResource *cons = NULL;
@@ -263,14 +263,14 @@ bool authenticate_user_agent(UaContext *uac)
    }
 
    if (bstrcmp(name, "*UserAgent*")) { /* default console */
-      auth_success = ua->authenticate_inbound_connection(
+      auth_success = ua->AuthenticateInboundConnection(
           NULL, "Console", "*UserAgent*", me->password, me);
    } else {
-      unbash_spaces(name);
+      UnbashSpaces(name);
       cons = (ConsoleResource *)GetResWithName(R_CONSOLE, name);
       if (cons) {
          auth_success =
-             ua->authenticate_inbound_connection(NULL, "Console", name, cons->password, cons);
+             ua->AuthenticateInboundConnection(NULL, "Console", name, cons->password, cons);
 
          if (auth_success) {
             uac->cons = cons; /* save console resource pointer */

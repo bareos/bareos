@@ -39,7 +39,7 @@
 /**
  * Open a fifo device
  */
-void win32_fifo_device::open_device(DeviceControlRecord *dcr, int omode)
+void win32_fifo_device::OpenDevice(DeviceControlRecord *dcr, int omode)
 {
    file_size = 0;
    int timeout = max_open_wait;
@@ -49,7 +49,7 @@ void win32_fifo_device::open_device(DeviceControlRecord *dcr, int omode)
 
    Dmsg0(100, "Open dev: device is fifo\n");
 
-   get_autochanger_loaded_slot(dcr);
+   GetAutochangerLoadedSlot(dcr);
 
    open_mode = omode;
    set_mode(omode);
@@ -92,7 +92,7 @@ void win32_fifo_device::open_device(DeviceControlRecord *dcr, int omode)
             break;
          }
          dev_errno = 0;
-         lock_door();
+         LockDoor();
          break;                               /* Successfully opened and rewound */
       }
       bmicrosleep(5, 0);
@@ -105,7 +105,7 @@ void win32_fifo_device::open_device(DeviceControlRecord *dcr, int omode)
       }
    }
 
-   if (!is_open()) {
+   if (!IsOpen()) {
       berrno be;
       Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
             prt_name, be.bstrerror(dev_errno));
@@ -116,7 +116,7 @@ void win32_fifo_device::open_device(DeviceControlRecord *dcr, int omode)
     * Stop any open() timer we started
     */
    if (tid) {
-      stop_thread_timer(tid);
+      StopThreadTimer(tid);
       tid = 0;
    }
 
@@ -132,11 +132,11 @@ bool win32_fifo_device::eod(DeviceControlRecord *dcr)
    }
 
    Dmsg0(100, "Enter eod\n");
-   if (at_eot()) {
+   if (AtEot()) {
       return true;
    }
 
-   clear_eof();         /* remove EOF flag */
+   ClearEof();         /* remove EOF flag */
 
    block_num = file = 0;
    file_size = 0;
@@ -168,9 +168,9 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
       icmd = device->unmount_command;
    }
 
-   dcr->dev->edit_mount_codes(ocmd, icmd);
+   dcr->dev->EditMountCodes(ocmd, icmd);
 
-   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), dcr->dev->is_mounted());
+   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), dcr->dev->IsMounted());
 
    if (dotimeout) {
       /* Try at most 10 times to (un)mount the device. This should perhaps be configurable. */
@@ -178,11 +178,11 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
    } else {
       tries = 1;
    }
-   results = get_memory(4000);
+   results = GetMemory(4000);
 
    /* If busy retry each second */
    Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-   while ((status = run_program_full_output(ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
+   while ((status = RunProgramFullOutput(ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
       /* Doesn't work with internationalization (This is not a problem) */
       if (mount && fnmatch("*is already mounted on*", results, 0) == 0) {
          break;
@@ -226,7 +226,7 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
       count = 0;
       while (1) {
 #ifdef USE_READDIR_R
-         if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+         if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
 #else
          result = readdir(dp);
          if (result == NULL) {
@@ -258,19 +258,19 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
             break;
          } else {
             /* An unmount request. We failed to unmount - report an error */
-            free_pool_memory(results);
+            FreePoolMemory(results);
             Dmsg0(200, "== error mount=1 wanted unmount\n");
             return false;
          }
       }
 get_out:
-      free_pool_memory(results);
+      FreePoolMemory(results);
       Dmsg0(200, "============ mount=0\n");
       Dsm_check(200);
       return false;
    }
 
-   free_pool_memory(results);
+   FreePoolMemory(results);
    Dmsg1(200, "============ mount=%d\n", mount);
    return true;
 }
@@ -281,11 +281,11 @@ get_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool win32_fifo_device::mount_backend(DeviceControlRecord *dcr, int timeout)
+bool win32_fifo_device::MountBackend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
-   if (requires_mount() && device->mount_command) {
+   if (RequiresMount() && device->mount_command) {
       retval = do_mount(dcr, true, timeout);
    }
 
@@ -298,11 +298,11 @@ bool win32_fifo_device::mount_backend(DeviceControlRecord *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool win32_fifo_device::unmount_backend(DeviceControlRecord *dcr, int timeout)
+bool win32_fifo_device::UnmountBackend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
-   if (requires_mount() && device->unmount_command) {
+   if (RequiresMount() && device->unmount_command) {
       retval = do_mount(dcr, false, timeout);
    }
 

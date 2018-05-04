@@ -22,8 +22,8 @@
 #ifndef BAREOS_DIRD_UA_UPDATE_H_
 #define BAREOS_DIRD_UA_UPDATE_H_
 
-void update_vol_pool(UaContext *ua, char *val, MediaDbRecord *mr, PoolDbRecord *opr);
-void update_slots_from_vol_list(UaContext *ua, StoreResource *store, changer_vol_list_t *vol_list, char *slot_list);
-void update_inchanger_for_export(UaContext *ua, StoreResource *store, changer_vol_list_t *vol_list, char *slot_list);
+void UpdateVolPool(UaContext *ua, char *val, MediaDbRecord *mr, PoolDbRecord *opr);
+void update_slots_from_vol_list(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list);
+void update_inchanger_for_export(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list);
 
 #endif // BAREOS_DIRD_UA_UPDATE_H_

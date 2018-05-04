@@ -22,10 +22,10 @@
 #ifndef BAREOS_STORED_AUTHENTICATE_H_
 #define BAREOS_STORED_AUTHENTICATE_H_
 
-bool authenticate_director(JobControlRecord *jcr);
-bool authenticate_storagedaemon(JobControlRecord *jcr);
-bool authenticate_with_storagedaemon(JobControlRecord *jcr);
-bool authenticate_filedaemon(JobControlRecord *jcr);
-bool authenticate_with_filedaemon(JobControlRecord *jcr);
+bool AuthenticateDirector(JobControlRecord *jcr);
+bool AuthenticateStoragedaemon(JobControlRecord *jcr);
+bool AuthenticateWithStoragedaemon(JobControlRecord *jcr);
+bool AuthenticateFiledaemon(JobControlRecord *jcr);
+bool AuthenticateWithFiledaemon(JobControlRecord *jcr);
 
 #endif // BAREOS_STORED_AUTHENTICATE_H_

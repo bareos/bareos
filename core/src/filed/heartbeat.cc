@@ -72,16 +72,16 @@ extern "C" void *sd_heartbeat_thread(void *arg)
     * check to see if we need to send a heartbeat to the
     * Director.
     */
-   while (!sd->is_stop()) {
-      n = bnet_wait_data_intr(sd.get(), WAIT_INTERVAL);
-      if (n < 0 || sd->is_stop()) {
+   while (!sd->IsStop()) {
+      n = BnetWaitDataIntr(sd.get(), WAIT_INTERVAL);
+      if (n < 0 || sd->IsStop()) {
          break;
       }
       if (me->heartbeat_interval) {
          now = time(NULL);
          if (now-last_heartbeat >= me->heartbeat_interval) {
             dir->signal(BNET_HEARTBEAT);
-            if (dir->is_stop()) {
+            if (dir->IsStop()) {
                break;
             }
             last_heartbeat = now;
@@ -89,7 +89,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
       }
       if (n == 1) {               /* input waiting */
          sd->recv();              /* read it -- probably heartbeat from sd */
-         if (sd->is_stop()) {
+         if (sd->IsStop()) {
             break;
          }
          if (sd->msglen <= 0) {
@@ -98,7 +98,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
             Dmsg2(100, "Got %d bytes from SD. MSG=%s\n", sd->msglen, sd->msg);
          }
       }
-      Dmsg2(200, "wait_intr=%d stop=%d\n", n, is_bnet_stop(sd.get()));
+      Dmsg2(200, "wait_intr=%d stop=%d\n", n, IsBnetStop(sd.get()));
    }
 
    sd->close();
@@ -111,7 +111,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
 }
 
 /* Startup the heartbeat thread -- see above */
-void start_heartbeat_monitor(JobControlRecord *jcr)
+void StartHeartbeatMonitor(JobControlRecord *jcr)
 {
    /*
     * If no signals are set, do not start the heartbeat because
@@ -127,7 +127,7 @@ void start_heartbeat_monitor(JobControlRecord *jcr)
 }
 
 /* Terminate the heartbeat thread. Used for both SD and DIR */
-void stop_heartbeat_monitor(JobControlRecord *jcr)
+void StopHeartbeatMonitor(JobControlRecord *jcr)
 {
    int cnt = 0;
    if (no_signals) {
@@ -139,13 +139,13 @@ void stop_heartbeat_monitor(JobControlRecord *jcr)
    }
 
    if (jcr->hb_started) {
-      jcr->hb_bsock->set_timed_out();       /* set timed_out to terminate read */
-      jcr->hb_bsock->set_terminated();      /* set to terminate read */
+      jcr->hb_bsock->SetTimedOut();       /* set timed_out to terminate read */
+      jcr->hb_bsock->SetTerminated();      /* set to terminate read */
    }
 
    if (jcr->hb_dir_bsock) {
-      jcr->hb_dir_bsock->set_timed_out();     /* set timed_out to terminate read */
-      jcr->hb_dir_bsock->set_terminated();    /* set to terminate read */
+      jcr->hb_dir_bsock->SetTimedOut();     /* set timed_out to terminate read */
+      jcr->hb_dir_bsock->SetTerminated();    /* set to terminate read */
    }
 
    if (jcr->hb_started) {
@@ -196,14 +196,14 @@ extern "C" void *dir_heartbeat_thread(void *arg)
    jcr->hb_started = true;
    dir->suppress_error_msgs_ = true;
 
-   while (!dir->is_stop()) {
+   while (!dir->IsStop()) {
       time_t now, next;
 
       now = time(NULL);
       next = now - last_heartbeat;
       if (next >= me->heartbeat_interval) {
          dir->signal(BNET_HEARTBEAT);
-         if (dir->is_stop()) {
+         if (dir->IsStop()) {
             break;
          }
          last_heartbeat = now;
@@ -219,17 +219,17 @@ extern "C" void *dir_heartbeat_thread(void *arg)
 /**
  * Same as above but we don't listen to the SD
  */
-void start_dir_heartbeat(JobControlRecord *jcr)
+void StartDirHeartbeat(JobControlRecord *jcr)
 {
    if (me->heartbeat_interval) {
-      jcr->dir_bsock->set_locking();
+      jcr->dir_bsock->SetLocking();
       pthread_create(&jcr->heartbeat_id, NULL, dir_heartbeat_thread, (void *)jcr);
    }
 }
 
-void stop_dir_heartbeat(JobControlRecord *jcr)
+void StopDirHeartbeat(JobControlRecord *jcr)
 {
    if (me->heartbeat_interval) {
-      stop_heartbeat_monitor(jcr);
+      StopHeartbeatMonitor(jcr);
    }
 }

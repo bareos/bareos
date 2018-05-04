@@ -106,17 +106,17 @@ BareosDbMysql::BareosDbMysql(JobControlRecord *jcr,
       have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
-   errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
+   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
    *errmsg = 0;
-   cmd = get_pool_memory(PM_EMSG);    /* get command buffer */
-   cached_path = get_pool_memory(PM_FNAME);
+   cmd = GetPoolMemory(PM_EMSG);    /* get command buffer */
+   cached_path = GetPoolMemory(PM_FNAME);
    cached_path_id = 0;
    ref_count_ = 1;
-   fname = get_pool_memory(PM_FNAME);
-   path = get_pool_memory(PM_FNAME);
-   esc_name = get_pool_memory(PM_FNAME);
-   esc_path = get_pool_memory(PM_FNAME);
-   esc_obj = get_pool_memory(PM_FNAME);
+   fname = GetPoolMemory(PM_FNAME);
+   path = GetPoolMemory(PM_FNAME);
+   esc_name = GetPoolMemory(PM_FNAME);
+   esc_path = GetPoolMemory(PM_FNAME);
+   esc_obj = GetPoolMemory(PM_FNAME);
    allow_transactions_ = mult_db_connections;
    is_private_ = need_private;
    try_reconnect_ = try_reconnect;
@@ -152,7 +152,7 @@ BareosDbMysql::~BareosDbMysql()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool BareosDbMysql::open_database(JobControlRecord *jcr)
+bool BareosDbMysql::OpenDatabase(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
@@ -164,7 +164,7 @@ bool BareosDbMysql::open_database(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if ((errstat=rwl_init(&lock_)) != 0) {
+   if ((errstat=RwlInit(&lock_)) != 0) {
       berrno be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
@@ -223,7 +223,7 @@ bool BareosDbMysql::open_database(JobControlRecord *jcr)
    }
 
    connected_ = true;
-   if (!check_tables_version(jcr)) {
+   if (!CheckTablesVersion(jcr)) {
       goto bail_out;
    }
 
@@ -232,8 +232,8 @@ bool BareosDbMysql::open_database(JobControlRecord *jcr)
    /*
     * Set connection timeout to 8 days specialy for batch mode
     */
-   sql_query_without_handler("SET wait_timeout=691200");
-   sql_query_without_handler("SET interactive_timeout=691200");
+   SqlQueryWithoutHandler("SET wait_timeout=691200");
+   SqlQueryWithoutHandler("SET interactive_timeout=691200");
 
    retval = true;
 
@@ -242,17 +242,17 @@ bail_out:
    return retval;
 }
 
-void BareosDbMysql::close_database(JobControlRecord *jcr)
+void BareosDbMysql::CloseDatabase(JobControlRecord *jcr)
 {
    if (connected_) {
-      end_transaction(jcr);
+      EndTransaction(jcr);
    }
    P(mutex);
    ref_count_--;
    Dmsg3(100, "closedb ref=%d connected=%d db=%p\n", ref_count_, connected_, db_handle_);
    if (ref_count_ == 0) {
       if (connected_) {
-         sql_free_result();
+         SqlFreeResult();
       }
       db_list->remove(this);
       if (connected_) {
@@ -263,17 +263,17 @@ void BareosDbMysql::close_database(JobControlRecord *jcr)
 //       mysql_server_end();
 #endif
       }
-      if (rwl_is_init(&lock_)) {
-         rwl_destroy(&lock_);
+      if (RwlIsInit(&lock_)) {
+         RwlDestroy(&lock_);
       }
-      free_pool_memory(errmsg);
-      free_pool_memory(cmd);
-      free_pool_memory(cached_path);
-      free_pool_memory(fname);
-      free_pool_memory(path);
-      free_pool_memory(esc_name);
-      free_pool_memory(esc_path);
-      free_pool_memory(esc_obj);
+      FreePoolMemory(errmsg);
+      FreePoolMemory(cmd);
+      FreePoolMemory(cached_path);
+      FreePoolMemory(fname);
+      FreePoolMemory(path);
+      FreePoolMemory(esc_name);
+      FreePoolMemory(esc_path);
+      FreePoolMemory(esc_obj);
       if (db_driver_) {
          free(db_driver_);
       }
@@ -301,7 +301,7 @@ void BareosDbMysql::close_database(JobControlRecord *jcr)
    V(mutex);
 }
 
-bool BareosDbMysql::validate_connection(void)
+bool BareosDbMysql::ValidateConnection(void)
 {
    bool retval;
    unsigned long mysql_threadid;
@@ -311,15 +311,15 @@ bool BareosDbMysql::validate_connection(void)
     * the server. We also catch a changing threadid which means
     * a reconnect has taken place.
     */
-   db_lock(this);
+   DbLock(this);
    mysql_threadid = mysql_thread_id(db_handle_);
    if (mysql_ping(db_handle_) == 0) {
       Dmsg2(500, "db_validate_connection connection valid previous threadid %ld new threadid %ld\n",
             mysql_threadid, mysql_thread_id(db_handle_));
 
       if (mysql_thread_id(db_handle_) != mysql_threadid) {
-         mysql_query(db_handle_, "SET wait_timeout=691200");
-         mysql_query(db_handle_, "SET interactive_timeout=691200");
+         mySqlQuery(db_handle_, "SET wait_timeout=691200");
+         mySqlQuery(db_handle_, "SET interactive_timeout=691200");
       }
 
       retval = true;
@@ -331,7 +331,7 @@ bool BareosDbMysql::validate_connection(void)
    }
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
@@ -343,7 +343,7 @@ bail_out:
  *  closes the database.  Thus the msgchan must call here
  *  to cleanup any thread specific data that it created.
  */
-void BareosDbMysql::thread_cleanup(void)
+void BareosDbMysql::ThreadCleanup(void)
 {
 #ifndef HAVE_WIN32
    mysql_thread_end();
@@ -357,7 +357,7 @@ void BareosDbMysql::thread_cleanup(void)
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-void BareosDbMysql::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
+void BareosDbMysql::EscapeString(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    mysql_real_escape_string(db_handle_, snew, old, len);
 }
@@ -368,7 +368,7 @@ void BareosDbMysql::escape_string(JobControlRecord *jcr, char *snew, char *old, 
  */
 char *BareosDbMysql::escape_object(JobControlRecord *jcr, char *old, int len)
 {
-   esc_obj = check_pool_memory_size(esc_obj, len*2+1);
+   esc_obj = CheckPoolMemorySize(esc_obj, len*2+1);
    mysql_real_escape_string(db_handle_, esc_obj, old, len);
    return esc_obj;
 }
@@ -376,7 +376,7 @@ char *BareosDbMysql::escape_object(JobControlRecord *jcr, char *old, int len)
 /**
  * Unescape binary object so that MySQL is happy
  */
-void BareosDbMysql::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
+void BareosDbMysql::UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
                                  POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
@@ -384,27 +384,27 @@ void BareosDbMysql::unescape_object(JobControlRecord *jcr, char *from, int32_t e
       *dest_len = 0;
       return;
    }
-   dest = check_pool_memory_size(dest, expected_len + 1);
+   dest = CheckPoolMemorySize(dest, expected_len + 1);
    *dest_len = expected_len;
    memcpy(dest, from, expected_len);
    dest[expected_len] = '\0';
 }
 
-void BareosDbMysql::start_transaction(JobControlRecord *jcr)
+void BareosDbMysql::StartTransaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
-      jcr->attr = get_pool_memory(PM_FNAME);
+      jcr->attr = GetPoolMemory(PM_FNAME);
    }
    if (!jcr->ar) {
       jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
    }
 }
 
-void BareosDbMysql::end_transaction(JobControlRecord *jcr)
+void BareosDbMysql::EndTransaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!create_attributes_record(jcr, jcr->ar)) {
+      if (!CreateAttributesRecord(jcr, jcr->ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
@@ -415,7 +415,7 @@ void BareosDbMysql::end_transaction(JobControlRecord *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool BareosDbMysql::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbMysql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    int status;
    SQL_ROW row;
@@ -423,12 +423,12 @@ bool BareosDbMysql::sql_query_with_handler(const char *query, DB_RESULT_HANDLER 
    bool retry = true;
    bool retval = false;
 
-   Dmsg1(500, "sql_query_with_handler starts with %s\n", query);
+   Dmsg1(500, "SqlQueryWithHandler starts with %s\n", query);
 
-   db_lock(this);
+   DbLock(this);
 
 retry_query:
-   status = mysql_query(db_handle_, query);
+   status = mySqlQuery(db_handle_, query);
 
    switch (status) {
    case 0:
@@ -457,8 +457,8 @@ retry_query:
                 * See if the threadid changed e.g. new connection to the DB.
                 */
                if (mysql_thread_id(db_handle_) != mysql_threadid) {
-                  mysql_query(db_handle_, "SET wait_timeout=691200");
-                  mysql_query(db_handle_, "SET interactive_timeout=691200");
+                  mySqlQuery(db_handle_, "SET wait_timeout=691200");
+                  mySqlQuery(db_handle_, "SET interactive_timeout=691200");
                }
 
                retry = false;
@@ -470,20 +470,20 @@ retry_query:
       /* FALL THROUGH */
    default:
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "sql_query_with_handler failed\n");
+      Dmsg0(500, "SqlQueryWithHandler failed\n");
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
+   Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
       if ((result_ = mysql_use_result(db_handle_)) != NULL) {
-         num_fields_ = mysql_num_fields(result_);
+         num_fields_ = mySqlNumFields(result_);
 
          /*
           * We *must* fetch all rows
           */
-         while ((row = mysql_fetch_row(result_)) != NULL) {
+         while ((row = mySqlFetchRow(result_)) != NULL) {
             if (send) {
                /* the result handler returns 1 when it has
                 *  seen all the data it wants.  However, we
@@ -494,25 +494,25 @@ retry_query:
                }
             }
          }
-         sql_free_result();
+         SqlFreeResult();
       }
    }
 
-   Dmsg0(500, "sql_query_with_handler finished\n");
+   Dmsg0(500, "SqlQueryWithHandler finished\n");
    retval = true;
 
 bail_out:
-   db_unlock(this);
+   DbUnlock(this);
    return retval;
 }
 
-bool BareosDbMysql::sql_query_without_handler(const char *query, int flags)
+bool BareosDbMysql::SqlQueryWithoutHandler(const char *query, int flags)
 {
    int status;
    bool retry = true;
    bool retval = true;
 
-   Dmsg1(500, "sql_query_without_handler starts with '%s'\n", query);
+   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
    /*
     * We are starting a new query. reset everything.
@@ -523,7 +523,7 @@ retry_query:
    field_number_ = -1;
 
    if (result_) {
-      mysql_free_result(result_);
+      mySqlFreeResult(result_);
       result_ = NULL;
    }
 
@@ -532,25 +532,25 @@ retry_query:
     * If multiple SQL statements have to be used, they can produce multiple results,
     * each of them needs handling.
     */
-   status = mysql_query(db_handle_, query);
+   status = mySqlQuery(db_handle_, query);
    switch (status) {
    case 0:
       Dmsg0(500, "we have a result\n");
       if (flags & QF_STORE_RESULT) {
          result_ = mysql_store_result(db_handle_);
          if (result_ != NULL) {
-            num_fields_ = mysql_num_fields(result_);
+            num_fields_ = mySqlNumFields(result_);
             Dmsg1(500, "we have %d fields\n", num_fields_);
-            num_rows_ = mysql_num_rows(result_);
+            num_rows_ = mySqlNumRows(result_);
             Dmsg1(500, "we have %d rows\n", num_rows_);
          } else {
             num_fields_ = 0;
-            num_rows_ = mysql_affected_rows(db_handle_);
+            num_rows_ = mySqlAffectedRows(db_handle_);
             Dmsg1(500, "we have %d rows\n", num_rows_);
          }
       } else {
          num_fields_ = 0;
-         num_rows_ = mysql_affected_rows(db_handle_);
+         num_rows_ = mySqlAffectedRows(db_handle_);
          Dmsg1(500, "we have %d rows\n", num_rows_);
       }
       break;
@@ -578,8 +578,8 @@ retry_query:
                 * See if the threadid changed e.g. new connection to the DB.
                 */
                if (mysql_thread_id(db_handle_) != mysql_threadid) {
-                  mysql_query(db_handle_, "SET wait_timeout=691200");
-                  mysql_query(db_handle_, "SET interactive_timeout=691200");
+                  mySqlQuery(db_handle_, "SET wait_timeout=691200");
+                  mySqlQuery(db_handle_, "SET interactive_timeout=691200");
                }
 
                retry = false;
@@ -599,11 +599,11 @@ retry_query:
    return retval;
 }
 
-void BareosDbMysql::sql_free_result(void)
+void BareosDbMysql::SqlFreeResult(void)
 {
-   db_lock(this);
+   DbLock(this);
    if (result_) {
-      mysql_free_result(result_);
+      mySqlFreeResult(result_);
       result_ = NULL;
    }
    if (fields_) {
@@ -611,15 +611,15 @@ void BareosDbMysql::sql_free_result(void)
       fields_ = NULL;
    }
    num_rows_ = num_fields_ = 0;
-   db_unlock(this);
+   DbUnlock(this);
 }
 
-SQL_ROW BareosDbMysql::sql_fetch_row(void)
+SQL_ROW BareosDbMysql::SqlFetchRow(void)
 {
    if (!result_) {
       return NULL;
    } else {
-      return mysql_fetch_row(result_);
+      return mySqlFetchRow(result_);
    }
 }
 
@@ -628,26 +628,26 @@ const char *BareosDbMysql::sql_strerror(void)
    return mysql_error(db_handle_);
 }
 
-void BareosDbMysql::sql_data_seek(int row)
+void BareosDbMysql::SqlDataSeek(int row)
 {
-   return mysql_data_seek(result_, row);
+   return mySqlDataSeek(result_, row);
 }
 
-int BareosDbMysql::sql_affected_rows(void)
+int BareosDbMysql::SqlAffectedRows(void)
 {
-   return mysql_affected_rows(db_handle_);
+   return mySqlAffectedRows(db_handle_);
 }
 
-uint64_t BareosDbMysql::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbMysql::SqlInsertAutokeyRecord(const char *query, const char *table_name)
 {
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (mysql_query(db_handle_, query) != 0) {
+   if (mySqlQuery(db_handle_, query) != 0) {
       return 0;
    }
 
-   num_rows_ = mysql_affected_rows(db_handle_);
+   num_rows_ = mySqlAffectedRows(db_handle_);
    if (num_rows_ != 1) {
       return 0;
    }
@@ -657,7 +657,7 @@ uint64_t BareosDbMysql::sql_insert_autokey_record(const char *query, const char 
    return mysql_insert_id(db_handle_);
 }
 
-SQL_FIELD *BareosDbMysql::sql_fetch_field(void)
+SQL_FIELD *BareosDbMysql::SqlFetchField(void)
 {
    int i;
    MYSQL_FIELD *field;
@@ -673,13 +673,13 @@ SQL_FIELD *BareosDbMysql::sql_fetch_field(void)
 
       for (i = 0; i < num_fields_; i++) {
          Dmsg1(500, "filling field %d\n", i);
-         if ((field = mysql_fetch_field(result_)) != NULL) {
+         if ((field = mySqlFetchField(result_)) != NULL) {
             fields_[i].name = field->name;
             fields_[i].max_length = field->max_length;
             fields_[i].type = field->type;
             fields_[i].flags = field->flags;
 
-            Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
+            Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
                   fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
          }
       }
@@ -691,12 +691,12 @@ SQL_FIELD *BareosDbMysql::sql_fetch_field(void)
    return &fields_[field_number_++];
 }
 
-bool BareosDbMysql::sql_field_is_not_null(int field_type)
+bool BareosDbMysql::SqlFieldIsNotNull(int field_type)
 {
    return IS_NOT_NULL(field_type);
 }
 
-bool BareosDbMysql::sql_field_is_numeric(int field_type)
+bool BareosDbMysql::SqlFieldIsNumeric(int field_type)
 {
    return IS_NUM(field_type);
 }
@@ -705,12 +705,12 @@ bool BareosDbMysql::sql_field_is_numeric(int field_type)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbMysql::sql_batch_start(JobControlRecord *jcr)
+bool BareosDbMysql::SqlBatchStart(JobControlRecord *jcr)
 {
    bool retval;
 
-   db_lock(this);
-   retval = sql_query("CREATE TEMPORARY TABLE batch ("
+   DbLock(this);
+   retval = SqlQuery("CREATE TEMPORARY TABLE batch ("
                               "FileIndex integer,"
                               "JobId integer,"
                               "Path blob,"
@@ -720,7 +720,7 @@ bool BareosDbMysql::sql_batch_start(JobControlRecord *jcr)
                               "DeltaSeq integer,"
                               "Fhinfo NUMERIC(20),"
                               "Fhnode NUMERIC(20) )");
-   db_unlock(this);
+   DbUnlock(this);
 
    /*
     * Keep track of the number of changes in batch mode.
@@ -735,7 +735,7 @@ bool BareosDbMysql::sql_batch_start(JobControlRecord *jcr)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbMysql::sql_batch_end(JobControlRecord *jcr, const char *error)
+bool BareosDbMysql::SqlBatchEnd(JobControlRecord *jcr, const char *error)
 {
    status_ = 0;
 
@@ -743,7 +743,7 @@ bool BareosDbMysql::sql_batch_end(JobControlRecord *jcr, const char *error)
     * Flush any pending inserts.
     */
    if (changes) {
-      return sql_query(cmd);
+      return SqlQuery(cmd);
    }
 
    return true;
@@ -753,16 +753,16 @@ bool BareosDbMysql::sql_batch_end(JobControlRecord *jcr, const char *error)
  * Returns true if OK
  *         false if failed
  */
-bool BareosDbMysql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
+bool BareosDbMysql::SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    const char *digest;
    char ed1[50], ed2[50], ed3[50];
 
-   esc_name = check_pool_memory_size(esc_name, fnl*2+1);
-   escape_string(jcr, esc_name, fname, fnl);
+   esc_name = CheckPoolMemorySize(esc_name, fnl*2+1);
+   EscapeString(jcr, esc_name, fname, fnl);
 
-   esc_path = check_pool_memory_size(esc_path, pnl*2+1);
-   escape_string(jcr, esc_path, path, pnl);
+   esc_path = CheckPoolMemorySize(esc_path, pnl*2+1);
+   EscapeString(jcr, esc_path, path, pnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = "0";
@@ -789,7 +789,7 @@ bool BareosDbMysql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *
       Mmsg(esc_obj, ",(%u,%s,'%s','%s','%s','%s',%u,%u,%u)",
            ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
            esc_name, ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
-      pm_strcat(cmd, esc_obj);
+      PmStrcat(cmd, esc_obj);
       changes++;
    }
 
@@ -798,7 +798,7 @@ bool BareosDbMysql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *
     * with multi-row inserts.
     */
    if ((changes % MYSQL_CHANGES_PER_BATCH_INSERT) == 0) {
-      if (!sql_query(cmd)) {
+      if (!SqlQuery(cmd)) {
          changes = 0;
          return false;
       } else {
@@ -855,13 +855,13 @@ BareosDb *db_init_database(JobControlRecord *jcr,
     */
    if (db_list && !mult_db_connections && !need_private) {
       foreach_dlist(mdb, db_list) {
-         if (mdb->is_private()) {
+         if (mdb->IsPrivate()) {
             continue;
          }
 
-         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->MatchDatabase(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
-            mdb->increment_refcount();
+            mdb->IncrementRefcount();
             goto bail_out;
          }
       }
@@ -890,7 +890,7 @@ bail_out:
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void CATS_IMP_EXP flush_backend(void)
 #else
-void db_flush_backends(void)
+void DbFlushBackends(void)
 #endif
 {
 }

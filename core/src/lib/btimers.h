@@ -42,10 +42,10 @@ struct btimer_t {
 };
 
 DLL_IMP_EXP btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait);
-DLL_IMP_EXP void stop_child_timer(btimer_t *wid);
+DLL_IMP_EXP void StopChildTimer(btimer_t *wid);
 DLL_IMP_EXP btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait);
-DLL_IMP_EXP void stop_thread_timer(btimer_t *wid);
-DLL_IMP_EXP btimer_t *start_bsock_timer(BareosSocket *bs, uint32_t wait);
-DLL_IMP_EXP void stop_bsock_timer(btimer_t *wid);
+DLL_IMP_EXP void StopThreadTimer(btimer_t *wid);
+DLL_IMP_EXP btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
+DLL_IMP_EXP void StopBsockTimer(btimer_t *wid);
 
 #endif /* BAREOS_LIB_BTIMERS_H_ */

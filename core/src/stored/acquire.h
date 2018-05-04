@@ -22,10 +22,10 @@
 #define BAREOS_STORED_ACQUIRE_H_
 
 DeviceControlRecord *acquire_device_for_append(DeviceControlRecord *dcr);
-bool acquire_device_for_read(DeviceControlRecord *dcr);
-bool release_device(DeviceControlRecord *dcr);
-bool clean_device(DeviceControlRecord *dcr);
-void setup_new_dcr_device(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, BlockSizes *blocksizes);
-void free_dcr(DeviceControlRecord *dcr);
+bool AcquireDeviceForRead(DeviceControlRecord *dcr);
+bool ReleaseDevice(DeviceControlRecord *dcr);
+bool CleanDevice(DeviceControlRecord *dcr);
+void SetupNewDcrDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, BlockSizes *blocksizes);
+void FreeDcr(DeviceControlRecord *dcr);
 
 #endif // BAREOS_STORED_ACQUIRE_H_

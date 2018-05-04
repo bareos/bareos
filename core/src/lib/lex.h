@@ -122,9 +122,9 @@ typedef struct s_lex_context {
       uint32_t pint32_val;
       uint64_t pint64_val;
    } u2;
-   void (*scan_error)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
+   void (*ScanError)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
    void (*scan_warning)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
-   int err_type;                      /* message level for scan_error (M_..) */
+   int err_type;                      /* message level for ScanError (M_..) */
    int error_counter;
    void *caller_ctx;                  /* caller private data */
    Bpipe *bpipe;                      /* set if we are piping */
@@ -137,19 +137,19 @@ typedef void (LEX_WARNING_HANDLER)(const char *file, int line, LEX *lc, const ch
  * Lexical scanning errors in parsing conf files
  */
 #define scan_err0(lc, msg) \
-lc->scan_error(__FILE__, __LINE__, lc, msg)
+lc->ScanError(__FILE__, __LINE__, lc, msg)
 #define scan_err1(lc, msg, a1) \
-lc->scan_error(__FILE__, __LINE__, lc, msg, a1)
+lc->ScanError(__FILE__, __LINE__, lc, msg, a1)
 #define scan_err2(lc, msg, a1, a2) \
-lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2)
+lc->ScanError(__FILE__, __LINE__, lc, msg, a1, a2)
 #define scan_err3(lc, msg, a1, a2, a3) \
-lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3)
+lc->ScanError(__FILE__, __LINE__, lc, msg, a1, a2, a3)
 #define scan_err4(lc, msg, a1, a2, a3, a4) \
-lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4)
+lc->ScanError(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4)
 #define scan_err5(lc, msg, a1, a2, a3, a4, a5) \
-lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
+lc->ScanError(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
 #define scan_err6(lc, msg, a1, a2, a3, a4, a5, a6) \
-lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
+lc->ScanError(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
 /**
  * Lexical scanning warnings in parsing conf files
@@ -169,23 +169,23 @@ lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
 #define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
 lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
-DLL_IMP_EXP void scan_to_eol(LEX *lc);
-DLL_IMP_EXP int scan_to_next_not_eol(LEX * lc);
+DLL_IMP_EXP void ScanToEol(LEX *lc);
+DLL_IMP_EXP int ScanToNextNotEol(LEX * lc);
 
 DLL_IMP_EXP LEX *lex_close_file(LEX *lf);
 DLL_IMP_EXP LEX *lex_open_file(LEX *lf,
                    const char *fname,
-                   LEX_ERROR_HANDLER *scan_error,
+                   LEX_ERROR_HANDLER *ScanError,
                    LEX_WARNING_HANDLER *scan_warning);
 DLL_IMP_EXP LEX *lex_new_buffer(LEX *lf,
-                    LEX_ERROR_HANDLER *scan_error,
+                    LEX_ERROR_HANDLER *ScanError,
                     LEX_WARNING_HANDLER *scan_warning);
-DLL_IMP_EXP int lex_get_char(LEX *lf);
-DLL_IMP_EXP void lex_unget_char(LEX *lf);
+DLL_IMP_EXP int LexGetChar(LEX *lf);
+DLL_IMP_EXP void LexUngetChar(LEX *lf);
 DLL_IMP_EXP const char *lex_tok_to_str(int token);
-DLL_IMP_EXP int lex_get_token(LEX *lf, int expect);
-DLL_IMP_EXP void lex_set_default_error_handler(LEX *lf);
-DLL_IMP_EXP void lex_set_default_warning_handler(LEX *lf);
-DLL_IMP_EXP void lex_set_error_handler_error_type(LEX *lf, int err_type);
+DLL_IMP_EXP int LexGetToken(LEX *lf, int expect);
+DLL_IMP_EXP void LexSetDefaultErrorHandler(LEX *lf);
+DLL_IMP_EXP void LexSetDefaultWarningHandler(LEX *lf);
+DLL_IMP_EXP void LexSetErrorHandlerErrorType(LEX *lf, int err_type);
 
 #endif /* BAREOS_LIB_LEX_H_ */

@@ -22,18 +22,18 @@
 #define BAREOS_STORED_READ_RECORD_H_
 
 DLL_IMP_EXP READ_CTX *new_read_context(void);
-DLL_IMP_EXP void free_read_context(READ_CTX *rctx);
-DLL_IMP_EXP void read_context_set_record(DeviceControlRecord *dcr, READ_CTX *rctx);
-DLL_IMP_EXP bool read_next_block_from_device(DeviceControlRecord *dcr,
+DLL_IMP_EXP void FreeReadContext(READ_CTX *rctx);
+DLL_IMP_EXP void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
+DLL_IMP_EXP bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
                                  SESSION_LABEL *sessrec,
-                                 bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec),
+                                 bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                                  bool mount_cb(DeviceControlRecord *dcr),
                                  bool *status);
-DLL_IMP_EXP bool read_next_record_from_block(DeviceControlRecord *dcr,
+DLL_IMP_EXP bool ReadNextRecordFromBlock(DeviceControlRecord *dcr,
                                  READ_CTX *rctx,
                                  bool *done);
-DLL_IMP_EXP bool read_records(DeviceControlRecord *dcr,
-                  bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec),
+DLL_IMP_EXP bool ReadRecords(DeviceControlRecord *dcr,
+                  bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                   bool mount_cb(DeviceControlRecord *dcr));
 
 

@@ -38,7 +38,7 @@
 #endif
 
 /* Dummy functions */
-void generate_plugin_event(JobControlRecord *jcr, bEventType eventType, void *value) { }
+void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
 extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Global variables */
@@ -96,7 +96,7 @@ main (int argc, char *const *argv)
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   lmgr_init_thread();
+   LmgrInitThread();
 
    while ((ch = getopt(argc, argv, "ac:d:f:?")) != -1) {
       switch (ch) {
@@ -140,7 +140,7 @@ main (int argc, char *const *argv)
 
    foreach_res(msg, R_MSGS)
    {
-      init_msg(NULL, msg);
+      InitMsg(NULL, msg);
    }
 
    jcr = new_jcr(sizeof(JobControlRecord), NULL);
@@ -164,16 +164,16 @@ main (int argc, char *const *argv)
 
    copy_fileset(ff, jcr);
 
-   find_files(jcr, ff, print_file, NULL);
+   FindFiles(jcr, ff, print_file, NULL);
 
-   free_jcr(jcr);
+   FreeJcr(jcr);
    if (my_config) {
-      my_config->free_resources();
+      my_config->FreeResources();
       free(my_config);
       my_config = NULL;
    }
 
-   term_last_jobs_list();
+   TermLastJobsList();
 
    /* Clean up fileset */
    findFILESET *fileset = ff->fileset;
@@ -225,7 +225,7 @@ main (int argc, char *const *argv)
       free(fileset);
    }
    ff->fileset = NULL;
-   hard_links = term_find_files(ff);
+   hard_links = TermFindFiles(ff);
 
    printf(_("\n"
 "Total files    : %d\n"
@@ -237,12 +237,12 @@ main (int argc, char *const *argv)
      num_files, max_file_len, max_path_len,
      trunc_fname, trunc_path, hard_links);
 
-   flush_mntent_cache();
+   FlushMntentCache();
 
-   term_msg();
+   TermMsg();
 
-   close_memory_pool();
-   lmgr_cleanup_main();
+   CloseMemoryPool();
+   LmgrCleanupMain();
    sm_dump(false);
    exit(0);
 }
@@ -388,9 +388,9 @@ static void count_files(FindFilesPacket *ar)
    }
 
    if (fnl > 0) {
-      pm_strcpy(file, l);             /* copy filename */
+      PmStrcpy(file, l);             /* copy filename */
    } else {
-      pm_strcpy(file, " ");           /* blank filename */
+      PmStrcpy(file, " ");           /* blank filename */
    }
 
    pnl = l - ar->fname;
@@ -403,9 +403,9 @@ static void count_files(FindFilesPacket *ar)
       trunc_path++;
    }
 
-   pm_strcpy(spath, ar->fname);
+   PmStrcpy(spath, ar->fname);
    if (pnl == 0) {
-      pm_strcpy(spath, " ");
+      PmStrcpy(spath, " ");
       printf(_("========== Path length is zero. File=%s\n"), ar->fname);
    }
    if (debug_level >= 10) {
@@ -540,73 +540,73 @@ static void set_options(findFOPTS *fo, const char *opts)
       case '0':                 /* no option */
          break;
       case 'e':
-         set_bit(FO_EXCLUDE, fo->flags);
+         SetBit(FO_EXCLUDE, fo->flags);
          break;
       case 'f':
-         set_bit(FO_MULTIFS, fo->flags);
+         SetBit(FO_MULTIFS, fo->flags);
          break;
       case 'h':                 /* no recursion */
-         set_bit(FO_NO_RECURSION, fo->flags);
+         SetBit(FO_NO_RECURSION, fo->flags);
          break;
       case 'H':                 /* no hard link handling */
-         set_bit(FO_NO_HARDLINK, fo->flags);
+         SetBit(FO_NO_HARDLINK, fo->flags);
          break;
       case 'i':
-         set_bit(FO_IGNORECASE, fo->flags);
+         SetBit(FO_IGNORECASE, fo->flags);
          break;
       case 'M':                 /* MD5 */
-         set_bit(FO_MD5, fo->flags);
+         SetBit(FO_MD5, fo->flags);
          break;
       case 'n':
-         set_bit(FO_NOREPLACE, fo->flags);
+         SetBit(FO_NOREPLACE, fo->flags);
          break;
       case 'p':                 /* use portable data format */
-         set_bit(FO_PORTABLE, fo->flags);
+         SetBit(FO_PORTABLE, fo->flags);
          break;
       case 'R':                 /* Resource forks and Finder Info */
-         set_bit(FO_HFSPLUS, fo->flags);
+         SetBit(FO_HFSPLUS, fo->flags);
       case 'r':                 /* read fifo */
-         set_bit(FO_READFIFO, fo->flags);
+         SetBit(FO_READFIFO, fo->flags);
          break;
       case 'S':
          switch(*(p + 1)) {
          case ' ':
             /* Old director did not specify SHA variant */
-            set_bit(FO_SHA1, fo->flags);
+            SetBit(FO_SHA1, fo->flags);
             break;
          case '1':
-            set_bit(FO_SHA1, fo->flags);
+            SetBit(FO_SHA1, fo->flags);
             p++;
             break;
 #ifdef HAVE_SHA2
          case '2':
-            set_bit(FO_SHA256, fo->flags);
+            SetBit(FO_SHA256, fo->flags);
             p++;
             break;
          case '3':
-            set_bit(FO_SHA512, fo->flags);
+            SetBit(FO_SHA512, fo->flags);
             p++;
             break;
 #endif
          default:
             /* Automatically downgrade to SHA-1 if an unsupported
              * SHA variant is specified */
-            set_bit(FO_SHA1, fo->flags);
+            SetBit(FO_SHA1, fo->flags);
             p++;
             break;
          }
          break;
       case 's':
-         set_bit(FO_SPARSE, fo->flags);
+         SetBit(FO_SPARSE, fo->flags);
          break;
       case 'm':
-         set_bit(FO_MTIMEONLY, fo->flags);
+         SetBit(FO_MTIMEONLY, fo->flags);
          break;
       case 'k':
-         set_bit(FO_KEEPATIME, fo->flags);
+         SetBit(FO_KEEPATIME, fo->flags);
          break;
       case 'A':
-         set_bit(FO_ACL, fo->flags);
+         SetBit(FO_ACL, fo->flags);
          break;
       case 'V':                  /* verify options */
          /* Copy Verify Options */
@@ -619,30 +619,30 @@ static void set_options(findFOPTS *fo, const char *opts)
          fo->VerifyOpts[j] = 0;
          break;
       case 'w':
-         set_bit(FO_IF_NEWER, fo->flags);
+         SetBit(FO_IF_NEWER, fo->flags);
          break;
       case 'W':
-         set_bit(FO_ENHANCEDWILD, fo->flags);
+         SetBit(FO_ENHANCEDWILD, fo->flags);
          break;
       case 'Z':                 /* compression */
          p++;                   /* skip Z */
          if (*p >= '0' && *p <= '9') {
-            set_bit(FO_COMPRESS, fo->flags);
+            SetBit(FO_COMPRESS, fo->flags);
             fo->Compress_algo = COMPRESS_GZIP;
             fo->Compress_level = *p - '0';
          }
          else if (*p == 'o') {
-            set_bit(FO_COMPRESS, fo->flags);
+            SetBit(FO_COMPRESS, fo->flags);
             fo->Compress_algo = COMPRESS_LZO1X;
             fo->Compress_level = 1; /* not used with LZO */
          }
          Dmsg2(200, "Compression alg=%d level=%d\n", fo->Compress_algo, fo->Compress_level);
          break;
       case 'x':
-         set_bit(FO_NO_AUTOEXCL, fo->flags);
+         SetBit(FO_NO_AUTOEXCL, fo->flags);
          break;
       case 'X':
-         set_bit(FO_XATTR, fo->flags);
+         SetBit(FO_XATTR, fo->flags);
          break;
       default:
          Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);

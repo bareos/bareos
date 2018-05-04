@@ -312,20 +312,20 @@ static inline POOLMEM *GetMountedVolumeForMountPointPath(POOLMEM *volumepath, PO
     * GetUniqueVolumeNameForPath() should be used here
     */
    len = strlen(volumepath) + 1;
-   fullPath = get_pool_memory(PM_FNAME);
-   pm_strcpy(fullPath, volumepath);
-   pm_strcat(fullPath, mountpoint);
+   fullPath = GetPoolMemory(PM_FNAME);
+   PmStrcpy(fullPath, volumepath);
+   PmStrcat(fullPath, mountpoint);
 
-   buf = get_pool_memory(PM_FNAME);
+   buf = GetPoolMemory(PM_FNAME);
    GetVolumeNameForVolumeMountPoint(fullPath, buf, len);
 
    Dmsg3(200, "%s%s mounts volume %s\n", volumepath, mountpoint, buf);
 
-   vol = get_pool_memory(PM_FNAME);
+   vol = GetPoolMemory(PM_FNAME);
    UTF8_2_wchar(vol, buf);
 
-   free_pool_memory(fullPath);
-   free_pool_memory(buf);
+   FreePoolMemory(fullPath);
+   FreePoolMemory(buf);
 
    return vol;
 }
@@ -344,7 +344,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric *pVssClient,
    vol = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
    hr = pVssObj->AddToSnapshotSet((LPWSTR)vol, GUID_NULL, &pid);
 
-   pvol = get_pool_memory(PM_FNAME);
+   pvol = GetPoolMemory(PM_FNAME);
    wchar_2_UTF8(pvol, (wchar_t *)vol);
 
    if (SUCCEEDED(hr)) {
@@ -357,9 +357,9 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric *pVssClient,
       Dmsg3(200, "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n", vol, mountpoint, hr);
    }
 
-   free_pool_memory(pvol);
+   FreePoolMemory(pvol);
    if (vol) {
-      free_pool_memory(vol);
+      FreePoolMemory(vol);
    }
 
    return retval;
@@ -464,7 +464,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    /*
     * Initialize COM security
     */
-   if (!initialize_com_security()) {
+   if (!InitializeComSecurity()) {
       JmsgVssApiStatus(jcr_, M_FATAL, hr, "CoInitializeSecurity");
       return false;
    }
@@ -526,7 +526,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
        * give back a bRC_Skip it means this will not be performed by any plugin
        * and we should do the generic handling ourself in the core.
        */
-      if (generate_plugin_event(jcr_, bEventVssSetBackupState) != bRC_Skip) {
+      if (GeneratePluginEvent(jcr_, bEventVssSetBackupState) != bRC_Skip) {
          VSS_BACKUP_TYPE backup_type;
 
          switch (jcr_->getJobLevel()) {
@@ -659,11 +659,11 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents *pVssObj, char *sz
       if (SUCCEEDED(pVssObj->AddToSnapshotSet((LPWSTR)volume.c_str(), GUID_NULL, &pid))) {
          if (debug_level >= 200) {
 
-            POOLMEM *szBuf = get_pool_memory(PM_FNAME);
+            POOLMEM *szBuf = GetPoolMemory(PM_FNAME);
 
             wchar_2_UTF8(szBuf, volume.c_str());
             Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
-            free_pool_memory(szBuf);
+            FreePoolMemory(szBuf);
          }
          wcsncpy(wszUniqueVolumeName_[szDriveLetters[i]-'A'], (LPWSTR)volume.c_str(), MAX_PATH);
       } else {
@@ -690,8 +690,8 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(IVssBackupComponents *pVssOb
    HANDLE hMount;
    POOLMEM *mp, *path;
 
-   mp = get_pool_memory(PM_FNAME);
-   path = get_pool_memory(PM_FNAME);
+   mp = GetPoolMemory(PM_FNAME);
+   path = GetPoolMemory(PM_FNAME);
 
    wchar_2_UTF8(path, volume);
 
@@ -726,8 +726,8 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(IVssBackupComponents *pVssOb
 
    FindVolumeMountPointClose(hMount);
 
-   free_pool_memory(path);
-   free_pool_memory(mp);
+   FreePoolMemory(path);
+   FreePoolMemory(mp);
 }
 
 void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord *jcr)
@@ -783,7 +783,7 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    /*
     * PrepareForBackup
     */
-   generate_plugin_event(jcr_, bEventVssPrepareSnapshot);
+   GeneratePluginEvent(jcr_, bEventVssPrepareSnapshot);
    hr = pVssObj->PrepareForBackup(&pAsync1.p);
    if (FAILED(hr)) {
       JmsgVssApiStatus(jcr_, M_FATAL, hr, "PrepareForBackup");
@@ -1063,7 +1063,7 @@ bool VSSClientGeneric::CheckWriterStatus()
    }
 
     int nState;
-    POOLMEM *szBuf = get_pool_memory(PM_FNAME);
+    POOLMEM *szBuf = GetPoolMemory(PM_FNAME);
 
    /*
     * Enumerate each writer
@@ -1124,7 +1124,7 @@ bool VSSClientGeneric::CheckWriterStatus()
        wchar_2_UTF8(szBuf, bstrWriterName.p);
        bstrncat(str, szBuf, sizeof(str));
        bstrncat(str, "\", State: 0x", sizeof(str));
-       itoa(eWriterStatus, szBuf, sizeof_pool_memory(szBuf));
+       itoa(eWriterStatus, szBuf, SizeofPoolMemory(szBuf));
        bstrncat(str, szBuf, sizeof(str));
        bstrncat(str, " (", sizeof(str));
        wchar_2_UTF8(szBuf, GetStringFromWriterStatus(eWriterStatus));
@@ -1133,7 +1133,7 @@ bool VSSClientGeneric::CheckWriterStatus()
        AppendWriterInfo(nState, (const char *)str);
    }
 
-   free_pool_memory(szBuf);
+   FreePoolMemory(szBuf);
    errno = 0;
 
    return true;

@@ -136,7 +136,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
    switch (type) {
       default:
          resclass = (BareosResource *)reshdr;
-         resclass->print_config(buf);
+         resclass->PrintConfig(buf);
          break;
    }
    sendit(sock, "%s", buf.c_str());
@@ -153,7 +153,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(CommonResourceHeader *sres, int type)
+void FreeResource(CommonResourceHeader *sres, int type)
 {
    CommonResourceHeader *nres;
    UnionOfResources *res = (UnionOfResources *)sres;
@@ -178,15 +178,15 @@ void free_resource(CommonResourceHeader *sres, int type)
       if (res->res_cons.history_file) {
          free(res->res_cons.history_file);
       }
-      if (res->res_cons.tls_cert.allowed_cns) {
-         res->res_cons.tls_cert.allowed_cns->destroy();
-         free(res->res_cons.tls_cert.allowed_cns);
+      if (res->res_cons.tls_cert.AllowedCns) {
+         res->res_cons.tls_cert.AllowedCns->destroy();
+         free(res->res_cons.tls_cert.AllowedCns);
       }
-      if (res->res_cons.tls_cert.ca_certfile) {
-         delete res->res_cons.tls_cert.ca_certfile;
+      if (res->res_cons.tls_cert.CaCertfile) {
+         delete res->res_cons.tls_cert.CaCertfile;
       }
-      if (res->res_cons.tls_cert.ca_certdir) {
-         delete res->res_cons.tls_cert.ca_certdir;
+      if (res->res_cons.tls_cert.CaCertdir) {
+         delete res->res_cons.tls_cert.CaCertdir;
       }
       if (res->res_cons.tls_cert.crlfile) {
          delete res->res_cons.tls_cert.crlfile;
@@ -217,15 +217,15 @@ void free_resource(CommonResourceHeader *sres, int type)
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
-      if (res->res_dir.tls_cert.allowed_cns) {
-         res->res_dir.tls_cert.allowed_cns->destroy();
-         free(res->res_dir.tls_cert.allowed_cns);
+      if (res->res_dir.tls_cert.AllowedCns) {
+         res->res_dir.tls_cert.AllowedCns->destroy();
+         free(res->res_dir.tls_cert.AllowedCns);
       }
-      if (res->res_dir.tls_cert.ca_certfile) {
-         delete res->res_dir.tls_cert.ca_certfile;
+      if (res->res_dir.tls_cert.CaCertfile) {
+         delete res->res_dir.tls_cert.CaCertfile;
       }
-      if (res->res_dir.tls_cert.ca_certdir) {
-         delete res->res_dir.tls_cert.ca_certdir;
+      if (res->res_dir.tls_cert.CaCertdir) {
+         delete res->res_dir.tls_cert.CaCertdir;
       }
       if (res->res_dir.tls_cert.crlfile) {
          delete res->res_dir.tls_cert.crlfile;
@@ -258,7 +258,7 @@ void free_resource(CommonResourceHeader *sres, int type)
    /* Common stuff again -- free the resource, recurse to next one */
    free(res);
    if (nres) {
-      free_resource(nres, type);
+      FreeResource(nres, type);
    }
 }
 
@@ -279,7 +279,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
     */
    for (i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
-            if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
+            if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
                  items[i].name, resources[rindex].name);
              }
@@ -298,14 +298,14 @@ bool save_resource(int type, ResourceItem *items, int pass)
             if ((res = (UnionOfResources *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
             } else {
-               res->res_cons.tls_cert.allowed_cns = res_all.res_cons.tls_cert.allowed_cns;
+               res->res_cons.tls_cert.AllowedCns = res_all.res_cons.tls_cert.AllowedCns;
             }
             break;
          case R_DIRECTOR:
             if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
+               res->res_dir.tls_cert.AllowedCns = res_all.res_dir.tls_cert.AllowedCns;
             }
             break;
          default:
@@ -354,7 +354,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
    return (error == 0);
 }
 
-void init_cons_config(ConfigurationParser *config, const char *configfile, int exit_code)
+void InitConsConfig(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -369,25 +369,25 @@ void init_cons_config(ConfigurationParser *config, const char *configfile, int e
                 R_LAST,
                 resources,
                 res_head);
-   config->set_default_config_filename(CONFIG_FILE);
-   config->set_config_include_dir("bconsole.d");
+   config->SetDefaultConfigFilename(CONFIG_FILE);
+   config->SetConfigIncludeDir("bconsole.d");
 }
 
 bool parse_cons_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
-   init_cons_config(config, configfile, exit_code);
-   return config->parse_config();
+   InitConsConfig(config, configfile, exit_code);
+   return config->ParseConfig();
 }
 
 /**
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool print_config_schema_json(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem &buffer)
 {
    ResourceTable *resources = my_config->resources_;
 
-   initialize_json();
+   InitializeJson();
 
    json_t *json = json_object();
    json_object_set_new(json, "format-version", json_integer(2));
@@ -407,15 +407,15 @@ bool print_config_schema_json(PoolMem &buffer)
       json_object_set(bconsole, resource.name, json_items(resource.items));
    }
 
-   pm_strcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
    json_decref(json);
 
    return true;
 }
 #else
-bool print_config_schema_json(PoolMem &buffer)
+bool PrintConfigSchemaJson(PoolMem &buffer)
 {
-   pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
    return false;
 }
 #endif

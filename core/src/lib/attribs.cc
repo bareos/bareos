@@ -41,7 +41,7 @@
  *   them in the encode_attribsEx() subroutine, but this is
  *   not recommended.
  */
-void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream)
+void EncodeStat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream)
 {
    char *p = buf;
 
@@ -123,7 +123,7 @@ void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, i
 /**
  * Decode a stat packet from base64 characters
  */
-int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI)
+int DecodeStat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI)
 {
    char *p = buf;
    int64_t val;
@@ -229,32 +229,32 @@ int32_t decode_LinkFI(char *buf, struct stat *statp, int stat_size)
     */
    ASSERT(stat_size == (int)sizeof(struct stat));
 
-   skip_nonspaces(&p);                /* st_dev */
+   SkipNonspaces(&p);                /* st_dev */
    p++;                               /* skip space */
-   skip_nonspaces(&p);                /* st_ino */
+   SkipNonspaces(&p);                /* st_ino */
    p++;
    p += from_base64(&val, p);
    plug(statp->st_mode, val);         /* st_mode */
    p++;
-   skip_nonspaces(&p);                /* st_nlink */
+   SkipNonspaces(&p);                /* st_nlink */
    p++;
-   skip_nonspaces(&p);                /* st_uid */
+   SkipNonspaces(&p);                /* st_uid */
    p++;
-   skip_nonspaces(&p);                /* st_gid */
+   SkipNonspaces(&p);                /* st_gid */
    p++;
-   skip_nonspaces(&p);                /* st_rdev */
+   SkipNonspaces(&p);                /* st_rdev */
    p++;
-   skip_nonspaces(&p);                /* st_size */
+   SkipNonspaces(&p);                /* st_size */
    p++;
-   skip_nonspaces(&p);                /* st_blksize */
+   SkipNonspaces(&p);                /* st_blksize */
    p++;
-   skip_nonspaces(&p);                /* st_blocks */
+   SkipNonspaces(&p);                /* st_blocks */
    p++;
-   skip_nonspaces(&p);                /* st_atime */
+   SkipNonspaces(&p);                /* st_atime */
    p++;
-   skip_nonspaces(&p);                /* st_mtime */
+   SkipNonspaces(&p);                /* st_mtime */
    p++;
-   skip_nonspaces(&p);                /* st_ctime */
+   SkipNonspaces(&p);                /* st_ctime */
 
    /* Optional FileIndex of hard linked file data */
    if (*p == ' ' || (*p != 0 && *(p+1) == ' ')) {

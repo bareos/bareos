@@ -51,7 +51,7 @@ static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt
  * to the Director.
  *
  */
-void do_verify(JobControlRecord *jcr)
+void DoVerify(JobControlRecord *jcr)
 {
    jcr->setJobStatus(JS_Running);
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
@@ -59,10 +59,10 @@ void do_verify(JobControlRecord *jcr)
       Jmsg1(jcr, M_ABORT, 0, _("Cannot malloc %d network read buffer\n"),
          DEFAULT_NETWORK_BUFFER_SIZE);
    }
-   set_find_options((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
+   SetFindOptions((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
    Dmsg0(10, "Start find files\n");
    /* Subroutine verify_file() is called for each file */
-   find_files(jcr, (FindFilesPacket *)jcr->ff, verify_file, NULL);
+   FindFiles(jcr, (FindFilesPacket *)jcr->ff, verify_file, NULL);
    Dmsg0(10, "End find files\n");
 
    if (jcr->big_buf) {
@@ -84,7 +84,7 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
    int status;
    BareosSocket *dir;
 
-   if (job_canceled(jcr)) {
+   if (JobCanceled(jcr)) {
       return 0;
    }
 
@@ -173,12 +173,12 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
    }
 
    /* Encode attributes and possibly extend them */
-   encode_stat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, 0);
+   EncodeStat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, 0);
    encode_attribsEx(jcr, attribsEx.c_str(), ff_pkt);
 
    jcr->lock();
    jcr->JobFiles++;                  /* increment number of files sent */
-   pm_strcpy(jcr->last_fname, ff_pkt->fname);
+   PmStrcpy(jcr->last_fname, ff_pkt->fname);
    jcr->unlock();
 
    /*
@@ -221,10 +221,10 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
 
    if (ff_pkt->type != FT_LNKSAVED &&
        S_ISREG(ff_pkt->statp.st_mode) &&
-      (bit_is_set(FO_MD5, ff_pkt->flags) ||
-       bit_is_set(FO_SHA1, ff_pkt->flags) ||
-       bit_is_set(FO_SHA256, ff_pkt->flags) ||
-       bit_is_set(FO_SHA512, ff_pkt->flags))) {
+      (BitIsSet(FO_MD5, ff_pkt->flags) ||
+       BitIsSet(FO_SHA1, ff_pkt->flags) ||
+       BitIsSet(FO_SHA256, ff_pkt->flags) ||
+       BitIsSet(FO_SHA512, ff_pkt->flags))) {
       int digest_stream = STREAM_NONE;
       DIGEST *digest = NULL;
       char *digest_buf = NULL;
@@ -251,7 +251,7 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
       }
 
       if (digest) {
-         crypto_digest_free(digest);
+         CryptoDigestFree(digest);
       }
    }
 
@@ -262,13 +262,13 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
  * Compute message digest for the file specified by ff_pkt.
  * In case of errors we need the job control record and file name.
  */
-int digest_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
+int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
 {
    BareosWinFilePacket bfd;
 
    binit(&bfd);
 
-   int noatime = bit_is_set(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
+   int noatime = BitIsSet(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
 
    if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
       ff_pkt->ff_errno = errno;
@@ -286,13 +286,13 @@ int digest_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
       /*
        * Open resource fork if necessary
        */
-      if (bit_is_set(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
-         if (bopen_rsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
+      if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
+         if (BopenRsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
             ff_pkt->ff_errno = errno;
             berrno be;
             Jmsg(jcr, M_ERROR, -1, _("     Cannot open resource fork for %s: ERR=%s.\n"),
                   ff_pkt->fname, be.bstrerror());
-            if (is_bopen(&ff_pkt->bfd)) {
+            if (IsBopen(&ff_pkt->bfd)) {
                bclose(&ff_pkt->bfd);
             }
             return 1;
@@ -301,8 +301,8 @@ int digest_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
          bclose(&bfd);
       }
 
-      if (digest && bit_is_set(FO_HFSPLUS, ff_pkt->flags)) {
-         crypto_digest_update(digest, (uint8_t *)ff_pkt->hfsinfo.fndrinfo, 32);
+      if (digest && BitIsSet(FO_HFSPLUS, ff_pkt->flags)) {
+         CryptoDigestUpdate(digest, (uint8_t *)ff_pkt->hfsinfo.fndrinfo, 32);
       }
    }
    return 0;
@@ -324,13 +324,13 @@ static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecor
    Dmsg0(50, "=== read_digest\n");
    while ((n=bread(bfd, buf, bufsiz)) > 0) {
       /* Check for sparse blocks */
-      if (bit_is_set(FO_SPARSE, ff_pkt->flags)) {
+      if (BitIsSet(FO_SPARSE, ff_pkt->flags)) {
          bool allZeros = false;
          if ((n == bufsiz &&
               fileAddr+n < (uint64_t)ff_pkt->statp.st_size) ||
              ((ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO) &&
                (uint64_t)ff_pkt->statp.st_size == 0)) {
-            allZeros = is_buf_zero(buf, bufsiz);
+            allZeros = IsBufZero(buf, bufsiz);
          }
          fileAddr += n;               /* update file address */
          /* Skip any block of all zeros */
@@ -339,7 +339,7 @@ static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecor
          }
       }
 
-      crypto_digest_update(digest, (uint8_t *)buf, n);
+      CryptoDigestUpdate(digest, (uint8_t *)buf, n);
 
       /* Can be used by BaseJobs or with accurate, update only for Verify
        * jobs
@@ -378,16 +378,16 @@ static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt
     * Create our digest context.
     * If this fails, the digest will be set to NULL and not used.
     */
-   if (bit_is_set(FO_MD5 ,ff_pkt->flags)) {
+   if (BitIsSet(FO_MD5 ,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
       *digest_stream = STREAM_MD5_DIGEST;
-   } else if (bit_is_set(FO_SHA1,ff_pkt->flags)) {
+   } else if (BitIsSet(FO_SHA1,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA1);
       *digest_stream = STREAM_SHA1_DIGEST;
-   } else if (bit_is_set(FO_SHA256 ,ff_pkt->flags)) {
+   } else if (BitIsSet(FO_SHA256 ,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA256);
       *digest_stream = STREAM_SHA256_DIGEST;
-   } else if (bit_is_set(FO_SHA512 ,ff_pkt->flags)) {
+   } else if (BitIsSet(FO_SHA512 ,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
       *digest_stream = STREAM_SHA512_DIGEST;
    }
@@ -400,12 +400,12 @@ static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt
       char md[CRYPTO_DIGEST_MAX_SIZE];
 
       size = sizeof(md);
-      if (digest_file(jcr, ff_pkt, *digest) != 0) {
+      if (DigestFile(jcr, ff_pkt, *digest) != 0) {
          jcr->JobErrors++;
          return false;
       }
 
-      if (crypto_digest_finalize(*digest, (uint8_t *)md, &size)) {
+      if (CryptoDigestFinalize(*digest, (uint8_t *)md, &size)) {
          *digest_buf = (char *)malloc(BASE64_SIZE(size));
          *digest_name = crypto_digest_name(*digest);
 
@@ -422,7 +422,7 @@ static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt
  * Returns: true   if chksum matches.
  *          false  if chksum is different.
  */
-bool calculate_and_compare_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+bool CalculateAndCompareFileChksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
                                        const char *fname, const char *chksum)
 {
    DIGEST *digest = NULL;
@@ -447,7 +447,7 @@ bool calculate_and_compare_file_chksum(JobControlRecord *jcr, FindFilesPacket *f
       }
 
       if (digest) {
-         crypto_digest_free(digest);
+         CryptoDigestFree(digest);
       }
    }
 

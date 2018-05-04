@@ -21,8 +21,8 @@
 #ifndef BAREOS_DIRD_STATS_H_
 #define BAREOS_DIRD_STATS_H_
 
-int start_statistics_thread(void);
-void stop_statistics_thread();
+int StartStatisticsThread(void);
+void StopStatisticsThread();
 void stats_job_started();
 
 #endif // BAREOS_DIRD_STATS_H_
