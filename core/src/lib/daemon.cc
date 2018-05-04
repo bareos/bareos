@@ -35,9 +35,7 @@
 
 extern int debug_level;
 
-void
-daemon_start()
-{
+void daemon_start() {
 #if !defined(HAVE_WIN32)
    int i;
    int fd;
