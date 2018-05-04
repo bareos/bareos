@@ -32,7 +32,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/autochanger.h"
-#include "unix_fifo_device.h"
+#include "backends/unix_fifo_device.h"
 #include "lib/util.h"
 #include "lib/btimers.h"
 
