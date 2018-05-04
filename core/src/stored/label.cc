@@ -655,7 +655,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord *dcr, Device *dev, Devic
       /* OLD WAY DEPRECATED */
       ser_float64(dev->VolHdr.label_date);
       ser_float64(dev->VolHdr.label_time);
-      GetCurrentTime(&dt);
+      get_current_time(&dt);
       dev->VolHdr.write_date = dt.julian_day_number;
       dev->VolHdr.write_time = dt.julian_day_fraction;
    }

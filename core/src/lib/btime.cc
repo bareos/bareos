@@ -252,7 +252,7 @@ int TmWoy(time_t stime)
 /*
  * Deprecated. Do not use.
  */
-void GetCurrentTime(struct date_time *dt)
+void get_current_time(struct date_time *dt)
 {
    struct tm tm;
    time_t now;

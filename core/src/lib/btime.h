@@ -87,7 +87,7 @@ extern int DateTimeCompare(struct date_time *dt1, struct date_time *dt2);
 
 extern void TmEncode(struct date_time *dt, struct tm *tm);
 DLL_IMP_EXP extern void TmDecode(struct date_time *dt, struct tm *tm);
-DLL_IMP_EXP extern void GetCurrentTime(struct date_time *dt);
+DLL_IMP_EXP extern void get_current_time(struct date_time *dt);
 
 
 #endif /* BAREOS_LIB_BTIME_H_ */
