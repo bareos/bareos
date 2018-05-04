@@ -1335,6 +1335,7 @@ int main(int argc, char *argv[])
    }
 
    UA_sock = New(BSOCK_TCP);
+   check_pool_memory_size(UA_sock->msg, 256*1024);
    if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
       delete UA_sock;
       terminate_console(0);
