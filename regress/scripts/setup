@@ -63,14 +63,6 @@ scripts/create_sed
 
 
 
-#
-# Now turn on DEVELOPER for regression testing
-#
-# echo "s%^.*define DEVELOPER 1.*$%#define DEVELOPER 1%g" >tmp/t$$
-# sed -f tmp/t$$ build/src/include/version.h >tmp/o$$
-# cp tmp/o$$ build/src/include/version.h
-
-
 sed -f tmp/sed_tmp scripts/regress-config.in >scripts/regress-config
 chmod 755 scripts/regress-config
 #cp scripts/regress-config build

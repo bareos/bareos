@@ -143,6 +143,10 @@ else()
    add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
+IF(developer)
+   add_definitions("-DDEVELOPER=1")
+ENDIF()
+
 
 INCLUDE(BareosFindPrograms)
 
@@ -686,6 +690,7 @@ message("   AWK:                          ${AWK}")
 message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
+message("   DEVELOPER:                    ${developer}")
 
 IF(HAVE_WIN32)
    message("   WINDOWS_VERSION:              ${WINDOWS_VERSION}")

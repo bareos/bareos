@@ -488,6 +488,10 @@ IF(DEFINED test-plugin)
    SET(HAVE_TEST_PLUGIN 1)
 ENDIF()
 
+IF(NOT DEFINED developer)
+   SET(developer OFF)
+ENDIF()
+
 IF(DEFINED dynamic-debian-package-list)
    SET(GENERATE_DEBIAN_CONTROL ON)
 ELSE()

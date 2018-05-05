@@ -65,7 +65,8 @@ else
     ${SCSICRYPTO} \
     ${TESTPLUGIN} \
     ${WHICHDB} \
-    -Dbaseport=${BASEPORT}
+    -Dbaseport=${BASEPORT}\
+    ${DEVELOPER}
 
 fi
 
