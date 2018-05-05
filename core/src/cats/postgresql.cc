@@ -899,7 +899,7 @@ bail_out:
 SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
 {
    int i, j;
-   int MaxLength;
+   int max_length;
    int this_length;
 
    Dmsg0(500, "SqlFetchField starts\n");
@@ -922,7 +922,7 @@ SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
          /*
           * For a given column, find the max length.
           */
-         MaxLength = 0;
+         max_length = 0;
          for (j = 0; j < num_rows_; j++) {
             if (PQgetisnull(result_, j, i)) {
                 this_length = 4;        /* "NULL" */
@@ -930,14 +930,14 @@ SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
                 this_length = cstrlen(PQgetvalue(result_, j, i));
             }
 
-            if (MaxLength < this_length) {
-               MaxLength = this_length;
+            if (max_length < this_length) {
+               max_length = this_length;
             }
          }
-         fields_[i].MaxLength = MaxLength;
+         fields_[i].max_length = max_length;
 
          Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
+               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
 

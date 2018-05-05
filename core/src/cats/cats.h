@@ -548,7 +548,7 @@ typedef char ** SQL_ROW;
  */
 typedef struct sql_field {
    char *name;                        /* name of column */
-   int MaxLength;                    /* max length */
+   int max_length;                    /* max length */
    uint32_t type;                     /* type */
    uint32_t flags;                    /* flags */
 } SQL_FIELD;

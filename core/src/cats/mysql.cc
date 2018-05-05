@@ -675,12 +675,12 @@ SQL_FIELD *BareosDbMysql::SqlFetchField(void)
          Dmsg1(500, "filling field %d\n", i);
          if ((field = mysql_fetch_field(result_)) != NULL) {
             fields_[i].name = field->name;
-            fields_[i].MaxLength = field->MaxLength;
+            fields_[i].max_length = field->max_length;
             fields_[i].type = field->type;
             fields_[i].flags = field->flags;
 
             Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-                  fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
+                  fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
          }
       }
    }

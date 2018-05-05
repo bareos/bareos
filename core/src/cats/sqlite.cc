@@ -529,7 +529,7 @@ SQL_FIELD *BareosDbSqlite::SqlFetchField(void)
           * estimation.
           */
          len = MAX(cstrlen(sql_field_.name), 80/num_fields_);
-         sql_field_.MaxLength = len;
+         sql_field_.max_length = len;
 
          field_number_++;
          sql_field_.type = 0;  /* not numeric */
@@ -553,22 +553,22 @@ SQL_FIELD *BareosDbSqlite::SqlFetchField(void)
       for (i = 0; i < num_fields_; i++) {
          Dmsg1(500, "filling field %d\n", i);
          fields_[i].name = result_[i];
-         fields_[i].MaxLength = cstrlen(fields_[i].name);
+         fields_[i].max_length = cstrlen(fields_[i].name);
          for (j = 1; j <= num_rows_; j++) {
             if (result_[i + num_fields_ * j]) {
                len = (uint32_t)cstrlen(result_[i + num_fields_ * j]);
             } else {
                len = 0;
             }
-            if (len > fields_[i].MaxLength) {
-               fields_[i].MaxLength = len;
+            if (len > fields_[i].max_length) {
+               fields_[i].max_length = len;
             }
          }
          fields_[i].type = 0;
          fields_[i].flags = 1;        /* not null */
 
          Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
+               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
 

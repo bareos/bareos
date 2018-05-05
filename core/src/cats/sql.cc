@@ -460,7 +460,7 @@ void BareosDb::ListDashes(OutputFormatter *send)
       if (!field) {
          break;
       }
-      len = MaxLength(field->MaxLength + 2);
+      len = MaxLength(field->max_length + 2);
       for (int j = 0; j < len; j++) {
          send->Decoration("-");
       }
@@ -541,16 +541,16 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
                   max_len = col_len;
                }
             } else {
-               if (SqlFieldIsNumeric(field->type) && (int)field->MaxLength > 0) { /* fixup for commas */
-                  field->MaxLength += (field->MaxLength - 1) / 3;
+               if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
+                  field->max_length += (field->max_length - 1) / 3;
                }
-               if (col_len < (int)field->MaxLength) {
-                  col_len = field->MaxLength;
+               if (col_len < (int)field->max_length) {
+                  col_len = field->max_length;
                }
                if (col_len < 4 && !SqlFieldIsNotNull(field->flags)) {
                   col_len = 4;                 /* 4 = length of the word "NULL" */
                }
-               field->MaxLength = col_len;    /* reset column info */
+               field->max_length = col_len;    /* reset column info */
             }
          }
 
@@ -586,7 +586,7 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
                continue;
             }
 
-            max_len = MaxLength(field->MaxLength);
+            max_len = MaxLength(field->max_length);
             send->Decoration(" %-*s |", max_len, field->name);
          }
          send->Decoration("\n");
@@ -645,7 +645,7 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
             continue;
          }
 
-         max_len = MaxLength(field->MaxLength);
+         max_len = MaxLength(field->max_length);
          if (row[i] == NULL) {
             value.bsprintf(" %-*s |", max_len, "NULL");
          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
@@ -771,16 +771,16 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
                max_len = col_len;
             }
          } else {
-            if (SqlFieldIsNumeric(field->type) && (int)field->MaxLength > 0) { /* fixup for commas */
-               field->MaxLength += (field->MaxLength - 1) / 3;
+            if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
+               field->max_length += (field->max_length - 1) / 3;
             }
-            if (col_len < (int)field->MaxLength) {
-               col_len = field->MaxLength;
+            if (col_len < (int)field->max_length) {
+               col_len = field->max_length;
             }
             if (col_len < 4 && !SqlFieldIsNotNull(field->flags)) {
                col_len = 4;                 /* 4 = length of the word "NULL" */
             }
-            field->MaxLength = col_len;    /* reset column info */
+            field->max_length = col_len;    /* reset column info */
          }
       }
       break;
@@ -857,7 +857,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
             continue;
          }
 
-         max_len = MaxLength(field->MaxLength);
+         max_len = MaxLength(field->max_length);
          send->Decoration(" %-*s |", max_len, field->name);
       }
       send->Decoration("\n");
@@ -889,7 +889,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
                continue;
             }
 
-            max_len = MaxLength(field->MaxLength);
+            max_len = MaxLength(field->max_length);
             if (row[i] == NULL) {
                value.bsprintf(" %-*s |", max_len, "NULL");
             } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
