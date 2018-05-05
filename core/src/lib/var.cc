@@ -1877,8 +1877,7 @@ lookup_value(
 }
 
 /* parse complex variable construct ("${name...}") */
-static int
-parse_variable_complex(
+static int parse_variable_complex(
     var_t *var, var_parse_t *ctx,
     const char *begin, const char *end,
     tokenbuf_t *result)
@@ -2057,8 +2056,7 @@ error_return:
 }
 
 /* parse variable construct ("$name" or "${name...}") */
-static int
-parse_variable(
+static int parse_variable(
     var_t *var, var_parse_t *ctx,
     const char *begin, const char *end,
     tokenbuf_t *result)
