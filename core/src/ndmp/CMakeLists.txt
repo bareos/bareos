@@ -100,7 +100,7 @@ foreach(NDMP_VERSION 0 1 2 3 4 9)
 endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS})
-target_link_libraries(bareosndmp ${WRAP_LIBS})
+target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 
 INSTALL(TARGETS bareosndmp DESTINATION ${libdir})
 

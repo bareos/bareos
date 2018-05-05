@@ -65,6 +65,7 @@ endif()
 #MESSAGE(FATAL_ERROR "exit")
 INCLUDE(BareosFindLibrary)
 
+BareosFindLibrary("tirpc")
 BareosFindLibrary("util")
 BareosFindLibrary("dl")
 BareosFindLibrary("acl")
