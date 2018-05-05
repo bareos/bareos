@@ -39,7 +39,7 @@ struct FileSet {
  * helper functions
  */
 
-void alist_fill(alist *list, int max)
+void AlistFill(alist *list, int max)
 {
    char buf[30];
    int start = 0;
@@ -65,7 +65,7 @@ void alist_fill(alist *list, int max)
 /*
  * we expect, that the list is filled with strings of numbers from 0 to n.
  */
-void test_foreach_alist(alist *list)
+void TestForeachAlist(alist *list)
 {
    char *str = NULL;
    char buf[30];
@@ -103,7 +103,7 @@ void test_alist_init_destroy()
    memset(fileset, 0, sizeof(FileSet));
    fileset->mylist.init();
 
-   alist_fill(&(fileset->mylist), 20);
+   AlistFill(&(fileset->mylist), 20);
    for (int i=0; i< fileset->mylist.size(); i++) {
       EXPECT_EQ(i, atoi((char *)fileset->mylist[i]));
    }
@@ -121,18 +121,18 @@ void test_alist_dynamic() {
    //EXPECT_EQ(list->size(), 0);
 
    // does foreach work for NULL?
-   test_foreach_alist(list);
+   TestForeachAlist(list);
 
    // create empty list, which is prepared for a number of entires
    list = New(alist(10));
    EXPECT_EQ(list->size(), 0);
 
    // does foreach work for empty lists?
-   test_foreach_alist(list);
+   TestForeachAlist(list);
 
    // fill the list
-   alist_fill(list, 20);
-   test_foreach_alist(list);
+   AlistFill(list, 20);
+   TestForeachAlist(list);
 
    // verify and remove the latest entries
    EXPECT_EQ(list->size(), 20);
@@ -146,8 +146,8 @@ void test_alist_dynamic() {
    free(buf);
 
    // added more entires
-   alist_fill(list, 20);
-   test_foreach_alist(list);
+   AlistFill(list, 20);
+   TestForeachAlist(list);
 
    EXPECT_EQ(list->size(), 38);
 

@@ -55,7 +55,7 @@ public:
    virtual int32_t GetOsTapeFile();
    virtual bool rewind(DeviceControlRecord *dcr);
    virtual bool UpdatePos(DeviceControlRecord *dcr);
-   virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
+   virtual bool Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
    virtual bool MountBackend(DeviceControlRecord *dcr, int timeout);
    virtual bool UnmountBackend(DeviceControlRecord *dcr, int timeout);
    virtual int d_close(int);

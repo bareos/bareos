@@ -268,7 +268,7 @@ void ReleaseDeviceCond()
  * Returns: true if time doubled
  *          false if max time expired
  */
-static bool double_jcr_wait_time(JobControlRecord *jcr)
+static bool DoubleJcrWaitTime(JobControlRecord *jcr)
 {
    jcr->wait_sec *= 2;               /* double wait time */
    if (jcr->wait_sec > jcr->max_wait) {   /* but not longer than maxtime */

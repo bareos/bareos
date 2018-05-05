@@ -71,7 +71,7 @@ static char OK_end_replicate[] =
  */
 static char start_replicate[] =
    "start replicate\n";
-static char replicate_data[] =
+static char ReplicateData[] =
    "replicate data %d\n";
 static char end_replicate[] =
    "end replicate\n";
@@ -121,7 +121,7 @@ static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const 
  * Returns: true if OK
  *           false if error
  */
-static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool CloneRecordInternally(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    bool retval = false;
    bool translated_record = false;
@@ -304,7 +304,7 @@ bail_out:
  * Returns: true if OK
  *           false if error
  */
-static bool clone_record_to_remote_sd(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool CloneRecordToRemoteSd(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    POOLMEM *msgsave;
    JobControlRecord *jcr = dcr->jcr;
@@ -438,7 +438,7 @@ static bool clone_record_to_remote_sd(DeviceControlRecord *dcr, DeviceRecord *re
 /**
  * Check autoinflation/autodeflation settings.
  */
-static inline void check_auto_xflation(JobControlRecord *jcr)
+static inline void CheckAutoXflation(JobControlRecord *jcr)
 {
    /*
     * See if the autoxflateonreplication flag is set to true then we allow
@@ -502,7 +502,7 @@ static inline void check_auto_xflation(JobControlRecord *jcr)
 /**
  * Read Data and commit to new job.
  */
-bool do_mac_run(JobControlRecord *jcr)
+bool DoMacRun(JobControlRecord *jcr)
 {
    utime_t now;
    char ec1[50];
@@ -539,7 +539,7 @@ bool do_mac_run(JobControlRecord *jcr)
    /*
     * Check autoinflation/autodeflation settings.
     */
-   check_auto_xflation(jcr);
+   CheckAutoXflation(jcr);
 
    /*
     * See if we perform both read and write or read only.
@@ -602,7 +602,7 @@ bool do_mac_run(JobControlRecord *jcr)
       /*
        * Let the remote SD know we are now really going to send the data.
        */
-      sd->fsend(replicate_data, jcr->Ticket);
+      sd->fsend(ReplicateData, jcr->Ticket);
       Dmsg1(110, ">stored: %s", sd->msg);
 
       /*
@@ -622,7 +622,7 @@ bool do_mac_run(JobControlRecord *jcr)
       /*
        * Read all data and send it to remote SD.
        */
-      ok = ReadRecords(jcr->read_dcr, clone_record_to_remote_sd, MountNextReadVolume);
+      ok = ReadRecords(jcr->read_dcr, CloneRecordToRemoteSd, MountNextReadVolume);
 
       /*
        * Send the last EOD to close the last data transfer and a next EOD to
@@ -708,7 +708,7 @@ bool do_mac_run(JobControlRecord *jcr)
       /*
        * Read all data and make a local clone of it.
        */
-      ok = ReadRecords(jcr->read_dcr, clone_record_internally, MountNextReadVolume);
+      ok = ReadRecords(jcr->read_dcr, CloneRecordInternally, MountNextReadVolume);
    }
 
 bail_out:

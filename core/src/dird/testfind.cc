@@ -39,7 +39,7 @@
 
 /* Dummy functions */
 void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
-extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Global variables */
 static int num_files = 0;
@@ -54,10 +54,10 @@ ConfigurationParser *my_config = NULL;             /* Our Global config */
 
 static JobControlRecord *jcr;
 
-static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool);
-static void count_files(FindFilesPacket *ff);
-static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr);
-static void set_options(findFOPTS *fo, const char *opts);
+static int PrintFile(JobControlRecord *jcr, FindFilesPacket *ff, bool);
+static void CountFiles(FindFilesPacket *ff);
+static bool CopyFileset(FindFilesPacket *ff, JobControlRecord *jcr);
+static void SetOptions(findFOPTS *fo, const char *opts);
 
 static void usage()
 {
@@ -134,7 +134,7 @@ main (int argc, char *const *argv)
    argv += optind;
 
    my_config = new_config_parser();
-   parse_dir_config(my_config, configfile, M_ERROR_TERM);
+   ParseDirConfig(my_config, configfile, M_ERROR_TERM);
 
    MessagesResource *msg;
 
@@ -162,9 +162,9 @@ main (int argc, char *const *argv)
 
    ff = init_find_files();
 
-   copy_fileset(ff, jcr);
+   CopyFileset(ff, jcr);
 
-   FindFiles(jcr, ff, print_file, NULL);
+   FindFiles(jcr, ff, PrintFile, NULL);
 
    FreeJcr(jcr);
    if (my_config) {
@@ -196,7 +196,7 @@ main (int argc, char *const *argv)
             fo->wildfile.destroy();
             fo->wildbase.destroy();
             fo->fstype.destroy();
-            fo->drivetype.destroy();
+            fo->Drivetype.destroy();
          }
          incexe->opts_list.destroy();
          incexe->name_list.destroy();
@@ -216,7 +216,7 @@ main (int argc, char *const *argv)
             fo->wildfile.destroy();
             fo->wildbase.destroy();
             fo->fstype.destroy();
-            fo->drivetype.destroy();
+            fo->Drivetype.destroy();
          }
          incexe->opts_list.destroy();
          incexe->name_list.destroy();
@@ -247,7 +247,7 @@ main (int argc, char *const *argv)
    exit(0);
 }
 
-static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
+static int PrintFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
 
    switch (ff->type) {
@@ -264,7 +264,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
       } else if (debug_level > 1) {
          printf("Empty: %s\n", ff->fname);
       }
-      count_files(ff);
+      CountFiles(ff);
       break;
    case FT_REG:
       if (debug_level == 1) {
@@ -272,7 +272,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
       } else if (debug_level > 1) {
          printf(_("Reg: %s\n"), ff->fname);
       }
-      count_files(ff);
+      CountFiles(ff);
       break;
    case FT_LNK:
       if (debug_level == 1) {
@@ -280,7 +280,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
       } else if (debug_level > 1) {
          printf("Lnk: %s -> %s\n", ff->fname, ff->link);
       }
-      count_files(ff);
+      CountFiles(ff);
       break;
    case FT_DIRBEGIN:
       return 1;
@@ -303,7 +303,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
          printf("%s%s%s\n", (debug_level > 1 ? "Dir: " : ""), ff->fname, errmsg);
       }
       ff->type = FT_DIREND;
-      count_files(ff);
+      CountFiles(ff);
       break;
    case FT_SPEC:
       if (debug_level == 1) {
@@ -311,7 +311,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
       } else if (debug_level > 1) {
          printf("Spec: %s\n", ff->fname);
       }
-      count_files(ff);
+      CountFiles(ff);
       break;
    case FT_NOACCESS:
       printf(_("Err: Could not access %s: %s\n"), ff->fname, strerror(errno));
@@ -346,7 +346,7 @@ static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level
    return 1;
 }
 
-static void count_files(FindFilesPacket *ar)
+static void CountFiles(FindFilesPacket *ar)
 {
    int fnl, pnl;
    char *l, *p;
@@ -415,7 +415,7 @@ static void count_files(FindFilesPacket *ar)
 
 }
 
-static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
+static bool CopyFileset(FindFilesPacket *ff, JobControlRecord *jcr)
 {
    FilesetResource *jcr_fileset = jcr->res.fileset;
    int num;
@@ -478,9 +478,9 @@ static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
             current_opts->wildfile.init(1, true);
             current_opts->wildbase.init(1, true);
             current_opts->fstype.init(1, true);
-            current_opts->drivetype.init(1, true);
+            current_opts->Drivetype.init(1, true);
 
-            set_options(current_opts, fo->opts);
+            SetOptions(current_opts, fo->opts);
 
             for (k=0; k<fo->regex.size(); k++) {
                // fd->fsend("R %s\n", fo->regex.get(k));
@@ -509,8 +509,8 @@ static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
             for (k=0; k<fo->fstype.size(); k++) {
                current_opts->fstype.append(bstrdup((const char *)fo->fstype.get(k)));
             }
-            for (k=0; k<fo->drivetype.size(); k++) {
-               current_opts->drivetype.append(bstrdup((const char *)fo->drivetype.get(k)));
+            for (k=0; k<fo->Drivetype.size(); k++) {
+               current_opts->Drivetype.append(bstrdup((const char *)fo->Drivetype.get(k)));
             }
          }
 
@@ -529,7 +529,7 @@ static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
    return true;
 }
 
-static void set_options(findFOPTS *fo, const char *opts)
+static void SetOptions(findFOPTS *fo, const char *opts)
 {
    int j;
    const char *p;

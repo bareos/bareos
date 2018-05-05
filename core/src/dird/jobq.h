@@ -68,7 +68,7 @@ extern int JobqInit(
                     );
 extern int JobqDestroy(jobq_t *wq);
 extern int JobqAdd(jobq_t *wq, JobControlRecord *jcr);
-extern int jobq_remove(jobq_t *wq, JobControlRecord *jcr);
+extern int JobqRemove(jobq_t *wq, JobControlRecord *jcr);
 
 bool IncReadStore(JobControlRecord *jcr);
 void DecReadStore(JobControlRecord *jcr);

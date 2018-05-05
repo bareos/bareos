@@ -81,7 +81,7 @@ static void dump_job(job_item *ji, const char *msg);
  * because run_nh = 1.
  */
 static bool schedules_invalidated = false;
-void invalidate_schedules(void) {
+void InvalidateSchedules(void) {
     schedules_invalidated = true;
 }
 
@@ -110,7 +110,7 @@ JobControlRecord *wait_for_next_job(char *one_shot_job_to_run)
             Emsg1(M_ABORT, 0, _("Job %s not found\n"), one_shot_job_to_run);
          }
          Dmsg1(5, "Found one_shot_job_to_run %s\n", one_shot_job_to_run);
-         jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
+         jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
          SetJcrDefaults(jcr, job);
          return jcr;
       }
@@ -125,7 +125,7 @@ again:
       if (!jobs_to_run->empty()) {
          break;
       }
-      bmicrosleep(next_check_secs, 0); /* recheck once per minute */
+      Bmicrosleep(next_check_secs, 0); /* recheck once per minute */
    }
 
 #ifdef  list_chain
@@ -172,7 +172,7 @@ again:
          break;
       }
       /* Recheck at least once per minute */
-      bmicrosleep((next_check_secs < twait)?next_check_secs:twait, 0);
+      Bmicrosleep((next_check_secs < twait)?next_check_secs:twait, 0);
       /* Attempt to handle clock shift (but not daylight savings time changes)
        * we allow a skew of 10 seconds before invalidating everything.
        */
@@ -182,7 +182,7 @@ again:
       }
    }
 
-   jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
    run = next_job->run;               /* pick up needed values */
    job = next_job->job;
 
@@ -331,7 +331,7 @@ static void find_runs()
     * Compute values for time now
     */
    now = time(NULL);
-   blocaltime(&now, &tm);
+   Blocaltime(&now, &tm);
    hour = tm.tm_hour;
    mday = tm.tm_mday - 1;
    wday = tm.tm_wday;
@@ -351,7 +351,7 @@ static void find_runs()
     * sleeping.
     */
    next_hour = now + 3600;
-   blocaltime(&next_hour, &tm);
+   Blocaltime(&next_hour, &tm);
    nh_hour = tm.tm_hour;
    nh_mday = tm.tm_mday - 1;
    nh_wday = tm.tm_wday;
@@ -429,7 +429,7 @@ static void find_runs()
            /*
             * find time (time_t) job is to be run
             */
-           blocaltime(&now, &tm);      /* reset tm structure */
+           Blocaltime(&now, &tm);      /* reset tm structure */
            tm.tm_min = run->minute;     /* set run minute */
            tm.tm_sec = 0;               /* zero secs */
            runtime = mktime(&tm);

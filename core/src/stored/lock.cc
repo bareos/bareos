@@ -356,7 +356,7 @@ void Device::SetMutexPriorities()
    BthreadMutexSetPriority(&acquire_mutex, PRIO_SD_DEV_ACQUIRE);
 }
 
-int Device::next_vol_timedwait(const struct timespec *timeout)
+int Device::NextVolTimedwait(const struct timespec *timeout)
 {
    return pthread_cond_timedwait(&wait_next_vol, &mutex_, timeout);
 }
@@ -419,9 +419,9 @@ void Device::rLock(bool locked)
  * the current thread can do slip through the dev->rLock()
  * calls without blocking.
  */
-void _block_device(const char *file, int line, Device *dev, int state)
+void _blockDevice(const char *file, int line, Device *dev, int state)
 {
-// ASSERT(lmgr_mutex_is_locked(&dev->mutex_) == 1);
+// ASSERT(LmgrMutexIsLocked(&dev->mutex_) == 1);
    ASSERT(dev->blocked() == BST_NOT_BLOCKED);
    dev->SetBlocked(state);           /* make other threads wait */
    dev->no_wait_id = pthread_self();  /* allow us to continue */
@@ -436,7 +436,7 @@ void _block_device(const char *file, int line, Device *dev, int state)
 void _unBlockDevice(const char *file, int line, Device *dev)
 {
    Dmsg3(sd_debuglevel, "unblock %s from %s:%d\n", dev->print_blocked(), file, line);
-// ASSERT(lmgr_mutex_is_locked(&dev->mutex_) == 1);
+// ASSERT(LmgrMutexIsLocked(&dev->mutex_) == 1);
    ASSERT(dev->blocked());
    dev->SetBlocked(BST_NOT_BLOCKED);
    ClearThreadId(dev->no_wait_id);
@@ -449,7 +449,7 @@ void _unBlockDevice(const char *file, int line, Device *dev)
  * Enter with device locked and blocked
  * Exit with device unlocked and blocked by us.
  */
-void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state)
+void _stealDeviceLock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state)
 {
    Dmsg3(sd_debuglevel, "steal lock. old=%s from %s:%d\n", dev->print_blocked(),
       file, line);
@@ -466,7 +466,7 @@ void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *
  * Enter with device blocked by us but not locked
  * Exit with device locked, and blocked by previous owner
  */
-void _give_back_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold)
+void _giveBackDeviceLock(const char *file, int line, Device *dev, bsteal_lock_t *hold)
 {
    Dmsg3(sd_debuglevel, "return lock. old=%s from %s:%d\n",
       dev->print_blocked(), file, line);

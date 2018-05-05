@@ -21,8 +21,8 @@
 #ifndef BAREOS_STORED_STATUS_H_
 #define BAREOS_STORED_STATUS_H_
 
-bool status_cmd(JobControlRecord *jcr);
-bool dotstatus_cmd(JobControlRecord *jcr);
+bool StatusCmd(JobControlRecord *jcr);
+bool DotstatusCmd(JobControlRecord *jcr);
 #if defined(HAVE_WIN32)
 char *bareos_status(char *buf, int buf_len);
 #endif

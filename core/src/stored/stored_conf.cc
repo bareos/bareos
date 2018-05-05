@@ -302,7 +302,7 @@ static s_kw compression_algorithms[] = {
 /**
  * Store authentication type (Mostly for NDMP like clear or MD5).
  */
-static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAuthtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -311,7 +311,7 @@ static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
     * Store the type both pass 1 and pass 2
     */
    for (i = 0; authmethods[i].name; i++) {
-      if (bstrcasecmp(lc->str, authmethods[i].name)) {
+      if (Bstrcasecmp(lc->str, authmethods[i].name)) {
          *(uint32_t *)(item->value) = authmethods[i].token;
          i = 0;
          break;
@@ -328,7 +328,7 @@ static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store password either clear if for NDMP or MD5 hashed for native.
  */
-static void store_autopassword(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (res_all.hdr.rcode) {
    case R_DIRECTOR:
@@ -357,7 +357,7 @@ static void store_autopassword(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store Device Type (File, FIFO, Tape)
  */
-static void store_devtype(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreDevtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -366,7 +366,7 @@ static void store_devtype(LEX *lc, ResourceItem *item, int index, int pass)
     * Store the label pass 2 so that type is defined
     */
    for (i = 0; dev_types[i].name; i++) {
-      if (bstrcasecmp(lc->str, dev_types[i].name)) {
+      if (Bstrcasecmp(lc->str, dev_types[i].name)) {
          *(uint32_t *)(item->value) = dev_types[i].token;
          i = 0;
          break;
@@ -383,7 +383,7 @@ static void store_devtype(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
  */
-static void store_maxblocksize(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreMaxblocksize(LEX *lc, ResourceItem *item, int index, int pass)
 {
    StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
    if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
@@ -395,13 +395,13 @@ static void store_maxblocksize(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store the IO direction on a certain device.
  */
-static void store_io_direction(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreIoDirection(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
    LexGetToken(lc, BCT_NAME);
    for (i = 0; io_directions[i].name; i++) {
-      if (bstrcasecmp(lc->str, io_directions[i].name)) {
+      if (Bstrcasecmp(lc->str, io_directions[i].name)) {
          *(uint16_t *)(item->value) = io_directions[i].token & 0xffff;
          i = 0;
          break;
@@ -418,13 +418,13 @@ static void store_io_direction(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store the compression algorithm to use on a certain device.
  */
-static void store_compressionalgorithm(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreCompressionalgorithm(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
    LexGetToken(lc, BCT_NAME);
    for (i = 0; compression_algorithms[i].name; i++) {
-      if (bstrcasecmp(lc->str, compression_algorithms[i].name)) {
+      if (Bstrcasecmp(lc->str, compression_algorithms[i].name)) {
          *(uint32_t *)(item->value) = compression_algorithms[i].token & 0xffffffff;
          i = 0;
          break;
@@ -441,7 +441,7 @@ static void store_compressionalgorithm(LEX *lc, ResourceItem *item, int index, i
 /**
  * Dump contents of resource
  */
-void dump_resource(int type, CommonResourceHeader *reshdr,
+void DumpResource(int type, CommonResourceHeader *reshdr,
                    void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
@@ -474,7 +474,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
    sendit(sock, "%s", buf.c_str());
 
    if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, (CommonResourceHeader *)res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
+      DumpResource(type, (CommonResourceHeader *)res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }
 }
 
@@ -719,7 +719,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * or alist pointers.
  */
-bool save_resource(int type, ResourceItem *items, int pass)
+bool SaveResource(int type, ResourceItem *items, int pass)
 {
    UnionOfResources *res;
    int rindex = type - R_FIRST;
@@ -856,14 +856,14 @@ bool save_resource(int type, ResourceItem *items, int pass)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function InitResource, for more generic handling.
  */
-static void init_resource_cb(ResourceItem *item, int pass)
+static void InitResourceCb(ResourceItem *item, int pass)
 {
    switch (pass) {
    case 1:
       switch (item->type) {
       case CFG_TYPE_AUTHTYPE:
          for (int i = 0; authmethods[i].name; i++) {
-            if (bstrcasecmp(item->default_value, authmethods[i].name)) {
+            if (Bstrcasecmp(item->default_value, authmethods[i].name)) {
                *(uint32_t *)(item->value) = authmethods[i].token;
             }
          }
@@ -881,26 +881,26 @@ static void init_resource_cb(ResourceItem *item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
+static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (item->type) {
    case CFG_TYPE_AUTOPASSWORD:
-      store_autopassword(lc, item, index, pass);
+      StoreAutopassword(lc, item, index, pass);
       break;
    case CFG_TYPE_AUTHTYPE:
-      store_authtype(lc, item, index, pass);
+      StoreAuthtype(lc, item, index, pass);
       break;
    case CFG_TYPE_DEVTYPE:
-      store_devtype(lc, item, index, pass);
+      StoreDevtype(lc, item, index, pass);
       break;
    case CFG_TYPE_MAXBLOCKSIZE:
-      store_maxblocksize(lc, item, index, pass);
+      StoreMaxblocksize(lc, item, index, pass);
       break;
    case CFG_TYPE_IODIRECTION:
-      store_io_direction(lc, item, index, pass);
+      StoreIoDirection(lc, item, index, pass);
       break;
    case CFG_TYPE_CMPRSALGO:
-      store_compressionalgorithm(lc, item, index, pass);
+      StoreCompressionalgorithm(lc, item, index, pass);
       break;
    default:
       break;
@@ -912,8 +912,8 @@ void InitSdConfig(ConfigurationParser *config, const char *configfile, int exit_
    config->init(configfile,
                 NULL,
                 NULL,
-                init_resource_cb,
-                parse_config_cb,
+                InitResourceCb,
+                ParseConfigCb,
                 NULL,
                 exit_code,
                 (void *)&res_all,
@@ -926,7 +926,7 @@ void InitSdConfig(ConfigurationParser *config, const char *configfile, int exit_
    config->SetConfigIncludeDir("bareos-sd.d");
 }
 
-bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code)
+bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    bool retval;
 

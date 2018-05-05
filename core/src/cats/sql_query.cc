@@ -96,7 +96,7 @@ void BareosDb::FillQueryVaList(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefin
    Dmsg3(debuglevel, "called: %s with query name %s (%d)\n", __PRETTY_FUNCTION__, query_name, predefined_query);
 
    if (query_template) {
-      query.bvsprintf(query_template, arg_ptr);
+      query.Bvsprintf(query_template, arg_ptr);
    }
 
    Dmsg2(debuglevel, "called: %s query is now %s\n", __PRETTY_FUNCTION__, query.c_str());
@@ -133,14 +133,14 @@ bool BareosDb::SqlQuery(const char *query, int flags)
    return retval;
 }
 
-bool BareosDb::SqlQuery(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::SqlQuery(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    bool retval;
 
    Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
    DbLock(this);
-   retval = SqlQueryWithHandler(query, result_handler, ctx);
+   retval = SqlQueryWithHandler(query, ResultHandler, ctx);
    if (!retval) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
    }

@@ -295,7 +295,7 @@ accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(char *fname)
    return payload;
 }
 
-bool BareosAccurateFilelistLmdb::update_payload(char *fname, accurate_payload *payload)
+bool BareosAccurateFilelistLmdb::UpdatePayload(char *fname, accurate_payload *payload)
 {
    int result,
        total_length,
@@ -478,7 +478,7 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
          payload = (accurate_payload *)data.mv_data;
 
          if (BitIsSet(payload->filenr, seen_bitmap_) ||
-             plugin_check_file(jcr_, (char *)key.mv_data)) {
+             PluginCheckFile(jcr_, (char *)key.mv_data)) {
             continue;
          }
 

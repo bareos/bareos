@@ -114,7 +114,7 @@
 #define DATA_ENCRYPTION 1
 
 /*
- * This uses a Bareos specific bsnprintf rather than the sys lib
+ * This uses a Bareos specific Bsnprintf rather than the sys lib
  *  version because it is much more secure. It should always be
  *  on.
  */

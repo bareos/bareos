@@ -54,13 +54,13 @@ static char ferrmsg[] =
 /* Imported functions */
 
 /* Forward referenced FD commands */
-static bool append_open_session(JobControlRecord *jcr);
-static bool append_close_session(JobControlRecord *jcr);
-static bool append_data_cmd(JobControlRecord *jcr);
-static bool append_end_session(JobControlRecord *jcr);
-static bool read_open_session(JobControlRecord *jcr);
-static bool read_data_cmd(JobControlRecord *jcr);
-static bool read_close_session(JobControlRecord *jcr);
+static bool AppendOpenSession(JobControlRecord *jcr);
+static bool AppendCloseSession(JobControlRecord *jcr);
+static bool AppendDataCmd(JobControlRecord *jcr);
+static bool AppendEndSession(JobControlRecord *jcr);
+static bool ReadOpenSession(JobControlRecord *jcr);
+static bool ReadDataCmd(JobControlRecord *jcr);
+static bool ReadCloseSession(JobControlRecord *jcr);
 
 /* Exported function */
 
@@ -73,13 +73,13 @@ struct s_cmds {
  * The following are the recognized commands from the File daemon
  */
 static struct s_cmds fd_cmds[] = {
-   { "append open", append_open_session },
-   { "append data", append_data_cmd },
-   { "append end", append_end_session },
-   { "append close", append_close_session },
-   { "read open", read_open_session },
-   { "read data", read_data_cmd },
-   { "read close", read_close_session },
+   { "append open", AppendOpenSession },
+   { "append data", AppendDataCmd },
+   { "append end", AppendEndSession },
+   { "append close", AppendCloseSession },
+   { "read open", ReadOpenSession },
+   { "read data", ReadDataCmd },
+   { "read close", ReadCloseSession },
    { NULL, NULL } /* list terminator */
 };
 
@@ -116,10 +116,10 @@ void *handle_filed_connection(BareosSocket *fd, char *job_name)
    JobControlRecord *jcr;
 
 /**
- * With the following bmicrosleep on, running the
+ * With the following Bmicrosleep on, running the
  * SD under the debugger fails.
  */
-// bmicrosleep(0, 50000);             /* wait 50 millisecs */
+// Bmicrosleep(0, 50000);             /* wait 50 millisecs */
    if (!(jcr = get_jcr_by_full_name(job_name))) {
       Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
@@ -268,7 +268,7 @@ void DoFdCommands(JobControlRecord *jcr)
  *    Open Data Channel and receive Data for archiving
  *    Write the Data to the archive device
  */
-static bool append_data_cmd(JobControlRecord *jcr)
+static bool AppendDataCmd(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 
@@ -290,7 +290,7 @@ static bool append_data_cmd(JobControlRecord *jcr)
    return false;
 }
 
-static bool append_end_session(JobControlRecord *jcr)
+static bool AppendEndSession(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 
@@ -306,7 +306,7 @@ static bool append_end_session(JobControlRecord *jcr)
 /**
  * Append Open session command
  */
-static bool append_open_session(JobControlRecord *jcr)
+static bool AppendOpenSession(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 
@@ -331,7 +331,7 @@ static bool append_open_session(JobControlRecord *jcr)
  *    Close the append session and send back Statistics
  *    (need to fix statistics)
  */
-static bool append_close_session(JobControlRecord *jcr)
+static bool AppendCloseSession(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 
@@ -360,14 +360,14 @@ static bool append_close_session(JobControlRecord *jcr)
  *    the archive device and send to File
  *    daemon.
  */
-static bool read_data_cmd(JobControlRecord *jcr)
+static bool ReadDataCmd(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 
    Dmsg1(120, "Read data: %s", fd->msg);
    if (jcr->session_opened) {
       Dmsg1(120, "<filed: %s", fd->msg);
-      return do_read_data(jcr);
+      return DoReadData(jcr);
    } else {
       PmStrcpy(jcr->errmsg, _("Attempt to read on non-open session.\n"));
       fd->fsend(NOT_opened);
@@ -380,7 +380,7 @@ static bool read_data_cmd(JobControlRecord *jcr)
  *    We need to scan for the parameters of the job
  *    to be restored.
  */
-static bool read_open_session(JobControlRecord *jcr)
+static bool ReadOpenSession(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 
@@ -399,7 +399,7 @@ static bool read_open_session(JobControlRecord *jcr)
          fd->fsend(NOT_opened);
          return false;
       }
-      Dmsg4(100, "read_open_session got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
+      Dmsg4(100, "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
             jcr->JobId, jcr->read_dcr->VolumeName, jcr->read_VolSessionId,
             jcr->read_VolSessionTime);
       Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
@@ -423,7 +423,7 @@ static bool read_open_session(JobControlRecord *jcr)
  * Read Close session command
  *    Close the read session
  */
-static bool read_close_session(JobControlRecord *jcr)
+static bool ReadCloseSession(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
 

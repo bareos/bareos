@@ -45,8 +45,8 @@ private:
                  struct sockaddr *lclient_addr);
    bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
              int port, utime_t heart_beat, int *fatal);
-   bool set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval);
-   bool send_packet(int32_t *hdr, int32_t pktsiz);
+   bool SetKeepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval);
+   bool SendPacket(int32_t *hdr, int32_t pktsiz);
 
 public:
    BareosSocketTCP();

@@ -68,7 +68,7 @@ bool accurate_unMarkFileAsSeen(JobControlRecord *jcr, char *fname)
    return true;
 }
 
-bool accurate_mark_all_files_as_seen(JobControlRecord *jcr)
+bool AccurateMarkAllFilesAsSeen(JobControlRecord *jcr)
 {
    if (!jcr->accurate || !jcr->file_list) {
       return false;
@@ -88,7 +88,7 @@ bool accurate_unMarkAllFilesAsSeen(JobControlRecord *jcr)
    return true;
 }
 
-static inline bool accurate_lookup(JobControlRecord *jcr, char *fname, accurate_payload **payload)
+static inline bool AccurateLookup(JobControlRecord *jcr, char *fname, accurate_payload **payload)
 {
    bool found = false;
 
@@ -148,7 +148,7 @@ bool AccurateFinish(JobControlRecord *jcr)
  * Returns: true   if file has changed (must be backed up)
  *          false  file not changed
  */
-bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
+bool AccurateCheckFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    char *opts;
    char *fname;
@@ -179,7 +179,7 @@ bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
       fname = ff_pkt->fname;
    }
 
-   if (!accurate_lookup(jcr, fname, &payload)) {
+   if (!AccurateLookup(jcr, fname, &payload)) {
       Dmsg1(debuglevel, "accurate %s (not found)\n", fname);
       status = true;
       UnstripPath(ff_pkt);
@@ -337,7 +337,7 @@ bail_out:
    return status;
 }
 
-bool accurate_cmd(JobControlRecord *jcr)
+bool AccurateCmd(JobControlRecord *jcr)
 {
    uint32_t number_of_previous_files;
    int fname_length,

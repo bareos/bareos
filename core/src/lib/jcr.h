@@ -29,7 +29,7 @@ DLL_IMP_EXP void UnlockLastJobsList();
 DLL_IMP_EXP bool ReadLastJobsList(int fd, uint64_t addr);
 DLL_IMP_EXP uint64_t WriteLastJobsList(int fd, uint64_t addr);
 DLL_IMP_EXP void WriteStateFile(char *dir, const char *progname, int port);
-DLL_IMP_EXP void RegisterJobEndCallback(JobControlRecord *jcr, void job_end_cb(JobControlRecord *jcr,void *), void *ctx);
+DLL_IMP_EXP void RegisterJobEndCallback(JobControlRecord *jcr, void JobEndCb(JobControlRecord *jcr,void *), void *ctx);
 DLL_IMP_EXP void LockJobs();
 DLL_IMP_EXP void UnlockJobs();
 DLL_IMP_EXP JobControlRecord *jcr_walk_start();

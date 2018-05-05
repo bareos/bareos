@@ -23,7 +23,7 @@
 
 void EndOfNdmpBackup(JobControlRecord *jcr);
 void EndOfNdmpRestore(JobControlRecord *jcr);
-int start_ndmp_thread_server(dlist *addr_list, int max_clients);
+int StartNdmpThreadServer(dlist *addr_list, int max_clients);
 void StopNdmpThreadServer();
 
 #endif // BAREOS_STORED_NDMP_TAPE_H_

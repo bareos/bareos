@@ -62,7 +62,7 @@ static struct cached_device {
    DBId_t DeviceId;
 } cached_device;
 
-static inline bool lookup_device(JobControlRecord *jcr, const char *device_name, DBId_t StorageId, DBId_t *DeviceId)
+static inline bool LookupDevice(JobControlRecord *jcr, const char *device_name, DBId_t StorageId, DBId_t *DeviceId)
 {
    DeviceDbRecord dr;
 
@@ -267,7 +267,7 @@ void *statistics_thread_runner(void *arg)
                      Dmsg4(200, "MediaId=%ld, VolBytes=%llu, VolFiles=%llu, VolBlocks=%llu\n",
                            dsr.MediaId, dsr.VolCatBytes, dsr.VolCatFiles, dsr.VolCatBlocks);
 
-                     if (!lookup_device(jcr, DevName.c_str(), StorageId, &dsr.DeviceId)) {
+                     if (!LookupDevice(jcr, DevName.c_str(), StorageId, &dsr.DeviceId)) {
                         continue;
                      }
 
@@ -288,7 +288,7 @@ void *statistics_thread_runner(void *arg)
                      Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
                            tsr.SampleTime, DevName.c_str(), tsr.AlertFlags);
 
-                     if (!lookup_device(jcr, DevName.c_str(), StorageId, &tsr.DeviceId)) {
+                     if (!LookupDevice(jcr, DevName.c_str(), StorageId, &tsr.DeviceId)) {
                         continue;
                      }
 
@@ -309,7 +309,7 @@ void *statistics_thread_runner(void *arg)
                      Dmsg5(200, "New Jobstats [%lld]: JobId %ld, JobFiles %lu, JobBytes %llu, DevName %s\n",
                            jsr.SampleTime, jsr.JobId, jsr.JobFiles, jsr.JobBytes, DevName.c_str());
 
-                     if (!lookup_device(jcr, DevName.c_str(), StorageId, &jsr.DeviceId)) {
+                     if (!LookupDevice(jcr, DevName.c_str(), StorageId, &jsr.DeviceId)) {
                         continue;
                      }
 

@@ -45,7 +45,7 @@
 /*
  * Imported subroutines
  */
-extern void store_inc(LEX *lc, ResourceItem *item, int index, int pass);
+extern void StoreInc(LEX *lc, ResourceItem *item, int index, int pass);
 
 /* We build the current new Include and Exclude items here */
 static IncludeExcludeItem res_incexe;
@@ -170,7 +170,7 @@ void FindUsedCompressalgos(PoolMem *compressalgos, JobControlRecord *jcr)
 /**
  * Check if the configured options are valid.
  */
-static inline void is_in_permitted_set(LEX *lc, const char *SetType, const char *permitted_set)
+static inline void IsInPermittedSet(LEX *lc, const char *SetType, const char *permitted_set)
 {
    const char *p, *q;
    bool found;
@@ -198,7 +198,7 @@ static inline void is_in_permitted_set(LEX *lc, const char *SetType, const char 
  *
  * This code is also used inside an Options resource.
  */
-static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
+static void ScanIncludeOptions(LEX *lc, int keyword, char *opts, int optlen)
 {
    int i;
    char option[64];
@@ -209,22 +209,22 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    lc->options |= LOPT_STRING;             /* force string */
    LexGetToken(lc, BCT_STRING);            /* expect at least one option */
    if (keyword == INC_KW_VERIFY) {         /* special case */
-      is_in_permitted_set(lc, _("verify"), PERMITTED_VERIFY_OPTIONS);
+      IsInPermittedSet(lc, _("verify"), PERMITTED_VERIFY_OPTIONS);
       bstrncat(opts, "V", optlen);         /* indicate Verify */
       bstrncat(opts, lc->str, optlen);
-      bstrncat(opts, ":", optlen);         /* terminate it */
+      bstrncat(opts, ":", optlen);         /* Terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_ACCURATE) { /* special case */
-      is_in_permitted_set(lc, _("accurate"), PERMITTED_ACCURATE_OPTIONS);
+      IsInPermittedSet(lc, _("accurate"), PERMITTED_ACCURATE_OPTIONS);
       bstrncat(opts, "C", optlen);         /* indicate Accurate */
       bstrncat(opts, lc->str, optlen);
-      bstrncat(opts, ":", optlen);         /* terminate it */
+      bstrncat(opts, ":", optlen);         /* Terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_BASEJOB) { /* special case */
-      is_in_permitted_set(lc, _("base job"), PERMITTED_BASEJOB_OPTIONS);
+      IsInPermittedSet(lc, _("base job"), PERMITTED_BASEJOB_OPTIONS);
       bstrncat(opts, "J", optlen);         /* indicate BaseJob */
       bstrncat(opts, lc->str, optlen);
-      bstrncat(opts, ":", optlen);         /* terminate it */
+      bstrncat(opts, ":", optlen);         /* Terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_STRIPPATH) { /* special case */
       if (!IsAnInteger(lc->str)) {
@@ -232,7 +232,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
       }
       bstrncat(opts, "P", optlen);         /* indicate strip path */
       bstrncat(opts, lc->str, optlen);
-      bstrncat(opts, ":", optlen);         /* terminate it */
+      bstrncat(opts, ":", optlen);         /* Terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_SIZE) { /* special case */
       if (!ParseSizeMatch(lc->str, &size_matching)) {
@@ -240,14 +240,14 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
       }
       bstrncat(opts, "z", optlen);         /* indicate size */
       bstrncat(opts, lc->str, optlen);
-      bstrncat(opts, ":", optlen);         /* terminate it */
+      bstrncat(opts, ":", optlen);         /* Terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else {
       /*
        * Standard keyword options for Include/Exclude
        */
       for (i = 0; FS_options[i].name; i++) {
-         if (FS_options[i].keyword == keyword && bstrcasecmp(lc->str, FS_options[i].name)) {
+         if (FS_options[i].keyword == keyword && Bstrcasecmp(lc->str, FS_options[i].name)) {
             bstrncpy(option, FS_options[i].option, sizeof(option));
             i = 0;
             break;
@@ -273,7 +273,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
 /**
  * Store regex info
  */
-static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreRegex(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token, rc;
    regex_t preg;
@@ -323,7 +323,7 @@ static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store Base info
  */
-static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreBase(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
    LexGetToken(lc, BCT_NAME);
@@ -339,7 +339,7 @@ static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store reader info
  */
-static void store_plugin(LEX *lc, ResourceItem *item, int index, int pass)
+static void StorePlugin(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
    LexGetToken(lc, BCT_NAME);
@@ -355,7 +355,7 @@ static void store_plugin(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store Wild-card info
  */
-static void store_wild(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreWild(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    const char *type;
@@ -402,7 +402,7 @@ static void store_wild(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * Store fstype info
  */
-static void store_fstype(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreFstype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
@@ -425,31 +425,31 @@ static void store_fstype(LEX *lc, ResourceItem *item, int index, int pass)
 }
 
 /**
- * Store drivetype info
+ * Store Drivetype info
  */
-static void store_drivetype(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreDrivetype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
    token = LexGetToken(lc, BCT_SKIP_EOL);
    if (pass == 1) {
-      /* Pickup drivetype string */
+      /* Pickup Drivetype string */
       switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-         res_incexe.current_opts->drivetype.append(bstrdup(lc->str));
-         Dmsg3(900, "set drivetype %p size=%d %s\n",
-            res_incexe.current_opts, res_incexe.current_opts->drivetype.size(), lc->str);
+         res_incexe.current_opts->Drivetype.append(bstrdup(lc->str));
+         Dmsg3(900, "set Drivetype %p size=%d %s\n",
+            res_incexe.current_opts, res_incexe.current_opts->Drivetype.size(), lc->str);
          break;
       default:
-         scan_err1(lc, _("Expected a drivetype string, got: %s\n"), lc->str);
+         scan_err1(lc, _("Expected a Drivetype string, got: %s\n"), lc->str);
       }
    }
    ScanToEol(lc);
 }
 
-static void store_meta(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreMeta(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
@@ -474,7 +474,7 @@ static void store_meta(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * New style options come here
  */
-static void store_option(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreOption(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
    int keyword;
@@ -487,7 +487,7 @@ static void store_option(LEX *lc, ResourceItem *item, int index, int pass)
     * Look up the keyword
     */
    for (i = 0; FS_option_kw[i].name; i++) {
-      if (bstrcasecmp(item->name, FS_option_kw[i].name)) {
+      if (Bstrcasecmp(item->name, FS_option_kw[i].name)) {
          keyword = FS_option_kw[i].token;
          break;
       }
@@ -500,7 +500,7 @@ static void store_option(LEX *lc, ResourceItem *item, int index, int pass)
    /*
     * Now scan for the value
     */
-   scan_include_options(lc, keyword, inc_opts, sizeof(inc_opts));
+   ScanIncludeOptions(lc, keyword, inc_opts, sizeof(inc_opts));
    if (pass == 1) {
       bstrncat(res_incexe.current_opts->opts, inc_opts, MAX_FOPTS);
       Dmsg2(900, "new pass=%d incexe opts=%s\n", pass, res_incexe.current_opts->opts);
@@ -512,7 +512,7 @@ static void store_option(LEX *lc, ResourceItem *item, int index, int pass)
 /**
  * If current_opts not defined, create first entry
  */
-static void setup_current_opts(void)
+static void SetupCurrentOpts(void)
 {
    FileOptions *fo = (FileOptions *)malloc(sizeof(FileOptions));
    memset(fo, 0, sizeof(FileOptions));
@@ -525,7 +525,7 @@ static void setup_current_opts(void)
    fo->wildbase.init(1, true);
    fo->base.init(1, true);
    fo->fstype.init(1, true);
-   fo->drivetype.init(1, true);
+   fo->Drivetype.init(1, true);
    fo->meta.init(1, true);
    res_incexe.current_opts = fo;
    if (res_incexe.num_opts == 0) {
@@ -540,7 +540,7 @@ static void setup_current_opts(void)
 /**
  * Come here when Options seen in Include/Exclude
  */
-static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
+static void StoreOptionsRes(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    int token, i;
 
@@ -554,7 +554,7 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
    }
 
    if (pass == 1) {
-      setup_current_opts();
+      SetupCurrentOpts();
    }
 
    while ((token = LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
@@ -568,7 +568,7 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
          scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
       for (i=0; options_items[i].name; i++) {
-         if (bstrcasecmp(options_items[i].name, lc->str)) {
+         if (Bstrcasecmp(options_items[i].name, lc->str)) {
             token = LexGetToken(lc, BCT_SKIP_EOL);
             if (token != BCT_EQUALS) {
                scan_err1(lc, _("expected an equals, got: %s"), lc->str);
@@ -576,28 +576,28 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
             /* Call item handler */
             switch (options_items[i].type) {
             case CFG_TYPE_OPTION:
-               store_option(lc, &options_items[i], i, pass);
+               StoreOption(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_REGEX:
-               store_regex(lc, &options_items[i], i, pass);
+               StoreRegex(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_BASE:
-               store_base(lc, &options_items[i], i, pass);
+               StoreBase(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_WILD:
-               store_wild(lc, &options_items[i], i, pass);
+               StoreWild(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_PLUGIN:
-               store_plugin(lc, &options_items[i], i, pass);
+               StorePlugin(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_FSTYPE:
-               store_fstype(lc, &options_items[i], i, pass);
+               StoreFstype(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_DRIVETYPE:
-               store_drivetype(lc, &options_items[i], i, pass);
+               StoreDrivetype(lc, &options_items[i], i, pass);
                break;
             case CFG_TYPE_META:
-               store_meta(lc, &options_items[i], i, pass);
+               StoreMeta(lc, &options_items[i], i, pass);
                break;
             default:
                break;
@@ -617,7 +617,7 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
+static void StoreFname(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    int token;
    IncludeExcludeItem *incexe;
@@ -657,7 +657,7 @@ static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool e
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
+static void StorePluginName(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    int token;
    IncludeExcludeItem *incexe;
@@ -700,7 +700,7 @@ static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, 
 /**
  * Store exclude directory containing info
  */
-static void store_excludedir(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
+static void StoreExcludedir(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    IncludeExcludeItem *incexe;
 
@@ -729,7 +729,7 @@ static void store_excludedir(LEX *lc, ResourceItem *item, int index, int pass, b
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreNewinc(LEX *lc, ResourceItem *item, int index, int pass)
 {
    bool options;
    int token, i;
@@ -750,8 +750,8 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
          scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
       for (i=0; newinc_items[i].name; i++) {
-         options = bstrcasecmp(lc->str, "options");
-         if (bstrcasecmp(newinc_items[i].name, lc->str)) {
+         options = Bstrcasecmp(lc->str, "options");
+         if (Bstrcasecmp(newinc_items[i].name, lc->str)) {
             if (!options) {
                token = LexGetToken(lc, BCT_SKIP_EOL);
                if (token != BCT_EQUALS) {
@@ -762,16 +762,16 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
             /* Call item handler */
             switch (newinc_items[i].type) {
             case CFG_TYPE_FNAME:
-               store_fname(lc, &newinc_items[i], i, pass, item->code);
+               StoreFname(lc, &newinc_items[i], i, pass, item->code);
                break;
             case CFG_TYPE_PLUGINNAME:
-               store_plugin_name(lc, &newinc_items[i], i, pass, item->code);
+               StorePluginName(lc, &newinc_items[i], i, pass, item->code);
                break;
             case CFG_TYPE_EXCLUDEDIR:
-               store_excludedir(lc, &newinc_items[i], i, pass, item->code);
+               StoreExcludedir(lc, &newinc_items[i], i, pass, item->code);
                break;
             case CFG_TYPE_OPTIONS:
-               store_options_res(lc, &newinc_items[i], i, pass, item->code);
+               StoreOptionsRes(lc, &newinc_items[i], i, pass, item->code);
                break;
             default:
                break;
@@ -815,9 +815,9 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
 
 /**
  * Store FileSet Include/Exclude info
- *  new style includes are handled in store_newinc()
+ *  new style includes are handled in StoreNewinc()
  */
-void store_inc(LEX *lc, ResourceItem *item, int index, int pass)
+void StoreInc(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
@@ -828,7 +828,7 @@ void store_inc(LEX *lc, ResourceItem *item, int index, int pass)
     */
    token = LexGetToken(lc, BCT_SKIP_EOL);
    if (token == BCT_BOB) {
-      store_newinc(lc, item, index, pass);
+      StoreNewinc(lc, item, index, pass);
       return;
    }
    scan_err0(lc, _("Old style Include/Exclude not supported\n"));

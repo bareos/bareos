@@ -64,8 +64,8 @@ static char OKpassiveclient[] =
    "2000 OK passive client\n";
 
 /* Forward referenced functions */
-static void prt_fname(JobControlRecord *jcr);
-static int missing_handler(void *ctx, int num_fields, char **row);
+static void PrtFname(JobControlRecord *jcr);
+static int MissingHandler(void *ctx, int num_fields, char **row);
 
 /**
  * Called here before the job is run to do the job
@@ -183,7 +183,7 @@ bool DoVerify(JobControlRecord *jcr)
       }
       if (!(jcr->previous_jr.JobStatus == JS_Terminated ||
             jcr->previous_jr.JobStatus == JS_Warnings)) {
-         Jmsg(jcr, M_FATAL, 0, _("Last Job %d did not terminate normally. JobStatus=%c\n"),
+         Jmsg(jcr, M_FATAL, 0, _("Last Job %d did not Terminate normally. JobStatus=%c\n"),
             verify_jobid, jcr->previous_jr.JobStatus);
          return false;
       }
@@ -450,7 +450,7 @@ bool DoVerify(JobControlRecord *jcr)
       jcr->sd_msg_thread_done = true;   /* no SD msg thread, so it is done */
       jcr->SDJobStatus = JS_Terminated;
       GetAttributesAndPutInCatalog(jcr);
-      jcr->db->EndTransaction(jcr);   /* terminate any open transaction */
+      jcr->db->EndTransaction(jcr);   /* Terminate any open transaction */
       jcr->db_batch->WriteBatchFileRecords(jcr);
       break;
    default:
@@ -528,7 +528,7 @@ void VerifyCleanup(JobControlRecord *jcr, int TermCode)
       break;
    default:
       TermMsg = term_code;
-      bsnprintf(term_code, sizeof(term_code),
+      Bsnprintf(term_code, sizeof(term_code),
                 _("Inappropriate term code: %d %c\n"), TermCode, TermCode);
       break;
    }
@@ -732,7 +732,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
             switch (*p) {
             case 'i':                /* compare INODEs */
                if (statc.st_ino != statf.st_ino) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_ino   differ. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_ino, ed1),
                      edit_uint64((uint64_t)statf.st_ino, ed2));
@@ -741,7 +741,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
                break;
             case 'p':                /* permissions bits */
                if (statc.st_mode != statf.st_mode) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_mode  differ. Cat: %x File: %x\n"),
                      (uint32_t)statc.st_mode, (uint32_t)statf.st_mode);
                   jcr->setJobStatus(JS_Differences);
@@ -749,7 +749,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
                break;
             case 'n':                /* number of links */
                if (statc.st_nlink != statf.st_nlink) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_nlink differ. Cat: %d File: %d\n"),
                      (uint32_t)statc.st_nlink, (uint32_t)statf.st_nlink);
                   jcr->setJobStatus(JS_Differences);
@@ -757,7 +757,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
                break;
             case 'u':                /* user id */
                if (statc.st_uid != statf.st_uid) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_uid   differ. Cat: %u File: %u\n"),
                      (uint32_t)statc.st_uid, (uint32_t)statf.st_uid);
                   jcr->setJobStatus(JS_Differences);
@@ -765,7 +765,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
                break;
             case 'g':                /* group id */
                if (statc.st_gid != statf.st_gid) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_gid   differ. Cat: %u File: %u\n"),
                      (uint32_t)statc.st_gid, (uint32_t)statf.st_gid);
                   jcr->setJobStatus(JS_Differences);
@@ -773,7 +773,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
                break;
             case 's':                /* size */
                if (statc.st_size != statf.st_size) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_size  differ. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_size, ed1),
                      edit_uint64((uint64_t)statf.st_size, ed2));
@@ -782,28 +782,28 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
                break;
             case 'a':                /* access time */
                if (statc.st_atime != statf.st_atime) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_atime differs\n"));
                   jcr->setJobStatus(JS_Differences);
                }
                break;
             case 'm':
                if (statc.st_mtime != statf.st_mtime) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_mtime differs\n"));
                   jcr->setJobStatus(JS_Differences);
                }
                break;
             case 'c':                /* ctime */
                if (statc.st_ctime != statf.st_ctime) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_ctime differs\n"));
                   jcr->setJobStatus(JS_Differences);
                }
                break;
             case 'd':                /* file size decrease */
                if (statc.st_size > statf.st_size) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      st_size  decrease. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_size, ed1),
                      edit_uint64((uint64_t)statf.st_size, ed2));
@@ -848,7 +848,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
             if (do_Digest != CRYPTO_DIGEST_NONE) {
                jcr->db->EscapeString(jcr, buf.c_str(), Opts_Digest.c_str(), strlen(Opts_Digest.c_str()));
                if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
-                  prt_fname(jcr);
+                  PrtFname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      %s differs. File=%s Cat=%s\n"),
                        stream_to_ascii(stream), buf.c_str(), fdbr.Digest);
                   jcr->setJobStatus(JS_Differences);
@@ -877,8 +877,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
       "WHERE File.JobId=%d AND File.FileIndex > 0 "
       "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
          JobId, jcr->JobId);
-   /* missing_handler is called for each file found */
-   jcr->db->SqlQuery(buf.c_str(), missing_handler, (void *)jcr);
+   /* MissingHandler is called for each file found */
+   jcr->db->SqlQuery(buf.c_str(), MissingHandler, (void *)jcr);
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }
@@ -893,7 +893,7 @@ bail_out:
  *  that was not marked earlier. This means that the file in
  *  question is a missing file (in the Catalog but not on Disk).
  */
-static int missing_handler(void *ctx, int num_fields, char **row)
+static int MissingHandler(void *ctx, int num_fields, char **row)
 {
    JobControlRecord *jcr = (JobControlRecord *)ctx;
 
@@ -912,7 +912,7 @@ static int missing_handler(void *ctx, int num_fields, char **row)
 /**
  * Print filename for verify
  */
-static void prt_fname(JobControlRecord *jcr)
+static void PrtFname(JobControlRecord *jcr)
 {
    if (!jcr->fn_printed) {
       Jmsg(jcr, M_INFO, 0, _("File: %s\n"), jcr->fname);

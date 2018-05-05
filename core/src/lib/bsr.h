@@ -143,7 +143,7 @@ struct BootStrapRecord {
    BootStrapRecord *next;                         /* pointer to next one */
    BootStrapRecord *prev;                         /* pointer to previous one */
    BootStrapRecord *root;                         /* root bsr */
-   bool reposition;                   /* set when any bsr is marked done */
+   bool Reposition;                   /* set when any bsr is marked done */
    bool mount_next_volume;            /* set when next volume should be mounted */
    bool done;                         /* set when everything found for this bsr */
    bool use_fast_rejection;           /* set if fast rejection can be used */

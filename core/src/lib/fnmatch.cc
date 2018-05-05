@@ -60,7 +60,7 @@
 #define ISSET(x, y) ((x) & (y))
 #define FOLD(c) ((flags & FNM_CASEFOLD) && B_ISUPPER(c) ? tolower(c) : (c))
 
-static int rangematch(const char *, char, int, char **);
+static int Rangematch(const char *, char, int, char **);
 static int r_fnmatch(const char *, const char *, int, int);
 
 #ifdef SYS
@@ -157,7 +157,7 @@ int r_fnmatch(const char *pattern, const char *string, int flags, int recur)
               (ISSET(flags, FNM_PATHNAME) && IsPathSeparator(*(string - 1)))))
             return (FNM_NOMATCH);
 
-         switch (rangematch(pattern, *string, flags, &newp)) {
+         switch (Rangematch(pattern, *string, flags, &newp)) {
          case RANGE_ERROR:
             /* not a good range, treat as normal text */
             goto normal;
@@ -190,7 +190,7 @@ normal:
    /* NOTREACHED */
 }
 
-static int rangematch(const char *pattern, char test, int flags,
+static int Rangematch(const char *pattern, char test, int flags,
                       char **newp)
 {
    int negate, ok;

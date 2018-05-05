@@ -76,7 +76,7 @@ public:
    void InsertAfter(void *item, void *where);
    void *binary_insert(void *item, int compare(void *item1, void *item2));
    void *binary_search(void *item, int compare(void *item1, void *item2));
-   void binary_insert_multiple(void *item, int compare(void *item1, void *item2));
+   void BinaryInsertMultiple(void *item, int compare(void *item1, void *item2));
    void remove(void *item);
    bool empty() const;
    int  size() const;

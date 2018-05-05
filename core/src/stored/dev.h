@@ -435,7 +435,7 @@ public:
    void set_media() { SetBit(ST_MEDIA, state); }
    void SetShortBlock() { SetBit(ST_SHORT, state); }
    void SetCryptoEnabled() { SetBit(ST_CRYPTOKEY, state); }
-   void set_part_spooled(int val) {
+   void SetPartSpooled(int val) {
       if (val)
          SetBit(ST_PART_SPOOLED, state);
       else
@@ -482,7 +482,7 @@ public:
    bool unmount(DeviceControlRecord *dcr, int timeout);
    void EditMountCodes(PoolMem &omsg, const char *imsg);
    bool OfflineOrRewind();
-   bool scan_dir_for_volume(DeviceControlRecord *dcr);
+   bool ScanDirForVolume(DeviceControlRecord *dcr);
    void SetSlot(slot_number_t slot);
    void ClearSlot();
 
@@ -519,7 +519,7 @@ public:
    virtual void SetAteot();
    virtual bool rewind(DeviceControlRecord *dcr);
    virtual bool UpdatePos(DeviceControlRecord *dcr);
-   virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
+   virtual bool Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
    virtual bool MountBackend(DeviceControlRecord *dcr, int timeout) { return true; }
    virtual bool UnmountBackend(DeviceControlRecord *dcr, int timeout) { return true; }
    virtual bool DeviceStatus(bsdDevStatTrig *dst) { return false; }
@@ -566,7 +566,7 @@ public:
    int InitReadAcquireMutex();
    int init_volcat_mutex();
    void SetMutexPriorities();
-   int next_vol_timedwait(const struct timespec *timeout);
+   int NextVolTimedwait(const struct timespec *timeout);
    void dblock(int why);
    void dunblock(bool locked = false);
    bool IsDeviceUnmounted();
@@ -745,7 +745,7 @@ public:
    bool find_a_volume();
    bool IsSuitableVolumeMounted();
    bool is_eod_valid();
-   int check_volume_label(bool &ask, bool &autochanger);
+   int CheckVolumeLabel(bool &ask, bool &autochanger);
    void ReleaseVolume();
    void DoSwapping(bool IsWriting);
    bool DoUnload();
@@ -763,7 +763,7 @@ public:
    /*
     * Methods in label.c
     */
-   bool rewrite_volume_label(bool recycle);
+   bool RewriteVolumeLabel(bool recycle);
 };
 
 class SD_IMP_EXP StorageDaemonDeviceControlRecord : public DeviceControlRecord {
@@ -804,11 +804,11 @@ public:
 };
 
 Device *InitDev(JobControlRecord *jcr, DeviceResource *device);
-bool can_open_mounted_dev(Device *dev);
+bool CanOpenMountedDev(Device *dev);
 bool LoadDev(Device *dev);
-int write_block(Device *dev);
-void attach_jcr_to_device(Device *dev, JobControlRecord *jcr);
-void detach_jcr_from_device(Device *dev, JobControlRecord *jcr);
+int WriteBlock(Device *dev);
+void AttachJcrToDevice(Device *dev, JobControlRecord *jcr);
+void DetachJcrFromDevice(Device *dev, JobControlRecord *jcr);
 JobControlRecord *next_attached_jcr(Device *dev, JobControlRecord *jcr);
 void InitDeviceWaitTimers(DeviceControlRecord *dcr);
 void InitJcrDeviceWaitTimers(JobControlRecord *jcr);

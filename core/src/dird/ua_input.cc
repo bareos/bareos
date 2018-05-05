@@ -65,7 +65,7 @@ bool GetCmd(UaContext *ua, const char *prompt, bool subprompt)
          continue;                    /* ignore signals */
       }
       if (IsBnetStop(sock)) {
-         return false;                /* error or terminate */
+         return false;                /* error or Terminate */
       }
       PmStrcpy(ua->cmd, sock->msg);
       StripTrailingJunk(ua->cmd);
@@ -125,11 +125,11 @@ bool GetPint(UaContext *ua, const char *prompt)
 bool IsYesno(char *val, bool *ret)
 {
    *ret = 0;
-   if (bstrcasecmp(val,   _("yes")) ||
-       bstrcasecmp(val, NT_("yes"))) {
+   if (Bstrcasecmp(val,   _("yes")) ||
+       Bstrcasecmp(val, NT_("yes"))) {
       *ret = true;
-   } else if (bstrcasecmp(val,   _("no")) ||
-              bstrcasecmp(val, NT_("no"))) {
+   } else if (Bstrcasecmp(val,   _("no")) ||
+              Bstrcasecmp(val, NT_("no"))) {
       *ret = false;
    } else {
       return false;
@@ -203,15 +203,15 @@ bool GetConfirmation(UaContext *ua, const char *prompt)
  * Returns: 0, 1, 2 if OK
  *          -1 on error
  */
-int get_enabled(UaContext *ua, const char *val)
+int GetEnabled(UaContext *ua, const char *val)
 {
    int Enabled = -1;
 
-   if (bstrcasecmp(val, "yes") || bstrcasecmp(val, "true")) {
+   if (Bstrcasecmp(val, "yes") || Bstrcasecmp(val, "true")) {
      Enabled = VOL_ENABLED;
-   } else if (bstrcasecmp(val, "no") || bstrcasecmp(val, "false")) {
+   } else if (Bstrcasecmp(val, "no") || Bstrcasecmp(val, "false")) {
       Enabled = VOL_NOT_ENABLED;
-   } else if (bstrcasecmp(val, "archived")) {
+   } else if (Bstrcasecmp(val, "archived")) {
       Enabled = VOL_ARCHIVED;
    } else {
       Enabled = atoi(val);

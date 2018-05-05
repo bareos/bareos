@@ -75,7 +75,7 @@ bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t tls_loc
    /* Read hashed response to challenge */
    if (bs->WaitData(180) <= 0 || bs->recv() <= 0) {
       Dmsg1(debuglevel, "Bnet receive challenge response comm error. ERR=%s\n", bs->bstrerror());
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
       return false;
    }
 
@@ -96,7 +96,7 @@ bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t tls_loc
       bs->fsend("1000 OK auth\n");
    } else {
       bs->fsend(_("1999 Authorization failed.\n"));
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
    }
    return ok;
 }
@@ -109,7 +109,7 @@ bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remo
 
    *compatible = false;
    if (bs->recv() <= 0) {
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
       return false;
    }
 
@@ -121,7 +121,7 @@ bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remo
       if (sscanf(bs->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
          Dmsg1(debuglevel, "Cannot scan challenge: %s", bs->msg);
          bs->fsend(_("1999 Authorization failed.\n"));
-         bmicrosleep(5, 0);
+         Bmicrosleep(5, 0);
          return false;
       }
    }
@@ -136,13 +136,13 @@ bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remo
    Dmsg1(99, "sending resp to challenge: %s\n", bs->msg);
    if (bs->WaitData(180) <= 0 || bs->recv() <= 0) {
       Dmsg1(debuglevel, "Receive challenge response failed. ERR=%s\n", bs->bstrerror());
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
       return false;
    }
    if (bstrcmp(bs->msg, "1000 OK auth\n")) {
       return true;
    }
    Dmsg1(debuglevel, "Received bad response: %s\n", bs->msg);
-   bmicrosleep(5, 0);
+   Bmicrosleep(5, 0);
    return false;
 }

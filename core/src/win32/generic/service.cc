@@ -46,7 +46,7 @@ static bool is_service = false;
 /*
  * Forward references
  */
-static void set_service_description(SC_HANDLE hSCManager,
+static void SetServiceDescription(SC_HANDLE hSCManager,
                                     SC_HANDLE hService, LPSTR lpDesc);
 void WINAPI serviceControlCallback(DWORD ctrlcode);
 BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint);
@@ -81,7 +81,7 @@ bool isAService()
 }
 
 /*
- * terminate any running Bareos
+ * Terminate any running Bareos
  */
 int stopRunningBareos()
 {
@@ -208,7 +208,7 @@ int bareosServiceMain()
 
       RegisterService(0, 1);             /* register us as a service */
       BareosAppMain();                   /* call the main Bareos code */
-      RegisterService(0, 0);             /* terminate the service */
+      RegisterService(0, 0);             /* Terminate the service */
       FreeLibrary(kerneldll);            /* free up kernel dll */
    }
    return 0;
@@ -255,7 +255,7 @@ int installService(const char *cmdOpts)
    char path[maxlen];
    char svcmd[maxlen];
 
-   bsnprintf(svcmd, sizeof(svcmd), "service: install: %s", cmdOpts, APP_DESC, MB_OK);
+   Bsnprintf(svcmd, sizeof(svcmd), "service: install: %s", cmdOpts, APP_DESC, MB_OK);
 
    /*
     * Get our filename
@@ -271,7 +271,7 @@ int installService(const char *cmdOpts)
     * Create a valid command for starting the service
     */
    if ((int)strlen(path) + (int)strlen(cmdOpts) + 30  < maxlen) {
-      bsnprintf(svcmd, sizeof(svcmd), "\"%s\" /service %s", path, cmdOpts);
+      Bsnprintf(svcmd, sizeof(svcmd), "\"%s\" /service %s", path, cmdOpts);
    } else {
       LogErrorMessage(_("Service command length too long"));
       MessageBox(NULL,
@@ -323,7 +323,7 @@ int installService(const char *cmdOpts)
       /*
        * Set a text description in the service manager's control panel
        */
-      set_service_description(serviceManager,
+      SetServiceDescription(serviceManager,
                               bareosService,
                               (char *)_(SERVICE_DESC));
 
@@ -564,7 +564,7 @@ void LogLastErrorMsg(const char *message, const char *fname, int lineno)
     */
    eventHandler = RegisterEventSource(NULL, APP_NAME);
 
-   bsnprintf(msgbuf, sizeof(msgbuf), _("\n\n%s error: %ld at %s:%d"),
+   Bsnprintf(msgbuf, sizeof(msgbuf), _("\n\n%s error: %ld at %s:%d"),
              APP_NAME, service_error, fname, lineno);
 
    strings[0] = msgbuf;
@@ -591,7 +591,7 @@ typedef BOOL  (WINAPI * WinAPI)(SC_HANDLE, DWORD, LPVOID);
 /*
  * This is amazingly complicated just to get a bit of English explanation in the service manager's dialog box.
  */
-static void set_service_description(SC_HANDLE hSCManager, SC_HANDLE hService, LPSTR lpDesc)
+static void SetServiceDescription(SC_HANDLE hSCManager, SC_HANDLE hService, LPSTR lpDesc)
 {
     SC_LOCK sclLock;
     LPQUERY_SERVICE_LOCK_STATUS lpqslsBuf;

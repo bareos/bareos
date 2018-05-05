@@ -22,10 +22,10 @@
 #define BAREOS_FINDLIB_FIND_ONE_H_
 
 DLL_IMP_EXP int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff,
-                  int handle_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
+                  int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
                   char *p, dev_t parent_device, bool top_level);
 DLL_IMP_EXP int TermFindOne(FindFilesPacket *ff);
 DLL_IMP_EXP bool HasFileChanged(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
-DLL_IMP_EXP bool check_changes(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
+DLL_IMP_EXP bool CheckChanges(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
 
 #endif // BAREOS_FINDLIB_FIND_ONE_H_

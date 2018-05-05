@@ -63,24 +63,24 @@ static
 #endif
 void TerminateDird(int sig);
 static bool check_resources();
-static bool initialize_sql_pooling(void);
+static bool InitializeSqlPooling(void);
 static void cleanup_old_files();
 static bool init_sighandler_sighup();
 
 /* Exported subroutines */
 extern bool do_reload_config();
-extern void invalidate_schedules();
-extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern void InvalidateSchedules();
+extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
-void init_job_server(int max_workers);
+void InitJobServer(int max_workers);
 void term_job_server();
-void store_jobtype(LEX *lc, ResourceItem *item, int index, int pass);
-void store_protocoltype(LEX *lc, ResourceItem *item, int index, int pass);
-void store_level(LEX *lc, ResourceItem *item, int index, int pass);
-void store_replace(LEX *lc, ResourceItem *item, int index, int pass);
-void store_migtype(LEX *lc, ResourceItem *item, int index, int pass);
+void StoreJobtype(LEX *lc, ResourceItem *item, int index, int pass);
+void StoreProtocoltype(LEX *lc, ResourceItem *item, int index, int pass);
+void StoreLevel(LEX *lc, ResourceItem *item, int index, int pass);
+void StoreReplace(LEX *lc, ResourceItem *item, int index, int pass);
+void StoreMigtype(LEX *lc, ResourceItem *item, int index, int pass);
 void init_device_resources();
 
 static char *runjob = NULL;
@@ -108,9 +108,9 @@ struct resource_table_reference {
    CommonResourceHeader **res_table;
 };
 
-static bool check_catalog(cat_op mode);
+static bool CheckCatalog(cat_op mode);
 
-static void free_saved_resources(resource_table_reference *table)
+static void FreeSavedResources(resource_table_reference *table)
 {
    int num = my_config->r_last_ - my_config->r_first_ + 1;
 
@@ -128,7 +128,7 @@ static void free_saved_resources(resource_table_reference *table)
  * Called here at the end of every job that was hooked decrementing the active JobCount.
  * When it goes to zero, no one is using the associated resource table, so free it.
  */
-static void reload_job_end_cb(JobControlRecord *jcr, void *ctx)
+static void ReloadJobEndCb(JobControlRecord *jcr, void *ctx)
 {
    int i;
    resource_table_reference *table;
@@ -140,7 +140,7 @@ static void reload_job_end_cb(JobControlRecord *jcr, void *ctx)
       if (table == (resource_table_reference *)ctx) {
          if (--table->JobCount <= 0) {
             Dmsg0(100, "Last reference to old configuration, removing saved configuration\n");
-            free_saved_resources(table);
+            FreeSavedResources(table);
             reload_table->remove(i);
             free(table);
             break;
@@ -158,7 +158,7 @@ static void reload_job_end_cb(JobControlRecord *jcr, void *ctx)
  * access to the database. If the pointer is not defined (other daemons), then
  * writing the database is disabled.
  */
-static bool dir_db_log_insert(JobControlRecord *jcr, utime_t mtime, char *msg)
+static bool DirDbLogInsert(JobControlRecord *jcr, utime_t mtime, char *msg)
 {
    int length;
    char ed1[50];
@@ -236,7 +236,7 @@ int main (int argc, char *argv[])
    InitMsg(NULL, NULL);              /* initialize message handler */
    daemon_start_time = time(NULL);
 
-   console_command = run_console_command;
+   console_command = RunConsoleCommand;
 
    while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:?")) != -1) {
       switch (ch) {
@@ -349,7 +349,7 @@ int main (int argc, char *argv[])
    }
 
    my_config = new_config_parser();
-   parse_dir_config(my_config, configfile, M_ERROR_TERM);
+   ParseDirConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
       my_config->DumpResources(prtmsg, NULL);
@@ -402,7 +402,7 @@ int main (int argc, char *argv[])
     */
    mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
-   if (!check_catalog(mode)) {
+   if (!CheckCatalog(mode)) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       goto bail_out;
    }
@@ -411,7 +411,7 @@ int main (int argc, char *argv[])
       TerminateDird(0);
    }
 
-   if (!initialize_sql_pooling()) {
+   if (!InitializeSqlPooling()) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       goto bail_out;
    }
@@ -420,7 +420,7 @@ int main (int argc, char *argv[])
 
    cleanup_old_files();
 
-   p_db_log_insert = (db_log_insert_func)dir_db_log_insert;
+   p_db_log_insert = (db_log_insert_func)DirDbLogInsert;
 
    init_sighandler_sighup();
 
@@ -435,7 +435,7 @@ int main (int argc, char *argv[])
       InitJcrSubsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
    }
 
-   init_job_server(me->MaxConcurrentJobs);
+   InitJobServer(me->MaxConcurrentJobs);
 
    DbgJcrAddHook(DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
 
@@ -450,7 +450,7 @@ int main (int argc, char *argv[])
       FreeJcr(jcr);                  /* release jcr */
       SetJcrInTsd(INVALID_JCR);
       if (runjob) {                   /* command line, run a single job? */
-         break;                       /* yes, terminate */
+         break;                       /* yes, Terminate */
       }
    }
 
@@ -472,7 +472,7 @@ void TerminateDird(int sig)
    static bool already_here = false;
 
    if (already_here) {                /* avoid recursive temination problems */
-      bmicrosleep(2, 0);              /* yield */
+      Bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
 
@@ -508,7 +508,7 @@ void TerminateDird(int sig)
    }
 
    StopSocketServer();
-   TermMsg();                        /* terminate message handler */
+   TermMsg();                        /* Terminate message handler */
    CleanupCrypto();
    CloseMemoryPool();               /* release free memory in pool */
    LmgrCleanupMain();
@@ -522,7 +522,7 @@ void TerminateDird(int sig)
  */
 #if !defined(HAVE_WIN32)
 extern "C"
-void sighandler_reload_config(int sig, siginfo_t *siginfo, void *ptr)
+void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
 {
    static bool already_here = false;
 
@@ -555,7 +555,7 @@ static bool init_sighandler_sighup()
    sigaddset(&block_mask, SIGHUP);
 
    memset(&action, 0, sizeof(action));
-   action.sa_sigaction = sighandler_reload_config;
+   action.sa_sigaction = SighandlerReloadConfig;
    action.sa_mask = block_mask;
    action.sa_flags = SA_SIGINFO;
    sigaction(SIGHUP, &action, NULL);
@@ -570,7 +570,7 @@ static bool init_sighandler_sighup()
  * running and mark the running jobs to make a callback on
  * exiting. The old config is saved with the reload table
  * id in a reload table. The new configuration is read. Now, as
- * each job exits, it calls back to the reload_job_end_cb(), which
+ * each job exits, it calls back to the ReloadJobEndCb(), which
  * decrements the count of open jobs for the given reload table.
  * When the count goes to zero, we release those resources.
  * This allows us to have pointers into the resource table (from
@@ -618,8 +618,8 @@ bool do_reload_config()
     * Start parsing the new config.
     */
    Dmsg0(100, "Reloading config file\n");
-   ok = parse_dir_config(my_config, configfile, M_ERROR);
-   if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG) || !initialize_sql_pooling()) {
+   ok = ParseDirConfig(my_config, configfile, M_ERROR);
+   if (!ok || !check_resources() || !CheckCatalog(UPDATE_CATALOG) || !InitializeSqlPooling()) {
       int num;
       resource_table_reference failed_config;
 
@@ -647,12 +647,12 @@ bool do_reload_config()
       /*
        * Destroy the content of the failed config load.
        */
-      free_saved_resources(&failed_config);
+      FreeSavedResources(&failed_config);
       goto bail_out;
    } else {
       resource_table_reference *new_table = NULL;
 
-      invalidate_schedules();
+      InvalidateSchedules();
       foreach_jcr(jcr) {
          if (jcr->getJobType() != JT_SYSTEM) {
             if (!new_table) {
@@ -660,7 +660,7 @@ bool do_reload_config()
                memcpy(new_table, &prev_config, sizeof(resource_table_reference));
             }
             new_table->JobCount++;
-            RegisterJobEndCallback(jcr, reload_job_end_cb, (void *)new_table);
+            RegisterJobEndCallback(jcr, ReloadJobEndCb, (void *)new_table);
             njobs++;
          }
       }
@@ -689,7 +689,7 @@ bool do_reload_config()
          /*
           * There are no running Jobs so we don't need to keep the old config around.
           */
-         free_saved_resources(&prev_config);
+         FreeSavedResources(&prev_config);
       }
    }
 
@@ -730,9 +730,9 @@ static int me_psk_server_callback(const char *identity,
    return result;
 }
 
-static int cons_psk_server_callback(const char *identity, unsigned char *psk, unsigned int max_psk_len) {
+static int ConsPskServerCallback(const char *identity, unsigned char *psk, unsigned int max_psk_len) {
 
-   Dmsg0(100, "cons_psk_server_callback");
+   Dmsg0(100, "ConsPskServerCallback");
    Dmsg1(100, "Received identity '%s'\n", identity);
 
    char *psk_key = (char *)"1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A";
@@ -795,11 +795,11 @@ static int store_psk_client_callback(char *identity,
  *  - SDport
  *  - password
  */
-static inline bool is_same_storage_daemon(StorageResource *store1, StorageResource *store2)
+static inline bool IsSameStorageDaemon(StorageResource *store1, StorageResource *store2)
 {
    return store1->SDport == store2->SDport &&
-          bstrcasecmp(store1->address, store2->address) &&
-          bstrcasecmp(store1->password.value, store2->password.value);
+          Bstrcasecmp(store1->address, store2->address) &&
+          Bstrcasecmp(store1->password.value, store2->password.value);
 }
 
 /**
@@ -1058,7 +1058,7 @@ static bool check_resources()
       if (store->collectstats) {
          nstore = store;
          while ((nstore = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
-            if (is_same_storage_daemon(store, nstore) && nstore->collectstats) {
+            if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
                nstore->collectstats = false;
                Dmsg1(200, _("Disabling collectstats for storage \"%s\""
                             " as other storage already collects from this SD.\n"), nstore->name());
@@ -1086,7 +1086,7 @@ bail_out:
 /**
  * Initialize the sql pooling.
  */
-static bool initialize_sql_pooling(void)
+static bool InitializeSqlPooling(void)
 {
    bool retval = true;
    CatalogResource *catalog;
@@ -1124,7 +1124,7 @@ bail_out:
  *  - we can synchronize the catalog with the configuration (mode=UPDATE_CATALOG)
  *  - we can synchronize, and fix old job records (mode=UPDATE_AND_FIX)
  */
-static bool check_catalog(cat_op mode)
+static bool CheckCatalog(cat_op mode)
 {
    bool OK = true;
 
@@ -1165,7 +1165,7 @@ static bool check_catalog(cat_op mode)
       }
 
       /* Display a message if the db max_connections is too low */
-      if (!db->check_max_connections(NULL, me->MaxConcurrentJobs)) {
+      if (!db->CheckMaxConnections(NULL, me->MaxConcurrentJobs)) {
          Pmsg1(000, "Warning, settings problem for Catalog=%s\n", catalog->name());
          Pmsg1(000, "%s", db->strerror());
       }
@@ -1197,7 +1197,7 @@ static bool check_catalog(cat_op mode)
           *   in that catalog.
           */
          if (!pool->catalog || pool->catalog == catalog) {
-            update_pool_references(NULL, db, pool);
+            UpdatePoolReferences(NULL, db, pool);
          }
       }
 
@@ -1228,13 +1228,13 @@ static bool check_catalog(cat_op mode)
          if (store->media_type) {
             bstrncpy(mtr.MediaType, store->media_type, sizeof(mtr.MediaType));
             mtr.ReadOnly = 0;
-            db->create_mediatype_record(NULL, &mtr);
+            db->CreateMediatypeRecord(NULL, &mtr);
          } else {
             mtr.MediaTypeId = 0;
          }
          bstrncpy(sr.Name, store->name(), sizeof(sr.Name));
          sr.AutoChanger = store->autochanger;
-         if (!db->create_storage_record(NULL, &sr)) {
+         if (!db->CreateStorageRecord(NULL, &sr)) {
             Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
                  store->name());
             OK = false;
@@ -1243,7 +1243,7 @@ static bool check_catalog(cat_op mode)
          store->StorageId = sr.StorageId;   /* set storage Id */
          if (!sr.created) {                 /* if not created, update it */
             sr.AutoChanger = store->autochanger;
-            if (!db->update_storage_record(NULL, &sr)) {
+            if (!db->UpdateStorageRecord(NULL, &sr)) {
                Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
                     store->name());
                OK = false;

@@ -116,7 +116,7 @@ struct DeviceBlock {
 void DumpBlock(DeviceBlock *b, const char *msg);
 DeviceBlock *new_block(Device *dev);
 DeviceBlock *dup_block(DeviceBlock *eblock);
-void init_block_write(DeviceBlock *block);
+void InitBlockWrite(DeviceBlock *block);
 void EmptyBlock(DeviceBlock *block);
 void FreeBlock(DeviceBlock *block);
 void PrintBlockReadErrors(JobControlRecord *jcr, DeviceBlock *block);

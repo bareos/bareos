@@ -106,8 +106,8 @@ struct acl_data_t {
    } u;
 };
 
-DLL_IMP_EXP bacl_exit_code send_acl_stream(JobControlRecord *jcr, acl_data_t *acl_data, int stream);
-DLL_IMP_EXP bacl_exit_code build_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
+DLL_IMP_EXP bacl_exit_code SendAclStream(JobControlRecord *jcr, acl_data_t *acl_data, int stream);
+DLL_IMP_EXP bacl_exit_code BuildAclStreams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
 DLL_IMP_EXP bacl_exit_code parse_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data,
                                  int stream, char *content, uint32_t content_length);
 

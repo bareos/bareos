@@ -114,7 +114,7 @@ struct fhdb_state {
  * Lightweight version of Bareos tree functions for holding the NDMP
  * filehandle index database. See lib/tree.[ch] for the full version.
  */
-static void malloc_buf(N_TREE_ROOT *root, int size)
+static void MallocBuf(N_TREE_ROOT *root, int size)
 {
    struct ndmp_fhdb_mem *mem;
 
@@ -151,7 +151,7 @@ static inline N_TREE_ROOT *ndmp_fhdb_new_tree()
 
    Dmsg2(400, "count=%d size=%d\n", count, size);
 
-   malloc_buf(root, size);
+   MallocBuf(root, size);
 
    return root;
 }
@@ -173,7 +173,7 @@ static inline char *ndmp_fhdb_tree_alloc(N_TREE_ROOT *root, int size)
       } else {
          mb_size = MAX_BUF_SIZE / 2;
       }
-      malloc_buf(root, mb_size);
+      MallocBuf(root, mb_size);
    }
 
    root->mem->rem -= asize;
@@ -186,7 +186,7 @@ static inline char *ndmp_fhdb_tree_alloc(N_TREE_ROOT *root, int size)
 /*
  * This routine can be called to release the previously allocated tree node.
  */
-static inline void ndmp_fhdb_free_tree_node(N_TREE_ROOT *root)
+static inline void NdmpFhdbFreeTreeNode(N_TREE_ROOT *root)
 {
    int asize = BALIGN(sizeof(N_TREE_NODE));
 
@@ -211,7 +211,7 @@ static N_TREE_NODE *ndmp_fhdb_new_tree_node(N_TREE_ROOT *root)
 /*
  * This routine frees the whole tree
  */
-static inline void ndmp_fhdb_free_tree(N_TREE_ROOT *root)
+static inline void NdmpFhdbFreeTree(N_TREE_ROOT *root)
 {
    struct ndmp_fhdb_mem *mem, *rel;
    uint32_t freed_blocks = 0;
@@ -231,7 +231,7 @@ static inline void ndmp_fhdb_free_tree(N_TREE_ROOT *root)
    return;
 }
 
-static int node_compare_by_name(void *item1, void *item2)
+static int NodeCompareByName(void *item1, void *item2)
 {
    N_TREE_NODE *tn1 = (N_TREE_NODE *)item1;
    N_TREE_NODE *tn2 = (N_TREE_NODE *)item2;
@@ -244,7 +244,7 @@ static int node_compare_by_name(void *item1, void *item2)
    return strcmp(tn1->fname, tn2->fname);
 }
 
-static int node_compare_by_id(void *item1, void *item2)
+static int NodeCompareById(void *item1, void *item2)
 {
    N_TREE_NODE *tn1 = (N_TREE_NODE *)item1;
    N_TREE_NODE *tn2 = (N_TREE_NODE *)item2;
@@ -266,10 +266,10 @@ static N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, 
    node = ndmp_fhdb_new_tree_node(root);
    if (inode) {
       node->inode = inode;
-      found_node = (N_TREE_NODE *)parent->child.insert(node, node_compare_by_id);
+      found_node = (N_TREE_NODE *)parent->child.insert(node, NodeCompareById);
    } else {
       node->fname = fname;
-      found_node = (N_TREE_NODE *)parent->child.insert(node, node_compare_by_name);
+      found_node = (N_TREE_NODE *)parent->child.insert(node, NodeCompareByName);
    }
 
    /*
@@ -279,7 +279,7 @@ static N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, 
       /*
        * Free node allocated above.
        */
-      ndmp_fhdb_free_tree_node(root);
+      NdmpFhdbFreeTreeNode(root);
       return found_node;
    }
 
@@ -320,7 +320,7 @@ static N_TREE_NODE *search_and_insert_tree_node(N_TREE_NODE *node, N_TREE_ROOT *
     * as the original node but if we do we better return as then there
     * is nothing todo.
     */
-   found_node = (N_TREE_NODE *)parent->child.insert(node, node_compare_by_id);
+   found_node = (N_TREE_NODE *)parent->child.insert(node, NodeCompareById);
    if (found_node != node) {
       return found_node;
    }
@@ -354,7 +354,7 @@ static N_TREE_NODE *find_tree_node(N_TREE_NODE *node, uint64_t inode)
    /*
     * Start searching in the children of this node.
     */
-   found_node = (N_TREE_NODE *)node->child.search(&match_node, node_compare_by_id);
+   found_node = (N_TREE_NODE *)node->child.search(&match_node, NodeCompareById);
    if (found_node) {
       return found_node;
    }
@@ -400,7 +400,7 @@ static N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint64_t inode)
     * First do the easy lookup e.g. is this inode part of the parent of the current parent.
     */
    if (root->cached_parent && root->cached_parent->parent) {
-      found_node = (N_TREE_NODE *)root->cached_parent->parent->child.search(&match_node, node_compare_by_id);
+      found_node = (N_TREE_NODE *)root->cached_parent->parent->child.search(&match_node, NodeCompareById);
       if (found_node) {
          return found_node;
       }
@@ -409,7 +409,7 @@ static N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint64_t inode)
    /*
     * Start searching from the root node.
     */
-   found_node = (N_TREE_NODE *)root->child.search(&match_node, node_compare_by_id);
+   found_node = (N_TREE_NODE *)root->child.search(&match_node, NodeCompareById);
    if (found_node) {
       return found_node;
    }
@@ -592,7 +592,7 @@ static N_TREE_NODE *insert_metadata_parent_node(htable *meta_data, N_TREE_ROOT *
  * This processes all saved out of order metadata and adds these entries to the tree.
  * Only used for NDMP DMAs which are sending their metadata fully at random.
  */
-static inline bool process_out_of_order_metadata(htable *meta_data, N_TREE_ROOT *fhdb_root)
+static inline bool ProcessOutOfOrderMetadata(htable *meta_data, N_TREE_ROOT *fhdb_root)
 {
    OOO_MD *md_entry;
 
@@ -663,7 +663,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
       }
 
       if (meta_data) {
-         if (!process_out_of_order_metadata(meta_data, fhdb_root)) {
+         if (!ProcessOutOfOrderMetadata(meta_data, fhdb_root)) {
             Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB unable to process out of order metadata.\n"));
             meta_data->destroy();
             free(meta_data);
@@ -743,7 +743,7 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog *ixlog, int tagc,
 /*
  * This glues the NDMP File Handle DB with internal code.
  */
-void ndmp_fhdb_mem_register(struct ndmlog *ixlog)
+void NdmpFhdbMemRegister(struct ndmlog *ixlog)
 {
    NIS *nis = (NIS *)ixlog->ctx;
    struct ndm_fhdb_callbacks fhdb_callbacks;
@@ -751,7 +751,7 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog)
    /*
     * Register the FileHandleDB callbacks.
     */
-   fhdb_callbacks.add_file = bndmp_fhdb_add_file;
+   fhdb_callbacks.add_file = BndmpFhdbAddFile;
    fhdb_callbacks.add_dir = bndmp_fhdb_mem_add_dir;
    fhdb_callbacks.add_node = bndmp_fhdb_mem_add_node;
    fhdb_callbacks.add_dirnode_root = bndmp_fhdb_mem_add_dirnode_root;
@@ -761,7 +761,7 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog)
    memset(nis->fhdb_state, 0, sizeof(struct fhdb_state));
 }
 
-void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog)
+void NdmpFhdbMemUnregister(struct ndmlog *ixlog)
 {
    NIS *nis = (NIS *)ixlog->ctx;
    if (nis && nis->fhdb_state) {
@@ -769,7 +769,7 @@ void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog)
 
       fhdb_root = ((struct fhdb_state *)nis->fhdb_state)->fhdb_root;
       if (fhdb_root) {
-         ndmp_fhdb_free_tree(fhdb_root);
+         NdmpFhdbFreeTree(fhdb_root);
       }
 
       free(nis->fhdb_state);
@@ -779,7 +779,7 @@ void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog)
    ndmfhdb_unregister_callbacks(ixlog);
 }
 
-void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
+void NdmpFhdbMemProcessDb(struct ndmlog *ixlog)
 {
    N_TREE_ROOT *fhdb_root;
    NIS *nis = (NIS *)ixlog->ctx;
@@ -839,7 +839,7 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
       /*
        * Destroy the tree.
        */
-      ndmp_fhdb_free_tree(fhdb_root);
+      NdmpFhdbFreeTree(fhdb_root);
       fhdb_state->fhdb_root = NULL;
    }
 }

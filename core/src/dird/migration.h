@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_MIGRATION_H_
 #define BAREOS_DIRD_MIGRATION_H_
 
-bool do_migration(JobControlRecord *jcr);
+bool DoMigration(JobControlRecord *jcr);
 bool DoMigrationInit(JobControlRecord *jcr);
 void MigrationCleanup(JobControlRecord *jcr, int TermCode);
 bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where);

@@ -70,7 +70,7 @@ static char EndJob[] =
    "ReadBytes=%llu JobBytes=%llu Errors=%u "
    "VSS=%d Encrypt=%d\n";
 
-static inline bool validate_client(JobControlRecord *jcr)
+static inline bool ValidateClient(JobControlRecord *jcr)
 {
    switch (jcr->res.client->Protocol) {
    case APT_NATIVE:
@@ -121,7 +121,7 @@ char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore)
    }
 }
 
-static inline bool validate_storage(JobControlRecord *jcr)
+static inline bool ValidateStorage(JobControlRecord *jcr)
 {
    StorageResource *store;
 
@@ -167,7 +167,7 @@ bool DoNativeBackupInit(JobControlRecord *jcr)
    /*
     * Validate that we have a native client and storage(s).
     */
-   if (!validate_client(jcr) || !validate_storage(jcr)) {
+   if (!ValidateClient(jcr) || !ValidateStorage(jcr)) {
       return false;
    }
 
@@ -179,7 +179,7 @@ bool DoNativeBackupInit(JobControlRecord *jcr)
 /*
  * Take all base jobs from job resource and find the last L_BASE jobid.
  */
-static bool get_base_jobids(JobControlRecord *jcr, db_list_ctx *jobids)
+static bool GetBaseJobids(JobControlRecord *jcr, db_list_ctx *jobids)
 {
    JobDbRecord jr;
    JobResource *job;
@@ -214,7 +214,7 @@ static bool get_base_jobids(JobControlRecord *jcr, db_list_ctx *jobids)
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
  *      row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=MD5
  */
-static int accurate_list_handler(void *ctx, int num_fields, char **row)
+static int AccurateListHandler(void *ctx, int num_fields, char **row)
 {
    JobControlRecord *jcr = (JobControlRecord *)ctx;
 
@@ -244,7 +244,7 @@ static int accurate_list_handler(void *ctx, int num_fields, char **row)
  * FileSet-> Include-> Options-> Accurate/Verify/BaseJob=checksum
  * This procedure uses jcr->HasBase, so it must be call after the initialization
  */
-static bool is_checksum_needed_by_fileset(JobControlRecord *jcr)
+static bool IsChecksumNeededByFileset(JobControlRecord *jcr)
 {
    IncludeExcludeItem *inc;
    FileOptions *fopts;
@@ -329,7 +329,7 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
       /*
        * On Full mode, if no previous base job, no accurate things
        */
-      if (get_base_jobids(jcr, &jobids)) {
+      if (GetBaseJobids(jcr, &jobids)) {
          jcr->HasBase = true;
          Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"), jobids.list);
       } else {
@@ -353,7 +353,7 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
    /*
     * Don't send and store the checksum if fileset doesn't require it
     */
-   jcr->use_accurate_chksum = is_checksum_needed_by_fileset(jcr);
+   jcr->use_accurate_chksum = IsChecksumNeededByFileset(jcr);
    if (jcr->JobId) {            /* display the message only for real jobs */
       Jmsg(jcr, M_INFO, 0, _("Sending Accurate information.\n"));
    }
@@ -362,7 +362,7 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
     * To be able to allocate the right size for htable
     */
    Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)", jobids.list);
-   jcr->db->SqlQuery(buf.c_str(), db_list_handler, &nb);
+   jcr->db->SqlQuery(buf.c_str(), DbListHandler, &nb);
    Dmsg2(200, "jobids=%s nb=%s\n", jobids.list, nb.list);
    jcr->file_bsock->fsend("accurate files=%s\n", nb.list);
 
@@ -374,7 +374,7 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
          return false;
       }
       if (!jcr->db->GetBaseFileList(jcr, jcr->use_accurate_chksum,
-                                  accurate_list_handler, (void *)jcr)) {
+                                  AccurateListHandler, (void *)jcr)) {
          Jmsg(jcr, M_FATAL, 0, "error in jcr->db->GetBaseFileList:%s\n"
               ,jcr->db->strerror());
          return false;
@@ -386,7 +386,7 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
       }
 
       jcr->db_batch->GetFileList(jcr, jobids.list, jcr->use_accurate_chksum,
-                                   false /* no delta */, accurate_list_handler, (void *)jcr);
+                                   false /* no delta */, AccurateListHandler, (void *)jcr);
    }
 
    jcr->file_bsock->signal(BNET_EOD);
@@ -399,7 +399,7 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
  *  Returns:  false on failure
  *            true  on success
  */
-bool do_native_backup(JobControlRecord *jcr)
+bool DoNativeBackup(JobControlRecord *jcr)
 {
    int status;
    uint32_t tls_need = 0;
@@ -739,7 +739,7 @@ int WaitForJobTermination(JobControlRecord *jcr, int timeout)
          Jmsg(jcr, M_FATAL, 0, _("Network error with FD during %s: ERR=%s\n"),
               job_type_to_str(jcr->getJobType()), fd->bstrerror());
          while (i++ < 10 && jcr->res.job->RescheduleIncompleteJobs && jcr->IsCanceled()) {
-            bmicrosleep(3, 0);
+            Bmicrosleep(3, 0);
          }
 
       }
@@ -1017,7 +1017,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       if (compression < 0.5) {
          bstrncpy(compress, "None", sizeof(compress));
       } else {
-         bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
+         Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
          FindUsedCompressalgos(&compress_algo_list, jcr);
       }
    }
@@ -1174,7 +1174,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       break;
    }
 
-// bmicrosleep(15, 0);                /* for debugging SIGHUP */
+// Bmicrosleep(15, 0);                /* for debugging SIGHUP */
 
    Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
         "  Build OS:               %s %s %s\n"

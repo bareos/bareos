@@ -39,10 +39,10 @@ void UpdateJobEnd(JobControlRecord *jcr, int TermCode);
 bool SetupJob(JobControlRecord *jcr, bool suppress_output = false);
 void CreateClones(JobControlRecord *jcr);
 int CreateRestoreBootstrapFile(JobControlRecord *jcr);
-void dird_free_jcr(JobControlRecord *jcr);
+void DirdFreeJcr(JobControlRecord *jcr);
 void DirdFreeJcrPointers(JobControlRecord *jcr);
 void CancelStorageDaemonJob(JobControlRecord *jcr);
-bool run_console_command(JobControlRecord *jcr, const char *cmd);
+bool RunConsoleCommand(JobControlRecord *jcr, const char *cmd);
 void SdMsgThreadSendSignal(JobControlRecord *jcr, int sig);
 
 #endif // BAREOS_DIRD_JOB_H_

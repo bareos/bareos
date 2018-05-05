@@ -112,18 +112,18 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
+static void SmartAllocMsg(const char *file, int line, const char *fmt, ...)
 {
    char buf[256];
    va_list arg_ptr;
    int len;
 
-   len = bsnprintf(buf, sizeof(buf),
+   len = Bsnprintf(buf, sizeof(buf),
                    _("%s: ABORTING due to ERROR in %s:%d\n"),
                    my_name, get_basename(file), line);
 
    va_start(arg_ptr, fmt);
-   bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
+   Bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
    va_end(arg_ptr);
 
    DispatchMessage(NULL, M_ABORT, 0, buf);
@@ -139,7 +139,7 @@ POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
    struct abufhead *buf;
 
    if (pool > PM_MAX) {
-      smart_alloc_msg(__FILE__, __LINE__, _("MemPool index %d larger than max %d\n"), pool, PM_MAX);
+      SmartAllocMsg(__FILE__, __LINE__, _("MemPool index %d larger than max %d\n"), pool, PM_MAX);
       return NULL;
    }
 
@@ -152,13 +152,13 @@ POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
          pool_ctl[pool].max_used = pool_ctl[pool].in_use;
       }
       V(mutex);
-      sm_new_owner(fname, lineno, (char *)buf);
+      SmNewOwner(fname, lineno, (char *)buf);
       return (POOLMEM *)((char *)buf + HEAD_SIZE);
    }
 
    if ((buf = (struct abufhead *)sm_malloc(fname, lineno, pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
       return NULL;
    }
 
@@ -179,7 +179,7 @@ POOLMEM *sm_get_memory(const char *fname, int lineno, int32_t size)
    int pool = 0;
 
    if ((buf = (struct abufhead *)sm_malloc(fname, lineno, size + HEAD_SIZE)) == NULL) {
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -200,7 +200,7 @@ int32_t sm_sizeof_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
    char *cp = (char *)obuf;
 
    if (obuf == NULL) {
-      smart_alloc_msg(__FILE__, __LINE__, _("obuf is NULL\n"));
+      SmartAllocMsg(__FILE__, __LINE__, _("obuf is NULL\n"));
       return 0;
    }
 
@@ -221,7 +221,7 @@ POOLMEM *sm_realloc_pool_memory(const char *fname, int lineno, POOLMEM *obuf, in
    buf = sm_realloc(fname, lineno, cp, size + HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -244,7 +244,7 @@ POOLMEM *sm_check_pool_memory_size(const char *fname, int lineno, POOLMEM *obuf,
 }
 
 /* Free a memory buffer */
-void sm_free_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
+void SmFreePoolMemory(const char *fname, int lineno, POOLMEM *obuf)
 {
    struct abufhead *buf;
    int pool;
@@ -291,7 +291,7 @@ POOLMEM *GetPoolMemory(int pool)
 
    if ((buf = (struct abufhead *)malloc(pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
       return NULL;
    }
 
@@ -313,7 +313,7 @@ POOLMEM *GetMemory(int32_t size)
    int pool = 0;
 
    if ((buf = (struct abufhead *)malloc(size + HEAD_SIZE)) == NULL) {
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -350,7 +350,7 @@ POOLMEM *ReallocPoolMemory(POOLMEM *obuf, int32_t size)
    buf = realloc(cp, size + HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -674,7 +674,7 @@ void PoolMem::ReallocPm(int32_t size)
    buf = (char *)realloc(cp, size + HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return;
    }
 
@@ -732,13 +732,13 @@ int PoolMem::bsprintf(const char *fmt, ...)
    int len;
    va_list arg_ptr;
    va_start(arg_ptr, fmt);
-   len = bvsprintf(fmt, arg_ptr);
+   len = Bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
    return len;
 }
 
 #ifdef HAVE_VA_COPY
-int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
+int PoolMem::Bvsprintf(const char *fmt, va_list arg_ptr)
 {
    int maxlen, len;
    va_list ap;
@@ -746,7 +746,7 @@ int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
 again:
    maxlen = MaxSize() - 1;
    va_copy(ap, arg_ptr);
-   len = ::bvsnprintf(mem, maxlen, fmt, ap);
+   len = ::Bvsnprintf(mem, maxlen, fmt, ap);
    va_end(ap);
    if (len < 0 || len >= maxlen) {
       ReallocPm(maxlen + maxlen / 2);
@@ -757,13 +757,13 @@ again:
 
 #else /* no va_copy() -- brain damaged version of variable arguments */
 
-int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
+int PoolMem::Bvsprintf(const char *fmt, va_list arg_ptr)
 {
    int maxlen, len;
 
    ReallocPm(5000);
    maxlen = MaxSize() - 1;
-   len = ::bvsnprintf(mem, maxlen, fmt, arg_ptr);
+   len = ::Bvsnprintf(mem, maxlen, fmt, arg_ptr);
    if (len < 0 || len >= maxlen) {
       if (len >= maxlen) {
          len = -len;

@@ -94,7 +94,7 @@ void FreeRunscript(RunScript *script)
    free(script);
 }
 
-static inline bool script_dir_allowed(JobControlRecord *jcr, RunScript *script, alist *allowed_script_dirs)
+static inline bool ScriptDirAllowed(JobControlRecord *jcr, RunScript *script, alist *allowed_script_dirs)
 {
    char *bp, *allowed_script_dir;
    bool allowed = false;
@@ -121,7 +121,7 @@ static inline bool script_dir_allowed(JobControlRecord *jcr, RunScript *script, 
     * absolute paths.
     */
    if (strstr(script_dir.c_str(), "..")) {
-      Dmsg1(200, "script_dir_allowed: relative pathnames not allowed: %s\n", script_dir.c_str());
+      Dmsg1(200, "ScriptDirAllowed: relative pathnames not allowed: %s\n", script_dir.c_str());
       return false;
    }
 
@@ -129,13 +129,13 @@ static inline bool script_dir_allowed(JobControlRecord *jcr, RunScript *script, 
     * Match the path the script is in against the list of allowed script directories.
     */
    foreach_alist(allowed_script_dir, allowed_script_dirs) {
-      if (bstrcasecmp(script_dir.c_str(), allowed_script_dir)) {
+      if (Bstrcasecmp(script_dir.c_str(), allowed_script_dir)) {
          allowed = true;
          break;
       }
    }
 
-   Dmsg2(200, "script_dir_allowed: script %s %s allowed by Allowed Script Dir setting",
+   Dmsg2(200, "ScriptDirAllowed: script %s %s allowed by Allowed Script Dir setting",
          script->command, (allowed) ? "" : "NOT");
 
    return allowed;
@@ -201,7 +201,7 @@ int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *label, alis
        * We execute it
        */
       if (runit) {
-         if (!script_dir_allowed(jcr, script, allowed_script_dirs)) {
+         if (!ScriptDirAllowed(jcr, script, allowed_script_dirs)) {
             Dmsg1(200, "runscript: Not running script %s because its not in one of the allowed scripts dirs\n",
                   script->command);
             Jmsg(jcr, M_ERROR, 0, _("Runscript: run %s \"%s\" could not execute, "

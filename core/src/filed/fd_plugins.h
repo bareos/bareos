@@ -88,7 +88,7 @@ struct save_pkt {
    char flags[FOPTS_BYTES];           /* Bareos internal flags */
    bool no_read;                      /* During the save, the file should not be saved */
    bool portable;                     /* Set if data format is portable */
-   bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
+   bool accurate_found;               /* Found in accurate list (valid after CheckChanges()) */
    char *cmd;                         /* Command */
    time_t save_time;                  /* Start of incremental time */
    uint32_t delta_seq;                /* Delta sequence number */
@@ -252,7 +252,7 @@ struct BareosWinFilePacket;                   /* forward referenced */
 struct FindFilesPacket;
 void LoadFdPlugins(const char *plugin_dir, alist *plugin_names);
 void UnloadFdPlugins(void);
-int list_fd_plugins(PoolMem &msg);
+int ListFdPlugins(PoolMem &msg);
 void NewPlugins(JobControlRecord *jcr);
 void FreePlugins(JobControlRecord *jcr);
 bRC GeneratePluginEvent(JobControlRecord *jcr, bEventType event,
@@ -261,7 +261,7 @@ bool SendPluginName(JobControlRecord *jcr, BareosSocket *sd, bool start);
 bool PluginNameStream(JobControlRecord *jcr, char *name);
 int PluginCreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace);
 bool PluginSetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
-bacl_exit_code plugin_build_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
+bacl_exit_code PluginBuildAclStreams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
 bacl_exit_code plugin_parse_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, int stream,
                                         char *content, uint32_t content_length);
 bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
@@ -269,8 +269,8 @@ bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr, struct xattr_dat
 bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                             int stream, char *content, uint32_t content_length);
 int PluginSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
-int plugin_estimate(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
-bool plugin_check_file(JobControlRecord *jcr, char *fname);
+int PluginEstimate(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
+bool PluginCheckFile(JobControlRecord *jcr, char *fname);
 void PluginUpdateFfPkt(FindFilesPacket *ff_pkt, struct save_pkt *sp);
 bRC PluginOptionHandleFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, struct save_pkt *sp);
 #endif

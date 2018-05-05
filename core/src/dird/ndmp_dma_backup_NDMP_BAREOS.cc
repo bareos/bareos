@@ -182,7 +182,7 @@ bool DoNdmpBackupInit(JobControlRecord *jcr)
 /**
  * Run a NDMP backup session.
  */
-bool do_ndmp_backup(JobControlRecord *jcr)
+bool DoNdmpBackup(JobControlRecord *jcr)
 {
    unsigned int cnt;
    int i, status;
@@ -324,7 +324,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
 
          ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
          memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-         ndmp_sess.param->log.deliver = ndmp_loghandler;
+         ndmp_sess.param->log.deliver = NdmpLoghandler;
          ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
          nis->filesystem = item;
          nis->FileIndex = cnt + 1;
@@ -367,7 +367,7 @@ bool do_ndmp_backup(JobControlRecord *jcr)
           * file records to it. So we allocate it here once so its available during the whole
           * NDMP session.
           */
-         if (bstrcasecmp(jcr->backup_format, "dump")) {
+         if (Bstrcasecmp(jcr->backup_format, "dump")) {
             Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem, jcr->DumpLevel);
          } else {
             Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
@@ -547,7 +547,7 @@ bool DoNdmpBackupInit(JobControlRecord *jcr)
    return false;
 }
 
-bool do_ndmp_backup(JobControlRecord *jcr)
+bool DoNdmpBackup(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

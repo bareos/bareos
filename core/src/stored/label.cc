@@ -36,7 +36,7 @@
 #include "include/jcr.h"
 
 /* Forward referenced functions */
-static void create_volume_label_record(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec);
+static void CreateVolumeLabelRecord(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec);
 
 /**
  * Read the volume label
@@ -77,7 +77,7 @@ int ReadDevVolumeLabel(DeviceControlRecord *dcr)
    */
    dev->SetLabelBlocksize(dcr);
 
-   Dmsg5(100, "Enter read_volume_label res=%d device=%s vol=%s dev_Vol=%s max_blocksize=%u\n",
+   Dmsg5(100, "Enter ReadVolumeLabel res=%d device=%s vol=%s dev_Vol=%s max_blocksize=%u\n",
          dev->NumReserved(), dev->print_name(), VolName,
          dev->VolHdr.VolumeName[0]?dev->VolHdr.VolumeName:"*NULL*", dev->max_block_size);
 
@@ -143,7 +143,7 @@ int ReadDevVolumeLabel(DeviceControlRecord *dcr)
    record = new_record();
    EmptyBlock(dcr->block);
 
-   Dmsg0(130, "Big if statement in read_volume_label\n");
+   Dmsg0(130, "Big if statement in ReadVolumeLabel\n");
    if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
       Mmsg(jcr->errmsg, _("Requested Volume \"%s\" on %s is not a Bareos "
            "labeled Volume, because: ERR=%s"), NPRT(VolName),
@@ -153,7 +153,7 @@ int ReadDevVolumeLabel(DeviceControlRecord *dcr)
       Mmsg(jcr->errmsg, _("Could not read Volume label from block.\n"));
       Dmsg1(130, "%s", jcr->errmsg);
    } else if (!UnserVolumeLabel(dev, record)) {
-      Mmsg(jcr->errmsg, _("Could not unserialize Volume label: ERR=%s\n"),
+      Mmsg(jcr->errmsg, _("Could not UnSerialize Volume label: ERR=%s\n"),
          dev->print_errmsg());
       Dmsg1(130, "%s", jcr->errmsg);
    } else if (!bstrcmp(dev->VolHdr.Id, BareosId) &&
@@ -237,7 +237,7 @@ int ReadDevVolumeLabel(DeviceControlRecord *dcr)
       DumpVolumeLabel(dev);
    }
 
-   Dmsg0(130, "Leave read_volume_label() VOL_OK\n");
+   Dmsg0(130, "Leave ReadVolumeLabel() VOL_OK\n");
    /*
     * If we are a streaming device, we only get one chance to read
     */
@@ -300,20 +300,20 @@ bail_out:
  * Returns: false on failure
  *          true  on success
  */
-static bool write_volume_label_to_block(DeviceControlRecord *dcr)
+static bool WriteVolumeLabelToBlock(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    DeviceBlock *block = dcr->block;
    DeviceRecord rec;
    JobControlRecord *jcr = dcr->jcr;
 
-   Dmsg0(130, "write Label in write_volume_label_to_block()\n");
+   Dmsg0(130, "write Label in WriteVolumeLabelToBlock()\n");
 
    memset(&rec, 0, sizeof(rec));
    rec.data = GetMemory(SER_LENGTH_Volume_Label);
    EmptyBlock(block);                /* Volume label always at beginning */
 
-   create_volume_label_record(dcr, dev, &rec);
+   CreateVolumeLabelRecord(dcr, dev, &rec);
 
    block->BlockNumber = 0;
    if (!WriteRecordToBlock(dcr, &rec)) {
@@ -420,7 +420,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord *dcr, const char *VolName,
    }
 
    rec = new_record();
-   create_volume_label_record(dcr, dev, rec);
+   CreateVolumeLabelRecord(dcr, dev, rec);
    rec->Stream = 0;
    rec->maskedStream = 0;
 
@@ -482,7 +482,7 @@ bail_out:
  *  Returns: true if OK
  *           false if unable to write it
  */
-bool DeviceControlRecord::rewrite_volume_label(bool recycle)
+bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
 {
    DeviceControlRecord *dcr = this;
 
@@ -509,7 +509,7 @@ bool DeviceControlRecord::rewrite_volume_label(bool recycle)
 
    dev->VolHdr.LabelType = VOL_LABEL; /* set Volume label */
    dev->SetAppend();
-   if (!write_volume_label_to_block(dcr)) {
+   if (!WriteVolumeLabelToBlock(dcr)) {
       Dmsg0(200, "Error from write volume label.\n");
       return false;
    }
@@ -630,7 +630,7 @@ bool DeviceControlRecord::rewrite_volume_label(bool recycle)
  *   Assumes that the dev->VolHdr structure is properly
  *   initialized.
 */
-static void create_volume_label_record(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec)
+static void CreateVolumeLabelRecord(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec)
 {
    ser_declare;
    struct date_time dt;
@@ -655,7 +655,7 @@ static void create_volume_label_record(DeviceControlRecord *dcr, Device *dev, De
       /* OLD WAY DEPRECATED */
       ser_float64(dev->VolHdr.label_date);
       ser_float64(dev->VolHdr.label_time);
-      get_current_time(&dt);
+      GetCurrentTime(&dt);
       dev->VolHdr.write_date = dt.julian_day_number;
       dev->VolHdr.write_time = dt.julian_day_fraction;
    }
@@ -732,7 +732,7 @@ void CreateVolumeLabel(Device *dev, const char *VolName, const char *PoolName)
  * Create session label
  *  The pool memory must be released by the calling program
  */
-static void create_session_label(DeviceControlRecord *dcr, DeviceRecord *rec, int label)
+static void CreateSessionLabel(DeviceControlRecord *dcr, DeviceRecord *rec, int label)
 {
    JobControlRecord *jcr = dcr->jcr;
    ser_declare;
@@ -819,7 +819,7 @@ bool WriteSessionLabel(DeviceControlRecord *dcr, int label)
       Jmsg1(jcr, M_ABORT, 0, _("Bad Volume session label = %d\n"), label);
       break;
    }
-   create_session_label(dcr, rec, label);
+   CreateSessionLabel(dcr, rec, label);
    rec->FileIndex = label;
 
    /*
@@ -856,7 +856,7 @@ bool WriteSessionLabel(DeviceControlRecord *dcr, int label)
 
 /*  unser_volume_label
  *
- * Unserialize the Bareos Volume label into the device Volume_Label
+ * UnSerialize the Bareos Volume label into the device Volume_Label
  * structure.
  *
  * Assumes that the record is already read.
@@ -883,7 +883,7 @@ bool UnserVolumeLabel(Device *dev, DeviceRecord *rec)
    dev->VolHdr.LabelSize = rec->data_len;
 
 
-   /* Unserialize the record into the Volume Header */
+   /* UnSerialize the record into the Volume Header */
    rec->data = CheckPoolMemorySize(rec->data, SER_LENGTH_Volume_Label);
    SerBegin(rec->data, SER_LENGTH_Volume_Label);
    UnserString(dev->VolHdr.Id);
@@ -1036,7 +1036,7 @@ bail_out:
    debug_level = dbl;
 }
 
-static void dump_session_label(DeviceRecord *rec, const char *type)
+static void DumpSessionLabel(DeviceRecord *rec, const char *type)
 {
    int dbl;
    struct date_time dt;
@@ -1143,10 +1143,10 @@ void DumpLabelRecord(Device *dev, DeviceRecord *rec, bool verbose)
          DumpVolumeLabel(dev);
          break;
       case SOS_LABEL:
-         dump_session_label(rec, type);
+         DumpSessionLabel(rec, type);
          break;
       case EOS_LABEL:
-         dump_session_label(rec, type);
+         DumpSessionLabel(rec, type);
          break;
       case EOM_LABEL:
          Pmsg7(-1, _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d DataLen=%d\n"),

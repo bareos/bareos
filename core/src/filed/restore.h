@@ -65,7 +65,7 @@ struct r_ctx {
 
 void DoRestore(JobControlRecord *jcr);
 void FreeSession(r_ctx &rctx);
-int do_file_digest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
+int DoFileDigest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 bool SparseData(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char **data, uint32_t *length);
 bool StoreData(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length, bool win32_decomp);
 

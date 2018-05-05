@@ -44,14 +44,14 @@
 static int const rdebuglevel = 100;
 
 /* Forward referenced functions */
-static void attach_dcr_to_dev(DeviceControlRecord *dcr);
-static void detach_dcr_from_dev(DeviceControlRecord *dcr);
-static void set_dcr_from_vol(DeviceControlRecord *dcr, VolumeList *vol);
+static void AttachDcrToDev(DeviceControlRecord *dcr);
+static void DetachDcrFromDev(DeviceControlRecord *dcr);
+static void SetDcrFromVol(DeviceControlRecord *dcr, VolumeList *vol);
 
 /**
  * Acquire device for reading.
  *  The drive should have previously been reserved by calling
- *  reserve_device_for_read(). We read the Volume label from the block and
+ *  ReserveDeviceForRead(). We read the Volume label from the block and
  *  leave the block pointers just after the label.
  *
  *  Returns: NULL if failed for any reason
@@ -99,7 +99,7 @@ bool AcquireDeviceForRead(DeviceControlRecord *dcr)
          jcr->NumReadVolumes, jcr->CurReadVolume);
       goto get_out;                   /* should not happen */
    }
-   set_dcr_from_vol(dcr, vol);
+   SetDcrFromVol(dcr, vol);
 
    Dmsg2(rdebuglevel, "Want Vol=%s Slot=%d\n", vol->VolumeName, vol->Slot);
 
@@ -238,7 +238,7 @@ bool AcquireDeviceForRead(DeviceControlRecord *dcr)
       dcr->DoUnload();
       dcr->DoSwapping(false/*!IsWriting*/);
       dcr->DoLoad(false /*!IsWriting*/);
-      set_dcr_from_vol(dcr, vol);          /* refresh dcr with desired volume info */
+      SetDcrFromVol(dcr, vol);          /* refresh dcr with desired volume info */
 
       /*
        * This code ensures that the device is ready for reading. If it is a file,
@@ -396,7 +396,7 @@ get_out:
  *
  *  Returns: NULL if failed for any reason
  *           dcr if successful.
- *   Note, normally reserve_device_for_append() is called
+ *   Note, normally ReserveDeviceForAppend() is called
  *   before this routine.
  */
 DeviceControlRecord *acquire_device_for_append(DeviceControlRecord *dcr)
@@ -656,7 +656,7 @@ bool ReleaseDevice(DeviceControlRecord *dcr)
    }
 
    if (dcr->keep_dcr) {
-      detach_dcr_from_dev(dcr);
+      DetachDcrFromDev(dcr);
    } else {
       FreeDcr(dcr);
    }
@@ -736,7 +736,7 @@ void SetupNewDcrDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *
       dcr->rec = new_record();
 
       if (dcr->attached_to_dev) {
-         detach_dcr_from_dev(dcr);
+         DetachDcrFromDev(dcr);
       }
 
       /*
@@ -750,7 +750,7 @@ void SetupNewDcrDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *
 
       dcr->device = dev->device;
       dcr->SetDev(dev);
-      attach_dcr_to_dev(dcr);
+      AttachDcrToDev(dcr);
 
       /*
        * Initialize the auto deflation/inflation which can
@@ -773,7 +773,7 @@ void SetupNewDcrDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *
  *  dcrs at the same time.
  */
 #ifdef needed
-static void remove_dcr_from_dcrs(DeviceControlRecord *dcr)
+static void RemoveDcrFromDcrs(DeviceControlRecord *dcr)
 {
    JobControlRecord *jcr = dcr->jcr;
    if (jcr->dcrs) {
@@ -793,7 +793,7 @@ static void remove_dcr_from_dcrs(DeviceControlRecord *dcr)
 }
 #endif
 
-static void attach_dcr_to_dev(DeviceControlRecord *dcr)
+static void AttachDcrToDev(DeviceControlRecord *dcr)
 {
    Device *dev;
    JobControlRecord *jcr;
@@ -801,7 +801,7 @@ static void attach_dcr_to_dev(DeviceControlRecord *dcr)
    P(dcr->mutex_);
    dev = dcr->dev;
    jcr = dcr->jcr;
-   if (jcr) Dmsg1(500, "JobId=%u enter attach_dcr_to_dev\n", (uint32_t)jcr->JobId);
+   if (jcr) Dmsg1(500, "JobId=%u enter AttachDcrToDev\n", (uint32_t)jcr->JobId);
    /* ***FIXME*** return error if dev not initiated */
    if (!dcr->attached_to_dev && dev->initiated && jcr && jcr->getJobType() != JT_SYSTEM) {
       dev->Lock();
@@ -817,10 +817,10 @@ static void attach_dcr_to_dev(DeviceControlRecord *dcr)
 /**
  * DeviceControlRecord is locked before calling this routine
  */
-static void locked_detach_dcr_from_dev(DeviceControlRecord *dcr)
+static void LockedDetachDcrFromDev(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
-   Dmsg0(500, "Enter detach_dcr_from_dev\n"); /* jcr is NULL in some cases */
+   Dmsg0(500, "Enter DetachDcrFromDev\n"); /* jcr is NULL in some cases */
 
    /* Detach this dcr only if attached */
    if (dcr->attached_to_dev && dev) {
@@ -832,17 +832,17 @@ static void locked_detach_dcr_from_dev(DeviceControlRecord *dcr)
       if (dev->attached_dcrs->size()) {
          dev->attached_dcrs->remove(dcr);  /* detach dcr from device */
       }
-//    remove_dcr_from_dcrs(dcr);      /* remove dcr from jcr list */
+//    RemoveDcrFromDcrs(dcr);      /* remove dcr from jcr list */
       dev->Unlock();
    }
    dcr->attached_to_dev = false;
 }
 
 
-static void detach_dcr_from_dev(DeviceControlRecord *dcr)
+static void DetachDcrFromDev(DeviceControlRecord *dcr)
 {
    P(dcr->mutex_);
-   locked_detach_dcr_from_dev(dcr);
+   LockedDetachDcrFromDev(dcr);
    V(dcr->mutex_);
 }
 
@@ -857,7 +857,7 @@ void FreeDcr(DeviceControlRecord *dcr)
    P(dcr->mutex_);
    jcr = dcr->jcr;
 
-   locked_detach_dcr_from_dev(dcr);
+   LockedDetachDcrFromDev(dcr);
 
    if (dcr->block) {
       FreeBlock(dcr->block);
@@ -883,7 +883,7 @@ void FreeDcr(DeviceControlRecord *dcr)
    delete dcr;
 }
 
-static void set_dcr_from_vol(DeviceControlRecord *dcr, VolumeList *vol)
+static void SetDcrFromVol(DeviceControlRecord *dcr, VolumeList *vol)
 {
    /*
     * Note, if we want to be able to work from a .bsr file only

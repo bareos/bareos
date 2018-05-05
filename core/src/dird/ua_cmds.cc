@@ -59,96 +59,96 @@
 extern bool do_reload_config();
 
 /* ua_cmds.c */
-extern bool autodisplay_cmd(UaContext *ua, const char *cmd);
-extern bool configure_cmd(UaContext *ua, const char *cmd);
+extern bool AutodisplayCmd(UaContext *ua, const char *cmd);
+extern bool ConfigureCmd(UaContext *ua, const char *cmd);
 extern bool gui_cmd(UaContext *ua, const char *cmd);
-extern bool label_cmd(UaContext *ua, const char *cmd);
+extern bool LabelCmd(UaContext *ua, const char *cmd);
 extern bool list_cmd(UaContext *ua, const char *cmd);
-extern bool llist_cmd(UaContext *ua, const char *cmd);
-extern bool messages_cmd(UaContext *ua, const char *cmd);
-extern bool prune_cmd(UaContext *ua, const char *cmd);
-extern bool purge_cmd(UaContext *ua, const char *cmd);
-extern bool query_cmd(UaContext *ua, const char *cmd);
-extern bool relabel_cmd(UaContext *ua, const char *cmd);
-extern bool restore_cmd(UaContext *ua, const char *cmd);
+extern bool LlistCmd(UaContext *ua, const char *cmd);
+extern bool MessagesCmd(UaContext *ua, const char *cmd);
+extern bool PruneCmd(UaContext *ua, const char *cmd);
+extern bool PurgeCmd(UaContext *ua, const char *cmd);
+extern bool QueryCmd(UaContext *ua, const char *cmd);
+extern bool RelabelCmd(UaContext *ua, const char *cmd);
+extern bool RestoreCmd(UaContext *ua, const char *cmd);
 extern bool show_cmd(UaContext *ua, const char *cmd);
-extern bool sqlquery_cmd(UaContext *ua, const char *cmd);
-extern bool status_cmd(UaContext *ua, const char *cmd);
-extern bool update_cmd(UaContext *ua, const char *cmd);
+extern bool SqlqueryCmd(UaContext *ua, const char *cmd);
+extern bool StatusCmd(UaContext *ua, const char *cmd);
+extern bool UpdateCmd(UaContext *ua, const char *cmd);
 
 /* ua_dotcmds.c */
-extern bool dot_catalogs_cmd(UaContext *ua, const char *cmd);
-extern bool dot_admin_cmds(UaContext *ua, const char *cmd);
-extern bool dot_jobdefs_cmd(UaContext *ua, const char *cmd);
-extern bool dot_jobs_cmd(UaContext *ua, const char *cmd);
-extern bool dot_jobstatus_cmd(UaContext *ua, const char *cmd);
-extern bool dot_filesets_cmd(UaContext *ua, const char *cmd);
-extern bool dot_clients_cmd(UaContext *ua, const char *cmd);
-extern bool dot_consoles_cmd(UaContext *ua, const char *cmd);
-extern bool dot_msgs_cmd(UaContext *ua, const char *cmd);
-extern bool dot_pools_cmd(UaContext *ua, const char *cmd);
-extern bool dot_schedule_cmd(UaContext *ua, const char *cmd);
-extern bool dot_storage_cmd(UaContext *ua, const char *cmd);
-extern bool dot_defaults_cmd(UaContext *ua, const char *cmd);
-extern bool dot_types_cmd(UaContext *ua, const char *cmd);
-extern bool dot_levels_cmd(UaContext *ua, const char *cmd);
-extern bool dot_getmsgs_cmd(UaContext *ua, const char *cmd);
-extern bool dot_volstatus_cmd(UaContext *ua, const char *cmd);
-extern bool dot_mediatypes_cmd(UaContext *ua, const char *cmd);
-extern bool dot_locations_cmd(UaContext *ua, const char *cmd);
-extern bool dot_media_cmd(UaContext *ua, const char *cmd);
-extern bool dot_profiles_cmd(UaContext *ua, const char *cmd);
-extern bool dot_aop_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_update_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_restore_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_cleanup_cmd(UaContext *ua, const char *cmd);
-extern bool dot_bvfs_clear_cache_cmd(UaContext *ua, const char *cmd);
-extern bool dot_api_cmd(UaContext *ua, const char *cmd);
-extern bool dot_sql_cmd(UaContext *ua, const char *cmd);
-extern bool dot_authorized_cmd(UaContext *ua, const char *cmd);
+extern bool DotCatalogsCmd(UaContext *ua, const char *cmd);
+extern bool DotAdminCmds(UaContext *ua, const char *cmd);
+extern bool DotJobdefsCmd(UaContext *ua, const char *cmd);
+extern bool DotJobsCmd(UaContext *ua, const char *cmd);
+extern bool DotJobstatusCmd(UaContext *ua, const char *cmd);
+extern bool DotFilesetsCmd(UaContext *ua, const char *cmd);
+extern bool DotClientsCmd(UaContext *ua, const char *cmd);
+extern bool DotConsolesCmd(UaContext *ua, const char *cmd);
+extern bool DotMsgsCmd(UaContext *ua, const char *cmd);
+extern bool DotPoolsCmd(UaContext *ua, const char *cmd);
+extern bool DotScheduleCmd(UaContext *ua, const char *cmd);
+extern bool DotStorageCmd(UaContext *ua, const char *cmd);
+extern bool DotDefaultsCmd(UaContext *ua, const char *cmd);
+extern bool DotTypesCmd(UaContext *ua, const char *cmd);
+extern bool DotLevelsCmd(UaContext *ua, const char *cmd);
+extern bool DotGetmsgsCmd(UaContext *ua, const char *cmd);
+extern bool DotVolstatusCmd(UaContext *ua, const char *cmd);
+extern bool DotMediatypesCmd(UaContext *ua, const char *cmd);
+extern bool DotLocationsCmd(UaContext *ua, const char *cmd);
+extern bool DotMediaCmd(UaContext *ua, const char *cmd);
+extern bool DotProfilesCmd(UaContext *ua, const char *cmd);
+extern bool DotAopCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsLsdirsCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsLsfilesCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsUpdateCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsGetJobidsCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsVersionsCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsRestoreCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsCleanupCmd(UaContext *ua, const char *cmd);
+extern bool DotBvfsClearCacheCmd(UaContext *ua, const char *cmd);
+extern bool DotApiCmd(UaContext *ua, const char *cmd);
+extern bool DotSqlCmd(UaContext *ua, const char *cmd);
+extern bool DotAuthorizedCmd(UaContext *ua, const char *cmd);
 
 /* ua_status.c */
-extern bool dot_status_cmd(UaContext *ua, const char *cmd);
+extern bool DotStatusCmd(UaContext *ua, const char *cmd);
 
 /* Forward referenced functions */
 static bool add_cmd(UaContext *ua, const char *cmd);
-static bool automount_cmd(UaContext *ua, const char *cmd);
-static bool cancel_cmd(UaContext *ua, const char *cmd);
-static bool create_cmd(UaContext *ua, const char *cmd);
-static bool delete_cmd(UaContext *ua, const char *cmd);
-static bool disable_cmd(UaContext *ua, const char *cmd);
-static bool enable_cmd(UaContext *ua, const char *cmd);
-static bool estimate_cmd(UaContext *ua, const char *cmd);
+static bool AutomountCmd(UaContext *ua, const char *cmd);
+static bool CancelCmd(UaContext *ua, const char *cmd);
+static bool CreateCmd(UaContext *ua, const char *cmd);
+static bool DeleteCmd(UaContext *ua, const char *cmd);
+static bool DisableCmd(UaContext *ua, const char *cmd);
+static bool EnableCmd(UaContext *ua, const char *cmd);
+static bool EstimateCmd(UaContext *ua, const char *cmd);
 static bool help_cmd(UaContext *ua, const char *cmd);
-static bool dot_help_cmd(UaContext *ua, const char *cmd);
-static bool memory_cmd(UaContext *ua, const char *cmd);
-static bool mount_cmd(UaContext *ua, const char *cmd);
+static bool DotHelpCmd(UaContext *ua, const char *cmd);
+static bool MemoryCmd(UaContext *ua, const char *cmd);
+static bool MountCmd(UaContext *ua, const char *cmd);
 static bool noop_cmd(UaContext *ua, const char *cmd);
-static bool release_cmd(UaContext *ua, const char *cmd);
-static bool reload_cmd(UaContext *ua, const char *cmd);
-static bool resolve_cmd(UaContext *ua, const char *cmd);
-static bool setdebug_cmd(UaContext *ua, const char *cmd);
-static bool setbwlimit_cmd(UaContext *ua, const char *cmd);
-static bool setip_cmd(UaContext *ua, const char *cmd);
+static bool ReleaseCmd(UaContext *ua, const char *cmd);
+static bool ReloadCmd(UaContext *ua, const char *cmd);
+static bool ResolveCmd(UaContext *ua, const char *cmd);
+static bool SetdebugCmd(UaContext *ua, const char *cmd);
+static bool SetbwlimitCmd(UaContext *ua, const char *cmd);
+static bool SetipCmd(UaContext *ua, const char *cmd);
 static bool time_cmd(UaContext *ua, const char *cmd);
-static bool trace_cmd(UaContext *ua, const char *cmd);
-static bool truncate_cmd(UaContext *ua, const char *cmd);
-static bool unmount_cmd(UaContext *ua, const char *cmd);
+static bool TraceCmd(UaContext *ua, const char *cmd);
+static bool TruncateCmd(UaContext *ua, const char *cmd);
+static bool UnmountCmd(UaContext *ua, const char *cmd);
 static bool use_cmd(UaContext *ua, const char *cmd);
 static bool var_cmd(UaContext *ua, const char *cmd);
-static bool version_cmd(UaContext *ua, const char *cmd);
+static bool VersionCmd(UaContext *ua, const char *cmd);
 static bool wait_cmd(UaContext *ua, const char *cmd);
 
-static void do_job_delete(UaContext *ua, JobId_t JobId);
-static bool delete_job_id_range(UaContext *ua, char *tok);
-static bool delete_volume(UaContext *ua);
-static bool delete_pool(UaContext *ua);
-static void delete_job(UaContext *ua);
-static bool do_truncate(UaContext *ua, MediaDbRecord &mr);
+static void DoJobDelete(UaContext *ua, JobId_t JobId);
+static bool DeleteJobIdRange(UaContext *ua, char *tok);
+static bool DeleteVolume(UaContext *ua);
+static bool DeletePool(UaContext *ua);
+static void DeleteJob(UaContext *ua);
+static bool DoTruncate(UaContext *ua, MediaDbRecord &mr);
 
 bool quit_cmd(UaContext *ua, const char *cmd);
 
@@ -160,113 +160,113 @@ bool quit_cmd(UaContext *ua, const char *cmd);
 static struct ua_cmdstruct commands[] = {
    { NT_("."), noop_cmd, _("no op"),
      NULL, true, false },
-   { NT_(".actiononpurge"), dot_aop_cmd, _("List possible actions on purge"),
+   { NT_(".actiononpurge"), DotAopCmd, _("List possible actions on purge"),
      NULL, true, false },
-   { NT_(".api"), dot_api_cmd, _("Switch between different api modes"),
+   { NT_(".api"), DotApiCmd, _("Switch between different api modes"),
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false },
-   { NT_(".authorized"), dot_authorized_cmd, _("Check for authorization"),
+   { NT_(".authorized"), DotAuthorizedCmd, _("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | \n"
          "schedule=<schedule-name> | pool=<pool-name> | cmd=<command> | \n"
          "fileset=<fileset-name> | catalog=<catalog>"), false, false },
-   { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
+   { NT_(".catalogs"), DotCatalogsCmd, _("List all catalog resources"),
      NULL, false, false },
-   { NT_(".clients"), dot_clients_cmd, _("List all client resources"),
+   { NT_(".clients"), DotClientsCmd, _("List all client resources"),
      NT_("[enabled | disabled]"), true, false },
-   { NT_(".consoles"), dot_consoles_cmd, _("List all console resources"),
+   { NT_(".consoles"), DotConsolesCmd, _("List all console resources"),
      NULL, true, false },
-   { NT_(".defaults"), dot_defaults_cmd, _("Get default settings"),
+   { NT_(".defaults"), DotDefaultsCmd, _("Get default settings"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },
 #ifdef DEVELOPER
-   { NT_(".die"), dot_admin_cmds, _("Generate Segmentation Fault"),
+   { NT_(".die"), DotAdminCmds, _("Generate Segmentation Fault"),
      NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
-   { NT_(".dump"), dot_admin_cmds, _("Dump memory statistics"),
+   { NT_(".dump"), DotAdminCmds, _("Dump memory statistics"),
      NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
-   { NT_(".memcheck"), dot_admin_cmds, _("Checks for internal memory leaks"),
+   { NT_(".memcheck"), DotAdminCmds, _("Checks for internal memory leaks"),
      NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
-   { NT_(".exit"), dot_admin_cmds, _("Close connection"),
+   { NT_(".exit"), DotAdminCmds, _("Close connection"),
      NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
 #endif
-   { NT_(".filesets"), dot_filesets_cmd, _("List all filesets"),
+   { NT_(".filesets"), DotFilesetsCmd, _("List all filesets"),
      NULL, false, false },
-   { NT_(".help"), dot_help_cmd, _("Print parsable information about a command"),
+   { NT_(".help"), DotHelpCmd, _("Print parsable information about a command"),
      NT_("[ all | item=cmd ]"), false, false },
-   { NT_(".jobdefs"), dot_jobdefs_cmd, _("List all job defaults resources"),
+   { NT_(".jobdefs"), DotJobdefsCmd, _("List all job defaults resources"),
      NULL, true, false },
-   { NT_(".jobs"), dot_jobs_cmd, _("List all job resources"),
+   { NT_(".jobs"), DotJobsCmd, _("List all job resources"),
      NT_("[type=<jobtype>] | [enabled | disabled]"), true, false },
-   { NT_(".jobstatus"), dot_jobstatus_cmd, _("List jobstatus information"),
+   { NT_(".jobstatus"), DotJobstatusCmd, _("List jobstatus information"),
      NT_("[ =<jobstatus> ]"), true, false },
-   { NT_(".levels"), dot_levels_cmd, _("List all backup levels"),
+   { NT_(".levels"), DotLevelsCmd, _("List all backup levels"),
      NULL, false, false },
-   { NT_(".locations"), dot_locations_cmd, NULL, NULL, true, false },
-   { NT_(".messages"), dot_getmsgs_cmd, _("Display pending messages"),
+   { NT_(".locations"), DotLocationsCmd, NULL, NULL, true, false },
+   { NT_(".messages"), DotGetmsgsCmd, _("Display pending messages"),
      NULL, false, false },
-   { NT_(".media"), dot_media_cmd, _("List all medias"),
+   { NT_(".media"), DotMediaCmd, _("List all medias"),
      NULL, true, false },
-   { NT_(".mediatypes"), dot_mediatypes_cmd, _("List all media types"),
+   { NT_(".mediatypes"), DotMediatypesCmd, _("List all media types"),
      NULL, true, false },
-   { NT_(".msgs"), dot_msgs_cmd, _("List all message resources"),
+   { NT_(".msgs"), DotMsgsCmd, _("List all message resources"),
      NULL, false, false },
-   { NT_(".pools"), dot_pools_cmd, _("List all pool resources"),
+   { NT_(".pools"), DotPoolsCmd, _("List all pool resources"),
      NT_("type=<pooltype>"), true, false },
-   { NT_(".profiles"), dot_profiles_cmd, _("List all profile resources"),
+   { NT_(".profiles"), DotProfilesCmd, _("List all profile resources"),
      NULL, true, false },
    { NT_(".quit"), quit_cmd, _("Close connection"),
      NULL, false, false },
-   { NT_(".sql"), dot_sql_cmd, _("Send an arbitrary SQL command"),
+   { NT_(".sql"), DotSqlCmd, _("Send an arbitrary SQL command"),
      NT_("query=<sqlquery>"), false, true },
-   { NT_(".schedule"), dot_schedule_cmd, _("List all schedule resources"),
+   { NT_(".schedule"), DotScheduleCmd, _("List all schedule resources"),
      NT_("[enabled | disabled]"), false, false },
-   { NT_(".status"), dot_status_cmd, _("Report status"),
+   { NT_(".status"), DotStatusCmd, _("Report status"),
      NT_("dir ( current | last | header | scheduled | running | terminated ) |\n"
          "storage=<storage> [ header | waitreservation | devices | volumes | spooling | running | terminated ] |\n"
          "client=<client> [ header | terminated | running ]"),
      false, true },
-   { NT_(".storages"), dot_storage_cmd, _("List all storage resources"),
+   { NT_(".storages"), DotStorageCmd, _("List all storage resources"),
      NT_("[enabled | disabled]"), true, false },
-   { NT_(".types"), dot_types_cmd, _("List all job types"),
+   { NT_(".types"), DotTypesCmd, _("List all job types"),
      NULL, false, false },
-   { NT_(".volstatus"), dot_volstatus_cmd, _("List all volume status"),
+   { NT_(".volstatus"), DotVolstatusCmd, _("List all volume status"),
      NULL, true, false },
-   { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs_cmd, _("List directories using BVFS"),
+   { NT_(".bvfs_lsdirs"), DotBvfsLsdirsCmd, _("List directories using BVFS"),
      NT_("jobid=<jobid> path=<path> | pathid=<pathid> [limit=<limit>] [offset=<offset>]"), true, true },
-   { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles_cmd, _("List files using BVFS"),
+   { NT_(".bvfs_lsfiles"),DotBvfsLsfilesCmd, _("List files using BVFS"),
      NT_("jobid=<jobid> path=<path> | pathid=<pathid> [limit=<limit>] [offset=<offset>]"), true, true },
-   { NT_(".bvfs_update"), dot_bvfs_update_cmd, _("Update BVFS cache"),
+   { NT_(".bvfs_update"), DotBvfsUpdateCmd, _("Update BVFS cache"),
      NT_("[jobid=<jobid>]"), true, true },
-   { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids_cmd, _("Get jobids required for a restore"),
+   { NT_(".bvfs_get_jobids"), DotBvfsGetJobidsCmd, _("Get jobids required for a restore"),
      NT_("jobid=<jobid> | ujobid=<unique-jobid> [all]"), true, true },
-   { NT_(".bvfs_versions"), dot_bvfs_versions_cmd, _("List versions of a file"),
+   { NT_(".bvfs_versions"), DotBvfsVersionsCmd, _("List versions of a file"),
      NT_("jobid=0 client=<client-name> pathid=<path-id> filename=<file-name> [copies] [versions]"), true, true },
-   { NT_(".bvfs_restore"), dot_bvfs_restore_cmd, _("Mark BVFS files/directories for restore. Stored in handle."),
+   { NT_(".bvfs_restore"), DotBvfsRestoreCmd, _("Mark BVFS files/directories for restore. Stored in handle."),
      NT_("path=<handle> jobid=<jobid> [fileid=<file-id>] [dirid=<dirid>] [hardlink=<hardlink>]"), true, true },
-   { NT_(".bvfs_cleanup"), dot_bvfs_cleanup_cmd, _("Cleanup BVFS cache for a certain handle"),
+   { NT_(".bvfs_cleanup"), DotBvfsCleanupCmd, _("Cleanup BVFS cache for a certain handle"),
      NT_("path=<handle>"), true, true },
-   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache_cmd, _("Clear BVFS cache"),
+   { NT_(".bvfs_clear_cache"), DotBvfsClearCacheCmd, _("Clear BVFS cache"),
      NT_("yes"), false, true },
    { NT_("add"), add_cmd, _("Add media to a pool"),
      NT_("pool=<pool-name> storage=<storage-name> jobid=<jobid>"), false, true },
-   { NT_("autodisplay"), autodisplay_cmd,_("Autodisplay console messages"),
+   { NT_("autodisplay"), AutodisplayCmd,_("Autodisplay console messages"),
      NT_("on | off"), false, false },
-   { NT_("automount"), automount_cmd, _("Automount after label"),
+   { NT_("automount"), AutomountCmd, _("Automount after label"),
      NT_("on | off"), false, true },
-   { NT_("cancel"), cancel_cmd, _("Cancel a job"),
+   { NT_("cancel"), CancelCmd, _("Cancel a job"),
      NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false, true },
-   { NT_("configure"), configure_cmd, _("Configure director resources"),
+   { NT_("configure"), ConfigureCmd, _("Configure director resources"),
      NT_(get_configure_usage_string()), false, true },
-   { NT_("create"), create_cmd, _("Create DB Pool from resource"),
+   { NT_("create"), CreateCmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true },
-   { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
+   { NT_("delete"), DeleteCmd, _("Delete volume, pool or job"),
      NT_("volume=<vol-name> pool=<pool-name> jobid=<jobid>"), true, true },
-   { NT_("disable"), disable_cmd, _("Disable a job/client/schedule"),
+   { NT_("disable"), DisableCmd, _("Disable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true, true },
-   { NT_("enable"), enable_cmd, _("Enable a job/client/schedule"),
+   { NT_("enable"), EnableCmd, _("Enable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true, true },
-   { NT_("estimate"), estimate_cmd, _("Performs FileSet estimate, listing gives full listing"),
+   { NT_("estimate"), EstimateCmd, _("Performs FileSet estimate, listing gives full listing"),
      NT_("fileset=<fileset-name> client=<client-name> level=<level> accurate=<yes/no> job=<job-name> listing"), true, true },
    { NT_("exit"), quit_cmd, _("Terminate Bconsole session"),
      NT_(""), false, false },
-   { NT_("export"), export_cmd,_("Export volumes from normal slots to import/export slots"),
+   { NT_("export"), ExportCmd,_("Export volumes from normal slots to import/export slots"),
      NT_("storage=<storage-name> srcslots=<slot-selection> [ dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
    { NT_("gui"), gui_cmd, _("Switch between interactive (gui off) and non-interactive (gui on) mode"),
      NT_("on | off"), false, false },
@@ -277,9 +277,9 @@ static struct ua_cmdstruct commands[] = {
          "\trestore relabel release reload run status\n"
          "\tsetbandwidth setdebug setip show sqlquery time trace truncate unmount\n"
          "\tumount update use var version wait"), false, false },
-   { NT_("import"), import_cmd, _("Import volumes from import/export slots to normal slots"),
+   { NT_("import"), ImportCmd, _("Import volumes from import/export slots to normal slots"),
      NT_("storage=<storage-name> [ srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
-   { NT_("label"), label_cmd, _("Label a tape"),
+   { NT_("label"), LabelCmd, _("Label a tape"),
      NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ drive = <drivenum>] [ barcodes ] [ encrypt ] [ yes ]"), false, true },
    { NT_("list"), list_cmd, _("List objects from catalog"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
@@ -307,7 +307,7 @@ static struct ua_cmdstruct commands[] = {
          "volume=<volume-name> |\n"
          "[current] | [enabled | disabled] |\n"
          "[limit=<number> [offset=<number>]]"), true, true },
-   { NT_("llist"), llist_cmd, _("Full or long list like list command"),
+   { NT_("llist"), LlistCmd, _("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
          "backups client=<client-name> [fileset=<fileset-name>] [jobstatus=<status>] [level=<level>] [order=<asc|desc>] [limit=<number>] [days=<number>] [hours=<number>]|\n"
          "clients | copies jobid=<jobid> |\n"
@@ -330,31 +330,31 @@ static struct ua_cmdstruct commands[] = {
          "volume=<volume-name> |\n"
          "[ current ] | [ enabled ] | [disabled] |\n"
          "[ limit=<num> [ offset=<number> ] ]"), true, true },
-   { NT_("messages"), messages_cmd, _("Display pending messages"),
+   { NT_("messages"), MessagesCmd, _("Display pending messages"),
      NT_(""), false, false },
-   { NT_("memory"), memory_cmd, _("Print current memory usage"),
+   { NT_("memory"), MemoryCmd, _("Print current memory usage"),
      NT_(""), true, false },
-   { NT_("mount"), mount_cmd, _("Mount storage"),
+   { NT_("mount"), MountCmd, _("Mount storage"),
      NT_("storage=<storage-name> slot=<num> drive=<drivenum>\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("move"), move_cmd, _("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true, true },
-   { NT_("prune"), prune_cmd, _("Prune records from catalog"),
+   { NT_("prune"), PruneCmd, _("Prune records from catalog"),
      NT_("files [client=<client>] [pool=<pool>] [yes] |\n"
          "jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |\n"
          "volume [=volume] [pool=<pool>] [yes] |\n"
          "stats [yes] |\n"
          "directory [=directory] [client=<client>] [recursive] [yes]"), true, true },
-   { NT_("purge"), purge_cmd, _("Purge records from catalog"),
+   { NT_("purge"), PurgeCmd, _("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | volume=<volume>]] |\n"
          "[jobs [client=<client> | volume=<volume>]] |\n"
          "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |\n"
          "[quota [client=<client>]]"), true, true },
    { NT_("quit"), quit_cmd, _("Terminate Bconsole session"),
      NT_(""), false, false },
-   { NT_("query"), query_cmd, _("Query catalog"),
+   { NT_("query"), QueryCmd, _("Query catalog"),
      NT_(""), false, true },
-   { NT_("restore"), restore_cmd, _("Restore files"),
+   { NT_("restore"), RestoreCmd, _("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> bootstrap=<file>\n"
          "\trestorejob=<job-name> comment=<text> jobid=<jobid> fileset=<fileset-name>\n"
          "\treplace=<always|never|ifolder|ifnewer> pluginoptions=<plugin-options-string>\n"
@@ -362,16 +362,16 @@ static struct ua_cmdstruct commands[] = {
          "\tpool=<pool-name> file=<filename> directory=<directory> before=<date>\n"
          "\tstrip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix>\n"
          "\tselect=<date> select before current copies done all"), false, true },
-   { NT_("relabel"), relabel_cmd, _("Relabel a tape"),
+   { NT_("relabel"), RelabelCmd, _("Relabel a tape"),
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false, true },
-   { NT_("release"), release_cmd, _("Release storage"),
+   { NT_("release"), ReleaseCmd, _("Release storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), false, true },
-   { NT_("reload"), reload_cmd, _("Reload conf file"),
+   { NT_("reload"), ReloadCmd, _("Reload conf file"),
      NT_(""), true, true },
    { NT_("rerun"), reRunCmd, _("Rerun a job"),
      NT_("jobid=<jobid> | since_jobid=<jobid> [ until_jobid=<jobid> ] | days=<nr_days> | hours=<nr_hours> | yes"), false, true },
-   { NT_("resolve"), resolve_cmd, _("Resolve a hostname"),
+   { NT_("resolve"), ResolveCmd, _("Resolve a hostname"),
      NT_("client=<client-name> | storage=<storage-name> <host-name>"), false, true },
    { NT_("run"), RunCmd, _("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> level=<level>\n"
@@ -381,17 +381,17 @@ static struct ua_cmdstruct commands[] = {
          "\tbackupclient=<client-name> backupformat=<format> nextpool=<pool-name>\n"
          "\tsince=<universal-time-specification> verifyjob=<job-name> verifylist=<verify-list>\n"
          "\tmigrationjob=<complete_name> yes"), false, true },
-   { NT_("status"), status_cmd, _("Report status"),
+   { NT_("status"), StatusCmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
          "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
          "\tsubscriptions"), true, true },
-   { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
+   { NT_("setbandwidth"), SetbwlimitCmd,  _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
          "\tlimit=<nn-kbs> [ yes ]"), true, true },
-   { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
+   { NT_("setdebug"), SetdebugCmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true, true },
-   { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
+   { NT_("setip"), SetipCmd, _("Sets new client address -- if authorized"),
      NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("catalog=<catalog-name> | client=<client-name> | console=<console-name> | "
@@ -406,21 +406,21 @@ static struct ua_cmdstruct commands[] = {
          "disabled [ clients | jobs | schedules ] "
          "|\n"
          "all [verbose]"), true, true },
-   { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
+   { NT_("sqlquery"), SqlqueryCmd, _("Use SQL to query catalog"),
      NT_(""), false, true },
    { NT_("time"), time_cmd, _("Print current time"),
      NT_(""), true, false },
-   { NT_("trace"), trace_cmd, _("Turn on/off trace to file"),
+   { NT_("trace"), TraceCmd, _("Turn on/off trace to file"),
      NT_("on | off"), true, true },
-   { NT_("truncate"), truncate_cmd, _("Truncate purged volumes"),
+   { NT_("truncate"), TruncateCmd, _("Truncate purged volumes"),
      NT_("volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]"), true, true },
-   { NT_("unmount"), unmount_cmd, _("Unmount storage"),
+   { NT_("unmount"), UnmountCmd, _("Unmount storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
-   { NT_("umount"), unmount_cmd, _("Umount - for old-time Unix guys, see unmount"),
+   { NT_("umount"), UnmountCmd, _("Umount - for old-time Unix guys, see unmount"),
      NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
-   { NT_("update"), update_cmd, _("Update volume, pool, slots, job or statistics"),
+   { NT_("update"), UpdateCmd, _("Update volume, pool, slots, job or statistics"),
      NT_("[volume=<volume-name> "
          "[volstatus=<status>] [volretention=<time-def>] actiononpurge=<action>] "
          "[pool=<pool-name>] [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>]] "
@@ -439,7 +439,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("catalog=<catalog>"), false, true },
    { NT_("var"), var_cmd, _("Does variable expansion"),
      NT_(""), false, true },
-   { NT_("version"), version_cmd, _("Print Director version"),
+   { NT_("version"), VersionCmd, _("Print Director version"),
      NT_(""), true, false },
    { NT_("wait"), wait_cmd, _("Wait until no jobs are running"),
      NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false }
@@ -480,7 +480,7 @@ bool Do_a_command(UaContext *ua)
           * Check if command permitted, but "quit" is always OK
           */
          if (!bstrcmp(ua->argk[0], NT_("quit")) &&
-             !ua->acl_access_ok(Command_ACL, ua->argk[0], true)) {
+             !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
             break;
          }
 
@@ -531,7 +531,7 @@ bool Do_a_command(UaContext *ua)
    return ok;
 }
 
-static bool is_dot_command(const char *cmd)
+static bool IsDotCommand(const char *cmd)
 {
    if (cmd && (strlen(cmd) > 0) && (cmd[0] == '.')) {
       return true;
@@ -595,7 +595,7 @@ static bool add_cmd(UaContext *ua, const char *cmd)
    for (;;) {
       char buf[100];
 
-      bsnprintf(buf, sizeof(buf), _("Enter number of Volumes to create. 0=>fixed name. Max=%d: "), max);
+      Bsnprintf(buf, sizeof(buf), _("Enter number of Volumes to create. 0=>fixed name. Max=%d: "), max);
       if (!GetPint(ua, buf)) {
          return true;
       }
@@ -668,7 +668,7 @@ static bool add_cmd(UaContext *ua, const char *cmd)
 
    SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
    for (i=startnum; i < num+startnum; i++) {
-      bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), name, i);
+      Bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), name, i);
       mr.Slot = Slot++;
       mr.InChanger = InChanger;
       mr.Enabled = VOL_ENABLED;
@@ -696,7 +696,7 @@ static bool add_cmd(UaContext *ua, const char *cmd)
  * automount on
  * automount off
  */
-static bool automount_cmd(UaContext *ua, const char *cmd)
+static bool AutomountCmd(UaContext *ua, const char *cmd)
 {
    char *onoff;
 
@@ -709,7 +709,7 @@ static bool automount_cmd(UaContext *ua, const char *cmd)
       onoff = ua->argk[1];
    }
 
-   ua->automount = (bstrcasecmp(onoff, NT_("off"))) ? 0 : 1;
+   ua->automount = (Bstrcasecmp(onoff, NT_("off"))) ? 0 : 1;
    return true;
 }
 
@@ -738,7 +738,7 @@ static inline bool CancelStorageDaemonJob(UaContext *ua, const char *cmd)
    return true;
 }
 
-static inline bool cancel_jobs(UaContext *ua, const char *cmd)
+static inline bool CancelJobs(UaContext *ua, const char *cmd)
 {
    JobControlRecord *jcr;
    JobId_t *JobId;
@@ -769,7 +769,7 @@ static inline bool cancel_jobs(UaContext *ua, const char *cmd)
 /**
  * Cancel a job
  */
-static bool cancel_cmd(UaContext *ua, const char *cmd)
+static bool CancelCmd(UaContext *ua, const char *cmd)
 {
    int i;
 
@@ -780,7 +780,7 @@ static bool cancel_cmd(UaContext *ua, const char *cmd)
    if (i >= 0) {
       return CancelStorageDaemonJob(ua, cmd);
    } else {
-      return cancel_jobs(ua, cmd);
+      return CancelJobs(ua, cmd);
    }
 }
 
@@ -788,7 +788,7 @@ static bool cancel_cmd(UaContext *ua, const char *cmd)
  * Create a Pool Record in the database.
  * It is always created from the Resource record.
  */
-static bool create_cmd(UaContext *ua, const char *cmd)
+static bool CreateCmd(UaContext *ua, const char *cmd)
 {
    PoolResource *pool;
 
@@ -818,7 +818,7 @@ static bool create_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static inline bool setbwlimit_filed(UaContext *ua, ClientResource *client, int64_t limit, char *Job)
+static inline bool SetbwlimitFiled(UaContext *ua, ClientResource *client, int64_t limit, char *Job)
 {
    /*
     * Connect to File daemon
@@ -904,7 +904,7 @@ static inline bool setbwlimit_stored(UaContext *ua, StorageResource *store,
    return true;
 }
 
-static bool setbwlimit_cmd(UaContext *ua, const char *cmd)
+static bool SetbwlimitCmd(UaContext *ua, const char *cmd)
 {
    int i;
    int64_t limit = -1;
@@ -973,7 +973,7 @@ static bool setbwlimit_cmd(UaContext *ua, const char *cmd)
    }
 
    if (client) {
-      return setbwlimit_filed(ua, client, limit, Job);
+      return SetbwlimitFiled(ua, client, limit, Job);
    }
 
    if (store) {
@@ -988,7 +988,7 @@ static bool setbwlimit_cmd(UaContext *ua, const char *cmd)
  * if the Console name is the same as the Client name
  * and the Console can access the client.
  */
-static bool setip_cmd(UaContext *ua, const char *cmd)
+static bool SetipCmd(UaContext *ua, const char *cmd)
 {
    ClientResource *client;
    char buf[1024];
@@ -1010,7 +1010,7 @@ static bool setip_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static void do_en_disable_cmd(UaContext *ua, bool setting)
+static void DoEnDisableCmd(UaContext *ua, bool setting)
 {
    ScheduleResource *sched = NULL;
    ClientResource *client = NULL;
@@ -1082,15 +1082,15 @@ static void do_en_disable_cmd(UaContext *ua, bool setting)
    ua->WarningMsg(_("%sabling is a temporary operation until the director reloads\n"), setting ? "En" : "Dis");
 }
 
-static bool enable_cmd(UaContext *ua, const char *cmd)
+static bool EnableCmd(UaContext *ua, const char *cmd)
 {
-   do_en_disable_cmd(ua, true);
+   DoEnDisableCmd(ua, true);
    return true;
 }
 
-static bool disable_cmd(UaContext *ua, const char *cmd)
+static bool DisableCmd(UaContext *ua, const char *cmd)
 {
-   do_en_disable_cmd(ua, false);
+   DoEnDisableCmd(ua, false);
    return true;
 }
 
@@ -1200,7 +1200,7 @@ static void do_client_setdebug(UaContext *ua, ClientResource *client, int level,
    return;
 }
 
-static void do_director_setdebug(UaContext *ua, int level, int trace_flag, int timestamp_flag)
+static void DoDirectorSetdebug(UaContext *ua, int level, int trace_flag, int timestamp_flag)
 {
    PoolMem tracefilename(PM_FNAME);
 
@@ -1221,7 +1221,7 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
    /*
     * Director
     */
-   do_director_setdebug(ua, level, trace_flag, timestamp_flag);
+   DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
 
    /*
     * Count Storage items
@@ -1309,7 +1309,7 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
 /**
  * setdebug level=nn all trace=1/0 timestamp=1/0
  */
-static bool setdebug_cmd(UaContext *ua, const char *cmd)
+static bool SetdebugCmd(UaContext *ua, const char *cmd)
 {
    int i;
    int level;
@@ -1373,17 +1373,17 @@ static bool setdebug_cmd(UaContext *ua, const char *cmd)
     * General debug?
     */
    for (i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], "all")) {
+      if (Bstrcasecmp(ua->argk[i], "all")) {
          do_all_setdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
          return true;
       }
-      if (bstrcasecmp(ua->argk[i], "dir") ||
-          bstrcasecmp(ua->argk[i], "director")) {
-         do_director_setdebug(ua, level, trace_flag, timestamp_flag);
+      if (Bstrcasecmp(ua->argk[i], "dir") ||
+          Bstrcasecmp(ua->argk[i], "director")) {
+         DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
          return true;
       }
-      if (bstrcasecmp(ua->argk[i], "client") ||
-          bstrcasecmp(ua->argk[i], "fd")) {
+      if (Bstrcasecmp(ua->argk[i], "client") ||
+          Bstrcasecmp(ua->argk[i], "fd")) {
          client = NULL;
          if (ua->argv[i]) {
             client = ua->GetClientResWithName(ua->argv[i]);
@@ -1399,9 +1399,9 @@ static bool setdebug_cmd(UaContext *ua, const char *cmd)
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("store")) ||
-          bstrcasecmp(ua->argk[i], NT_("storage")) ||
-          bstrcasecmp(ua->argk[i], NT_("sd"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("store")) ||
+          Bstrcasecmp(ua->argk[i], NT_("storage")) ||
+          Bstrcasecmp(ua->argk[i], NT_("sd"))) {
          store = NULL;
          if (ua->argv[i]) {
             store = ua->GetStoreResWithName(ua->argv[i]);
@@ -1442,7 +1442,7 @@ static bool setdebug_cmd(UaContext *ua, const char *cmd)
       /*
        * Director
        */
-      do_director_setdebug(ua, level, trace_flag, timestamp_flag);
+      DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
       break;
    case 1:
       store = get_storage_resource(ua);
@@ -1478,14 +1478,14 @@ static bool setdebug_cmd(UaContext *ua, const char *cmd)
 /**
  * Resolve a hostname.
  */
-static bool resolve_cmd(UaContext *ua, const char *cmd)
+static bool ResolveCmd(UaContext *ua, const char *cmd)
 {
    StorageResource *storage = NULL;
    ClientResource *client = NULL;
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("client")) ||
-          bstrcasecmp(ua->argk[i], NT_("fd"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("client")) ||
+          Bstrcasecmp(ua->argk[i], NT_("fd"))) {
          if (ua->argv[i]) {
             client = ua->GetClientResWithName(ua->argv[i]);
             if (!client) {
@@ -1499,7 +1499,7 @@ static bool resolve_cmd(UaContext *ua, const char *cmd)
             ua->ErrorMsg(_("Client name missing.\n"));
             return true;
          }
-      } else if (bstrcasecmp(ua->argk[i], NT_("storage")))  {
+      } else if (Bstrcasecmp(ua->argk[i], NT_("storage")))  {
          if (ua->argv[i]) {
             storage = ua->GetStoreResWithName(ua->argv[i]);
             if (!storage) {
@@ -1550,7 +1550,7 @@ static bool resolve_cmd(UaContext *ua, const char *cmd)
 /**
  * Turn debug tracing to file on/off
  */
-static bool trace_cmd(UaContext *ua, const char *cmd)
+static bool TraceCmd(UaContext *ua, const char *cmd)
 {
    char *onoff;
 
@@ -1564,7 +1564,7 @@ static bool trace_cmd(UaContext *ua, const char *cmd)
    }
 
 
-   SetTrace((bstrcasecmp(onoff, NT_("off"))) ? false : true);
+   SetTrace((Bstrcasecmp(onoff, NT_("off"))) ? false : true);
    return true;
 
 }
@@ -1590,7 +1590,7 @@ static bool var_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static bool estimate_cmd(UaContext *ua, const char *cmd)
+static bool EstimateCmd(UaContext *ua, const char *cmd)
 {
    JobResource *job = NULL;
    ClientResource *client = NULL;
@@ -1602,8 +1602,8 @@ static bool estimate_cmd(UaContext *ua, const char *cmd)
 
    jcr->setJobLevel(L_FULL);
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("client")) ||
-          bstrcasecmp(ua->argk[i], NT_("fd"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("client")) ||
+          Bstrcasecmp(ua->argk[i], NT_("fd"))) {
          if (ua->argv[i]) {
             client = ua->GetClientResWithName(ua->argv[i]);
             if (!client) {
@@ -1617,7 +1617,7 @@ static bool estimate_cmd(UaContext *ua, const char *cmd)
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("job"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("job"))) {
          if (ua->argv[i]) {
             job = ua->GetJobResWithName(ua->argv[i]);
             if (!job) {
@@ -1632,7 +1632,7 @@ static bool estimate_cmd(UaContext *ua, const char *cmd)
 
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("fileset"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("fileset"))) {
          if (ua->argv[i]) {
             fileset = ua->GetFileSetResWithName(ua->argv[i]);
             if (!fileset) {
@@ -1646,12 +1646,12 @@ static bool estimate_cmd(UaContext *ua, const char *cmd)
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("listing"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("listing"))) {
          listing = 1;
          continue;
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("level"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("level"))) {
          if (ua->argv[i]) {
             if (!GetLevelFromName(jcr, ua->argv[i])) {
                ua->ErrorMsg(_("Level \"%s\" not valid.\n"), ua->argv[i]);
@@ -1663,7 +1663,7 @@ static bool estimate_cmd(UaContext *ua, const char *cmd)
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("accurate"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("accurate"))) {
          if (ua->argv[i]) {
             if (!IsYesno(ua->argv[i], &accurate)) {
                ua->ErrorMsg(_("Invalid value for accurate. "
@@ -1851,7 +1851,7 @@ static bool time_cmd(UaContext *ua, const char *cmd)
  * usage:
  * truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
  */
-static bool truncate_cmd(UaContext *ua, const char *cmd)
+static bool TruncateCmd(UaContext *ua, const char *cmd)
 {
    bool result = false;
    int i = -1;
@@ -1887,7 +1887,7 @@ static bool truncate_cmd(UaContext *ua, const char *cmd)
       ua->SendCmdUsage(_("required parameter 'volstatus' missing"));
       return false;
    }
-   if (!(bstrcasecmp(ua->argv[i], "Purged"))) {
+   if (!(Bstrcasecmp(ua->argv[i], "Purged"))) {
       ua->SendCmdUsage(_("Invalid parameter. 'volstatus' must be 'Purged'."));
       return false;
    }
@@ -1903,8 +1903,8 @@ static bool truncate_cmd(UaContext *ua, const char *cmd)
       goto bail_out;
    }
 
-   ua->send->add_acl_filter_tuple(2, Pool_ACL);
-   ua->send->add_acl_filter_tuple(3, Storage_ACL);
+   ua->send->AddAclFilterTuple(2, Pool_ACL);
+   ua->send->AddAclFilterTuple(3, Storage_ACL);
 
    /*
     * storage parameter is only required
@@ -1912,7 +1912,7 @@ static bool truncate_cmd(UaContext *ua, const char *cmd)
     * Otherwise the user should not be asked for this parameter.
     */
    i = FindArgWithValue(ua, "storage");
-   if ((i >= 0) || ua->acl_has_restrictions(Storage_ACL)) {
+   if ((i >= 0) || ua->AclHasRestrictions(Storage_ACL)) {
       if (!SelectStorageDbr(ua, &storage_dbr, "storage")) {
          goto bail_out;
       }
@@ -1926,7 +1926,7 @@ static bool truncate_cmd(UaContext *ua, const char *cmd)
     * Otherwise the user should not be asked for this parameter.
     */
    i = FindArgWithValue(ua, "pool");
-   if ((i >= 0) || ua->acl_has_restrictions(Pool_ACL)) {
+   if ((i >= 0) || ua->AclHasRestrictions(Pool_ACL)) {
       if (!SelectPoolDbr(ua, &pool_dbr, "pool")) {
          goto bail_out;
       }
@@ -2021,7 +2021,7 @@ static bool truncate_cmd(UaContext *ua, const char *cmd)
       if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
          Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t) mr.MediaId);
       } else {
-         do_truncate(ua, mr);
+         DoTruncate(ua, mr);
       }
    }
 
@@ -2036,7 +2036,7 @@ bail_out:
    return result;
 }
 
-static bool do_truncate(UaContext *ua, MediaDbRecord &mr)
+static bool DoTruncate(UaContext *ua, MediaDbRecord &mr)
 {
    bool retval = false;
    StorageDbRecord storage_dbr;
@@ -2089,7 +2089,7 @@ bail_out:
 /**
  * Reload the conf file
  */
-static bool reload_cmd(UaContext *ua, const char *cmd)
+static bool ReloadCmd(UaContext *ua, const char *cmd)
 {
    bool result;
 
@@ -2113,7 +2113,7 @@ static bool reload_cmd(UaContext *ua, const char *cmd)
  * delete volume pool=<pool-name> volume=<name>
  * delete jobid=<jobid>
  */
-static bool delete_cmd(UaContext *ua, const char *cmd)
+static bool DeleteCmd(UaContext *ua, const char *cmd)
 {
    static const char *keywords[] = {
       NT_("volume"),
@@ -2128,15 +2128,15 @@ static bool delete_cmd(UaContext *ua, const char *cmd)
 
    switch (FindArgKeyword(ua, keywords)) {
    case 0:
-      delete_volume(ua);
+      DeleteVolume(ua);
       return true;
    case 1:
-      delete_pool(ua);
+      DeletePool(ua);
       return true;
    case 2:
       int i;
       while ((i = FindArg(ua, "jobid")) > 0) {
-         delete_job(ua);
+         DeleteJob(ua);
          *ua->argk[i] = 0;         /* zap keyword already visited */
       }
       return true;
@@ -2149,13 +2149,13 @@ static bool delete_cmd(UaContext *ua, const char *cmd)
 
    switch (DoKeywordPrompt(ua, _("Choose catalog item to delete"), keywords)) {
    case 0:
-      delete_volume(ua);
+      DeleteVolume(ua);
       break;
    case 1:
-      delete_pool(ua);
+      DeletePool(ua);
       break;
    case 2:
-      delete_job(ua);
+      DeleteJob(ua);
       return true;
    default:
       ua->WarningMsg(_("Nothing done.\n"));
@@ -2165,12 +2165,12 @@ static bool delete_cmd(UaContext *ua, const char *cmd)
 }
 
 /**
- * delete_job has been modified to parse JobID lists like the following:
+ * DeleteJob has been modified to parse JobID lists like the following:
  * delete JobID=3,4,6,7-11,14
  *
  * Thanks to Phil Stracchino for the above addition.
  */
-static void delete_job(UaContext *ua)
+static void DeleteJob(UaContext *ua)
 {
    int i;
    JobId_t JobId;
@@ -2192,10 +2192,10 @@ static void delete_job(UaContext *ua)
          sep = strchr(tok, ',');
          while (sep != NULL) {
             *sep = '\0';
-            if (!delete_job_id_range(ua, tok)) {
+            if (!DeleteJobIdRange(ua, tok)) {
                if (Is_a_number(tok)) {
                   JobId = (JobId_t)str_to_uint64(tok);
-                  do_job_delete(ua, JobId);
+                  DoJobDelete(ua, JobId);
                } else {
                   ua->WarningMsg(_("Illegal JobId %s ignored\n"), tok);
                }
@@ -2207,10 +2207,10 @@ static void delete_job(UaContext *ua)
          /*
           * Pick up the last token
           */
-         if (!delete_job_id_range(ua, tok)) {
+         if (!DeleteJobIdRange(ua, tok)) {
             if (Is_a_number(tok)) {
                JobId = (JobId_t)str_to_uint64(tok);
-               do_job_delete(ua, JobId);
+               DoJobDelete(ua, JobId);
             } else {
                ua->WarningMsg(_("Illegal JobId %s ignored\n"), tok);
             }
@@ -2220,7 +2220,7 @@ static void delete_job(UaContext *ua)
       } else {
          if (Is_a_number(ua->argv[i])) {
             JobId = (JobId_t)str_to_uint64(ua->argv[i]);
-            do_job_delete(ua, JobId);
+            DoJobDelete(ua, JobId);
          } else {
             ua->WarningMsg(_("Illegal JobId %s ignored\n"), ua->argv[i]);
          }
@@ -2229,14 +2229,14 @@ static void delete_job(UaContext *ua)
       return;
    } else {
       JobId = ua->int64_val;
-      do_job_delete(ua, JobId);
+      DoJobDelete(ua, JobId);
    }
 }
 
 /**
- * We call delete_job_id_range to parse range tokens and iterate over ranges
+ * We call DeleteJobIdRange to parse range tokens and iterate over ranges
  */
-static bool delete_job_id_range(UaContext *ua, char *tok)
+static bool DeleteJobIdRange(UaContext *ua, char *tok)
 {
    char buf[64];
    char *tok2;
@@ -2260,14 +2260,14 @@ static bool delete_job_id_range(UaContext *ua, char *tok)
           * ask the user for confirmation.
           */
          if ((j2 - j1) > 25) {
-            bsnprintf(buf, sizeof(buf),
+            Bsnprintf(buf, sizeof(buf),
                       _("Are you sure you want to delete %d JobIds ? (yes/no): "), j2 - j1);
             if (!GetYesno(ua, buf) || !ua->pint32_val) {
                return true;
             }
          }
          for (j = j1; j <= j2; j++) {
-            do_job_delete(ua, j);
+            DoJobDelete(ua, j);
          }
       } else {
          ua->WarningMsg(_("Illegal JobId range %s - %s should define increasing JobIds, ignored\n"), tok, tok2);
@@ -2280,9 +2280,9 @@ static bool delete_job_id_range(UaContext *ua, char *tok)
 }
 
 /**
- * do_job_delete now performs the actual delete operation atomically
+ * DoJobDelete now performs the actual delete operation atomically
  */
-static void do_job_delete(UaContext *ua, JobId_t JobId)
+static void DoJobDelete(UaContext *ua, JobId_t JobId)
 {
    char ed1[50];
 
@@ -2294,7 +2294,7 @@ static void do_job_delete(UaContext *ua, JobId_t JobId)
 /**
  * Delete media records from database -- dangerous
  */
-static bool delete_volume(UaContext *ua)
+static bool DeleteVolume(UaContext *ua)
 {
    MediaDbRecord mr;
    char buf[1000];
@@ -2311,7 +2311,7 @@ static bool delete_volume(UaContext *ua)
    if (FindArg(ua, "yes") >= 0) {
       ua->pint32_val = 1; /* Have "yes" on command line already" */
    } else {
-      bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Volume \"%s\"? (yes/no): "), mr.VolumeName);
+      Bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Volume \"%s\"? (yes/no): "), mr.VolumeName);
       if (!GetYesno(ua, buf)) {
          return true;
       }
@@ -2340,7 +2340,7 @@ static bool delete_volume(UaContext *ua)
 /**
  * Delete a pool record from the database -- dangerous
  */
-static bool delete_pool(UaContext *ua)
+static bool DeletePool(UaContext *ua)
 {
    PoolDbRecord  pr;
    char buf[200];
@@ -2350,7 +2350,7 @@ static bool delete_pool(UaContext *ua)
    if (!GetPoolDbr(ua, &pr)) {
       return true;
    }
-   bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Pool \"%s\"? (yes/no): "),
+   Bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Pool \"%s\"? (yes/no): "),
       pr.Name);
    if (!GetYesno(ua, buf)) {
       return true;
@@ -2361,7 +2361,7 @@ static bool delete_pool(UaContext *ua)
    return true;
 }
 
-static bool memory_cmd(UaContext *ua, const char *cmd)
+static bool MemoryCmd(UaContext *ua, const char *cmd)
 {
    GarbageCollectMemory();
    ListDirStatusHeader(ua);
@@ -2369,7 +2369,7 @@ static bool memory_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static void do_mount_cmd(UaContext *ua, const char *cmd)
+static void DoMountCmd(UaContext *ua, const char *cmd)
 {
    UnifiedStorageResource store;
    drive_number_t nr_drives;
@@ -2422,18 +2422,18 @@ static void do_mount_cmd(UaContext *ua, const char *cmd)
 /**
  * mount [storage=<name>] [drive=nn] [slot=mm]
  */
-static bool mount_cmd(UaContext *ua, const char *cmd)
+static bool MountCmd(UaContext *ua, const char *cmd)
 {
-   do_mount_cmd(ua, "mount");          /* mount */
+   DoMountCmd(ua, "mount");          /* mount */
    return true;
 }
 
 /**
  * unmount [storage=<name>] [drive=nn]
  */
-static bool unmount_cmd(UaContext *ua, const char *cmd)
+static bool UnmountCmd(UaContext *ua, const char *cmd)
 {
-   do_mount_cmd(ua, "unmount");          /* unmount */
+   DoMountCmd(ua, "unmount");          /* unmount */
    return true;
 }
 
@@ -2456,9 +2456,9 @@ static bool noop_cmd(UaContext *ua, const char *cmd)
 /**
  * release [storage=<name>] [drive=nn]
  */
-static bool release_cmd(UaContext *ua, const char *cmd)
+static bool ReleaseCmd(UaContext *ua, const char *cmd)
 {
-   do_mount_cmd(ua, "release");          /* release */
+   DoMountCmd(ua, "release");          /* release */
    return true;
 }
 
@@ -2495,7 +2495,7 @@ bool quit_cmd(UaContext *ua, const char *cmd)
 /**
  * Handler to get job status
  */
-static int status_handler(void *ctx, int num_fields, char **row)
+static int StatusHandler(void *ctx, int num_fields, char **row)
 {
    char *val = (char *)ctx;
 
@@ -2527,7 +2527,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
     * Wait until no job is running
     */
    if (ua->argc == 1) {
-      bmicrosleep(0, 200000);            /* let job actually start */
+      Bmicrosleep(0, 200000);            /* let job actually start */
       for (bool running=true; running; ) {
          running = false;
          foreach_jcr(jcr) {
@@ -2539,7 +2539,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
          endeach_jcr(jcr);
 
          if (running) {
-            bmicrosleep(1, 0);
+            Bmicrosleep(1, 0);
          }
       }
       return true;
@@ -2559,14 +2559,14 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
    }
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], "jobid")) {
+      if (Bstrcasecmp(ua->argk[i], "jobid")) {
          if (!ua->argv[i]) {
             break;
          }
          JobId = str_to_int64(ua->argv[i]);
          break;
-      } else if (bstrcasecmp(ua->argk[i], "jobname") ||
-                 bstrcasecmp(ua->argk[i], "job")) {
+      } else if (Bstrcasecmp(ua->argk[i], "jobname") ||
+                 Bstrcasecmp(ua->argk[i], "job")) {
          if (!ua->argv[i]) {
             break;
          }
@@ -2576,7 +2576,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
             FreeJcr(jcr);
          }
          break;
-      } else if (bstrcasecmp(ua->argk[i], "ujobid")) {
+      } else if (Bstrcasecmp(ua->argk[i], "ujobid")) {
          if (!ua->argv[i]) {
             break;
          }
@@ -2586,7 +2586,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
             FreeJcr(jcr);
          }
          break;
-      } else if (bstrcasecmp(ua->argk[i], "mount")) {
+      } else if (Bstrcasecmp(ua->argk[i], "mount")) {
          /*
           * Wait for a mount request
           */
@@ -2606,7 +2606,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
                ua->WarningMsg(_("Wait on mount timed out\n"));
                return true;
             }
-            bmicrosleep(1, 0);
+            Bmicrosleep(1, 0);
          }
          return true;
       }
@@ -2620,7 +2620,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
    /*
     * We wait the end of a specific job
     */
-   bmicrosleep(0, 200000);            /* let job actually start */
+   Bmicrosleep(0, 200000);            /* let job actually start */
    for (bool running = true; running; ) {
       running = false;
 
@@ -2631,7 +2631,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
       }
 
       if (running) {
-         bmicrosleep(1, 0);
+         Bmicrosleep(1, 0);
       }
    }
 
@@ -2639,7 +2639,7 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
     * We have to get JobStatus
     */
    Mmsg(temp, "SELECT JobStatus FROM Job WHERE JobId='%s'", edit_int64(JobId, ed1));
-   ua->db->SqlQuery(temp.c_str(), status_handler, (void *)&jobstatus);
+   ua->db->SqlQuery(temp.c_str(), StatusHandler, (void *)&jobstatus);
 
    switch (jobstatus) {
    case JS_Error:
@@ -2674,20 +2674,20 @@ static bool help_cmd(UaContext *ua, const char *cmd)
 {
    int i;
 
-   ua->send->decoration("%s", _("  Command            Description\n  =======            ===========\n"));
+   ua->send->Decoration("%s", _("  Command            Description\n  =======            ===========\n"));
    for (i = 0; i < comsize; i++) {
       if (ua->argc == 2) {
-         if (bstrcasecmp(ua->argk[1], commands[i].key)) {
+         if (Bstrcasecmp(ua->argk[1], commands[i].key)) {
             ua->send->ObjectStart(commands[i].key);
             ua->send->ObjectKeyValue("command", commands[i].key, "  %-18s");
             ua->send->ObjectKeyValue("description", commands[i].help, " %s\n\n");
             ua->send->ObjectKeyValue("arguments", "Arguments:\n\t", commands[i].usage, "%s\n", 40);
-            ua->send->ObjectKeyValueBool("permission", ua->acl_access_ok(Command_ACL, commands[i].key));
+            ua->send->ObjectKeyValueBool("permission", ua->AclAccessOk(Command_ACL, commands[i].key));
             ua->send->ObjectEnd(commands[i].key);
             break;
          }
       } else {
-         if (ua->acl_access_ok(Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
+         if (ua->AclAccessOk(Command_ACL, commands[i].key) && (!IsDotCommand(commands[i].key))) {
             ua->send->ObjectStart(commands[i].key);
             ua->send->ObjectKeyValue("command", commands[i].key, "  %-18s");
             ua->send->ObjectKeyValue("description", commands[i].help, " %s\n");
@@ -2700,17 +2700,17 @@ static bool help_cmd(UaContext *ua, const char *cmd)
    if (i == comsize && ua->argc == 2) {
       ua->SendMsg(_("\nCan't find %s command.\n\n"), ua->argk[1]);
    }
-   ua->send->decoration(_("\nWhen at a prompt, entering a period cancels the command.\n\n"));
+   ua->send->Decoration(_("\nWhen at a prompt, entering a period cancels the command.\n\n"));
 
    return true;
 }
 
-static bool dot_help_cmd(UaContext *ua, const char *cmd)
+static bool DotHelpCmd(UaContext *ua, const char *cmd)
 {
    int i, j;
 
    /*
-    * Implement dot_help_cmd here instead of ua_dotcmds.c,
+    * Implement DotHelpCmd here instead of ua_dotcmds.c,
     * because comsize and commands are defined here.
     */
 
@@ -2725,7 +2725,7 @@ static bool dot_help_cmd(UaContext *ua, const char *cmd)
             ua->send->ObjectKeyValue("command", commands[i].key);
             ua->send->ObjectKeyValue("description", commands[i].help);
             ua->send->ObjectKeyValue("arguments", commands[i].usage, "%s\n", 0);
-            ua->send->ObjectKeyValueBool("permission", ua->acl_access_ok(Command_ACL, commands[i].key));
+            ua->send->ObjectKeyValueBool("permission", ua->AclAccessOk(Command_ACL, commands[i].key));
             ua->send->ObjectEnd(commands[i].key);
             break;
          }
@@ -2739,7 +2739,7 @@ static bool dot_help_cmd(UaContext *ua, const char *cmd)
        * Want to display only user commands (except dot commands)
        */
       for (i = 0; i < comsize; i++) {
-         if (ua->acl_access_ok(Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
+         if (ua->AclAccessOk(Command_ACL, commands[i].key) && (!IsDotCommand(commands[i].key))) {
             ua->send->ObjectStart(commands[i].key);
             ua->send->ObjectKeyValue("command", commands[i].key, "%s\n");
             ua->send->ObjectKeyValue("description", commands[i].help);
@@ -2753,7 +2753,7 @@ static bool dot_help_cmd(UaContext *ua, const char *cmd)
        * Want to display everything
        */
       for (i = 0; i < comsize; i++) {
-         if (ua->acl_access_ok(Command_ACL, commands[i].key)) {
+         if (ua->AclAccessOk(Command_ACL, commands[i].key)) {
             ua->send->ObjectStart(commands[i].key);
             ua->send->ObjectKeyValue("command", commands[i].key, "%s ");
             ua->send->ObjectKeyValue("description", commands[i].help, "%s -- ");
@@ -2768,7 +2768,7 @@ static bool dot_help_cmd(UaContext *ua, const char *cmd)
 }
 
 #if 1
-static bool version_cmd(UaContext *ua, const char *cmd)
+static bool VersionCmd(UaContext *ua, const char *cmd)
 {
    ua->send->ObjectStart("version");
    ua->send->ObjectKeyValue("name", my_name, "%s ");
@@ -2791,7 +2791,7 @@ static bool version_cmd(UaContext *ua, const char *cmd)
 /**
  *  Test code -- turned on only for debug testing
  */
-static bool version_cmd(UaContext *ua, const char *cmd)
+static bool VersionCmd(UaContext *ua, const char *cmd)
 {
    dbid_list ids;
    PoolMem query(PM_MESSAGE);

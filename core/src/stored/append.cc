@@ -48,7 +48,7 @@ static char OK_replicate[] =
 
 /* Forward referenced functions */
 
-void possible_incomplete_job(JobControlRecord *jcr, int32_t last_file_index)
+void PossibleIncompleteJob(JobControlRecord *jcr, int32_t last_file_index)
 {
 }
 
@@ -169,7 +169,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
          }
          Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
                what, bs->bstrerror());
-         possible_incomplete_job(jcr, last_file_index);
+         PossibleIncompleteJob(jcr, last_file_index);
          ok = false;
          break;
       }
@@ -178,7 +178,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
          Jmsg2(jcr, M_FATAL, 0, _("Malformed data header from %s: %s\n"),
                what, bs->msg);
          ok = false;
-         possible_incomplete_job(jcr, last_file_index);
+         PossibleIncompleteJob(jcr, last_file_index);
          break;
       }
 
@@ -198,7 +198,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
       }
       Jmsg3(jcr, M_FATAL, 0, _("FI=%d from %s not positive or sequential=%d\n"),
             file_index, what, last_file_index);
-      possible_incomplete_job(jcr, last_file_index);
+      PossibleIncompleteJob(jcr, last_file_index);
       ok = false;
       break;
 
@@ -251,7 +251,7 @@ fi_checked:
                   what, bs->bstrerror());
             Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
                   what, bs->bstrerror());
-            possible_incomplete_job(jcr, last_file_index);
+            PossibleIncompleteJob(jcr, last_file_index);
          }
          ok = false;
          break;
@@ -289,7 +289,7 @@ fi_checked:
          if (ok && !jcr->IsJobCanceled()) {
             Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                   dev->bstrerror());
-            possible_incomplete_job(jcr, last_file_index);
+            PossibleIncompleteJob(jcr, last_file_index);
          }
          jcr->setJobStatus(JS_ErrorTerminated);
          ok = false;
@@ -307,7 +307,7 @@ fi_checked:
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
             Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
-            possible_incomplete_job(jcr, last_file_index);
+            PossibleIncompleteJob(jcr, last_file_index);
          }
          jcr->setJobStatus(JS_ErrorTerminated);
          ok = false;

@@ -166,9 +166,9 @@ int main()
    fclose(fp);
 
    buf = new PoolMem(PM_BSOCK);
-   ok(ini->unserialize("test2.cfg"), "Test dynamic parse");
-   ok(ini->serialize("test4.cfg"), "Try to dump the item table in a file");
-   ok(ini->serialize(buf) > 0, "Try to dump the item table in a buffer");
+   ok(ini->UnSerialize("test2.cfg"), "Test dynamic parse");
+   ok(ini->Serialize("test4.cfg"), "Try to dump the item table in a file");
+   ok(ini->Serialize(buf) > 0, "Try to dump the item table in a buffer");
    ok(ini->parse("test3.cfg"), "Parse test file with dynamic grammar");
 
    ok((pos = ini->GetItem("datastore")) == 0, "Check datastore definition");
@@ -190,7 +190,7 @@ int main()
    ok((pos = ini->GetItem("bool")) == 4, "Check bool definition");
    ok(ini->items[pos].val.boolval == true, "Test bool");
 
-   ok(ini->dump_results(buf), "Test to dump results");
+   ok(ini->DumpResults(buf), "Test to dump results");
    printf("<%s>\n", buf);
 
    ini->ClearItems();

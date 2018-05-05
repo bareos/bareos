@@ -101,7 +101,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
       dir->fsend("%s", Dir_sorry);
       Dmsg2(debuglevel, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
       Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"), dir->who());
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
       FreePoolMemory(dirname);
       return false;
    }

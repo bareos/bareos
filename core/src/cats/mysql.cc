@@ -198,7 +198,7 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord *jcr)
       if (db_handle_ != NULL) {
          break;
       }
-      bmicrosleep(5,0);
+      Bmicrosleep(5,0);
    }
 
    mysql_options(&instance_, MYSQL_OPT_RECONNECT, &reconnect);    /* so connection does not timeout */
@@ -413,9 +413,9 @@ void BareosDbMysql::EndTransaction(JobControlRecord *jcr)
 
 /**
  * Submit a general SQL command (cmd), and for each row returned,
- * the result_handler is called with the ctx.
+ * the ResultHandler is called with the ctx.
  */
-bool BareosDbMysql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbMysql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    int status;
    SQL_ROW row;
@@ -476,7 +476,7 @@ retry_query:
 
    Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
 
-   if (result_handler != NULL) {
+   if (ResultHandler != NULL) {
       if ((result_ = mysql_use_result(db_handle_)) != NULL) {
          num_fields_ = mysql_num_fields(result_);
 
@@ -489,7 +489,7 @@ retry_query:
                 *  seen all the data it wants.  However, we
                 *  loop to the end of the data.
                 */
-               if (result_handler(ctx, num_fields_, row)) {
+               if (ResultHandler(ctx, num_fields_, row)) {
                   send = false;
                }
             }
@@ -675,12 +675,12 @@ SQL_FIELD *BareosDbMysql::SqlFetchField(void)
          Dmsg1(500, "filling field %d\n", i);
          if ((field = mysql_fetch_field(result_)) != NULL) {
             fields_[i].name = field->name;
-            fields_[i].max_length = field->max_length;
+            fields_[i].MaxLength = field->MaxLength;
             fields_[i].type = field->type;
             fields_[i].flags = field->flags;
 
             Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-                  fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
+                  fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
          }
       }
    }

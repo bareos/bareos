@@ -47,32 +47,32 @@ extern void PrintBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
 
 
 /* Forward referenced functions */
-static int last_full_handler(void *ctx, int num_fields, char **row);
-static int jobid_handler(void *ctx, int num_fields, char **row);
-static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx);
-static int fileset_handler(void *ctx, int num_fields, char **row);
-static void free_name_list(NameList *name_list);
-static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *date);
-static bool build_directory_tree(UaContext *ua, RestoreContext *rx);
+static int LastFullHandler(void *ctx, int num_fields, char **row);
+static int JobidHandler(void *ctx, int num_fields, char **row);
+static int UserSelectJobidsOrFiles(UaContext *ua, RestoreContext *rx);
+static int FilesetHandler(void *ctx, int num_fields, char **row);
+static void FreeNameList(NameList *name_list);
+static bool SelectBackupsBeforeDate(UaContext *ua, RestoreContext *rx, char *date);
+static bool BuildDirectoryTree(UaContext *ua, RestoreContext *rx);
 static void free_rx(RestoreContext *rx);
 static void SplitPathAndFilename(UaContext *ua, RestoreContext *rx, char *fname);
-static int jobid_fileindex_handler(void *ctx, int num_fields, char **row);
-static bool insert_file_into_findex_list(UaContext *ua, RestoreContext *rx, char *file,
+static int JobidFileindexHandler(void *ctx, int num_fields, char **row);
+static bool InsertFileIntoFindexList(UaContext *ua, RestoreContext *rx, char *file,
                                          char *date);
-static bool insert_dir_into_findex_list(UaContext *ua, RestoreContext *rx, char *dir,
+static bool InsertDirIntoFindexList(UaContext *ua, RestoreContext *rx, char *dir,
                                         char *date);
-static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date, bool dir);
-static bool get_client_name(UaContext *ua, RestoreContext *rx);
-static bool get_restore_client_name(UaContext *ua, RestoreContext &rx);
+static void InsertOneFileOrDir(UaContext *ua, RestoreContext *rx, char *date, bool dir);
+static bool GetClientName(UaContext *ua, RestoreContext *rx);
+static bool GetRestoreClientName(UaContext *ua, RestoreContext &rx);
 static bool get_date(UaContext *ua, char *date, int date_len);
-static int restore_count_handler(void *ctx, int num_fields, char **row);
-static bool insert_table_into_findex_list(UaContext *ua, RestoreContext *rx, char *table);
-static void get_and_display_basejobs(UaContext *ua, RestoreContext *rx);
+static int RestoreCountHandler(void *ctx, int num_fields, char **row);
+static bool InsertTableIntoFindexList(UaContext *ua, RestoreContext *rx, char *table);
+static void GetAndDisplayBasejobs(UaContext *ua, RestoreContext *rx);
 
 /**
  * Restore files
  */
-bool restore_cmd(UaContext *ua, const char *cmd)
+bool RestoreCmd(UaContext *ua, const char *cmd)
 {
    RestoreContext rx;                    /* restore context */
    PoolMem buf;
@@ -152,14 +152,14 @@ bool restore_cmd(UaContext *ua, const char *cmd)
    /* TODO: add acl for regexwhere ? */
 
    if (rx.RegexWhere) {
-      if (!ua->acl_access_ok(Where_ACL, rx.RegexWhere, true)) {
+      if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere, true)) {
          ua->ErrorMsg(_("\"RegexWhere\" specification not authorized.\n"));
          goto bail_out;
       }
    }
 
    if (rx.where) {
-      if (!ua->acl_access_ok(Where_ACL, rx.where, true)) {
+      if (!ua->AclAccessOk(Where_ACL, rx.where, true)) {
          ua->ErrorMsg(_("\"where\" specification not authorized.\n"));
          goto bail_out;
       }
@@ -194,12 +194,12 @@ bool restore_cmd(UaContext *ua, const char *cmd)
     *  In the end, a list of files are pumped into
     *  AddFindex()
     */
-   switch (user_select_jobids_or_files(ua, &rx)) {
+   switch (UserSelectJobidsOrFiles(ua, &rx)) {
    case 0:                            /* error */
       goto bail_out;
    case 1:                            /* selected by jobid */
-      get_and_display_basejobs(ua, &rx);
-      if (!build_directory_tree(ua, &rx)) {
+      GetAndDisplayBasejobs(ua, &rx);
+      if (!BuildDirectoryTree(ua, &rx)) {
          ua->SendMsg(_("Restore not done.\n"));
          goto bail_out;
       }
@@ -250,14 +250,14 @@ bool restore_cmd(UaContext *ua, const char *cmd)
       }
    }
 
-   if (!get_client_name(ua, &rx)) {
+   if (!GetClientName(ua, &rx)) {
       goto bail_out;
    }
    if (!rx.ClientName) {
       ua->ErrorMsg(_("No Client resource found!\n"));
       goto bail_out;
    }
-   if (!get_restore_client_name(ua, rx)) {
+   if (!GetRestoreClientName(ua, rx)) {
       goto bail_out;
    }
 
@@ -358,7 +358,7 @@ bail_out:
 /**
  * Fill the rx->BaseJobIds and display the list
  */
-static void get_and_display_basejobs(UaContext *ua, RestoreContext *rx)
+static void GetAndDisplayBasejobs(UaContext *ua, RestoreContext *rx)
 {
    db_list_ctx jobids;
 
@@ -396,10 +396,10 @@ static void free_rx(RestoreContext *rx)
    FreeAndNullPoolMemory(rx->fname);
    FreeAndNullPoolMemory(rx->path);
    FreeAndNullPoolMemory(rx->query);
-   free_name_list(&rx->name_list);
+   FreeNameList(&rx->name_list);
 }
 
-static bool has_value(UaContext *ua, int i)
+static bool HasValue(UaContext *ua, int i)
 {
    if (!ua->argv[i]) {
       ua->ErrorMsg(_("Missing value for keyword: %s\n"), ua->argk[i]);
@@ -411,7 +411,7 @@ static bool has_value(UaContext *ua, int i)
 /**
  * This gets the client name from which the backup was made
  */
-static bool get_client_name(UaContext *ua, RestoreContext *rx)
+static bool GetClientName(UaContext *ua, RestoreContext *rx)
 {
    int i;
    ClientDbRecord cr;
@@ -453,7 +453,7 @@ static bool get_client_name(UaContext *ua, RestoreContext *rx)
 /**
  * This is where we pick up a client name to restore to.
  */
-static bool get_restore_client_name(UaContext *ua, RestoreContext &rx)
+static bool GetRestoreClientName(UaContext *ua, RestoreContext &rx)
 {
    int i;
 
@@ -487,7 +487,7 @@ static bool get_restore_client_name(UaContext *ua, RestoreContext &rx)
  *            1  if jobid list made
  *            0  on error
  */
-static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
+static int UserSelectJobidsOrFiles(UaContext *ua, RestoreContext *rx)
 {
    char *p;
    char date[MAX_TIME_LENGTH];
@@ -556,7 +556,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
    for (i = 1; i<ua->argc; i++) {        /* loop through arguments */
       bool found_kw = false;
       for (j = 0; kw[j]; j++) {          /* loop through keywords */
-         if (bstrcasecmp(kw[j], ua->argk[i])) {
+         if (Bstrcasecmp(kw[j], ua->argk[i])) {
             found_kw = true;
             break;
          }
@@ -568,7 +568,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
       /* Found keyword in kw[] list, process it */
       switch (j) {
       case 0:                            /* jobid */
-         if (!has_value(ua, i)) {
+         if (!HasValue(ua, i)) {
             return 0;
          }
          if (*rx->JobIds != 0) {
@@ -587,7 +587,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          have_date = true;
          break;
       case 2:                            /* before */
-         if (have_date || !has_value(ua, i)) {
+         if (have_date || !HasValue(ua, i)) {
             return 0;
          }
          if (StrToUtime(ua->argv[i]) == 0) {
@@ -599,29 +599,29 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          break;
       case 3:                            /* file */
       case 4:                            /* dir */
-         if (!has_value(ua, i)) {
+         if (!HasValue(ua, i)) {
             return 0;
          }
          if (!have_date) {
             bstrutime(date, sizeof(date), now);
          }
-         if (!get_client_name(ua, rx)) {
+         if (!GetClientName(ua, rx)) {
             return 0;
          }
          PmStrcpy(ua->cmd, ua->argv[i]);
-         insert_one_file_or_dir(ua, rx, date, j==4);
+         InsertOneFileOrDir(ua, rx, date, j==4);
          return 2;
       case 5:                            /* select */
          if (!have_date) {
             bstrutime(date, sizeof(date), now);
          }
-         if (!select_backups_before_date(ua, rx, date)) {
+         if (!SelectBackupsBeforeDate(ua, rx, date)) {
             return 0;
          }
          done = true;
          break;
       case 6:                            /* pool specified */
-         if (!has_value(ua, i)) {
+         if (!HasValue(ua, i)) {
             return 0;
          }
          rx->pool = ua->GetPoolResWithName(ua->argv[i]);
@@ -664,7 +664,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
       case -1:                        /* error or cancel */
          return 0;
       case 0:                         /* list last 20 Jobs run */
-         if (!ua->acl_access_ok(Command_ACL, NT_("sqlquery"), true)) {
+         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
             ua->ErrorMsg(_("SQL query not authorized.\n"));
             return 0;
          }
@@ -675,7 +675,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          done = false;
          break;
       case 1:                         /* list where a file is saved */
-         if (!get_client_name(ua, rx)) {
+         if (!GetClientName(ua, rx)) {
             return 0;
          }
          if (!GetCmd(ua, _("Enter Filename (no path):"))) {
@@ -699,7 +699,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          PmStrcpy(rx->JobIds, ua->cmd);
          break;
       case 3:                         /* Enter an SQL list command */
-         if (!ua->acl_access_ok(Command_ACL, NT_("sqlquery"), true)) {
+         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
             ua->ErrorMsg(_("SQL query not authorized.\n"));
             return 0;
          }
@@ -716,7 +716,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          if (!have_date) {
             bstrutime(date, sizeof(date), now);
          }
-         if (!select_backups_before_date(ua, rx, date)) {
+         if (!SelectBackupsBeforeDate(ua, rx, date)) {
             return 0;
          }
          break;
@@ -726,7 +726,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
                return 0;
             }
          }
-         if (!select_backups_before_date(ua, rx, date)) {
+         if (!SelectBackupsBeforeDate(ua, rx, date)) {
             return 0;
          }
          break;
@@ -734,11 +734,11 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          if (!have_date) {
             bstrutime(date, sizeof(date), now);
          }
-         if (!get_client_name(ua, rx)) {
+         if (!GetClientName(ua, rx)) {
             return 0;
          }
          ua->SendMsg(_("Enter file names with paths, or < to enter a filename\n"
-                        "containing a list of file names with paths, and terminate\n"
+                        "containing a list of file names with paths, and Terminate\n"
                         "them with a blank line.\n"));
          for ( ;; ) {
             if (!GetCmd(ua, _("Enter full filename: "))) {
@@ -748,7 +748,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
             if (len == 0) {
                break;
             }
-            insert_one_file_or_dir(ua, rx, date, false);
+            InsertOneFileOrDir(ua, rx, date, false);
          }
          return 2;
        case 7:                        /* enter files backed up before specified time */
@@ -757,11 +757,11 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
                return 0;
             }
          }
-         if (!get_client_name(ua, rx)) {
+         if (!GetClientName(ua, rx)) {
             return 0;
          }
          ua->SendMsg(_("Enter file names with paths, or < to enter a filename\n"
-                        "containing a list of file names with paths, and terminate\n"
+                        "containing a list of file names with paths, and Terminate\n"
                         "them with a blank line.\n"));
          for ( ;; ) {
             if (!GetCmd(ua, _("Enter full filename: "))) {
@@ -771,7 +771,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
             if (len == 0) {
                break;
             }
-            insert_one_file_or_dir(ua, rx, date, false);
+            InsertOneFileOrDir(ua, rx, date, false);
          }
          return 2;
 
@@ -779,7 +779,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          if (!have_date) {
             bstrutime(date, sizeof(date), now);
          }
-         if (!select_backups_before_date(ua, rx, date)) {
+         if (!SelectBackupsBeforeDate(ua, rx, date)) {
             return 0;
          }
          done = false;
@@ -791,7 +791,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
                return 0;
             }
          }
-         if (!select_backups_before_date(ua, rx, date)) {
+         if (!SelectBackupsBeforeDate(ua, rx, date)) {
             return 0;
          }
          done = false;
@@ -814,12 +814,12 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          if (!have_date) {
             bstrutime(date, sizeof(date), now);
          }
-         if (!get_client_name(ua, rx)) {
+         if (!GetClientName(ua, rx)) {
             return 0;
          }
          ua->SendMsg(_("Enter full directory names or start the name\n"
                         "with a < to indicate it is a filename containing a list\n"
-                        "of directories and terminate them with a blank line.\n"));
+                        "of directories and Terminate them with a blank line.\n"));
          for ( ;; ) {
             if (!GetCmd(ua, _("Enter directory name: "))) {
                return 0;
@@ -832,7 +832,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
             if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len-1])) {
                strcat(ua->cmd, "/");
             }
-            insert_one_file_or_dir(ua, rx, date, true);
+            InsertOneFileOrDir(ua, rx, date, true);
          }
          return 2;
 
@@ -894,7 +894,7 @@ static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
          FreePoolMemory(JobIds);
          return 0;
       }
-      if (!ua->acl_access_ok(Job_ACL, jr.Name, true)) {
+      if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
          ua->ErrorMsg(_("Access to JobId=%s (Job \"%s\") not authorized. Not selected.\n"),
             edit_int64(JobId, ed1), jr.Name);
          continue;
@@ -943,7 +943,7 @@ static bool get_date(UaContext *ua, char *date, int date_len)
 /**
  * Insert a single file, or read a list of files from a file
  */
-static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date, bool dir)
+static void InsertOneFileOrDir(UaContext *ua, RestoreContext *rx, char *date, bool dir)
 {
    FILE *ffd;
    char file[5000];
@@ -962,11 +962,11 @@ static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date
       while (fgets(file, sizeof(file), ffd)) {
          line++;
          if (dir) {
-            if (!insert_dir_into_findex_list(ua, rx, file, date)) {
+            if (!InsertDirIntoFindexList(ua, rx, file, date)) {
                ua->ErrorMsg(_("Error occurred on line %d of file \"%s\"\n"), line, p);
             }
          } else {
-            if (!insert_file_into_findex_list(ua, rx, file, date)) {
+            if (!InsertFileIntoFindexList(ua, rx, file, date)) {
                ua->ErrorMsg(_("Error occurred on line %d of file \"%s\"\n"), line, p);
             }
          }
@@ -975,13 +975,13 @@ static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date
       break;
    case '?':
       p++;
-      insert_table_into_findex_list(ua, rx, p);
+      InsertTableIntoFindexList(ua, rx, p);
       break;
    default:
       if (dir) {
-         insert_dir_into_findex_list(ua, rx, ua->cmd, date);
+         InsertDirIntoFindexList(ua, rx, ua->cmd, date);
       } else {
-         insert_file_into_findex_list(ua, rx, ua->cmd, date);
+         InsertFileIntoFindexList(ua, rx, ua->cmd, date);
       }
       break;
    }
@@ -992,7 +992,7 @@ static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date
  * lookup the most recent backup in the catalog to get the JobId
  * and FileIndex, then insert them into the findex list.
  */
-static bool insert_file_into_findex_list(UaContext *ua, RestoreContext *rx, char *file, char *date)
+static bool InsertFileIntoFindexList(UaContext *ua, RestoreContext *rx, char *file, char *date)
 {
    StripTrailingNewline(file);
    SplitPathAndFilename(ua, rx, file);
@@ -1007,7 +1007,7 @@ static bool insert_file_into_findex_list(UaContext *ua, RestoreContext *rx, char
     * Find and insert jobid and File Index
     */
    rx->found = false;
-   if (!ua->db->SqlQuery(rx->query, jobid_fileindex_handler, (void *)rx)) {
+   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void *)rx)) {
       ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"),
                     rx->query, ua->db->strerror());
    }
@@ -1022,7 +1022,7 @@ static bool insert_file_into_findex_list(UaContext *ua, RestoreContext *rx, char
  * For a given path lookup the most recent backup in the catalog
  * to get the JobId and FileIndexes of all files in that directory.
  */
-static bool insert_dir_into_findex_list(UaContext *ua, RestoreContext *rx, char *dir, char *date)
+static bool InsertDirIntoFindexList(UaContext *ua, RestoreContext *rx, char *dir, char *date)
 {
    StripTrailingJunk(dir);
 
@@ -1037,7 +1037,7 @@ static bool insert_dir_into_findex_list(UaContext *ua, RestoreContext *rx, char 
     * Find and insert jobid and File Index
     */
    rx->found = false;
-   if (!ua->db->SqlQuery(rx->query, jobid_fileindex_handler, (void *)rx)) {
+   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void *)rx)) {
       ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"),
                     rx->query, ua->db->strerror());
    }
@@ -1051,7 +1051,7 @@ static bool insert_dir_into_findex_list(UaContext *ua, RestoreContext *rx, char 
 /**
  * Get the JobId and FileIndexes of all files in the specified table
  */
-static bool insert_table_into_findex_list(UaContext *ua, RestoreContext *rx, char *table)
+static bool InsertTableIntoFindexList(UaContext *ua, RestoreContext *rx, char *table)
 {
    StripTrailingJunk(table);
 
@@ -1061,7 +1061,7 @@ static bool insert_table_into_findex_list(UaContext *ua, RestoreContext *rx, cha
     * Find and insert jobid and File Index
     */
    rx->found = false;
-   if (!ua->db->SqlQuery(rx->query, jobid_fileindex_handler, (void *)rx)) {
+   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void *)rx)) {
       ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"),
                     rx->query, ua->db->strerror());
    }
@@ -1119,7 +1119,7 @@ static void SplitPathAndFilename(UaContext *ua, RestoreContext *rx, char *name)
    Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
 }
 
-static bool ask_for_fileregex(UaContext *ua, RestoreContext *rx)
+static bool AskForFileregex(UaContext *ua, RestoreContext *rx)
 {
    if (FindArg(ua, NT_("all")) >= 0) {  /* if user enters all on command line */
       return true;                       /* select everything */
@@ -1166,18 +1166,18 @@ static bool ask_for_fileregex(UaContext *ua, RestoreContext *rx)
  * should insert as
  * 0, 1, 2, 3, 4, 5, 6
  */
-static void add_delta_list_findex(RestoreContext *rx, struct delta_list *lst)
+static void AddDeltaListFindex(RestoreContext *rx, struct delta_list *lst)
 {
    if (lst == NULL) {
       return;
    }
    if (lst->next) {
-      add_delta_list_findex(rx, lst->next);
+      AddDeltaListFindex(rx, lst->next);
    }
    AddFindex(rx->bsr, lst->JobId, lst->FileIndex);
 }
 
-static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
+static bool BuildDirectoryTree(UaContext *ua, RestoreContext *rx)
 {
    TreeContext tree;
    JobId_t JobId, last_JobId;
@@ -1207,7 +1207,7 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
        * Use first JobId as estimate of the number of files to restore
        */
       ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY_uar_count_files, edit_int64(JobId, ed1));
-      if (!ua->db->SqlQuery(rx->query, restore_count_handler, (void *)rx)) {
+      if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void *)rx)) {
          ua->ErrorMsg("%s\n", ua->db->strerror());
       }
       if (rx->found) {
@@ -1222,7 +1222,7 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
    ua->InfoMsg(_("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
 
    if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
-                              true /* get delta */, insert_tree_handler, (void *)&tree)) {
+                              true /* get delta */, InsertTreeHandler, (void *)&tree)) {
       ua->ErrorMsg("%s", ua->db->strerror());
    }
 
@@ -1248,7 +1248,7 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
        * Find out if any Job is purged
        */
       Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)", rx->JobIds);
-      if (!ua->db->SqlQuery(rx->query, restore_count_handler, (void *)rx)) {
+      if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void *)rx)) {
          ua->ErrorMsg("%s\n", ua->db->strerror());
       }
       /*
@@ -1260,14 +1260,14 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
    }
 
    if (tree.FileCount == 0) {
-      OK = ask_for_fileregex(ua, rx);
+      OK = AskForFileregex(ua, rx);
       if (OK) {
          last_JobId = 0;
          for (p=rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0; ) {
              if (JobId == last_JobId) {
                 continue;                    /* eliminate duplicate JobIds */
              }
-             add_findex_all(rx->bsr, JobId);
+             AddFindexAll(rx->bsr, JobId);
          }
       }
    } else {
@@ -1284,7 +1284,7 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
          /*
           * Let the user interact in selecting which files to restore
           */
-         OK = user_select_files_from_tree(&tree);
+         OK = UserSelectFilesFromTree(&tree);
       }
 
       /*
@@ -1297,7 +1297,7 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
             if (node->extract || node->extract_dir) {
                Dmsg3(400, "JobId=%lld type=%d FI=%d\n", (uint64_t)node->JobId, node->type, node->FileIndex);
                /* TODO: optimize bsr insertion when jobid are non sorted */
-               add_delta_list_findex(rx, node->delta_list);
+               AddDeltaListFindex(rx, node->delta_list);
                AddFindex(rx->bsr, node->JobId, node->FileIndex);
                if (node->extract && node->type != TN_NEWDIR) {
                   rx->selected_files++;  /* count only saved files */
@@ -1320,7 +1320,7 @@ static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
 /**
  * This routine is used to get the current backup or a backup before the specified date.
  */
-static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *date)
+static bool SelectBackupsBeforeDate(UaContext *ua, RestoreContext *rx, char *date)
 {
    int i;
    ClientDbRecord cr;
@@ -1371,7 +1371,7 @@ static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *
       ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY_uar_sel_fileset, edit_int64(cr.ClientId, ed1), ed1);
 
       StartPrompt(ua, _("The defined FileSet resources are:\n"));
-      if (!ua->db->SqlQuery(rx->query, fileset_handler, (void *)ua)) {
+      if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void *)ua)) {
          ua->ErrorMsg("%s\n", ua->db->strerror());
       }
       if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"),
@@ -1398,7 +1398,7 @@ static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
       if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
-         bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ", edit_int64(pr.PoolId, ed1));
+         Bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ", edit_int64(pr.PoolId, ed1));
       } else {
          ua->WarningMsg(_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
       }
@@ -1436,7 +1436,7 @@ static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *
     */
    rx->JobTDate = 0;
    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY_uar_sel_all_temp1);
-   if (!ua->db->SqlQuery(rx->query, last_full_handler, (void *)rx)) {
+   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void *)rx)) {
       ua->WarningMsg("%s\n", ua->db->strerror());
    }
    if (rx->JobTDate == 0) {
@@ -1458,7 +1458,7 @@ static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *
     */
    rx->JobTDate = 0;
    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY_uar_sel_all_temp);
-   if (!ua->db->SqlQuery(rx->query, last_full_handler, (void *)rx)) {
+   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void *)rx)) {
       ua->WarningMsg("%s\n", ua->db->strerror());
    }
    if (rx->JobTDate == 0) {
@@ -1481,7 +1481,7 @@ static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *
    rx->last_jobid[0] = rx->JobIds[0] = 0;
 
    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY_uar_sel_jobid_temp);
-   if (!ua->db->SqlQuery(rx->query, jobid_handler, (void *)rx)) {
+   if (!ua->db->SqlQuery(rx->query, JobidHandler, (void *)rx)) {
       ua->WarningMsg("%s\n", ua->db->strerror());
    }
 
@@ -1507,7 +1507,7 @@ static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *
             PmStrcpy(JobIds, rx->JobIds);
             rx->last_jobid[0] = rx->JobIds[0] = 0;
             ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY_uar_sel_jobid_copies, JobIds.c_str());
-            if (!ua->db->SqlQuery(rx->query, jobid_handler, (void *)rx)) {
+            if (!ua->db->SqlQuery(rx->query, JobidHandler, (void *)rx)) {
                ua->WarningMsg("%s\n", ua->db->strerror());
             }
          }
@@ -1531,7 +1531,7 @@ bail_out:
    return ok;
 }
 
-static int restore_count_handler(void *ctx, int num_fields, char **row)
+static int RestoreCountHandler(void *ctx, int num_fields, char **row)
 {
    RestoreContext *rx = (RestoreContext *)ctx;
    rx->JobId = str_to_int64(row[0]);
@@ -1543,7 +1543,7 @@ static int restore_count_handler(void *ctx, int num_fields, char **row)
  * Callback handler to get JobId and FileIndex for files
  *   can insert more than one depending on the caller.
  */
-static int jobid_fileindex_handler(void *ctx, int num_fields, char **row)
+static int JobidFileindexHandler(void *ctx, int num_fields, char **row)
 {
    RestoreContext *rx = (RestoreContext *)ctx;
 
@@ -1558,7 +1558,7 @@ static int jobid_fileindex_handler(void *ctx, int num_fields, char **row)
 /**
  * Callback handler make list of JobIds
  */
-static int jobid_handler(void *ctx, int num_fields, char **row)
+static int JobidHandler(void *ctx, int num_fields, char **row)
 {
    RestoreContext *rx = (RestoreContext *)ctx;
 
@@ -1576,7 +1576,7 @@ static int jobid_handler(void *ctx, int num_fields, char **row)
 /**
  * Callback handler to pickup last Full backup JobTDate
  */
-static int last_full_handler(void *ctx, int num_fields, char **row)
+static int LastFullHandler(void *ctx, int num_fields, char **row)
 {
    RestoreContext *rx = (RestoreContext *)ctx;
 
@@ -1587,7 +1587,7 @@ static int last_full_handler(void *ctx, int num_fields, char **row)
 /**
  * Callback handler build FileSet name prompt list
  */
-static int fileset_handler(void *ctx, int num_fields, char **row)
+static int FilesetHandler(void *ctx, int num_fields, char **row)
 {
    /* row[0] = FileSet (name) */
    if (row[0]) {
@@ -1599,7 +1599,7 @@ static int fileset_handler(void *ctx, int num_fields, char **row)
 /**
  * Free names in the list
  */
-static void free_name_list(NameList *name_list)
+static void FreeNameList(NameList *name_list)
 {
    int i;
 
@@ -1625,7 +1625,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
    LockRes();
    foreach_res(store, R_STORAGE) {
       if (bstrcmp(Storage, store->name())) {
-         if (ua->acl_access_ok(Storage_ACL, store->name())) {
+         if (ua->AclAccessOk(Storage_ACL, store->name())) {
             rx.store = store;
          }
          break;
@@ -1659,7 +1659,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
       LockRes();
       foreach_res(store, R_STORAGE) {
          if (bstrcmp(MediaType, store->media_type)) {
-            if (ua->acl_access_ok(Storage_ACL, store->name())) {
+            if (ua->AclAccessOk(Storage_ACL, store->name())) {
                rx.store = store;
                Dmsg1(200, "Set store=%s\n", rx.store->name());
                if (Storage == NULL) {

@@ -21,7 +21,7 @@
 #ifndef BAREOS_LIB_SCAN_H_
 #define BAREOS_LIB_SCAN_H_
 
-DLL_IMP_EXP void strip_leading_space(char *str);
+DLL_IMP_EXP void StripLeadingSpace(char *str);
 DLL_IMP_EXP void StripTrailingJunk(char *str);
 DLL_IMP_EXP void StripTrailingNewline(char *str);
 DLL_IMP_EXP void StripTrailingSlashes(char *dir);

@@ -21,6 +21,6 @@
 #ifndef BAREOS_STORED_READ_H_
 #define BAREOS_STORED_READ_H_
 
-DLL_IMP_EXP bool do_read_data(JobControlRecord *jcr);
+DLL_IMP_EXP bool DoReadData(JobControlRecord *jcr);
 
 #endif // BAREOS_STORED_READ_H_

@@ -272,7 +272,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 
 static pthread_mutex_t crypto_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static inline bool get_volume_encryption_key(DeviceControlRecord *dcr, char *VolEncrKey)
+static inline bool GetVolumeEncryptionKey(DeviceControlRecord *dcr, char *VolEncrKey)
 {
    /*
     * See if we have valid VolCatInfo.
@@ -343,8 +343,8 @@ static bRC do_set_scsi_encryption_key(void *value)
    }
 
    *StoredVolEncrKey = '\0';
-   if (!get_volume_encryption_key(dcr, StoredVolEncrKey)) {
-      Dmsg0(debuglevel, "scsicrypto-sd: Could not get_volume_encryption_key!\n");
+   if (!GetVolumeEncryptionKey(dcr, StoredVolEncrKey)) {
+      Dmsg0(debuglevel, "scsicrypto-sd: Could not GetVolumeEncryptionKey!\n");
 
       /*
        * Check if encryption key is needed for reading this volume.
@@ -528,7 +528,7 @@ static bRC handle_read_error(void *value)
          if (decryption_needed) {
             berrno be;
 
-            be.set_errno(dev->dev_errno);
+            be.SetErrno(dev->dev_errno);
             Mmsg5(dev->errmsg, _("Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"
                                  "Probably due to reading encrypted data from volume\n"),
                   dev->fd(), dev->file, dev->block_num, dev->print_name(), be.bstrerror());

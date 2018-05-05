@@ -19,18 +19,18 @@
    02110-1301, USA.
 */
 
-void test_alist(void **state);
-void test_dlist(void **state);
-void test_htable(void **state);
-void test_rblist(void **state);
-void test_edit(void **state);
-void test_generate_crypto_passphrase(void **state);
-void test_bsnprintf(void **state);
-void test_sellist(void **state);
-void test_scan(void **state);
+void TestAlist(void **state);
+void TestDlist(void **state);
+void TestHtable(void **state);
+void TestRblist(void **state);
+void TestEdit(void **state);
+void TestGenerateCryptoPassphrase(void **state);
+void TestBsnprintf(void **state);
+void TestSellist(void **state);
+void TestScan(void **state);
 void test_base64(void **state);
-void test_rwlock(void **state);
-void test_devlock(void **state);
+void TestRwlock(void **state);
+void TestDevlock(void **state);
 #ifdef HAVE_WIN32
-void test_junction(void **state);
+void TestJunction(void **state);
 #endif

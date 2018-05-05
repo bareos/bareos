@@ -171,7 +171,7 @@ struct s_kw RunFields[] = {
  *   together.
  *
  */
-void store_run(LEX *lc, ResourceItem *item, int index, int pass)
+void StoreRun(LEX *lc, ResourceItem *item, int index, int pass)
 {
    char *p;
    int i, j;
@@ -197,7 +197,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
       found = false;
       token = LexGetToken(lc, BCT_NAME);
       for (i = 0; !found && RunFields[i].name; i++) {
-         if (bstrcasecmp(lc->str, RunFields[i].name)) {
+         if (Bstrcasecmp(lc->str, RunFields[i].name)) {
             found = true;
             if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
                scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
@@ -206,10 +206,10 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             switch (RunFields[i].token) {
             case 's':                 /* Data spooling */
                token = LexGetToken(lc, BCT_NAME);
-               if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+               if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
                   lrun.spool_data = true;
                   lrun.spool_data_set = true;
-               } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+               } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
                   lrun.spool_data = false;
                   lrun.spool_data_set = true;
                } else {
@@ -219,7 +219,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             case 'L':                 /* Level */
                token = LexGetToken(lc, BCT_NAME);
                for (j = 0; joblevels[j].level_name; j++) {
-                  if (bstrcasecmp(lc->str, joblevels[j].level_name)) {
+                  if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
                      lrun.level = joblevels[j].level;
                      lrun.job_type = joblevels[j].job_type;
                      j = 0;
@@ -323,7 +323,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                /* NOT REACHED */
                break;
             } /* end switch */
-         } /* end if bstrcasecmp */
+         } /* end if Bstrcasecmp */
       } /* end for RunFields */
 
       /*
@@ -332,7 +332,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
        */
       if (!found) {
          for (j = 0; joblevels[j].level_name; j++) {
-            if (bstrcasecmp(lc->str, joblevels[j].level_name)) {
+            if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
                lrun.level = joblevels[j].level;
                lrun.job_type = joblevels[j].job_type;
                found = true;
@@ -389,7 +389,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
           * Everything else must be a keyword
           */
          for (i = 0; keyw[i].name; i++) {
-            if (bstrcasecmp(lc->str, keyw[i].name)) {
+            if (Bstrcasecmp(lc->str, keyw[i].name)) {
                state = keyw[i].state;
                code   = keyw[i].code;
                i = 0;
@@ -467,9 +467,9 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
          if (len >= 2) {
             p += 2;
          }
-         if (bstrcasecmp(p, "pm")) {
+         if (Bstrcasecmp(p, "pm")) {
             pm = true;
-         } else if (bstrcasecmp(p, "am")) {
+         } else if (Bstrcasecmp(p, "am")) {
             am = true;
          } else if (len != 2) {
             scan_err0(lc, _("Bad time specification."));

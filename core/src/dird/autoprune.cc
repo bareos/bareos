@@ -42,7 +42,7 @@
  * Auto Prune Jobs and Files. This is called at the end of every
  *   Job.  We do not prune volumes here.
  */
-void do_autoprune(JobControlRecord *jcr)
+void DoAutoprune(JobControlRecord *jcr)
 {
    UaContext *ua;
    JobResource *job;
@@ -60,7 +60,7 @@ void do_autoprune(JobControlRecord *jcr)
    pool = jcr->res.pool;
 
    if (job->PruneJobs || client->AutoPrune) {
-      prune_jobs(ua, client, pool, jcr->getJobType());
+      PruneJobs(ua, client, pool, jcr->getJobType());
       pruned = true;
    } else {
       pruned = false;
@@ -147,7 +147,7 @@ void PruneVolumes(JobControlRecord *jcr, bool InChanger,
    if (InChanger) {
       char changer[100];
       /* Ensure it is in this autochanger */
-      bsnprintf(changer, sizeof(changer), "AND InChanger=1 AND StorageId=%s ",
+      Bsnprintf(changer, sizeof(changer), "AND InChanger=1 AND StorageId=%s ",
          edit_int64(mr->StorageId, ed3));
       Mmsg(query, select, ed1, ed2, mr->MediaType, changer);
    } else {

@@ -48,7 +48,7 @@ int num_execvp_errors = (int)(sizeof(execvp_errors)/sizeof(int));
 #define MAX_ARGV 100
 
 #if !defined(HAVE_WIN32)
-static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg);
+static void BuildArgcArgv(char *cmd, int *bargc, char *bargv[], int max_arg);
 
 /*
  * Run an external program. Optionally wait a specified number
@@ -76,7 +76,7 @@ Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
     */
    tprog = GetPoolMemory(PM_FNAME);
    PmStrcpy(tprog, prog);
-   build_argc_argv(tprog, &bargc, bargv, MAX_ARGV);
+   BuildArgcArgv(tprog, &bargc, bargv, MAX_ARGV);
 
    /*
     * Each pipe is one way, write one end, read the other, so we need two
@@ -256,7 +256,7 @@ int CloseBpipe(Bpipe *bpipe)
       Dmsg3(800, "Got wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
             wpid==-1?strerror(errno):"none");
       if (remaining_wait > 0) {
-         bmicrosleep(1, 0);           /* wait one second */
+         Bmicrosleep(1, 0);           /* wait one second */
          remaining_wait--;
       } else {
          status = ETIME;              /* set error status */
@@ -293,7 +293,7 @@ int CloseBpipe(Bpipe *bpipe)
 /*
  * Build argc and argv from a string
  */
-static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_argv)
+static void BuildArgcArgv(char *cmd, int *bargc, char *bargv[], int max_argv)
 {
    int i;
    char *p, *q, quote;

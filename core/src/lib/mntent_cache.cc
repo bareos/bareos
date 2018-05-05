@@ -115,7 +115,7 @@ static const char *skipped_fs_types[] = {
 /**
  * Simple comparison function for binary search and insert.
  */
-static int compare_mntent_mapping(void *e1, void *e2)
+static int CompareMntentMapping(void *e1, void *e2)
 {
    mntent_cache_entry_t *mce1, *mce2;
 
@@ -132,7 +132,7 @@ static int compare_mntent_mapping(void *e1, void *e2)
 /**
  * Free the members of the mntent_cache structure not the structure itself.
  */
-static inline void destroy_mntent_cache_entry(mntent_cache_entry_t *mce)
+static inline void DestroyMntentCacheEntry(mntent_cache_entry_t *mce)
 {
    if (mce->mntopts) {
       free(mce->mntopts);
@@ -164,7 +164,7 @@ static mntent_cache_entry_t *add_mntent_mapping(uint32_t dev,
       mce->mntopts = bstrdup(mntopts);
    }
 
-   mntent_cache_entries->binary_insert(mce, compare_mntent_mapping);
+   mntent_cache_entries->binary_insert(mce, CompareMntentMapping);
 
    return mce;
 }
@@ -182,7 +182,7 @@ static mntent_cache_entry_t *update_mntent_mapping(uint32_t dev,
    mntent_cache_entry_t lookup, *mce;
 
    lookup.dev = dev;
-   mce = (mntent_cache_entry_t *)mntent_cache_entries->binary_search(&lookup, compare_mntent_mapping);
+   mce = (mntent_cache_entry_t *)mntent_cache_entries->binary_search(&lookup, CompareMntentMapping);
    if (mce) {
       /*
        * See if the info changed.
@@ -214,7 +214,7 @@ static mntent_cache_entry_t *update_mntent_mapping(uint32_t dev,
    return mce;
 }
 
-static inline bool skip_fstype(const char *fstype)
+static inline bool SkipFstype(const char *fstype)
 {
    int i;
 
@@ -271,7 +271,7 @@ static void refresh_mount_cache(mntent_cache_entry_t *handle_entry(uint32_t dev,
 #endif
 
    while ((mnt = getmntent(fp)) != (struct mntent *)NULL) {
-      if (skip_fstype(mnt->mnt_type)) {
+      if (SkipFstype(mnt->mnt_type)) {
          continue;
       }
 
@@ -294,7 +294,7 @@ static void refresh_mount_cache(mntent_cache_entry_t *handle_entry(uint32_t dev,
       return;
 
    while (getmntent(fp, &mnt) == 0) {
-      if (skip_fstype(mnt.mnt_fstype)) {
+      if (SkipFstype(mnt.mnt_fstype)) {
          continue;
       }
 
@@ -329,7 +329,7 @@ static void refresh_mount_cache(mntent_cache_entry_t *handle_entry(uint32_t dev,
 
    if ((cnt = getmntinfo(&mntinfo, flags)) > 0) {
       while (cnt > 0) {
-         if (!skip_fstype(mntinfo->f_fstypename) &&
+         if (!SkipFstype(mntinfo->f_fstypename) &&
              stat(mntinfo->f_mntonname, &st) == 0) {
             handle_entry(st.st_dev,
                          mntinfo->f_mntfromname,
@@ -364,7 +364,7 @@ static void refresh_mount_cache(mntent_cache_entry_t *handle_entry(uint32_t dev,
    while (cnt < n_entries) {
       vmp = (struct vmount *)current;
 
-      if (skip_fstype(ve->vfsent_name)) {
+      if (SkipFstype(ve->vfsent_name)) {
          continue;
       }
 
@@ -405,7 +405,7 @@ static void refresh_mount_cache(mntent_cache_entry_t *handle_entry(uint32_t dev,
    cnt = 0;
    current = entries;
    while (cnt < n_entries) {
-      if (skip_fstype(current->f_fstypename)) {
+      if (SkipFstype(current->f_fstypename)) {
          continue;
       }
 
@@ -428,7 +428,7 @@ static void refresh_mount_cache(mntent_cache_entry_t *handle_entry(uint32_t dev,
  * Initialize the cache for use.
  * This function should be called with a write lock on the mntent_cache.
  */
-static inline void initialize_mntent_cache(void)
+static inline void InitializeMntentCache(void)
 {
    mntent_cache_entry_t *mce = NULL;
 
@@ -444,7 +444,7 @@ static inline void initialize_mntent_cache(void)
  * Repopulate the cache with new data.
  * This function should be called with a write lock on the mntent_cache.
  */
-static void repopulate_mntent_cache(void)
+static void RepopulateMntentCache(void)
 {
    mntent_cache_entry_t *mce, *next_mce;
 
@@ -485,7 +485,7 @@ static void repopulate_mntent_cache(void)
           */
          if (mce->reference_count == 0) {
             mntent_cache_entries->remove(mce);
-            destroy_mntent_cache_entry(mce);
+            DestroyMntentCacheEntry(mce);
             free(mce);
          } else {
             mce->destroyed = true;
@@ -511,7 +511,7 @@ void FlushMntentCache(void)
    if (mntent_cache_entries) {
       previous_cache_hit = NULL;
       foreach_dlist(mce, mntent_cache_entries) {
-         destroy_mntent_cache_entry(mce);
+         DestroyMntentCacheEntry(mce);
       }
       mntent_cache_entries->destroy();
       delete mntent_cache_entries;
@@ -538,7 +538,7 @@ void ReleaseMntentMapping(mntent_cache_entry_t *mce)
     * See if this entry is a dangling entry.
     */
    if (mce->reference_count == 0 && mce->destroyed) {
-      destroy_mntent_cache_entry(mce);
+      DestroyMntentCacheEntry(mce);
       free(mce);
    }
 
@@ -571,7 +571,7 @@ mntent_cache_entry_t *find_mntent_mapping(uint32_t dev)
     * Initialize the cache if that was not done before.
     */
    if (!mntent_cache_entries) {
-      initialize_mntent_cache();
+      InitializeMntentCache();
       last_rescan = time(NULL);
    } else {
       /**
@@ -582,13 +582,13 @@ mntent_cache_entry_t *find_mntent_mapping(uint32_t dev)
        */
       now = time(NULL);
       if ((now - last_rescan) > MNTENT_RESCAN_INTERVAL) {
-         repopulate_mntent_cache();
+         RepopulateMntentCache();
          last_rescan = time(NULL);
       }
    }
 
    lookup.dev = dev;
-   mce = (mntent_cache_entry_t *)mntent_cache_entries->binary_search(&lookup, compare_mntent_mapping);
+   mce = (mntent_cache_entry_t *)mntent_cache_entries->binary_search(&lookup, CompareMntentMapping);
 
    /**
     * If we fail to lookup the mountpoint its probably a mountpoint added
@@ -596,8 +596,8 @@ mntent_cache_entry_t *find_mntent_mapping(uint32_t dev)
     * the lookup again.
     */
    if (!mce) {
-      repopulate_mntent_cache();
-      mce = (mntent_cache_entry_t *)mntent_cache_entries->binary_search(&lookup, compare_mntent_mapping);
+      RepopulateMntentCache();
+      mce = (mntent_cache_entry_t *)mntent_cache_entries->binary_search(&lookup, CompareMntentMapping);
    }
 
    /**

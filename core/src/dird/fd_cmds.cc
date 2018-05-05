@@ -89,7 +89,7 @@ static char OKgetSecureEraseCmd[] =
    "2000 OK FDSecureEraseCmd %s\n";
 
 /* Forward referenced functions */
-static bool send_list_item(JobControlRecord *jcr, const char *code, char *item, BareosSocket *fd);
+static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, BareosSocket *fd);
 
 /* External functions */
 extern DirectorResource *director;
@@ -237,7 +237,7 @@ int SendJobInfo(JobControlRecord *jcr)
          cr.FileRetention = jcr->res.client->FileRetention;
          cr.JobRetention = jcr->res.client->JobRetention;
          bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
-         if (!jcr->db->update_client_record(jcr, &cr)) {
+         if (!jcr->db->UpdateClientRecord(jcr, &cr)) {
             Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"), jcr->db->strerror());
          }
       }
@@ -259,7 +259,7 @@ bool SendPreviousRestoreObjects(JobControlRecord *jcr)
    case L_DIFFERENTIAL:
    case L_INCREMENTAL:
       if (jcr->previous_jr.JobId > 0) {
-         if (!send_restore_objects(jcr, jcr->previous_jr.JobId, false)) {
+         if (!SendRestoreObjects(jcr, jcr->previous_jr.JobId, false)) {
             return false;
          }
       }
@@ -315,7 +315,7 @@ bool SendSecureEraseReqToFd(JobControlRecord *jcr)
    return true;
 }
 
-static inline void send_since_time(JobControlRecord *jcr)
+static inline void SendSinceTime(JobControlRecord *jcr)
 {
    char ed1[50];
    utime_t stime;
@@ -356,11 +356,11 @@ bool SendLevelCommand(JobControlRecord *jcr)
       break;
    case L_DIFFERENTIAL:
       fd->fsend(levelcmd, accurate, "differential", rerunning, 0, "", "");
-      send_since_time(jcr);
+      SendSinceTime(jcr);
       break;
    case L_INCREMENTAL:
       fd->fsend(levelcmd, accurate, "incremental", rerunning, 0, "", "");
-      send_since_time(jcr);
+      SendSinceTime(jcr);
       break;
    case L_SINCE:
       Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"), JobLevel, JobLevel);
@@ -382,7 +382,7 @@ bool SendLevelCommand(JobControlRecord *jcr)
 /**
  * Send either an Included or an Excluded list to FD
  */
-static bool send_fileset(JobControlRecord *jcr)
+static bool SendFileset(JobControlRecord *jcr)
 {
    FilesetResource *fileset = jcr->res.fileset;
    BareosSocket *fd = jcr->file_bsock;
@@ -501,8 +501,8 @@ static bool send_fileset(JobControlRecord *jcr)
                fd->fsend("X %s\n", fo->fstype.get(k));
             }
 
-            for (int k = 0; k < fo->drivetype.size(); k++) {
-               fd->fsend("XD %s\n", fo->drivetype.get(k));
+            for (int k = 0; k < fo->Drivetype.size(); k++) {
+               fd->fsend("XD %s\n", fo->Drivetype.get(k));
             }
 
             if (fo->plugin) {
@@ -522,7 +522,7 @@ static bool send_fileset(JobControlRecord *jcr)
 
          for (int j = 0; j < ie->name_list.size(); j++) {
             item = (char *)ie->name_list.get(j);
-            if (!send_list_item(jcr, "F ", item, fd)) {
+            if (!SendListItem(jcr, "F ", item, fd)) {
                goto bail_out;
             }
          }
@@ -530,7 +530,7 @@ static bool send_fileset(JobControlRecord *jcr)
 
          for (int j = 0; j < ie->plugin_list.size(); j++) {
             item = (char *)ie->plugin_list.get(j);
-            if (!send_list_item(jcr, "P ", item, fd)) {
+            if (!SendListItem(jcr, "P ", item, fd)) {
                goto bail_out;
             }
          }
@@ -556,7 +556,7 @@ bail_out:
 
 }
 
-static bool send_list_item(JobControlRecord *jcr, const char *code, char *item, BareosSocket *fd)
+static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, BareosSocket *fd)
 {
    Bpipe *bpipe;
    FILE *ffd;
@@ -638,7 +638,7 @@ bool SendIncludeList(JobControlRecord *jcr)
    BareosSocket *fd = jcr->file_bsock;
    if (jcr->res.fileset->new_include) {
       fd->fsend(filesetcmd, jcr->res.fileset->enable_vss ? " vss=1" : "");
-      return send_fileset(jcr);
+      return SendFileset(jcr);
    }
    return true;
 }
@@ -657,7 +657,7 @@ bool SendExcludeList(JobControlRecord *jcr)
 /*
  * This checks to see if there are any non local runscripts for this job.
  */
-static inline bool have_client_runscripts(alist *RunScripts)
+static inline bool HaveClientRunscripts(alist *RunScripts)
 {
    RunScript *cmd;
    bool retval = false;
@@ -692,7 +692,7 @@ int SendRunscriptsCommands(JobControlRecord *jcr)
    /*
     * See if there are any runscripts that need to be ran on the client.
     */
-   if (!have_client_runscripts(jcr->res.job->RunScripts)) {
+   if (!HaveClientRunscripts(jcr->res.job->RunScripts)) {
       return 1;
    }
 
@@ -769,9 +769,9 @@ struct RestoreObjectContext {
 };
 
 /**
- * restore_object_handler is called for each file found
+ * RestoreObjectHandler is called for each file found
  */
-static int restore_object_handler(void *ctx, int num_fields, char **row)
+static int RestoreObjectHandler(void *ctx, int num_fields, char **row)
 {
    BareosSocket *fd;
    bool is_compressed;
@@ -836,7 +836,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-bool send_plugin_options(JobControlRecord *jcr)
+bool SendPluginOptions(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
    POOLMEM *msg;
@@ -858,7 +858,7 @@ bool send_plugin_options(JobControlRecord *jcr)
    return true;
 }
 
-static inline void send_global_restore_objects(JobControlRecord *jcr, RestoreObjectContext *octx)
+static inline void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObjectContext *octx)
 {
    char ed1[50];
    PoolMem query(PM_MESSAGE);
@@ -871,19 +871,19 @@ static inline void send_global_restore_objects(JobControlRecord *jcr, RestoreObj
     * Send restore objects for all jobs involved
     */
    jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
-   jcr->db->SqlQuery(query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 
    jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects, jcr->JobIds, FT_PLUGIN_CONFIG);
-   jcr->db->SqlQuery(query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 
    /*
     * Send config objects for the current restore job
     */
    jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
-   jcr->db->SqlQuery(query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 }
 
-static inline void send_job_specific_restore_objects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
+static inline void SendJobSpecificRestoreObjects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
 {
    char ed1[50];
    PoolMem query(PM_MESSAGE);
@@ -892,13 +892,13 @@ static inline void send_job_specific_restore_objects(JobControlRecord *jcr, JobI
     * Send restore objects for specific JobId.
     */
    jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
-   jcr->db->SqlQuery(query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 
    jcr->db->FillQuery(query, BareosDb::SQL_QUERY_get_restore_objects, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
-   jcr->db->SqlQuery(query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 }
 
-bool send_restore_objects(JobControlRecord *jcr, JobId_t JobId, bool send_global)
+bool SendRestoreObjects(JobControlRecord *jcr, JobId_t JobId, bool send_global)
 {
    BareosSocket *fd;
    RestoreObjectContext octx;
@@ -907,9 +907,9 @@ bool send_restore_objects(JobControlRecord *jcr, JobId_t JobId, bool send_global
    octx.count = 0;
 
    if (send_global) {
-      send_global_restore_objects(jcr, &octx);
+      SendGlobalRestoreObjects(jcr, &octx);
    } else {
-      send_job_specific_restore_objects(jcr, JobId, &octx);
+      SendJobSpecificRestoreObjects(jcr, JobId, &octx);
    }
 
    /*
@@ -1064,7 +1064,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord *jcr)
 /**
  * Cancel a job running in the File daemon
  */
-bool cancel_file_daemon_job(UaContext *ua, JobControlRecord *jcr)
+bool CancelFileDaemonJob(UaContext *ua, JobControlRecord *jcr)
 {
    BareosSocket *fd;
 

@@ -530,7 +530,7 @@ static bRC endBackupFile(bpContext *ctx)
 /**
  * Strip any backslashes in the string.
  */
-static inline void strip_back_slashes(char *value)
+static inline void StripBackSlashes(char *value)
 {
    char *bp;
 
@@ -551,11 +551,11 @@ static inline void strip_back_slashes(char *value)
 /**
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_string_if_null(char **destination, char *value)
+static inline void SetStringIfNull(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
-      strip_back_slashes(*destination);
+      StripBackSlashes(*destination);
    }
 }
 
@@ -569,7 +569,7 @@ static inline void SetString(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
-   strip_back_slashes(*destination);
+   StripBackSlashes(*destination);
 }
 
 /**
@@ -647,7 +647,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       } while (bp);
 
       for (i = 0; plugin_arguments[i].name; i++) {
-         if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+         if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
             char **str_destination = NULL;
 
             switch (plugin_arguments[i].type) {
@@ -681,7 +681,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              */
             if (str_destination) {
                if (keep_existing) {
-                  set_string_if_null(str_destination, argument_value);
+                  SetStringIfNull(str_destination, argument_value);
                } else {
                   SetString(str_destination, argument_value);
                }
@@ -848,7 +848,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
    rados_ioctx_snap_set_read(p_ctx->ioctx, p_ctx->snap_id);
 
 #if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
-   if (!p_ctx->rados_namespace || bstrcasecmp(p_ctx->rados_namespace, "all")) {
+   if (!p_ctx->rados_namespace || Bstrcasecmp(p_ctx->rados_namespace, "all")) {
       rados_ioctx_set_namespace(p_ctx->ioctx, LIBRADOS_ALL_NSPACES);
    } else {
       rados_ioctx_set_namespace(p_ctx->ioctx, p_ctx->rados_namespace);

@@ -93,18 +93,18 @@ static bool bufimode = false;   /* Buffers not tracked when True */
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
+static void SmartAllocMsg(const char *file, int line, const char *fmt, ...)
 {
    char buf[256];
    va_list arg_ptr;
    int len;
 
-   len = bsnprintf(buf, sizeof(buf),
+   len = Bsnprintf(buf, sizeof(buf),
                    _("%s: ABORTING due to ERROR in %s:%d\n"),
                    my_name, get_basename(file), line);
 
    va_start(arg_ptr, fmt);
-   bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
+   Bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
    va_end(arg_ptr);
 
    DispatchMessage(NULL, M_ABORT, 0, buf);
@@ -161,11 +161,11 @@ static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
       }
       V(mutex);
    } else {
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory\n"));
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory\n"));
    }
 #if SMALLOC_SANITY_CHECK > 0
    if (sm_bytes > SMALLOC_SANITY_CHECK) {
-      smart_alloc_msg(__FILE__, __LINE__, _("Too much memory used."));
+      SmartAllocMsg(__FILE__, __LINE__, _("Too much memory used."));
    }
 #endif
    return (void *)buf;
@@ -174,7 +174,7 @@ static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
 /*  SM_NEW_OWNER -- Update the File and line number for a buffer
                     This is to accomodate mem_pool. */
 
-void sm_new_owner(const char *fname, int lineno, char *buf)
+void SmNewOwner(const char *fname, int lineno, char *buf)
 {
    buf -= HEAD_SIZE;  /* Decrement to header */
    ((struct abufhead *)buf)->abfname = bufimode ? NULL : fname;
@@ -184,7 +184,7 @@ void sm_new_owner(const char *fname, int lineno, char *buf)
 }
 
 /*  SM_FREE  --  Update free pool availability.  FREE is never called
-                 except  through  this interface or by actuallyfree().
+                 except  through  this interface or by Actuallyfree().
                  free(x)  is  defined  to  generate  a  call  to  this
                  routine.  */
 
@@ -195,7 +195,7 @@ void sm_free(const char *file, int line, void *fp)
    uint32_t lineno = line;
 
    if (cp == NULL) {
-      smart_alloc_msg(__FILE__, __LINE__, _("Attempt to free NULL called from %s:%d\n"), file, lineno);
+      SmartAllocMsg(__FILE__, __LINE__, _("Attempt to free NULL called from %s:%d\n"), file, lineno);
    }
 
    cp -= HEAD_SIZE;
@@ -205,7 +205,7 @@ void sm_free(const char *file, int line, void *fp)
    P(mutex);
    if (!head->abin_use) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("double free from %s:%d\n"), file, lineno);
+      SmartAllocMsg(__FILE__, __LINE__, _("double free from %s:%d\n"), file, lineno);
    }
    head->abin_use = false;
 
@@ -213,11 +213,11 @@ void sm_free(const char *file, int line, void *fp)
       of an address which isn't an allocated buffer. */
    if (qp->qnext->qprev != qp) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("qp->qnext->qprev != qp called from %s:%d\n"), file, lineno);
+      SmartAllocMsg(__FILE__, __LINE__, _("qp->qnext->qprev != qp called from %s:%d\n"), file, lineno);
    }
    if (qp->qprev->qnext != qp) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("qp->qprev->qnext != qp called from %s:%d\n"), file, lineno);
+      SmartAllocMsg(__FILE__, __LINE__, _("qp->qprev->qnext != qp called from %s:%d\n"), file, lineno);
    }
 
    /* The following assertion detects storing off the  end  of  the
@@ -226,7 +226,7 @@ void sm_free(const char *file, int line, void *fp)
 
    if (((unsigned char *)cp)[head->ablen - 1] != ((((intptr_t) cp) & 0xFF) ^ 0xC5)) {
       V(mutex);
-      smart_alloc_msg(__FILE__, __LINE__, _("Overrun buffer: len=%d addr=%p allocated: %s:%d called from %s:%d\n"),
+      SmartAllocMsg(__FILE__, __LINE__, _("Overrun buffer: len=%d addr=%p allocated: %s:%d called from %s:%d\n"),
                       head->ablen, fp, get_basename(head->abfname), head->ablineno, file, line);
    }
    if (sm_buffers > 0) {
@@ -267,7 +267,7 @@ void *sm_malloc(const char *fname, int lineno, unsigned int nbytes)
 
       memset(buf, 0x55, (int) nbytes);
    } else {
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory\n"));
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory\n"));
    }
    return buf;
 }
@@ -282,7 +282,7 @@ void *sm_calloc(const char *fname, int lineno,
    if ((buf = smalloc(fname, lineno, nelem * elsize)) != NULL) {
       memset(buf, 0, (int) (nelem * elsize));
    } else {
-      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory\n"));
+      SmartAllocMsg(__FILE__, __LINE__, _("Out of memory\n"));
    }
    return buf;
 }
@@ -377,7 +377,7 @@ void *actuallyrealloc(void *ptr, unsigned int size)
 /*  ACTUALLYFREE  --  Interface to system free() function to release
                       buffers allocated by low-level routines. */
 
-void actuallyfree(void *cp)
+void Actuallyfree(void *cp)
 {
    free(cp);
 }
@@ -424,7 +424,7 @@ void sm_dump(bool bufdump, bool in_use)
                   FPmsg1(0, "%s", errmsg);
                   errmsg[0] = EOS;
                }
-               bsnprintf(buf, sizeof(buf), " %02X",
+               Bsnprintf(buf, sizeof(buf), " %02X",
                   (*cp++) & 0xFF);
                bstrncat(errmsg, buf, sizeof(errmsg));
                llen++;
@@ -443,7 +443,7 @@ void sm_dump(bool bufdump, bool in_use)
 void sm_check(const char *fname, int lineno, bool bufdump)
 {
    if (!sm_check_rtn(fname, lineno, bufdump)) {
-      smart_alloc_msg(__FILE__, __LINE__, _("Damaged buffer found. Called from %s:%d\n"),
+      SmartAllocMsg(__FILE__, __LINE__, _("Damaged buffer found. Called from %s:%d\n"),
                       get_basename(fname), (uint32_t)lineno);
    }
 }
@@ -538,12 +538,12 @@ get_out:
 
 /*  SM_STATIC  --  Orphaned buffer detection can be disabled  (for  such
                    items  as buffers allocated during initialisation) by
-                   calling   sm_static(1).    Normal   orphaned   buffer
-                   detection  can be re-enabled with sm_static(0).  Note
+                   calling   SmStatic(1).    Normal   orphaned   buffer
+                   detection  can be re-enabled with SmStatic(0).  Note
                    that all the other safeguards still apply to  buffers
-                   allocated  when  sm_static(1)  mode is in effect.  */
+                   allocated  when  SmStatic(1)  mode is in effect.  */
 
-void sm_static(bool mode)
+void SmStatic(bool mode)
 {
    bufimode = mode;
 }

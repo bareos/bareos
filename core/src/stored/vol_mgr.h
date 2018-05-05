@@ -114,7 +114,7 @@ void FreeTempVolList(dlist *temp_vol_list);
 bool VolumeUnused(DeviceControlRecord *dcr);
 void CreateVolumeLists();
 void FreeVolumeLists();
-bool is_volume_in_use(DeviceControlRecord *dcr);
+bool IsVolumeInUse(DeviceControlRecord *dcr);
 void AddReadVolume(JobControlRecord *jcr, const char *VolumeName);
 void RemoveReadVolume(JobControlRecord *jcr, const char *VolumeName);
 

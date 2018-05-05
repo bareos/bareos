@@ -50,7 +50,7 @@ int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
 /*=============================================================*/
 
 #if defined(HAVE_WIN32)
-void win_error(JobControlRecord *jcr, const char *prefix, DWORD lerror);
+void WinError(JobControlRecord *jcr, const char *prefix, DWORD lerror);
 
 static int
 enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_errors)
@@ -64,7 +64,7 @@ enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_e
 
     // Get the LUID for the security privilege.
     if (!p_LookupPrivilegeValue(NULL, name,  &tkp.Privileges[0].Luid)) {
-       win_error(jcr, "LookupPrivilegeValue", GetLastError());
+       WinError(jcr, "LookupPrivilegeValue", GetLastError());
        return 0;
     }
 
@@ -78,7 +78,7 @@ enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_e
           char buf[200];
           strcpy(buf, _("AdjustTokenPrivileges set "));
           bstrncat(buf, name, sizeof(buf));
-          win_error(jcr, buf, lerror);
+          WinError(jcr, buf, lerror);
        }
        return 0;
     }
@@ -105,7 +105,7 @@ int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors)
     if (!p_OpenProcessToken(hProcess,
             TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
        if (!ignore_errors) {
-          win_error(jcr, "OpenProcessToken", GetLastError());
+          WinError(jcr, "OpenProcessToken", GetLastError());
        }
        /* Forge on anyway */
     }

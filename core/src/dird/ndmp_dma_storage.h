@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 #define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 
-void do_ndmp_storage_status(UaContext *ua, StorageResource *store, char *cmd);
+void DoNdmpStorageStatus(UaContext *ua, StorageResource *store, char *cmd);
 dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bool scan);
 slot_number_t NdmpGetNumSlots(UaContext *ua, StorageResource *store);
 drive_number_t NdmpGetNumDrives(UaContext *ua, StorageResource *store);

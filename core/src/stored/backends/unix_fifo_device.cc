@@ -95,7 +95,7 @@ void unix_fifo_device::OpenDevice(DeviceControlRecord *dcr, int omode)
          LockDoor();
          break;                               /* Successfully opened and rewound */
       }
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
 
       /*
        * Exceed wait time ?
@@ -194,7 +194,7 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
             Dmsg1(400, "Trying to unmount the device %s...\n", dcr->dev->print_name());
             do_mount(dcr, 0, 0);
          }
-         bmicrosleep(1, 0);
+         Bmicrosleep(1, 0);
          continue;
       }
       Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n", dcr->dev->print_name(),

@@ -87,7 +87,7 @@ public:
                          int32_t delta_seq) = 0;
    virtual bool EndLoad() = 0;
    virtual accurate_payload *lookup_payload(char *fname) = 0;
-   virtual bool update_payload(char *fname, accurate_payload *payload) = 0;
+   virtual bool UpdatePayload(char *fname, accurate_payload *payload) = 0;
    virtual bool SendBaseFileList() = 0;
    virtual bool SendDeletedList() = 0;
    void MarkFileAsSeen(accurate_payload *payload) {
@@ -146,7 +146,7 @@ public:
                  int32_t delta_seq);
    bool EndLoad();
    accurate_payload *lookup_payload(char *fname);
-   bool update_payload(char *fname, accurate_payload *payload);
+   bool UpdatePayload(char *fname, accurate_payload *payload);
    bool SendBaseFileList();
    bool SendDeletedList();
 };
@@ -187,17 +187,17 @@ public:
                  int32_t delta_seq);
    bool EndLoad();
    accurate_payload *lookup_payload(char *fname);
-   bool update_payload(char *fname, accurate_payload *payload);
+   bool UpdatePayload(char *fname, accurate_payload *payload);
    bool SendBaseFileList();
    bool SendDeletedList();
 };
 #endif /* HAVE_LMDB */
 
 bool AccurateFinish(JobControlRecord *jcr);
-bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
+bool AccurateCheckFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
 bool AccurateMarkFileAsSeen(JobControlRecord *jcr, char *fname);
 bool accurate_unMarkFileAsSeen(JobControlRecord *jcr, char *fname);
-bool accurate_mark_all_files_as_seen(JobControlRecord *jcr);
+bool AccurateMarkAllFilesAsSeen(JobControlRecord *jcr);
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord *jcr);
 void AccurateFree(JobControlRecord *jcr);
 

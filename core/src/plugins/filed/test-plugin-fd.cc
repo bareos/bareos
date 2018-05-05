@@ -284,7 +284,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
       if (!strcmp(rop->object_name, INI_RESTORE_OBJECT_NAME)) {
          ConfigFile ini;
-         if (!ini.dump_string(rop->object, rop->object_len)) {
+         if (!ini.DumpString(rop->object, rop->object_len)) {
             break;
          }
          ini.RegisterItems(test_items, sizeof(struct ini_items));
@@ -313,7 +313,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          Dmsg(ctx, debuglevel, "Plugin terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
-      *p++ = 0;           /* terminate plugin */
+      *p++ = 0;           /* Terminate plugin */
       p_ctx->fname = p;
       p = strchr(p, ':');
       if (!p) {
@@ -321,7 +321,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          Dmsg(ctx, debuglevel, "File terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
-      *p++ = 0;           /* terminate file */
+      *p++ = 0;           /* Terminate file */
       p_ctx->reader = p;
       p = strchr(p, ':');
       if (!p) {
@@ -329,7 +329,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          Dmsg(ctx, debuglevel, "Reader terminator not found: %s\n", (char *)value);
          return bRC_Error;
       }
-      *p++ = 0;           /* terminate reader string */
+      *p++ = 0;           /* Terminate reader string */
       p_ctx->writer = p;
       Dmsg(ctx, debuglevel, "test-plugin-fd: plugin=%s fname=%s reader=%s writer=%s\n",
            p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
@@ -587,7 +587,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       ini.RegisterItems(test_items, sizeof(struct ini_items));
 
       sp->object_name = (char*)INI_RESTORE_OBJECT_NAME;
-      sp->object_len = ini.serialize(p_ctx->buf);
+      sp->object_len = ini.Serialize(p_ctx->buf);
       sp->object = p_ctx->buf;
       sp->type = FT_PLUGIN_CONFIG;
 

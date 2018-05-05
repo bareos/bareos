@@ -234,11 +234,11 @@ struct idpkt {
  *  - SDport
  *  - password
  */
-static inline bool is_same_storage_daemon(StorageResource *rstore, StorageResource *wstore)
+static inline bool IsSameStorageDaemon(StorageResource *rstore, StorageResource *wstore)
 {
    return rstore->SDport == wstore->SDport &&
-          bstrcasecmp(rstore->address, wstore->address) &&
-          bstrcasecmp(rstore->password.value, wstore->password.value);
+          Bstrcasecmp(rstore->address, wstore->address) &&
+          Bstrcasecmp(rstore->password.value, wstore->password.value);
 }
 
 bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where)
@@ -261,14 +261,14 @@ bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResourc
 }
 
 /**
- * set_migration_next_pool() called by DoMigrationInit()
+ * SetMigrationNextPool() called by DoMigrationInit()
  * at differents stages.
  *
  * The idea here is to make a common subroutine for the
  * NextPool's search code and to permit DoMigrationInit()
  * to return with NextPool set in jcr struct.
  */
-static inline bool set_migration_next_pool(JobControlRecord *jcr, PoolResource **retpool)
+static inline bool SetMigrationNextPool(JobControlRecord *jcr, PoolResource **retpool)
 {
    PoolDbRecord pr;
    char ed1[100];
@@ -349,7 +349,7 @@ static inline bool set_migration_next_pool(JobControlRecord *jcr, PoolResource *
 /**
  * Sanity check that we are not using the same storage for reading and writing.
  */
-static inline bool same_storage(JobControlRecord *jcr)
+static inline bool SameStorage(JobControlRecord *jcr)
 {
    StorageResource *read_store, *write_store;
 
@@ -364,7 +364,7 @@ static inline bool same_storage(JobControlRecord *jcr)
    return false;
 }
 
-static inline void start_new_migration_job(JobControlRecord *jcr)
+static inline void StartNewMigrationJob(JobControlRecord *jcr)
 {
    char ed1[50];
    JobId_t jobid;
@@ -418,7 +418,7 @@ static inline void start_new_migration_job(JobControlRecord *jcr)
  *   0 if no more DBIds are in list
  *  -1 there is an error
  */
-static inline int get_next_dbid_from_list(char **p, DBId_t *DBId)
+static inline int GetNextDbidFromList(char **p, DBId_t *DBId)
 {
    int i;
    const int maxlen = 30;
@@ -452,7 +452,7 @@ static inline int get_next_dbid_from_list(char **p, DBId_t *DBId)
 /**
  * Add an item to the list if it is unique
  */
-static void add_unique_id(idpkt *ids, char *item)
+static void AddUniqueId(idpkt *ids, char *item)
 {
    const int maxlen = 30;
    char id[maxlen+1];
@@ -496,7 +496,7 @@ static void add_unique_id(idpkt *ids, char *item)
 /**
  * Callback handler make list of DB Ids
  */
-static int unique_dbid_handler(void *ctx, int num_fields, char **row)
+static int UniqueDbidHandler(void *ctx, int num_fields, char **row)
 {
    idpkt *ids = (idpkt *)ctx;
 
@@ -508,7 +508,7 @@ static int unique_dbid_handler(void *ctx, int num_fields, char **row)
       return 1;              /* stop calling us */
    }
 
-   add_unique_id(ids, row[0]);
+   AddUniqueId(ids, row[0]);
    Dmsg3(dbglevel, "dbid_hdlr count=%d Ids=%p %s\n", ids->count, ids->list, ids->list);
    return 0;
 }
@@ -518,7 +518,7 @@ struct uitem {
    char *item;
 };
 
-static int item_compare(void *item1, void *item2)
+static int ItemCompare(void *item1, void *item2)
 {
    uitem *i1 = (uitem *)item1;
    uitem *i2 = (uitem *)item2;
@@ -526,7 +526,7 @@ static int item_compare(void *item1, void *item2)
    return strcmp(i1->item, i2->item);
 }
 
-static int unique_name_handler(void *ctx, int num_fields, char **row)
+static int UniqueNameHandler(void *ctx, int num_fields, char **row)
 {
    dlist *list = (dlist *)ctx;
 
@@ -537,7 +537,7 @@ static int unique_name_handler(void *ctx, int num_fields, char **row)
    new_item->item = bstrdup(row[0]);
    Dmsg1(dbglevel, "Unique_name_hdlr Item=%s\n", row[0]);
 
-   item = (uitem *)list->binary_insert((void *)new_item, item_compare);
+   item = (uitem *)list->binary_insert((void *)new_item, ItemCompare);
    if (item != new_item) {            /* already in list */
       free(new_item->item);
       free((char *)new_item);
@@ -553,14 +553,14 @@ static int unique_name_handler(void *ctx, int num_fields, char **row)
  *    true        otherwise
  *    ids.count   number of jobids found (may be zero)
  */
-static bool find_jobids_from_mediaid_list(JobControlRecord *jcr, idpkt *ids, const char *type)
+static bool FindJobidsFromMediaidList(JobControlRecord *jcr, idpkt *ids, const char *type)
 {
    bool ok = false;
    PoolMem query(PM_MESSAGE);
 
    Mmsg(query, sql_jobids_from_mediaid, ids->list);
    ids->count = 0;
-   if (!jcr->db->SqlQuery(query.c_str(), unique_dbid_handler, (void *)ids)) {
+   if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void *)ids)) {
       Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
    }
@@ -586,7 +586,7 @@ static bool find_mediaid_then_jobids(JobControlRecord *jcr, idpkt *ids,
     * Basic query for MediaId
     */
    Mmsg(query, query1, jcr->res.rpool->name());
-   if (!jcr->db->SqlQuery(query.c_str(), unique_dbid_handler, (void *)ids)) {
+   if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void *)ids)) {
       Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
    }
@@ -602,7 +602,7 @@ static bool find_mediaid_then_jobids(JobControlRecord *jcr, idpkt *ids,
 
    Dmsg2(dbglevel, "%s MediaIds=%s\n", type, ids->list);
 
-   ok = find_jobids_from_mediaid_list(jcr, ids, type);
+   ok = FindJobidsFromMediaidList(jcr, ids, type);
 
 bail_out:
    return ok;
@@ -614,7 +614,7 @@ bail_out:
  *    true        otherwise
  *    ids.count   number of jobids found (may be zero)
  */
-static inline bool find_jobids_of_pool_uncopied_jobs(JobControlRecord *jcr, idpkt *ids)
+static inline bool FindJobidsOfPoolUncopiedJobs(JobControlRecord *jcr, idpkt *ids)
 {
    bool ok = false;
    PoolMem query(PM_MESSAGE);
@@ -631,7 +631,7 @@ static inline bool find_jobids_of_pool_uncopied_jobs(JobControlRecord *jcr, idpk
    Dmsg1(dbglevel, "copy selection pattern=%s\n", jcr->res.rpool->name());
    Mmsg(query, sql_jobids_of_pool_uncopied_jobs, jcr->res.rpool->name());
    Dmsg1(dbglevel, "get uncopied jobs query=%s\n", query.c_str());
-   if (!jcr->db->SqlQuery(query.c_str(), unique_dbid_handler, (void *)ids)) {
+   if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void *)ids)) {
       Jmsg(jcr, M_FATAL, 0,
            _("SQL to get uncopied jobs failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
@@ -669,7 +669,7 @@ static bool regex_find_jobids(JobControlRecord *jcr, idpkt *ids,
     */
    Mmsg(query, query1, jcr->res.rpool->name());
    Dmsg1(dbglevel, "get name query1=%s\n", query.c_str());
-   if (!jcr->db->SqlQuery(query.c_str(), unique_name_handler,
+   if (!jcr->db->SqlQuery(query.c_str(), UniqueNameHandler,
         (void *)item_chain)) {
       Jmsg(jcr, M_FATAL, 0,
            _("SQL to get %s failed. ERR=%s\n"), type, jcr->db->strerror());
@@ -736,7 +736,7 @@ static bool regex_find_jobids(JobControlRecord *jcr, idpkt *ids,
       Dmsg2(dbglevel, "Got %s: %s\n", type, item->item);
       Mmsg(query, query2, item->item, jcr->res.rpool->name());
       Dmsg1(dbglevel, "get id from name query2=%s\n", query.c_str());
-      if (!jcr->db->SqlQuery(query.c_str(), unique_dbid_handler, (void *)ids)) {
+      if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void *)ids)) {
          Jmsg(jcr, M_FATAL, 0,
               _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
@@ -812,7 +812,7 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
       }
       Dmsg1(dbglevel, "SQL=%s\n", jcr->res.job->selection_pattern);
       if (!jcr->db->SqlQuery(jcr->res.job->selection_pattern,
-           unique_dbid_handler, (void *)&ids)) {
+           UniqueDbidHandler, (void *)&ids)) {
          Jmsg(jcr, M_FATAL, 0,
               _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
@@ -874,7 +874,7 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
       Mmsg(query, sql_mediaids, jcr->res.rpool->name());
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
-      if (!jcr->db->SqlQuery(query.c_str(), unique_dbid_handler, (void *)&ids)) {
+      if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void *)&ids)) {
          Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
@@ -887,7 +887,7 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
 
       Dmsg2(dbglevel, "Pool Occupancy ids=%d MediaIds=%s\n", ids.count, ids.list);
 
-      if (!find_jobids_from_mediaid_list(jcr, &ids, "Volume")) {
+      if (!FindJobidsFromMediaidList(jcr, &ids, "Volume")) {
          goto bail_out;
       }
 
@@ -896,7 +896,7 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
        */
       p = ids.list;
       for (int i = 0; i < (int)ids.count; i++) {
-         status = get_next_dbid_from_list(&p, &DBId);
+         status = GetNextDbidFromList(&p, &DBId);
          Dmsg2(dbglevel, "get_next_dbid status=%d JobId=%u\n", status, (uint32_t)DBId);
          if (status < 0) {
             Jmsg(jcr, M_FATAL, 0, _("Invalid JobId found.\n"));
@@ -953,7 +953,7 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
       Mmsg(query, sql_pool_time, jcr->res.rpool->name(), dt);
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
-      if (!jcr->db->SqlQuery(query.c_str(), unique_dbid_handler, (void *)&ids)) {
+      if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void *)&ids)) {
          Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
@@ -968,7 +968,7 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
       break;
    }
    case MT_POOL_UNCOPIED_JOBS:
-      if (!find_jobids_of_pool_uncopied_jobs(jcr, &ids)) {
+      if (!FindJobidsOfPoolUncopiedJobs(jcr, &ids)) {
          goto bail_out;
       }
       break;
@@ -1022,8 +1022,8 @@ static inline bool getJobs_to_migrate(JobControlRecord *jcr)
          }
       }
 
-      start_new_migration_job(jcr);
-      Dmsg0(dbglevel, "Back from start_new_migration_job\n");
+      StartNewMigrationJob(jcr);
+      Dmsg0(dbglevel, "Back from StartNewMigrationJob\n");
    }
 
    jcr->HasSelectedJobs = true;
@@ -1121,7 +1121,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
          } else {
             Jmsg(jcr, M_INFO, 0, _("Previous Job has no data to %s.\n"), jcr->get_ActionName());
          }
-         set_migration_next_pool(jcr, &pool);
+         SetMigrationNextPool(jcr, &pool);
          return true;                    /* no work */
       }
 
@@ -1177,7 +1177,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
       /*
        * Create a migration jcr
        */
-      mig_jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
+      mig_jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
       jcr->mig_jcr = mig_jcr;
       memcpy(&mig_jcr->previous_jr, &jcr->previous_jr, sizeof(mig_jcr->previous_jr));
 
@@ -1232,7 +1232,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
       mig_jcr->jr.PoolId = jcr->jr.PoolId;
       mig_jcr->jr.JobId = mig_jcr->JobId;
 
-      if (set_migration_next_pool(jcr, &pool)) {
+      if (SetMigrationNextPool(jcr, &pool)) {
          /*
           * If pool storage specified, use it as source
           */
@@ -1258,7 +1258,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
        * otherwise we open a connection to the reading SD and a second
        * one to the writing SD.
        */
-      jcr->remote_replicate = !is_same_storage_daemon(jcr->res.rstore, jcr->res.wstore);
+      jcr->remote_replicate = !IsSameStorageDaemon(jcr->res.rstore, jcr->res.wstore);
 
       /*
        * set the JobLevel to what the original job was
@@ -1303,7 +1303,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
  * Returns:  false on failure
  *           true  on success
  */
-static inline bool do_actual_migration(JobControlRecord *jcr)
+static inline bool DoActualMigration(JobControlRecord *jcr)
 {
    char ed1[100];
    bool retval = false;
@@ -1325,7 +1325,7 @@ static inline bool do_actual_migration(JobControlRecord *jcr)
       return true;
    }
 
-   if (same_storage(jcr)) {
+   if (SameStorage(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("JobId %s cannot %s using the same read and write storage.\n"),
            edit_int64(jcr->previous_jr.JobId, ed1),
            jcr->get_OperationName());
@@ -1516,7 +1516,7 @@ static inline bool do_actual_migration(JobControlRecord *jcr)
       uint32_t tls_need = 0;
 
       if (jcr->max_bandwidth > 0) {
-         send_bwlimit_to_sd(jcr, jcr->Job);
+         SendBwlimitToSd(jcr, jcr->Job);
       }
 
       /*
@@ -1627,7 +1627,7 @@ bail_out:
 /**
  * Select the Jobs to Migrate/Copy using the getJobs_to_migrate function and then exit.
  */
-static inline bool do_migration_selection(JobControlRecord *jcr)
+static inline bool DoMigrationSelection(JobControlRecord *jcr)
 {
    bool retval;
 
@@ -1642,7 +1642,7 @@ static inline bool do_migration_selection(JobControlRecord *jcr)
    return retval;
 }
 
-bool do_migration(JobControlRecord *jcr)
+bool DoMigration(JobControlRecord *jcr)
 {
    /*
     * See if this is a control job e.g. the one that selects the Jobs to Migrate or Copy or
@@ -1650,13 +1650,13 @@ bool do_migration(JobControlRecord *jcr)
     * unset we know that its the control job.
     */
    if (jcr->MigrateJobId == 0) {
-      return do_migration_selection(jcr);
+      return DoMigrationSelection(jcr);
    } else {
-      return do_actual_migration(jcr);
+      return DoActualMigration(jcr);
    }
 }
 
-static inline void generate_migrate_summary(JobControlRecord *jcr, MediaDbRecord *mr, int msg_type, const char *TermMsg)
+static inline void GenerateMigrateSummary(JobControlRecord *jcr, MediaDbRecord *mr, int msg_type, const char *TermMsg)
 {
    double kbps;
    utime_t RunTime;
@@ -1666,7 +1666,7 @@ static inline void generate_migrate_summary(JobControlRecord *jcr, MediaDbRecord
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
    char ec6[50], ec7[50], ec8[50];
 
-   bsnprintf(term_code, sizeof(term_code), TermMsg, jcr->get_OperationName(), jcr->get_ActionName());
+   Bsnprintf(term_code, sizeof(term_code), TermMsg, jcr->get_OperationName(), jcr->get_ActionName());
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
    RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
@@ -2039,7 +2039,7 @@ void MigrationCleanup(JobControlRecord *jcr, int TermCode)
       TermMsg = _("%s -- no files to %s");
    }
 
-   generate_migrate_summary(jcr, &mr, msg_type, TermMsg);
+   GenerateMigrateSummary(jcr, &mr, msg_type, TermMsg);
 
    Dmsg0(100, "Leave migrate_cleanup()\n");
 }

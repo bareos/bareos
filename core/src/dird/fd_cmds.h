@@ -35,9 +35,9 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId);
 int put_file_into_catalog(JobControlRecord *jcr, long file_index, char *fname,
                           char *link, char *attr, int stream);
 int SendRunscriptsCommands(JobControlRecord *jcr);
-bool send_plugin_options(JobControlRecord *jcr);
-bool send_restore_objects(JobControlRecord *jcr, JobId_t JobId, bool send_global);
-bool cancel_file_daemon_job(UaContext *ua, JobControlRecord *jcr);
+bool SendPluginOptions(JobControlRecord *jcr);
+bool SendRestoreObjects(JobControlRecord *jcr, JobId_t JobId, bool send_global);
+bool CancelFileDaemonJob(UaContext *ua, JobControlRecord *jcr);
 void DoNativeClientStatus(UaContext *ua, ClientResource *client, char *cmd);
 void DoClientResolve(UaContext *ua, ClientResource *client);
 void *handle_filed_connection(ConnectionPool *connections, BareosSocket *fd,

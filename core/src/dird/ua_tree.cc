@@ -45,26 +45,26 @@
 
 /* Forward referenced commands */
 static int markcmd(UaContext *ua, TreeContext *tree);
-static int markdircmd(UaContext *ua, TreeContext *tree);
+static int Markdircmd(UaContext *ua, TreeContext *tree);
 static int countcmd(UaContext *ua, TreeContext *tree);
 static int findcmd(UaContext *ua, TreeContext *tree);
 static int lscmd(UaContext *ua, TreeContext *tree);
-static int lsmarkcmd(UaContext *ua, TreeContext *tree);
+static int Lsmarkcmd(UaContext *ua, TreeContext *tree);
 static int dircmd(UaContext *ua, TreeContext *tree);
-static int dot_dircmd(UaContext *ua, TreeContext *tree);
-static int estimatecmd(UaContext *ua, TreeContext *tree);
+static int DotDircmd(UaContext *ua, TreeContext *tree);
+static int Estimatecmd(UaContext *ua, TreeContext *tree);
 static int helpcmd(UaContext *ua, TreeContext *tree);
 static int cdcmd(UaContext *ua, TreeContext *tree);
 static int pwdcmd(UaContext *ua, TreeContext *tree);
-static int dot_pwdcmd(UaContext *ua, TreeContext *tree);
-static int unmarkcmd(UaContext *ua, TreeContext *tree);
-static int unmarkdircmd(UaContext *ua, TreeContext *tree);
+static int DotPwdcmd(UaContext *ua, TreeContext *tree);
+static int Unmarkcmd(UaContext *ua, TreeContext *tree);
+static int UnMarkdircmd(UaContext *ua, TreeContext *tree);
 static int quitcmd(UaContext *ua, TreeContext *tree);
 static int donecmd(UaContext *ua, TreeContext *tree);
-static int dot_lsdircmd(UaContext *ua, TreeContext *tree);
-static int dot_lscmd(UaContext *ua, TreeContext *tree);
-static int dot_helpcmd(UaContext *ua, TreeContext *tree);
-static int dot_lsmarkcmd(UaContext *ua, TreeContext *tree);
+static int DotLsdircmd(UaContext *ua, TreeContext *tree);
+static int DotLscmd(UaContext *ua, TreeContext *tree);
+static int DotHelpcmd(UaContext *ua, TreeContext *tree);
+static int DotLsmarkcmd(UaContext *ua, TreeContext *tree);
 
 struct cmdstruct {
    const char *key;
@@ -76,27 +76,27 @@ static struct cmdstruct commands[] = {
    { NT_("add"), markcmd, _("add dir/file to be restored recursively, wildcards allowed") },
    { NT_("cd"), cdcmd, _("change current directory") },
    { NT_("count"), countcmd, _("count marked files in and below the cd") },
-   { NT_("delete"), unmarkcmd, _("delete dir/file to be restored recursively in dir") },
+   { NT_("delete"), Unmarkcmd, _("delete dir/file to be restored recursively in dir") },
    { NT_("dir"), dircmd, _("long list current directory, wildcards allowed") },
-   { NT_(".dir"), dot_dircmd, _("long list current directory, wildcards allowed") },
+   { NT_(".dir"), DotDircmd, _("long list current directory, wildcards allowed") },
    { NT_("done"), donecmd, _("leave file selection mode") },
-   { NT_("estimate"), estimatecmd, _("estimate restore size") },
+   { NT_("estimate"), Estimatecmd, _("estimate restore size") },
    { NT_("exit"), donecmd, _("same as done command") },
    { NT_("find"), findcmd, _("find files, wildcards allowed") },
    { NT_("help"), helpcmd, _("print help") },
    { NT_("ls"), lscmd, _("list current directory, wildcards allowed") },
-   { NT_(".ls"), dot_lscmd, _("list current directory, wildcards allowed") },
-   { NT_(".lsdir"), dot_lsdircmd, _("list subdir in current directory, wildcards allowed") },
-   { NT_("lsmark"), lsmarkcmd, _("list the marked files in and below the cd") },
-   { NT_(".lsmark"), dot_lsmarkcmd,_("list the marked files in") },
+   { NT_(".ls"), DotLscmd, _("list current directory, wildcards allowed") },
+   { NT_(".lsdir"), DotLsdircmd, _("list subdir in current directory, wildcards allowed") },
+   { NT_("lsmark"), Lsmarkcmd, _("list the marked files in and below the cd") },
+   { NT_(".lsmark"), DotLsmarkcmd,_("list the marked files in") },
    { NT_("mark"), markcmd, _("mark dir/file to be restored recursively, wildcards allowed") },
-   { NT_("markdir"), markdircmd, _("mark directory name to be restored (no files)") },
+   { NT_("markdir"), Markdircmd, _("mark directory name to be restored (no files)") },
    { NT_("pwd"), pwdcmd, _("print current working directory") },
-   { NT_(".pwd"), dot_pwdcmd, _("print current working directory") },
-   { NT_("unmark"), unmarkcmd, _("unmark dir/file to be restored recursively in dir") },
-   { NT_("unmarkdir"), unmarkdircmd, _("unmark directory name only no recursion") },
+   { NT_(".pwd"), DotPwdcmd, _("print current working directory") },
+   { NT_("unmark"), Unmarkcmd, _("unmark dir/file to be restored recursively in dir") },
+   { NT_("unmarkdir"), UnMarkdircmd, _("unmark directory name only no recursion") },
    { NT_("quit"), quitcmd, _("quit and do not do restore") },
-   { NT_(".help"), dot_helpcmd, _("print help") },
+   { NT_(".help"), DotHelpcmd, _("print help") },
    { NT_("?"), helpcmd, _("print help") },
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
@@ -106,7 +106,7 @@ static struct cmdstruct commands[] = {
  * files to be restored. This is sort of like a mini-shell
  * that allows "cd", "pwd", "add", "rm", ...
  */
-bool user_select_files_from_tree(TreeContext *tree)
+bool UserSelectFilesFromTree(TreeContext *tree)
 {
    POOLMEM *cwd;
    UaContext *ua;
@@ -209,7 +209,7 @@ bool user_select_files_from_tree(TreeContext *tree)
  * row[0]=Path, row[1]=Filename, row[2]=FileIndex
  * row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=Fhinfo row[7]=Fhnode
  */
-int insert_tree_handler(void *ctx, int num_fields, char **row)
+int InsertTreeHandler(void *ctx, int num_fields, char **row)
 {
    struct stat statp;
    TreeContext *tree = (TreeContext *)ctx;
@@ -353,7 +353,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
  * Set extract to value passed. We recursively walk down the tree setting all children
  * if the node is a directory.
  */
-static int set_extract(UaContext *ua, TREE_NODE *node, TreeContext *tree, bool extract)
+static int SetExtract(UaContext *ua, TREE_NODE *node, TreeContext *tree, bool extract)
 {
    TREE_NODE *n;
    int count = 0;
@@ -375,7 +375,7 @@ static int set_extract(UaContext *ua, TREE_NODE *node, TreeContext *tree, bool e
        * Recursive set children within directory
        */
       foreach_child(n, node) {
-         count += set_extract(ua, n, tree, extract);
+         count += SetExtract(ua, n, tree, extract);
       }
 
       /*
@@ -446,7 +446,7 @@ static int set_extract(UaContext *ua, TREE_NODE *node, TreeContext *tree, bool e
    return count;
 }
 
-static void strip_trailing_slash(char *arg)
+static void StripTrailingSlash(char *arg)
 {
    int len = strlen(arg);
    if (len == 0) {
@@ -481,7 +481,7 @@ static int markcmd(UaContext *ua, TreeContext *tree)
    cwd = tree_getpath(tree->node);
 
    for (int i = 1; i < ua->argc; i++) {
-      strip_trailing_slash(ua->argk[i]);
+      StripTrailingSlash(ua->argk[i]);
 
       /*
        * See if this is a full path.
@@ -511,7 +511,7 @@ static int markcmd(UaContext *ua, TreeContext *tree)
 
          foreach_child(node, tree->node) {
             if (fnmatch(file, node->fname, 0) == 0) {
-               count += set_extract(ua, node, tree, true);
+               count += SetExtract(ua, node, tree, true);
             }
          }
 
@@ -523,7 +523,7 @@ static int markcmd(UaContext *ua, TreeContext *tree)
           */
          foreach_child(node, tree->node) {
             if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
-               count += set_extract(ua, node, tree, true);
+               count += SetExtract(ua, node, tree, true);
             }
          }
       }
@@ -557,7 +557,7 @@ static int markcmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int markdircmd(UaContext *ua, TreeContext *tree)
+static int Markdircmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
    int count = 0;
@@ -568,7 +568,7 @@ static int markdircmd(UaContext *ua, TreeContext *tree)
       return 1;
    }
    for (int i = 1; i < ua->argc; i++) {
-      strip_trailing_slash(ua->argk[i]);
+      StripTrailingSlash(ua->argk[i]);
       foreach_child(node, tree->node) {
          if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
             if (node->type == TN_DIR || node->type == TN_DIR_NLS) {
@@ -645,7 +645,7 @@ static int findcmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int dot_lsdircmd(UaContext *ua, TreeContext *tree)
+static int DotLsdircmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
 
@@ -664,7 +664,7 @@ static int dot_lsdircmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int dot_helpcmd(UaContext *ua, TreeContext *tree)
+static int DotHelpcmd(UaContext *ua, TreeContext *tree)
 {
    for (int i = 0; i < comsize; i++) {
       /* List only non-dot commands */
@@ -675,7 +675,7 @@ static int dot_helpcmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int dot_lscmd(UaContext *ua, TreeContext *tree)
+static int DotLscmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
 
@@ -718,7 +718,7 @@ static int lscmd(UaContext *ua, TreeContext *tree)
 /**
  * Ls command that lists only the marked files
  */
-static int dot_lsmarkcmd(UaContext *ua, TreeContext *tree)
+static int DotLsmarkcmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
    if (!TreeNodeHasChild(tree->node)) {
@@ -774,7 +774,7 @@ static void rlsmark(UaContext *ua, TREE_NODE *tnode, int level)
    }
 }
 
-static int lsmarkcmd(UaContext *ua, TreeContext *tree)
+static int Lsmarkcmd(UaContext *ua, TreeContext *tree)
 {
    rlsmark(ua, tree->node, 0);
    return 1;
@@ -837,7 +837,7 @@ static inline void ls_output(guid_list *guid, POOLMEM *&buf,
 /**
  * Like ls command, but give more detail on each file
  */
-static int do_dircmd(UaContext *ua, TreeContext *tree, bool dot_cmd)
+static int DoDircmd(UaContext *ua, TreeContext *tree, bool dot_cmd)
 {
    TREE_NODE *node;
    POOLMEM *cwd, *buf;
@@ -908,17 +908,17 @@ static int do_dircmd(UaContext *ua, TreeContext *tree, bool dot_cmd)
    return 1;
 }
 
-int dot_dircmd(UaContext *ua, TreeContext *tree)
+int DotDircmd(UaContext *ua, TreeContext *tree)
 {
-   return do_dircmd(ua, tree, true/*dot command*/);
+   return DoDircmd(ua, tree, true/*dot command*/);
 }
 
 static int dircmd(UaContext *ua, TreeContext *tree)
 {
-   return do_dircmd(ua, tree, false/*not dot command*/);
+   return DoDircmd(ua, tree, false/*not dot command*/);
 }
 
-static int estimatecmd(UaContext *ua, TreeContext *tree)
+static int Estimatecmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
    POOLMEM *cwd;
@@ -1040,7 +1040,7 @@ static int pwdcmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int dot_pwdcmd(UaContext *ua, TreeContext *tree)
+static int DotPwdcmd(UaContext *ua, TreeContext *tree)
 {
    POOLMEM *cwd;
 
@@ -1053,7 +1053,7 @@ static int dot_pwdcmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int unmarkcmd(UaContext *ua, TreeContext *tree)
+static int Unmarkcmd(UaContext *ua, TreeContext *tree)
 {
    POOLMEM *cwd;
    TREE_NODE *node;
@@ -1071,7 +1071,7 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
    cwd = tree_getpath(tree->node);
 
    for (int i = 1; i < ua->argc; i++) {
-      strip_trailing_slash(ua->argk[i]);
+      StripTrailingSlash(ua->argk[i]);
 
       /*
        * See if this is a full path.
@@ -1101,7 +1101,7 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
 
          foreach_child(node, tree->node) {
             if (fnmatch(file, node->fname, 0) == 0) {
-               count += set_extract(ua, node, tree, false);
+               count += SetExtract(ua, node, tree, false);
             }
          }
 
@@ -1113,7 +1113,7 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
           */
          foreach_child(node, tree->node) {
             if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
-               count += set_extract(ua, node, tree, false);
+               count += SetExtract(ua, node, tree, false);
             }
          }
       }
@@ -1147,7 +1147,7 @@ static int unmarkcmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int unmarkdircmd(UaContext *ua, TreeContext *tree)
+static int UnMarkdircmd(UaContext *ua, TreeContext *tree)
 {
    TREE_NODE *node;
    int count = 0;
@@ -1158,7 +1158,7 @@ static int unmarkdircmd(UaContext *ua, TreeContext *tree)
    }
 
    for (int i = 1; i < ua->argc; i++) {
-      strip_trailing_slash(ua->argk[i]);
+      StripTrailingSlash(ua->argk[i]);
       foreach_child(node, tree->node) {
          if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
             if (node->type == TN_DIR || node->type == TN_DIR_NLS) {

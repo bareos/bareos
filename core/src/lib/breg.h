@@ -79,7 +79,7 @@ public:
 BareosRegex *NewBregexp(const char *motif);
 
 /* launch each bregexp on filename */
-DLL_IMP_EXP int run_bregexp(alist *bregexps, const char *fname);
+DLL_IMP_EXP int RunBregexp(alist *bregexps, const char *fname);
 
 /* free BareosRegex (and all POOLMEM) */
 DLL_IMP_EXP void FreeBregexp(BareosRegex *script);

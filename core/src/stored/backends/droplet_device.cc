@@ -91,7 +91,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Generic log function that glues libdroplet with BAREOS.
  */
-static void droplet_device_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+static void DropletDeviceLogfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
    switch (level) {
    case DPL_DEBUG:
@@ -114,7 +114,7 @@ static void droplet_device_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const 
 /**
  * Map the droplet errno's to system ones.
  */
-static inline int droplet_errno_to_system_errno(dpl_status_t status)
+static inline int DropletErrnoToSystemErrno(dpl_status_t status)
 {
    switch (status) {
    case DPL_ENOENT:
@@ -155,7 +155,7 @@ static inline int droplet_errno_to_system_errno(dpl_status_t status)
 }
 
 /**
- * Generic callback for the walk_dpl_directory() function.
+ * Generic callback for the WalkDplDirectory() function.
  *
  * Returns true - abort loop
  *         false - continue loop
@@ -210,7 +210,7 @@ static bool chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_ctx_t *ct
  * Generic function that walks a dirname and calls the callback
  * function for each entry it finds in that directory.
  */
-static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back callback, void *data)
+static bool WalkDplDirectory(dpl_ctx_t *ctx, const char *dirname, t_call_back callback, void *data)
 {
    void *dir_hdl;
    dpl_status_t status;
@@ -281,7 +281,7 @@ static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back 
  * This does the real work either by being called from a
  * io-thread or directly blocking the device.
  */
-bool droplet_device::flush_remote_chunk(chunk_io_request *request)
+bool droplet_device::FlushRemoteChunk(chunk_io_request *request)
 {
    bool retval = false;
    dpl_status_t status;
@@ -356,7 +356,7 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
          default:
             Mmsg2(errmsg, _("Failed to create direcory %s using dpl_mkdir(): ERR=%s.\n"),
                   chunk_dir.c_str(), dpl_status_str(status));
-            dev_errno = droplet_errno_to_system_errno(status);
+            dev_errno = DropletErrnoToSystemErrno(status);
             goto bail_out;
          }
          break;
@@ -394,7 +394,7 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
    default:
       Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
             chunk_name.c_str(), dpl_status_str(status));
-      dev_errno = droplet_errno_to_system_errno(status);
+      dev_errno = DropletErrnoToSystemErrno(status);
       goto bail_out;
    }
 
@@ -416,7 +416,7 @@ bail_out:
 /*
  * Internal method for reading a chunk from the remote backing store.
  */
-bool droplet_device::read_remote_chunk(chunk_io_request *request)
+bool droplet_device::ReadRemoteChunk(chunk_io_request *request)
 {
    bool retval = false;
    dpl_status_t status;
@@ -491,7 +491,7 @@ bool droplet_device::read_remote_chunk(chunk_io_request *request)
    default:
       Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
             chunk_name.c_str(), dpl_status_str(status));
-      dev_errno = droplet_errno_to_system_errno(status);
+      dev_errno = DropletErrnoToSystemErrno(status);
       goto bail_out;
    }
 
@@ -513,7 +513,7 @@ bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord *dcr)
    PoolMem chunk_dir(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", getVolCatName());
-   if (!walk_dpl_directory(ctx_, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
+   if (!WalkDplDirectory(ctx_, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
       return false;
    }
 
@@ -532,7 +532,7 @@ bool droplet_device::initialize()
     */
    P(mutex);
    if (droplet_reference_count == 0) {
-      dpl_set_log_func(droplet_device_logfunc);
+      dpl_set_log_func(DropletDeviceLogfunc);
 
       status = dpl_init();
       switch (status) {
@@ -582,7 +582,7 @@ bool droplet_device::initialize()
                    */
                   profile = bp + device_options[i].compare_size;
                   len = strlen(profile);
-                  if (len > 8 && bstrcasecmp(profile + (len - 8), ".profile")) {
+                  if (len > 8 && Bstrcasecmp(profile + (len - 8), ".profile")) {
                      profile[len - 8] = '\0';
                   }
                   profile_ = profile;
@@ -769,7 +769,7 @@ int droplet_device::d_open(const char *pathname, int flags, int mode)
       return -1;
    }
 
-   return setup_chunk(pathname, flags, mode);
+   return SetupChunk(pathname, flags, mode);
 }
 
 /*
@@ -777,7 +777,7 @@ int droplet_device::d_open(const char *pathname, int flags, int mode)
  */
 ssize_t droplet_device::d_read(int fd, void *buffer, size_t count)
 {
-   return read_chunked(fd, buffer, count);
+   return ReadChunked(fd, buffer, count);
 }
 
 /**
@@ -785,7 +785,7 @@ ssize_t droplet_device::d_read(int fd, void *buffer, size_t count)
  */
 ssize_t droplet_device::d_write(int fd, const void *buffer, size_t count)
 {
-   return write_chunked(fd, buffer, count);
+   return WriteChunked(fd, buffer, count);
 }
 
 int droplet_device::d_close(int fd)
@@ -813,7 +813,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    /*
     * FIXME: With the current version of libdroplet a dpl_getattr() on a directory
     *        fails with DPL_ENOENT even when the directory does exist. All other
-    *        operations succeed and as walk_dpl_directory() does a dpl_chdir() anyway
+    *        operations succeed and as WalkDplDirectory() does a dpl_chdir() anyway
     *        that will fail if the directory doesn't exist for now we should be
     *        mostly fine.
     */
@@ -846,7 +846,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    }
 #endif
 
-   if (!walk_dpl_directory(ctx_, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+   if (!WalkDplDirectory(ctx_, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
       volumesize = -1;
       goto bail_out;
    }
@@ -897,7 +897,7 @@ boffset_t droplet_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, in
 
 bool droplet_device::d_truncate(DeviceControlRecord *dcr)
 {
-   return truncate_chunked_volume(dcr);
+   return TruncateChunkedVolume(dcr);
 }
 
 droplet_device::~droplet_device()

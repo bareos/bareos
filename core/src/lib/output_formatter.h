@@ -181,7 +181,7 @@ public:
    void ObjectEnd(const char *name = NULL);
    void ArrayStart(const char *name);
    void ArrayEnd(const char *name);
-   void decoration(const char *fmt, ...);
+   void Decoration(const char *fmt, ...);
    /*
     * boolean and integer can not be used to distinguish overloading functions,
     * therefore the bool function have the postfix _bool.
@@ -213,7 +213,7 @@ public:
     */
    void AddLimitFilterTuple(int limit);
    void AddOffsetFilterTuple(int offset);
-   void add_acl_filter_tuple(int column, int acltype);
+   void AddAclFilterTuple(int column, int acltype);
    void AddResFilterTuple(int column, int restype);
    void AddEnabledFilterTuple(int column, int restype);
    void AddDisabledFilterTuple(int column, int restype);
@@ -234,7 +234,7 @@ public:
    void FinalizeResult(bool result);
 
 #if HAVE_JANSSON
-   void json_add_result(json_t *json);
+   void JsonAddResult(json_t *json);
    bool JsonKeyValueAddBool(const char *key, bool value);
    bool JsonKeyValueAdd(const char *key, uint64_t value);
    bool JsonKeyValueAdd(const char *key, const char *value);

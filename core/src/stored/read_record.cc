@@ -47,7 +47,7 @@
 
 static const int debuglevel = 500;
 
-static void handle_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
+static void HandleSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
    const char *rtype;
    char buf[100];
@@ -72,7 +72,7 @@ static void handle_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL 
       rtype = _("End of Media");
       break;
    default:
-      bsnprintf(buf, sizeof(buf), _("Unknown code %d\n"), rec->FileIndex);
+      Bsnprintf(buf, sizeof(buf), _("Unknown code %d\n"), rec->FileIndex);
       rtype = buf;
       break;
    }
@@ -232,7 +232,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
             dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
             trec = new_record();
             ReadRecordFromBlock(dcr, trec);
-            handle_session_record(dcr->dev, trec, sessrec);
+            HandleSessionRecord(dcr->dev, trec, sessrec);
             if (RecordCb) {
                RecordCb(dcr, trec);
             }
@@ -317,7 +317,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord *dcr, READ_CTX *rctx, bool *don
        * Some sort of label?
        */
       if (rec->FileIndex < 0) {
-         handle_session_record(dcr->dev, rec, &rctx->sessrec);
+         HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
          if (jcr->bsr) {
             /*
              * We just check block FI and FT not FileIndex

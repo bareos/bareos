@@ -23,7 +23,7 @@
 #define BAREOS_DIRD_CONSOLIDATE_H_
 
 bool DoConsolidateInit(JobControlRecord *jcr);
-bool do_consolidate(JobControlRecord *jcr);
+bool DoConsolidate(JobControlRecord *jcr);
 void ConsolidateCleanup(JobControlRecord *jcr, int TermCode);
 
 #endif // BAREOS_DIRD_CONSOLIDATE_H_

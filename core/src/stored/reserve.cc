@@ -48,14 +48,14 @@ static int reservations_lock_count = 0;
 static brwlock_t reservation_lock;
 
 /* Forward referenced functions */
-static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx);
-static int reserve_device(ReserveContext &rctx);
-static bool reserve_device_for_read(DeviceControlRecord *dcr);
-static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &rctx);
-static bool use_device_cmd(JobControlRecord *jcr);
-static void queue_reserve_message(JobControlRecord *jcr);
-static void pop_reserve_messages(JobControlRecord *jcr);
-//void switch_device(DeviceControlRecord *dcr, Device *dev);
+static int CanReserveDrive(DeviceControlRecord *dcr, ReserveContext &rctx);
+static int ReserveDevice(ReserveContext &rctx);
+static bool ReserveDeviceForRead(DeviceControlRecord *dcr);
+static bool ReserveDeviceForAppend(DeviceControlRecord *dcr, ReserveContext &rctx);
+static bool UseDeviceCmd(JobControlRecord *jcr);
+static void QueueReserveMessage(JobControlRecord *jcr);
+static void PopReserveMessages(JobControlRecord *jcr);
+//void SwitchDevice(DeviceControlRecord *dcr, Device *dev);
 
 /* Requests from the Director daemon */
 static char use_storage[] =
@@ -78,7 +78,7 @@ bool use_cmd(JobControlRecord *jcr)
    /*
     * Get the device, media, and pool information
     */
-   if (!use_device_cmd(jcr)) {
+   if (!UseDeviceCmd(jcr)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
       return false;
@@ -111,7 +111,7 @@ void TermReservationsLock()
 /**
  * This applies to a drive and to Volumes
  */
-void _lock_reservations(const char *file, int line)
+void _lockReservations(const char *file, int line)
 {
    int errstat;
    reservations_lock_count++;
@@ -189,9 +189,9 @@ void DeviceControlRecord::UnreserveDevice()
  * use storage=xxx media_type=yyy pool_name=xxx pool_type=yyy append=0 copy=0 strip=0
  * use device=bbb
  */
-static bool use_device_cmd(JobControlRecord *jcr)
+static bool UseDeviceCmd(JobControlRecord *jcr)
 {
-   PoolMem store_name, dev_name, media_type, pool_name, pool_type;
+   PoolMem StoreName, dev_name, media_type, pool_name, pool_type;
    BareosSocket *dir = jcr->dir_bsock;
    int32_t append;
    bool ok;
@@ -211,7 +211,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
    jcr->reserve_msgs = New(alist(10, not_owned_by_alist));
    do {
       Dmsg1(debuglevel, "<dird: %s", dir->msg);
-      ok = sscanf(dir->msg, use_storage, store_name.c_str(),
+      ok = sscanf(dir->msg, use_storage, StoreName.c_str(),
                   media_type.c_str(), pool_name.c_str(),
                   pool_type.c_str(), &append, &Copy, &Stripe) == 7;
       if (!ok) {
@@ -223,7 +223,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
          jcr->read_store = dirstore;
       }
       rctx.append = append;
-      UnbashSpaces(store_name);
+      UnbashSpaces(StoreName);
       UnbashSpaces(media_type);
       UnbashSpaces(pool_name);
       UnbashSpaces(pool_type);
@@ -231,7 +231,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
       dirstore->append(store);
       memset(store, 0, sizeof(DirectorStorage));
       store->device = New(alist(10));
-      bstrncpy(store->name, store_name, sizeof(store->name));
+      bstrncpy(store->name, StoreName, sizeof(store->name));
       bstrncpy(store->media_type, media_type, sizeof(store->media_type));
       bstrncpy(store->pool_name, pool_name, sizeof(store->pool_name));
       bstrncpy(store->pool_type, pool_type, sizeof(store->pool_type));
@@ -307,7 +307,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
 
       LockReservations();
       for ( ; !fail && !JobCanceled(jcr); ) {
-         pop_reserve_messages(jcr);
+         PopReserveMessages(jcr);
          rctx.suitable_device = false;
          rctx.have_volume = false;
          rctx.VolumeName[0] = 0;
@@ -382,7 +382,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
           * a drive at the same time a second job wants it.
           */
          if (repeat++ > 1) {              /* try algorithm 3 times */
-            bmicrosleep(30, 0);           /* wait a bit */
+            Bmicrosleep(30, 0);           /* wait a bit */
             Dmsg0(debuglevel, "repeat reserve algorithm\n");
          } else if (!rctx.suitable_device || !WaitForDevice(jcr, wait_for_device_retries)) {
             Dmsg0(debuglevel, "Fail. !suitable_device || !WaitForDevice\n");
@@ -425,7 +425,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
  * Returns:  true  if volume is in device
  *           false otherwise
  */
-static bool is_vol_in_autochanger(ReserveContext &rctx, VolumeReservationItem *vol)
+static bool IsVolInAutochanger(ReserveContext &rctx, VolumeReservationItem *vol)
 {
    AutochangerResource *changer = vol->dev->device->changer_res;
 
@@ -511,7 +511,7 @@ bool FindSuitableDeviceForJob(JobControlRecord *jcr, ReserveContext &rctx)
 
                if (vol->dev->IsAutochanger()) {
                   Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
-                  if (!is_vol_in_autochanger(rctx, vol) || !vol->dev->autoselect) {
+                  if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
                      continue;
                   }
                } else if (!bstrcmp(device_name, vol->dev->device->name())) {
@@ -527,7 +527,7 @@ bool FindSuitableDeviceForJob(JobControlRecord *jcr, ReserveContext &rctx)
                 * Try reserving this device and volume
                 */
                Dmsg2(debuglevel, "try vol=%s on device=%s\n", rctx.VolumeName, device_name);
-               status = reserve_device(rctx);
+               status = ReserveDevice(rctx);
                if (status == 1) {             /* found available device */
                   Dmsg1(debuglevel, "Suitable device found=%s\n", device_name);
                   ok = true;
@@ -619,7 +619,7 @@ int SearchResForDevice(ReserveContext &rctx)
                Dmsg1(100, "Device %s not autoselect skipped.\n", rctx.device->name());
                continue;                      /* Device is not available */
             }
-            status = reserve_device(rctx);
+            status = ReserveDevice(rctx);
             if (status != 1) {                /* Try another device */
                continue;
             }
@@ -650,7 +650,7 @@ int SearchResForDevice(ReserveContext &rctx)
           * Find resource, and make sure we were able to open it
           */
          if (bstrcmp(rctx.device_name, rctx.device->name())) {
-            status = reserve_device(rctx);
+            status = ReserveDevice(rctx);
             if (status != 1) {                /* Try another device */
                continue;
             }
@@ -678,7 +678,7 @@ int SearchResForDevice(ReserveContext &rctx)
                   rctx.device->name(), rctx.store->media_type, rctx.store->media_type);
 
             if (bstrcmp(rctx.store->media_type, rctx.device->media_type)) {
-               status = reserve_device(rctx);
+               status = ReserveDevice(rctx);
                if (status != 1) {                /* Try another device */
                   continue;
                }
@@ -709,7 +709,7 @@ int SearchResForDevice(ReserveContext &rctx)
  *          0 -- must wait
  *         -1 -- fatal error
  */
-static int reserve_device(ReserveContext &rctx)
+static int ReserveDevice(ReserveContext &rctx)
 {
    bool ok;
    DeviceControlRecord *dcr;
@@ -772,7 +772,7 @@ static int reserve_device(ReserveContext &rctx)
    bstrncpy(dcr->dev_name, rctx.device_name, name_len);
    if (rctx.store->append == SD_APPEND) {
       Dmsg2(debuglevel, "call reserve for append: have_vol=%d vol=%s\n", rctx.have_volume, rctx.VolumeName);
-      ok = reserve_device_for_append(dcr, rctx);
+      ok = ReserveDeviceForAppend(dcr, rctx);
       if (!ok) {
          goto bail_out;
       }
@@ -838,7 +838,7 @@ static int reserve_device(ReserveContext &rctx)
          }
       }
    } else {
-      ok = reserve_device_for_read(dcr);
+      ok = ReserveDeviceForRead(dcr);
       if (ok) {
          rctx.jcr->read_dcr = dcr;
          Dmsg5(debuglevel, "Read reserved=%d dev_name=%s mediatype=%s pool=%s ok=%d\n",
@@ -874,7 +874,7 @@ bail_out:
  * No one else should touch the drive until that is cleared.
  * This allows the DIR to "reserve" the device before actually starting the job.
  */
-static bool reserve_device_for_read(DeviceControlRecord *dcr)
+static bool ReserveDeviceForRead(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -891,7 +891,7 @@ static bool reserve_device_for_read(DeviceControlRecord *dcr)
       Dmsg1(debuglevel, "Device %s is BLOCKED due to user unmount.\n", dev->print_name());
       Mmsg(jcr->errmsg, _("3601 JobId=%u device %s is BLOCKED due to user unmount.\n"),
            jcr->JobId, dev->print_name());
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       goto bail_out;
    }
 
@@ -901,7 +901,7 @@ static bool reserve_device_for_read(DeviceControlRecord *dcr)
          BitIsSet(ST_READREADY, dev->state) ? 1 : 0, dev->num_writers, dev->NumReserved());
       Mmsg(jcr->errmsg, _("3602 JobId=%u device %s is busy (already reading/writing).\n"),
            jcr->JobId, dev->print_name());
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       goto bail_out;
    }
 
@@ -909,7 +909,7 @@ static bool reserve_device_for_read(DeviceControlRecord *dcr)
     * Note: on failure this returns jcr->errmsg properly edited
     */
    if (GeneratePluginEvent(jcr, bsdEventDeviceReserve, dcr) != bRC_OK) {
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       goto bail_out;
    }
    dev->ClearAppend();
@@ -937,7 +937,7 @@ bail_out:
  * the first to reserve the device, we put the pool
  * name and pool type in the device record.
  */
-static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &rctx)
+static bool ReserveDeviceForAppend(DeviceControlRecord *dcr, ReserveContext &rctx)
 {
    JobControlRecord *jcr = dcr->jcr;
    Device *dev = dcr->dev;
@@ -957,7 +957,7 @@ static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &
       Mmsg(jcr->errmsg, _("3603 JobId=%u device %s is busy reading.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       goto bail_out;
    }
 
@@ -968,7 +968,7 @@ static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &
       Mmsg(jcr->errmsg, _("3604 JobId=%u device %s is BLOCKED due to user unmount.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       goto bail_out;
    }
 
@@ -977,8 +977,8 @@ static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &
    /*
     * Now do detailed tests ...
     */
-   if (can_reserve_drive(dcr, rctx) != 1) {
-      Dmsg0(debuglevel, "can_reserve_drive!=1\n");
+   if (CanReserveDrive(dcr, rctx) != 1) {
+      Dmsg0(debuglevel, "CanReserveDrive!=1\n");
       goto bail_out;
    }
 
@@ -986,7 +986,7 @@ static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &
     * Note: on failure this returns jcr->errmsg properly edited
     */
    if (GeneratePluginEvent(jcr, bsdEventDeviceReserve, dcr) != bRC_OK) {
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       goto bail_out;
    }
    dcr->SetReserved();
@@ -997,7 +997,7 @@ bail_out:
    return ok;
 }
 
-static int is_pool_ok(DeviceControlRecord *dcr)
+static int IsPoolOk(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -1019,12 +1019,12 @@ static int is_pool_ok(DeviceControlRecord *dcr)
             (uint32_t)jcr->JobId, dcr->pool_name, dev->pool_name,
             dev->NumReserved(), dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
    }
    return 0;
 }
 
-static bool is_max_jobs_ok(DeviceControlRecord *dcr)
+static bool IsMaxJobsOk(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -1046,7 +1046,7 @@ static bool is_max_jobs_ok(DeviceControlRecord *dcr)
       Mmsg(jcr->errmsg, _("3609 JobId=%u Max concurrent jobs exceeded on drive %s.\n"),
            (uint32_t)jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       return false;
    }
    if (bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
@@ -1060,7 +1060,7 @@ static bool is_max_jobs_ok(DeviceControlRecord *dcr)
       Mmsg(jcr->errmsg, _("3610 JobId=%u Volume max jobs exceeded on drive %s.\n"),
            (uint32_t)jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "reserve dev failed: %s", jcr->errmsg);
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       return false;                /* wait */
    }
    return true;
@@ -1071,7 +1071,7 @@ static bool is_max_jobs_ok(DeviceControlRecord *dcr)
  *          0 if we should wait
  *         -1 on error or impossibility
  */
-static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
+static int CanReserveDrive(DeviceControlRecord *dcr, ReserveContext &rctx)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -1083,7 +1083,7 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
    /*
     * Check for max jobs on this Volume
     */
-   if (!is_max_jobs_ok(dcr)) {
+   if (!IsMaxJobsOk(dcr)) {
       return 0;
    }
 
@@ -1121,7 +1121,7 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
          Mmsg(jcr->errmsg, _("3605 JobId=%u wants free drive but device %s is busy.\n"),
               jcr->JobId, dev->print_name());
          Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
-         queue_reserve_message(jcr);
+         QueueReserveMessage(jcr);
          return 0;
       }
 
@@ -1132,7 +1132,7 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
          Mmsg(jcr->errmsg, _("3606 JobId=%u prefers mounted drives, but drive %s has no Volume.\n"),
               jcr->JobId, dev->print_name());
          Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
-         queue_reserve_message(jcr);
+         QueueReserveMessage(jcr);
          return 0;                 /* No volume mounted */
       }
 
@@ -1154,7 +1154,7 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
          if (!ok) {
             Mmsg(jcr->errmsg, _("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive %s.\n"),
                  jcr->JobId, rctx.VolumeName, dev->VolHdr.VolumeName, dev->print_name());
-            queue_reserve_message(jcr);
+            QueueReserveMessage(jcr);
             Dmsg3(debuglevel, "not OK: dev have=%s resvol=%s want=%s\n",
                   dev->VolHdr.VolumeName, dev->vol?dev->vol->vol_name:"*None*", rctx.VolumeName);
             return 0;
@@ -1188,9 +1188,9 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
        * Now check if there are any reservations on the drive
        */
       if (dev->NumReserved()) {
-         return is_pool_ok(dcr);
+         return IsPoolOk(dcr);
       } else if (dev->CanAppend()) {
-         if (is_pool_ok(dcr)) {
+         if (IsPoolOk(dcr)) {
             return 1;
          } else {
             /*
@@ -1217,12 +1217,12 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
     * Check if the device is in append mode with writers (i.e. available if pool is the same).
     */
    if (dev->CanAppend() || dev->num_writers > 0) {
-      return is_pool_ok(dcr);
+      return IsPoolOk(dcr);
    } else {
       Pmsg1(000, _("Logic error!!!! JobId=%u Should not get here.\n"), (int)jcr->JobId);
       Mmsg(jcr->errmsg, _("3910 JobId=%u Logic error!!!! drive %s Should not get here.\n"),
            jcr->JobId, dev->print_name());
-      queue_reserve_message(jcr);
+      QueueReserveMessage(jcr);
       Jmsg0(jcr, M_FATAL, 0, _("Logic error!!!! Should not get here.\n"));
 
       return -1;                      /* error, should not get here */
@@ -1232,7 +1232,7 @@ static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
 /**
  * Queue a reservation error or failure message for this jcr
  */
-static void queue_reserve_message(JobControlRecord *jcr)
+static void QueueReserveMessage(JobControlRecord *jcr)
 {
    int i;
    alist *msgs;
@@ -1273,7 +1273,7 @@ bail_out:
 /**
  * Pop and release any reservations messages
  */
-static void pop_reserve_messages(JobControlRecord *jcr)
+static void PopReserveMessages(JobControlRecord *jcr)
 {
    alist *msgs;
    char *msg;
@@ -1295,7 +1295,7 @@ bail_out:
  */
 void ReleaseReserveMessages(JobControlRecord *jcr)
 {
-   pop_reserve_messages(jcr);
+   PopReserveMessages(jcr);
    jcr->lock();
    if (!jcr->reserve_msgs) {
       goto bail_out;

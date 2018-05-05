@@ -32,7 +32,7 @@
 /* #include "protos.h" */
 
 
-TEST(bsnprintf, bsnprintf) {
+TEST(Bsnprintf, Bsnprintf) {
 #define FP_OUTPUT
 #ifndef LONG_STRING
 #define LONG_STRING 1024
@@ -142,7 +142,7 @@ TEST(bsnprintf, bsnprintf) {
 #ifdef FP_OUTPUT
    for (x = 0; fp_fmt[x] != NULL; x++)
       for (y = 0; fp_nums[y] != 0; y++) {
-         bsnprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
+         Bsnprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
          sprintf(buf2, fp_fmt[x], fp_nums[y]);
          EXPECT_STREQ ( buf1, buf2);
       }
@@ -150,7 +150,7 @@ TEST(bsnprintf, bsnprintf) {
    for (x = 0; int_fmt[x] != NULL; x++)
       for (y = 0; int_nums[y] != 0; y++) {
          int pcount, bcount;
-         bcount = bsnprintf(buf1, sizeof(buf1), int_fmt[x], int_nums[y]);
+         bcount = Bsnprintf(buf1, sizeof(buf1), int_fmt[x], int_nums[y]);
          pcount = sprintf(buf2, int_fmt[x], int_nums[y]);
 
          EXPECT_EQ(bcount, pcount);
@@ -160,7 +160,7 @@ TEST(bsnprintf, bsnprintf) {
    for (x = 0; ll_fmt[x] != NULL; x++) {
       for (y = 0; ll_nums[y] != 0; y++) {
          int pcount, bcount;
-         bcount = bsnprintf(buf1, sizeof(buf1), ll_fmt[x], ll_nums[y]);
+         bcount = Bsnprintf(buf1, sizeof(buf1), ll_fmt[x], ll_nums[y]);
          pcount = sprintf(buf2, ll_fmt[x], ll_nums[y]);
 
          EXPECT_EQ(bcount, pcount);
@@ -171,7 +171,7 @@ TEST(bsnprintf, bsnprintf) {
    for (x = 0; s_fmt[x] != NULL; x++) {
       for (y = 0; s_nums[y] != 0; y++) {
          int pcount, bcount;
-         bcount = bsnprintf(buf1, sizeof(buf1), s_fmt[x], s_nums[y]);
+         bcount = Bsnprintf(buf1, sizeof(buf1), s_fmt[x], s_nums[y]);
          pcount = sprintf(buf2, s_fmt[x], s_nums[y]);
 
          EXPECT_EQ(bcount, pcount);
@@ -182,7 +182,7 @@ TEST(bsnprintf, bsnprintf) {
    for (x = 0; ls_fmt[x] != NULL; x++) {
       for (y = 0; ls_nums[y] != 0; y++) {
          int pcount, bcount;
-         bcount = bsnprintf(buf1, sizeof(buf1), ls_fmt[x], ls_nums[y]);
+         bcount = Bsnprintf(buf1, sizeof(buf1), ls_fmt[x], ls_nums[y]);
          pcount = sprintf(buf2, ls_fmt[x], ls_nums[y]);
 
          EXPECT_EQ(bcount, pcount);

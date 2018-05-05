@@ -40,8 +40,8 @@ const bool have_darwin_os = true;
 const bool have_darwin_os = false;
 #endif
 
-static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
-static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord *jcr);
+static int VerifyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
+static int ReadDigest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord *jcr);
 static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
                                   DIGEST **digest, int *digest_stream,
                                   char **digest_buf, const char **digest_name);
@@ -61,8 +61,8 @@ void DoVerify(JobControlRecord *jcr)
    }
    SetFindOptions((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
    Dmsg0(10, "Start find files\n");
-   /* Subroutine verify_file() is called for each file */
-   FindFiles(jcr, (FindFilesPacket *)jcr->ff, verify_file, NULL);
+   /* Subroutine VerifyFile() is called for each file */
+   FindFiles(jcr, (FindFilesPacket *)jcr->ff, VerifyFile, NULL);
    Dmsg0(10, "End find files\n");
 
    if (jcr->big_buf) {
@@ -77,7 +77,7 @@ void DoVerify(JobControlRecord *jcr)
  *
  *  Find the file, compute the MD5 or SHA1 and send it back to the Director
  */
-static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
+static int VerifyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    PoolMem attribs(PM_NAME),
             attribsEx(PM_NAME);
@@ -123,21 +123,21 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
       break;
    case FT_NOACCESS: {
       berrno be;
-      be.set_errno(ff_pkt->ff_errno);
+      be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not access %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
    }
    case FT_NOFOLLOW: {
       berrno be;
-      be.set_errno(ff_pkt->ff_errno);
+      be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not follow link %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
    }
    case FT_NOSTAT: {
       berrno be;
-      be.set_errno(ff_pkt->ff_errno);
+      be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not stat %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
@@ -161,7 +161,7 @@ static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_
       return 1;                       /* silently skip */
    case FT_NOOPEN: {
       berrno be;
-      be.set_errno(ff_pkt->ff_errno);
+      be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not open directory %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
@@ -273,13 +273,13 @@ int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
    if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
       ff_pkt->ff_errno = errno;
       berrno be;
-      be.set_errno(bfd.berrno);
+      be.SetErrno(bfd.berrno);
       Dmsg2(100, "Cannot open %s: ERR=%s\n", ff_pkt->fname, be.bstrerror());
       Jmsg(jcr, M_ERROR, 1, _("     Cannot open %s: ERR=%s.\n"),
             ff_pkt->fname, be.bstrerror());
       return 1;
    }
-   read_digest(&bfd, digest, jcr);
+   ReadDigest(&bfd, digest, jcr);
    bclose(&bfd);
 
    if (have_darwin_os) {
@@ -297,7 +297,7 @@ int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
             }
             return 1;
          }
-         read_digest(&bfd, digest, jcr);
+         ReadDigest(&bfd, digest, jcr);
          bclose(&bfd);
       }
 
@@ -312,7 +312,7 @@ int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
  * Read message digest of bfd, updating digest
  * In case of errors we need the job control record and file name.
  */
-static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord *jcr)
+static int ReadDigest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord *jcr)
 {
    char buf[DEFAULT_NETWORK_BUFFER_SIZE];
    int64_t n;
@@ -321,7 +321,7 @@ static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecor
    uint64_t fileAddr = 0;             /* file address */
 
 
-   Dmsg0(50, "=== read_digest\n");
+   Dmsg0(50, "=== ReadDigest\n");
    while ((n=bread(bfd, buf, bufsiz)) > 0) {
       /* Check for sparse blocks */
       if (BitIsSet(FO_SPARSE, ff_pkt->flags)) {
@@ -351,7 +351,7 @@ static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecor
    }
    if (n < 0) {
       berrno be;
-      be.set_errno(bfd->berrno);
+      be.SetErrno(bfd->berrno);
       Dmsg2(100, "Error reading file %s: ERR=%s\n", jcr->last_fname, be.bstrerror());
       Jmsg(jcr, M_ERROR, 1, _("Error reading file %s: ERR=%s\n"),
             jcr->last_fname, be.bstrerror());

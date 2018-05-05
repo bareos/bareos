@@ -80,45 +80,45 @@ static bool quit_client_initiate_connection = false;
 static alist *client_initiated_connection_threads = NULL;
 
 /* Imported functions */
-extern bool accurate_cmd(JobControlRecord *jcr);
-extern bool status_cmd(JobControlRecord *jcr);
-extern bool qstatus_cmd(JobControlRecord *jcr);
+extern bool AccurateCmd(JobControlRecord *jcr);
+extern bool StatusCmd(JobControlRecord *jcr);
+extern bool QstatusCmd(JobControlRecord *jcr);
 extern "C" char *job_code_callback_filed(JobControlRecord *jcr, const char* param);
 
 /* Forward referenced functions */
-static bool backup_cmd(JobControlRecord *jcr);
-static bool bootstrap_cmd(JobControlRecord *jcr);
-static bool cancel_cmd(JobControlRecord *jcr);
-static bool end_restore_cmd(JobControlRecord *jcr);
-static bool estimate_cmd(JobControlRecord *jcr);
+static bool BackupCmd(JobControlRecord *jcr);
+static bool BootstrapCmd(JobControlRecord *jcr);
+static bool CancelCmd(JobControlRecord *jcr);
+static bool EndRestoreCmd(JobControlRecord *jcr);
+static bool EstimateCmd(JobControlRecord *jcr);
 #ifdef DEVELOPER
 static bool exit_cmd(JobControlRecord *jcr);
 #endif
-static bool fileset_cmd(JobControlRecord *jcr);
+static bool FilesetCmd(JobControlRecord *jcr);
 static bool job_cmd(JobControlRecord *jcr);
-static bool level_cmd(JobControlRecord *jcr);
-static bool pluginoptions_cmd(JobControlRecord *jcr);
-static bool runafter_cmd(JobControlRecord *jcr);
-static bool runbeforenow_cmd(JobControlRecord *jcr);
-static bool runbefore_cmd(JobControlRecord *jcr);
-static bool runscript_cmd(JobControlRecord *jcr);
-static bool resolve_cmd(JobControlRecord *jcr);
-static bool restore_object_cmd(JobControlRecord *jcr);
-static bool restore_cmd(JobControlRecord *jcr);
-static bool session_cmd(JobControlRecord *jcr);
-static bool secureerasereq_cmd(JobControlRecord *jcr);
-static bool setauthorization_cmd(JobControlRecord *jcr);
-static bool setbandwidth_cmd(JobControlRecord *jcr);
-static bool setdebug_cmd(JobControlRecord *jcr);
-static bool storage_cmd(JobControlRecord *jcr);
-static bool sm_dump_cmd(JobControlRecord *jcr);
-static bool verify_cmd(JobControlRecord *jcr);
+static bool LevelCmd(JobControlRecord *jcr);
+static bool PluginoptionsCmd(JobControlRecord *jcr);
+static bool RunafterCmd(JobControlRecord *jcr);
+static bool RunbeforenowCmd(JobControlRecord *jcr);
+static bool RunbeforeCmd(JobControlRecord *jcr);
+static bool RunscriptCmd(JobControlRecord *jcr);
+static bool ResolveCmd(JobControlRecord *jcr);
+static bool RestoreObjectCmd(JobControlRecord *jcr);
+static bool RestoreCmd(JobControlRecord *jcr);
+static bool SessionCmd(JobControlRecord *jcr);
+static bool SecureerasereqCmd(JobControlRecord *jcr);
+static bool SetauthorizationCmd(JobControlRecord *jcr);
+static bool SetbandwidthCmd(JobControlRecord *jcr);
+static bool SetdebugCmd(JobControlRecord *jcr);
+static bool StorageCmd(JobControlRecord *jcr);
+static bool SmDumpCmd(JobControlRecord *jcr);
+static bool VerifyCmd(JobControlRecord *jcr);
 
 static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource *dir_res, bool verbose);
 static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *cmd);
-static void filed_free_jcr(JobControlRecord *jcr);
-static bool open_sd_read_session(JobControlRecord *jcr);
-static void set_storage_auth_key(JobControlRecord *jcr, char *key);
+static void FiledFreeJcr(JobControlRecord *jcr);
+static bool OpenSdReadSession(JobControlRecord *jcr);
+static void SetStorageAuthKey(JobControlRecord *jcr, char *key);
 
 /* Exported functions */
 
@@ -134,36 +134,36 @@ struct s_cmds {
  * Keywords are sorted first longest match when the keywords start with the same string.
  */
 static struct s_cmds cmds[] = {
-   { "accurate", accurate_cmd, false },
-   { "backup", backup_cmd, false },
-   { "bootstrap", bootstrap_cmd, false },
-   { "cancel", cancel_cmd, false },
-   { "endrestore", end_restore_cmd, false },
-   { "estimate", estimate_cmd, false },
+   { "accurate", AccurateCmd, false },
+   { "backup", BackupCmd, false },
+   { "bootstrap", BootstrapCmd, false },
+   { "cancel", CancelCmd, false },
+   { "endrestore", EndRestoreCmd, false },
+   { "estimate", EstimateCmd, false },
 #ifdef DEVELOPER
    { "exit", exit_cmd, false },
 #endif
-   { "fileset", fileset_cmd, false },
+   { "fileset", FilesetCmd, false },
    { "JobId=", job_cmd, false },
-   { "level = ", level_cmd, false },
-   { "pluginoptions", pluginoptions_cmd, false },
-   { "RunAfterJob", runafter_cmd, false },
-   { "RunBeforeNow", runbeforenow_cmd, false },
-   { "RunBeforeJob", runbefore_cmd, false },
-   { "Run", runscript_cmd, false },
-   { "restoreobject", restore_object_cmd, false },
-   { "restore ", restore_cmd, false },
-   { "resolve ", resolve_cmd, false },
-   { "getSecureEraseCmd", secureerasereq_cmd, false},
-   { "session", session_cmd, false },
-   { "setauthorization", setauthorization_cmd, false },
-   { "setbandwidth=", setbandwidth_cmd, false },
-   { "setdebug=", setdebug_cmd, false },
-   { "status", status_cmd, true },
-   { ".status", qstatus_cmd, true },
-   { "storage ", storage_cmd, false },
-   { "sm_dump", sm_dump_cmd, false },
-   { "verify", verify_cmd, false },
+   { "level = ", LevelCmd, false },
+   { "pluginoptions", PluginoptionsCmd, false },
+   { "RunAfterJob", RunafterCmd, false },
+   { "RunBeforeNow", RunbeforenowCmd, false },
+   { "RunBeforeJob", RunbeforeCmd, false },
+   { "Run", RunscriptCmd, false },
+   { "restoreobject", RestoreObjectCmd, false },
+   { "restore ", RestoreCmd, false },
+   { "resolve ", ResolveCmd, false },
+   { "getSecureEraseCmd", SecureerasereqCmd, false},
+   { "session", SessionCmd, false },
+   { "setauthorization", SetauthorizationCmd, false },
+   { "setbandwidth=", SetbandwidthCmd, false },
+   { "setdebug=", SetdebugCmd, false },
+   { "status", StatusCmd, true },
+   { ".status", QstatusCmd, true },
+   { "storage ", StorageCmd, false },
+   { "sm_dump", SmDumpCmd, false },
+   { "verify", VerifyCmd, false },
    { NULL, NULL, false } /* list terminator */
 };
 
@@ -217,7 +217,7 @@ static char pluginoptionscmd[] =
    "pluginoptions %s";
 static char verifycmd[] =
    "verify level=%30s";
-static char estimatecmd[] =
+static char Estimatecmd[] =
    "estimate listing=%d";
 static char runbeforecmd[] =
    "RunBeforeJob %s";
@@ -334,7 +334,7 @@ static char read_close[] =
 /**
  * See if we are allowed to execute the command issued.
  */
-static bool validate_command(JobControlRecord *jcr, const char *cmd, alist *allowed_job_cmds)
+static bool ValidateCommand(JobControlRecord *jcr, const char *cmd, alist *allowed_job_cmds)
 {
    char *allowed_job_cmd;
    bool allowed = false;
@@ -347,7 +347,7 @@ static bool validate_command(JobControlRecord *jcr, const char *cmd, alist *allo
    }
 
    foreach_alist(allowed_job_cmd, allowed_job_cmds) {
-      if (bstrcasecmp(cmd, allowed_job_cmd)) {
+      if (Bstrcasecmp(cmd, allowed_job_cmd)) {
          allowed = true;
          break;
       }
@@ -360,7 +360,7 @@ static bool validate_command(JobControlRecord *jcr, const char *cmd, alist *allo
    return allowed;
 }
 
-static inline void cleanup_fileset(JobControlRecord *jcr)
+static inline void CleanupFileset(JobControlRecord *jcr)
 {
    findFILESET *fileset;
    findIncludeExcludeItem *incexe;
@@ -399,7 +399,7 @@ static inline void cleanup_fileset(JobControlRecord *jcr)
             fo->wildbase.destroy();
             fo->base.destroy();
             fo->fstype.destroy();
-            fo->drivetype.destroy();
+            fo->Drivetype.destroy();
          }
          incexe->opts_list.destroy();
          incexe->name_list.destroy();
@@ -427,7 +427,7 @@ static inline void cleanup_fileset(JobControlRecord *jcr)
             fo->wildbase.destroy();
             fo->base.destroy();
             fo->fstype.destroy();
-            fo->drivetype.destroy();
+            fo->Drivetype.destroy();
          }
          incexe->opts_list.destroy();
          incexe->name_list.destroy();
@@ -461,7 +461,7 @@ JobControlRecord *create_new_director_session(BareosSocket *dir)
    JobControlRecord *jcr;
    const char jobname[12] = "*Director*";
 
-   jcr = new_jcr(sizeof(JobControlRecord), filed_free_jcr); /* create JobControlRecord */
+   jcr = new_jcr(sizeof(JobControlRecord), FiledFreeJcr); /* create JobControlRecord */
    jcr->dir_bsock = dir;
    jcr->ff = init_find_files();
    jcr->start_time = time(NULL);
@@ -578,7 +578,7 @@ void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir)
    /*
     * Clean up fileset
     */
-   cleanup_fileset(jcr);
+   CleanupFileset(jcr);
 
    FreeJcr(jcr);                     /* destroy JobControlRecord record */
    Dmsg0(100, "Done with FreeJcr\n");
@@ -595,7 +595,7 @@ void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir)
 /**
  * Create a new thread to handle director connection.
  */
-static bool start_process_director_commands(JobControlRecord *jcr)
+static bool StartProcessDirectorCommands(JobControlRecord *jcr)
 {
    int result = 0;
    pthread_t thread;
@@ -651,7 +651,7 @@ void *handle_director_connection(BareosSocket *dir)
    return process_director_commands(jcr, dir);
 }
 
-static bool parse_ok_version(const char *string)
+static bool ParseOkVersion(const char *string)
 {
    char name[MAX_NAME_LENGTH];
    char version[MAX_NAME_LENGTH];
@@ -708,7 +708,7 @@ void *handle_connection_to_director(void *director_resource)
                 */
                dir_bsock->SetJcr(jcr);
                jcr->dir_bsock = dir_bsock;
-               if (start_process_director_commands(jcr)) {
+               if (StartProcessDirectorCommands(jcr)) {
                   /*
                    * jcr (and dir_bsock) are now used by another thread.
                    */
@@ -786,7 +786,7 @@ bool StopConnectToDirectorThreads(bool wait)
    return result;
 }
 
-static bool sm_dump_cmd(JobControlRecord *jcr)
+static bool SmDumpCmd(JobControlRecord *jcr)
 {
    CloseMemoryPool();
    sm_dump(false, true);
@@ -797,7 +797,7 @@ static bool sm_dump_cmd(JobControlRecord *jcr)
 /**
  * Resolve a hostname
  */
-static bool resolve_cmd(JobControlRecord *jcr)
+static bool ResolveCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    dlist *addr_list;
@@ -821,7 +821,7 @@ bail_out:
    return true;
 }
 
-static bool secureerasereq_cmd(JobControlRecord *jcr) {
+static bool SecureerasereqCmd(JobControlRecord *jcr) {
    const char *setting;
    BareosSocket *dir = jcr->dir_bsock;
 
@@ -843,7 +843,7 @@ static bool exit_cmd(JobControlRecord *jcr)
 /**
  * Cancel a Job
  */
-static bool cancel_cmd(JobControlRecord *jcr)
+static bool CancelCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    char Job[MAX_NAME_LENGTH];
@@ -873,7 +873,7 @@ static bool cancel_cmd(JobControlRecord *jcr)
 /**
  * Set new authorization key as requested by the Director
  */
-static bool setauthorization_cmd(JobControlRecord *jcr)
+static bool SetauthorizationCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    PoolMem sd_auth_key(PM_MESSAGE);
@@ -884,7 +884,7 @@ static bool setauthorization_cmd(JobControlRecord *jcr)
       return false;
    }
 
-   set_storage_auth_key(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str());
    Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
 
    return dir->fsend(OkAuthorization);
@@ -893,7 +893,7 @@ static bool setauthorization_cmd(JobControlRecord *jcr)
 /**
  * Set bandwidth limit as requested by the Director
  */
-static bool setbandwidth_cmd(JobControlRecord *jcr)
+static bool SetbandwidthCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    int64_t bw = 0;
@@ -930,13 +930,13 @@ static bool setbandwidth_cmd(JobControlRecord *jcr)
 /**
  * Set debug level as requested by the Director
  */
-static bool setdebug_cmd(JobControlRecord *jcr)
+static bool SetdebugCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    int32_t level, trace_flag, hangup_flag, timestamp_flag;
    int scan;
 
-   Dmsg1(50, "setdebug_cmd: %s", dir->msg);
+   Dmsg1(50, "SetdebugCmd: %s", dir->msg);
    scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &hangup_flag, &timestamp_flag);
    if (scan != 4) {
       scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &hangup_flag);
@@ -971,7 +971,7 @@ static bool setdebug_cmd(JobControlRecord *jcr)
    }
 }
 
-static bool estimate_cmd(JobControlRecord *jcr)
+static bool EstimateCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    char ed1[50], ed2[50];
@@ -979,7 +979,7 @@ static bool estimate_cmd(JobControlRecord *jcr)
    /*
     * See if we are allowed to run estimate cmds.
     */
-   if (!validate_command(jcr, "estimate",
+   if (!ValidateCommand(jcr, "estimate",
                         (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
@@ -987,7 +987,7 @@ static bool estimate_cmd(JobControlRecord *jcr)
       return 0;
    }
 
-   if (sscanf(dir->msg, estimatecmd, &jcr->listing) != 1) {
+   if (sscanf(dir->msg, Estimatecmd, &jcr->listing) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s"), jcr->errmsg);
       dir->fsend(_("2992 Bad estimate command.\n"));
@@ -1021,7 +1021,7 @@ static bool job_cmd(JobControlRecord *jcr)
       dir->fsend(BADjob);
       return false;
    }
-   set_storage_auth_key(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str());
    Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
    Mmsg(jcr->errmsg, "JobId=%d Job=%s", jcr->JobId, jcr->Job);
    NewPlugins(jcr);                  /* instantiate plugins for this jcr */
@@ -1040,7 +1040,7 @@ static bool job_cmd(JobControlRecord *jcr)
 #endif
 }
 
-static bool runbefore_cmd(JobControlRecord *jcr)
+static bool RunbeforeCmd(JobControlRecord *jcr)
 {
    bool ok;
    POOLMEM *cmd;
@@ -1052,7 +1052,7 @@ static bool runbefore_cmd(JobControlRecord *jcr)
       return false;
    }
 
-   Dmsg1(100, "runbefore_cmd: %s", dir->msg);
+   Dmsg1(100, "RunbeforeCmd: %s", dir->msg);
    cmd = GetMemory(dir->msglen + 1);
    if (sscanf(dir->msg, runbeforecmd, cmd) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
@@ -1084,7 +1084,7 @@ static bool runbefore_cmd(JobControlRecord *jcr)
    }
 }
 
-static bool runbeforenow_cmd(JobControlRecord *jcr)
+static bool RunbeforenowCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
 
@@ -1104,7 +1104,7 @@ static bool runbeforenow_cmd(JobControlRecord *jcr)
    }
 }
 
-static bool runafter_cmd(JobControlRecord *jcr)
+static bool RunafterCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *cmd;
@@ -1115,7 +1115,7 @@ static bool runafter_cmd(JobControlRecord *jcr)
       return false;
    }
 
-   Dmsg1(100, "runafter_cmd: %s", dir->msg);
+   Dmsg1(100, "RunafterCmd: %s", dir->msg);
    cmd = GetMemory(dir->msglen + 1);
    if (sscanf(dir->msg, runaftercmd, cmd) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
@@ -1139,7 +1139,7 @@ static bool runafter_cmd(JobControlRecord *jcr)
    return dir->fsend(OKRunAfter);
 }
 
-static bool runscript_cmd(JobControlRecord *jcr)
+static bool RunscriptCmd(JobControlRecord *jcr)
 {
    POOLMEM *msg;
    RunScript *cmd;
@@ -1149,7 +1149,7 @@ static bool runscript_cmd(JobControlRecord *jcr)
    /*
     * See if we are allowed to run runscript cmds.
     */
-   if (!validate_command(jcr, "runscript",
+   if (!ValidateCommand(jcr, "runscript",
                         (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
@@ -1161,7 +1161,7 @@ static bool runscript_cmd(JobControlRecord *jcr)
    cmd = NewRunscript();
    cmd->SetJobCodeCallback(job_code_callback_filed);
 
-   Dmsg1(100, "runscript_cmd: '%s'\n", dir->msg);
+   Dmsg1(100, "RunscriptCmd: '%s'\n", dir->msg);
 
    /*
     * Note, we cannot sscanf into bools
@@ -1193,7 +1193,7 @@ static bool runscript_cmd(JobControlRecord *jcr)
 /**
  * This passes plugin specific options.
  */
-static bool pluginoptions_cmd(JobControlRecord *jcr)
+static bool PluginoptionsCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *msg;
@@ -1220,7 +1220,7 @@ static bool pluginoptions_cmd(JobControlRecord *jcr)
  * that were backed up (VSS .xml data) and are needed
  * before starting the restore.
  */
-static bool restore_object_cmd(JobControlRecord *jcr)
+static bool RestoreObjectCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    int32_t FileIndex;
@@ -1357,7 +1357,7 @@ bail_out:
 }
 
 #if defined(WIN32_VSS)
-static inline int count_include_list_file_entries(JobControlRecord *jcr)
+static inline int CountIncludeListFileEntries(JobControlRecord *jcr)
 {
    int cnt = 0;
    findFILESET *fileset;
@@ -1378,7 +1378,7 @@ static inline int count_include_list_file_entries(JobControlRecord *jcr)
 /**
  * Director is passing his Fileset
  */
-static bool fileset_cmd(JobControlRecord *jcr)
+static bool FilesetCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    bool retval;
@@ -1395,7 +1395,7 @@ static bool fileset_cmd(JobControlRecord *jcr)
    while (dir->recv() >= 0) {
       StripTrailingJunk(dir->msg);
       Dmsg1(500, "Fileset: %s\n", dir->msg);
-      add_fileset(jcr, dir->msg);
+      AddFileset(jcr, dir->msg);
    }
 
    if (!TermFileset(jcr)) {
@@ -1403,7 +1403,7 @@ static bool fileset_cmd(JobControlRecord *jcr)
    }
 
 #if defined(WIN32_VSS)
-   jcr->enable_vss = (vss && (count_include_list_file_entries(jcr) > 0)) ? true : false;
+   jcr->enable_vss = (vss && (CountIncludeListFileEntries(jcr) > 0)) ? true : false;
 #endif
 
    retval = dir->fsend(OKinc);
@@ -1413,7 +1413,7 @@ static bool fileset_cmd(JobControlRecord *jcr)
    return retval;
 }
 
-static void free_bootstrap(JobControlRecord *jcr)
+static void FreeBootstrap(JobControlRecord *jcr)
 {
    if (jcr->RestoreBootstrap) {
       SecureErase(jcr, jcr->RestoreBootstrap);
@@ -1431,13 +1431,13 @@ static uint32_t bsr_uniq = 0;
  * Deprecated.  The bsr is now sent directly from the
  * Director to the SD.
  */
-static bool bootstrap_cmd(JobControlRecord *jcr)
+static bool BootstrapCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *fname = GetPoolMemory(PM_FNAME);
    FILE *bs;
 
-   free_bootstrap(jcr);
+   FreeBootstrap(jcr);
    P(bsr_mutex);
    bsr_uniq++;
    Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
@@ -1456,7 +1456,7 @@ static bool bootstrap_cmd(JobControlRecord *jcr)
        */
       while (dir->recv() >= 0)
         {  }
-      free_bootstrap(jcr);
+      FreeBootstrap(jcr);
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
@@ -1475,14 +1475,14 @@ static bool bootstrap_cmd(JobControlRecord *jcr)
 /**
  * Get backup level from Director
  */
-static bool level_cmd(JobControlRecord *jcr)
+static bool LevelCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *level, *buf = NULL;
    int mtime_only;
 
    level = GetMemory(dir->msglen+1);
-   Dmsg1(10, "level_cmd: %s", dir->msg);
+   Dmsg1(10, "LevelCmd: %s", dir->msg);
 
    /*
     * Keep compatibility with older directors
@@ -1613,7 +1613,7 @@ bail_out:
  * Get session parameters from Director -- this is for a Restore command
  * This is deprecated. It is now passed via the bsr.
  */
-static bool session_cmd(JobControlRecord *jcr)
+static bool SessionCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
 
@@ -1630,7 +1630,7 @@ static bool session_cmd(JobControlRecord *jcr)
    return dir->fsend(OKsession);
 }
 
-static void set_storage_auth_key(JobControlRecord *jcr, char *key)
+static void SetStorageAuthKey(JobControlRecord *jcr, char *key)
 {
    /* if no key don't update anything */
    if (!*key) {
@@ -1666,7 +1666,7 @@ static void set_storage_auth_key(JobControlRecord *jcr, char *key)
 /**
  * Get address of storage daemon from Director
  */
-static bool storage_cmd(JobControlRecord *jcr)
+static bool StorageCmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
    int enable_ssl;                 /* enable ssl to sd */
@@ -1691,7 +1691,7 @@ static bool storage_cmd(JobControlRecord *jcr)
       }
    }
 
-   set_storage_auth_key(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str());
 
    Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
 
@@ -1756,7 +1756,7 @@ bail_out:
  * We walk the list of include blocks and for each option block
  * check if a certain flag is set and clear that.
  */
-static inline void clear_flag_in_fileset(JobControlRecord *jcr, int flag, const char *warning)
+static inline void ClearFlagInFileset(JobControlRecord *jcr, int flag, const char *warning)
 {
    findFILESET *fileset;
    bool cleared_flag = false;
@@ -1788,7 +1788,7 @@ static inline void clear_flag_in_fileset(JobControlRecord *jcr, int flag, const 
  * We walk the list of include blocks and for each option block
  * check if a certain compression flag is set and clear that.
  */
-static inline void clear_compression_flag_in_fileset(JobControlRecord *jcr)
+static inline void ClearCompressionFlagInFileset(JobControlRecord *jcr)
 {
    findFILESET *fileset;
 
@@ -1840,7 +1840,7 @@ static inline void clear_compression_flag_in_fileset(JobControlRecord *jcr)
 /**
  * Find out what encryption cipher to use.
  */
-static inline bool get_wanted_crypto_cipher(JobControlRecord *jcr, crypto_cipher_t *cipher)
+static inline bool GetWantedCryptoCipher(JobControlRecord *jcr, crypto_cipher_t *cipher)
 {
    findFILESET *fileset;
    bool force_encrypt = false;
@@ -1922,7 +1922,7 @@ static inline bool get_wanted_crypto_cipher(JobControlRecord *jcr, crypto_cipher
 /**
  * Do a backup.
  */
-static bool backup_cmd(JobControlRecord *jcr)
+static bool BackupCmd(JobControlRecord *jcr)
 {
    int ok = 0;
    int SDJobStatus;
@@ -1942,7 +1942,7 @@ static bool backup_cmd(JobControlRecord *jcr)
    /*
     * See if we are allowed to run backup cmds.
     */
-   if (!validate_command(jcr, "backup",
+   if (!ValidateCommand(jcr, "backup",
                         (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
@@ -1964,23 +1964,23 @@ static bool backup_cmd(JobControlRecord *jcr)
     * Validate some options given to the backup make sense for the compiled in options of this filed.
     */
    if (!have_acl) {
-      clear_flag_in_fileset(jcr, FO_ACL,
+      ClearFlagInFileset(jcr, FO_ACL,
                             _("ACL support requested in fileset but not available on this platform. Disabling ...\n"));
    }
 
    if (!have_xattr) {
-      clear_flag_in_fileset(jcr, FO_XATTR,
+      ClearFlagInFileset(jcr, FO_XATTR,
                             _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
    }
 
    if (!have_encryption) {
-      clear_flag_in_fileset(jcr, FO_ENCRYPT,
+      ClearFlagInFileset(jcr, FO_ENCRYPT,
                             _("Encryption support requested in fileset but not available on this platform. Disabling ...\n"));
    }
 
-   clear_compression_flag_in_fileset(jcr);
+   ClearCompressionFlagInFileset(jcr);
 
-   if (!get_wanted_crypto_cipher(jcr, &cipher)) {
+   if (!GetWantedCryptoCipher(jcr, &cipher)) {
       dir->fsend(BADcmd, "backup");
       goto cleanup;
    }
@@ -2180,7 +2180,7 @@ cleanup:
  * Do a Verify for Director
  *
  */
-static bool verify_cmd(JobControlRecord *jcr)
+static bool VerifyCmd(JobControlRecord *jcr)
 {
    char level[100];
    BareosSocket *dir = jcr->dir_bsock;
@@ -2189,7 +2189,7 @@ static bool verify_cmd(JobControlRecord *jcr)
    /*
     * See if we are allowed to run verify cmds.
     */
-   if (!validate_command(jcr, "verify",
+   if (!ValidateCommand(jcr, "verify",
                         (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
@@ -2203,15 +2203,15 @@ static bool verify_cmd(JobControlRecord *jcr)
       return false;
    }
 
-   if (bstrcasecmp(level, "init")) {
+   if (Bstrcasecmp(level, "init")) {
       jcr->setJobLevel(L_VERIFY_INIT);
-   } else if (bstrcasecmp(level, "catalog")){
+   } else if (Bstrcasecmp(level, "catalog")){
       jcr->setJobLevel(L_VERIFY_CATALOG);
-   } else if (bstrcasecmp(level, "volume")){
+   } else if (Bstrcasecmp(level, "volume")){
       jcr->setJobLevel(L_VERIFY_VOLUME_TO_CATALOG);
-   } else if (bstrcasecmp(level, "data")){
+   } else if (Bstrcasecmp(level, "data")){
       jcr->setJobLevel(L_VERIFY_DATA);
-   } else if (bstrcasecmp(level, "disk_to_catalog")) {
+   } else if (Bstrcasecmp(level, "disk_to_catalog")) {
       jcr->setJobLevel(L_VERIFY_DISK_TO_CATALOG);
    } else {
       dir->fsend(_("2994 Bad verify level: %s\n"), dir->msg);
@@ -2231,7 +2231,7 @@ static bool verify_cmd(JobControlRecord *jcr)
       DoVerify(jcr);
       break;
    case L_VERIFY_VOLUME_TO_CATALOG:
-      if (!open_sd_read_session(jcr)) {
+      if (!OpenSdReadSession(jcr)) {
          return false;
       }
       StartDirHeartbeat(jcr);
@@ -2260,7 +2260,7 @@ static bool verify_cmd(JobControlRecord *jcr)
 
    dir->signal(BNET_EOD);
    GeneratePluginEvent(jcr, bEventEndVerifyJob);
-   return false;                      /* return and terminate command loop */
+   return false;                      /* return and Terminate command loop */
 }
 
 /**
@@ -2303,7 +2303,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
    }
 
    dir->recv();
-   parse_ok_version(dir->msg);
+   ParseOkVersion(dir->msg);
 
    jcr->director = dir_res;
 
@@ -2313,7 +2313,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
 /**
  * Do a Restore for Director
  */
-static bool restore_cmd(JobControlRecord *jcr)
+static bool RestoreCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *sd = jcr->store_bsock;
@@ -2334,7 +2334,7 @@ static bool restore_cmd(JobControlRecord *jcr)
    /*
     * See if we are allowed to run restore cmds.
     */
-   if (!validate_command(jcr, "restore",
+   if (!ValidateCommand(jcr, "restore",
                         (jcr->director && jcr->director->allowed_job_cmds) ?
                          jcr->director->allowed_job_cmds :
                          me->allowed_job_cmds)) {
@@ -2414,7 +2414,7 @@ static bool restore_cmd(JobControlRecord *jcr)
 
    jcr->setJobStatus(JS_Blocked);
 
-   if (!open_sd_read_session(jcr)) {
+   if (!OpenSdReadSession(jcr)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       goto bail_out;
    }
@@ -2518,20 +2518,20 @@ bail_out:
    }
 
    if (!retval) {
-      end_restore_cmd(jcr);           /* stopping so send bEventEndRestoreJob */
+      EndRestoreCmd(jcr);           /* stopping so send bEventEndRestoreJob */
    }
 
    return retval;
 }
 
-static bool end_restore_cmd(JobControlRecord *jcr)
+static bool EndRestoreCmd(JobControlRecord *jcr)
 {
-   Dmsg0(5, "end_restore_cmd\n");
+   Dmsg0(5, "EndRestoreCmd\n");
    GeneratePluginEvent(jcr, bEventEndRestoreJob);
-   return false;                      /* return and terminate command loop */
+   return false;                      /* return and Terminate command loop */
 }
 
-static bool open_sd_read_session(JobControlRecord *jcr)
+static bool OpenSdReadSession(JobControlRecord *jcr)
 {
    BareosSocket *sd = jcr->store_bsock;
 
@@ -2584,7 +2584,7 @@ static bool open_sd_read_session(JobControlRecord *jcr)
 /**
  * Destroy the Job Control Record and associated resources (sockets).
  */
-static void filed_free_jcr(JobControlRecord *jcr)
+static void FiledFreeJcr(JobControlRecord *jcr)
 {
 #if defined(WIN32_VSS)
    if (jcr->pVSSClient) {
@@ -2609,7 +2609,7 @@ static void filed_free_jcr(JobControlRecord *jcr)
       FreePoolMemory(jcr->last_fname);
    }
 
-   free_bootstrap(jcr);
+   FreeBootstrap(jcr);
    FreeRunscripts(jcr->RunScripts);
    delete jcr->RunScripts;
 

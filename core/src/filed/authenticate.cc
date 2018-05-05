@@ -68,11 +68,11 @@ static inline void delay()
     * Single thread all failures to avoid DOS
     */
    P(mutex);
-   bmicrosleep(6, 0);
+   Bmicrosleep(6, 0);
    V(mutex);
 }
 
-static inline void authenticate_failed(JobControlRecord *jcr, PoolMem &message)
+static inline void AuthenticateFailed(JobControlRecord *jcr, PoolMem &message)
 {
    Dmsg0(debuglevel, message.c_str());
    Jmsg0(jcr, M_FATAL, 0, message.c_str());
@@ -98,7 +98,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
       char addr[64];
       char *who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"), who, dir->msglen);
-      authenticate_failed(jcr, errormsg);
+      AuthenticateFailed(jcr, errormsg);
       return false;
    }
 
@@ -107,7 +107,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
       char *who     = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       dir->msg[100] = 0;
       errormsg.bsprintf(_("Bad Hello command from Director at %s: %s\n"), who, dir->msg);
-      authenticate_failed(jcr, errormsg);
+      AuthenticateFailed(jcr, errormsg);
       return false;
    }
 
@@ -119,13 +119,13 @@ bool AuthenticateDirector(JobControlRecord *jcr)
       char *who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       errormsg.bsprintf(
           _("Connection from unknown Director %s at %s rejected.\n"), dirname.c_str(), who);
-      authenticate_failed(jcr, errormsg);
+      AuthenticateFailed(jcr, errormsg);
       return false;
    }
 
    if (!director->conn_from_dir_to_fd) {
       errormsg.bsprintf(_("Connection from Director %s rejected.\n"), dirname.c_str());
-      authenticate_failed(jcr, errormsg);
+      AuthenticateFailed(jcr, errormsg);
       return false;
    }
 
@@ -133,7 +133,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
            jcr, "Director", dirname.c_str(), director->password, director)) {
       dir->fsend("%s", Dir_sorry);
       errormsg.bsprintf(_("Unable to authenticate Director %s.\n"), dirname.c_str());
-      authenticate_failed(jcr, errormsg);
+      AuthenticateFailed(jcr, errormsg);
       return false;
    }
 

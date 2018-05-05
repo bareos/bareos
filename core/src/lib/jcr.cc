@@ -55,8 +55,8 @@ const int debuglevel = 3400;
 void FreeBregexps(alist *bregexps);
 
 /* Forward referenced functions */
-extern "C" void timeout_handler(int sig);
-static void jcr_timeout_check(watchdog_t *self);
+extern "C" void TimeoutHandler(int sig);
+static void JcrTimeoutCheck(watchdog_t *self);
 #ifdef TRACE_JCR_CHAIN
 static void b_lock_jcr_chain(const char *filen, int line);
 static void b_unlock_jcr_chain(const char *filen, int line);
@@ -307,13 +307,13 @@ bool JobControlRecord::JobReads()
 /*
  * Push a job_callback_item onto the job end callback stack.
  */
-void RegisterJobEndCallback(JobControlRecord *jcr, void job_end_cb(JobControlRecord *jcr, void *), void *ctx)
+void RegisterJobEndCallback(JobControlRecord *jcr, void JobEndCb(JobControlRecord *jcr, void *), void *ctx)
 {
    job_callback_item *item;
 
    item = (job_callback_item *)malloc(sizeof(job_callback_item));
 
-   item->job_end_cb = job_end_cb;
+   item->JobEndCb = JobEndCb;
    item->ctx = ctx;
 
    jcr->job_end_callbacks.push((void *)item);
@@ -322,14 +322,14 @@ void RegisterJobEndCallback(JobControlRecord *jcr, void job_end_cb(JobControlRec
 /*
  * Pop each job_callback_item and process it.
  */
-static void call_job_end_callbacks(JobControlRecord *jcr)
+static void CallJobEndCallbacks(JobControlRecord *jcr)
 {
    job_callback_item *item;
 
    if (jcr->job_end_callbacks.size() > 0) {
       item = (job_callback_item *)jcr->job_end_callbacks.pop();
       while (item) {
-         item->job_end_cb(jcr, item->ctx);
+         item->JobEndCb(jcr, item->ctx);
          free(item);
          item = (job_callback_item *)jcr->job_end_callbacks.pop();
       }
@@ -432,7 +432,7 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    jcr->setJobLevel(L_NONE);
    jcr->setJobStatus(JS_Created);        /* ready to run */
    sigtimer.sa_flags = 0;
-   sigtimer.sa_handler = timeout_handler;
+   sigtimer.sa_handler = TimeoutHandler;
    sigfillset(&sigtimer.sa_mask);
    sigaction(TIMEOUT_SIGNAL, &sigtimer, NULL);
 
@@ -460,26 +460,26 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
  *
  * NOTE! The chain must be locked prior to calling this routine.
  */
-static void remove_jcr(JobControlRecord *jcr)
+static void RemoveJcr(JobControlRecord *jcr)
 {
-   Dmsg0(debuglevel, "Enter remove_jcr\n");
+   Dmsg0(debuglevel, "Enter RemoveJcr\n");
    if (!jcr) {
       Emsg0(M_ABORT, 0, _("NULL jcr.\n"));
    }
    jcrs->remove(jcr);
-   Dmsg0(debuglevel, "Leave remove_jcr\n");
+   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
 
 /*
  * Free stuff common to all JCRs.  N.B. Be careful to include only
  * generic stuff in the common part of the jcr.
  */
-static void free_common_jcr(JobControlRecord *jcr)
+static void FreeCommonJcr(JobControlRecord *jcr)
 {
-   Dmsg1(100, "free_common_jcr: %p \n", jcr);
+   Dmsg1(100, "FreeCommonJcr: %p \n", jcr);
 
    if (!jcr) {
-      Dmsg0(100, "free_common_jcr: Invalid jcr\n");
+      Dmsg0(100, "FreeCommonJcr: Invalid jcr\n");
    }
 
    /*
@@ -601,11 +601,11 @@ void FreeJcr(JobControlRecord *jcr)
       Dmsg3(debuglevel, "remove jcr jid=%u UseCount=%d Job=%s\n",
             jcr->JobId, jcr->UseCount(), jcr->Job);
    }
-   remove_jcr(jcr);                   /* remove Jcr from chain */
+   RemoveJcr(jcr);                   /* remove Jcr from chain */
    unlock_jcr_chain();
 
    DequeueMessages(jcr);
-   call_job_end_callbacks(jcr);                  /* call registered callbacks */
+   CallJobEndCallbacks(jcr);                  /* call registered callbacks */
 
    Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
@@ -662,7 +662,7 @@ void FreeJcr(JobControlRecord *jcr)
       jcr->daemon_free_jcr(jcr);      /* call daemon free routine */
    }
 
-   free_common_jcr(jcr);
+   FreeCommonJcr(jcr);
    CloseMsg(NULL);                   /* flush any daemon messages */
    Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
@@ -885,7 +885,7 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
    return jcr;
 }
 
-static void update_wait_time(JobControlRecord *jcr, int newJobStatus)
+static void UpdateWaitTime(JobControlRecord *jcr, int newJobStatus)
 {
    bool enter_in_waittime;
    int oldJobStatus = jcr->JobStatus;
@@ -941,7 +941,7 @@ static void update_wait_time(JobControlRecord *jcr, int newJobStatus)
 /*
  * Priority runs from 0 (lowest) to 10 (highest)
  */
-static int get_status_priority(int JobStatus)
+static int GetStatusPriority(int JobStatus)
 {
    int priority = 0;
 
@@ -1006,16 +1006,16 @@ void JobControlRecord::setJobStatus(int newJobStatus)
 
    if (JobStatus) {
       oldJobStatus = JobStatus;
-      old_priority = get_status_priority(oldJobStatus);
+      old_priority = GetStatusPriority(oldJobStatus);
    }
-   priority = get_status_priority(newJobStatus);
+   priority = GetStatusPriority(newJobStatus);
 
-   Dmsg2(800, "set_jcr_job_status(%s, %c)\n", Job, newJobStatus);
+   Dmsg2(800, "SetJcrJobStatus(%s, %c)\n", Job, newJobStatus);
 
    /*
     * Update wait_time depending on newJobStatus and oldJobStatus
     */
-   update_wait_time(this, newJobStatus);
+   UpdateWaitTime(this, newJobStatus);
 
    /*
     * For a set of errors, ... keep the current status
@@ -1174,14 +1174,14 @@ bool InitJcrSubsystem(int timeout)
    wd->one_shot = false;
    wd->interval = 30;   /* FIXME: should be configurable somewhere, even
                          if only with a #define */
-   wd->callback = jcr_timeout_check;
+   wd->callback = JcrTimeoutCheck;
 
    RegisterWatchdog(wd);
 
    return true;
 }
 
-static void jcr_timeout_check(watchdog_t *self)
+static void JcrTimeoutCheck(watchdog_t *self)
 {
    JobControlRecord *jcr;
    BareosSocket *bs;
@@ -1193,7 +1193,7 @@ static void jcr_timeout_check(watchdog_t *self)
     * blocked for more than specified max time.
     */
    foreach_jcr(jcr) {
-      Dmsg2(debuglevel, "jcr_timeout_check JobId=%u jcr=0x%x\n", jcr->JobId, jcr);
+      Dmsg2(debuglevel, "JcrTimeoutCheck JobId=%u jcr=0x%x\n", jcr->JobId, jcr);
       if (jcr->JobId == 0) {
          continue;
       }
@@ -1277,7 +1277,7 @@ int GetNextJobidFromList(char **p, uint32_t *JobId)
 /*
  * Timeout signal comes here
  */
-extern "C" void timeout_handler(int sig)
+extern "C" void TimeoutHandler(int sig)
 {
    return;                            /* thus interrupting the function */
 }
@@ -1302,7 +1302,7 @@ void DbgJcrAddHook(dbg_jcr_hook_t *hook)
  * This function should be used ONLY after a fatal signal. We walk through the
  * JobControlRecord chain without doing any lock, BAREOS should not be running.
  */
-void dbg_print_jcr(FILE *fp)
+void DbgPrintJcr(FILE *fp)
 {
    char ed1[50], buf1[128], buf2[128], buf3[128], buf4[128];
    if (!jcrs) {

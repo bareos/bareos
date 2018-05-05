@@ -33,7 +33,7 @@
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
 
-extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
+extern "C" int BndmpFhdbAddFile(struct ndmlog *ixlog, int tagc, char *raw_name,
                                         ndmp9_file_stat *fstat)
 {
    NIS *nis = (NIS *)ixlog->ctx;
@@ -50,7 +50,7 @@ extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_nam
       /*
        * Every file entry is relative from the filesystem currently being backed up.
        */
-      Dmsg2(100, "bndmp_fhdb_add_file: New filename ==> %s%s\n", nis->filesystem, raw_name);
+      Dmsg2(100, "BndmpFhdbAddFile: New filename ==> %s%s\n", nis->filesystem, raw_name);
 
       //if (nis->jcr->ar) {
          /*

@@ -28,6 +28,6 @@ DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
                             workq_t *client_wq,
                             bool nokeepalive,
                             void *handle_client_request(void *bsock));
-DLL_IMP_EXP void bnet_stop_thread_server_tcp(pthread_t tid);
+DLL_IMP_EXP void BnetStopThreadServerTcp(pthread_t tid);
 
 #endif // BAREOS_LIB_BNET_SEVER_TCP_H_

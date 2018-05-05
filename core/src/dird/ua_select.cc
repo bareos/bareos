@@ -61,7 +61,7 @@ bool ConfirmRetention(UaContext *ua, utime_t *ret, const char *msg)
           return false;
        }
 
-       if (bstrcasecmp(ua->cmd, _("mod"))) {
+       if (Bstrcasecmp(ua->cmd, _("mod"))) {
           if (!GetCmd(ua, _("Enter new retention period: "))) {
              return false;
           }
@@ -90,7 +90,7 @@ int FindArgKeyword(UaContext *ua, const char **list)
 {
    for (int i = 1; i < ua->argc; i++) {
       for (int j = 0; list[j]; j++) {
-         if (bstrcasecmp(list[j], ua->argk[i])) {
+         if (Bstrcasecmp(list[j], ua->argk[i])) {
             return j;
          }
       }
@@ -108,7 +108,7 @@ int FindArgKeyword(UaContext *ua, const char **list)
 int FindArg(UaContext *ua, const char *keyword)
 {
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(keyword, ua->argk[i])) {
+      if (Bstrcasecmp(keyword, ua->argk[i])) {
          return i;
       }
    }
@@ -125,7 +125,7 @@ int FindArg(UaContext *ua, const char *keyword)
 int FindArgWithValue(UaContext *ua, const char *keyword)
 {
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(keyword, ua->argk[i])) {
+      if (Bstrcasecmp(keyword, ua->argk[i])) {
          if (ua->argv[i]) {
             return i;
          } else {
@@ -169,7 +169,7 @@ StorageResource *select_storage_resource(UaContext *ua, bool autochanger_only)
 
    LockRes();
    foreach_res(store, R_STORAGE) {
-      if (ua->acl_access_ok(Storage_ACL, store->name())) {
+      if (ua->AclAccessOk(Storage_ACL, store->name())) {
          if (autochanger_only && !store->autochanger) {
             continue;
          } else {
@@ -199,7 +199,7 @@ FilesetResource *select_fileset_resource(UaContext *ua)
 
    LockRes();
    foreach_res(fs, R_FILESET) {
-      if (ua->acl_access_ok(FileSet_ACL, fs->name())) {
+      if (ua->AclAccessOk(FileSet_ACL, fs->name())) {
          AddPrompt(ua, fs->name());
       }
    }
@@ -223,7 +223,7 @@ CatalogResource *get_catalog_resource(UaContext *ua)
    char name[MAX_NAME_LENGTH];
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("catalog")) && ua->argv[i]) {
+      if (Bstrcasecmp(ua->argk[i], NT_("catalog")) && ua->argv[i]) {
          catalog = ua->GetCatalogResWithName(ua->argv[i]);
          if (catalog) {
             break;
@@ -239,7 +239,7 @@ CatalogResource *get_catalog_resource(UaContext *ua)
       if (!catalog) {
          ua->ErrorMsg(_("Could not find a Catalog resource\n"));
          return NULL;
-      } else if (!ua->acl_access_ok(Catalog_ACL, catalog->name())) {
+      } else if (!ua->AclAccessOk(Catalog_ACL, catalog->name())) {
          ua->ErrorMsg(_("You must specify a \"use <catalog-name>\" command before continuing.\n"));
          return NULL;
       }
@@ -252,7 +252,7 @@ CatalogResource *get_catalog_resource(UaContext *ua)
 
       LockRes();
       foreach_res(catalog, R_CATALOG) {
-         if (ua->acl_access_ok(Catalog_ACL, catalog->name())) {
+         if (ua->AclAccessOk(Catalog_ACL, catalog->name())) {
             AddPrompt(ua, catalog->name());
          }
       }
@@ -280,7 +280,7 @@ JobResource *select_enable_disable_job_resource(UaContext *ua, bool enable)
 
    LockRes();
    foreach_res(job, R_JOB) {
-      if (!ua->acl_access_ok(Job_ACL, job->name())) {
+      if (!ua->AclAccessOk(Job_ACL, job->name())) {
          continue;
       }
       if (job->enabled == enable) {   /* Already enabled/disabled? */
@@ -311,7 +311,7 @@ JobResource *select_job_resource(UaContext *ua)
 
    LockRes();
    foreach_res(job, R_JOB) {
-      if (ua->acl_access_ok(Job_ACL, job->name())) {
+      if (ua->AclAccessOk(Job_ACL, job->name())) {
          AddPrompt(ua, job->name());
       }
    }
@@ -358,7 +358,7 @@ JobResource *select_restore_job_resource(UaContext *ua)
 
    LockRes();
    foreach_res(job, R_JOB) {
-      if (job->JobType == JT_RESTORE && ua->acl_access_ok(Job_ACL, job->name())) {
+      if (job->JobType == JT_RESTORE && ua->AclAccessOk(Job_ACL, job->name())) {
          AddPrompt(ua, job->name());
       }
    }
@@ -385,7 +385,7 @@ ClientResource *select_client_resource(UaContext *ua)
 
    LockRes();
    foreach_res(client, R_CLIENT) {
-      if (ua->acl_access_ok(Client_ACL, client->name())) {
+      if (ua->AclAccessOk(Client_ACL, client->name())) {
          AddPrompt(ua, client->name());
       }
    }
@@ -412,7 +412,7 @@ ClientResource *select_enable_disable_client_resource(UaContext *ua, bool enable
 
    LockRes();
    foreach_res(client, R_CLIENT) {
-      if (!ua->acl_access_ok(Client_ACL, client->name())) {
+      if (!ua->AclAccessOk(Client_ACL, client->name())) {
          continue;
       }
       if (client->enabled == enable) {   /* Already enabled/disabled? */
@@ -441,8 +441,8 @@ ClientResource *get_client_resource(UaContext *ua)
    ClientResource *client = NULL;
 
    for (int i = 1; i < ua->argc; i++) {
-      if ((bstrcasecmp(ua->argk[i], NT_("client")) ||
-           bstrcasecmp(ua->argk[i], NT_("fd"))) && ua->argv[i]) {
+      if ((Bstrcasecmp(ua->argk[i], NT_("client")) ||
+           Bstrcasecmp(ua->argk[i], NT_("fd"))) && ua->argv[i]) {
          client = ua->GetClientResWithName(ua->argv[i]);
          if (client) {
             return client;
@@ -469,7 +469,7 @@ ScheduleResource *select_enable_disable_schedule_resource(UaContext *ua, bool en
 
    LockRes();
    foreach_res(sched, R_SCHEDULE) {
-      if (!ua->acl_access_ok(Schedule_ACL, sched->name())) {
+      if (!ua->AclAccessOk(Schedule_ACL, sched->name())) {
          continue;
       }
       if (sched->enabled == enable) {   /* Already enabled/disabled? */
@@ -508,9 +508,9 @@ bool GetClientDbr(UaContext *ua, ClientDbRecord *cr)
    }
 
    for (int i = 1; i < ua->argc; i++) {
-      if ((bstrcasecmp(ua->argk[i], NT_("client")) ||
-           bstrcasecmp(ua->argk[i], NT_("fd"))) && ua->argv[i]) {
-         if (!ua->acl_access_ok(Client_ACL, ua->argv[i])) {
+      if ((Bstrcasecmp(ua->argk[i], NT_("client")) ||
+           Bstrcasecmp(ua->argk[i], NT_("fd"))) && ua->argv[i]) {
+         if (!ua->AclAccessOk(Client_ACL, ua->argv[i])) {
             break;
          }
          bstrncpy(cr->Name, ua->argv[i], sizeof(cr->Name));
@@ -559,7 +559,7 @@ bool SelectClientDbr(UaContext *ua, ClientDbRecord *cr)
    for (int i = 0; i < num_clients; i++) {
       ocr.ClientId = ids[i];
       if (!ua->db->GetClientRecord(ua->jcr, &ocr) ||
-          !ua->acl_access_ok(Client_ACL, ocr.Name)) {
+          !ua->AclAccessOk(Client_ACL, ocr.Name)) {
          continue;
       }
       AddPrompt(ua, ocr.Name);
@@ -595,11 +595,11 @@ bool SelectClientDbr(UaContext *ua, ClientDbRecord *cr)
  * returns: false on error
  *          true  on success and fills in StorageDbRecord
  */
-bool get_storage_dbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
+bool GetStorageDbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
 {
    if (sr->Name[0]) {                 /* If name already supplied */
       if (ua->db->GetStorageRecord(ua->jcr, sr) &&
-          ua->acl_access_ok(Pool_ACL, sr->Name)) {
+          ua->AclAccessOk(Pool_ACL, sr->Name)) {
          return true;
       }
       ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), sr->Name, ua->db->strerror());
@@ -628,7 +628,7 @@ bool GetPoolDbr(UaContext *ua, PoolDbRecord *pr, const char *argk)
 {
    if (pr->Name[0]) {                 /* If name already supplied */
       if (ua->db->GetPoolRecord(ua->jcr, pr) &&
-          ua->acl_access_ok(Pool_ACL, pr->Name)) {
+          ua->AclAccessOk(Pool_ACL, pr->Name)) {
          return true;
       }
       ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), pr->Name, ua->db->strerror());
@@ -653,8 +653,8 @@ bool SelectPoolDbr(UaContext *ua, PoolDbRecord *pr, const char *argk)
    char name[MAX_NAME_LENGTH];
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
-          ua->acl_access_ok(Pool_ACL, ua->argv[i])) {
+      if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
+          ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
          bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
          if (!ua->db->GetPoolRecord(ua->jcr, pr)) {
             ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i], ua->db->strerror());
@@ -684,7 +684,7 @@ bool SelectPoolDbr(UaContext *ua, PoolDbRecord *pr, const char *argk)
    for (int i = 0; i < num_pools; i++) {
       opr.PoolId = ids[i];
       if (!ua->db->GetPoolRecord(ua->jcr, &opr) ||
-          !ua->acl_access_ok(Pool_ACL, opr.Name)) {
+          !ua->AclAccessOk(Pool_ACL, opr.Name)) {
          continue;
       }
       AddPrompt(ua, opr.Name);
@@ -732,7 +732,7 @@ bool SelectPoolAndMediaDbr(UaContext *ua, PoolDbRecord *pr, MediaDbRecord *mr)
       return false;
    }
 
-   if (!ua->acl_access_ok(Pool_ACL, pr->Name, true)) {
+   if (!ua->AclAccessOk(Pool_ACL, pr->Name, true)) {
       ua->ErrorMsg(_("No access to Pool \"%s\"\n"), pr->Name);
       return false;
    }
@@ -752,8 +752,8 @@ bool SelectStorageDbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
    char name[MAX_NAME_LENGTH];
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
-          ua->acl_access_ok(Storage_ACL, ua->argv[i])) {
+      if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
+          ua->AclAccessOk(Storage_ACL, ua->argv[i])) {
          bstrncpy(sr->Name, ua->argv[i], sizeof(sr->Name));
          if (!ua->db->GetStorageRecord(ua->jcr, sr)) {
             ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i], ua->db->strerror());
@@ -765,7 +765,7 @@ bool SelectStorageDbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
    }
 
    sr->StorageId = 0;
-   if (!ua->db->get_storage_ids(ua->jcr, &num_storages, &ids)) {
+   if (!ua->db->GetStorageIds(ua->jcr, &num_storages, &ids)) {
       ua->ErrorMsg(_("Error obtaining storage ids. ERR=%s\n"), ua->db->strerror());
       return 0;
    }
@@ -783,7 +783,7 @@ bool SelectStorageDbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
    for (int i = 0; i < num_storages; i++) {
       osr.StorageId = ids[i];
       if (!ua->db->GetStorageRecord(ua->jcr, &osr) ||
-          !ua->acl_access_ok(Storage_ACL, osr.Name)) {
+          !ua->AclAccessOk(Storage_ACL, osr.Name)) {
          continue;
       }
       AddPrompt(ua, osr.Name);
@@ -888,7 +888,7 @@ PoolResource *select_pool_resource(UaContext *ua)
    StartPrompt(ua, _("The defined Pool resources are:\n"));
    LockRes();
    foreach_res(pool, R_POOL) {
-      if (ua->acl_access_ok(Pool_ACL, pool->name())) {
+      if (ua->AclAccessOk(Pool_ACL, pool->name())) {
          AddPrompt(ua, pool->name());
       }
    }
@@ -914,7 +914,7 @@ PoolResource *get_pool_resource(UaContext *ua)
    PoolResource *pool = NULL;
 
    i = FindArgWithValue(ua, NT_("pool"));
-   if (i >= 0 && ua->acl_access_ok(Pool_ACL, ua->argv[i])) {
+   if (i >= 0 && ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
       pool = ua->GetPoolResWithName(ua->argv[i]);
       if (pool) {
          return pool;
@@ -928,7 +928,7 @@ PoolResource *get_pool_resource(UaContext *ua)
 /**
  * List all jobs and ask user to select one
  */
-int select_job_dbr(UaContext *ua, JobDbRecord *jr)
+int SelectJobDbr(UaContext *ua, JobDbRecord *jr)
 {
    ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
    if (!GetPint(ua, _("Enter the JobId to select: "))) {
@@ -960,10 +960,10 @@ int GetJobDbr(UaContext *ua, JobDbRecord *jr)
    int i;
 
    for (i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("ujobid")) && ua->argv[i]) {
+      if (Bstrcasecmp(ua->argk[i], NT_("ujobid")) && ua->argv[i]) {
          jr->JobId = 0;
          bstrncpy(jr->Job, ua->argv[i], sizeof(jr->Job));
-      } else if (bstrcasecmp(ua->argk[i], NT_("jobid")) && ua->argv[i]) {
+      } else if (Bstrcasecmp(ua->argk[i], NT_("jobid")) && ua->argv[i]) {
          jr->JobId = str_to_int64(ua->argv[i]);
          jr->Job[0] = 0;
       } else {
@@ -982,15 +982,15 @@ int GetJobDbr(UaContext *ua, JobDbRecord *jr)
    jr->Job[0] = 0;
 
    for (i = 1; i < ua->argc; i++) {
-      if ((bstrcasecmp(ua->argk[i], NT_("jobname")) ||
-           bstrcasecmp(ua->argk[i], NT_("job"))) && ua->argv[i]) {
+      if ((Bstrcasecmp(ua->argk[i], NT_("jobname")) ||
+           Bstrcasecmp(ua->argk[i], NT_("job"))) && ua->argv[i]) {
          jr->JobId = 0;
          bstrncpy(jr->Name, ua->argv[i], sizeof(jr->Name));
          break;
       }
    }
 
-   if (!select_job_dbr(ua, jr)) {  /* try once more */
+   if (!SelectJobDbr(ua, jr)) {  /* try once more */
       return 0;
    }
 
@@ -1165,7 +1165,7 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
    JobControlRecord *jcr;
    int jobid;
    char ed1[50];
-   char *store_name = NULL;
+   char *StoreName = NULL;
    StorageResource *store = NULL;
 
    Dmsg1(100, "get_storage_resource: autochangers_only is %d\n", autochangers_only);
@@ -1181,31 +1181,31 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
          /*
           * Ignore barcode, barcodes, encrypt, scan and slots keywords.
           */
-         if (bstrcasecmp("barcode", ua->argk[i]) ||
-             bstrcasecmp("barcodes", ua->argk[i]) ||
-             bstrcasecmp("encrypt", ua->argk[i]) ||
-             bstrcasecmp("scan", ua->argk[i]) ||
-             bstrcasecmp("slots", ua->argk[i])) {
+         if (Bstrcasecmp("barcode", ua->argk[i]) ||
+             Bstrcasecmp("barcodes", ua->argk[i]) ||
+             Bstrcasecmp("encrypt", ua->argk[i]) ||
+             Bstrcasecmp("scan", ua->argk[i]) ||
+             Bstrcasecmp("slots", ua->argk[i])) {
             continue;
          }
          /*
           * Default argument is storage
           */
-         if (store_name) {
+         if (StoreName) {
             ua->ErrorMsg(_("Storage name given twice.\n"));
             return NULL;
          }
-         store_name = ua->argk[i];
-         if (*store_name == '?') {
-            *store_name = 0;
+         StoreName = ua->argk[i];
+         if (*StoreName == '?') {
+            *StoreName = 0;
             break;
          }
       } else {
-         if (bstrcasecmp(ua->argk[i], NT_("storage")) ||
-             bstrcasecmp(ua->argk[i], NT_("sd"))) {
-            store_name = ua->argv[i];
+         if (Bstrcasecmp(ua->argk[i], NT_("storage")) ||
+             Bstrcasecmp(ua->argk[i], NT_("sd"))) {
+            StoreName = ua->argv[i];
             break;
-         } else if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+         } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
             jobid = str_to_int64(ua->argv[i]);
             if (jobid <= 0) {
                ua->ErrorMsg(_("Expecting jobid=nn command, got: %s\n"), ua->argk[i]);
@@ -1218,8 +1218,8 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
             store = jcr->res.wstore;
             FreeJcr(jcr);
             break;
-         } else if (bstrcasecmp(ua->argk[i], NT_("job")) ||
-                    bstrcasecmp(ua->argk[i], NT_("jobname"))) {
+         } else if (Bstrcasecmp(ua->argk[i], NT_("job")) ||
+                    Bstrcasecmp(ua->argk[i], NT_("jobname"))) {
             if (!ua->argv[i]) {
                ua->ErrorMsg(_("Expecting job=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
@@ -1231,7 +1231,7 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
             store = jcr->res.wstore;
             FreeJcr(jcr);
             break;
-         } else if (bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
+         } else if (Bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
             if (!ua->argv[i]) {
                ua->ErrorMsg(_("Expecting ujobid=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
@@ -1247,19 +1247,19 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
       }
    }
 
-   if (store && !ua->acl_access_ok(Storage_ACL, store->name())) {
+   if (store && !ua->AclAccessOk(Storage_ACL, store->name())) {
       store = NULL;
    }
 
-   if (!store && store_name && store_name[0] != 0) {
-      store = ua->GetStoreResWithName(store_name);
+   if (!store && StoreName && StoreName[0] != 0) {
+      store = ua->GetStoreResWithName(StoreName);
 
       if (!store) {
-         ua->ErrorMsg(_("Storage resource \"%s\": not found\n"), store_name);
+         ua->ErrorMsg(_("Storage resource \"%s\": not found\n"), StoreName);
       }
    }
 
-   if (store && !ua->acl_access_ok(Storage_ACL, store->name())) {
+   if (store && !ua->AclAccessOk(Storage_ACL, store->name())) {
       store = NULL;
    }
 
@@ -1304,7 +1304,7 @@ drive_number_t GetStorageDrive(UaContext *ua, StorageResource *store)
           */
          StartPrompt(ua, _("Select Drive:\n"));
          for (drive_number_t cnt = 0; cnt < drives; cnt++) {
-            bsnprintf(drivename, sizeof(drivename), "Drive %hd", cnt);
+            Bsnprintf(drivename, sizeof(drivename), "Drive %hd", cnt);
             AddPrompt(ua, drivename);
          }
          if (DoPrompt(ua, _("Drive"), _("Select drive"), drivename, sizeof(drivename)) < 0) {
@@ -1375,7 +1375,7 @@ int GetMediaType(UaContext *ua, char *MediaType, int max_media)
 
    LockRes();
    foreach_res(store, R_STORAGE) {
-      if (ua->acl_access_ok(Storage_ACL, store->name())) {
+      if (ua->AclAccessOk(Storage_ACL, store->name())) {
          AddPrompt(ua, store->media_type);
       }
    }
@@ -1392,7 +1392,7 @@ bool GetLevelFromName(JobControlRecord *jcr, const char *level_name)
     * Look up level name and pull code
     */
    for (int i = 0; joblevels[i].level_name; i++) {
-      if (bstrcasecmp(level_name, joblevels[i].level_name)) {
+      if (Bstrcasecmp(level_name, joblevels[i].level_name)) {
          jcr->setJobLevel(joblevels[i].level);
          found = true;
          break;
@@ -1405,7 +1405,7 @@ bool GetLevelFromName(JobControlRecord *jcr, const char *level_name)
 /**
  * Insert an JobId into the list of selected JobIds when its a unique new id.
  */
-static inline bool insert_selected_jobid(alist *selected_jobids, JobId_t JobId)
+static inline bool InsertSelectedJobid(alist *selected_jobids, JobId_t JobId)
 {
    bool found;
    JobId_t *selected_jobid;
@@ -1482,7 +1482,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
     */
    if (FindArgKeyword(ua, lst) > 0) {
       for (i = 1; i < ua->argc; i++) {
-         if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+         if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
             JobId_t JobId = str_to_int64(ua->argv[i]);
             if (!JobId) {
                continue;
@@ -1491,7 +1491,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
                ua->ErrorMsg(_("JobId %s is not running. Use Job name to %s inactive jobs.\n"),  ua->argv[i], _(reason));
                continue;
             }
-         } else if (bstrcasecmp(ua->argk[i], NT_("job"))) {
+         } else if (Bstrcasecmp(ua->argk[i], NT_("job"))) {
             if (!ua->argv[i]) {
                continue;
             }
@@ -1499,7 +1499,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
                ua->WarningMsg(_("Warning Job %s is not running. Continuing anyway ...\n"), ua->argv[i]);
                continue;
             }
-         } else if (bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
+         } else if (Bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
             if (!ua->argv[i]) {
                continue;
             }
@@ -1510,12 +1510,12 @@ alist *select_jobs(UaContext *ua, const char *reason)
          }
 
          if (jcr) {
-            if (jcr->res.job && !ua->acl_access_ok(Job_ACL, jcr->res.job->name(), true)) {
+            if (jcr->res.job && !ua->AclAccessOk(Job_ACL, jcr->res.job->name(), true)) {
                ua->ErrorMsg(_("Unauthorized command from this console.\n"));
                goto bail_out;
             }
 
-            if (insert_selected_jobid(selected_jobids, jcr->JobId)) {
+            if (InsertSelectedJobid(selected_jobids, jcr->JobId)) {
                cnt++;
             }
 
@@ -1540,7 +1540,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
             continue;
          }
          tjobs++;                      /* Count of all jobs */
-         if (!ua->acl_access_ok(Job_ACL, jcr->res.job->name())) {
+         if (!ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
             continue;                  /* Skip not authorized */
          }
          njobs++;                      /* Count of authorized jobs */
@@ -1566,19 +1566,19 @@ alist *select_jobs(UaContext *ua, const char *reason)
          } else {
             i = FindArgWithValue(ua, NT_("state"));
             if (i > 0) {
-               if (bstrcasecmp(ua->argv[i], NT_("created"))) {
+               if (Bstrcasecmp(ua->argv[i], NT_("created"))) {
                   selection_criterium = created_jobs;
                }
 
-               if (bstrcasecmp(ua->argv[i], NT_("blocked"))) {
+               if (Bstrcasecmp(ua->argv[i], NT_("blocked"))) {
                   selection_criterium = blocked_jobs;
                }
 
-               if (bstrcasecmp(ua->argv[i], NT_("waiting"))) {
+               if (Bstrcasecmp(ua->argv[i], NT_("waiting"))) {
                   selection_criterium = waiting_jobs;
                }
 
-               if (bstrcasecmp(ua->argv[i], NT_("running"))) {
+               if (Bstrcasecmp(ua->argv[i], NT_("running"))) {
                   selection_criterium = running_jobs;
                }
 
@@ -1597,7 +1597,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
                continue;
             }
 
-            if (!ua->acl_access_ok(Job_ACL, jcr->res.job->name())) {
+            if (!ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
                continue;            /* Skip not authorized */
             }
 
@@ -1631,7 +1631,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
                break;
             }
 
-            insert_selected_jobid(selected_jobids, jcr->JobId);
+            InsertSelectedJobid(selected_jobids, jcr->JobId);
             ua->SendMsg(_("Selected Job %d for cancelling\n") , jcr->JobId);
          }
 
@@ -1661,15 +1661,15 @@ alist *select_jobs(UaContext *ua, const char *reason)
             if (jcr->JobId == 0) {    /* This is us */
                continue;
             }
-            if (!ua->acl_access_ok(Job_ACL, jcr->res.job->name())) {
+            if (!ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
                continue;              /* Skip not authorized */
             }
-            bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"), edit_int64(jcr->JobId, ed1), jcr->Job);
+            Bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"), edit_int64(jcr->JobId, ed1), jcr->Job);
             AddPrompt(ua, buf);
          }
          endeach_jcr(jcr);
 
-         bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
+         Bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
          if (DoPrompt(ua, _("Job"),  temp, buf, sizeof(buf)) < 0) {
             goto bail_out;
          }
@@ -1678,7 +1678,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
             if (ua->api && njobs == 1) {
                char nbuf[1000];
 
-               bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf, _("Confirm cancel?"));
+               Bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf, _("Confirm cancel?"));
                if (!GetYesno(ua, nbuf) || !ua->pint32_val) {
                   goto bail_out;
                }
@@ -1698,7 +1698,7 @@ alist *select_jobs(UaContext *ua, const char *reason)
             goto bail_out;
          }
 
-         insert_selected_jobid(selected_jobids, jcr->JobId);
+         InsertSelectedJobid(selected_jobids, jcr->JobId);
          FreeJcr(jcr);
       }
    }
@@ -1851,7 +1851,7 @@ bool GetUserJobTypeSelection(UaContext *ua, int *jobtype)
    }
 
    for (i = 0; jobtypes[i].type_name; i++) {
-      if (bstrcasecmp(jobtypes[i].type_name, job_type)) {
+      if (Bstrcasecmp(jobtypes[i].type_name, job_type)) {
          break;
       }
    }
@@ -1873,17 +1873,17 @@ bool GetUserJobStatusSelection(UaContext *ua, int *jobstatus)
    if ((i = FindArgWithValue(ua, NT_("jobstatus"))) >= 0) {
       if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A' && ua->argv[i][0] <= 'z') {
          *jobstatus = ua->argv[i][0];
-      } else if (bstrcasecmp(ua->argv[i], "terminated")) {
+      } else if (Bstrcasecmp(ua->argv[i], "terminated")) {
          *jobstatus = JS_Terminated;
-      } else if (bstrcasecmp(ua->argv[i], "warnings")) {
+      } else if (Bstrcasecmp(ua->argv[i], "warnings")) {
          *jobstatus = JS_Warnings;
-      } else if (bstrcasecmp(ua->argv[i], "canceled")) {
+      } else if (Bstrcasecmp(ua->argv[i], "canceled")) {
          *jobstatus = JS_Canceled;
-      } else if (bstrcasecmp(ua->argv[i], "running")) {
+      } else if (Bstrcasecmp(ua->argv[i], "running")) {
          *jobstatus = JS_Running;
-      } else if (bstrcasecmp(ua->argv[i], "error")) {
+      } else if (Bstrcasecmp(ua->argv[i], "error")) {
          *jobstatus = JS_ErrorTerminated;
-      } else if (bstrcasecmp(ua->argv[i], "fatal")) {
+      } else if (Bstrcasecmp(ua->argv[i], "fatal")) {
          *jobstatus = JS_FatalError;
       } else {
          /* invalid jobstatus */

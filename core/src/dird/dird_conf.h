@@ -333,7 +333,7 @@ public:
    UnifiedStorageResource() { store = NULL; store_source = GetPoolMemory(PM_MESSAGE);
               *store_source = 0; }
    ~UnifiedStorageResource() { destroy(); }
-   void set_source(const char *where);
+   void SetSource(const char *where);
    void destroy();
 };
 
@@ -345,7 +345,7 @@ inline void UnifiedStorageResource::destroy()
    }
 }
 
-inline void UnifiedStorageResource::set_source(const char *where)
+inline void UnifiedStorageResource::SetSource(const char *where)
 {
    if (!store_source) {
       store_source = GetPoolMemory(PM_MESSAGE);
@@ -470,7 +470,7 @@ struct FileOptions {
    alist wildbase;                    /**< Wild card strings for files without '/' */
    alist base;                        /**< List of base names */
    alist fstype;                      /**< File system type limitation */
-   alist drivetype;                   /**< Drive type limitation */
+   alist Drivetype;                   /**< Drive type limitation */
    alist meta;                        /**< Backup meta information */
    char *reader;                      /**< Reader program */
    char *writer;                      /**< Writer program */

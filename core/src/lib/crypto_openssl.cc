@@ -489,7 +489,7 @@ err:
 }
 
 /* Dispatch user PEM encryption callbacks */
-static int crypto_pem_callback_dispatch(char *buf, int size, int rwflag, void *userdata)
+static int CryptoPemCallbackDispatch(char *buf, int size, int rwflag, void *userdata)
 {
    PEM_CB_CONTEXT *ctx = (PEM_CB_CONTEXT *) userdata;
    return (ctx->pem_callback(buf, size, ctx->pem_userdata));
@@ -567,11 +567,11 @@ int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file,
       ctx.pem_callback = pem_callback;
       ctx.pem_userdata = pem_userdata;
    } else {
-      ctx.pem_callback = crypto_default_pem_callback;
+      ctx.pem_callback = CryptoDefaultPemCallback;
       ctx.pem_userdata = NULL;
    }
 
-   keypair->privkey = PEM_read_bio_PrivateKey(bio, NULL, crypto_pem_callback_dispatch, &ctx);
+   keypair->privkey = PEM_read_bio_PrivateKey(bio, NULL, CryptoPemCallbackDispatch, &ctx);
    BIO_free(bio);
    if (!keypair->privkey) {
       OpensslPostErrors(M_ERROR, _("Unable to read private key from file"));
@@ -1445,7 +1445,7 @@ int InitCrypto(void)
 {
    int status;
 
-   if ((status = openssl_init_threads()) != 0) {
+   if ((status = OpensslInitThreads()) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0,
         _("Unable to init OpenSSL threading: ERR=%s\n"), be.bstrerror(status));
@@ -1460,7 +1460,7 @@ int InitCrypto(void)
    /* Register OpenSSL ciphers and digests */
    OpenSSL_add_all_algorithms();
 
-   if (!openssl_seed_prng()) {
+   if (!OpensslSeedPrng()) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to seed OpenSSL PRNG\n"));
    }
 
@@ -1506,11 +1506,11 @@ int CleanupCrypto(void)
    ENGINE_cleanup();
 #endif
 
-   if (!openssl_save_prng()) {
+   if (!OpensslSavePrng()) {
       Jmsg0(NULL, M_ERROR, 0, _("Failed to save OpenSSL PRNG\n"));
    }
 
-   openssl_cleanup_threads();
+   OpensslCleanupThreads();
 
    /* Free libssl and libcrypto error strings */
    ERR_free_strings();
@@ -1567,7 +1567,7 @@ void OpensslPostErrors(JobControlRecord *jcr, int code, const char *errstring)
  *  Returns: thread ID
  *
  */
-static unsigned long get_openssl_thread_id(void)
+static unsigned long GetOpensslThreadId(void)
 {
 #ifdef HAVE_WIN32
    return (unsigned long)getpid();
@@ -1600,7 +1600,7 @@ static struct CRYPTO_dynlock_value *openssl_create_dynamic_mutex (const char *fi
    return dynlock;
 }
 
-static void openssl_update_dynamic_mutex(int mode, struct CRYPTO_dynlock_value *dynlock, const char *file, int line)
+static void OpensslUpdateDynamicMutex(int mode, struct CRYPTO_dynlock_value *dynlock, const char *file, int line)
 {
    if (mode & CRYPTO_LOCK) {
       P(dynlock->mutex);
@@ -1609,7 +1609,7 @@ static void openssl_update_dynamic_mutex(int mode, struct CRYPTO_dynlock_value *
    }
 }
 
-static void openssl_destroy_dynamic_mutex(struct CRYPTO_dynlock_value *dynlock, const char *file, int line)
+static void OpensslDestroyDynamicMutex(struct CRYPTO_dynlock_value *dynlock, const char *file, int line)
 {
    int status;
 
@@ -1638,14 +1638,14 @@ static void openssl_update_static_mutex (int mode, int i, const char *file, int 
  *  Returns: 0 on success
  *           errno on failure
  */
-int openssl_init_threads (void)
+int OpensslInitThreads (void)
 {
    int i, numlocks;
    int status;
 
 
    /* Set thread ID callback */
-   CRYPTO_set_id_callback(get_openssl_thread_id);
+   CRYPTO_set_id_callback(GetOpensslThreadId);
 
    /* Initialize static locking */
    numlocks = CRYPTO_num_locks();
@@ -1663,8 +1663,8 @@ int openssl_init_threads (void)
 
    /* Initialize dyanmic locking */
    CRYPTO_set_dynlock_create_callback(openssl_create_dynamic_mutex);
-   CRYPTO_set_dynlock_lock_callback(openssl_update_dynamic_mutex);
-   CRYPTO_set_dynlock_destroy_callback(openssl_destroy_dynamic_mutex);
+   CRYPTO_set_dynlock_lock_callback(OpensslUpdateDynamicMutex);
+   CRYPTO_set_dynlock_destroy_callback(OpensslDestroyDynamicMutex);
 
    return 0;
 }
@@ -1672,7 +1672,7 @@ int openssl_init_threads (void)
 /*
  * Clean up OpenSSL threading support
  */
-void openssl_cleanup_threads(void)
+void OpensslCleanupThreads(void)
 {
    int i, numlocks;
    int status;
@@ -1716,7 +1716,7 @@ void openssl_cleanup_threads(void)
  *  Returns: 1 on success
  *           0 on failure
  */
-int openssl_seed_prng (void)
+int OpensslSeedPrng (void)
 {
    const char *names[]  = { "/dev/urandom", "/dev/random", NULL };
    int i;
@@ -1741,7 +1741,7 @@ int openssl_seed_prng (void)
  *  Returns: 1 on success
  *           0 on failure
  */
-int openssl_save_prng (void)
+int OpensslSavePrng (void)
 {
    // ***FIXME***
    // Implement PRNG state save

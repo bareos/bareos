@@ -43,7 +43,7 @@ static int date_item(JobControlRecord *jcr,
    struct tm tm;
    time_t now = time(NULL);
 
-   blocaltime(&now, &tm);
+   Blocaltime(&now, &tm);
 
    switch (code) {
    case 1:                            /* year */
@@ -68,7 +68,7 @@ static int date_item(JobControlRecord *jcr,
       val = tm.tm_wday;
       break;
    }
-   bsnprintf(buf, sizeof(buf), "%d", val);
+   Bsnprintf(buf, sizeof(buf), "%d", val);
    *val_ptr = bstrdup(buf);
    *val_len = strlen(buf);
    *val_size = *val_len + 1;
@@ -99,7 +99,7 @@ static int job_item(JobControlRecord *jcr,
       str = job_type_to_str(jcr->getJobType());
       break;
    case 5:                            /* JobId */
-      bsnprintf(buf, sizeof(buf), "%d", jcr->JobId);
+      Bsnprintf(buf, sizeof(buf), "%d", jcr->JobId);
       str = buf;
       break;
    case 6:                            /* Client */
@@ -109,7 +109,7 @@ static int job_item(JobControlRecord *jcr,
       }
       break;
    case 7:                            /* NumVols */
-      bsnprintf(buf, sizeof(buf), "%d", jcr->NumVols);
+      Bsnprintf(buf, sizeof(buf), "%d", jcr->NumVols);
       str = buf;
       break;
    case 8:                            /* Pool */

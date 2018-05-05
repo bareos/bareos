@@ -127,7 +127,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
             break;                               /* Successfully opened and rewound */
          }
       }
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
 
       /*
        * Exceed wait time ?
@@ -629,9 +629,9 @@ bool generic_tape_device::bsf(int num)
    return status == 0;
 }
 
-static inline bool dev_get_os_pos(Device *dev, struct mtget *mt_stat)
+static inline bool DevGetOsPos(Device *dev, struct mtget *mt_stat)
 {
-   Dmsg0(100, "dev_get_os_pos\n");
+   Dmsg0(100, "DevGetOsPos\n");
    return dev->HasCap(CAP_MTIOCGET) &&
           dev->d_ioctl(dev->fd(), MTIOCGET, (char *)mt_stat) == 0 &&
           mt_stat->mt_fileno >= 0;
@@ -674,7 +674,7 @@ bool generic_tape_device::fsr(int num)
 
       clrerror(mt_com.mt_op);
       Dmsg1(100, "FSF fail: ERR=%s\n", be.bstrerror());
-      if (dev_get_os_pos(this, &mt_stat)) {
+      if (DevGetOsPos(this, &mt_stat)) {
          Dmsg4(100, "Adjust from %d:%d to %d:%d\n", file,
             block_num, mt_stat.mt_fileno, mt_stat.mt_blkno);
          file = mt_stat.mt_fileno;
@@ -805,7 +805,7 @@ void generic_tape_device::UnlockDoor()
 /**
  * Found on Solaris
  */
-static inline void os_clrerror(Device *dev)
+static inline void OsClrerror(Device *dev)
 {
    if (dev->d_ioctl(dev->fd(), MTIOCLRERR) < 0) {
       dev->clrerror(MTIOCLRERR);
@@ -816,7 +816,7 @@ static inline void os_clrerror(Device *dev)
 /**
  * Typically on FreeBSD
  */
-static inline void os_clrerror(Device *dev)
+static inline void OsClrerror(Device *dev)
 {
    berrno be;
    union mterrstat mt_errstat;
@@ -833,7 +833,7 @@ static inline void os_clrerror(Device *dev)
 /**
  * Clear Subsystem Exception TRU64
  */
-static inline void os_clrerror(Device *dev)
+static inline void OsClrerror(Device *dev)
 {
    struct mtop mt_com;
 
@@ -848,7 +848,7 @@ static inline void os_clrerror(Device *dev)
    Dmsg0(200, "Did MTCSE\n");
 }
 #else
-static inline void os_clrerror(Device *dev)
+static inline void OsClrerror(Device *dev)
 {
 }
 #endif
@@ -959,7 +959,7 @@ void generic_tape_device::clrerror(int func)
          break;
 #endif
       default:
-         bsnprintf(buf, sizeof(buf), _("unknown func code %d"), func);
+         Bsnprintf(buf, sizeof(buf), _("unknown func code %d"), func);
          msg = buf;
          break;
       }
@@ -983,7 +983,7 @@ void generic_tape_device::clrerror(int func)
    /*
     * OS specific clear function.
     */
-   os_clrerror(this);
+   OsClrerror(this);
 }
 
 void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
@@ -1173,7 +1173,7 @@ bool generic_tape_device::rewind(DeviceControlRecord *dcr)
 #else
          if (dev_errno == EIO && i > 0) {
             Dmsg0(200, "Sleeping 5 seconds.\n");
-            bmicrosleep(5, 0);
+            Bmicrosleep(5, 0);
             continue;
          }
 #endif
@@ -1368,9 +1368,9 @@ bool generic_tape_device::UpdatePos(DeviceControlRecord *dcr)
  * Returns: false on failure
  *          true  on success
  */
-bool generic_tape_device::reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock)
+bool generic_tape_device::Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock)
 {
-   Dmsg4(100, "reposition from %u:%u to %u:%u\n", file, block_num, rfile, rblock);
+   Dmsg4(100, "Reposition from %u:%u to %u:%u\n", file, block_num, rfile, rblock);
    if (rfile < file) {
       Dmsg0(100, "Rewind\n");
       if (!rewind(NULL)) {

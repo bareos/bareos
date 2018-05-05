@@ -132,7 +132,7 @@ void MessagesResource::WaitNotInUse()    /* leaves fides_mutex set */
    lock();
    while (in_use_ || closing_) {
       unlock();
-      bmicrosleep(0, 200);         /* wait */
+      Bmicrosleep(0, 200);         /* wait */
       lock();
    }
 }
@@ -140,7 +140,7 @@ void MessagesResource::WaitNotInUse()    /* leaves fides_mutex set */
 /*
  * Handle message delivery errors
  */
-static void delivery_error(const char *fmt,...)
+static void DeliveryError(const char *fmt,...)
 {
    va_list ap;
    int i, len, maxlen;
@@ -157,7 +157,7 @@ static void delivery_error(const char *fmt,...)
    while (1) {
       maxlen = SizeofPoolMemory(pool_buf) - i - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(pool_buf+i, maxlen, fmt, ap);
+      len = Bvsnprintf(pool_buf+i, maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -174,7 +174,7 @@ static void delivery_error(const char *fmt,...)
    FreeMemory(pool_buf);
 }
 
-void register_message_callback(void msg_callback(int type, char *msg))
+void RegisterMessageCallback(void msg_callback(int type, char *msg))
 {
    message_callback = msg_callback;
 }
@@ -357,7 +357,7 @@ void InitConsoleMsg(const char *wd)
 {
    int fd;
 
-   bsnprintf(con_fname, sizeof(con_fname), "%s%c%s.conmsg", wd, PathSeparator, my_name);
+   Bsnprintf(con_fname, sizeof(con_fname), "%s%c%s.conmsg", wd, PathSeparator, my_name);
    fd = open(con_fname, O_CREAT|O_RDWR|O_BINARY, 0600);
    if (fd == -1) {
       berrno be;
@@ -464,7 +464,7 @@ void RemMsgDest(MessagesResource *msg, int dest_code, int msg_type, char *where)
 /*
  * Create a unique filename for the mail command
  */
-static void make_unique_mail_filename(JobControlRecord *jcr, POOLMEM *&name, DEST *d)
+static void MakeUniqueMailFilename(JobControlRecord *jcr, POOLMEM *&name, DEST *d)
 {
    if (jcr) {
       Mmsg(name, "%s/%s.%s.%d.mail", working_directory, my_name,
@@ -498,7 +498,7 @@ static Bpipe *open_mail_pipe(JobControlRecord *jcr, POOLMEM *&cmd, DEST *d)
       }
    } else {
       berrno be;
-      delivery_error(_("open mail pipe %s failed: ERR=%s\n"),
+      DeliveryError(_("open mail pipe %s failed: ERR=%s\n"),
                      cmd, be.bstrerror());
    }
 
@@ -621,16 +621,16 @@ void CloseMsg(JobControlRecord *jcr)
                 * Read what mail prog returned -- should be nothing
                 */
                while (fgets(line, len, bpipe->rfd)) {
-                  delivery_error(_("Mail prog: %s"), line);
+                  DeliveryError(_("Mail prog: %s"), line);
                }
             }
 
             status = CloseBpipe(bpipe);
             if (status != 0 && msgs != daemon_msgs) {
                berrno be;
-               be.set_errno(status);
+               be.SetErrno(status);
                Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
-               delivery_error(_("Mail program terminated in error.\n"
+               DeliveryError(_("Mail program terminated in error.\n"
                                  "CMD=%s\n"
                                  "ERR=%s\n"), cmd, be.bstrerror());
             }
@@ -736,12 +736,12 @@ void TermMsg()
    TermLastJobsList();
 }
 
-static inline bool open_dest_file(JobControlRecord *jcr, DEST *d, const char *mode)
+static inline bool OpenDestFile(JobControlRecord *jcr, DEST *d, const char *mode)
 {
    d->fd = fopen(d->where, mode);
    if (!d->fd) {
       berrno be;
-      delivery_error(_("fopen %s failed: ERR=%s\n"), d->where, be.bstrerror());
+      DeliveryError(_("fopen %s failed: ERR=%s\n"), d->where, be.bstrerror());
       return false;
    }
 
@@ -793,13 +793,13 @@ static struct syslog_facility_name {
     { NULL, -1 }
 };
 
-static inline bool set_syslog_facility(JobControlRecord *jcr, DEST *d)
+static inline bool SetSyslogFacility(JobControlRecord *jcr, DEST *d)
 {
    int i;
 
    if (d->where) {
       for (i = 0; syslog_facility_names[i].name; i++) {
-         if (bstrcasecmp(d->where, syslog_facility_names[i].name)) {
+         if (Bstrcasecmp(d->where, syslog_facility_names[i].name)) {
             d->syslog_facility = syslog_facility_names[i].facility;
             i = 0;
             break;
@@ -823,7 +823,7 @@ static inline bool set_syslog_facility(JobControlRecord *jcr, DEST *d)
  * Split the output for syslog (it converts \n to ' ' and is
  * limited to 1024 characters per syslog message
  */
-static inline void send_to_syslog(int mode, const char *msg)
+static inline void SendToSyslog(int mode, const char *msg)
 {
    int len;
    char buf[1024];
@@ -968,7 +968,7 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
 
             if (p_db_log_insert) {
                if (!p_db_log_insert(jcr, mtime, msg)) {
-                  delivery_error(_("Msg delivery error: Unable to store data in database.\n"));
+                  DeliveryError(_("Msg delivery error: Unable to store data in database.\n"));
                }
             }
             break;
@@ -1001,7 +1001,7 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
          case MD_SYSLOG:
             Dmsg1(850, "SYSLOG for following msg: %s\n", msg);
 
-            if (!d->syslog_facility && !set_syslog_facility(jcr, d)) {
+            if (!d->syslog_facility && !SetSyslogFacility(jcr, d)) {
                msgs->ClearInUse();
                break;
             }
@@ -1012,17 +1012,17 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             switch (type) {
             case M_ERROR:
             case M_ERROR_TERM:
-               send_to_syslog(d->syslog_facility | LOG_ERR, msg);
+               SendToSyslog(d->syslog_facility | LOG_ERR, msg);
                break;
             case M_ABORT:
             case M_FATAL:
-               send_to_syslog(d->syslog_facility | LOG_CRIT, msg);
+               SendToSyslog(d->syslog_facility | LOG_CRIT, msg);
                break;
             case M_WARNING:
-               send_to_syslog(d->syslog_facility | LOG_WARNING, msg);
+               SendToSyslog(d->syslog_facility | LOG_WARNING, msg);
                break;
             case M_DEBUG:
-               send_to_syslog(d->syslog_facility | LOG_DEBUG, msg);
+               SendToSyslog(d->syslog_facility | LOG_DEBUG, msg);
                break;
             case M_INFO:
             case M_NOTSAVED:
@@ -1030,17 +1030,17 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             case M_SAVED:
             case M_SKIPPED:
             case M_TERM:
-               send_to_syslog(d->syslog_facility | LOG_INFO, msg);
+               SendToSyslog(d->syslog_facility | LOG_INFO, msg);
                break;
             case M_ALERT:
             case M_AUDIT:
             case M_MOUNT:
             case M_SECURITY:
             case M_VOLMGMT:
-               send_to_syslog(d->syslog_facility | LOG_NOTICE, msg);
+               SendToSyslog(d->syslog_facility | LOG_NOTICE, msg);
                break;
             default:
-               send_to_syslog(d->syslog_facility | LOG_ERR, msg);
+               SendToSyslog(d->syslog_facility | LOG_ERR, msg);
                break;
             }
             break;
@@ -1057,8 +1057,8 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
                status = CloseBpipe(bpipe);
                if (status != 0) {
                   berrno be;
-                  be.set_errno(status);
-                  delivery_error(_("Msg delivery error: Operator mail program terminated in error.\n"
+                  be.SetErrno(status);
+                  DeliveryError(_("Msg delivery error: Operator mail program terminated in error.\n"
                                    "CMD=%s\nERR=%s\n"), mcmd, be.bstrerror());
                }
             }
@@ -1074,11 +1074,11 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             msgs->SetInUse();
             if (!d->fd) {
                POOLMEM *name = GetPoolMemory(PM_MESSAGE);
-               make_unique_mail_filename(jcr, name, d);
+               MakeUniqueMailFilename(jcr, name, d);
                d->fd = fopen(name, "w+b");
                if (!d->fd) {
                   berrno be;
-                  delivery_error(_("Msg delivery error: fopen %s failed: ERR=%s\n"), name,
+                  DeliveryError(_("Msg delivery error: fopen %s failed: ERR=%s\n"), name,
                            be.bstrerror());
                   FreePoolMemory(name);
                   msgs->ClearInUse();
@@ -1106,7 +1106,7 @@ send_to_file:
                break;
             }
             msgs->SetInUse();
-            if (!d->fd && !open_dest_file(jcr, d, mode)) {
+            if (!d->fd && !OpenDestFile(jcr, d, mode)) {
                msgs->ClearInUse();
                break;
             }
@@ -1118,7 +1118,7 @@ send_to_file:
             if (ferror(d->fd)) {
                fclose(d->fd);
                d->fd = NULL;
-               if (open_dest_file(jcr, d, mode)) {
+               if (OpenDestFile(jcr, d, mode)) {
                   fputs(dt, d->fd);
                   fputs(msg, d->fd);
                }
@@ -1250,7 +1250,7 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
       while (1) {
          maxlen = more.MaxSize() - 1;
          va_start(ap, fmt);
-         len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+         len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
          va_end(ap);
 
          if (len < 0 || len >= (maxlen - 5)) {
@@ -1287,7 +1287,7 @@ void SetTrace(int trace_flag)
    if (!trace && trace_fd) {
       FILE *ltrace_fd = trace_fd;
       trace_fd = NULL;
-      bmicrosleep(0, 100000);         /* yield to prevent seg faults */
+      Bmicrosleep(0, 100000);         /* yield to prevent seg faults */
       fclose(ltrace_fd);
    }
 }
@@ -1348,7 +1348,7 @@ void p_msg(const char *file, int line, int level, const char *fmt,...)
    while (1) {
       maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1382,14 +1382,14 @@ void p_msg_fb(const char *file, int line, int level, const char *fmt,...)
 
 #ifdef FULL_LOCATION
    if (level >= 0) {
-      len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
+      len = Bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
                       my_name, get_basename(file), line,
                       GetJobidFromTsd());
    }
 #endif
 
    va_start(arg_ptr, fmt);
-   bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
+   Bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
    va_end(arg_ptr);
 
    pt_out(buf);
@@ -1432,7 +1432,7 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
       while (1) {
          maxlen = more.MaxSize() - 1;
          va_start(ap, fmt);
-         len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+         len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
          va_end(ap);
 
          if (len < 0 || len >= (maxlen - 5)) {
@@ -1505,7 +1505,7 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
    while (1) {
       maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1566,7 +1566,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
       BareosSocket *dir = jcr->dir_bsock;
 
       va_start(ap, fmt);
-      dir->msglen = bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
+      dir->msglen = Bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
       va_end(ap);
       jcr->dir_bsock->send();
 
@@ -1580,7 +1580,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
       while (1) {
          maxlen = buf.MaxSize() - 1;
          va_start(ap, fmt);
-         len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
+         len = Bvsnprintf(buf.c_str(), maxlen, fmt, ap);
          va_end(ap);
 
          if (len < 0 || len >= (maxlen - 5)) {
@@ -1662,7 +1662,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
    while (1) {
       maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1703,7 +1703,7 @@ void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t 
    while (1) {
       maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1733,7 +1733,7 @@ int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
    while (1) {
       maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1764,7 +1764,7 @@ int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
    while (1) {
       maxlen = SizeofPoolMemory(pool_buf) - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(pool_buf, maxlen, fmt, ap);
+      len = Bvsnprintf(pool_buf, maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1786,7 +1786,7 @@ int Mmsg(PoolMem &pool_buf, const char *fmt, ...)
    while (1) {
       maxlen = pool_buf.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1808,7 +1808,7 @@ int Mmsg(PoolMem *&pool_buf, const char *fmt, ...)
    while (1) {
       maxlen = pool_buf->MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(pool_buf->c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(pool_buf->c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1839,7 +1839,7 @@ void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
    while (1) {
       maxlen = buf.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -1915,7 +1915,7 @@ void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t 
    while (1) {
       maxlen = more.MaxSize() - 1;
       va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {

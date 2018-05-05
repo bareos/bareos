@@ -47,8 +47,8 @@
 /*
  * Forward referenced functions
  */
-static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr);
-static bool perform_full_name_substitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr);
+static bool CreateSimpleName(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr);
+static bool PerformFullNameSubstitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr);
 
 /**
  * Automatic Volume name creation using the LabelFormat
@@ -87,14 +87,14 @@ bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StorageResource *store)
             /*
              * No special characters, so apply simple algorithm
              */
-            if (!create_simple_name(jcr, mr, &pr)) {
+            if (!CreateSimpleName(jcr, mr, &pr)) {
                goto bail_out;
             }
          } else {
             /*
              * Found special characters, so try full substitution
              */
-            if (!perform_full_name_substitution(jcr, mr, &pr)) {
+            if (!PerformFullNameSubstitution(jcr, mr, &pr)) {
                goto bail_out;
             }
             if (!IsVolumeNameLegal(NULL, mr->VolumeName)) {
@@ -125,7 +125,7 @@ bail_out:
    return retval;
 }
 
-static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
+static bool CreateSimpleName(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    char num[20];
    db_int64_ctx ctx;
@@ -170,7 +170,7 @@ static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbR
 /**
  * Perform full substitution on Label
  */
-static bool perform_full_name_substitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
+static bool PerformFullNameSubstitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    bool ok = false;
    POOLMEM *label = GetPoolMemory(PM_FNAME);

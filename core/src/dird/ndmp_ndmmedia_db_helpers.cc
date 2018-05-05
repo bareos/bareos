@@ -54,7 +54,7 @@
  */
 
 
-void ndmmedia_to_bareos_db_records(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)
+void NdmmediaToBareosDbRecords(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)
 {
    bstrncpy(mr->VolumeName, media->label, NDMMEDIA_LABEL_MAX);
    mr->Slot = media->slot_addr;
@@ -94,7 +94,7 @@ void ndmmedia_to_bareos_db_records(ndmmedia *media, MediaDbRecord *mr, JobMediaD
    mr->VolFiles = media->file_mark_offset;
 }
 
-void ndmmedia_from_bareos_db_records(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)
+void NdmmediaFromBareosDbRecords(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)
 {
    bstrncpy(media->label, mr->VolumeName, NDMMEDIA_LABEL_MAX - 1);
    media->valid_label = NDMP9_VALIDITY_VALID;
@@ -135,7 +135,7 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia *media, JobControlRecord  *jcr)
    /*
     * map media info into db records
     */
-   ndmmedia_to_bareos_db_records(media, &mr, &jm);
+   NdmmediaToBareosDbRecords(media, &mr, &jm);
 
 
    /*

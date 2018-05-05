@@ -42,12 +42,12 @@ enum {
  * The ConfigFile object can generate a text file that describes the C
  * structure. This text format is saved as RestoreObject in the catalog.
  *
- *   struct ini_items[]  -> RegisterItems()  -> serialize() -> RestoreObject R1
+ *   struct ini_items[]  -> RegisterItems()  -> Serialize() -> RestoreObject R1
  *
  * On the Director side, at the restore time, we can analyse this text to
  * get the C structure.
  *
- * RestoreObject R1 -> write to disk -> unserialize() -> struct ini_items[]
+ * RestoreObject R1 -> write to disk -> UnSerialize() -> struct ini_items[]
  *
  * Once done, we can ask questions to the user at the restore time and fill
  * the C struct with answers. The Director can send back as a RestoreObject
@@ -159,7 +159,7 @@ public:
    /*
     * Dump a config string to out_fname
     */
-   bool dump_string(const char *buf, int32_t len);
+   bool DumpString(const char *buf, int32_t len);
 
    /*
     * JobControlRecord needed for Jmsg
@@ -181,18 +181,18 @@ public:
    /*
     * Dump the item table to a file (used on plugin side)
     */
-   bool serialize(const char *fname);
+   bool Serialize(const char *fname);
 
    /*
     * Dump the item table format to a buffer (used on plugin side)
     * returns the length of the buffer, -1 if error
     */
-   int serialize(PoolMem *buf);
+   int Serialize(PoolMem *buf);
 
    /*
     * Dump the item table content to a buffer
     */
-   int dump_results(PoolMem *buf);
+   int DumpResults(PoolMem *buf);
 
    /*
     * Get item position in items list (useful when dynamic)
@@ -222,7 +222,7 @@ public:
    /*
     * Create a item list from a ini file (director side)
     */
-   bool unserialize(const char *filename);
+   bool UnSerialize(const char *filename);
 };
 
 /*
@@ -233,6 +233,6 @@ const char *ini_get_store_code(int type);
 /*
  * Get storage type from handler name.
  */
-int ini_get_store_type(const char *key);
+int IniGetStoreType(const char *key);
 
 #endif

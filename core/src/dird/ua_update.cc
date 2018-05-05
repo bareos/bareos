@@ -40,11 +40,11 @@
 #include "lib/edit.h"
 
 /* Forward referenced functions */
-static bool update_volume(UaContext *ua);
-static bool update_pool(UaContext *ua);
-static bool update_job(UaContext *ua);
+static bool UpdateVolume(UaContext *ua);
+static bool UpdatePool(UaContext *ua);
+static bool UpdateJob(UaContext *ua);
 static bool UpdateStats(UaContext *ua);
-static void update_slots(UaContext *ua);
+static void UpdateSlots(UaContext *ua);
 
 /**
  * Update a Pool Record in the database.
@@ -61,7 +61,7 @@ static void update_slots(UaContext *ua);
  *    update stats [days=...]
  *         updates long term statistics
  */
-bool update_cmd(UaContext *ua, const char *cmd)
+bool UpdateCmd(UaContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("media"),  /* 0 */
@@ -81,17 +81,17 @@ bool update_cmd(UaContext *ua, const char *cmd)
    switch (FindArgKeyword(ua, kw)) {
    case 0:
    case 1:
-      update_volume(ua);
+      UpdateVolume(ua);
       return true;
    case 2:
-      update_pool(ua);
+      UpdatePool(ua);
       return true;
    case 3:
    case 4:
-      update_slots(ua);
+      UpdateSlots(ua);
       return true;
    case 5:
-      update_job(ua);
+      UpdateJob(ua);
       return true;
    case 6:
       UpdateStats(ua);
@@ -107,13 +107,13 @@ bool update_cmd(UaContext *ua, const char *cmd)
    AddPrompt(ua, _("Long term statistics"));
    switch (DoPrompt(ua, _("item"), _("Choose catalog item to update"), NULL, 0)) {
    case 0:
-      update_volume(ua);
+      UpdateVolume(ua);
       break;
    case 1:
-      update_pool(ua);
+      UpdatePool(ua);
       break;
    case 2:
-      update_slots(ua);
+      UpdateSlots(ua);
       break;
    case 3:
       UpdateStats(ua);
@@ -124,7 +124,7 @@ bool update_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static void update_volstatus(UaContext *ua, const char *val, MediaDbRecord *mr)
+static void UpdateVolstatus(UaContext *ua, const char *val, MediaDbRecord *mr)
 {
    PoolMem query(PM_MESSAGE);
    const char *kw[] = {
@@ -143,7 +143,7 @@ static void update_volstatus(UaContext *ua, const char *val, MediaDbRecord *mr)
    int i;
 
    for (i = 0; kw[i]; i++) {
-      if (bstrcasecmp(val, kw[i])) {
+      if (Bstrcasecmp(val, kw[i])) {
          found = true;
          break;
       }
@@ -163,7 +163,7 @@ static void update_volstatus(UaContext *ua, const char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volretention(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolretention(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    char ed1[150], ed2[50];
    PoolMem query(PM_MESSAGE);
@@ -182,7 +182,7 @@ static void update_volretention(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_voluseduration(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVoluseduration(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    char ed1[150], ed2[50];
    PoolMem query(PM_MESSAGE);
@@ -201,7 +201,7 @@ static void update_voluseduration(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volmaxjobs(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolmaxjobs(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    PoolMem query(PM_MESSAGE);
    char ed1[50];
@@ -215,7 +215,7 @@ static void update_volmaxjobs(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volmaxfiles(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolmaxfiles(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    PoolMem query(PM_MESSAGE);
    char ed1[50];
@@ -229,7 +229,7 @@ static void update_volmaxfiles(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volmaxbytes(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolmaxbytes(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    uint64_t maxbytes;
    char ed1[50], ed2[50];
@@ -248,7 +248,7 @@ static void update_volmaxbytes(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volrecycle(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolrecycle(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    bool recycle;
    char ed1[50];
@@ -270,7 +270,7 @@ static void update_volrecycle(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volinchanger(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolinchanger(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    char ed1[50];
    bool InChanger;
@@ -292,7 +292,7 @@ static void update_volinchanger(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_volslot(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolslot(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    PoolDbRecord pr;
 
@@ -358,7 +358,7 @@ void UpdateVolPool(UaContext *ua, char *val, MediaDbRecord *mr, PoolDbRecord *op
 /**
  * Modify the RecyclePool of a Volume
  */
-void update_vol_recyclepool(UaContext *ua, char *val, MediaDbRecord *mr)
+void UpdateVolRecyclepool(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    PoolDbRecord pr;
    PoolMem query(PM_MESSAGE);
@@ -398,7 +398,7 @@ void update_vol_recyclepool(UaContext *ua, char *val, MediaDbRecord *mr)
 /**
  * Modify the Storage in which this Volume is located
  */
-void update_vol_storage(UaContext *ua, char *val, MediaDbRecord *mr)
+void UpdateVolStorage(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    StorageDbRecord sr;
    PoolMem query(PM_MESSAGE);
@@ -406,7 +406,7 @@ void update_vol_storage(UaContext *ua, char *val, MediaDbRecord *mr)
 
    memset(&sr, 0, sizeof(sr));
    bstrncpy(sr.Name, val, sizeof(sr.Name));
-   if (!get_storage_dbr(ua, &sr)) {
+   if (!GetStorageDbr(ua, &sr)) {
       return;
    }
    mr->StorageId = sr.StorageId;            /* set new StorageId */
@@ -424,18 +424,18 @@ void update_vol_storage(UaContext *ua, char *val, MediaDbRecord *mr)
 /**
  * Refresh the Volume information from the Pool record
  */
-static void update_vol_from_pool(UaContext *ua, MediaDbRecord *mr)
+static void UpdateVolFromPool(UaContext *ua, MediaDbRecord *mr)
 {
    PoolDbRecord pr;
 
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = mr->PoolId;
    if (!ua->db->GetPoolRecord(ua->jcr, &pr) ||
-       !ua->acl_access_ok(Pool_ACL, pr.Name, true)) {
+       !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
       return;
    }
    SetPoolDbrDefaultsInMediaDbr(mr, &pr);
-   if (!ua->db->update_media_defaults(ua->jcr, mr)) {
+   if (!ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
       ua->ErrorMsg(_("Error updating Volume record: ERR=%s"), ua->db->strerror());
    } else {
       ua->InfoMsg(_("Volume defaults updated from \"%s\" Pool record.\n"),
@@ -446,7 +446,7 @@ static void update_vol_from_pool(UaContext *ua, MediaDbRecord *mr)
 /**
  * Refresh the Volume information from the Pool record for all Volumes
  */
-static void update_all_vols_from_pool(UaContext *ua, const char *pool_name)
+static void UpdateAllVolsFromPool(UaContext *ua, const char *pool_name)
 {
    PoolDbRecord pr;
    MediaDbRecord mr;
@@ -460,7 +460,7 @@ static void update_all_vols_from_pool(UaContext *ua, const char *pool_name)
    }
    SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
    mr.PoolId = pr.PoolId;
-   if (!ua->db->update_media_defaults(ua->jcr, &mr)) {
+   if (!ua->db->UpdateMediaDefaults(ua->jcr, &mr)) {
       ua->ErrorMsg(_("Error updating Volume records: ERR=%s"), ua->db->strerror());
    } else {
       ua->InfoMsg(_("All Volume defaults updated from \"%s\" Pool record.\n"),
@@ -468,7 +468,7 @@ static void update_all_vols_from_pool(UaContext *ua, const char *pool_name)
    }
 }
 
-static void update_all_vols(UaContext *ua)
+static void UpdateAllVols(UaContext *ua)
 {
    int i, num_pools;
    uint32_t *ids;
@@ -493,14 +493,14 @@ static void update_all_vols(UaContext *ua)
       /*
        * Check access to pool.
        */
-      if (!ua->acl_access_ok(Pool_ACL, pr.Name, false)) {
+      if (!ua->AclAccessOk(Pool_ACL, pr.Name, false)) {
          continue;
       }
 
       SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
       mr.PoolId = pr.PoolId;
 
-      if (!ua->db->update_media_defaults(ua->jcr, &mr)) {
+      if (!ua->db->UpdateMediaDefaults(ua->jcr, &mr)) {
          ua->ErrorMsg(_("Error updating Volume records: ERR=%s"), ua->db->strerror());
       } else {
          ua->InfoMsg(_("All Volume defaults updated from \"%s\" Pool record.\n"), pr.Name);
@@ -510,9 +510,9 @@ static void update_all_vols(UaContext *ua)
    free(ids);
 }
 
-static void update_volenabled(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolenabled(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   mr->Enabled = get_enabled(ua, val);
+   mr->Enabled = GetEnabled(ua, val);
    if (mr->Enabled < 0) {
       return;
    }
@@ -524,10 +524,10 @@ static void update_volenabled(UaContext *ua, char *val, MediaDbRecord *mr)
    }
 }
 
-static void update_vol_actiononpurge(UaContext *ua, char *val, MediaDbRecord *mr)
+static void UpdateVolActiononpurge(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    PoolMem ret;
-   if (bstrcasecmp(val, "truncate")) {
+   if (Bstrcasecmp(val, "truncate")) {
       mr->ActionOnPurge = ON_PURGE_TRUNCATE;
    } else {
       mr->ActionOnPurge = 0;
@@ -549,7 +549,7 @@ static void update_vol_actiononpurge(UaContext *ua, char *val, MediaDbRecord *mr
  *  writing on the volume, set it to anything other
  *  than Append.
  */
-static bool update_volume(UaContext *ua)
+static bool UpdateVolume(UaContext *ua)
 {
    PoolResource *pool;
    POOLMEM *query;
@@ -595,31 +595,31 @@ static bool update_volume(UaContext *ua)
          }
          switch (i) {
          case 0:
-            update_volstatus(ua, ua->argv[j], &mr);
+            UpdateVolstatus(ua, ua->argv[j], &mr);
             break;
          case 1:
-            update_volretention(ua, ua->argv[j], &mr);
+            UpdateVolretention(ua, ua->argv[j], &mr);
             break;
          case 2:
-            update_voluseduration(ua, ua->argv[j], &mr);
+            UpdateVoluseduration(ua, ua->argv[j], &mr);
             break;
          case 3:
-            update_volmaxjobs(ua, ua->argv[j], &mr);
+            UpdateVolmaxjobs(ua, ua->argv[j], &mr);
             break;
          case 4:
-            update_volmaxfiles(ua, ua->argv[j], &mr);
+            UpdateVolmaxfiles(ua, ua->argv[j], &mr);
             break;
          case 5:
-            update_volmaxbytes(ua, ua->argv[j], &mr);
+            UpdateVolmaxbytes(ua, ua->argv[j], &mr);
             break;
          case 6:
-            update_volrecycle(ua, ua->argv[j], &mr);
+            UpdateVolrecycle(ua, ua->argv[j], &mr);
             break;
          case 7:
-            update_volinchanger(ua, ua->argv[j], &mr);
+            UpdateVolinchanger(ua, ua->argv[j], &mr);
             break;
          case 8:
-            update_volslot(ua, ua->argv[j], &mr);
+            UpdateVolslot(ua, ua->argv[j], &mr);
             break;
          case 9:
             pr.PoolId = mr.PoolId;
@@ -630,22 +630,22 @@ static bool update_volume(UaContext *ua)
             UpdateVolPool(ua, ua->argv[j], &mr, &pr);
             break;
          case 10:
-            update_vol_from_pool(ua, &mr);
+            UpdateVolFromPool(ua, &mr);
             return true;
          case 11:
-            update_all_vols_from_pool(ua, ua->argv[j]);
+            UpdateAllVolsFromPool(ua, ua->argv[j]);
             return true;
          case 12:
-            update_volenabled(ua, ua->argv[j], &mr);
+            UpdateVolenabled(ua, ua->argv[j], &mr);
             break;
          case 13:
-            update_vol_recyclepool(ua, ua->argv[j], &mr);
+            UpdateVolRecyclepool(ua, ua->argv[j], &mr);
             break;
          case 14:
-            update_vol_actiononpurge(ua, ua->argv[j], &mr);
+            UpdateVolActiononpurge(ua, ua->argv[j], &mr);
             break;
          case 15:
-            update_vol_storage(ua, ua->argv[j], &mr);
+            UpdateVolStorage(ua, ua->argv[j], &mr);
             break;
          }
          done = true;
@@ -654,7 +654,7 @@ static bool update_volume(UaContext *ua)
 
    /* Allow user to simply update all volumes */
    if (FindArg(ua, NT_("fromallpools")) > 0) {
-      update_all_vols(ua);
+      UpdateAllVols(ua);
       return true;
    }
 
@@ -715,7 +715,7 @@ static bool update_volume(UaContext *ua)
          if (DoPrompt(ua, "", _("Choose new Volume Status"), ua->cmd, sizeof(mr.VolStatus)) < 0) {
             return true;
          }
-         update_volstatus(ua, ua->cmd, &mr);
+         UpdateVolstatus(ua, ua->cmd, &mr);
          break;
       case 1:                         /* Retention */
          ua->InfoMsg(_("Current retention period is: %s\n"),
@@ -723,7 +723,7 @@ static bool update_volume(UaContext *ua)
          if (!GetCmd(ua, _("Enter Volume Retention period: "))) {
             return false;
          }
-         update_volretention(ua, ua->cmd, &mr);
+         UpdateVolretention(ua, ua->cmd, &mr);
          break;
 
       case 2:                         /* Use Duration */
@@ -732,7 +732,7 @@ static bool update_volume(UaContext *ua)
          if (!GetCmd(ua, _("Enter Volume Use Duration: "))) {
             return false;
          }
-         update_voluseduration(ua, ua->cmd, &mr);
+         UpdateVoluseduration(ua, ua->cmd, &mr);
          break;
 
       case 3:                         /* Max Jobs */
@@ -740,7 +740,7 @@ static bool update_volume(UaContext *ua)
          if (!GetPint(ua, _("Enter new Maximum Jobs: "))) {
             return false;
          }
-         update_volmaxjobs(ua, ua->cmd, &mr);
+         UpdateVolmaxjobs(ua, ua->cmd, &mr);
          break;
 
       case 4:                         /* Max Files */
@@ -748,7 +748,7 @@ static bool update_volume(UaContext *ua)
          if (!GetPint(ua, _("Enter new Maximum Files: "))) {
             return false;
          }
-         update_volmaxfiles(ua, ua->cmd, &mr);
+         UpdateVolmaxfiles(ua, ua->cmd, &mr);
          break;
 
       case 5:                         /* Max Bytes */
@@ -756,7 +756,7 @@ static bool update_volume(UaContext *ua)
          if (!GetCmd(ua, _("Enter new Maximum Bytes: "))) {
             return false;
          }
-         update_volmaxbytes(ua, ua->cmd, &mr);
+         UpdateVolmaxbytes(ua, ua->cmd, &mr);
          break;
 
 
@@ -766,7 +766,7 @@ static bool update_volume(UaContext *ua)
          if (!GetYesno(ua, _("Enter new Recycle status: "))) {
             return false;
          }
-         update_volrecycle(ua, ua->cmd, &mr);
+         UpdateVolrecycle(ua, ua->cmd, &mr);
          break;
 
       case 7:                         /* Slot */
@@ -774,12 +774,12 @@ static bool update_volume(UaContext *ua)
          if (!GetPint(ua, _("Enter new Slot: "))) {
             return false;
          }
-         update_volslot(ua, ua->cmd, &mr);
+         UpdateVolslot(ua, ua->cmd, &mr);
          break;
 
       case 8:                         /* InChanger */
          ua->InfoMsg(_("Current InChanger flag is: %d\n"), mr.InChanger);
-         bsnprintf(buf, sizeof(buf), _("Set InChanger flag for Volume \"%s\": yes/no: "), mr.VolumeName);
+         Bsnprintf(buf, sizeof(buf), _("Set InChanger flag for Volume \"%s\": yes/no: "), mr.VolumeName);
          if (!GetYesno(ua, buf)) {
             return false;
          }
@@ -836,17 +836,17 @@ static bool update_volume(UaContext *ua)
          return true;
 
       case 11:
-         update_vol_from_pool(ua, &mr);
+         UpdateVolFromPool(ua, &mr);
          return true;
       case 12:
          pool = select_pool_resource(ua);
          if (pool) {
-            update_all_vols_from_pool(ua, pool->name());
+            UpdateAllVolsFromPool(ua, pool->name());
          }
          return true;
 
       case 13:
-         update_all_vols(ua);
+         UpdateAllVols(ua);
          return true;
 
       case 14:
@@ -855,7 +855,7 @@ static bool update_volume(UaContext *ua)
             return false;
          }
 
-         update_volenabled(ua, ua->cmd, &mr);
+         UpdateVolenabled(ua, ua->cmd, &mr);
          break;
 
       case 15:
@@ -868,7 +868,7 @@ static bool update_volume(UaContext *ua)
          if (!SelectPoolDbr(ua, &pr, NT_("recyclepool"))) {
             return false;
          }
-         update_vol_recyclepool(ua, pr.Name, &mr);
+         UpdateVolRecyclepool(ua, pr.Name, &mr);
          return true;
 
       case 16:
@@ -879,7 +879,7 @@ static bool update_volume(UaContext *ua)
             return false;
          }
 
-         update_vol_actiononpurge(ua, ua->cmd, &mr);
+         UpdateVolActiononpurge(ua, ua->cmd, &mr);
          break;
 
       case 17:
@@ -892,7 +892,7 @@ static bool update_volume(UaContext *ua)
          if (!SelectStorageDbr(ua, &sr, NT_("storage"))) {
             return false;
          }
-         update_vol_storage(ua, sr.Name, &mr);
+         UpdateVolStorage(ua, sr.Name, &mr);
          ua->InfoMsg(_("New Storage is: %s\n"), sr.Name);
          return true;
 
@@ -925,7 +925,7 @@ static bool UpdateStats(UaContext *ua)
 /**
  * Update pool record -- pull info from current POOL resource
  */
-static bool update_pool(UaContext *ua)
+static bool UpdatePool(UaContext *ua)
 {
    int id;
    PoolDbRecord pr;
@@ -961,7 +961,7 @@ static bool update_pool(UaContext *ua)
 /**
  * Update a Job record -- allows to change the fields in a Job record.
  */
-static bool update_job(UaContext *ua)
+static bool UpdateJob(UaContext *ua)
 {
    int i;
    char ed1[50], ed2[50], ed3[50], ed4[50];
@@ -1079,7 +1079,7 @@ static bool update_job(UaContext *ua)
 /**
  * Update Slots corresponding to Volumes in autochanger
  */
-static void update_slots(UaContext *ua)
+static void UpdateSlots(UaContext *ua)
 {
    UnifiedStorageResource store;
    vol_list_t *vl;
@@ -1108,7 +1108,7 @@ static void update_slots(UaContext *ua)
       drive = GetStorageDrive(ua, store.store);
    }
    if ((i=FindArgWithValue(ua, NT_("Enabled"))) >= 0) {
-      Enabled = get_enabled(ua, ua->argv[i]);
+      Enabled = GetEnabled(ua, ua->argv[i]);
       if (Enabled < 0) {
          return;
       }
@@ -1270,7 +1270,7 @@ bail_out:
  *
  * The vol_list passed here needs to be from an "autochanger listall" cmd.
  */
-void update_slots_from_vol_list(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list)
+void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list)
 {
    vol_list_t *vl;
    MediaDbRecord mr;
@@ -1375,7 +1375,7 @@ void update_slots_from_vol_list(UaContext *ua, StorageResource *store, changer_v
  *
  * The vol_list passed here needs to be from an "autochanger listall" cmd.
  */
-void update_inchanger_for_export(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list)
+void UpdateInchangerForExport(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list)
 {
    vol_list_t *vl;
    MediaDbRecord mr;

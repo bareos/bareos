@@ -249,12 +249,12 @@ bool AuthenticateUserAgent(UaContext *uac)
    bool auth_success = false;
 
    if (sscanf(ua->msg, "Hello %127s calling\n", name) != 1) {
-      ua->msg[100] = 0;                 /* terminate string */
+      ua->msg[100] = 0;                 /* Terminate string */
       Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"), ua->who(),
             ua->host(), ua->port(), ua->msg);
       return false;
    }
-   name[sizeof(name)-1] = 0;            /* terminate name */
+   name[sizeof(name)-1] = 0;            /* Terminate name */
 
    if (!count_console_connections()) {
       ua->fsend("%s", _(Dir_sorry));

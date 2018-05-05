@@ -46,7 +46,7 @@ int32_t path_max;              /* path name max length */
 #undef bmalloc
 #define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
 #endif
-static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
+static int OurCallback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
 
 static const int fnmode = 0;
 
@@ -105,10 +105,10 @@ void SetFindChangedFunction(FindFilesPacket *ff, bool CheckFct(JobControlRecord 
  * argument.
  */
 int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff,
-               int file_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
+               int FileSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
                int PluginSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level))
 {
-   ff->file_save = file_save;
+   ff->FileSave = FileSave;
    ff->PluginSave = PluginSave;
 
    /* This is the new way */
@@ -148,7 +148,7 @@ int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff,
             ff->StripPath = fo->StripPath;
             ff->size_match = fo->size_match;
             ff->fstypes = fo->fstype;
-            ff->drivetypes = fo->drivetype;
+            ff->drivetypes = fo->Drivetype;
             if (fo->plugin != NULL) {
                ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
                ff->opt_plugin = true;
@@ -169,7 +169,7 @@ int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff,
 
             Dmsg1(debuglevel, "F %s\n", fname);
             ff->top_fname = fname;
-            if (FindOneFile(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
+            if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, true) == 0) {
                return 0;                  /* error return */
             }
             if (JobCanceled(jcr)) {
@@ -265,7 +265,7 @@ bool AcceptFile(FindFilesPacket *ff)
       ff->Compress_algo = fo->Compress_algo;
       ff->Compress_level = fo->Compress_level;
       ff->fstypes = fo->fstype;
-      ff->drivetypes = fo->drivetype;
+      ff->drivetypes = fo->Drivetype;
 
       fnm_flags = BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0;
       fnm_flags |= BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0;
@@ -390,10 +390,10 @@ bool AcceptFile(FindFilesPacket *ff)
  * The code comes here for each file examined.
  * We filter the files, then call the user's callback if the file is included.
  */
-static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
+static int OurCallback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
    if (top_level) {
-      return ff->file_save(jcr, ff, top_level);   /* accept file */
+      return ff->FileSave(jcr, ff, top_level);   /* accept file */
    }
    switch (ff->type) {
    case FT_NOACCESS:
@@ -406,7 +406,7 @@ static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_lev
    case FT_INVALIDFS:
    case FT_INVALIDDT:
    case FT_NOOPEN:
-//    return ff->file_save(jcr, ff, top_level);
+//    return ff->FileSave(jcr, ff, top_level);
 
    /* These items can be filtered */
    case FT_LNKSAVED:
@@ -422,7 +422,7 @@ static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_lev
    case FT_REPARSE:
    case FT_JUNCTION:
       if (AcceptFile(ff)) {
-         return ff->file_save(jcr, ff, top_level);
+         return ff->FileSave(jcr, ff, top_level);
       } else {
          Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
          return -1;                   /* ignore this file */
@@ -551,7 +551,7 @@ findFOPTS *start_options(FindFilesPacket *ff)
       fo->wildbase.init(1, true);
       fo->base.init(1, true);
       fo->fstype.init(1, true);
-      fo->drivetype.init(1, true);
+      fo->Drivetype.init(1, true);
       incexe->current_opts = fo;
       incexe->opts_list.append(fo);
    }
@@ -577,7 +577,7 @@ void NewOptions(FindFilesPacket *ff, findIncludeExcludeItem *incexe)
    fo->wildbase.init(1, true);
    fo->base.init(1, true);
    fo->fstype.init(1, true);
-   fo->drivetype.init(1, true);
+   fo->Drivetype.init(1, true);
    incexe->current_opts = fo;
    incexe->opts_list.prepend(fo);
    ff->fileset->state = state_options;

@@ -93,7 +93,7 @@ int BthreadMutexUnlock_p(bthread_mutex_t *m,
  * 0 - not locked by the current thread
  * 1 - locked by the current thread
  */
-int lmgr_mutex_is_locked(void *m);
+int LmgrMutexIsLocked(void *m);
 
 /*
  * Use them when you want use your lock yourself (ie rwlock)
@@ -232,7 +232,7 @@ int BthreadKill(pthread_t thread, int sig,
 #define BTHREAD_MUTEX_PRIORITY(p) PTHREAD_MUTEX_INITIALIZER
 #define BTHREAD_MUTEX_NO_PRIORITY PTHREAD_MUTEX_INITIALIZER
 #define BTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
-#define lmgr_mutex_is_locked(m) (1)
+#define LmgrMutexIsLocked(m) (1)
 #define BthreadCondWait_p(w,x,y,z) pthread_cond_wait(w,x)
 #endif /* BAREOS_INCLUDE_VERSION_H_ */
 #endif /* BAREOS_LIB_LOCKMGR_H_ */

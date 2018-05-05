@@ -340,19 +340,19 @@ BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceCont
     *   on this tape.
     */
    if (jcr->bsr) {
-      jcr->bsr->reposition = true;    /* force repositioning */
+      jcr->bsr->Reposition = true;    /* force repositioning */
       bsr = find_next_bsr(jcr->bsr, dev);
       if (GetBsrStartAddr(bsr, &file, &block) > 0) {
          Jmsg(jcr, M_INFO, 0, _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
               dev->VolHdr.VolumeName, file, block);
-         dev->reposition(dcr, file, block);
+         dev->Reposition(dcr, file, block);
       }
    }
    return bsr;
 }
 
 /**
- * See if we can reposition.
+ * See if we can Reposition.
  *
  * Returns: true  if at end of volume
  *          false otherwise
@@ -392,7 +392,7 @@ bool TryDeviceRepositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceCont
       }
       Dmsg4(500, "Try_Reposition from (file:block) %u:%u to %u:%u\n",
             dev->file, dev->block_num, file, block);
-      dev->reposition(dcr, file, block);
+      dev->Reposition(dcr, file, block);
       rec->Block = 0;
    }
    return false;

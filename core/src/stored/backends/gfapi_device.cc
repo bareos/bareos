@@ -134,7 +134,7 @@ static inline bool parse_gfapi_devicename(char *devicename,
    /*
     * When protocol is not UNIX parse servername and portnr.
     */
-   if (!*transport || !bstrcasecmp(*transport, "unix")) {
+   if (!*transport || !Bstrcasecmp(*transport, "unix")) {
       /*
        * Parse servername of gluster management server.
        */
@@ -262,7 +262,7 @@ bail_out:
 /**
  * Create a parent directory using the gfapi.
  */
-static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
+static inline bool GfapiMakedirs(glfs_t *glfs, const char *directory)
 {
    int len;
    char *bp;
@@ -295,7 +295,7 @@ static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
                 * Make sure our parent exists.
                 */
                *bp = '\0';
-               retval = gfapi_makedirs(glfs, new_directory.c_str());
+               retval = GfapiMakedirs(glfs, new_directory.c_str());
                if (!retval) {
                   return false;
                }
@@ -439,7 +439,7 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
       if (glfs_stat(glfs_, virtual_filename_, &st) != 0) {
          switch (errno) {
          case ENOENT:
-            if (!gfapi_makedirs(glfs_, virtual_filename_)) {
+            if (!GfapiMakedirs(glfs_, virtual_filename_)) {
                Mmsg1(errmsg, _("Specified glusterfs directory %s cannot be created.\n"), virtual_filename_);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;

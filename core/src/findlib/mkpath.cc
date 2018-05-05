@@ -87,7 +87,7 @@ static bool makedir(JobControlRecord *jcr, char *path, mode_t mode, int *created
    return true;
 }
 
-static void set_own_mod(Attributes *attr, char *path, uid_t owner, gid_t group, mode_t mode)
+static void SetOwnMod(Attributes *attr, char *path, uid_t owner, gid_t group, mode_t mode)
 {
    if (lchown(path, owner, group) != 0 && attr->uid == 0
 #ifdef AFS
@@ -140,7 +140,7 @@ bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mo
       if (keep_dir_modes) {
          return true;
       }
-      set_own_mod(attr, path, owner, group, mode);
+      SetOwnMod(attr, path, owner, group, mode);
       return true;
    }
    omask = umask(0);
@@ -255,7 +255,7 @@ bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mo
       save_p = *p;
       *p = 0;
       if (i < ndir && new_dir[i++] && !keep_dir_modes) {
-         set_own_mod(attr, path, owner, group, parent_mode);
+         SetOwnMod(attr, path, owner, group, parent_mode);
       }
       *p = save_p;
       while (IsPathSeparator(*p)) {
@@ -267,7 +267,7 @@ bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mo
     * Set for final component
     */
    if (i < ndir && new_dir[i++]) {
-      set_own_mod(attr, path, owner, group, mode);
+      SetOwnMod(attr, path, owner, group, mode);
    }
 
    ok = true;

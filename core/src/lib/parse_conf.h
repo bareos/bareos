@@ -398,7 +398,7 @@ public:
    STORE_RES_HANDLER *store_res_;      /* Store resource handler for non default types if non-null */
    PRINT_RES_HANDLER *print_res_;      /* Print resource handler for non default types if non-null */
 
-   int32_t err_type_;                  /* The way to terminate on failure */
+   int32_t err_type_;                  /* The way to Terminate on failure */
    void *res_all_;                     /* Pointer to res_all buffer */
    int32_t res_all_size_;              /* Length of buffer */
    bool omit_defaults_;                /* Omit config variables with default values when dumping the config */
@@ -417,7 +417,7 @@ public:
       LEX_ERROR_HANDLER *ScanError,
       LEX_WARNING_HANDLER *scan_warning,
       INIT_RES_HANDLER *init_res,
-      STORE_RES_HANDLER *store_res,
+      STORE_RES_HANDLER *StoreRes,
       PRINT_RES_HANDLER *print_res,
       int32_t err_type,
       void *vres_all,
@@ -441,7 +441,7 @@ public:
    void DumpResources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);
    const char *get_resource_type_name(int code);
-   int get_resource_code(const char *resource_type);
+   int GetResourceCode(const char *resource_type);
    ResourceTable *get_resource_table(int resource_type);
    ResourceTable *get_resource_table(const char *resource_type_name);
    int GetResourceItemIndex(ResourceItem *res_table, const char *item);
@@ -462,10 +462,10 @@ protected:
    const char *used_config_path_;                /* Config file that is used. */
 
    const char *get_default_configdir();
-   bool get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename);
-   bool get_config_include_path(PoolMem &full_path, const char *config_dir);
+   bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);
+   bool GetConfigIncludePath(PoolMem &full_path, const char *config_dir);
    bool FindConfigPath(PoolMem &full_path);
-   int get_resource_table_index(int resource_type);
+   int GetResourceTableIndex(int resource_type);
 };
 
 ConfigurationParser *new_config_parser();
@@ -486,12 +486,12 @@ DLL_IMP_EXP CommonResourceHeader *GetResWithName(int rcode, const char *name, bo
 DLL_IMP_EXP CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
 DLL_IMP_EXP void b_LockRes(const char *file, int line);
 DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
-DLL_IMP_EXP void dump_resource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),
+DLL_IMP_EXP void DumpResource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data = false, bool verbose = false);
 DLL_IMP_EXP void IndentConfigItem(PoolMem &cfg_str, int level, const char *config_item, bool inherited = false);
 DLL_IMP_EXP void FreeResource(CommonResourceHeader *res, int type);
 DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
-DLL_IMP_EXP bool save_resource(int type, ResourceItem *item, int pass);
+DLL_IMP_EXP bool SaveResource(int type, ResourceItem *item, int pass);
 DLL_IMP_EXP bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
 DLL_IMP_EXP const char *res_to_str(int rcode);
 

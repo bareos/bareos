@@ -113,7 +113,7 @@ bool RwlIsInit(brwlock_t *rwl)
  * Handle cleanup when the read lock condition variable
  * wait is released.
  */
-static void rwl_read_release(void *arg)
+static void RwlReadRelease(void *arg)
 {
    brwlock_t *rwl = (brwlock_t *)arg;
 
@@ -125,7 +125,7 @@ static void rwl_read_release(void *arg)
  * Handle cleanup when the write lock condition variable wait
  * is released.
  */
-static void rwl_write_release(void *arg)
+static void RwlWriteRelease(void *arg)
 {
    brwlock_t *rwl = (brwlock_t *)arg;
 
@@ -148,7 +148,7 @@ int RwlReadlock(brwlock_t *rwl)
    }
    if (rwl->w_active) {
       rwl->r_wait++;                  /* indicate that we are waiting */
-      pthread_cleanup_push(rwl_read_release, (void *)rwl);
+      pthread_cleanup_push(RwlReadRelease, (void *)rwl);
       while (rwl->w_active) {
          status = pthread_cond_wait(&rwl->read, &rwl->mutex);
          if (status != 0) {
@@ -231,7 +231,7 @@ int RwlWritelock_p(brwlock_t *rwl, const char *file, int line)
    LmgrPreLock(rwl, rwl->priority, file, line);
    if (rwl->w_active || rwl->r_active > 0) {
       rwl->w_wait++;                  /* indicate that we are waiting */
-      pthread_cleanup_push(rwl_write_release, (void *)rwl);
+      pthread_cleanup_push(RwlWriteRelease, (void *)rwl);
       while (rwl->w_active || rwl->r_active > 0) {
          if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
             LmgrDoUnlock(rwl);

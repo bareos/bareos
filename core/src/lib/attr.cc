@@ -138,7 +138,7 @@ int UnpackAttributesRecord(JobControlRecord *jcr, int32_t stream, char *rec, int
 }
 
 #if defined(HAVE_WIN32)
-static void strip_double_slashes(char *fname)
+static void StripDoubleSlashes(char *fname)
 {
    char *p = fname;
    while (p && *p) {
@@ -235,8 +235,8 @@ void BuildAttrOutputFnames(JobControlRecord *jcr, Attributes *attr)
       }
    }
 #if defined(HAVE_WIN32)
-   strip_double_slashes(attr->ofname);
-   strip_double_slashes(attr->olname);
+   StripDoubleSlashes(attr->ofname);
+   StripDoubleSlashes(attr->olname);
 #endif
 }
 

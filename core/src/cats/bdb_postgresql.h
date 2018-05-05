@@ -45,8 +45,8 @@ private:
    void UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len, POOLMEM *&dest, int32_t *len);
    void StartTransaction(JobControlRecord *jcr);
    void EndTransaction(JobControlRecord *jcr);
-   bool BigSqlQuery(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
-   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool BigSqlQuery(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx);
+   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx);
    bool SqlQueryWithoutHandler(const char *query, int flags = 0);
    void SqlFreeResult(void);
    SQL_ROW SqlFetchRow(void);

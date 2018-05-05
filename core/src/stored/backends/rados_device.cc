@@ -516,7 +516,7 @@ boffset_t rados_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int 
 }
 
 #ifdef HAVE_RADOS_STRIPER
-bool rados_device::truncate_striper_volume(DeviceControlRecord *dcr)
+bool rados_device::TruncateStriperVolume(DeviceControlRecord *dcr)
 {
    int status;
    uint64_t object_size;
@@ -551,7 +551,7 @@ bool rados_device::truncate_striper_volume(DeviceControlRecord *dcr)
 }
 #endif
 
-bool rados_device::truncate_volume(DeviceControlRecord *dcr)
+bool rados_device::TruncateVolume(DeviceControlRecord *dcr)
 {
    int status;
    uint64_t object_size;
@@ -590,12 +590,12 @@ bool rados_device::d_truncate(DeviceControlRecord *dcr)
    if (ctx_) {
 #ifdef HAVE_RADOS_STRIPER
       if (stripe_volume_) {
-         return truncate_striper_volume(dcr);
+         return TruncateStriperVolume(dcr);
       } else {
-         return truncate_volume(dcr);
+         return TruncateVolume(dcr);
       }
 #else
-      return truncate_volume(dcr);
+      return TruncateVolume(dcr);
 #endif
    }
 

@@ -116,7 +116,7 @@ static int glob_escape_char = '\\';
 #define glob_strdup	strdup
 #endif
 
-static int is_glob_pattern( const char *pattern, int flags )
+static int IsGlobPattern( const char *pattern, int flags )
 {
   /* Check if "pattern" represents a globbing pattern
    * with included wild card characters.
@@ -349,7 +349,7 @@ static const char *glob_in_set( const char *set, int test, int flags )
   return NULL;
 }
 
-GLOB_INLINE int glob_case_match( int flags, int check, int match )
+GLOB_INLINE int GlobCaseMatch( int flags, int check, int match )
 {
   /* Local helper function, used to facilitate the case insensitive
    * glob character matching appropriate for MS-Windows systems.
@@ -358,7 +358,7 @@ GLOB_INLINE int glob_case_match( int flags, int check, int match )
     : tolower( check ) - tolower( match );
 }
 
-static int glob_strcmp( const char *pattern, const char *text, int flags )
+static int GlobStrcmp( const char *pattern, const char *text, int flags )
 {
   /* Compare "text" to a specified globbing "pattern" using semantics
    * comparable to "strcmp()"; returns zero for a complete match, else
@@ -428,7 +428,7 @@ static int glob_strcmp( const char *pattern, const char *text, int flags )
 	 * matching substring, or we exhaust "text" without any
 	 * possible match...
 	 */
-	do { c = glob_strcmp( p, t, flags | GLOB_PERIOD );
+	do { c = GlobStrcmp( p, t, flags | GLOB_PERIOD );
 	   } while( (c != 0) && (*t++ != '\0') );
 	/*
 	 * ...and ultimately, we return the result of this
@@ -498,7 +498,7 @@ static int glob_strcmp( const char *pattern, const char *text, int flags )
 	 * match for the next available character "t", if any,
 	 * in the candidate text string...
 	 */
-	if( (*t == '\0') || (glob_case_match( flags, c, *t ) != 0) )
+	if( (*t == '\0') || (GlobCaseMatch( flags, c, *t ) != 0) )
 	  /*
 	   * ...otherwise we return a mismatch.
 	   */
@@ -567,7 +567,7 @@ int GLOB_ISDIR( const char *path, const struct dirent *ent )
 # define D_NAMLEN( entry )  (strlen( (entry)->d_name ))
 #endif
 
-static int glob_initialise( glob_t *gl_data )
+static int GlobInitialise( glob_t *gl_data )
 {
   /* Helper routine to initialise a glob_t structure
    * for first time use.
@@ -599,7 +599,7 @@ static int glob_initialise( glob_t *gl_data )
   return GLOB_SUCCESS;
 }
 
-GLOB_INLINE int glob_expand( glob_t *gl_buf )
+GLOB_INLINE int GlobExpand( glob_t *gl_buf )
 {
   /* Inline helper to compute the new size allocation required
    * for buf->gl_pathv, prior to adding a new glob result.
@@ -607,7 +607,7 @@ GLOB_INLINE int glob_expand( glob_t *gl_buf )
   return ((2 + gl_buf->gl_pathc + gl_buf->gl_offs) * sizeof( char ** ));
 }
 
-static int glob_store_entry( char *path, glob_t *gl_buf )
+static int GlobStoreEntry( char *path, glob_t *gl_buf )
 {
   /* Local helper routine to add a single path name entity
    * to the globbed path vector, after first expanding the
@@ -615,7 +615,7 @@ static int glob_store_entry( char *path, glob_t *gl_buf )
    */
   char **pathv;
   if(  (path != NULL)  &&  (gl_buf != NULL)
-  &&  ((pathv = (char **)realloc( gl_buf->gl_pathv, glob_expand( gl_buf ))) != NULL)  )
+  &&  ((pathv = (char **)realloc( gl_buf->gl_pathv, GlobExpand( gl_buf ))) != NULL)  )
   {
     /* Memory expansion was successful; store the new path name
      * in place of the former NULL pointer at the end of the old
@@ -725,7 +725,7 @@ glob_store_collated_entries( struct glob_collator *collator, glob_t *gl_buf )
 
   /* Store the path name entry at the root of the current (sub-)tree.
    */
-  glob_store_entry( collator->entry, gl_buf );
+  GlobStoreEntry( collator->entry, gl_buf );
 
   if( collator->next != NULL )
     /*
@@ -763,7 +763,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
    * intermediate results at the current level of recursion...
    */
   local_gl_buf.gl_offs = 0;
-  if( (status = glob_initialise( &local_gl_buf )) != GLOB_SUCCESS )
+  if( (status = GlobInitialise( &local_gl_buf )) != GLOB_SUCCESS )
     /*
      * ...bailing out if unsuccessful.
      */
@@ -771,7 +771,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
 
   /* Check if there are any globbing tokens in the path prefix...
    */
-  if( is_glob_pattern( dir, flags ) )
+  if( IsGlobPattern( dir, flags ) )
     /*
      * ...and recurse to identify all possible matching prefixes,
      * as may be necessary...
@@ -781,7 +781,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
   else
     /* ...or simply store the current prefix, if not.
      */
-    status = glob_store_entry( glob_strdup( dir ), &local_gl_buf );
+    status = GlobStoreEntry( glob_strdup( dir ), &local_gl_buf );
 
   /* Check nothing has gone wrong, so far...
    */
@@ -862,7 +862,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
 	     * ...provided we don't require it to be a subdirectory,
 	     * or it actually is one...
 	     */
-	  && (glob_strcmp( pattern, entry->d_name, flags ) == 0)   )
+	  && (GlobStrcmp( pattern, entry->d_name, flags ) == 0)   )
 	  {
 	    /* ...and it is a globbed match for the pattern, then
 	     * we allocate a temporary local buffer of sufficient
@@ -920,7 +920,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
 		 * just add the current match directly into the
 		 * result vector at gl_buf->gl_pathv.
 		 */
-		glob_store_entry( found, gl_buf );
+		GlobStoreEntry( found, gl_buf );
 	      }
 	    }
 	  }
@@ -964,7 +964,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
 #define GLOB_INIT	(0x100 << 0)
 #define GLOB_FREE	(0x100 << 1)
 
-GLOB_INLINE int glob_signed( const char *check, const char *magic )
+GLOB_INLINE int GlobSigned( const char *check, const char *magic )
 {
   /* Inline helper function, used exclusively by the glob_registry()
    * function, to confirm that the gl_magic field within a glob_t data
@@ -1001,13 +1001,13 @@ static glob_t *glob_registry( int request, glob_t *gl_data )
     /* ...a registration (initialisation) request...
      */
     case GLOB_INIT:
-      if( glob_signed( (const char *)gl_data->gl_magic, glob_magic ) != 0 )
+      if( GlobSigned( (const char *)gl_data->gl_magic, glob_magic ) != 0 )
       {
 	/* The gl_magic field doesn't (yet) indicate that the
 	 * data structure has been initialised; assume that this
 	 * is first use, and initialise it now.
 	 */
-	glob_initialise( gl_data );
+	GlobInitialise( gl_data );
 	gl_data->gl_magic = (void *)(glob_magic);
       }
       break;
@@ -1018,7 +1018,7 @@ static glob_t *glob_registry( int request, glob_t *gl_data )
      * before we attempt to free it.
      */
     case GLOB_FREE:
-      if( glob_signed( (const char *)gl_data->gl_magic, glob_magic ) == 0 )
+      if( GlobSigned( (const char *)gl_data->gl_magic, glob_magic ) == 0 )
       {
 	/* On passing the sanity check, we may proceed to free
 	 * all dynamically (strdup) allocated string buffers in
@@ -1054,11 +1054,11 @@ __mingw_glob( const char *pattern, int flags, int (*errfn)(const char *, int), g
   status = glob_match( pattern, flags, errfn, gl_data );
   if( (status == GLOB_NOMATCH) && ((flags & GLOB_NOCHECK) != 0) )
     /*
-     * ...ultimately delegating to glob_strdup() and glob_store_entry()
+     * ...ultimately delegating to glob_strdup() and GlobStoreEntry()
      * to handle any unmatched globbing pattern which the user specified
      * options may require to be stored anyway.
      */
-    glob_store_entry( glob_strdup( pattern ), gl_data );
+    GlobStoreEntry( glob_strdup( pattern ), gl_data );
 
   /* We always return the status reported by glob_match().
    */

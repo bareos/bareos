@@ -159,7 +159,7 @@ DLL_IMP_EXP int CryptoKeypairLoadCert(X509_KEYPAIR *keypair, const char *file);
 DLL_IMP_EXP bool CryptoKeypairHasKey(const char *file);
 DLL_IMP_EXP int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata);
 DLL_IMP_EXP void CryptoKeypairFree(X509_KEYPAIR *keypair);
-DLL_IMP_EXP int crypto_default_pem_callback(char *buf, int size, const void *userdata);
+DLL_IMP_EXP int CryptoDefaultPemCallback(char *buf, int size, const void *userdata);
 DLL_IMP_EXP const char *crypto_digest_name(crypto_digest_t type);
 DLL_IMP_EXP const char *crypto_digest_name(DIGEST *digest);
 DLL_IMP_EXP crypto_digest_t CryptoDigestStreamType(int stream);

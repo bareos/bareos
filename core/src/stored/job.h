@@ -22,6 +22,6 @@
 #ifndef BAREOS_STORED_JOB_H_
 #define BAREOS_STORED_JOB_H_
 
-void stored_free_jcr(JobControlRecord *jcr);
+void StoredFreeJcr(JobControlRecord *jcr);
 
 #endif // BAREOS_STORED_JOB_H_

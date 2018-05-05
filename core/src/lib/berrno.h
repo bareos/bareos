@@ -60,7 +60,7 @@ public:
    ~berrno();
    const char *bstrerror();
    const char *bstrerror(int errnum);
-   void set_errno(int errnum);
+   void SetErrno(int errnum);
    int code() { return berrno_ & ~(b_errno_exit|b_errno_signal); }
    int code(int stat) { return stat & ~(b_errno_exit|b_errno_signal); }
 };
@@ -86,7 +86,7 @@ inline const char *berrno::bstrerror(int errnum)
 }
 
 
-inline void berrno::set_errno(int errnum)
+inline void berrno::SetErrno(int errnum)
 {
    berrno_ = errnum;
 }

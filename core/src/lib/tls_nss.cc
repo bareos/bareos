@@ -63,31 +63,31 @@ void FreeTlsContext(TLS_CONTEXT *ctx)
 {
 }
 
-bool get_tls_require(TLS_CONTEXT *ctx)
+bool GetTlsRequire(TLS_CONTEXT *ctx)
 {
    return (ctx) ? ctx->tls_require : false;
 }
 
-void set_tls_require(TLS_CONTEXT *ctx, bool value)
+void SetTlsRequire(TLS_CONTEXT *ctx, bool value)
 {
    if (ctx) {
       ctx->tls_require = value;
    }
 }
 
-bool get_tls_enable(TLS_CONTEXT *ctx)
+bool GetTlsEnable(TLS_CONTEXT *ctx)
 {
    return (ctx) ? ctx->tls_enable : false;
 }
 
-void set_tls_enable(TLS_CONTEXT *ctx, bool value)
+void SetTlsEnable(TLS_CONTEXT *ctx, bool value)
 {
    if (ctx) {
       ctx->tls_enable = value;
    }
 }
 
-bool get_tls_verify_peer(TLS_CONTEXT *ctx)
+bool GetTlsVerifyPeer(TLS_CONTEXT *ctx)
 {
    return (ctx) ? ctx->VerifyPeer : false;
 }
@@ -98,7 +98,7 @@ bool get_tls_verify_peer(TLS_CONTEXT *ctx)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    return true;
 }
@@ -109,7 +109,7 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    return true;
 }
@@ -134,7 +134,7 @@ void FreeTlsConnection(TLS_CONNECTION *tls_conn)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_connect(BareosSocket *bsock)
+bool TlsBsockConnect(BareosSocket *bsock)
 {
    return false;
 }
@@ -144,7 +144,7 @@ bool tls_bsock_connect(BareosSocket *bsock)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_accept(BareosSocket *bsock)
+bool TlsBsockAccept(BareosSocket *bsock)
 {
    return false;
 }

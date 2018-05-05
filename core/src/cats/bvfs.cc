@@ -93,7 +93,7 @@ private:
 /*
  * Generic path handlers used for database queries.
  */
-static int get_path_handler(void *ctx, int fields, char **row)
+static int GetPathHandler(void *ctx, int fields, char **row)
 {
    PoolMem *buf = (PoolMem *)ctx;
 
@@ -102,11 +102,11 @@ static int get_path_handler(void *ctx, int fields, char **row)
    return 0;
 }
 
-static int path_handler(void *ctx, int fields, char **row)
+static int PathHandler(void *ctx, int fields, char **row)
 {
    Bvfs *fs = (Bvfs *)ctx;
 
-   return fs->_handle_path(ctx, fields, row);
+   return fs->_handlePath(ctx, fields, row);
 }
 
 /*
@@ -315,7 +315,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord *jcr)
              "WHERE HasCache = 0 "
              "AND Type IN ('B') AND JobStatus IN ('T', 'W', 'f', 'A') "
              "ORDER BY JobId");
-   SqlQuery(cmd, db_list_handler, &jobids_list);
+   SqlQuery(cmd, DbListHandler, &jobids_list);
 
    BvfsUpdatePathHierarchyCache(jcr, jobids_list.list);
 
@@ -374,7 +374,7 @@ int BareosDb::BvfsLsDirs(PoolMem &query, void *ctx)
 
    DbLock(this);
 
-   SqlQuery(query.c_str(), path_handler, ctx);
+   SqlQuery(query.c_str(), PathHandler, ctx);
    // FIXME: SqlNumRows() is always 0 after SqlQuery.
    //nb_record = SqlNumRows();
 
@@ -383,14 +383,14 @@ int BareosDb::BvfsLsDirs(PoolMem &query, void *ctx)
    return nb_record;
 }
 
-int BareosDb::BvfsBuildLsFileQuery(PoolMem &query, DB_RESULT_HANDLER *result_handler, void *ctx)
+int BareosDb::BvfsBuildLsFileQuery(PoolMem &query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    int nb_record = 0;
 
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
    DbLock(this);
-   SqlQuery(query.c_str(), result_handler, ctx);
+   SqlQuery(query.c_str(), ResultHandler, ctx);
    // FIXME: SqlNumRows() is always 0 after SqlQuery.
    //nb_record = SqlNumRows();
    DbUnlock(this);
@@ -401,9 +401,9 @@ int BareosDb::BvfsBuildLsFileQuery(PoolMem &query, DB_RESULT_HANDLER *result_han
 /*
  * Generic result handler.
  */
-static int result_handler(void *ctx, int fields, char **row)
+static int ResultHandler(void *ctx, int fields, char **row)
 {
-   Dmsg1(100, "result_handler(*,%d,**)", fields);
+   Dmsg1(100, "ResultHandler(*,%d,**)", fields);
    if (fields == 4) {
       Pmsg4(0, "%s\t%s\t%s\t%s\n",
             row[0], row[1], row[2], row[3]);
@@ -437,7 +437,7 @@ Bvfs::Bvfs(JobControlRecord *j, BareosDb *mdb) {
    limit = 1000;
    offset = 0;
    attr = new_attr(jcr);
-   list_entries = result_handler;
+   list_entries = ResultHandler;
    user_data = this;
 }
 
@@ -454,7 +454,7 @@ void Bvfs::SetJobid(JobId_t id)
    Mmsg(jobids, "%lld", (uint64_t)id);
 }
 
-void Bvfs::set_jobids(char *ids)
+void Bvfs::SetJobids(char *ids)
 {
    PmStrcpy(jobids, ids);
 }
@@ -618,7 +618,7 @@ DBId_t Bvfs::get_root()
    return p;
 }
 
-int Bvfs::_handle_path(void *ctx, int fields, char **row)
+int Bvfs::_handlePath(void *ctx, int fields, char **row)
 {
    if (BvfsIsDir(row)) {
       /*
@@ -717,9 +717,9 @@ bool Bvfs::ls_files()
  *   1 if next Id returned
  *   0 if no more Ids are in list
  *  -1 there is an error
- * TODO: merge with GetNextJobidFromList() and get_next_dbid_from_list()
+ * TODO: merge with GetNextJobidFromList() and GetNextDbidFromList()
  */
-static int get_next_id_from_list(char **p, int64_t *Id)
+static int GetNextIdFromList(char **p, int64_t *Id)
 {
    const int maxlen = 30;
    char id[maxlen+1];
@@ -746,7 +746,7 @@ static int get_next_id_from_list(char **p, int64_t *Id)
    return 1;
 }
 
-static bool check_temp(char *output_table)
+static bool CheckTemp(char *output_table)
 {
    if (output_table[0] == 'b' &&
        output_table[1] == '2' &&
@@ -778,10 +778,10 @@ void Bvfs::clear_cache()
    db->EndTransaction(jcr);
 }
 
-bool Bvfs::drop_restore_list(char *output_table)
+bool Bvfs::DropRestoreList(char *output_table)
 {
    PoolMem query(PM_MESSAGE);
-   if (check_temp(output_table)) {
+   if (CheckTemp(output_table)) {
       Mmsg(query, "DROP TABLE %s", output_table);
       db->SqlQuery(query.c_str());
       return true;
@@ -805,7 +805,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
    {
       return false;
    }
-   if (!check_temp(output_table)) {
+   if (!CheckTemp(output_table)) {
       return false;
    }
 
@@ -830,10 +830,10 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
    }
 
    /* Add a directory content */
-   while (get_next_id_from_list(&dirid, &id) == 1) {
+   while (GetNextIdFromList(&dirid, &id) == 1) {
       Mmsg(tmp, "SELECT Path FROM Path WHERE PathId=%lld", id);
 
-      if (!db->SqlQuery(tmp.c_str(), get_path_handler, (void *)&tmp2)) {
+      if (!db->SqlQuery(tmp.c_str(), GetPathHandler, (void *)&tmp2)) {
          Dmsg0(dbglevel, "Can't search for path\n");
          /* print error */
          goto bail_out;
@@ -889,8 +889,8 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
 
    /* expect jobid,fileindex */
    prev_jobid=0;
-   while (get_next_id_from_list(&hardlink, &jobid) == 1) {
-      if (get_next_id_from_list(&hardlink, &id) != 1) {
+   while (GetNextIdFromList(&hardlink, &jobid) == 1) {
+      if (GetNextIdFromList(&hardlink, &id) != 1) {
          Dmsg0(dbglevel, "hardlink should be two by two\n");
          goto bail_out;
       }

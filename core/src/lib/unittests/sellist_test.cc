@@ -37,7 +37,7 @@ extern "C" {
 #include "include/bareos.h"
 
 
-void test_sellist(void **state) {
+void TestSellist(void **state) {
    (void) state; /* unused */
 
    char *str1 =           "1,4,5,7,12,12321,1231,99999";

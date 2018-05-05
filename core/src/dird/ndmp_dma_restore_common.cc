@@ -123,7 +123,7 @@ void AddToNamelist(struct ndm_job_param *job,
 /*
  * Database handler that handles the returned environment data for a given JobId.
  */
-int ndmp_env_handler(void *ctx, int num_fields, char **row)
+int NdmpEnvHandler(void *ctx, int num_fields, char **row)
 {
    struct ndm_env_table *envtab;
    ndmp9_pval pv;

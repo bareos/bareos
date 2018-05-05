@@ -30,7 +30,7 @@ DLL_IMP_EXP utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 DLL_IMP_EXP int tm_wom(int mday, int wday);
 DLL_IMP_EXP int TmWoy(time_t stime);
 
-DLL_IMP_EXP void blocaltime(const time_t *time, struct tm *tm);
+DLL_IMP_EXP void Blocaltime(const time_t *time, struct tm *tm);
 DLL_IMP_EXP char *bstrutime(char *dt, int maxlen, utime_t tim);
 DLL_IMP_EXP char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
 DLL_IMP_EXP char *bstrftimes(char *dt, int maxlen, utime_t tim);
@@ -83,11 +83,11 @@ extern void date_time_decode(struct date_time *dt,
                              uint8_t *hour, uint8_t *minute, uint8_t *second,
                              float32_t *second_fraction);
 
-extern int date_time_compare(struct date_time *dt1, struct date_time *dt2);
+extern int DateTimeCompare(struct date_time *dt1, struct date_time *dt2);
 
 extern void TmEncode(struct date_time *dt, struct tm *tm);
 DLL_IMP_EXP extern void TmDecode(struct date_time *dt, struct tm *tm);
-DLL_IMP_EXP extern void get_current_time(struct date_time *dt);
+DLL_IMP_EXP extern void GetCurrentTime(struct date_time *dt);
 
 
 #endif /* BAREOS_LIB_BTIME_H_ */

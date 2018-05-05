@@ -249,7 +249,7 @@ static inline int to_hex(char ch)
  * It decodes the entries returned by glusterfind which uses
  * the python urllib.quote_plus method.
  */
-static bool urllib_unquote_plus(char *str)
+static bool UrllibUnquotePlus(char *str)
 {
    char *p, *q;
    bool retval = true;
@@ -651,7 +651,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
              * NEW and MODIFY just means we need to backup the file.
              */
             bstrinlinecpy(p_ctx->next_filename, p_ctx->next_filename + gf_mapping->compare_size);
-            urllib_unquote_plus(p_ctx->next_filename);
+            UrllibUnquotePlus(p_ctx->next_filename);
             break;
          case gf_type_rename:
             /*
@@ -665,11 +665,11 @@ static bRC get_next_file_to_backup(bpContext *ctx)
             }
             *bp++ = '\0';
             if (p_ctx->is_accurate) {
-               urllib_unquote_plus(p_ctx->next_filename);
+               UrllibUnquotePlus(p_ctx->next_filename);
                bfuncs->ClearSeenBitmap(ctx, false, p_ctx->next_filename);
             }
             bstrinlinecpy(p_ctx->next_filename, bp);
-            urllib_unquote_plus(p_ctx->next_filename);
+            UrllibUnquotePlus(p_ctx->next_filename);
             break;
          case gf_type_delete:
             /*
@@ -677,7 +677,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
              */
             if (p_ctx->is_accurate) {
                bstrinlinecpy(p_ctx->next_filename, p_ctx->next_filename + gf_mapping->compare_size);
-               urllib_unquote_plus(p_ctx->next_filename);
+               UrllibUnquotePlus(p_ctx->next_filename);
                bfuncs->ClearSeenBitmap(ctx, false, p_ctx->next_filename);
             }
             continue;
@@ -1015,7 +1015,7 @@ static bRC endBackupFile(bpContext *ctx)
 /**
  * Strip any backslashes in the string.
  */
-static inline void strip_back_slashes(char *value)
+static inline void StripBackSlashes(char *value)
 {
    char *bp;
 
@@ -1036,11 +1036,11 @@ static inline void strip_back_slashes(char *value)
 /**
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_string_if_null(char **destination, char *value)
+static inline void SetStringIfNull(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
-      strip_back_slashes(*destination);
+      StripBackSlashes(*destination);
    }
 }
 
@@ -1054,7 +1054,7 @@ static inline void SetString(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
-   strip_back_slashes(*destination);
+   StripBackSlashes(*destination);
 }
 
 /**
@@ -1151,7 +1151,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       } while (bp);
 
       for (i = 0; plugin_arguments[i].name; i++) {
-         if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+         if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
             char **str_destination = NULL;
 
             switch (plugin_arguments[i].type) {
@@ -1176,7 +1176,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              */
             if (str_destination) {
                if (keep_existing) {
-                  set_string_if_null(str_destination, argument_value);
+                  SetStringIfNull(str_destination, argument_value);
                } else {
                   SetString(str_destination, argument_value);
                }
@@ -1211,7 +1211,7 @@ bail_out:
 /**
  * Create a parent directory using the gfapi.
  */
-static inline bool gfapi_makedirs(plugin_ctx *p_ctx, const char *directory)
+static inline bool GfapiMakedirs(plugin_ctx *p_ctx, const char *directory)
 {
    int len;
    char *bp;
@@ -1244,7 +1244,7 @@ static inline bool gfapi_makedirs(plugin_ctx *p_ctx, const char *directory)
                 * Make sure our parent exists.
                 */
                *bp = '\0';
-               retval = gfapi_makedirs(p_ctx, new_directory.c_str());
+               retval = GfapiMakedirs(p_ctx, new_directory.c_str());
                if (!retval) {
                   return false;
                }
@@ -1353,7 +1353,7 @@ static inline bool parse_gfapi_devicename(char *devicename,
    /*
     * When protocol is not UNIX parse servername and portnr.
     */
-   if (!*transport || !bstrcasecmp(*transport, "unix")) {
+   if (!*transport || !Bstrcasecmp(*transport, "unix")) {
       /*
        * Parse servername of gluster management server.
        */
@@ -1934,7 +1934,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (bp) {
             *bp = '\0';
             if (strlen(parent_dir.c_str())) {
-               if (!gfapi_makedirs(p_ctx, parent_dir.c_str())) {
+               if (!GfapiMakedirs(p_ctx, parent_dir.c_str())) {
                   rp->create_status = CF_ERROR;
                   goto bail_out;
                }
@@ -1986,7 +1986,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       break;
    case FT_DIRBEGIN:
    case FT_DIREND:
-      if (!gfapi_makedirs(p_ctx, rp->ofname)) {
+      if (!GfapiMakedirs(p_ctx, rp->ofname)) {
          rp->create_status = CF_ERROR;
       } else {
          rp->create_status = CF_CREATED;

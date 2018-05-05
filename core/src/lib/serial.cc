@@ -170,7 +170,7 @@ void SerialString(uint8_t * * const ptr, const char * const str)
    for (i=0; src[i] != 0;  i++) {
       dest[i] = src[i];
    }
-   dest[i++] = 0;                  /* terminate output string */
+   dest[i++] = 0;                  /* Terminate output string */
    *ptr += i;                      /* update pointer */
 // Dmsg2(000, "ser src=%s dest=%s\n", src, dest);
 }
@@ -304,7 +304,7 @@ void UnserialString(uint8_t * * const ptr, char * const str, int max)
    for (i=0; i<max && src[i] != 0;  i++) {
       dest[i] = src[i];
    }
-   dest[i++] = 0;            /* terminate output string */
+   dest[i++] = 0;            /* Terminate output string */
    *ptr += i;                /* update pointer */
 // Dmsg2(000, "unser src=%s dest=%s\n", src, dest);
 }

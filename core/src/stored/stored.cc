@@ -51,7 +51,7 @@
 #include "include/jcr.h"
 
 /* Imported functions */
-extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
@@ -249,7 +249,7 @@ int main (int argc, char *argv[])
    }
 
    my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
       my_config->DumpResources(prtmsg, NULL);
@@ -325,7 +325,7 @@ int main (int argc, char *argv[])
     * Separate thread that handles NDMP connections
     */
    if (me->ndmp_enable) {
-      start_ndmp_thread_server(me->NDMPaddrs, me->MaxConnections);
+      StartNdmpThreadServer(me->NDMPaddrs, me->MaxConnections);
    }
 #endif
 
@@ -614,7 +614,7 @@ void *device_initialization(void *arg)
    LockRes();
 
    pthread_detach(pthread_self());
-   jcr = new_jcr(sizeof(JobControlRecord), stored_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), StoredFreeJcr);
    NewPlugins(jcr);  /* instantiate plugins */
    jcr->setJobType(JT_SYSTEM);
 
@@ -708,7 +708,7 @@ void TerminateStored(int sig)
    JobControlRecord *jcr;
 
    if (in_here) {                     /* prevent loops */
-      bmicrosleep(2, 0);              /* yield */
+      Bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
    in_here = true;
@@ -753,11 +753,11 @@ void TerminateStored(int sig)
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
                ReleaseDeviceCond();
             }
-            bmicrosleep(0, 50000);
+            Bmicrosleep(0, 50000);
          }
          FreeJcr(jcr);
       }
-      bmicrosleep(0, 500000);         /* give them 1/2 sec to clean up */
+      Bmicrosleep(0, 500000);         /* give them 1/2 sec to clean up */
    }
 
    WriteStateFile(me->working_directory, "bareos-sd", GetFirstPortHostOrder(me->SDaddrs));

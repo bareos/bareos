@@ -50,7 +50,7 @@
 
 static const int dbglevel = 10;
 
-static bool create_bootstrap_file(JobControlRecord *jcr, char *jobids);
+static bool CreateBootstrapFile(JobControlRecord *jcr, char *jobids);
 
 /**
  * Called here before the job is run to do the job specific setup.
@@ -157,7 +157,7 @@ bool DoNativeVbackupInit(JobControlRecord *jcr)
  * Returns:  false on failure
  *           true  on success
  */
-bool do_native_vbackup(JobControlRecord *jcr)
+bool DoNativeVbackup(JobControlRecord *jcr)
 {
    char *p;
    BareosSocket *sd;
@@ -262,7 +262,7 @@ bool do_native_vbackup(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if (!create_bootstrap_file(jcr, jobids)) {
+   if (!CreateBootstrapFile(jcr, jobids)) {
       Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file\n"));
       goto bail_out;
    }
@@ -478,7 +478,7 @@ void NativeVbackupCleanup(JobControlRecord *jcr, int TermCode, int JobLevel)
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
  *      row[3]=JobId row[4]=LStat
  */
-static int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
+static int InsertBootstrapHandler(void *ctx, int num_fields, char **row)
 {
    JobId_t JobId;
    int FileIndex;
@@ -490,7 +490,7 @@ static int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-static bool create_bootstrap_file(JobControlRecord *jcr, char *jobids)
+static bool CreateBootstrapFile(JobControlRecord *jcr, char *jobids)
 {
    RestoreContext rx;
    UaContext *ua;
@@ -507,7 +507,7 @@ static bool create_bootstrap_file(JobControlRecord *jcr, char *jobids)
 
    if (!jcr->db_batch->GetFileList(jcr, jobids, false /* don't use md5 */,
                          true /* use delta */,
-                         insert_bootstrap_handler, (void *)rx.bsr)) {
+                         InsertBootstrapHandler, (void *)rx.bsr)) {
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->db_batch->strerror());
    }
 

@@ -157,7 +157,7 @@ static inline int NativeToNdmpLoglevel(int debuglevel, NIS *nis)
 /**
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
-extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
+extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
    int internal_level;
    NIS *nis;
@@ -234,7 +234,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
 /**
  * Clear text authentication callback.
  */
-extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass)
+extern "C" int BndmpAuthClear(struct ndm_session *sess, char *name, char *pass)
 {
    NdmpResource *auth_config;
 
@@ -478,7 +478,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord *jcr,
 /**
  * Generate virtual file attributes for the whole NDMP stream.
  */
-static inline bool bndmp_create_virtual_file(JobControlRecord *jcr, char *filename)
+static inline bool BndmpCreateVirtualFile(JobControlRecord *jcr, char *filename)
 {
    DeviceControlRecord *dcr = jcr->dcr;
    struct stat statp;
@@ -529,7 +529,7 @@ static inline bool bndmp_create_virtual_file(JobControlRecord *jcr, char *filena
    return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data.c_str(), size);
 }
 
-static int bndmp_simu_flush_weof(struct ndm_session *sess)
+static int BndmpSimuFlushWeof(struct ndm_session *sess)
 {
    struct ndm_tape_agent * ta = sess->tape_acb;
 
@@ -727,7 +727,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
        * @NDMP/<filesystem> and save the attributes to the director.
        */
       Mmsg(virtual_filename, "/@NDMP%s", filesystem);
-      if (!bndmp_create_virtual_file(jcr, virtual_filename.c_str())) {
+      if (!BndmpCreateVirtualFile(jcr, virtual_filename.c_str())) {
          Jmsg0(jcr, M_FATAL, 0,
                _("Creating virtual file attributes failed.\n"));
          goto bail_out;
@@ -828,7 +828,7 @@ bail_out:
    return NDMP9_NO_DEVICE_ERR;
 }
 
-extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
+extern "C" ndmp9_error BndmpTapeClose(struct ndm_session *sess)
 {
    JobControlRecord *jcr;
    ndmp9_error err;
@@ -840,7 +840,7 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
       return NDMP9_DEV_NOT_OPEN_ERR;
    }
 
-   bndmp_simu_flush_weof(sess);
+   BndmpSimuFlushWeof(sess);
 
    /*
     * Setup the glue between the NDMP layer and the Storage Daemon.
@@ -901,7 +901,7 @@ extern "C" ndmp9_error bndmp_tape_mtio(struct ndm_session *sess,
       return NDMP9_NO_ERR;
 
    case NDMP9_MTIO_REW:
-      bndmp_simu_flush_weof(sess);
+      BndmpSimuFlushWeof(sess);
       *resid = 0;
       ta->tape_state.file_num.value = 0;
       ta->tape_state.blockno.value = 0;
@@ -966,7 +966,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session *sess,
    return err;
 }
 
-extern "C" ndmp9_error bndmp_tape_wfm(struct ndm_session *sess)
+extern "C" ndmp9_error BndmpTapeWfm(struct ndm_session *sess)
 {
    ndmp9_error err;
    struct ndm_tape_agent *ta = sess->tape_acb;
@@ -1034,7 +1034,7 @@ static inline void RegisterCallbackHooks(struct ndm_session *sess)
    /*
     * Register the authentication callbacks.
     */
-   auth_callbacks.validate_password = bndmp_auth_clear;
+   auth_callbacks.validate_password = BndmpAuthClear;
    auth_callbacks.validate_md5 = bndmp_auth_md5;
    ndmos_auth_register_callbacks(sess, &auth_callbacks);
 
@@ -1042,10 +1042,10 @@ static inline void RegisterCallbackHooks(struct ndm_session *sess)
     * Register the tape simulator callbacks.
     */
    tape_callbacks.tape_open = bndmp_tape_open;
-   tape_callbacks.tape_close = bndmp_tape_close;
+   tape_callbacks.tape_close = BndmpTapeClose;
    tape_callbacks.tape_mtio = bndmp_tape_mtio;
    tape_callbacks.tape_write = bndmp_tape_write;
-   tape_callbacks.tape_wfm = bndmp_tape_wfm;
+   tape_callbacks.tape_wfm = BndmpTapeWfm;
    tape_callbacks.tape_read = bndmp_tape_read;
    ndmos_tape_register_callbacks(sess, &tape_callbacks);
 }
@@ -1174,7 +1174,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
 
    sess->param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(sess->param, 0, sizeof(struct ndm_session_param));
-   sess->param->log.deliver = ndmp_loghandler;
+   sess->param->log.deliver = NdmpLoghandler;
    nis = (NIS *)malloc(sizeof(NIS));
    sess->param->log.ctx = nis;
    sess->param->log_level = NativeToNdmpLoglevel(debug_level, nis);
@@ -1349,7 +1349,7 @@ extern "C" void *ndmp_thread_server(void *arg)
                   ipaddr->build_address_str(curbuf, sizeof(curbuf)),
                   build_addresses_str(ntsa->addr_list, allbuf, sizeof(allbuf)));
          }
-         bmicrosleep(10, 0);
+         Bmicrosleep(10, 0);
       }
 
       /*
@@ -1372,7 +1372,7 @@ extern "C" void *ndmp_thread_server(void *arg)
                   _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
                   ntohs(fd_ptr->port), be.bstrerror());
          }
-         bmicrosleep(5, 0);
+         Bmicrosleep(5, 0);
          if (--tmax <= 0) {
             Emsg2(M_ABORT, 0,
                   _("Cannot bind port %d: ERR=%s.\n"), ntohs(fd_ptr->port),
@@ -1391,7 +1391,7 @@ extern "C" void *ndmp_thread_server(void *arg)
     */
    if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, handle_ndmp_client_request)) != 0) {
       berrno be;
-      be.set_errno(status);
+      be.SetErrno(status);
       Emsg1(M_ABORT, 0,
             _("Could not init ndmp client queue: ERR=%s\n"),
             be.bstrerror());
@@ -1512,7 +1512,7 @@ extern "C" void *ndmp_thread_server(void *arg)
              */
             if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL, 0)) != 0) {
                berrno be;
-               be.set_errno(status);
+               be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to ndmp client queue: ERR=%s\n"),
                      be.bstrerror());
             }
@@ -1534,7 +1534,7 @@ extern "C" void *ndmp_thread_server(void *arg)
     */
    if ((status = WorkqDestroy(ntsa->client_wq)) != 0) {
       berrno be;
-      be.set_errno(status);
+      be.SetErrno(status);
       Emsg1(M_FATAL, 0,
             _("Could not destroy ndmp client queue: ERR=%s\n"),
             be.bstrerror());
@@ -1543,7 +1543,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    return NULL;
 }
 
-int start_ndmp_thread_server(dlist *addr_list, int max_clients)
+int StartNdmpThreadServer(dlist *addr_list, int max_clients)
 {
    int status;
 

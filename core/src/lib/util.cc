@@ -260,7 +260,7 @@ char *encode_time(utime_t utime, char *buf)
    }
 #endif
 
-   blocaltime(&time, &tm);
+   Blocaltime(&time, &tm);
    n = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d",
                 tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
                 tm.tm_hour, tm.tm_min, tm.tm_sec);
@@ -368,7 +368,7 @@ void JobstatusToAscii(int JobStatus, char *msg, int maxlen)
       if (JobStatus == 0) {
          buf[0] = 0;
       } else {
-         bsnprintf(buf, sizeof(buf), _("Unknown Job termination status=%d"), JobStatus);
+         Bsnprintf(buf, sizeof(buf), _("Unknown Job termination status=%d"), JobStatus);
       }
       jobstat = buf;
       break;
@@ -379,7 +379,7 @@ void JobstatusToAscii(int JobStatus, char *msg, int maxlen)
 /*
  * Convert a JobStatus code into a human readable form - gui version
  */
-void jobstatus_to_ascii_gui(int JobStatus, char *msg, int maxlen)
+void JobstatusToAsciiGui(int JobStatus, char *msg, int maxlen)
 {
    const char *cnv = NULL;
    switch (JobStatus) {
@@ -734,39 +734,39 @@ void MakeSessionKey(char *key, char *seed, int mode)
       DWORD             length;
       FILETIME          ft;
 
-      bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetCurrentProcessId());
+      Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetCurrentProcessId());
       (void)getcwd(s + strlen(s), 256);
-      bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetTickCount());
+      Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetTickCount());
       QueryPerformanceCounter(&li);
-      bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)li.LowPart);
+      Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)li.LowPart);
       GetSystemTimeAsFileTime(&ft);
-      bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwLowDateTime);
-      bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwHighDateTime);
+      Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwLowDateTime);
+      Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwHighDateTime);
       length = 256;
       GetComputerName(s + strlen(s), &length);
       length = 256;
       GetUserName(s + strlen(s), &length);
    }
 #else
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getpid());
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getppid());
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getpid());
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getppid());
    (void)getcwd(s + strlen(s), 256);
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)clock());
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)time(NULL));
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)clock());
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)time(NULL));
 #if defined(Solaris)
    sysinfo(SI_HW_SERIAL,s + strlen(s), 12);
 #endif
 #if defined(HAVE_GETHOSTID)
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t) gethostid());
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t) gethostid());
 #endif
    gethostname(s + strlen(s), 256);
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
 #endif
    MD5_Init(&md5c);
    MD5_Update(&md5c, (uint8_t *)s, strlen(s));
    MD5_Final(md5key, &md5c);
-   bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)((time(NULL) + 65121) ^ 0x375F));
+   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)((time(NULL) + 65121) ^ 0x375F));
    MD5_Init(&md5c);
    MD5_Update(&md5c, (uint8_t *)s, strlen(s));
    MD5_Final(md5key1, &md5c);
@@ -792,7 +792,7 @@ void MakeSessionKey(char *key, char *seed, int mode)
 }
 #undef nextrand
 
-void encode_session_key(char *encode, char *session, char *key, int maxlen)
+void EncodeSessionKey(char *encode, char *session, char *key, int maxlen)
 {
    int i;
 
@@ -807,7 +807,7 @@ void encode_session_key(char *encode, char *session, char *key, int maxlen)
    Dmsg3(000, "Session=%s key=%s encode=%s\n", session, key, encode);
 }
 
-void decode_session_key(char *decode, char *session, char *key, int maxlen)
+void DecodeSessionKey(char *decode, char *session, char *key, int maxlen)
 {
    int i, x;
 
@@ -867,14 +867,14 @@ POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const cha
             str = "%";
             break;
          case 'B':                    /* Job Bytes in human readable format */
-            bsnprintf(add, sizeof(add), "%sB", edit_uint64_with_suffix(jcr->JobBytes, ed1));
+            Bsnprintf(add, sizeof(add), "%sB", edit_uint64_with_suffix(jcr->JobBytes, ed1));
             str = add;
             break;
          case 'F':                    /* Job Files */
             str = edit_uint64(jcr->JobFiles, add);
             break;
          case 'P':                    /* Process Id */
-            bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
+            Bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
             str = add;
             break;
          case 'b':                    /* Job Bytes */
@@ -899,7 +899,7 @@ POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const cha
             break;
          case 'i':                    /* JobId */
             if (jcr) {
-               bsnprintf(add, sizeof(add), "%d", jcr->JobId);
+               Bsnprintf(add, sizeof(add), "%d", jcr->JobId);
                str = add;
             } else {
                str = _("*None*");

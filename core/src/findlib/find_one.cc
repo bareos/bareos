@@ -78,7 +78,7 @@ static inline FindFilesPacket *new_dir_ff_pkt(FindFilesPacket *ff_pkt)
 /**
  * Free the temp directory ff_pkt
  */
-static void free_dir_ff_pkt(FindFilesPacket *dir_ff_pkt)
+static void FreeDirFfPkt(FindFilesPacket *dir_ff_pkt)
 {
    free(dir_ff_pkt->fname);
    free(dir_ff_pkt->link);
@@ -100,12 +100,12 @@ static void free_dir_ff_pkt(FindFilesPacket *dir_ff_pkt)
  * If we do not have a list of file system types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static bool accept_fstype(FindFilesPacket *ff, void *dummy)
+static bool AcceptFstype(FindFilesPacket *ff, void *dummy)
 {
    return true;
 }
 #else
-static bool accept_fstype(FindFilesPacket *ff, void *dummy)
+static bool AcceptFstype(FindFilesPacket *ff, void *dummy)
 {
    int i;
    char fs[1000];
@@ -137,7 +137,7 @@ static bool accept_fstype(FindFilesPacket *ff, void *dummy)
  * If we do not have a list of drive types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
+static inline bool AcceptDrivetype(FindFilesPacket *ff, void *dummy)
 {
    int i;
    char dt[100];
@@ -145,7 +145,7 @@ static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
 
    if (ff->drivetypes.size()) {
       accept = false;
-      if (!drivetype(ff->fname, dt, sizeof(dt))) {
+      if (!Drivetype(ff->fname, dt, sizeof(dt))) {
          Dmsg1(50, "Cannot determine drive type for \"%s\"\n", ff->fname);
       } else {
          for (i = 0; i < ff->drivetypes.size(); ++i) {
@@ -163,7 +163,7 @@ static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
    return accept;
 }
 #else
-static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
+static inline bool AcceptDrivetype(FindFilesPacket *ff, void *dummy)
 {
    return true;
 }
@@ -177,7 +177,7 @@ static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
  * On Mac OS X, this succesfully differentiates between HFS+ and UFS
  * volumes, which makes me trust it is OK for others, too.
  */
-static bool volume_has_attrlist(const char *fname)
+static bool VolumeHasAttrlist(const char *fname)
 {
 #ifdef HAVE_DARWIN_OS
    struct statfs st;
@@ -223,7 +223,7 @@ static inline bool no_dump(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 /**
  * check for sizes
  */
-static inline bool check_size_matching(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
+static inline bool CheckSizeMatching(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    int64_t begin_size, end_size, difference;
 
@@ -328,7 +328,7 @@ bool HasFileChanged(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
  * For incremental/diffential or accurate backups, we
  * determine if the current file has changed.
  */
-bool check_changes(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
+bool CheckChanges(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    /*
     * In special mode (like accurate backup), the programmer can
@@ -351,7 +351,7 @@ bool check_changes(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    return true;
 }
 
-static inline bool have_ignoredir(FindFilesPacket *ff_pkt)
+static inline bool HaveIgnoredir(FindFilesPacket *ff_pkt)
 {
    struct stat sb;
    char *ignoredir;
@@ -385,7 +385,7 @@ static inline bool have_ignoredir(FindFilesPacket *ff_pkt)
 /**
  * Restore file times.
  */
-static inline void restore_file_times(FindFilesPacket *ff_pkt, char *fname)
+static inline void RestoreFileTimes(FindFilesPacket *ff_pkt, char *fname)
 {
 #if defined(HAVE_LUTIMES)
    struct timeval restore_times[2];
@@ -420,7 +420,7 @@ static inline void restore_file_times(FindFilesPacket *ff_pkt, char *fname)
  * Handling of a HFS+ attributes.
  */
 static inline int process_hfsattributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                                        int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                                        int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                         char *fname, bool top_level)
 {
     /*
@@ -436,7 +436,7 @@ static inline int process_hfsattributes(JobControlRecord *jcr, FindFilesPacket *
                     sizeof(ff_pkt->hfsinfo), FSOPT_NOFOLLOW) != 0) {
        ff_pkt->type = FT_NOSTAT;
        ff_pkt->ff_errno = errno;
-       return handle_file(jcr, ff_pkt, top_level);
+       return HandleFile(jcr, ff_pkt, top_level);
     }
 
     return -1;
@@ -447,7 +447,7 @@ static inline int process_hfsattributes(JobControlRecord *jcr, FindFilesPacket *
  * Handling of a hardlinked file.
  */
 static inline int process_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                                   int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                                   int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                    char *fname, bool top_level, bool *done)
 {
    int rtn_stat = 0;
@@ -472,7 +472,7 @@ static inline int process_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pk
       ff_pkt->digest_stream = hl->digest_stream;
       ff_pkt->digest_len = hl->digest_len;
 
-      rtn_stat = handle_file(jcr, ff_pkt, top_level);
+      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
       Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex, hl->FileIndex, hl->name);
       *done = true;
    } else {
@@ -492,7 +492,7 @@ static inline int process_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pk
  * Handling of a regular file.
  */
 static inline int process_regular_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                                       int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                                       int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                        char *fname, bool top_level)
 {
    int rtn_stat;
@@ -511,7 +511,7 @@ static inline int process_regular_file(JobControlRecord *jcr, FindFilesPacket *f
       ff_pkt->type = FT_REG;
    }
 
-   rtn_stat = handle_file(jcr, ff_pkt, top_level);
+   rtn_stat = HandleFile(jcr, ff_pkt, top_level);
    if (ff_pkt->linked) {
       ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
    }
@@ -520,7 +520,7 @@ static inline int process_regular_file(JobControlRecord *jcr, FindFilesPacket *f
          ff_pkt->FileIndex, ff_pkt->linked ? 1 : 0, fname);
 
    if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
-      restore_file_times(ff_pkt, fname);
+      RestoreFileTimes(ff_pkt, fname);
    }
 
    return rtn_stat;
@@ -530,7 +530,7 @@ static inline int process_regular_file(JobControlRecord *jcr, FindFilesPacket *f
  * Handling of a symlink.
  */
 static inline int process_symlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                                  int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                                  int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                   char *fname, bool top_level)
 {
    int rtn_stat;
@@ -544,7 +544,7 @@ static inline int process_symlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt
        */
       ff_pkt->type = FT_NOFOLLOW;
       ff_pkt->ff_errno = errno;
-      rtn_stat = handle_file(jcr, ff_pkt, top_level);
+      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
       if (ff_pkt->linked) {
          ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
       }
@@ -555,7 +555,7 @@ static inline int process_symlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt
    ff_pkt->link = buffer;          /* point to link */
    ff_pkt->type = FT_LNK;          /* got a real link */
 
-   rtn_stat = handle_file(jcr, ff_pkt, top_level);
+   rtn_stat = HandleFile(jcr, ff_pkt, top_level);
    if (ff_pkt->linked) {
       ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
    }
@@ -567,7 +567,7 @@ static inline int process_symlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt
  * Handling of a directory.
  */
 static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                                    int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                                    int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                     char *fname, dev_t parent_device, bool top_level)
 {
    int rtn_stat;
@@ -587,7 +587,7 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
     * Ignore this directory and everything below if the file .nobackup
     * (or what is defined for IgnoreDir in this fileset) exists
     */
-   if (have_ignoredir(ff_pkt)) {
+   if (HaveIgnoredir(ff_pkt)) {
       return 1; /* Just ignore this directory */
    }
 
@@ -609,7 +609,7 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
    link[len] = 0;
 
    ff_pkt->link = link;
-   if (!check_changes(jcr, ff_pkt)) {
+   if (!CheckChanges(jcr, ff_pkt)) {
       /*
        * Incremental/Full+Base option, directory entry not changed
        */
@@ -633,14 +633,14 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
 #endif
 
    /*
-    * Note, we return the directory to the calling program (handle_file)
+    * Note, we return the directory to the calling program (HandleFile)
     * when we first see the directory (FT_DIRBEGIN.
     * This allows the program to apply matches and make a
     * choice whether or not to accept it.  If it is accepted, we
     * do not immediately save it, but do so only after everything
     * in the directory is seen (i.e. the FT_DIREND).
     */
-   rtn_stat = handle_file(jcr, ff_pkt, top_level);
+   rtn_stat = HandleFile(jcr, ff_pkt, top_level);
    if (rtn_stat < 1 ||
        ff_pkt->type == FT_REPARSE)  {   /* ignore or error status */
       free(link);
@@ -682,11 +682,11 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
       if(!BitIsSet(FO_MULTIFS, ff_pkt->flags)) {
          ff_pkt->type = FT_NOFSCHG;
          recurse = false;
-      } else if (!accept_fstype(ff_pkt, NULL)) {
+      } else if (!AcceptFstype(ff_pkt, NULL)) {
          ff_pkt->type = FT_INVALIDFS;
          recurse = false;
       } else {
-         ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
+         ff_pkt->volhas_attrlist = VolumeHasAttrlist(fname);
       }
    }
 
@@ -694,15 +694,15 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
     * If not recursing, just backup dir and return
     */
    if (!recurse) {
-      rtn_stat = handle_file(jcr, ff_pkt, top_level);
+      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
       if (ff_pkt->linked) {
          ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
       }
       free(link);
-      free_dir_ff_pkt(dir_ff_pkt);
+      FreeDirFfPkt(dir_ff_pkt);
       ff_pkt->link = ff_pkt->fname;     /* reset "link" */
       if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
-         restore_file_times(ff_pkt, fname);
+         RestoreFileTimes(ff_pkt, fname);
       }
       return rtn_stat;
    }
@@ -716,12 +716,12 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
    if ((directory = opendir(fname)) == NULL) {
       ff_pkt->type = FT_NOOPEN;
       ff_pkt->ff_errno = errno;
-      rtn_stat = handle_file(jcr, ff_pkt, top_level);
+      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
       if (ff_pkt->linked) {
          ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
       }
       free(link);
-      free_dir_ff_pkt(dir_ff_pkt);
+      FreeDirFfPkt(dir_ff_pkt);
       return rtn_stat;
    }
 
@@ -781,7 +781,7 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
       link[len + name_length] = '\0';
 
       if (!FileIsExcluded(ff_pkt, link)) {
-         rtn_stat = FindOneFile(jcr, ff_pkt, handle_file, link, our_device, false);
+         rtn_stat = FindOneFile(jcr, ff_pkt, HandleFile, link, our_device, false);
          if (ff_pkt->linked) {
             ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
          }
@@ -833,7 +833,7 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
       link[len + name_length] = '\0';
 
       if (!FileIsExcluded(ff_pkt, link)) {
-         rtn_stat = FindOneFile(jcr, ff_pkt, handle_file, link, our_device, false);
+         rtn_stat = FindOneFile(jcr, ff_pkt, HandleFile, link, our_device, false);
          if (ff_pkt->linked) {
             ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
          }
@@ -850,14 +850,14 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
     * the directory modes and dates.  Temp directory values
     * were used without this record.
     */
-   handle_file(jcr, dir_ff_pkt, top_level);       /* handle directory entry */
+   HandleFile(jcr, dir_ff_pkt, top_level);       /* handle directory entry */
    if (ff_pkt->linked) {
       ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex;
    }
-   free_dir_ff_pkt(dir_ff_pkt);
+   FreeDirFfPkt(dir_ff_pkt);
 
    if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
-      restore_file_times(ff_pkt, fname);
+      RestoreFileTimes(ff_pkt, fname);
    }
    ff_pkt->volhas_attrlist = volhas_attrlist;      /* Restore value in case it changed. */
 
@@ -868,7 +868,7 @@ static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_p
  * Handling of a special file.
  */
 static inline int process_special_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                                       int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                                       int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                        char *fname, bool top_level)
 {
    int rtn_stat;
@@ -903,7 +903,7 @@ static inline int process_special_file(JobControlRecord *jcr, FindFilesPacket *f
       ff_pkt->type = FT_SPEC;
    }
 
-   rtn_stat = handle_file(jcr, ff_pkt, top_level);
+   rtn_stat = HandleFile(jcr, ff_pkt, top_level);
    if (ff_pkt->linked) {
      ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
    }
@@ -914,16 +914,16 @@ static inline int process_special_file(JobControlRecord *jcr, FindFilesPacket *f
 /**
  * See if we need to perform any processing for a given file.
  */
-static inline bool needs_processing(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname)
+static inline bool NeedsProcessing(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname)
 {
    int loglevel = M_INFO;
 
-   if (!accept_fstype(ff_pkt, NULL)) {
+   if (!AcceptFstype(ff_pkt, NULL)) {
       char fs[100];
 
       ff_pkt->type = FT_INVALIDFS;
       if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
-         restore_file_times(ff_pkt, fname);
+         RestoreFileTimes(ff_pkt, fname);
       }
 
       if (!fstype(ff_pkt->fname, fs, sizeof(fs))) {
@@ -935,15 +935,15 @@ static inline bool needs_processing(JobControlRecord *jcr, FindFilesPacket *ff_p
       return false;  /* Just ignore this error - or the whole backup is cancelled */
    }
 
-   if (!accept_drivetype(ff_pkt, NULL)) {
+   if (!AcceptDrivetype(ff_pkt, NULL)) {
       char dt[100];
 
       ff_pkt->type = FT_INVALIDDT;
       if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
-         restore_file_times(ff_pkt, fname);
+         RestoreFileTimes(ff_pkt, fname);
       }
 
-      if (!drivetype(ff_pkt->fname, dt, sizeof(dt))) {
+      if (!Drivetype(ff_pkt->fname, dt, sizeof(dt))) {
          bstrncpy(dt, "unknown", sizeof(dt));
          loglevel = M_WARNING;
       }
@@ -952,7 +952,7 @@ static inline bool needs_processing(JobControlRecord *jcr, FindFilesPacket *ff_p
       return false;  /* Just ignore this error - or the whole backup is cancelled */
    }
 
-   ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
+   ff_pkt->volhas_attrlist = VolumeHasAttrlist(fname);
 
    return true;
 }
@@ -960,13 +960,13 @@ static inline bool needs_processing(JobControlRecord *jcr, FindFilesPacket *ff_p
 /**
  * Find a single file.
  *
- * handle_file is the callback for handling the file.
+ * HandleFile is the callback for handling the file.
  *    p is the filename
  *    parent_device is the device we are currently on
  *    top_level is 1 when not recursing or 0 when descending into a directory.
  */
 int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
-                  int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
+                  int HandleFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                   char *fname, dev_t parent_device, bool top_level)
 {
    int rtn_stat;
@@ -980,7 +980,7 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
         */
        ff_pkt->type = FT_NOSTAT;
        ff_pkt->ff_errno = errno;
-       return handle_file(jcr, ff_pkt, top_level);
+       return HandleFile(jcr, ff_pkt, top_level);
    }
 
    Dmsg1(300, "File ----: %s\n", fname);
@@ -989,7 +989,7 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
     * We check for allowed fstypes and drivetypes at top_level and fstype change (below).
     */
    if (top_level) {
-      if (!needs_processing(jcr, ff_pkt, fname)) {
+      if (!NeedsProcessing(jcr, ff_pkt, fname)) {
          return 1;
       }
    }
@@ -1006,7 +1006,7 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
    case S_IFDIR:
       break;
    case S_IFREG:
-      if (!check_size_matching(jcr, ff_pkt)) {
+      if (!CheckSizeMatching(jcr, ff_pkt)) {
          Dmsg1(100, "'%s' ignored (Size doesn't match\n", ff_pkt->fname);
          return 1;
       }
@@ -1019,10 +1019,10 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
        * since our last "save_time", presumably the last Full save
        * or Incremental.
        */
-      if (!check_changes(jcr, ff_pkt)) {
+      if (!CheckChanges(jcr, ff_pkt)) {
          Dmsg1(500, "Non-directory incremental: %s\n", ff_pkt->fname);
          ff_pkt->type = FT_NOCHG;
-         return handle_file(jcr, ff_pkt, top_level);
+         return HandleFile(jcr, ff_pkt, top_level);
       }
       break;
    }
@@ -1031,7 +1031,7 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
    if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) &&
        ff_pkt->volhas_attrlist &&
        S_ISREG(ff_pkt->statp.st_mode)) {
-      rtn_stat = process_hfsattributes(jcr, ff_pkt, handle_file, fname, top_level);
+      rtn_stat = process_hfsattributes(jcr, ff_pkt, HandleFile, fname, top_level);
       if (rtn_stat != -1) {
          return rtn_stat;
       }
@@ -1060,7 +1060,7 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
           * if file processing is done. If done is set to false we continue
           * with the normal processing of the file.
           */
-         rtn_stat = process_hardlink(jcr, ff_pkt, handle_file, fname, top_level, &done);
+         rtn_stat = process_hardlink(jcr, ff_pkt, HandleFile, fname, top_level, &done);
          if (done) {
             return rtn_stat;
          }
@@ -1079,15 +1079,15 @@ int FindOneFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
     */
    switch (ff_pkt->statp.st_mode & S_IFMT) {
    case S_IFREG:
-      return process_regular_file(jcr, ff_pkt, handle_file, fname, top_level);
+      return process_regular_file(jcr, ff_pkt, HandleFile, fname, top_level);
 #ifdef S_IFLNK
    case S_IFLNK:
-      return process_symlink(jcr, ff_pkt, handle_file, fname, top_level);
+      return process_symlink(jcr, ff_pkt, HandleFile, fname, top_level);
 #endif
    case S_IFDIR:
-      return process_directory(jcr, ff_pkt, handle_file, fname, parent_device, top_level);
+      return process_directory(jcr, ff_pkt, HandleFile, fname, parent_device, top_level);
    default:
-      return process_special_file(jcr, ff_pkt, handle_file, fname, top_level);
+      return process_special_file(jcr, ff_pkt, HandleFile, fname, top_level);
    }
 }
 

@@ -44,13 +44,13 @@
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
-static void do_blocks(char *infname);
+static void DoBlocks(char *infname);
 static void do_jobs(char *infname);
 static void do_ls(char *fname);
 static void do_close(JobControlRecord *jcr);
-static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
+static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
 static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 static Device *dev;
@@ -218,7 +218,7 @@ int main (int argc, char *argv[])
    }
 
    my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
@@ -269,7 +269,7 @@ int main (int argc, char *argv[])
       }
 
       if (list_blocks) {
-         do_blocks(argv[i]);
+         DoBlocks(argv[i]);
       } else if (list_jobs) {
          do_jobs(argv[i]);
       } else {
@@ -296,7 +296,7 @@ static void do_close(JobControlRecord *jcr)
 }
 
 /* List just block information */
-static void do_blocks(char *infname)
+static void DoBlocks(char *infname)
 {
    DeviceBlock *block = dcr->block;
    char buf1[100], buf2[100];
@@ -314,7 +314,7 @@ static void do_blocks(char *infname)
             record = new_record();
             dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
             ReadRecordFromBlock(dcr, record);
-            get_session_record(dev, record, &sessrec);
+            GetSessionRecord(dev, record, &sessrec);
             FreeRecord(record);
             Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
          } else if (dev->AtEof()) {
@@ -395,7 +395,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
    PoolMem record_str(PM_MESSAGE);
 
    if (rec->FileIndex < 0) {
-      get_session_record(dev, rec, &sessrec);
+      GetSessionRecord(dev, rec, &sessrec);
       return true;
    }
 
@@ -440,7 +440,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
    return true;
 }
 
-static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
+static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
    const char *rtype;
    memset(sessrec, 0, sizeof(SESSION_LABEL));

@@ -71,10 +71,10 @@ static bRC setup_record_translation(bpContext *ctx, void *value);
 static bRC handle_read_translation(bpContext *ctx, void *value);
 static bRC handle_write_translation(bpContext *ctx, void *value);
 
-static bool setup_auto_deflation(bpContext *ctx, DeviceControlRecord *dcr);
-static bool setup_auto_inflation(bpContext *ctx, DeviceControlRecord *dcr);
-static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr);
-static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr);
+static bool SetupAutoDeflation(bpContext *ctx, DeviceControlRecord *dcr);
+static bool SetupAutoInflation(bpContext *ctx, DeviceControlRecord *dcr);
+static bool AutoDeflateRecord(bpContext *ctx, DeviceControlRecord *dcr);
+static bool AutoInflateRecord(bpContext *ctx, DeviceControlRecord *dcr);
 
 /**
  * Is the SD in compatible mode or not.
@@ -380,7 +380,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
       break;
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
-      if (!setup_auto_deflation(ctx, dcr)) {
+      if (!SetupAutoDeflation(ctx, dcr)) {
          return bRC_Error;
       }
       did_setup = true;
@@ -394,7 +394,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
       break;
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
-      if (!setup_auto_inflation(ctx, dcr)) {
+      if (!SetupAutoInflation(ctx, dcr)) {
          return bRC_Error;
       }
       did_setup = true;
@@ -431,7 +431,7 @@ static bRC handle_read_translation(bpContext *ctx, void *value)
    switch (dcr->autoinflate) {
    case IO_DIRECTION_IN:
    case IO_DIRECTION_INOUT:
-      swap_record = auto_inflate_record(ctx, dcr);
+      swap_record = AutoInflateRecord(ctx, dcr);
       break;
    default:
       break;
@@ -441,7 +441,7 @@ static bRC handle_read_translation(bpContext *ctx, void *value)
       switch (dcr->autodeflate) {
       case IO_DIRECTION_IN:
       case IO_DIRECTION_INOUT:
-         swap_record = auto_deflate_record(ctx, dcr);
+         swap_record = AutoDeflateRecord(ctx, dcr);
          break;
       default:
          break;
@@ -470,7 +470,7 @@ static bRC handle_write_translation(bpContext *ctx, void *value)
    switch (dcr->autoinflate) {
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
-      swap_record = auto_inflate_record(ctx, dcr);
+      swap_record = AutoInflateRecord(ctx, dcr);
       break;
    default:
       break;
@@ -480,7 +480,7 @@ static bRC handle_write_translation(bpContext *ctx, void *value)
       switch (dcr->autodeflate) {
       case IO_DIRECTION_OUT:
       case IO_DIRECTION_INOUT:
-         swap_record = auto_deflate_record(ctx, dcr);
+         swap_record = AutoDeflateRecord(ctx, dcr);
          break;
       default:
          break;
@@ -493,7 +493,7 @@ static bRC handle_write_translation(bpContext *ctx, void *value)
 /**
  * Setup deflate for auto deflate of data streams.
  */
-static bool setup_auto_deflation(bpContext *ctx, DeviceControlRecord *dcr)
+static bool SetupAutoDeflation(bpContext *ctx, DeviceControlRecord *dcr)
 {
    JobControlRecord *jcr = dcr->jcr;
    bool retval = false;
@@ -585,7 +585,7 @@ bail_out:
 /**
  * Setup inflation for auto inflation of data streams.
  */
-static bool setup_auto_inflation(bpContext *ctx, DeviceControlRecord *dcr)
+static bool SetupAutoInflation(bpContext *ctx, DeviceControlRecord *dcr)
 {
    JobControlRecord *jcr = dcr->jcr;
    uint32_t decompress_buf_size;
@@ -618,7 +618,7 @@ static bool setup_auto_inflation(bpContext *ctx, DeviceControlRecord *dcr)
 /**
  * Perform automatic compression of certain stream types when enabled in the config.
  */
-static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
+static bool AutoDeflateRecord(bpContext *ctx, DeviceControlRecord *dcr)
 {
    ser_declare;
    bool retval = false;
@@ -752,7 +752,7 @@ static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
       break;
    }
 
-   Dmsg(ctx, 400, "auto_deflate_record: From datastream %d to %d from original size %ld to %ld\n",
+   Dmsg(ctx, 400, "AutoDeflateRecord: From datastream %d to %d from original size %ld to %ld\n",
         rec->maskedStream, nrec->maskedStream, rec->data_len, nrec->data_len);
 
    p_ctx->deflate_bytes_in += rec->data_len;
@@ -774,7 +774,7 @@ bail_out:
 /**
  * Inflate (uncompress) the content of a read record and return the data as an alternative datastream.
  */
-static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr)
+static bool AutoInflateRecord(bpContext *ctx, DeviceControlRecord *dcr)
 {
    DeviceRecord *rec, *nrec;
    bool retval = false;
@@ -860,7 +860,7 @@ static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr)
       break;
    }
 
-   Dmsg(ctx, 400, "auto_inflate_record: From datastream %d to %d from original size %ld to %ld\n",
+   Dmsg(ctx, 400, "AutoInflateRecord: From datastream %d to %d from original size %ld to %ld\n",
         rec->maskedStream, nrec->maskedStream, rec->data_len, nrec->data_len);
 
    p_ctx->inflate_bytes_in += rec->data_len;

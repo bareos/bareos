@@ -659,11 +659,11 @@ extern int ThrSetconcurrency(int);
 #endif
 
 #ifdef HAVE_DARWIN_OS
-/* Apparently someone forgot to wrap getdomainname as a C function */
+/* Apparently someone forgot to wrap Getdomainname as a C function */
 #ifdef  __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-int getdomainname(char *name, int len);
+int Getdomainname(char *name, int len);
 #ifdef  __cplusplus
 }
 #endif /* __cplusplus */
@@ -715,8 +715,8 @@ extern int h_errno;
 #ifdef  __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-int getdomainname(char *name, int namelen);
-int setdomainname(char *name, int namelen);
+int Getdomainname(char *name, int namelen);
+int Setdomainname(char *name, int namelen);
 #ifdef  __cplusplus
 }
 #endif /* __cplusplus */
@@ -729,7 +729,7 @@ extern "C" {
 #endif /* __cplusplus */
 int fchdir(int filedes);
 long gethostid(void);
-int getdomainname(char *name, int len);
+int Getdomainname(char *name, int len);
 #ifdef  __cplusplus
 }
 #endif /* __cplusplus */

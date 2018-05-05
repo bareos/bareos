@@ -32,7 +32,7 @@
 /*
  * Strip leading space from command line arguments
  */
-void strip_leading_space(char *str)
+void StripLeadingSpace(char *str)
 {
    char *p = str;
 
@@ -240,7 +240,7 @@ int ParseArgs(POOLMEM *cmd, POOLMEM *&args, int *argc,
    for (int i=0; i < *argc; i++) {
       p = strchr(argk[i], '=');
       if (p) {
-         *p++ = 0;                    /* terminate keyword and point to value */
+         *p++ = 0;                    /* Terminate keyword and point to value */
       }
       argv[i] = p;                    /* save ptr to value or NULL */
    }

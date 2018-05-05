@@ -95,7 +95,7 @@ extern char *UP;
 
 /* Forward referenced functions */
 extern "C" {
-static void sigintcatcher(int);
+static void Sigintcatcher(int);
 }
 
 static void add_smap(char *str, int func);
@@ -228,10 +228,10 @@ static short char_map[600]= {
 
 /* Function Prototypes */
 
-static unsigned int input_char(void);
+static unsigned int InputChar(void);
 static unsigned int t_gnc(void);
-static void insert_space(char *curline, int line_len);
-static void insert_hole(char *curline, int line_len);
+static void InsertSpace(char *curline, int line_len);
+static void InsertHole(char *curline, int line_len);
 static void forward(char *str, int str_len);
 static void backup(char *curline);
 static void delchr(int cnt, char *curline, int line_len);
@@ -454,7 +454,7 @@ input_char()
     if (c == F_SCRSIZ) {
        t_gnc();   /*  - 0x20 = y */
        t_gnc();   /*  - 0x20 = x */
-       c = input_char();
+       c = InputChar();
     }
     return c;
 }
@@ -481,7 +481,7 @@ input_line(char *string, int length)
           clrbrk();
           break;
        }
-       switch (c=input_char()) {
+       switch (c=InputChar()) {
        case F_RETURN:                /* CR */
            t_sendl("\r\n", 2);       /* yes, print it and */
            goto done;                /* get out */
@@ -504,7 +504,7 @@ input_line(char *string, int length)
            prtcur(curline);
            break;
        case F_INSCHR:
-           insert_space(curline, sizeof(curline));
+           InsertSpace(curline, sizeof(curline));
            break;
        case F_DELCHR:
            delchr(1, curline, sizeof(curline));       /* delete one character */
@@ -545,7 +545,7 @@ input_line(char *string, int length)
            break;
        case F_NXTMCH:                /* Ctl-X */
            if (cl==0) {
-               *string = EOS;        /* terminate string */
+               *string = EOS;        /* Terminate string */
                return(c);            /* give it to him */
            }
            /* Note fall through */
@@ -579,7 +579,7 @@ input_line(char *string, int length)
        default:
            if (c > 255) {            /* function key hit */
                if (cl==0) {          /* if first character then */
-                  *string = EOS;     /* terminate string */
+                  *string = EOS;     /* Terminate string */
                   return c;          /* return it */
                }
                t_honk_horn();        /* complain */
@@ -600,13 +600,13 @@ input_line(char *string, int length)
                   more = 0;
                }
                if (mode_insert) {
-                  insert_space(curline, sizeof(curline));
+                  InsertSpace(curline, sizeof(curline));
                }
                curline[cp++] = c;    /* store character in line being built */
                t_char(c);      /* echo character to terminal */
                while (more--) {
-                  c= input_char();
-                  insert_hole(curline, sizeof(curline));
+                  c= InputChar();
+                  InsertHole(curline, sizeof(curline));
                   curline[cp++] = c;    /* store character in line being built */
                   t_char(c);      /* echo character to terminal */
                }
@@ -621,7 +621,7 @@ input_line(char *string, int length)
 /* If we fall through here rather than goto done, the line is too long
    simply return what we have now. */
 done:
-   curline[cl++] = EOS;              /* terminate */
+   curline[cl++] = EOS;              /* Terminate */
    bstrncpy(string,curline,length);           /* return line to caller */
    /* Save non-blank lines. Note, put line zaps curline */
    if (curline[0] != EOS) {
@@ -933,7 +933,7 @@ t_clrline(int pos, int width)
 
 /* Helper function to add string preceded by
  *  ESC to smap table */
-static void add_esc_smap(const char *str, int func)
+static void AddEscSmap(const char *str, int func)
 {
    char buf[1000];
    buf[0] = 0x1B;                     /* esc */
@@ -978,7 +978,7 @@ static void rawmode(FILE *input)
    /* Defaults, the main program can override these */
    signal(SIGQUIT, SIG_IGN);
    signal(SIGHUP, SIG_IGN);
-   signal(SIGINT, sigintcatcher);
+   signal(SIGINT, Sigintcatcher);
    signal(SIGWINCH, SIG_IGN);
 
    if (!termtype) {
@@ -1038,16 +1038,16 @@ static void rawmode(FILE *input)
    add_smap(kE, F_EOF);
 
 
-   add_esc_smap("[A",   F_CSRUP);
-   add_esc_smap("[B",   F_CSRDWN);
-   add_esc_smap("[C",   F_CSRRGT);
-   add_esc_smap("[D",   F_CSRLFT);
-   add_esc_smap("[1~",  F_HOME);
-   add_esc_smap("[2~",  F_TINS);
-   add_esc_smap("[3~",  F_DELCHR);
-   add_esc_smap("[4~",  F_EOF);
-   add_esc_smap("f",    F_NXTWRD);
-   add_esc_smap("b",    F_PRVWRD);
+   AddEscSmap("[A",   F_CSRUP);
+   AddEscSmap("[B",   F_CSRDWN);
+   AddEscSmap("[C",   F_CSRRGT);
+   AddEscSmap("[D",   F_CSRLFT);
+   AddEscSmap("[1~",  F_HOME);
+   AddEscSmap("[2~",  F_TINS);
+   AddEscSmap("[3~",  F_DELCHR);
+   AddEscSmap("[4~",  F_EOF);
+   AddEscSmap("f",    F_NXTWRD);
+   AddEscSmap("b",    F_PRVWRD);
 }
 
 
@@ -1119,21 +1119,21 @@ void clrbrk()
 }
 
 /* Interrupt caught here */
-static void sigintcatcher(int sig)
+static void Sigintcatcher(int sig)
 {
    brkflg++;
    if (brkflg > 3) {
       normode();
       exit(1);
    }
-   signal(SIGINT, sigintcatcher);
+   signal(SIGINT, Sigintcatcher);
 }
 
 
 /* Trap Ctl-C */
 void trapctlc()
 {
-   signal(SIGINT, sigintcatcher);
+   signal(SIGINT, Sigintcatcher);
 }
 
 

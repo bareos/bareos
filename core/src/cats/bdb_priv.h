@@ -53,7 +53,7 @@ private:
    int SqlNumFields(void) { return num_fields_; }
    virtual void SqlFreeResult(void) = 0;
    virtual SQL_ROW SqlFetchRow(void) = 0;
-   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
+   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx) = 0;
    virtual bool SqlQueryWithoutHandler(const char *query, int flags = 0) = 0;
    virtual const char *sql_strerror(void) = 0;
    virtual void SqlDataSeek(int row) = 0;

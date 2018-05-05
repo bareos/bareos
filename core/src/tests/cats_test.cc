@@ -151,7 +151,7 @@ static void cmp_pool(PoolDbRecord &pr, PoolDbRecord &pr2)
    ok(pr.ActionOnPurge == pr2.ActionOnPurge,    "  Check Pool ActionOnPurge");
 }
 
-static void cmp_client(ClientDbRecord &cr, ClientDbRecord &cr2)
+static void CmpClient(ClientDbRecord &cr, ClientDbRecord &cr2)
 {
    ok(bstrcmp(cr2.Name, cr.Name),           "  Check Client Name");
    ok(bstrcmp(cr2.Uname, cr.Uname),         "  Check Client Uname");
@@ -191,7 +191,7 @@ static void cmp_job(JobDbRecord &jr, JobDbRecord &jr2)
 #define aPATH "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 #define aFILE "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
-static int list_files(void *ctx, int nb_col, char **row)
+static int ListFiles(void *ctx, int nb_col, char **row)
 {
    uint32_t *k = (uint32_t*) ctx;
    (*k)++;
@@ -203,7 +203,7 @@ static int list_files(void *ctx, int nb_col, char **row)
    return 1;
 }
 
-static int count_col(void *ctx, int nb_col, char **row)
+static int CountCol(void *ctx, int nb_col, char **row)
 {
    *((int32_t*) ctx) = nb_col;
    return 1;
@@ -386,7 +386,7 @@ int main (int argc, char *argv[])
    //db_check_backend_thread_safe();
    ok(CheckTablesVersion(jcr, db), "Check table version");
    ok(db_sql_query(db, "SELECT VersionId FROM Version",
-                   db_int_handler, &j), "SELECT VersionId");
+                   DbIntHandler, &j), "SELECT VersionId");
 
    ok(UPDATE_DB(jcr, db, (char*)"UPDATE Version SET VersionId = 1"),
       "Update VersionId");
@@ -407,7 +407,7 @@ int main (int argc, char *argv[])
 
    uint32_t storageid=0;
    ok(db_sql_query(db, "SELECT MIN(StorageId) FROM Storage",
-                   db_int_handler, &storageid), "Get StorageId");
+                   DbIntHandler, &storageid), "Get StorageId");
    ok(storageid > 0, "Check StorageId");
    if (!storageid) {
       Pmsg0(0, "Please, run REGRESS_DEBUG=1 tests/bareos-backup-test before this test");
@@ -416,16 +416,16 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing Basic SQL tests" PLINE);
-   ok(db_sql_query(db, "SELECT 1,2,3,4,5", count_col, &j), "Count 5 rows");
+   ok(db_sql_query(db, "SELECT 1,2,3,4,5", CountCol, &j), "Count 5 rows");
    ok(j == 5, "Check number of columns");
    ok(db_sql_query(db, "SELECT 1,2,3,4,5,'a','b','c','d','e'",
-                   count_col, &j), "Count 10 rows");
+                   CountCol, &j), "Count 10 rows");
    ok(j == 10, "Check number of columns");
 
-   bsnprintf(temp, sizeof(temp), "t%lld", pid);
-   ok(db_sql_query(db, "SELECT 2", db_int_handler, &j), "Good SELECT query");
+   Bsnprintf(temp, sizeof(temp), "t%lld", pid);
+   ok(db_sql_query(db, "SELECT 2", DbIntHandler, &j), "Good SELECT query");
    ok(db_sql_query(db, "SELECT 1 FROM Media WHERE VolumeName='missing'",
-                   db_int_handler, &j), "Good empty SELECT query");
+                   DbIntHandler, &j), "Good empty SELECT query");
 
    db_int64_ctx i64;
    i64.value = 0; i64.count = 0;
@@ -434,11 +434,11 @@ int main (int argc, char *argv[])
 
    db_list_ctx lctx;
    ok(db_sql_query(db, "SELECT FileId FROM File ORDER By FileId LIMIT 10",
-                   db_list_handler, &lctx), "db_list_ctx");
+                   DbListHandler, &lctx), "db_list_ctx");
    ok(lctx.count == 10, "Check db_list_ctx count ");
    ok(bstrcmp(lctx.list, "1,2,3,4,5,6,7,8,9,10"), "Check db_list_ctx list");
 
-   nok(db_sql_query(db, "blabla", db_int_handler, &j), "Bad query");
+   nok(db_sql_query(db, "blabla", DbIntHandler, &j), "Bad query");
 
    Mmsg(buf, "CREATE Table %s (a int)", temp);
    ok(db_sql_query(db, buf, NULL, NULL), "CREATE query");
@@ -530,14 +530,14 @@ int main (int argc, char *argv[])
    ok(db_create_attributes_record(jcr, db, &ar), "Inserting Filename");
    ok(db_write_batch_file_records(jcr), "Commit batch session");
    Mmsg(buf, "SELECT FileIndex FROM File WHERE JobId=%lld",(int64_t)jcr->JobId);
-   ok(db_sql_query(db, buf, db_int_handler, &j), "Get Inserted record");
+   ok(db_sql_query(db, buf, DbIntHandler, &j), "Get Inserted record");
    ok(j == ar.FileIndex, "Check FileIndex");
    Mmsg(buf, "SELECT COUNT(1) FROM File WHERE JobId=%lld",(int64_t)jcr->JobId);
-   ok(db_sql_query(db, buf, db_int_handler, &j), "List records");
+   ok(db_sql_query(db, buf, DbIntHandler, &j), "List records");
    ok(j == 1, "Check batch session records");
    j = 0;
    Mmsg(buf, "%lld", (uint64_t)jcr->JobId);
-   ok(db_get_file_list(jcr, jcr->db_batch, buf, false, false, list_files, &j),
+   ok(db_get_file_list(jcr, jcr->db_batch, buf, false, false, ListFiles, &j),
       "List files with db_get_file_list()");
    ok(j == 1, "Check db_get_file_list results");
    /* ---------------------------------------------------------------- */
@@ -550,8 +550,8 @@ int main (int argc, char *argv[])
    cr.AutoPrune = 1;
    cr.FileRetention = 10;
    cr.JobRetention = 15;
-   bsnprintf(cr.Name, sizeof(cr.Name), "client-%lld-fd", pid);
-   bsnprintf(cr.Uname, sizeof(cr.Uname), "uname-%lld", pid);
+   Bsnprintf(cr.Name, sizeof(cr.Name), "client-%lld-fd", pid);
+   Bsnprintf(cr.Uname, sizeof(cr.Uname), "uname-%lld", pid);
 
    ok(db_create_client_record(jcr, db, &cr), "db_create_client_record()");
    ok(cr.ClientId > 0, "Check ClientId");
@@ -564,17 +564,17 @@ int main (int argc, char *argv[])
    ok(cr.ClientId == cr2.ClientId,           "Check if ClientId is the same");
 
    ok(db_get_client_record(jcr, db, &cr2), "Search client by ClientId");
-   cmp_client(cr, cr2);
+   CmpClient(cr, cr2);
 
    Pmsg0(0, "Search client by Name\n");
    memset(&cr2, 0, sizeof(cr2));
    strcpy(cr2.Name, cr.Name);
    ok(db_get_client_record(jcr, db, &cr2),"Search client by Name");
-   cmp_client(cr, cr2);
+   CmpClient(cr, cr2);
 
    Pmsg0(0, "Search non existing client by Name\n");
    memset(&cr2, 0, sizeof(cr2));
-   bsnprintf(cr2.Name, sizeof(cr2.Name), "hollow-client-%lld-fd", pid);
+   Bsnprintf(cr2.Name, sizeof(cr2.Name), "hollow-client-%lld-fd", pid);
    nok(db_get_client_record(jcr, db, &cr2), "Search non existing client");
    ok(cr2.ClientId == 0, "Check ClientId after failed search");
 
@@ -584,7 +584,7 @@ int main (int argc, char *argv[])
    memset(&cr2, 0, sizeof(cr2));
    cr2.ClientId = cr.ClientId;
    ok(db_get_client_record(jcr, db, &cr2),"Search client by ClientId");
-   cmp_client(cr, cr2);
+   CmpClient(cr, cr2);
 
    int nb, i;
    uint32_t *ret_ids;
@@ -603,7 +603,7 @@ int main (int argc, char *argv[])
    memset(&pr, 0, sizeof(pr));
    memset(&pr2, 0, sizeof(pr2));
 
-   bsnprintf(pr.Name, sizeof(pr.Name), "pool-%lld", pid);
+   Bsnprintf(pr.Name, sizeof(pr.Name), "pool-%lld", pid);
    pr.MaxVols = 10;
    pr.UseOnce = 0;
    pr.UseCatalog = true;
@@ -630,7 +630,7 @@ int main (int argc, char *argv[])
 
    Pmsg0(0, "Search pool by PoolId\n");
    nok(db_create_pool_record(jcr, db, &pr),"Can't create pool twice");
-   ok(db_get_pool_record(jcr, db, &pr2), "Search pool by PoolId");
+   ok(DbGetPoolRecord(jcr, db, &pr2), "Search pool by PoolId");
    cmp_pool(pr, pr2);
 
    pr2.MaxVols++;
@@ -650,7 +650,7 @@ int main (int argc, char *argv[])
    ok(db_update_pool_record(jcr, db, &pr2), "Update Pool record");
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = pr2.PoolId;
-   ok(db_get_pool_record(jcr, db, &pr), "Search pool by PoolId");
+   ok(DbGetPoolRecord(jcr, db, &pr), "Search pool by PoolId");
    cmp_pool(pr, pr2);
 
    ok(db_delete_pool_record(jcr, db, &pr), "Delete Pool");
@@ -665,8 +665,8 @@ int main (int argc, char *argv[])
    memset(&mr, 0, sizeof(mr));
    memset(&mr2, 0, sizeof(mr2));
 
-   bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), "media-%lld", pid);
-   bsnprintf(mr.MediaType, sizeof(mr.MediaType), "type-%lld", pid);
+   Bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), "media-%lld", pid);
+   Bsnprintf(mr.MediaType, sizeof(mr.MediaType), "type-%lld", pid);
 
    /* from SetPoolDbrDefaultsInMediaDbr(&mr, &pr);  */
    mr.PoolId = pr.PoolId;

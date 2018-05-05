@@ -153,7 +153,7 @@ void DoVerifyVolume(JobControlRecord *jcr)
          while (*ap != 0) {
             *fp++  = *ap++;           /* copy filename to fname */
          }
-         *fp = *ap++;                 /* terminate filename & point to attribs */
+         *fp = *ap++;                 /* Terminate filename & point to attribs */
 
          Dmsg1(200, "Attr=%s\n", ap);
          /* Skip to Link name */

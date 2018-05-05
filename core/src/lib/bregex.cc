@@ -556,7 +556,7 @@ void ReCompileInitialize(void)
    regexp_ansi_sequences = (regexp_syntax & RE_ANSI_HEX) != 0;
 }
 
-int re_set_syntax(int syntax) {
+int ReSetSyntax(int syntax) {
    int ret;
 
    ret = regexp_syntax;
@@ -566,7 +566,7 @@ int re_set_syntax(int syntax) {
    return ret;
 }
 
-static int hex_char_to_decimal(int ch) {
+static int HexCharToDecimal(int ch) {
    if (ch >= '0' && ch <= '9')
       return ch - '0';
    if (ch >= 'a' && ch <= 'f')
@@ -741,7 +741,7 @@ void ReCompileFastmap(regex_t * bufp)
  *
  */
 
-static int re_optimize_star_jump(regex_t * bufp, unsigned char *code)
+static int ReOptimizeStarJump(regex_t * bufp, unsigned char *code)
 {
    unsigned char map[256];
    unsigned char can_be_null;
@@ -874,7 +874,7 @@ static int re_optimize_star_jump(regex_t * bufp, unsigned char *code)
    return 1;
 }
 
-static int re_optimize(regex_t * bufp)
+static int ReOptimize(regex_t * bufp)
 {
    unsigned char *code;
 
@@ -906,7 +906,7 @@ static int re_optimize(regex_t * bufp)
          code++;
          break;
       case Cstar_jump:
-         if (!re_optimize_star_jump(bufp, code)) {
+         if (!ReOptimizeStarJump(bufp, code)) {
             return 0;
          }
          /* fall through */
@@ -986,11 +986,11 @@ else \
 { \
         unsigned char gethex_ch, gethex_value; \
         NEXTCHAR(gethex_ch); \
-        gethex_value = hex_char_to_decimal(gethex_ch); \
+        gethex_value = HexCharToDecimal(gethex_ch); \
         if (gethex_value == 16) \
                 goto hex_error; \
         NEXTCHAR(gethex_ch); \
-        gethex_ch = hex_char_to_decimal(gethex_ch); \
+        gethex_ch = HexCharToDecimal(gethex_ch); \
         if (gethex_ch == 16) \
                 goto hex_error; \
         (var) = gethex_value * 16 + gethex_ch; \
@@ -1395,7 +1395,7 @@ const char *re_compile_pattern(regex_t * bufp, unsigned char *regex)
    ALLOC(1);
    STORE(Cend);
    SET_FIELDS;
-   if (!re_optimize(bufp))
+   if (!ReOptimize(bufp))
       return "Optimization error";
    return NULL;
 

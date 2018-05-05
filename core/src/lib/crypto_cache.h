@@ -51,8 +51,8 @@ DLL_IMP_EXP void WriteCryptoCache(const char *dir, const char *progname, int por
 DLL_IMP_EXP void WriteCryptoCache(const char *cache_file);
 DLL_IMP_EXP bool UpdateCryptoCache(const char *VolumeName, const char *EncryptionKey);
 DLL_IMP_EXP char *lookup_crypto_cache_entry(const char *VolumeName);
-DLL_IMP_EXP void dump_crypto_cache(int fd);
-DLL_IMP_EXP void reset_crypto_cache(void);
+DLL_IMP_EXP void DumpCryptoCache(int fd);
+DLL_IMP_EXP void ResetCryptoCache(void);
 DLL_IMP_EXP void FlushCryptoCache(void);
 
 #endif /* BAREOS_LIB_CRYPTO_CACHE_H_ */

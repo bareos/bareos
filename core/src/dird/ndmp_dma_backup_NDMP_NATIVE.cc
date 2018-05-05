@@ -62,7 +62,7 @@ static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
  * \return 0 if OK, -1 if NOT OK
  */
 
-int ndmp_load_next(struct ndm_session *sess) {
+int NdmpLoadNext(struct ndm_session *sess) {
 
    NIS *nis = (NIS *)sess->param->log.ctx;
    JobControlRecord *jcr = nis->jcr;
@@ -153,7 +153,7 @@ bail_out:
 /*
  * Run a NDMP backup session for NDMP_NATIVE backup
  */
-bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
+bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
 {
    unsigned int cnt;
    int i, status;
@@ -174,8 +174,8 @@ bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
 
    struct ndmca_media_callbacks  media_callbacks;
 
-   media_callbacks.load_first = ndmp_load_next; /* we use the same callback for first and next*/
-   media_callbacks.load_next = ndmp_load_next;
+   media_callbacks.load_first = NdmpLoadNext; /* we use the same callback for first and next*/
+   media_callbacks.load_next = NdmpLoadNext;
    media_callbacks.unload_current = NULL;
 
 
@@ -235,7 +235,7 @@ bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
       Dmsg0(100,"NdmpSendLabelRequest: no robot to use\n");
       return retval;
    }
@@ -258,7 +258,7 @@ bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
    Jmsg(jcr, M_INFO, 0, _("Using Tape record size %d\n"), ndmp_job.record_size);
 
    if (!ndmp_job.tape_device) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
       Dmsg0(100,"ndmp: no tape drive to use\n");
       return retval;
    }
@@ -294,7 +294,7 @@ bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
 
          ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
          memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-         ndmp_sess.param->log.deliver = ndmp_loghandler;
+         ndmp_sess.param->log.deliver = NdmpLoghandler;
          ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
          nis->filesystem = item;
          nis->FileIndex = cnt + 1;
@@ -340,7 +340,7 @@ bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
           * file records to it. So we allocate it here once so its available during the whole
           * NDMP session.
           */
-         if (bstrcasecmp(jcr->backup_format, "dump")) {
+         if (Bstrcasecmp(jcr->backup_format, "dump")) {
             Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem, jcr->DumpLevel);
          } else {
             Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
@@ -646,7 +646,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord *jcr)
    return false;
 }
 
-bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
+bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

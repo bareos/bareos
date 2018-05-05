@@ -648,7 +648,7 @@ static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawP
    }
 
    /*
-    * NULL terminate string
+    * NULL Terminate string
     */
    *win32_name = 0;
 
@@ -943,7 +943,7 @@ void srandom(unsigned int seed)
 /**
  * Convert from Windows concept of time to Unix concept of time
  */
-static void cvt_utime_to_ftime(const time_t  &time, FILETIME &wintime)
+static void CvtUtimeToFtime(const time_t  &time, FILETIME &wintime)
 {
    uint64_t mstime = time;
    mstime *= WIN32_FILETIME_SCALE;
@@ -957,7 +957,7 @@ static void cvt_utime_to_ftime(const time_t  &time, FILETIME &wintime)
    wintime.dwHighDateTime = (DWORD) ((mstime>>32)& 0xffffffffUL);
 }
 
-static time_t cvt_ftime_to_utime(const FILETIME &time)
+static time_t CvtFtimeToUtime(const FILETIME &time)
 {
    uint64_t mstime;
 
@@ -970,7 +970,7 @@ static time_t cvt_ftime_to_utime(const FILETIME &time)
    return (time_t) (mstime & 0xffffffff);
 }
 
-static time_t cvt_ftime_to_utime(const LARGE_INTEGER &time)
+static time_t CvtFtimeToUtime(const LARGE_INTEGER &time)
 {
    uint64_t mstime;
 
@@ -1149,7 +1149,7 @@ const char *errorString(void)
 /**
  * Retrieve the unique devicename of a Volume MountPoint.
  */
-static inline bool get_volume_mount_point_data(const char *filename, POOLMEM *&devicename)
+static inline bool GetVolumeMountPointData(const char *filename, POOLMEM *&devicename)
 {
    HANDLE h = INVALID_HANDLE_VALUE;
 
@@ -1242,7 +1242,7 @@ static inline bool get_volume_mount_point_data(const char *filename, POOLMEM *&d
 /**
  * Retrieve the symlink target
  */
-static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinktarget)
+static inline ssize_t GetSymlinkData(const char *filename, POOLMEM *&symlinktarget)
 {
    ssize_t nrconverted = -1;
    HANDLE h = INVALID_HANDLE_VALUE;
@@ -1321,7 +1321,7 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinkta
          offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset / sizeof(wchar_t);
 
          /*
-          * null-terminate pathbuffer
+          * null-Terminate pathbuffer
           */
          *(wchar_t *)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset + len) = L'\0';
 
@@ -1360,7 +1360,7 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinkta
 /**
  * Encode file sttributes using the old Bacula method.
  */
-static inline void encode_windows_flags_compatible(DWORD pdwFileAttributes, struct stat *sb)
+static inline void EncodeWindowsFlagsCompatible(DWORD pdwFileAttributes, struct stat *sb)
 {
    if (pdwFileAttributes & FILE_ATTRIBUTE_READONLY) {
       sb->st_mode &= ~(S_IRUSR|S_IRGRP|S_IROTH); /* Clear all read bits */
@@ -1379,7 +1379,7 @@ static inline void encode_windows_flags_compatible(DWORD pdwFileAttributes, stru
  * This is called for directories, and reparse points and is used to
  * get some special attributes like the type of reparse point etc..
  */
-static int get_windows_file_info(const char *filename, struct stat *sb, bool is_directory)
+static int GetWindowsFileInfo(const char *filename, struct stat *sb, bool is_directory)
 {
    bool use_fallback_data = true;
    WIN32_FIND_DATAW info_w;       // window's file info
@@ -1473,7 +1473,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &binfo, sizeof(binfo))) {
                pftLastAccessTime = (FILETIME *)&binfo.LastAccessTime;
                pftLastWriteTime = (FILETIME *)&binfo.LastWriteTime;
-               if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+               if (CvtFtimeToUtime(binfo.CreationTime) > CvtFtimeToUtime(binfo.ChangeTime)) {
                   pftCreationTime = (FILETIME *)&binfo.CreationTime;
                } else {
                   pftCreationTime = (FILETIME *)&binfo.ChangeTime;
@@ -1521,7 +1521,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
     * See if we need to encode in the old Bacula compatible way.
     */
    if (win32_bacula_compatible) {
-      encode_windows_flags_compatible(*pdwFileAttributes, sb);
+      EncodeWindowsFlagsCompatible(*pdwFileAttributes, sb);
    } else {
       /*
        * We store the full windows file attributes into st_rdev.
@@ -1554,7 +1554,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
              * Junction Point     "\\??\\..."
              */
             POOLMEM *vmp = GetPoolMemory(PM_NAME);
-            if (get_volume_mount_point_data(filename, vmp)) {
+            if (GetVolumeMountPointData(filename, vmp)) {
                if (bstrncasecmp(vmp, "\\??\\volume{", 11)) {
                   Dmsg2(debuglevel, "Volume Mount Point %s points to: %s\n", filename, vmp);
                   sb->st_rdev |= FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
@@ -1579,7 +1579,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             slt = GetPoolMemory(PM_NAME);
             slt = CheckPoolMemorySize(slt, MAX_PATH * sizeof(wchar_t));
 
-            if (get_symlink_data(filename, slt)) {
+            if (GetSymlinkData(filename, slt)) {
                Dmsg2(debuglevel, "Symlinked Directory %s points to: %s\n", filename, slt);
             }
             FreePoolMemory(slt);
@@ -1602,7 +1602,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             Dmsg0(debuglevel, "We have a symlinked file!\n");
             sb->st_mode |= S_IFLNK;
 
-            if (get_symlink_data(filename, slt)) {
+            if (GetSymlinkData(filename, slt)) {
                Dmsg2(debuglevel, "Symlinked File %s points to: %s\n", filename, slt);
             }
             FreePoolMemory(slt);
@@ -1632,9 +1632,9 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
    sb->st_blksize = 4096;
    sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
 
-   sb->st_atime = cvt_ftime_to_utime(*pftLastAccessTime);
-   sb->st_mtime = cvt_ftime_to_utime(*pftLastWriteTime);
-   sb->st_ctime = cvt_ftime_to_utime(*pftCreationTime);
+   sb->st_atime = CvtFtimeToUtime(*pftLastAccessTime);
+   sb->st_mtime = CvtFtimeToUtime(*pftLastWriteTime);
+   sb->st_ctime = CvtFtimeToUtime(*pftCreationTime);
 
    return 0;
 }
@@ -1670,7 +1670,7 @@ int fstat(intptr_t fd, struct stat *sb)
     * See if we need to encode in the old Bacula compatible way.
     */
    if (win32_bacula_compatible) {
-      encode_windows_flags_compatible(info.dwFileAttributes, sb);
+      EncodeWindowsFlagsCompatible(info.dwFileAttributes, sb);
    } else {
       /*
        * We store the full windows file attributes into st_rdev.
@@ -1692,12 +1692,12 @@ int fstat(intptr_t fd, struct stat *sb)
       FILE_BASIC_INFO binfo;
 
       if (p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd), FileBasicInfo, &binfo, sizeof(binfo))) {
-         sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
-         sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
-         if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
-            sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
+         sb->st_atime = CvtFtimeToUtime(binfo.LastAccessTime);
+         sb->st_mtime = CvtFtimeToUtime(binfo.LastWriteTime);
+         if (CvtFtimeToUtime(binfo.CreationTime) > CvtFtimeToUtime(binfo.ChangeTime)) {
+            sb->st_ctime = CvtFtimeToUtime(binfo.CreationTime);
          } else {
-            sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+            sb->st_ctime = CvtFtimeToUtime(binfo.ChangeTime);
          }
          use_fallback_data = false;
       }
@@ -1705,15 +1705,15 @@ int fstat(intptr_t fd, struct stat *sb)
 #endif
 
    if (use_fallback_data) {
-      sb->st_atime = cvt_ftime_to_utime(info.ftLastAccessTime);
-      sb->st_mtime = cvt_ftime_to_utime(info.ftLastWriteTime);
-      sb->st_ctime = cvt_ftime_to_utime(info.ftCreationTime);
+      sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
+      sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
+      sb->st_ctime = CvtFtimeToUtime(info.ftCreationTime);
    }
 
    return 0;
 }
 
-static inline bool is_drive_letter_only(const char *filename)
+static inline bool IsDriveLetterOnly(const char *filename)
 {
    return ((filename[1] == ':' && filename[2] == 0) ||
            (filename[1] == ':' && filename[2] == '/' && filename[3] == 0));
@@ -1789,12 +1789,12 @@ static int stat2(const char *filename, struct stat *sb)
 
    /*
     * See if this is a directory or a reparse point and its not a single drive letter.
-    * If so we call get_windows_file_info() which retrieves the lowlevel information we need.
+    * If so we call GetWindowsFileInfo() which retrieves the lowlevel information we need.
     */
    if (((attr & FILE_ATTRIBUTE_DIRECTORY) ||
         (attr & FILE_ATTRIBUTE_REPARSE_POINT)) &&
-        !is_drive_letter_only(filename)) {
-      rval = get_windows_file_info(filename, sb, (attr & FILE_ATTRIBUTE_DIRECTORY));
+        !IsDriveLetterOnly(filename)) {
+      rval = GetWindowsFileInfo(filename, sb, (attr & FILE_ATTRIBUTE_DIRECTORY));
    }
 
 bail_out:
@@ -1836,14 +1836,14 @@ int stat(const char *filename, struct stat *sb)
 
    /*
     * See if this is a directory or a reparse point and not a single drive letter.
-    * If so we call get_windows_file_info() which retrieves the lowlevel information we need.
-    * As get_windows_file_info() fills the complete stat structs we only need to perform the
-    * other part of the code when we don't call the get_windows_file_info() function.
+    * If so we call GetWindowsFileInfo() which retrieves the lowlevel information we need.
+    * As GetWindowsFileInfo() fills the complete stat structs we only need to perform the
+    * other part of the code when we don't call the GetWindowsFileInfo() function.
     */
    if (((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
         (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) &&
-        !is_drive_letter_only(filename)) {
-      rval = get_windows_file_info(filename, sb, (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+        !IsDriveLetterOnly(filename)) {
+      rval = GetWindowsFileInfo(filename, sb, (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
    } else {
       bool use_fallback_data = true;
 
@@ -1853,7 +1853,7 @@ int stat(const char *filename, struct stat *sb)
        * See if we need to encode in the old Bacula compatible way.
        */
       if (win32_bacula_compatible) {
-         encode_windows_flags_compatible(data.dwFileAttributes, sb);
+         EncodeWindowsFlagsCompatible(data.dwFileAttributes, sb);
       }
 
       /*
@@ -1914,12 +1914,12 @@ int stat(const char *filename, struct stat *sb)
             FILE_BASIC_INFO binfo;
 
             if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &binfo, sizeof(binfo))) {
-               sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
-               sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
-               if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
-                  sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
+               sb->st_atime = CvtFtimeToUtime(binfo.LastAccessTime);
+               sb->st_mtime = CvtFtimeToUtime(binfo.LastWriteTime);
+               if (CvtFtimeToUtime(binfo.CreationTime) > CvtFtimeToUtime(binfo.ChangeTime)) {
+                  sb->st_ctime = CvtFtimeToUtime(binfo.CreationTime);
                } else {
-                  sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+                  sb->st_ctime = CvtFtimeToUtime(binfo.ChangeTime);
                }
                use_fallback_data = false;
             }
@@ -1933,9 +1933,9 @@ int stat(const char *filename, struct stat *sb)
          /*
           * Fall back to the GetFileAttributesEx data.
           */
-         sb->st_atime = cvt_ftime_to_utime(data.ftLastAccessTime);
-         sb->st_mtime = cvt_ftime_to_utime(data.ftLastWriteTime);
-         sb->st_ctime = cvt_ftime_to_utime(data.ftCreationTime);
+         sb->st_atime = CvtFtimeToUtime(data.ftLastAccessTime);
+         sb->st_mtime = CvtFtimeToUtime(data.ftLastWriteTime);
+         sb->st_ctime = CvtFtimeToUtime(data.ftCreationTime);
       }
    }
    rval = 0;
@@ -1954,12 +1954,12 @@ bail_out:
 
 /**
  * Get the Volume MountPoint unique devicename for the given filename.
- * This is a wrapper around get_volume_mount_point_data() used for retrieving
+ * This is a wrapper around GetVolumeMountPointData() used for retrieving
  * the VMP data used in the VSS snapshotting.
  */
 bool win32_get_vmp_devicename(const char *filename, POOLMEM *&devicename)
 {
-   return get_volume_mount_point_data(filename, devicename);
+   return GetVolumeMountPointData(filename, devicename);
 }
 
 /**
@@ -2055,7 +2055,7 @@ ssize_t readlink(const char *path, char *buf, size_t bufsiz)
    POOLMEM *slt = GetPoolMemory(PM_NAME);
 
    Dmsg1(debuglevel, "readlink called for path %s\n", path);
-   get_symlink_data(path, slt);
+   GetSymlinkData(path, slt);
 
    strncpy(buf, slt, bufsiz - 1);
    buf[bufsiz] = '\0';
@@ -2248,7 +2248,7 @@ extern "C" void syslog(int type, const char *fmt, ...)
    for (;;) {
       maxlen = SizeofPoolMemory(msg) - 1;
       va_start(arg_ptr, fmt);
-      len = bvsnprintf(msg, maxlen, fmt, arg_ptr);
+      len = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (len < 0 || len >= (maxlen-5)) {
          msg = ReallocPoolMemory(msg, maxlen + maxlen/2);
@@ -2470,7 +2470,7 @@ int inet_aton(const char *a, struct in_addr *inp)
    return 1;
 }
 
-void InitSignals(void terminate(int sig))
+void InitSignals(void Terminate(int sig))
 {
 }
 
@@ -2798,7 +2798,7 @@ char *win32_cgets (char* buffer, int len)
       if (ReadConsoleW (hIn, wszBuf, 1024, &dwRead, NULL)) {
 
          /*
-          * NULL terminate at end
+          * NULL Terminate at end
           */
          if (wszBuf[dwRead-1] == L'\n') {
             wszBuf[dwRead-1] = L'\0';
@@ -2820,7 +2820,7 @@ char *win32_cgets (char* buffer, int len)
       if (ReadConsoleA (hIn, szBuf, 1024, &dwRead, NULL)) {
 
          /*
-          * NULL terminate at end
+          * NULL Terminate at end
           */
          if (szBuf[dwRead-1] == L'\n') {
             szBuf[dwRead-1] = L'\0';
@@ -3660,7 +3660,7 @@ int CloseBpipe(Bpipe *bpipe)
             rval = ETIME;             /* Timed out */
             break;
          }
-         bmicrosleep(1, 0);           /* Wait one second */
+         Bmicrosleep(1, 0);           /* Wait one second */
          remaining_wait--;
       } else if (exitCode != 0) {
          /*
@@ -3710,8 +3710,8 @@ int utime(const char *filename, struct utimbuf *times)
    FILETIME acc, mod;
    HANDLE h = INVALID_HANDLE_VALUE;
 
-   cvt_utime_to_ftime(times->actime, acc);
-   cvt_utime_to_ftime(times->modtime, mod);
+   CvtUtimeToFtime(times->actime, acc);
+   CvtUtimeToFtime(times->modtime, mod);
 
    if (p_CreateFileW) {
       POOLMEM *pwszBuf;

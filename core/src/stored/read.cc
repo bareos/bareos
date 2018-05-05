@@ -53,7 +53,7 @@ static char rec_header[] =
  * Returns: false on failure
  *          true  on success
  */
-bool do_read_data(JobControlRecord *jcr)
+bool DoReadData(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
    DeviceControlRecord *dcr = jcr->read_dcr;

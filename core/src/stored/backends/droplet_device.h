@@ -53,8 +53,8 @@ private:
    /*
     * Interface from chunked_device
     */
-   bool flush_remote_chunk(chunk_io_request *request);
-   bool read_remote_chunk(chunk_io_request *request);
+   bool FlushRemoteChunk(chunk_io_request *request);
+   bool ReadRemoteChunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
    bool TruncateRemoteChunkedVolume(DeviceControlRecord *dcr);
 

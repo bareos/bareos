@@ -95,7 +95,7 @@ static dlist *db_pooling_descriptors = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void destroy_pool_descriptor(SqlPoolDescriptor *spd, bool flush_only)
+static void DestroyPoolDescriptor(SqlPoolDescriptor *spd, bool flush_only)
 {
    SqlPoolEntry *spe, *spe_next;
 
@@ -249,7 +249,7 @@ bail_out:
    }
 
    if (spd) {
-      destroy_pool_descriptor(spd, false);
+      DestroyPoolDescriptor(spd, false);
    }
 
 ok_out:
@@ -276,7 +276,7 @@ void DbSqlPoolDestroy(void)
    spd = (SqlPoolDescriptor *)db_pooling_descriptors->first();
    while (spd) {
       spd_next = (SqlPoolDescriptor *)db_pooling_descriptors->get_next(spd);
-      destroy_pool_descriptor(spd, false);
+      DestroyPoolDescriptor(spd, false);
       spd = spd_next;
    }
    delete db_pooling_descriptors;
@@ -309,7 +309,7 @@ void DbSqlPoolFlush(void)
           * On a flush all current available pools are invalidated.
           */
          spd->active = false;
-         destroy_pool_descriptor(spd, true);
+         DestroyPoolDescriptor(spd, true);
       }
       spd = spd_next;
    }
@@ -320,7 +320,7 @@ void DbSqlPoolFlush(void)
  * Grow the sql connection pool.
  * This function should be called with the mutex held.
  */
-static inline void sql_pool_grow(SqlPoolDescriptor *spd)
+static inline void SqlPoolGrow(SqlPoolDescriptor *spd)
 {
    int cnt, next_id;
    BareosDb *mdb;
@@ -381,11 +381,11 @@ static inline void sql_pool_grow(SqlPoolDescriptor *spd)
          spe->db_handle = mdb;
          spd->pool_entries->append(spe);
       }
-      Dmsg3(100, "sql_pool_grow created %d connections to database %s, backend type %s\n",
+      Dmsg3(100, "SqlPoolGrow created %d connections to database %s, backend type %s\n",
             cnt, spe->db_handle->get_db_name(), spe->db_handle->GetType());
       spd->last_update = now;
    } else {
-      Dmsg0(100, "sql_pool_grow unable to determine first entry on pool list\n");
+      Dmsg0(100, "SqlPoolGrow unable to determine first entry on pool list\n");
    }
 }
 
@@ -393,7 +393,7 @@ static inline void sql_pool_grow(SqlPoolDescriptor *spd)
  * Shrink the sql connection pool.
  * This function should be called with the mutex held.
  */
-static inline void sql_pool_shrink(SqlPoolDescriptor *spd)
+static inline void SqlPoolShrink(SqlPoolDescriptor *spd)
 {
    int cnt;
    time_t now;
@@ -406,7 +406,7 @@ static inline void sql_pool_shrink(SqlPoolDescriptor *spd)
     * See if we want to shrink.
     */
    if (spd->min_connections && spd->nr_connections <= spd->min_connections) {
-      Dmsg0(100, "sql_pool_shrink cannot shrink connection pool already minimum size\n");
+      Dmsg0(100, "SqlPoolShrink cannot shrink connection pool already minimum size\n");
       return;
    }
 
@@ -432,7 +432,7 @@ static inline void sql_pool_shrink(SqlPoolDescriptor *spd)
     */
    spe = (SqlPoolEntry *)spd->pool_entries->first();
    if (spe) {
-      Dmsg3(100, "sql_pool_shrink shrinking connection pool with %d connections to database %s, backend type %s\n",
+      Dmsg3(100, "SqlPoolShrink shrinking connection pool with %d connections to database %s, backend type %s\n",
             cnt, spe->db_handle->get_db_name(), spe->db_handle->GetType());
    }
 
@@ -641,7 +641,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                }
 
                Dmsg0(100, "db_sql_get_pooled_connection trying to grow connection pool for getting free connection\n");
-               sql_pool_grow(wanted_pool);
+               SqlPoolGrow(wanted_pool);
             } else {
                /*
                 * Request for a shared connection and no connection gets through the validation.
@@ -793,7 +793,7 @@ void DbSqlClosePooledConnection(JobControlRecord *jcr, BareosDb *mdb, bool abort
           */
          if ((now - spd->last_update) >= spd->validate_timeout) {
             Dmsg0(100, "DbSqlClosePooledConnection trying to shrink connection pool\n");
-            sql_pool_shrink(spd);
+            SqlPoolShrink(spd);
          }
       }
 

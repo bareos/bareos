@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_AUTOPRUNE_H_
 #define BAREOS_DIRD_AUTOPRUNE_H_
 
-void do_autoprune(JobControlRecord *jcr);
+void DoAutoprune(JobControlRecord *jcr);
 void PruneVolumes(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
                    StorageResource *store);
 

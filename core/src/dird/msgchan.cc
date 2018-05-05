@@ -86,7 +86,7 @@ extern "C" void *msg_thread(void *arg);
  *  particular device resource.
  */
 #ifdef xxx
-bool update_device_res(JobControlRecord *jcr, DeviceResource *dev)
+bool UpdateDeviceRes(JobControlRecord *jcr, DeviceResource *dev)
 {
    PoolMem device_name;
    BareosSocket *sd;
@@ -114,13 +114,13 @@ bool update_device_res(JobControlRecord *jcr, DeviceResource *dev)
  *    * migration and
  *    * copy Jobs
  */
-static inline bool send_bootstrap_file_to_sd(JobControlRecord *jcr, BareosSocket *sd)
+static inline bool SendBootstrapFileToSd(JobControlRecord *jcr, BareosSocket *sd)
 {
    FILE *bs;
    char buf[1000];
    const char *bootstrap = "bootstrap\n";
 
-   Dmsg1(400, "send_bootstrap_file_to_sd: %s\n", jcr->RestoreBootstrap);
+   Dmsg1(400, "SendBootstrapFileToSd: %s\n", jcr->RestoreBootstrap);
    if (!jcr->RestoreBootstrap) {
       return true;
    }
@@ -153,7 +153,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
    StorageResource *storage;
    char auth_key[100];
    const char *fileset_md5;
-   PoolMem store_name, device_name, pool_name, pool_type, media_type, backup_format;
+   PoolMem StoreName, device_name, pool_name, pool_type, media_type, backup_format;
    PoolMem job_name, client_name, fileset_name;
    int copy = 0;
    int stripe = 0;
@@ -248,7 +248,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
       return false;
    }
 
-   if (send_bsr && (!send_bootstrap_file_to_sd(jcr, sd) ||
+   if (send_bsr && (!SendBootstrapFileToSd(jcr, sd) ||
        !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR))) {
       return false;
    }
@@ -285,11 +285,11 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
       BashSpaces(pool_name);
       foreach_alist(storage, rstore) {
          Dmsg1(100, "Rstore=%s\n", storage->name());
-         PmStrcpy(store_name, storage->name());
-         BashSpaces(store_name);
+         PmStrcpy(StoreName, storage->name());
+         BashSpaces(StoreName);
          PmStrcpy(media_type, storage->media_type);
          BashSpaces(media_type);
-         sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
+         sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
          Dmsg1(100, "rstore >stored: %s", sd->msg);
          DeviceResource *dev;
@@ -322,11 +322,11 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
       BashSpaces(pool_type);
       BashSpaces(pool_name);
       foreach_alist(storage, wstore) {
-         PmStrcpy(store_name, storage->name());
-         BashSpaces(store_name);
+         PmStrcpy(StoreName, storage->name());
+         BashSpaces(StoreName);
          PmStrcpy(media_type, storage->media_type);
          BashSpaces(media_type);
-         sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
+         sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
          Dmsg1(100, "wstore >stored: %s", sd->msg);
@@ -386,7 +386,7 @@ bool StartStorageDaemonMessageThread(JobControlRecord *jcr)
    }
    /* Wait for thread to start */
    while (!jcr->SD_msg_chan_started) {
-      bmicrosleep(0, 50);
+      Bmicrosleep(0, 50);
       if (JobCanceled(jcr) || jcr->sd_msg_thread_done) {
          return false;
       }
@@ -395,11 +395,11 @@ bool StartStorageDaemonMessageThread(JobControlRecord *jcr)
    return true;
 }
 
-extern "C" void msg_thread_cleanup(void *arg)
+extern "C" void MsgThreadCleanup(void *arg)
 {
    JobControlRecord *jcr = (JobControlRecord *)arg;
 
-   jcr->db->EndTransaction(jcr);           /* terminate any open transaction */
+   jcr->db->EndTransaction(jcr);           /* Terminate any open transaction */
    jcr->lock();
    jcr->sd_msg_thread_done = true;
    jcr->SD_msg_chan_started = false;
@@ -430,7 +430,7 @@ extern "C" void *msg_thread(void *arg)
    SetJcrInTsd(jcr);
    jcr->SD_msg_chan = pthread_self();
    jcr->SD_msg_chan_started = true;
-   pthread_cleanup_push(msg_thread_cleanup, arg);
+   pthread_cleanup_push(MsgThreadCleanup, arg);
    sd = jcr->store_bsock;
 
    /*
@@ -490,7 +490,7 @@ extern "C" void *msg_thread(void *arg)
 void WaitForStorageDaemonTermination(JobControlRecord *jcr)
 {
    int cancel_count = 0;
-   /* Now wait for Storage daemon to terminate our message thread */
+   /* Now wait for Storage daemon to Terminate our message thread */
    while (!jcr->sd_msg_thread_done) {
       struct timeval tv;
       struct timezone tz;
@@ -537,7 +537,7 @@ extern "C" void *device_thread(void *arg)
       }
       LockRes();
       foreach_res(dev, R_DEVICE) {
-         if (!update_device_res(jcr, dev)) {
+         if (!UpdateDeviceRes(jcr, dev)) {
             Dmsg1(900, "Error updating device=%s\n", dev->name());
          } else {
             Dmsg1(900, "Updated Device=%s\n", dev->name());

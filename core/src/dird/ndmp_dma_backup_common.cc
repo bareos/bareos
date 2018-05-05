@@ -209,7 +209,7 @@ int NativeToNdmpLevel(JobControlRecord *jcr, char *filesystem)
 {
    int level = -1;
 
-   if (!jcr->db->create_ndmp_level_mapping(jcr, &jcr->jr, filesystem)) {
+   if (!jcr->db->CreateNdmpLevelMapping(jcr, &jcr->jr, filesystem)) {
       return -1;
    }
 
@@ -221,7 +221,7 @@ int NativeToNdmpLevel(JobControlRecord *jcr, char *filesystem)
       level = 1;
       break;
    case L_INCREMENTAL:
-      level = jcr->db->get_ndmp_level_mapping(jcr, &jcr->jr, filesystem);
+      level = jcr->db->GetNdmpLevelMapping(jcr, &jcr->jr, filesystem);
       break;
    default:
       Jmsg(jcr, M_FATAL, 0, _("Illegal Job Level %c for NDMP Job\n"), jcr->getJobLevel());
@@ -249,12 +249,12 @@ void RegisterCallbackHooks(struct ndmlog *ixlog)
    NIS *nis = (NIS *)ixlog->ctx;
 
    if (nis->jcr->res.client->ndmp_use_lmdb) {
-      ndmp_fhdb_lmdb_register(ixlog);
+      NdmpFhdbLmdbRegister(ixlog);
    } else {
-      ndmp_fhdb_mem_register(ixlog);
+      NdmpFhdbMemRegister(ixlog);
    }
 #else
-   ndmp_fhdb_mem_register(ixlog);
+   NdmpFhdbMemRegister(ixlog);
 #endif
 }
 
@@ -264,12 +264,12 @@ void UnregisterCallbackHooks(struct ndmlog *ixlog)
    NIS *nis = (NIS *)ixlog->ctx;
 
    if (nis->jcr->res.client->ndmp_use_lmdb) {
-      ndmp_fhdb_lmdb_unregister(ixlog);
+      NdmpFhdbLmdbUnregister(ixlog);
    } else {
-      ndmp_fhdb_mem_unregister(ixlog);
+      NdmpFhdbMemUnregister(ixlog);
    }
 #else
-   ndmp_fhdb_mem_unregister(ixlog);
+   NdmpFhdbMemUnregister(ixlog);
 #endif
 }
 
@@ -279,12 +279,12 @@ void ProcessFhdb(struct ndmlog *ixlog)
    NIS *nis = (NIS *)ixlog->ctx;
 
    if (nis->jcr->res.client->ndmp_use_lmdb) {
-      ndmp_fhdb_lmdb_process_db(ixlog);
+      NdmpFhdbLmdbProcessDb(ixlog);
    } else {
-      ndmp_fhdb_mem_process_db(ixlog);
+      NdmpFhdbMemProcessDb(ixlog);
    }
 #else
-   ndmp_fhdb_mem_process_db(ixlog);
+   NdmpFhdbMemProcessDb(ixlog);
 #endif
 }
 

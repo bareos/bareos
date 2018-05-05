@@ -189,7 +189,7 @@ static inline bool native_send_label_request(UaContext *ua,
  * the old key somewhere save so you can use bscrypto to
  * convert them for the new wrap key.
  */
-static bool generate_new_encryption_key(UaContext *ua, MediaDbRecord *mr)
+static bool GenerateNewEncryptionKey(UaContext *ua, MediaDbRecord *mr)
 {
    int length;
    char *passphrase;
@@ -263,7 +263,7 @@ bool SendLabelRequest(UaContext *ua,
  * Check if this is a cleaning tape by comparing the Volume name
  * with the Cleaning Prefix. If they match, this is a cleaning tape.
  */
-static inline bool is_cleaning_tape(UaContext *ua, MediaDbRecord *mr, PoolDbRecord *pr)
+static inline bool IsCleaningTape(UaContext *ua, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    bool retval;
 
@@ -382,7 +382,7 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
        * Deal with creating cleaning tape here.
        * Normal tapes created in SendLabelRequest() below
        */
-      if (is_cleaning_tape(ua, &mr, &pr)) {
+      if (IsCleaningTape(ua, &mr, &pr)) {
          if (media_record_exists) {      /* we update it */
             mr.VolBytes = 1;             /* any bytes to indicate it exists */
             bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
@@ -419,7 +419,7 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
        * See if we need to generate a new passphrase for hardware encryption.
        */
       if (label_encrypt) {
-         if (!generate_new_encryption_key(ua, &mr)) {
+         if (!GenerateNewEncryptionKey(ua, &mr)) {
             continue;
          }
       }
@@ -640,7 +640,7 @@ checkName:
     */
    if (label_encrypt) {
       ua->InfoMsg(_("Generating new hardware encryption key\n"));
-      if (!generate_new_encryption_key(ua, &mr)) {
+      if (!GenerateNewEncryptionKey(ua, &mr)) {
          return 1;
       }
    }
@@ -720,12 +720,12 @@ checkName:
  *
  *   label storage=xxx volume=vvv
  */
-bool label_cmd(UaContext *ua, const char *cmd)
+bool LabelCmd(UaContext *ua, const char *cmd)
 {
    return do_label(ua, cmd, false);   /* standard label */
 }
 
-bool relabel_cmd(UaContext *ua, const char *cmd)
+bool RelabelCmd(UaContext *ua, const char *cmd)
 {
    return do_label(ua, cmd, true);    /* relabel tape */
 }

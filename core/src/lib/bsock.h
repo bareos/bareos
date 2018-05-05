@@ -152,7 +152,7 @@ public:
    void SetKillable(bool killable);
    bool signal(int signal);
    const char *bstrerror();           /* last error on socket */
-   bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
+   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
    bool AuthenticateWithDirector(JobControlRecord *jcr,
                                    const char *name,
                                    s_password &password,
@@ -190,7 +190,7 @@ public:
    bool IsTimedOut() { return timed_out_; }
    bool IsStop() { return errors || IsTerminated(); }
    bool IsError() { errno = b_errno; return errors; }
-   void set_data_end(int32_t FileIndex) {
+   void SetDataEnd(int32_t FileIndex) {
       if (spool_ && FileIndex > FileIndex_) {
          FileIndex_ = FileIndex - 1;
          data_end_ = lseek(spool_fd_, 0, SEEK_CUR);
@@ -202,7 +202,7 @@ public:
    bool UseBwlimit() { return bwlimit_ > 0;}
    void SetBwlimitBursting() { use_bursting_ = true; }
    void clear_bwlimit_bursting() { use_bursting_ = false; }
-   void set_keepalive() { use_keepalive_ = true; }
+   void SetKeepalive() { use_keepalive_ = true; }
    void ClearKeepalive() { use_keepalive_ = false; }
    void SetSpooling() { spool_ = true; }
    void ClearSpooling() { spool_ = false; }

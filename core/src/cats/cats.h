@@ -522,7 +522,7 @@ typedef void (DB_LIST_HANDLER)(void *, const char *);
 typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 
 #define DbLock(mdb)   mdb->_lock_db(__FILE__, __LINE__)
-#define DbUnlock(mdb) mdb->_unlock_db(__FILE__, __LINE__)
+#define DbUnlock(mdb) mdb->_unlockDb(__FILE__, __LINE__)
 
 class pathid_cache;
 
@@ -548,7 +548,7 @@ typedef char ** SQL_ROW;
  */
 typedef struct sql_field {
    char *name;                        /* name of column */
-   int max_length;                    /* max length */
+   int MaxLength;                    /* max length */
    uint32_t type;                     /* type */
    uint32_t flags;                    /* flags */
 } SQL_FIELD;
@@ -600,10 +600,10 @@ private:
    /*
     * Methods
     */
-   int get_filename_record(JobControlRecord *jcr);
+   int GetFilenameRecord(JobControlRecord *jcr);
    bool GetFileRecord(JobControlRecord *jcr, JobDbRecord *jr, FileDbRecord *fdbr);
    bool CreateBatchFileAttributesRecord(JobControlRecord *jcr, AttributesDbRecord *ar);
-   bool create_filename_record(JobControlRecord *jcr, AttributesDbRecord *ar);
+   bool CreateFilenameRecord(JobControlRecord *jcr, AttributesDbRecord *ar);
    bool CreateFileRecord(JobControlRecord *jcr, AttributesDbRecord *ar);
    void CleanupBaseFile(JobControlRecord *jcr);
    void BuildPathHierarchy(JobControlRecord *jcr, pathid_cache &ppathid_cache, char *org_pathid, char *path);
@@ -629,16 +629,16 @@ public:
    bool BvfsUpdatePathHierarchyCache(JobControlRecord *jcr, char *jobids);
    void BvfsUpdateCache(JobControlRecord *jcr);
    int BvfsLsDirs(PoolMem &query, void *ctx);
-   int BvfsBuildLsFileQuery(PoolMem &query, DB_RESULT_HANDLER *result_handler, void *ctx);
+   int BvfsBuildLsFileQuery(PoolMem &query, DB_RESULT_HANDLER *ResultHandler, void *ctx);
 
    /* sql.c */
    char *strerror();
-   bool check_max_connections(JobControlRecord *jcr, uint32_t max_concurrent_jobs);
+   bool CheckMaxConnections(JobControlRecord *jcr, uint32_t max_concurrent_jobs);
    bool CheckTablesVersion(JobControlRecord *jcr);
    bool QueryDB(const char *file, int line, JobControlRecord *jcr, const char *select_cmd);
    bool InsertDB(const char *file, int line, JobControlRecord *jcr, const char *select_cmd);
-   int DeleteDB(const char *file, int line, JobControlRecord *jcr, const char *delete_cmd);
-   bool UpdateDB(const char *file, int line, JobControlRecord *jcr, const char *update_cmd, int nr_afr);
+   int DeleteDB(const char *file, int line, JobControlRecord *jcr, const char *DeleteCmd);
+   bool UpdateDB(const char *file, int line, JobControlRecord *jcr, const char *UpdateCmd, int nr_afr);
    int GetSqlRecordMax(JobControlRecord *jcr);
    void SplitPathAndFile(JobControlRecord *jcr, const char *fname);
    void ListDashes(OutputFormatter *send);
@@ -658,8 +658,8 @@ public:
    bool CreateJobmediaRecord(JobControlRecord *jcr, JobMediaDbRecord *jr);
    bool CreateCounterRecord(JobControlRecord *jcr, CounterDbRecord *cr);
    bool CreateDeviceRecord(JobControlRecord *jcr, DeviceDbRecord *dr);
-   bool create_storage_record(JobControlRecord *jcr, StorageDbRecord *sr);
-   bool create_mediatype_record(JobControlRecord *jcr, MediaTypeDbRecord *mr);
+   bool CreateStorageRecord(JobControlRecord *jcr, StorageDbRecord *sr);
+   bool CreateMediatypeRecord(JobControlRecord *jcr, MediaTypeDbRecord *mr);
    bool WriteBatchFileRecords(JobControlRecord *jcr);
    bool CreateAttributesRecord(JobControlRecord *jcr, AttributesDbRecord *ar);
    bool CreateRestoreObjectRecord(JobControlRecord *jcr, RestoreObjectDbRecord *ar);
@@ -667,7 +667,7 @@ public:
    bool CommitBaseFileAttributesRecord(JobControlRecord *jcr);
    bool CreateBaseFileList(JobControlRecord *jcr, char *jobids);
    bool CreateQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cr);
-   bool create_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem);
+   bool CreateNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem);
    bool CreateNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, char *name, char *value);
    bool CreateJobStatistics(JobControlRecord *jcr, JobStatisticsDbRecord *jsr);
    bool CreateDeviceStatistics(JobControlRecord *jcr, DeviceStatisticsDbRecord *dsr);
@@ -676,7 +676,7 @@ public:
    /* sql_delete.c */
    bool DeletePoolRecord(JobControlRecord *jcr, PoolDbRecord *pool_dbr);
    bool DeleteMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr);
-   bool purge_media_record(JobControlRecord *jcr, MediaDbRecord *mr);
+   bool PurgeMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr);
 
    /* sql_find.c */
    bool FindLastJobStartTime(JobControlRecord *jcr, JobDbRecord *jr, POOLMEM *&stime, char *job, int JobLevel);
@@ -687,7 +687,7 @@ public:
 
    /* sql_get.c */
    bool GetVolumeJobids(JobControlRecord *jcr, MediaDbRecord *mr, db_list_ctx *lst);
-   bool GetBaseFileList(JobControlRecord *jcr, bool use_md5, DB_RESULT_HANDLER *result_handler,void *ctx);
+   bool GetBaseFileList(JobControlRecord *jcr, bool use_md5, DB_RESULT_HANDLER *ResultHandler,void *ctx);
    int GetPathRecord(JobControlRecord *jcr);
    int GetPathRecord(JobControlRecord *jcr, const char *new_path);
    bool GetPoolRecord(JobControlRecord *jcr, PoolDbRecord *pdbr);
@@ -697,27 +697,27 @@ public:
    bool GetFileAttributesRecord(JobControlRecord *jcr, char *filename, JobDbRecord *jr, FileDbRecord *fdbr);
    int GetFilesetRecord(JobControlRecord *jcr, FileSetDbRecord *fsr);
    bool GetMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr);
-   int get_num_media_records(JobControlRecord *jcr);
-   int get_num_pool_records(JobControlRecord *jcr);
+   int GetNumMediaRecords(JobControlRecord *jcr);
+   int GetNumPoolRecords(JobControlRecord *jcr);
    int GetPoolIds(JobControlRecord *jcr, int *num_ids, DBId_t **ids);
    bool GetClientIds(JobControlRecord *jcr, int *num_ids, DBId_t **ids);
-   int get_storage_ids(JobControlRecord *jcr, int *num_ids, DBId_t **ids);
+   int GetStorageIds(JobControlRecord *jcr, int *num_ids, DBId_t **ids);
    bool PrepareMediaSqlQuery(JobControlRecord *jcr, MediaDbRecord *mr, PoolMem &volumes);
    bool GetMediaIds(JobControlRecord *jcr, MediaDbRecord *mr, PoolMem &volumes, int *num_ids, DBId_t **ids);
    int GetJobVolumeParameters(JobControlRecord *jcr, JobId_t JobId, VolumeParameters **VolParams);
    bool GetClientRecord(JobControlRecord *jcr, ClientDbRecord *cdbr);
    bool GetCounterRecord(JobControlRecord *jcr, CounterDbRecord *cr);
    bool GetQueryDbids(JobControlRecord *jcr, PoolMem &query, dbid_list &ids);
-   bool GetFileList(JobControlRecord *jcr, char *jobids, bool use_md5, bool use_delta, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool GetFileList(JobControlRecord *jcr, char *jobids, bool use_md5, bool use_delta, DB_RESULT_HANDLER *ResultHandler, void *ctx);
    bool GetBaseJobid(JobControlRecord *jcr, JobDbRecord *jr, JobId_t *jobid);
    bool AccurateGetJobids(JobControlRecord *jcr, JobDbRecord *jr, db_list_ctx *jobids);
    bool GetUsedBaseJobids(JobControlRecord *jcr, POOLMEM *jobids, db_list_ctx *result);
    bool GetQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cr);
    bool GetQuotaJobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
    bool GetQuotaJobbytesNofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
-   int get_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem);
-   bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *result_handler, void *ctx);
-   bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *result_handler, void *ctx);
+   int GetNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem);
+   bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *ResultHandler, void *ctx);
+   bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *ResultHandler, void *ctx);
    bool PrepareMediaSqlQuery(JobControlRecord *jcr, MediaDbRecord *mr, PoolMem *querystring, PoolMem &volumes);
    bool VerifyMediaIdsFromSingleStorage(JobControlRecord *jcr, dbid_list &mediaIds);
 
@@ -729,7 +729,7 @@ public:
    void ListJobTotals(JobControlRecord *jcr, JobDbRecord *jr, OutputFormatter *sendit);
    void ListFilesForJob(JobControlRecord *jcr, uint32_t jobid, OutputFormatter *sendit);
    void ListFilesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OutputFormatter *sendit, e_list_type type);
-   void list_storage_records(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type);
+   void ListStorageRecords(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type);
    void ListMediaRecords(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OutputFormatter *sendit, e_list_type type);
    void ListJobmediaRecords(JobControlRecord *jcr, JobId_t JobId, OutputFormatter *sendit, e_list_type type);
    void ListVolumesOfJobid(JobControlRecord *jcr, JobId_t JobId, OutputFormatter *sendit, e_list_type type);
@@ -757,16 +757,16 @@ public:
 
    bool SqlQuery(SQL_QUERY_ENUM query, ...);
    bool SqlQuery(const char *query, int flags = 0);
-   bool SqlQuery(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool SqlQuery(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx);
 
    /* sql_update.c */
    bool UpdateJobStartRecord(JobControlRecord *jcr, JobDbRecord *jr);
    bool UpdateJobEndRecord(JobControlRecord *jcr, JobDbRecord *jr);
-   bool update_client_record(JobControlRecord *jcr, ClientDbRecord *cr);
+   bool UpdateClientRecord(JobControlRecord *jcr, ClientDbRecord *cr);
    bool UpdatePoolRecord(JobControlRecord *jcr, PoolDbRecord *pr);
-   bool update_storage_record(JobControlRecord *jcr, StorageDbRecord *sr);
+   bool UpdateStorageRecord(JobControlRecord *jcr, StorageDbRecord *sr);
    bool UpdateMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr);
-   bool update_media_defaults(JobControlRecord *jcr, MediaDbRecord *mr);
+   bool UpdateMediaDefaults(JobControlRecord *jcr, MediaDbRecord *mr);
    bool UpdateCounterRecord(JobControlRecord *jcr, CounterDbRecord *cr);
    bool UpdateQuotaGracetime(JobControlRecord *jcr, JobDbRecord *jr);
    bool UpdateQuotaSoftlimit(JobControlRecord *jcr, JobDbRecord *jr);
@@ -787,7 +787,7 @@ public:
    int GetTypeIndex(void) { return db_type_; }
    const char *GetType(void);
    void _lock_db(const char *file, int line);
-   void _unlock_db(const char *file, int line);
+   void _unlockDb(const char *file, int line);
    void PrintLockInfo(FILE *fp);
 
    /* Virtual low level methods */
@@ -806,8 +806,8 @@ public:
 
    /* By default, we use db_sql_query */
    virtual bool BigSqlQuery(const char *query,
-                              DB_RESULT_HANDLER *result_handler, void *ctx) {
-      return SqlQuery(query, result_handler, ctx);
+                              DB_RESULT_HANDLER *ResultHandler, void *ctx) {
+      return SqlQuery(query, ResultHandler, ctx);
    }
 
 #ifdef _BDB_PRIV_INTERFACE_
@@ -821,7 +821,7 @@ private:
    virtual void SqlFreeResult(void) = 0;
    virtual SQL_ROW SqlFetchRow(void) = 0;
    virtual bool SqlQueryWithoutHandler(const char *query, int flags = 0) = 0;
-   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
+   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx) = 0;
    virtual const char *sql_strerror(void) = 0;
    virtual void SqlDataSeek(int row) = 0;
    virtual int SqlAffectedRows(void) = 0;
@@ -902,7 +902,7 @@ public:
 
    void send_dashes() {
       if (*line) {
-         send->decoration(line);
+         send->Decoration(line);
       }
    }
 

@@ -45,7 +45,7 @@ private:
    void ThreadCleanup(void);
    void StartTransaction(JobControlRecord *jcr);
    void EndTransaction(JobControlRecord *jcr);
-   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx);
    bool SqlQueryWithoutHandler(const char *query, int flags = 0);
    void SqlFreeResult(void);
    SQL_ROW SqlFetchRow(void);

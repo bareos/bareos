@@ -61,9 +61,9 @@ static const int fnmode = 0;
 #undef bmalloc
 #define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
 
-bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_save(JobControlRecord *, FindFilesPacket *ff_pkt, bool))
+bool MatchFiles(JobControlRecord *jcr, FindFilesPacket *ff, int FileSave(JobControlRecord *, FindFilesPacket *ff_pkt, bool))
 {
-   ff->file_save = file_save;
+   ff->FileSave = FileSave;
 
    struct s_included_file *inc = NULL;
 
@@ -73,7 +73,7 @@ bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_save(JobCo
       bstrncat(ff->VerifyOpts, inc->VerifyOpts, sizeof(ff->VerifyOpts));
       Dmsg1(100, "FindFiles: file=%s\n", inc->fname);
       if (!FileIsExcluded(ff, inc->fname)) {
-         if (FindOneFile(jcr, ff, file_save, inc->fname, (dev_t)-1, 1) ==0) {
+         if (FindOneFile(jcr, ff, FileSave, inc->fname, (dev_t)-1, 1) ==0) {
             return false;                  /* error return */
          }
       }
@@ -520,7 +520,7 @@ bool FileIsIncluded(FindFilesPacket *ff, const char *file)
  * This is the workhorse of excluded_file().
  * Determine if the file is excluded or not.
  */
-static bool file_in_excluded_list(struct s_excluded_file *exc, const char *file)
+static bool FileInExcludedList(struct s_excluded_file *exc, const char *file)
 {
    if (exc == NULL) {
       Dmsg0(900, "exc is NULL\n");
@@ -554,7 +554,7 @@ bool FileIsExcluded(FindFilesPacket *ff, const char *file)
    }
 #endif
 
-   if (file_in_excluded_list(ff->excluded_paths_list, file)) {
+   if (FileInExcludedList(ff->excluded_paths_list, file)) {
       return true;
    }
 
@@ -562,7 +562,7 @@ bool FileIsExcluded(FindFilesPacket *ff, const char *file)
    for (p = file; *p; p++) {
       /* Match from the beginning of a component only */
       if ((p == file || (!IsPathSeparator(*p) && IsPathSeparator(p[-1])))
-           && file_in_excluded_list(ff->excluded_files_list, p)) {
+           && FileInExcludedList(ff->excluded_files_list, p)) {
          return true;
       }
    }

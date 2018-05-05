@@ -93,21 +93,21 @@ std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateServerContext(
 void FreeTlsContext(TLS_CONTEXT *ctx) {
 }
 
-bool get_tls_require(TLS_CONTEXT *ctx) {
+bool GetTlsRequire(TLS_CONTEXT *ctx) {
    return false;
 }
 
-void set_tls_require(TLS_CONTEXT *ctx, bool value) {
+void SetTlsRequire(TLS_CONTEXT *ctx, bool value) {
 }
 
-bool get_tls_enable(TLS_CONTEXT *ctx) {
+bool GetTlsEnable(TLS_CONTEXT *ctx) {
    return false;
 }
 
-void set_tls_enable(TLS_CONTEXT *ctx, bool value) {
+void SetTlsEnable(TLS_CONTEXT *ctx, bool value) {
 }
 
-bool get_tls_verify_peer(TLS_CONTEXT *ctx) {
+bool GetTlsVerifyPeer(TLS_CONTEXT *ctx) {
    return false;
 }
 

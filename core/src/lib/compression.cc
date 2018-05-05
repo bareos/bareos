@@ -101,13 +101,13 @@ static const char *zlib_strerror(int stat)
 }
 #endif
 
-static inline void unknown_compression_algorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
+static inline void UnknownCompressionAlgorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
 {
    Jmsg(jcr, M_FATAL, 0, _("%s compression not supported on this platform\n"),
         cmprs_algo_to_text(compression_algorithm));
 }
 
-static inline void non_compatible_compression_algorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
+static inline void NonCompatibleCompressionAlgorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
 {
    Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm %s for compatible mode\n"),
         cmprs_algo_to_text(compression_algorithm));
@@ -218,7 +218,7 @@ bool SetupCompressionBuffers(JobControlRecord *jcr,
       zfast_stream *pZfastStream;
 
       if (compatible) {
-         non_compatible_compression_algorithm(jcr, compression_algorithm);
+         NonCompatibleCompressionAlgorithm(jcr, compression_algorithm);
          return false;
       }
 
@@ -266,7 +266,7 @@ bool SetupCompressionBuffers(JobControlRecord *jcr,
    }
 #endif
    default:
-      unknown_compression_algorithm(jcr, compression_algorithm);
+      UnknownCompressionAlgorithm(jcr, compression_algorithm);
       return false;
    }
 

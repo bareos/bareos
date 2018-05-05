@@ -146,7 +146,7 @@ public:
       seen = LMGR_WHITE;
    }
 
-   void mark_as_seen(lmgr_color_t c) {
+   void MarkAsSeen(lmgr_color_t c) {
       seen = c;
    }
 
@@ -196,7 +196,7 @@ public:
 /*
  * Get the child list, ret must be already allocated
  */
-static void search_all_node(dlist *g, lmgr_node_t *v, alist *ret)
+static void SearchAllNode(dlist *g, lmgr_node_t *v, alist *ret)
 {
    lmgr_node_t *n;
    foreach_dlist(n, g) {
@@ -210,10 +210,10 @@ static bool visite(dlist *g, lmgr_node_t *v)
 {
    bool ret=false;
    lmgr_node_t *n;
-   v->mark_as_seen(LMGR_GREY);
+   v->MarkAsSeen(LMGR_GREY);
 
    alist *d = New(alist(5, false)); /* use alist because own=false */
-   search_all_node(g, v, d);
+   SearchAllNode(g, v, d);
 
    //foreach_alist(n, d) {
    //   printf("node n=%p c=%p s=%c\n", n->node, n->child, n->seen);
@@ -230,13 +230,13 @@ static bool visite(dlist *g, lmgr_node_t *v)
          }
       }
    }
-   v->mark_as_seen(LMGR_BLACK); /* no loop detected, node is clean */
+   v->MarkAsSeen(LMGR_BLACK); /* no loop detected, node is clean */
 bail_out:
    delete d;
    return ret;
 }
 
-static bool contains_cycle(dlist *g)
+static bool ContainsCycle(dlist *g)
 {
    lmgr_node_t *n;
    foreach_dlist(n, g) {
@@ -332,7 +332,7 @@ public:
    }
 
    /* Using this function is some sort of bug */
-   void shift_list(int i) {
+   void ShiftList(int i) {
       for(int j=i+1; j<=current; j++) {
          lock_list[i] = lock_list[j];
       }
@@ -370,7 +370,7 @@ public:
                       i, lock_list[i].lock, lock_list[i].file, lock_list[i].line);
                if (lock_list[i].lock == m) {
                   FPmsg3(0, "ERROR: FOUND P pos=%i %s:%i\n", i, f, l);
-                  shift_list(i);
+                  ShiftList(i);
                   current--;
                   break;
                }
@@ -420,7 +420,7 @@ static bool use_undertaker=true;
 /*
  * Add a new lmgr_thread_t object to the global list
  */
-void lmgr_register_thread(lmgr_thread_t *item)
+void LmgrRegisterThread(lmgr_thread_t *item)
 {
    Lmgr_p(&lmgr_global_mutex);
    {
@@ -432,7 +432,7 @@ void lmgr_register_thread(lmgr_thread_t *item)
 /*
  * Call this function to cleanup specific lock thread data
  */
-void lmgr_unregister_thread(lmgr_thread_t *item)
+void LmgrUnregisterThread(lmgr_thread_t *item)
 {
    if (!lmgr_is_active()) {
       return;
@@ -484,7 +484,7 @@ bool LmgrDetectDeadlockUnlocked()
    //   printf("g n=%p c=%p\n", node->node, node->child);
    //}
 
-   ret = contains_cycle(g);
+   ret = ContainsCycle(g);
    if (ret) {
       printf("Found a deadlock !!!!\n");
    }
@@ -528,7 +528,7 @@ bool LmgrDetectDeadlock()
  * Use this function is used only after a fatal signal
  * We don't use locking to display the information
  */
-void dbg_print_lock(FILE *fp)
+void DbgPrintLock(FILE *fp)
 {
    fprintf(fp, "Attempt to dump locks\n");
    if (!lmgr_is_active()) {
@@ -566,7 +566,7 @@ void *check_deadlock(void *)
    LmgrInitThread();
    pthread_cleanup_push(cln_hdl, NULL);
 
-   while (!bmicrosleep(30, 0)) {
+   while (!Bmicrosleep(30, 0)) {
       pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
       if (LmgrDetectDeadlock()) {
          LmgrDump();
@@ -633,7 +633,7 @@ void LmgrInitThread()
    }
    lmgr_thread_t *l = New(lmgr_thread_t());
    pthread_setspecific(lmgr_key, l);
-   lmgr_register_thread(l);
+   LmgrRegisterThread(l);
 }
 
 /*
@@ -645,7 +645,7 @@ void LmgrCleanupThread()
       return ;
    }
    lmgr_thread_t *self = lmgr_get_thread_info();
-   lmgr_unregister_thread(self);
+   LmgrUnregisterThread(self);
    delete(self);
 }
 
@@ -854,7 +854,7 @@ int BthreadCondTimedwait_p(pthread_cond_t *cond,
  *     1 - locked by the current thread
  *     2 - locked by another thread
  */
-int lmgr_mutex_is_locked(void *m)
+int LmgrMutexIsLocked(void *m)
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
 
@@ -951,7 +951,7 @@ int LmgrThreadCreate(pthread_t *thread,
  * Use this function is used only after a fatal signal
  * We don't use locking to display information
  */
-void dbg_print_lock(FILE *fp)
+void DbgPrintLock(FILE *fp)
 {
    FPmsg0(000, "lockmgr disabled\n");
 }
@@ -1061,9 +1061,9 @@ void *thx(void *temp)
 {
    int s= 1 + (int) (500.0 * (rand() / (RAND_MAX + 1.0))) + 200;
    P(mutex1);
-   bmicrosleep(0,s);
+   Bmicrosleep(0,s);
    P(mutex2);
-   bmicrosleep(0,s);
+   Bmicrosleep(0,s);
 
    V(mutex2);
    V(mutex1);
@@ -1234,9 +1234,9 @@ int main(int argc, char **argv)
    P(mutex4);
    P(mutex5);
    P(mutex6);
-   ok(lmgr_mutex_is_locked(&mutex6) == 1, "Check if mutex is locked");
+   ok(LmgrMutexIsLocked(&mutex6) == 1, "Check if mutex is locked");
    V(mutex6);
-   ok(lmgr_mutex_is_locked(&mutex6) == 0, "Check if mutex is locked");
+   ok(LmgrMutexIsLocked(&mutex6) == 0, "Check if mutex is locked");
    V(mutex5);
    V(mutex4);
 

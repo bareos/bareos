@@ -67,7 +67,7 @@ ndmp_backup_format_option *ndmp_lookup_backup_format_options(const char *backup_
    int i = 0;
 
    while (ndmp_backup_format_options[i].format) {
-      if (bstrcasecmp(backup_format, ndmp_backup_format_options[i].format)) {
+      if (Bstrcasecmp(backup_format, ndmp_backup_format_options[i].format)) {
          break;
       }
       i++;
@@ -356,7 +356,7 @@ bool NdmpBuildClientJob(JobControlRecord *jcr,
       goto bail_out;
    }
 
-   if (bstrcasecmp(jcr->backup_format, "smtape")) {
+   if (Bstrcasecmp(jcr->backup_format, "smtape")) {
       /*
        * SMTAPE only wants certain blocksizes.
        */
@@ -479,7 +479,7 @@ bail_out:
 /**
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
-extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
+extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
    int internal_level;
    NIS *nis;
@@ -556,7 +556,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
 /**
  * Interface function which glues the logging infra of the NDMP lib with the user context.
  */
-extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int lev, char *msg)
+extern "C" void NdmpClientStatusHandler(struct ndmlog *log, char *tag, int lev, char *msg)
 {
    NIS *nis;
 
@@ -573,7 +573,7 @@ extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int le
 
 /**
  * Generic function to query the NDMP server using the NDM_JOB_OP_QUERY_AGENTS
- * operation. Callback is the above ndmp_client_status_handler which prints
+ * operation. Callback is the above NdmpClientStatusHandler which prints
  * the data to the user context.
  */
 void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
@@ -590,7 +590,7 @@ void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
 
    ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-   ndmp_sess.param->log.deliver = ndmp_client_status_handler;
+   ndmp_sess.param->log.deliver = NdmpClientStatusHandler;
    nis = (NIS *)malloc(sizeof(NIS));
    memset(nis, 0, sizeof(NIS));
    ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);

@@ -32,7 +32,7 @@
 #include "filed/filed.h"
 #include "filed/accurate.h"
 
-static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
+static int TallyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
 
 /**
  * Find all the requested files and count them.
@@ -46,10 +46,10 @@ int MakeEstimate(JobControlRecord *jcr)
    SetFindOptions((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
    /* in accurate mode, we overwrite the find_one check function */
    if (jcr->accurate) {
-      SetFindChangedFunction((FindFilesPacket *)jcr->ff, accurate_check_file);
+      SetFindChangedFunction((FindFilesPacket *)jcr->ff, AccurateCheckFile);
    }
 
-   status = FindFiles(jcr, (FindFilesPacket *)jcr->ff, tally_file, plugin_estimate);
+   status = FindFiles(jcr, (FindFilesPacket *)jcr->ff, TallyFile, PluginEstimate);
    AccurateFree(jcr);
    return status;
 }
@@ -58,7 +58,7 @@ int MakeEstimate(JobControlRecord *jcr)
  * Called here by find() for each file included.
  *
  */
-static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
+static int TallyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    Attributes attr;
 

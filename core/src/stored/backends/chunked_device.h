@@ -109,7 +109,7 @@ private:
    void FreeChunkIoRequest(chunk_io_request *request);
    bool StartIoThreads();
    void StopThreads();
-   bool enqueue_chunk(chunk_io_request *request);
+   bool EnqueueChunk(chunk_io_request *request);
    bool FlushChunk(bool release_chunk, bool move_to_next_chunk);
    bool ReadChunk();
 
@@ -131,19 +131,19 @@ protected:
    void ClearInflightChunk(chunk_io_request *request);
    bool IsInflightChunk(chunk_io_request *request);
    int NrInflightChunks();
-   int setup_chunk(const char *pathname, int flags, int mode);
-   ssize_t read_chunked(int fd, void *buffer, size_t count);
-   ssize_t write_chunked(int fd, const void *buffer, size_t count);
+   int SetupChunk(const char *pathname, int flags, int mode);
+   ssize_t ReadChunked(int fd, void *buffer, size_t count);
+   ssize_t WriteChunked(int fd, const void *buffer, size_t count);
    int close_chunk();
-   bool truncate_chunked_volume(DeviceControlRecord *dcr);
+   bool TruncateChunkedVolume(DeviceControlRecord *dcr);
    ssize_t ChunkedVolumeSize();
    bool LoadChunk();
 
    /*
     * Methods implemented by inheriting class.
     */
-   virtual bool flush_remote_chunk(chunk_io_request *request) = 0;
-   virtual bool read_remote_chunk(chunk_io_request *request) = 0;
+   virtual bool FlushRemoteChunk(chunk_io_request *request) = 0;
+   virtual bool ReadRemoteChunk(chunk_io_request *request) = 0;
    virtual ssize_t chunked_remote_volume_size() = 0;
    virtual bool TruncateRemoteChunkedVolume(DeviceControlRecord *dcr) = 0;
 

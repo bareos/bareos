@@ -53,7 +53,7 @@ void MonitorItem::writecmd(const char* command)
    }
 }
 
-bool MonitorItem::get_job_defaults(struct JobDefaults &job_defs)
+bool MonitorItem::GetJobDefaults(struct JobDefaults &job_defs)
 {
    int stat;
    char *def;
@@ -88,7 +88,7 @@ bool MonitorItem::get_job_defaults(struct JobDefaults &job_defs)
          } else if (strcmp(dircomm->msg, "client") == 0) {
             job_defs.client_name = def;
          } else if (strcmp(dircomm->msg, "storage") == 0) {
-            job_defs.store_name = def;
+            job_defs.StoreName = def;
          } else if (strcmp(dircomm->msg, "where") == 0) {
             job_defs.where = def;
          } else if (strcmp(dircomm->msg, "level") == 0) {

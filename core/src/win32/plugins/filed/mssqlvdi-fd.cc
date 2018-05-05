@@ -98,7 +98,7 @@ static bRC checkFile(bpContext *ctx, char *fname);
 
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
 static bRC end_restore_job(bpContext *ctx, void *value);
-static void close_vdi_deviceset(struct plugin_ctx *p_ctx);
+static void CloseVdiDeviceset(struct plugin_ctx *p_ctx);
 static bool adoReportError(bpContext *ctx);
 
 /**
@@ -315,7 +315,7 @@ static bRC freePlugin(bpContext *ctx)
    /*
     * Close any open VDI deviceset.
     */
-   close_vdi_deviceset(p_ctx);
+   CloseVdiDeviceset(p_ctx);
 
    /*
     * See if there is any error to report from the ADO layer.
@@ -540,7 +540,7 @@ static bRC endBackupFile(bpContext *ctx)
 /**
  * Strip any backslashes in the string.
  */
-static inline void strip_back_slashes(char *value)
+static inline void StripBackSlashes(char *value)
 {
    char *bp;
 
@@ -561,10 +561,10 @@ static inline void strip_back_slashes(char *value)
 /**
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
-static inline bool parse_boolean(const char *argument_value)
+static inline bool ParseBoolean(const char *argument_value)
 {
-   if (bstrcasecmp(argument_value, "yes") ||
-       bstrcasecmp(argument_value, "true")) {
+   if (Bstrcasecmp(argument_value, "yes") ||
+       Bstrcasecmp(argument_value, "true")) {
       return true;
    } else {
       return false;
@@ -574,11 +574,11 @@ static inline bool parse_boolean(const char *argument_value)
 /**
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_string_if_null(char **destination, char *value)
+static inline void SetStringIfNull(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
-      strip_back_slashes(*destination);
+      StripBackSlashes(*destination);
    }
 }
 
@@ -592,7 +592,7 @@ static inline void SetString(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
-   strip_back_slashes(*destination);
+   StripBackSlashes(*destination);
 }
 
 /**
@@ -670,7 +670,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       } while (bp);
 
       for (i = 0; plugin_arguments[i].name; i++) {
-         if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+         if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
             char **str_destination = NULL;
             bool *bool_destination = NULL;
 
@@ -717,7 +717,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              */
             if (str_destination) {
                if (keep_existing) {
-                  set_string_if_null(str_destination, argument_value);
+                  SetStringIfNull(str_destination, argument_value);
                } else {
                   SetString(str_destination, argument_value);
                }
@@ -727,7 +727,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              * Set any boolean variable.
              */
             if (bool_destination) {
-               *bool_destination = parse_boolean(argument_value);
+               *bool_destination = ParseBoolean(argument_value);
             }
 
             /*
@@ -758,7 +758,7 @@ bail_out:
 /**
  * Close the VDI deviceset if is is opened.
  */
-static void close_vdi_deviceset(plugin_ctx *p_ctx)
+static void CloseVdiDeviceset(plugin_ctx *p_ctx)
 {
    /*
     * Close VDI Device.
@@ -1112,12 +1112,12 @@ bail_out:
 /**
  * Create a connection string for connecting to the master database.
  */
-static void set_ado_connect_string(bpContext *ctx)
+static void SetAdoConnectString(bpContext *ctx)
 {
    PoolMem ado_connect_string(PM_NAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
-   if (bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
+   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
       Mmsg(ado_connect_string,
            "Provider=SQLOLEDB.1;Data Source=%s;Initial Catalog=master",
            p_ctx->server_address);
@@ -1140,7 +1140,7 @@ static void set_ado_connect_string(bpContext *ctx)
       PmStrcat(ado_connect_string, ";Integrated Security=SSPI;");
    }
 
-   Dmsg(ctx, debuglevel, "set_ado_connect_string: ADO Connect String '%s'\n", ado_connect_string.c_str());
+   Dmsg(ctx, debuglevel, "SetAdoConnectString: ADO Connect String '%s'\n", ado_connect_string.c_str());
 
    if (p_ctx->ado_connect_string) {
       free(p_ctx->ado_connect_string);
@@ -1152,7 +1152,7 @@ static void set_ado_connect_string(bpContext *ctx)
  * Generate a valid connect string and the backup command we should execute
  * in the separate database controling thread.
  */
-static inline void perform_ado_backup(bpContext *ctx)
+static inline void PerformAdoBackup(bpContext *ctx)
 {
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    PoolMem ado_connect_string(PM_NAME),
@@ -1166,7 +1166,7 @@ static inline void perform_ado_backup(bpContext *ctx)
       p_ctx->instance = bstrdup(DEFAULT_INSTANCE);
    }
 
-   set_ado_connect_string(ctx);
+   SetAdoConnectString(ctx);
 
    vdsname = GetPoolMemory(PM_NAME);
    wchar_2_UTF8(vdsname, p_ctx->vdsname);
@@ -1201,7 +1201,7 @@ static inline void perform_ado_backup(bpContext *ctx)
         break;
    }
 
-   Dmsg(ctx, debuglevel, "perform_ado_backup: ADO Query '%s'\n", ado_query.c_str());
+   Dmsg(ctx, debuglevel, "PerformAdoBackup: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
    FreePoolMemory(vdsname);
@@ -1225,7 +1225,7 @@ static inline void perform_aDoRestore(bpContext *ctx)
       p_ctx->instance = bstrdup(DEFAULT_INSTANCE);
    }
 
-   set_ado_connect_string(ctx);
+   SetAdoConnectString(ctx);
 
    vdsname = GetPoolMemory(PM_NAME);
    wchar_2_UTF8(vdsname, p_ctx->vdsname);
@@ -1294,7 +1294,7 @@ static inline void perform_aDoRestore(bpContext *ctx)
 /*
  * Run a query not in a separate thread.
  */
-static inline bool run_ado_query(bpContext *ctx, const char *query)
+static inline bool RunAdoQuery(bpContext *ctx, const char *query)
 {
    bool retval = false;
    HRESULT hr;
@@ -1303,7 +1303,7 @@ static inline bool run_ado_query(bpContext *ctx, const char *query)
    _ADOConnection *adoConnection = NULL;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
-   Dmsg(ctx, debuglevel, "run_ado_query: ADO Query '%s'\n", query);
+   Dmsg(ctx, debuglevel, "RunAdoQuery: ADO Query '%s'\n", query);
 
    /*
     * Create a COM instance for an ActiveX® Data Objects connection.
@@ -1377,21 +1377,21 @@ cleanup:
 /**
  * Automatically recover the database at the end of the whole restore process.
  */
-static inline bool perform_ado_recover(bpContext *ctx)
+static inline bool PerformAdoRecover(bpContext *ctx)
 {
    PoolMem recovery_query(PM_NAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
-   set_ado_connect_string(ctx);
+   SetAdoConnectString(ctx);
    Mmsg(recovery_query, "RESTORE DATABASE [%s] WITH RECOVERY", p_ctx->database);
 
-   return run_ado_query(ctx, recovery_query.c_str());
+   return RunAdoQuery(ctx, recovery_query.c_str());
 }
 
 /**
  * Setup a VDI device for performing a backup or restore operation.
  */
-static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
+static inline bool SetupVdiDevice(bpContext *ctx, struct io_pkt *io)
 {
    int status;
    HRESULT hr = NOERROR;
@@ -1431,7 +1431,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
    /*
     * Create the VDI device set.
     */
-   if (bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
+   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
       hr = p_ctx->VDIDeviceSet->CreateEx(NULL, p_ctx->vdsname, &p_ctx->VDIConfig);
    } else {
       POOLMEM *instance_name;
@@ -1452,7 +1452,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
    if (io->flags & (O_CREAT | O_WRONLY)) {
       perform_aDoRestore(ctx);
    } else {
-      perform_ado_backup(ctx);
+      PerformAdoBackup(ctx);
    }
 
    /*
@@ -1520,7 +1520,7 @@ bail_out:
 /**
  * Perform an I/O operation to a file as part of a restore.
  */
-static inline bool perform_file_io(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
+static inline bool PerformFileIo(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
 {
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
@@ -1593,7 +1593,7 @@ bail_out:
 /**
  * Perform an I/O operation to a virtual device as part of a backup or restore.
  */
-static inline bool perform_vdi_io(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
+static inline bool PerformVdiIo(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
 {
    HRESULT hr = NOERROR;
    VDC_Command *cmd;
@@ -1686,13 +1686,13 @@ bail_out:
 /**
  * End of I/O tear down the VDI and check if everything did go to plan.
  */
-static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
+static inline bool TearDownVdiDevice(bpContext *ctx, struct io_pkt *io)
 {
    HRESULT hr = NOERROR;
    VDC_Command *cmd;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
-   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering tear_down_vdi_device\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering TearDownVdiDevice\n");
 
    /*
     * Check if the VDI device is closed.
@@ -1709,7 +1709,7 @@ static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
    /*
     * Close and release the VDIDevice and VDIDeviceSet.
     */
-   close_vdi_deviceset(p_ctx);
+   CloseVdiDeviceset(p_ctx);
 
    /*
     * See if there is any error to report from the ADO layer.
@@ -1725,7 +1725,7 @@ static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
    io->lerror = 0;
    io->win32 = false;
 
-   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving tear_down_vdi_device\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving TearDownVdiDevice\n");
 
    return true;
 
@@ -1735,7 +1735,7 @@ bail_out:
     */
    comReportError(ctx, hr);
 
-   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving tear_down_vdi_device\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving TearDownVdiDevice\n");
 
    return false;
 }
@@ -1755,11 +1755,11 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    switch(io->func) {
    case IO_OPEN:
       if (p_ctx->RestoreToFile) {
-         if (!perform_file_io(ctx, io, &completionCode)) {
+         if (!PerformFileIo(ctx, io, &completionCode)) {
             goto bail_out;
          }
       } else {
-         if (!setup_vdi_device(ctx, io)) {
+         if (!SetupVdiDevice(ctx, io)) {
             goto bail_out;
          }
       }
@@ -1768,38 +1768,38 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       if (!p_ctx->VDIDevice) {
          return bRC_Error;
       }
-      if (!perform_vdi_io(ctx, io, &completionCode)) {
+      if (!PerformVdiIo(ctx, io, &completionCode)) {
          goto bail_out;
       }
       break;
    case IO_WRITE:
       if (p_ctx->RestoreToFile) {
-         if (!perform_file_io(ctx, io, &completionCode)) {
+         if (!PerformFileIo(ctx, io, &completionCode)) {
             goto bail_out;
          }
       } else {
          if (!p_ctx->VDIDevice) {
             return bRC_Error;
          }
-         if (!perform_vdi_io(ctx, io, &completionCode)) {
+         if (!PerformVdiIo(ctx, io, &completionCode)) {
             goto bail_out;
          }
       }
       break;
    case IO_CLOSE:
       if (p_ctx->RestoreToFile) {
-         if (!perform_file_io(ctx, io, &completionCode)) {
+         if (!PerformFileIo(ctx, io, &completionCode)) {
             goto bail_out;
          }
       } else {
-         if (!tear_down_vdi_device(ctx, io)) {
+         if (!TearDownVdiDevice(ctx, io)) {
             goto bail_out;
          }
       }
       break;
    case IO_SEEK:
       if (p_ctx->RestoreToFile) {
-         if (!perform_file_io(ctx, io, &completionCode)) {
+         if (!PerformFileIo(ctx, io, &completionCode)) {
             goto bail_out;
          }
       } else {
@@ -1822,7 +1822,7 @@ bail_out:
       /*
        * Generic error handling.
        */
-      close_vdi_deviceset(p_ctx);
+      CloseVdiDeviceset(p_ctx);
    }
 
    io->io_errno = completionCode;
@@ -1848,7 +1848,7 @@ static bRC end_restore_job(bpContext *ctx, void *value)
    Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering end_restore_job\n");
 
    if (!p_ctx->RestoreToFile && p_ctx->RecoverAfterRestore) {
-      if (!perform_ado_recover(ctx)) {
+      if (!PerformAdoRecover(ctx)) {
          retval = bRC_Error;
       }
    }

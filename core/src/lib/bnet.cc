@@ -134,13 +134,13 @@ bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, ali
    /*
     * Initiate TLS Negotiation
     */
-   if (!tls_bsock_accept(bsock)) {
+   if (!TlsBsockAccept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
    }
 
    if (verify_list) {
-      if (!tls_postconnect_verify_cn(jcr, tls_conn, verify_list)) {
+      if (!TlsPostconnectVerifyCn(jcr, tls_conn, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
@@ -178,7 +178,7 @@ bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bo
     * Initiate TLS Negotiation
     */
 
-    if (!tls_bsock_connect(bsock)) {
+    if (!TlsBsockConnect(bsock)) {
       goto err;
    }
 
@@ -188,14 +188,14 @@ bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bo
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
       if (verify_list) {
-         if (!tls_postconnect_verify_cn(jcr, tls_conn, verify_list)) {
+         if (!TlsPostconnectVerifyCn(jcr, tls_conn, verify_list)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
             goto err;
          }
       } else {
-         if (!tls_postconnect_verify_host(jcr, tls_conn, bsock->host())) {
+         if (!TlsPostconnectVerifyHost(jcr, tls_conn, bsock->host())) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
                   bsock->host());
             goto err;
@@ -232,7 +232,7 @@ bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bo
  *            0 if timeout
  *           -1 if error
  */
-int bnet_wait_data(BareosSocket * bsock, int sec)
+int BnetWaitData(BareosSocket * bsock, int sec)
 {
    return bsock->WaitData(sec);
 }
@@ -485,7 +485,7 @@ const char *bnet_strerror(BareosSocket * bsock)
  *  Returns: false on error
  *           true  on success
  */
-bool bnet_fsend(BareosSocket * bs, const char *fmt, ...)
+bool BnetFsend(BareosSocket * bs, const char *fmt, ...)
 {
    va_list arg_ptr;
    int maxlen;
@@ -501,7 +501,7 @@ bool bnet_fsend(BareosSocket * bs, const char *fmt, ...)
    for (;;) {
       maxlen = SizeofPoolMemory(bs->msg) - 1;
       va_start(arg_ptr, fmt);
-      bs->msglen = bvsnprintf(bs->msg, maxlen, fmt, arg_ptr);
+      bs->msglen = Bvsnprintf(bs->msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (bs->msglen > 0 && bs->msglen < (maxlen - 5)) {
          break;
@@ -532,7 +532,7 @@ bool BnetSetBufferSize(BareosSocket * bs, uint32_t size, int rw)
  * Set socket non-blocking
  * Returns previous socket flag
  */
-int bnet_set_nonblocking(BareosSocket *bsock)
+int BnetSetNonblocking(BareosSocket *bsock)
 {
    return bsock->SetNonblocking();
 }
@@ -541,7 +541,7 @@ int bnet_set_nonblocking(BareosSocket *bsock)
  * Set socket blocking
  * Returns previous socket flags
  */
-int bnet_set_blocking(BareosSocket *bsock)
+int BnetSetBlocking(BareosSocket *bsock)
 {
    return bsock->SetBlocking();
 }
@@ -549,7 +549,7 @@ int bnet_set_blocking(BareosSocket *bsock)
 /**
  * Restores socket flags
  */
-void bnet_restore_blocking (BareosSocket *bsock, int flags)
+void BnetRestoreBlocking (BareosSocket *bsock, int flags)
 {
    bsock->RestoreBlocking(flags);
 }
@@ -581,7 +581,7 @@ const char *bnet_sig_to_ascii(BareosSocket * bs)
    case BNET_STATUS:
       return "BNET_STATUS";
    case BNET_TERMINATE:
-      return "BNET_TERMINATE";     /* terminate connection */
+      return "BNET_TERMINATE";     /* Terminate connection */
    case BNET_POLL:
       return "BNET_POLL";
    case BNET_HEARTBEAT:

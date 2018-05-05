@@ -32,15 +32,15 @@
 const int debuglevel = 900;
 
 /* Forward referenced functions */
-static void stop_btimer(btimer_t *wid);
+static void StopBtimer(btimer_t *wid);
 static btimer_t *btimer_start_common(uint32_t wait);
 
 /* Forward referenced callback functions */
-static void callback_child_timer(watchdog_t *self);
-static void callback_thread_timer(watchdog_t *self);
+static void CallbackChildTimer(watchdog_t *self);
+static void CallbackThreadTimer(watchdog_t *self);
 #ifdef xxx
-static void destructor_thread_timer(watchdog_t *self);
-static void destructor_child_timer(watchdog_t *self);
+static void DestructorThreadTimer(watchdog_t *self);
+static void DestructorChildTimer(watchdog_t *self);
 #endif
 
 /*
@@ -62,7 +62,7 @@ btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait)
    wid->killed = false;
    wid->jcr = jcr;
 
-   wid->wd->callback = callback_child_timer;
+   wid->wd->callback = CallbackChildTimer;
    wid->wd->one_shot = false;
    wid->wd->interval = wait;
    RegisterWatchdog(wid->wd);
@@ -81,11 +81,11 @@ void StopChildTimer(btimer_t *wid)
       return;
    }
    Dmsg2(debuglevel, "Stop child timer %p pid %d\n", wid, wid->pid);
-   stop_btimer(wid);
+   StopBtimer(wid);
 }
 
 #ifdef xxx
-static void destructor_child_timer(watchdog_t *self)
+static void DestructorChildTimer(watchdog_t *self)
 {
    btimer_t *wid = (btimer_t *)self->data;
    free(wid->wd);
@@ -93,7 +93,7 @@ static void destructor_child_timer(watchdog_t *self)
 }
 #endif
 
-static void callback_child_timer(watchdog_t *self)
+static void CallbackChildTimer(watchdog_t *self)
 {
    btimer_t *wid = (btimer_t *)self->data;
 
@@ -111,7 +111,7 @@ static void callback_child_timer(watchdog_t *self)
       kill(wid->pid, SIGTERM);
       self->interval = 5;
    } else {
-      /* This is the second call - terminate with prejudice. */
+      /* This is the second call - Terminate with prejudice. */
       Dmsg2(debuglevel, "watchdog %p kill PID %d\n", self, wid->pid);
 
       kill(wid->pid, SIGKILL);
@@ -143,7 +143,7 @@ btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait
    wid->type = TYPE_PTHREAD;
    wid->tid = tid;
    wid->jcr = jcr;
-   wid->wd->callback = callback_thread_timer;
+   wid->wd->callback = CallbackThreadTimer;
    wid->wd->one_shot = true;
    wid->wd->interval = wait;
    RegisterWatchdog(wid->wd);
@@ -179,7 +179,7 @@ btimer_t *StartBsockTimer(BareosSocket *bsock, uint32_t wait)
    wid->bsock = bsock;
    wid->jcr = bsock->jcr();
 
-   wid->wd->callback = callback_thread_timer;
+   wid->wd->callback = CallbackThreadTimer;
    wid->wd->one_shot = true;
    wid->wd->interval = wait;
    RegisterWatchdog(wid->wd);
@@ -204,7 +204,7 @@ void StopBsockTimer(btimer_t *wid)
 
    Dmsg3(debuglevel, "Stop bsock timer %p tid=%s at %d.\n",
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
-   stop_btimer(wid);
+   StopBtimer(wid);
 }
 
 
@@ -222,11 +222,11 @@ void StopThreadTimer(btimer_t *wid)
 
    Dmsg2(debuglevel, "Stop thread timer %p tid=%s.\n",
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)));
-   stop_btimer(wid);
+   StopBtimer(wid);
 }
 
 #ifdef xxx
-static void destructor_thread_timer(watchdog_t *self)
+static void DestructorThreadTimer(watchdog_t *self)
 {
    btimer_t *wid = (btimer_t *)self->data;
    free(wid->wd);
@@ -234,7 +234,7 @@ static void destructor_thread_timer(watchdog_t *self)
 }
 #endif
 
-static void callback_thread_timer(watchdog_t *self)
+static void CallbackThreadTimer(watchdog_t *self)
 {
    char ed1[50];
    btimer_t *wid = (btimer_t *)self->data;
@@ -270,10 +270,10 @@ static btimer_t *btimer_start_common(uint32_t wait)
 /*
  * Stop btimer
  */
-static void stop_btimer(btimer_t *wid)
+static void StopBtimer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Emsg0(M_ABORT, 0, _("stop_btimer called with NULL btimer_id\n"));
+      Emsg0(M_ABORT, 0, _("StopBtimer called with NULL btimer_id\n"));
    }
    UnregisterWatchdog(wid->wd);
    free(wid->wd);

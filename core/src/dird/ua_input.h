@@ -27,7 +27,7 @@ bool GetPint(UaContext *ua, const char *prompt);
 bool GetYesno(UaContext *ua, const char *prompt);
 bool IsYesno(char *val, bool *ret);
 bool GetConfirmation(UaContext *ua, const char *prompt = _("Confirm (yes/no): "));
-int get_enabled(UaContext *ua, const char *val);
+int GetEnabled(UaContext *ua, const char *val);
 void ParseUaArgs(UaContext *ua);
 bool IsCommentLegal(UaContext *ua, const char *name);
 

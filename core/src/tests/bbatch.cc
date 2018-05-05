@@ -97,7 +97,7 @@ PROG_COPYRIGHT
 /* number of thread started */
 int nb=0;
 
-static int list_handler(void *ctx, int num_fields, char **row)
+static int ListHandler(void *ctx, int num_fields, char **row)
 {
    uint64_t *a = (uint64_t*) ctx;
    (*a)++;
@@ -232,7 +232,7 @@ int main (int argc, char *argv[])
       }
 
       start = GetCurrentBtime();
-      db->GetFileList(NULL, restore_list, false, false, list_handler, &nb_file);
+      db->GetFileList(NULL, restore_list, false, false, ListHandler, &nb_file);
       end = GetCurrentBtime();
 
       Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"),
@@ -300,13 +300,13 @@ int main (int argc, char *argv[])
    }
 
    while (nb > 0) {
-      bmicrosleep(1,0);
+      Bmicrosleep(1,0);
    }
 
    return 0;
 }
 
-static void fill_attr(AttributesDbRecord *ar, char *data)
+static void FillAttr(AttributesDbRecord *ar, char *data)
 {
    char *p;
    char *b;
@@ -357,7 +357,7 @@ static void *do_batch(void *jcr)
       if (verbose && ((lineno % 5000) == 1)) {
          printf("\r%i", lineno);
       }
-      fill_attr(&ar, data);
+      FillAttr(&ar, data);
       if (!bjcr->db->CreateAttributesRecord(bjcr, &ar)) {
          Emsg0(M_ERROR_TERM, 0, _("Error while inserting file\n"));
       }

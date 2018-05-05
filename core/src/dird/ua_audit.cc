@@ -44,7 +44,7 @@ bool UaContext::AuditEventWanted(bool audit_event_enabled)
       const char *event;
 
       foreach_alist(event, me->audit_events) {
-         if (bstrcasecmp(event, argk[0])) {
+         if (Bstrcasecmp(event, argk[0])) {
             return true;
          }
       }
@@ -56,7 +56,7 @@ bool UaContext::AuditEventWanted(bool audit_event_enabled)
 /**
  * Log an audit event for a console that accesses an resource or cmd that is not allowed.
  */
-static inline void log_audit_event_acl_msg(UaContext *ua, const char *audit_msg, int acl, const char *item)
+static inline void LogAuditEventAclMsg(UaContext *ua, const char *audit_msg, int acl, const char *item)
 {
    const char *console_name;
    const char *host;
@@ -107,22 +107,22 @@ static inline void log_audit_event_acl_msg(UaContext *ua, const char *audit_msg,
    Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
 }
 
-void UaContext::log_audit_event_acl_failure(int acl, const char *item)
+void UaContext::LogAuditEventAclFailure(int acl, const char *item)
 {
    if (!me->auditing) {
       return;
    }
 
-   log_audit_event_acl_msg(this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
+   LogAuditEventAclMsg(this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
 }
 
-void UaContext::log_audit_event_acl_success(int acl, const char *item)
+void UaContext::LogAuditEventAclSuccess(int acl, const char *item)
 {
    if (!me->auditing) {
       return;
    }
 
-   log_audit_event_acl_msg(this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
+   LogAuditEventAclMsg(this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
 /**

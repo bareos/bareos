@@ -36,15 +36,15 @@
 #include "include/jcr.h"
 
 /* Forward referenced subroutines */
-static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&name);
-static bool open_data_spool_file(DeviceControlRecord *dcr);
-static bool close_data_spool_file(DeviceControlRecord *dcr, bool end_of_spool);
-static bool despool_data(DeviceControlRecord *dcr, bool commit);
-static int  read_block_from_spool_file(DeviceControlRecord *dcr);
-static bool open_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs);
-static bool close_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs);
-static bool write_spool_header(DeviceControlRecord *dcr);
-static bool write_spool_data(DeviceControlRecord *dcr);
+static void MakeUniqueDataSpoolFilename(DeviceControlRecord *dcr, POOLMEM *&name);
+static bool OpenDataSpoolFile(DeviceControlRecord *dcr);
+static bool CloseDataSpoolFile(DeviceControlRecord *dcr, bool end_of_spool);
+static bool DespoolData(DeviceControlRecord *dcr, bool commit);
+static int  ReadBlockFromSpoolFile(DeviceControlRecord *dcr);
+static bool OpenAttrSpoolFile(JobControlRecord *jcr, BareosSocket *bs);
+static bool CloseAttrSpoolFile(JobControlRecord *jcr, BareosSocket *bs);
+static bool WriteSpoolHeader(DeviceControlRecord *dcr);
+static bool WriteSpoolData(DeviceControlRecord *dcr);
 
 struct spool_stats_t {
    uint32_t data_jobs;                /* current jobs spooling data */
@@ -107,7 +107,7 @@ bool BeginDataSpool(DeviceControlRecord *dcr)
    if (dcr->jcr->spool_data) {
       Dmsg0(100, "Turning on data spooling\n");
       dcr->spool_data = true;
-      status = open_data_spool_file(dcr);
+      status = OpenDataSpoolFile(dcr);
       if (status) {
          dcr->spooling = true;
          Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data ...\n"));
@@ -124,7 +124,7 @@ bool DiscardDataSpool(DeviceControlRecord *dcr)
 {
    if (dcr->spooling) {
       Dmsg0(100, "Data spooling discarded\n");
-      return close_data_spool_file(dcr, true);
+      return CloseDataSpoolFile(dcr, true);
    }
 
    return true;
@@ -136,19 +136,19 @@ bool CommitDataSpool(DeviceControlRecord *dcr)
 
    if (dcr->spooling) {
       Dmsg0(100, "Committing spooled data\n");
-      status = despool_data(dcr, true /*commit*/);
+      status = DespoolData(dcr, true /*commit*/);
       if (!status) {
          Dmsg1(100, _("Bad return from despool WroteVol=%d\n"), dcr->WroteVol);
-         close_data_spool_file(dcr, true);
+         CloseDataSpoolFile(dcr, true);
          return false;
       }
-      return close_data_spool_file(dcr, true);
+      return CloseDataSpoolFile(dcr, true);
    }
 
    return true;
 }
 
-static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&name)
+static void MakeUniqueDataSpoolFilename(DeviceControlRecord *dcr, POOLMEM *&name)
 {
    const char *dir;
 
@@ -162,12 +162,12 @@ static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&
         dcr->jcr->JobId, dcr->jcr->Job, dcr->device->name());
 }
 
-static bool open_data_spool_file(DeviceControlRecord *dcr)
+static bool OpenDataSpoolFile(DeviceControlRecord *dcr)
 {
    int spool_fd;
    POOLMEM *name = GetPoolMemory(PM_MESSAGE);
 
-   make_unique_data_spool_filename(dcr, name);
+   MakeUniqueDataSpoolFilename(dcr, name);
    if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640)) >= 0) {
       dcr->spool_fd = spool_fd;
       dcr->jcr->spool_attributes = true;
@@ -184,7 +184,7 @@ static bool open_data_spool_file(DeviceControlRecord *dcr)
    return true;
 }
 
-static bool close_data_spool_file(DeviceControlRecord *dcr, bool end_of_spool)
+static bool CloseDataSpoolFile(DeviceControlRecord *dcr, bool end_of_spool)
 {
    POOLMEM *name = GetPoolMemory(PM_MESSAGE);
 
@@ -192,7 +192,7 @@ static bool close_data_spool_file(DeviceControlRecord *dcr, bool end_of_spool)
    dcr->spool_fd = -1;
    dcr->spooling = false;
 
-   make_unique_data_spool_filename(dcr, name);
+   MakeUniqueDataSpoolFilename(dcr, name);
    SecureErase(dcr->jcr, name);
    Dmsg1(100, "Deleted spool file: %s\n", name);
    FreePoolMemory(name);
@@ -223,7 +223,7 @@ static const char *spool_name = "*spool*";
  * NB! This routine locks the device, but if committing will
  *     not unlock it. If not committing, it will be unlocked.
  */
-static bool despool_data(DeviceControlRecord *dcr, bool commit)
+static bool DespoolData(DeviceControlRecord *dcr, bool commit)
 {
    Device *rdev;
    DeviceControlRecord *rdcr;
@@ -302,7 +302,7 @@ static bool despool_data(DeviceControlRecord *dcr, bool commit)
          ok = false;
          break;
       }
-      status = read_block_from_spool_file(rdcr);
+      status = ReadBlockFromSpoolFile(rdcr);
       if (status == RB_EOT) {
          break;
       } else if (status == RB_ERROR) {
@@ -360,7 +360,7 @@ static bool despool_data(DeviceControlRecord *dcr, bool commit)
     * See if we are using secure erase.
     */
    if (me->secure_erase_cmdline) {
-      close_data_spool_file(dcr, false);
+      CloseDataSpoolFile(dcr, false);
       BeginDataSpool(dcr);
    } else {
       lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
@@ -417,7 +417,7 @@ static bool despool_data(DeviceControlRecord *dcr, bool commit)
  *          RB_EOT when file done
  *          RB_ERROR on error
  */
-static int read_block_from_spool_file(DeviceControlRecord *dcr)
+static int ReadBlockFromSpoolFile(DeviceControlRecord *dcr)
 {
    uint32_t rlen;
    ssize_t status;
@@ -517,8 +517,8 @@ bool WriteBlockToSpoolFile(DeviceControlRecord *dcr)
             edit_uint64_with_commas(dcr->dev->max_spool_size, ec2));
       }
 
-      if (!despool_data(dcr, false)) {
-         Pmsg0(000, _("Bad return from despool in write_block.\n"));
+      if (!DespoolData(dcr, false)) {
+         Pmsg0(000, _("Bad return from despool in WriteBlock.\n"));
          return false;
       }
       /* Despooling cleared these variables so reset them */
@@ -530,10 +530,10 @@ bool WriteBlockToSpoolFile(DeviceControlRecord *dcr)
    }
 
 
-   if (!write_spool_header(dcr)) {
+   if (!WriteSpoolHeader(dcr)) {
       return false;
    }
-   if (!write_spool_data(dcr)) {
+   if (!WriteSpoolData(dcr)) {
      return false;
    }
 
@@ -542,7 +542,7 @@ bool WriteBlockToSpoolFile(DeviceControlRecord *dcr)
    return true;
 }
 
-static bool write_spool_header(DeviceControlRecord *dcr)
+static bool WriteSpoolHeader(DeviceControlRecord *dcr)
 {
    spool_hdr hdr;
    ssize_t status;
@@ -580,7 +580,7 @@ static bool write_spool_header(DeviceControlRecord *dcr)
               /* Note, try continuing despite ftruncate problem */
             }
          }
-         if (!despool_data(dcr, false)) {
+         if (!DespoolData(dcr, false)) {
             Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
             jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
             return false;
@@ -594,7 +594,7 @@ static bool write_spool_header(DeviceControlRecord *dcr)
    return false;
 }
 
-static bool write_spool_data(DeviceControlRecord *dcr)
+static bool WriteSpoolData(DeviceControlRecord *dcr)
 {
    ssize_t status;
    DeviceBlock *block = dcr->block;
@@ -629,13 +629,13 @@ static bool write_spool_data(DeviceControlRecord *dcr)
             }
          }
 
-         if (!despool_data(dcr, false)) {
+         if (!DespoolData(dcr, false)) {
             Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
             jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
             return false;
          }
 
-         if (!write_spool_header(dcr)) {
+         if (!WriteSpoolHeader(dcr)) {
             return false;
          }
 
@@ -666,7 +666,7 @@ bool AreAttributesSpooled(JobControlRecord *jcr)
 bool BeginAttributeSpool(JobControlRecord *jcr)
 {
    if (!jcr->no_attributes && jcr->spool_attributes) {
-      return open_attr_spool_file(jcr, jcr->dir_bsock);
+      return OpenAttrSpoolFile(jcr, jcr->dir_bsock);
    }
    return true;
 }
@@ -674,12 +674,12 @@ bool BeginAttributeSpool(JobControlRecord *jcr)
 bool DiscardAttributeSpool(JobControlRecord *jcr)
 {
    if (AreAttributesSpooled(jcr)) {
-      return close_attr_spool_file(jcr, jcr->dir_bsock);
+      return CloseAttrSpoolFile(jcr, jcr->dir_bsock);
    }
    return true;
 }
 
-static void update_attr_spool_size(ssize_t size)
+static void UpdateAttrSpoolSize(ssize_t size)
 {
    P(mutex);
    if (size > 0) {
@@ -692,7 +692,7 @@ static void update_attr_spool_size(ssize_t size)
    V(mutex);
 }
 
-static void make_unique_spool_filename(JobControlRecord *jcr, POOLMEM *&name, int fd)
+static void MakeUniqueSpoolFilename(JobControlRecord *jcr, POOLMEM *&name, int fd)
 {
    Mmsg(name, "%s/%s.attr.%s.%d.spool", working_directory, my_name, jcr->Job, fd);
 }
@@ -703,14 +703,14 @@ static void make_unique_spool_filename(JobControlRecord *jcr, POOLMEM *&name, in
  *  return an error, and the higher level routine will transmit
  *  the data record by record -- using bsock->despool().
  */
-static bool blast_attr_spool_file(JobControlRecord *jcr, boffset_t size)
+static bool BlastAttrSpoolFile(JobControlRecord *jcr, boffset_t size)
 {
    POOLMEM *name = GetPoolMemory(PM_MESSAGE);
 
    /*
     * Send full spool file name
     */
-   make_unique_spool_filename(jcr, name, jcr->dir_bsock->fd_);
+   MakeUniqueSpoolFilename(jcr, name, jcr->dir_bsock->fd_);
    BashSpaces(name);
    jcr->dir_bsock->fsend("BlastAttr Job=%s File=%s\n", jcr->Job, name);
    FreePoolMemory(name);
@@ -785,26 +785,26 @@ bool CommitAttributeSpool(JobControlRecord *jcr)
       Jmsg(jcr, M_INFO, 0, _("Sending spooled attrs to the Director. Despooling %s bytes ...\n"),
            edit_uint64_with_commas(size, ec1));
 
-      if (!blast_attr_spool_file(jcr, size)) {
+      if (!BlastAttrSpoolFile(jcr, size)) {
          /* Can't read spool file from director side,
           * send content over network.
           */
-         dir->despool(update_attr_spool_size, size);
+         dir->despool(UpdateAttrSpoolSize, size);
       }
-      return close_attr_spool_file(jcr, dir);
+      return CloseAttrSpoolFile(jcr, dir);
    }
    return true;
 
 bail_out:
-   close_attr_spool_file(jcr, dir);
+   CloseAttrSpoolFile(jcr, dir);
    return false;
 }
 
-static bool open_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs)
+static bool OpenAttrSpoolFile(JobControlRecord *jcr, BareosSocket *bs)
 {
    POOLMEM *name = GetPoolMemory(PM_MESSAGE);
 
-   make_unique_spool_filename(jcr, name, bs->fd_);
+   MakeUniqueSpoolFilename(jcr, name, bs->fd_);
    bs->spool_fd_ = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
    if (bs->spool_fd_ == -1) {
       berrno be;
@@ -824,7 +824,7 @@ static bool open_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs)
    return true;
 }
 
-static bool close_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs)
+static bool CloseAttrSpoolFile(JobControlRecord *jcr, BareosSocket *bs)
 {
    POOLMEM *name;
    char tbuf[MAX_TIME_LENGTH];
@@ -841,7 +841,7 @@ static bool close_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs)
    spool_stats.total_attr_jobs++;
    V(mutex);
 
-   make_unique_spool_filename(jcr, name, bs->fd_);
+   MakeUniqueSpoolFilename(jcr, name, bs->fd_);
 
    close(bs->spool_fd_);
    SecureErase(jcr, name);

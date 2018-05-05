@@ -276,7 +276,7 @@ DLL_IMP_EXP bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
 DLL_IMP_EXP bool CanWriteRecordToBlock(DeviceBlock *block, const DeviceRecord *rec);
 DLL_IMP_EXP bool ReadRecordFromBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
 DLL_IMP_EXP DeviceRecord *new_record(bool with_data = true);
-DLL_IMP_EXP void empty_record(DeviceRecord *rec);
+DLL_IMP_EXP void EmptyRecord(DeviceRecord *rec);
 DLL_IMP_EXP void CopyRecordState(DeviceRecord *dst, DeviceRecord *src);
 DLL_IMP_EXP void FreeRecord(DeviceRecord *rec);
 DLL_IMP_EXP uint64_t GetRecordAddress(const DeviceRecord *rec);

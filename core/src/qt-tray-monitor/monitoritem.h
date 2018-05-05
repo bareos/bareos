@@ -54,7 +54,7 @@ public:
       QString pool_name;
       QString messages_name;
       QString client_name;
-      QString store_name;
+      QString StoreName;
       QString where;
       QString level;
       QString type;
@@ -80,7 +80,7 @@ public:
 
    char *get_name() const;
    void writecmd(const char* command);
-   bool get_job_defaults(struct JobDefaults &job_defs);
+   bool GetJobDefaults(struct JobDefaults &job_defs);
    bool doconnect();
    void disconnect();
    bool docmd(const char* command);

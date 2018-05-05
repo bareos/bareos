@@ -141,9 +141,9 @@ void usage()
      exit(1);
  }
 
-/* get_response - examine message from server */
+/* GetResponse - examine message from server */
 
-void get_response()
+void GetResponse()
  {
      char buf[BUFSIZ];
 
@@ -178,7 +178,7 @@ void VARARGS(chat, fmt, char *)
     /* Send message to server and parse its response. */
 
     fflush(sfp);
-     get_response();
+     GetResponse();
  }
 
 main(argc, argv)
@@ -291,7 +291,7 @@ main(argc, argv)
      }
      /* Speak SMTP. */
 
-    get_response(); /* banner */
+    GetResponse(); /* banner */
 
     chat("HELO %s\r\n", my_name);
 

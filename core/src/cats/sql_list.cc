@@ -66,7 +66,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord *jcr, const char *query, OutputForm
    if (!SqlQuery(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
       if (verbose) {
-         sendit->decoration(errmsg);
+         sendit->Decoration(errmsg);
       }
       goto bail_out;
    }
@@ -164,7 +164,7 @@ bail_out:
    DbUnlock(this);
 }
 
-void BareosDb::list_storage_records(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type)
+void BareosDb::ListStorageRecords(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type)
 {
    DbLock(this);
 
@@ -352,9 +352,9 @@ void BareosDb::ListCopiesRecords(JobControlRecord *jcr, const char *range, const
 
    if (SqlNumRows()) {
       if (JobIds && JobIds[0]) {
-         send->decoration(_("These JobIds have copies as follows:\n"));
+         send->Decoration(_("These JobIds have copies as follows:\n"));
       } else {
-         send->decoration(_("The catalog contains copies as follows:\n"));
+         send->Decoration(_("The catalog contains copies as follows:\n"));
       }
 
       send->ArrayStart("copies");

@@ -69,7 +69,7 @@ DBId_t dbid_list::get(int i) const {
 /**
  * Called here to retrieve an integer from the database
  */
-int db_int_handler(void *ctx, int num_fields, char **row)
+int DbIntHandler(void *ctx, int num_fields, char **row)
 {
    uint32_t *val = (uint32_t *)ctx;
 
@@ -105,7 +105,7 @@ int db_int64_handler(void *ctx, int num_fields, char **row)
  * Called here to retrieve a btime from the database.
  *   The returned integer will be extended to 64 bit.
  */
-int db_strtime_handler(void *ctx, int num_fields, char **row)
+int DbStrtimeHandler(void *ctx, int num_fields, char **row)
 {
    db_int64_ctx *lctx = (db_int64_ctx *)ctx;
 
@@ -119,7 +119,7 @@ int db_strtime_handler(void *ctx, int num_fields, char **row)
 /**
  * Use to build a comma separated list of values from a query. "10,20,30"
  */
-int db_list_handler(void *ctx, int num_fields, char **row)
+int DbListHandler(void *ctx, int num_fields, char **row)
 {
    db_list_ctx *lctx = (db_list_ctx *)ctx;
    if (num_fields == 1 && row[0]) {
@@ -129,7 +129,7 @@ int db_list_handler(void *ctx, int num_fields, char **row)
 }
 
 /**
- * specific context passed from db_check_max_connections to db_max_connections_handler.
+ * specific context passed from db_check_max_connections to DbMaxConnectionsHandler.
  */
 struct max_connections_context {
    BareosDb *db;
@@ -139,7 +139,7 @@ struct max_connections_context {
 /**
  * Called here to retrieve an integer from the database
  */
-static inline int db_max_connections_handler(void *ctx, int num_fields, char **row)
+static inline int DbMaxConnectionsHandler(void *ctx, int num_fields, char **row)
 {
    struct max_connections_context *context;
    uint32_t index;
@@ -166,7 +166,7 @@ static inline int db_max_connections_handler(void *ctx, int num_fields, char **r
 /**
  * Check catalog max_connections setting
  */
-bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurrent_jobs)
+bool BareosDb::CheckMaxConnections(JobControlRecord *jcr, uint32_t max_concurrent_jobs)
 {
    PoolMem query(PM_MESSAGE);
    struct max_connections_context context;
@@ -184,7 +184,7 @@ bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurr
     * Check max_connections setting
     */
    FillQuery(query, SQL_QUERY_sql_get_max_connections);
-   if (!SqlQueryWithHandler(query.c_str(), db_max_connections_handler, &context)) {
+   if (!SqlQueryWithHandler(query.c_str(), DbMaxConnectionsHandler, &context)) {
       Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
       return false;
    }
@@ -214,7 +214,7 @@ bool BareosDb::CheckTablesVersion(JobControlRecord *jcr)
    uint32_t bareos_db_version = 0;
    const char *query = "SELECT VersionId FROM Version";
 
-   if (!SqlQueryWithHandler(query, db_int_handler, (void *)&bareos_db_version)) {
+   if (!SqlQueryWithHandler(query, DbIntHandler, (void *)&bareos_db_version)) {
       Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
       return false;
    }
@@ -286,15 +286,15 @@ bool BareosDb::InsertDB(const char *file, int line, JobControlRecord *jcr, const
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const char *update_cmd, int nr_afr)
+bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const char *UpdateCmd, int nr_afr)
 {
    int num_rows;
 
-   if (!SqlQuery(update_cmd)) {
-      msg_(file, line, errmsg, _("update %s failed:\n%s\n"), update_cmd, sql_strerror());
+   if (!SqlQuery(UpdateCmd)) {
+      msg_(file, line, errmsg, _("update %s failed:\n%s\n"), UpdateCmd, sql_strerror());
       j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
       if (verbose) {
-         j_msg(file, line, jcr, M_INFO, 0, "%s\n", update_cmd);
+         j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd);
       }
       return false;
    }
@@ -304,9 +304,9 @@ bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const
       if (num_rows < nr_afr) {
          char ed1[30];
          msg_(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
-               edit_uint64(num_rows, ed1), update_cmd);
+               edit_uint64(num_rows, ed1), UpdateCmd);
          if (verbose) {
-//          j_msg(file, line, jcr, M_INFO, 0, "%s\n", update_cmd);
+//          j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd);
          }
          return false;
       }
@@ -322,14 +322,14 @@ bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const
  * Returns: -1 on error
  *           n number of rows affected
  */
-int BareosDb::DeleteDB(const char *file, int line, JobControlRecord *jcr, const char *delete_cmd)
+int BareosDb::DeleteDB(const char *file, int line, JobControlRecord *jcr, const char *DeleteCmd)
 {
 
-   if (!SqlQuery(delete_cmd)) {
-      msg_(file, line, errmsg, _("delete %s failed:\n%s\n"), delete_cmd, sql_strerror());
+   if (!SqlQuery(DeleteCmd)) {
+      msg_(file, line, errmsg, _("delete %s failed:\n%s\n"), DeleteCmd, sql_strerror());
       j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
       if (verbose) {
-         j_msg(file, line, jcr, M_INFO, 0, "%s\n", delete_cmd);
+         j_msg(file, line, jcr, M_INFO, 0, "%s\n", DeleteCmd);
       }
       return -1;
    }
@@ -431,9 +431,9 @@ void BareosDb::SplitPathAndFile(JobControlRecord *jcr, const char *filename)
 /**
  * Set maximum field length to something reasonable
  */
-static int max_length(int max_length)
+static int MaxLength(int MaxLength)
 {
-   int max_len = max_length;
+   int max_len = MaxLength;
    /* Sanity check */
    if (max_len < 0) {
       max_len = 2;
@@ -453,20 +453,20 @@ void BareosDb::ListDashes(OutputFormatter *send)
    SQL_FIELD *field;
 
    SqlFieldSeek(0);
-   send->decoration("+");
+   send->Decoration("+");
    num_fields = SqlNumFields();
    for (int i = 0; i < num_fields; i++) {
       field = SqlFetchField();
       if (!field) {
          break;
       }
-      len = max_length(field->max_length + 2);
+      len = MaxLength(field->MaxLength + 2);
       for (int j = 0; j < len; j++) {
-         send->decoration("-");
+         send->Decoration("-");
       }
-      send->decoration("+");
+      send->Decoration("+");
    }
-   send->decoration("\n");
+   send->Decoration("\n");
 }
 
 /**
@@ -541,16 +541,16 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
                   max_len = col_len;
                }
             } else {
-               if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
-                  field->max_length += (field->max_length - 1) / 3;
+               if (SqlFieldIsNumeric(field->type) && (int)field->MaxLength > 0) { /* fixup for commas */
+                  field->MaxLength += (field->MaxLength - 1) / 3;
                }
-               if (col_len < (int)field->max_length) {
-                  col_len = field->max_length;
+               if (col_len < (int)field->MaxLength) {
+                  col_len = field->MaxLength;
                }
                if (col_len < 4 && !SqlFieldIsNotNull(field->flags)) {
                   col_len = 4;                 /* 4 = length of the word "NULL" */
                }
-               field->max_length = col_len;    /* reset column info */
+               field->MaxLength = col_len;    /* reset column info */
             }
          }
 
@@ -568,7 +568,7 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
           */
          ListDashes(send);
 
-         send->decoration("|");
+         send->Decoration("|");
          SqlFieldSeek(0);
          for (int i = 0; i < num_fields; i++) {
             Dmsg1(800, "ListResult looking at field %d\n", i);
@@ -586,10 +586,10 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
                continue;
             }
 
-            max_len = max_length(field->max_length);
-            send->decoration(" %-*s |", max_len, field->name);
+            max_len = MaxLength(field->MaxLength);
+            send->Decoration(" %-*s |", max_len, field->name);
          }
-         send->decoration("\n");
+         send->Decoration("\n");
          ListDashes(send);
       }
       break;
@@ -624,13 +624,13 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
          send->ObjectKeyValue(field->name, value.c_str(), " %s");
       }
       if (type != RAW_LIST) {
-         send->decoration("\n");
+         send->Decoration("\n");
       }
       break;
    case HORZ_LIST:
       Dmsg1(800, "ListResult starts third loop looking at %d fields\n", num_fields);
       SqlFieldSeek(0);
-      send->decoration("|");
+      send->Decoration("|");
       for (int i = 0; i < num_fields; i++) {
          field = SqlFetchField();
          if (!field) {
@@ -645,7 +645,7 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
             continue;
          }
 
-         max_len = max_length(field->max_length);
+         max_len = MaxLength(field->MaxLength);
          if (row[i] == NULL) {
             value.bsprintf(" %-*s |", max_len, "NULL");
          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
@@ -659,7 +659,7 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
           */
          send->ObjectKeyValue(field->name, row[i], value.c_str());
       }
-      send->decoration("\n");
+      send->Decoration("\n");
       break;
    case VERT_LIST:
       Dmsg1(800, "ListResult starts vertical list at %d fields\n", num_fields);
@@ -694,7 +694,7 @@ int BareosDb::ListResult(void *vctx, int nb_col, char **row)
           */
          send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
       }
-      send->decoration("\n");
+      send->Decoration("\n");
       break;
    default:
       break;
@@ -730,7 +730,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
 
    Dmsg0(800, "ListResult starts\n");
    if (SqlNumRows() == 0) {
-      send->decoration(_("No results to list.\n"));
+      send->Decoration(_("No results to list.\n"));
       return 0;
    }
 
@@ -771,16 +771,16 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
                max_len = col_len;
             }
          } else {
-            if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0) { /* fixup for commas */
-               field->max_length += (field->max_length - 1) / 3;
+            if (SqlFieldIsNumeric(field->type) && (int)field->MaxLength > 0) { /* fixup for commas */
+               field->MaxLength += (field->MaxLength - 1) / 3;
             }
-            if (col_len < (int)field->max_length) {
-               col_len = field->max_length;
+            if (col_len < (int)field->MaxLength) {
+               col_len = field->MaxLength;
             }
             if (col_len < 4 && !SqlFieldIsNotNull(field->flags)) {
                col_len = 4;                 /* 4 = length of the word "NULL" */
             }
-            field->max_length = col_len;    /* reset column info */
+            field->MaxLength = col_len;    /* reset column info */
          }
       }
       break;
@@ -831,7 +831,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
             send->ObjectKeyValue(field->name, value.c_str(), " %s");
          }
          if (type != RAW_LIST) {
-            send->decoration("\n");
+            send->Decoration("\n");
          }
          send->ObjectEnd();
       }
@@ -839,7 +839,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
    case HORZ_LIST:
       Dmsg1(800, "ListResult starts second loop looking at %d fields\n", num_fields);
       ListDashes(send);
-      send->decoration("|");
+      send->Decoration("|");
       SqlFieldSeek(0);
       for (int i = 0; i < num_fields; i++) {
          Dmsg1(800, "ListResult looking at field %d\n", i);
@@ -857,10 +857,10 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
             continue;
          }
 
-         max_len = max_length(field->max_length);
-         send->decoration(" %-*s |", max_len, field->name);
+         max_len = MaxLength(field->MaxLength);
+         send->Decoration(" %-*s |", max_len, field->name);
       }
-      send->decoration("\n");
+      send->Decoration("\n");
       ListDashes(send);
 
       Dmsg1(800, "ListResult starts third loop looking at %d fields\n", num_fields);
@@ -874,7 +874,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
 
          send->ObjectStart();
          SqlFieldSeek(0);
-         send->decoration("|");
+         send->Decoration("|");
          for (int i = 0; i < num_fields; i++) {
             field = SqlFetchField();
             if (!field) {
@@ -889,7 +889,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
                continue;
             }
 
-            max_len = max_length(field->max_length);
+            max_len = MaxLength(field->MaxLength);
             if (row[i] == NULL) {
                value.bsprintf(" %-*s |", max_len, "NULL");
             } else if (SqlFieldIsNumeric(field->type) && !jcr->gui && IsAnInteger(row[i])) {
@@ -952,7 +952,7 @@ int BareosDb::ListResult(JobControlRecord *jcr, OutputFormatter *send, e_list_ty
              */
             send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
          }
-         send->decoration("\n");
+         send->Decoration("\n");
          send->ObjectEnd();
       }
       break;

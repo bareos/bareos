@@ -100,7 +100,7 @@ static Plugin *new_plugin()
    return plugin;
 }
 
-static void close_plugin(Plugin *plugin)
+static void ClosePlugin(Plugin *plugin)
 {
    if (plugin->file) {
       Dmsg1(50, "Got plugin=%s but not accepted.\n", plugin->file);
@@ -146,7 +146,7 @@ static bool load_a_plugin(void *binfo,
       Dmsg2(debuglevel, "dlopen plugin %s failed: ERR=%s\n",
             plugin_pathname, NPRT(error));
 
-      close_plugin(plugin);
+      ClosePlugin(plugin);
 
       return false;
    }
@@ -161,7 +161,7 @@ static bool load_a_plugin(void *binfo,
       Dmsg2(debuglevel, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
             plugin_pathname, NPRT(dlerror()));
 
-      close_plugin(plugin);
+      ClosePlugin(plugin);
 
       return false;
    }
@@ -173,7 +173,7 @@ static bool load_a_plugin(void *binfo,
       Dmsg2(debuglevel, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
             plugin_pathname, NPRT(dlerror()));
 
-      close_plugin(plugin);
+      ClosePlugin(plugin);
 
       return false;
    }
@@ -182,7 +182,7 @@ static bool load_a_plugin(void *binfo,
     * Initialize the plugin
     */
    if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
-      close_plugin(plugin);
+      ClosePlugin(plugin);
 
       return false;
    }
@@ -190,7 +190,7 @@ static bool load_a_plugin(void *binfo,
    if (!IsPluginCompatible) {
       Dmsg0(50, "Plugin compatibility pointer not set.\n");
    } else if (!IsPluginCompatible(plugin)) {
-      close_plugin(plugin);
+      ClosePlugin(plugin);
 
       return false;
    }
@@ -383,7 +383,7 @@ void UnloadPlugin(alist *plugin_list, Plugin *plugin, int index)
    free(plugin);
 }
 
-int list_plugins(alist *plugin_list, PoolMem &msg)
+int ListPlugins(alist *plugin_list, PoolMem &msg)
 {
    int i, len = 0;
    Plugin *plugin;
@@ -474,7 +474,7 @@ void DumpPlugins(alist *plugin_list, FILE *fp)
  * plugin_list as argument and we don't want to expose it as global variable.
  * If the daemon didn't register a dump plugin function this is a NOP.
  */
-void dbg_print_plugin(FILE *fp)
+void DbgPrintPlugin(FILE *fp)
 {
    if (dbg_print_plugin_hook) {
       dbg_print_plugin_hook(fp);

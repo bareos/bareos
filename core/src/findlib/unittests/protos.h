@@ -20,5 +20,5 @@
 */
 
 
-void test_fstype(void **state);
-void test_drivetype(void **state);
+void TestFstype(void **state);
+void TestDrivetype(void **state);

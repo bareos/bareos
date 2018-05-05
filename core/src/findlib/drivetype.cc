@@ -34,12 +34,12 @@
 /**
  * These functions should be implemented for each OS
  *
- * bool drivetype(const char *fname, char *dt, int dtlen);
+ * bool Drivetype(const char *fname, char *dt, int dtlen);
  */
 #if defined (HAVE_WIN32)
 /* Windows */
 
-bool drivetype(const char *fname, char *dt, int dtlen)
+bool Drivetype(const char *fname, char *dt, int dtlen)
 {
    CHAR rootpath[4];
    UINT type;
@@ -78,9 +78,9 @@ bool drivetype(const char *fname, char *dt, int dtlen)
 
 #else    /* No recognised OS */
 
-bool drivetype(const char *fname, char *dt, int dtlen)
+bool Drivetype(const char *fname, char *dt, int dtlen)
 {
-   Dmsg0(10, "!!! drivetype() not implemented for this OS. !!!\n");
+   Dmsg0(10, "!!! Drivetype() not implemented for this OS. !!!\n");
    return false;
 }
 #endif

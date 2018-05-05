@@ -65,11 +65,11 @@
 
 /* Forward referenced subroutines */
 static void *job_thread(void *arg);
-static void job_monitor_watchdog(watchdog_t *self);
-static void job_monitor_destructor(watchdog_t *self);
-static bool job_check_maxwaittime(JobControlRecord *jcr);
-static bool job_check_maxruntime(JobControlRecord *jcr);
-static bool job_check_maxrunschedtime(JobControlRecord *jcr);
+static void JobMonitorWatchdog(watchdog_t *self);
+static void JobMonitorDestructor(watchdog_t *self);
+static bool JobCheckMaxwaittime(JobControlRecord *jcr);
+static bool JobCheckMaxruntime(JobControlRecord *jcr);
+static bool JobCheckMaxrunschedtime(JobControlRecord *jcr);
 
 /* Imported subroutines */
 
@@ -77,7 +77,7 @@ static bool job_check_maxrunschedtime(JobControlRecord *jcr);
 
 jobq_t job_queue;
 
-void init_job_server(int max_workers)
+void InitJobServer(int max_workers)
 {
    int status;
    watchdog_t *wd;
@@ -87,8 +87,8 @@ void init_job_server(int max_workers)
       Emsg1(M_ABORT, 0, _("Could not init job queue: ERR=%s\n"), be.bstrerror(status));
    }
    wd = new_watchdog();
-   wd->callback = job_monitor_watchdog;
-   wd->destructor = job_monitor_destructor;
+   wd->callback = JobMonitorWatchdog;
+   wd->destructor = JobMonitorDestructor;
    wd->one_shot = false;
    wd->interval = 60;
    wd->data = new_control_jcr("*JobMonitor*", JT_SYSTEM);
@@ -471,7 +471,7 @@ static void *job_thread(void *arg)
       Jmsg(jcr, M_FATAL, 0, _("Job canceled because max start delay time exceeded.\n"));
    }
 
-   if (job_check_maxrunschedtime(jcr)) {
+   if (JobCheckMaxrunschedtime(jcr)) {
       jcr->setJobStatus(JS_Canceled);
       Jmsg(jcr, M_FATAL, 0, _("Job canceled because max run sched time exceeded.\n"));
    }
@@ -514,8 +514,8 @@ static void *job_thread(void *arg)
       switch (jcr->getJobProtocol()) {
       case PT_NDMP_BAREOS:
          if (!JobCanceled(jcr)) {
-            if (do_ndmp_backup(jcr)) {
-               do_autoprune(jcr);
+            if (DoNdmpBackup(jcr)) {
+               DoAutoprune(jcr);
             } else {
                NdmpBackupCleanup(jcr, JS_ErrorTerminated);
             }
@@ -525,8 +525,8 @@ static void *job_thread(void *arg)
          break;
       case PT_NDMP_NATIVE:
          if (!JobCanceled(jcr)) {
-            if (do_ndmp_backup_ndmp_native(jcr)) {
-               do_autoprune(jcr);
+            if (DoNdmpBackupNdmpNative(jcr)) {
+               DoAutoprune(jcr);
             } else {
                NdmpBackupCleanup(jcr, JS_ErrorTerminated);
             }
@@ -537,14 +537,14 @@ static void *job_thread(void *arg)
       default:
          if (!JobCanceled(jcr)) {
             if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-               if (do_native_vbackup(jcr)) {
-                  do_autoprune(jcr);
+               if (DoNativeVbackup(jcr)) {
+                  DoAutoprune(jcr);
                } else {
                   NativeVbackupCleanup(jcr, JS_ErrorTerminated);
                }
             } else {
-               if (do_native_backup(jcr)) {
-                  do_autoprune(jcr);
+               if (DoNativeBackup(jcr)) {
+                  DoAutoprune(jcr);
                } else {
                   NativeBackupCleanup(jcr, JS_ErrorTerminated);
                }
@@ -562,7 +562,7 @@ static void *job_thread(void *arg)
    case JT_VERIFY:
       if (!JobCanceled(jcr)) {
          if (DoVerify(jcr)) {
-            do_autoprune(jcr);
+            DoAutoprune(jcr);
          } else {
             VerifyCleanup(jcr, JS_ErrorTerminated);
          }
@@ -574,8 +574,8 @@ static void *job_thread(void *arg)
       switch (jcr->getJobProtocol()) {
       case PT_NDMP_BAREOS:
          if (!JobCanceled(jcr)) {
-            if (do_ndmp_restore(jcr)) {
-               do_autoprune(jcr);
+            if (DoNdmpRestore(jcr)) {
+               DoAutoprune(jcr);
             } else {
                NdmpRestoreCleanup(jcr, JS_ErrorTerminated);
             }
@@ -585,8 +585,8 @@ static void *job_thread(void *arg)
          break;
       case PT_NDMP_NATIVE:
          if (!JobCanceled(jcr)) {
-            if (do_ndmp_restore_ndmp_native(jcr)) {
-               do_autoprune(jcr);
+            if (DoNdmpRestoreNdmpNative(jcr)) {
+               DoAutoprune(jcr);
             } else {
                NdmpRestoreCleanup(jcr, JS_ErrorTerminated);
             }
@@ -596,8 +596,8 @@ static void *job_thread(void *arg)
          break;
       default:
          if (!JobCanceled(jcr)) {
-            if (do_native_restore(jcr)) {
-               do_autoprune(jcr);
+            if (DoNativeRestore(jcr)) {
+               DoAutoprune(jcr);
             } else {
                NativeRestoreCleanup(jcr, JS_ErrorTerminated);
             }
@@ -610,7 +610,7 @@ static void *job_thread(void *arg)
    case JT_ADMIN:
       if (!JobCanceled(jcr)) {
          if (do_admin(jcr)) {
-            do_autoprune(jcr);
+            DoAutoprune(jcr);
          } else {
             AdminCleanup(jcr, JS_ErrorTerminated);
          }
@@ -620,8 +620,8 @@ static void *job_thread(void *arg)
       break;
    case JT_ARCHIVE:
       if (!JobCanceled(jcr)) {
-         if (do_archive(jcr)) {
-            do_autoprune(jcr);
+         if (DoArchive(jcr)) {
+            DoAutoprune(jcr);
          } else {
             ArchiveCleanup(jcr, JS_ErrorTerminated);
          }
@@ -632,8 +632,8 @@ static void *job_thread(void *arg)
    case JT_COPY:
    case JT_MIGRATE:
       if (!JobCanceled(jcr)) {
-         if (do_migration(jcr)) {
-            do_autoprune(jcr);
+         if (DoMigration(jcr)) {
+            DoAutoprune(jcr);
          } else {
             MigrationCleanup(jcr, JS_ErrorTerminated);
          }
@@ -643,8 +643,8 @@ static void *job_thread(void *arg)
       break;
    case JT_CONSOLIDATE:
       if (!JobCanceled(jcr)) {
-         if (do_consolidate(jcr)) {
-            do_autoprune(jcr);
+         if (DoConsolidate(jcr)) {
+            DoAutoprune(jcr);
          } else {
             ConsolidateCleanup(jcr, JS_ErrorTerminated);
          }
@@ -718,7 +718,7 @@ bool CancelJob(UaContext *ua, JobControlRecord *jcr)
    case JS_WaitStartTime:
       ua->InfoMsg(_("JobId %s, Job %s marked to be canceled.\n"),
               edit_uint64(jcr->JobId, ed1), jcr->Job);
-      jobq_remove(&job_queue, jcr); /* attempt to remove it from queue */
+      JobqRemove(&job_queue, jcr); /* attempt to remove it from queue */
       break;
 
    default:
@@ -726,7 +726,7 @@ bool CancelJob(UaContext *ua, JobControlRecord *jcr)
        * Cancel File daemon
        */
       if (jcr->file_bsock) {
-         if (!cancel_file_daemon_job(ua, jcr)) {
+         if (!CancelFileDaemonJob(ua, jcr)) {
             return false;
          }
       }
@@ -757,21 +757,21 @@ bool CancelJob(UaContext *ua, JobControlRecord *jcr)
    return true;
 }
 
-static void job_monitor_destructor(watchdog_t *self)
+static void JobMonitorDestructor(watchdog_t *self)
 {
    JobControlRecord *control_jcr = (JobControlRecord *)self->data;
 
    FreeJcr(control_jcr);
 }
 
-static void job_monitor_watchdog(watchdog_t *self)
+static void JobMonitorWatchdog(watchdog_t *self)
 {
    JobControlRecord *control_jcr, *jcr;
 
    control_jcr = (JobControlRecord *)self->data;
 
    Dsm_check(100);
-   Dmsg1(800, "job_monitor_watchdog %p called\n", self);
+   Dmsg1(800, "JobMonitorWatchdog %p called\n", self);
 
    foreach_jcr(jcr) {
       bool cancel = false;
@@ -782,17 +782,17 @@ static void job_monitor_watchdog(watchdog_t *self)
       }
 
       /* check MaxWaitTime */
-      if (job_check_maxwaittime(jcr)) {
+      if (JobCheckMaxwaittime(jcr)) {
          jcr->setJobStatus(JS_Canceled);
          Qmsg(jcr, M_FATAL, 0, _("Max wait time exceeded. Job canceled.\n"));
          cancel = true;
       /* check MaxRunTime */
-      } else if (job_check_maxruntime(jcr)) {
+      } else if (JobCheckMaxruntime(jcr)) {
          jcr->setJobStatus(JS_Canceled);
          Qmsg(jcr, M_FATAL, 0, _("Max run time exceeded. Job canceled.\n"));
          cancel = true;
       /* check MaxRunSchedTime */
-      } else if (job_check_maxrunschedtime(jcr)) {
+      } else if (JobCheckMaxrunschedtime(jcr)) {
          jcr->setJobStatus(JS_Canceled);
          Qmsg(jcr, M_FATAL, 0, _("Max run sched time exceeded. Job canceled.\n"));
          cancel = true;
@@ -816,7 +816,7 @@ static void job_monitor_watchdog(watchdog_t *self)
  * Check if the maxwaittime has expired and it is possible
  *  to cancel the job.
  */
-static bool job_check_maxwaittime(JobControlRecord *jcr)
+static bool JobCheckMaxwaittime(JobControlRecord *jcr)
 {
    bool cancel = false;
    JobResource *job = jcr->res.job;
@@ -844,7 +844,7 @@ static bool job_check_maxwaittime(JobControlRecord *jcr)
  * Check if maxruntime has expired and if the job can be
  *   canceled.
  */
-static bool job_check_maxruntime(JobControlRecord *jcr)
+static bool JobCheckMaxruntime(JobControlRecord *jcr)
 {
    bool cancel = false;
    JobResource *job = jcr->res.job;
@@ -886,7 +886,7 @@ static bool job_check_maxruntime(JobControlRecord *jcr)
  * Check if MaxRunSchedTime has expired and if the job can be
  *   canceled.
  */
-static bool job_check_maxrunschedtime(JobControlRecord *jcr)
+static bool JobCheckMaxrunschedtime(JobControlRecord *jcr)
 {
    if (jcr->MaxRunSchedTime == 0 || JobCanceled(jcr)) {
       return false;
@@ -1034,7 +1034,7 @@ bool AllowDuplicateJob(JobControlRecord *jcr)
             UaContext *ua = new_ua_context(jcr);
             Jmsg(jcr, M_INFO, 0, _("Cancelling duplicate JobId=%d.\n"), djcr->JobId);
             CancelJob(ua, djcr);
-            bmicrosleep(0, 500000);
+            Bmicrosleep(0, 500000);
             djcr->setJobStatus(JS_Canceled);
             CancelJob(ua, djcr);
             FreeUaContext(ua);
@@ -1176,7 +1176,7 @@ bool GetLevelSinceTime(JobControlRecord *jcr)
           */
          Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing FULL backup.\n"));
-         bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+         Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
          pool_updated = true;
       } else if (do_vfull) {
@@ -1185,7 +1185,7 @@ bool GetLevelSinceTime(JobControlRecord *jcr)
           */
          Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing Virtual FULL backup.\n"));
-         bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(jcr->getJobLevel()));
+         Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
          pool_updated = true;
 
@@ -1201,14 +1201,14 @@ bool GetLevelSinceTime(JobControlRecord *jcr)
           * No recent diff job found, so upgrade this one to Diff
           */
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
-         bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+         Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
          pool_updated = true;
       } else {
          if (jcr->res.job->rerun_failed_levels) {
             if (jcr->db->FindFailedJobSince(jcr, &jcr->jr, jcr->stime, JobLevel)) {
                Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"), level_to_str(JobLevel));
-               bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+               Bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
                jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
                jcr->jr.JobId = jcr->JobId;
                pool_updated = true;
@@ -1489,7 +1489,7 @@ void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name)
    if (seq > 59) {                    /* wrap as if it is seconds */
       seq = 0;
       while (now == last_start_time) {
-         bmicrosleep(0, 500000);
+         Bmicrosleep(0, 500000);
          now = time(NULL);
       }
    }
@@ -1506,7 +1506,7 @@ void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name)
    len = strlen(dt) + 5;   /* dt + .%02d EOS */
    bstrncpy(name, base_name, sizeof(name));
    name[sizeof(name)-len] = 0;          /* truncate if too long */
-   bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt, seq); /* add date & time */
+   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt, seq); /* add date & time */
    /* Convert spaces into underscores */
    for (p=jcr->Job; *p; p++) {
       if (*p == ' ') {
@@ -1552,7 +1552,7 @@ void DirdFreeJcrPointers(JobControlRecord *jcr)
  *  Called from main FreeJcr() routine in src/lib/jcr.c so
  *  that we can do our Director specific cleanup of the jcr.
  */
-void dird_free_jcr(JobControlRecord *jcr)
+void DirdFreeJcr(JobControlRecord *jcr)
 {
    Dmsg0(200, "Start dird FreeJcr\n");
 
@@ -1854,7 +1854,7 @@ bail_out:
 }
 
 /* TODO: redirect command ouput to job log */
-bool run_console_command(JobControlRecord *jcr, const char *cmd)
+bool RunConsoleCommand(JobControlRecord *jcr, const char *cmd)
 {
    UaContext *ua;
    bool ok;

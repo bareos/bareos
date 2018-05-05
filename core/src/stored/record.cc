@@ -374,7 +374,7 @@ static const char *record_state_to_ascii(rec_state state)
 static const char *findex_to_str(int32_t index, char *buf, size_t bufsz)
 {
    if (index >= 0) {
-      bsnprintf(buf, bufsz, "<User> %d", index);
+      Bsnprintf(buf, bufsz, "<User> %d", index);
       return buf;
    }
 
@@ -504,7 +504,7 @@ DeviceRecord *new_record(bool with_data)
    return rec;
 }
 
-void empty_record(DeviceRecord *rec)
+void EmptyRecord(DeviceRecord *rec)
 {
    rec->File = rec->Block = 0;
    rec->VolSessionId = rec->VolSessionTime = 0;
@@ -558,7 +558,7 @@ void FreeRecord(DeviceRecord *rec)
    Dmsg0(950, "Leave FreeRecord.\n");
 }
 
-static inline ssize_t write_header_to_block(DeviceBlock *block, const DeviceRecord *rec, int32_t Stream)
+static inline ssize_t WriteHeaderToBlock(DeviceBlock *block, const DeviceRecord *rec, int32_t Stream)
 {
    ser_declare;
 
@@ -599,7 +599,7 @@ static inline ssize_t write_header_to_block(DeviceBlock *block, const DeviceReco
    return WRITE_RECHDR_LENGTH;
 }
 
-static inline ssize_t write_data_to_block(DeviceBlock *block, const DeviceRecord *rec)
+static inline ssize_t WriteDataToBlock(DeviceBlock *block, const DeviceRecord *rec)
 {
    uint32_t len;
 
@@ -747,7 +747,7 @@ bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
          /*
           * Write header
           */
-         n = write_header_to_block(block, rec, rec->Stream);
+         n = WriteHeaderToBlock(block, rec, rec->Stream);
          if (n < 0) {
             /*
              * the header did not fit into the block, so flush the current
@@ -778,7 +778,7 @@ bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
          /*
           * Write continuation header
           */
-         n = write_header_to_block(block, rec, -rec->Stream);
+         n = WriteHeaderToBlock(block, rec, -rec->Stream);
          if (n < 0) {
             /*
              * The continuation header wouldn't fit, which is impossible
@@ -812,7 +812,7 @@ bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
           * may not have enough room to transfer the whole this time.
           */
          if (rec->remainder > 0) {
-            n = write_data_to_block(block, rec);
+            n = WriteDataToBlock(block, rec);
             if (n < 0) {
                /*
                 * error appending data to block should be impossible

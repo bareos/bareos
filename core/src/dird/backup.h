@@ -24,7 +24,7 @@
 
 int WaitForJobTermination(JobControlRecord *jcr, int timeout = 0);
 bool DoNativeBackupInit(JobControlRecord *jcr);
-bool do_native_backup(JobControlRecord *jcr);
+bool DoNativeBackup(JobControlRecord *jcr);
 void NativeBackupCleanup(JobControlRecord *jcr, int TermCode);
 void UpdateBootstrapFile(JobControlRecord *jcr);
 bool SendAccurateCurrentFiles(JobControlRecord *jcr);

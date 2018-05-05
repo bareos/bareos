@@ -51,7 +51,7 @@ static char *tree_alloc(TREE_ROOT *root, int size);
 /*
  * This subroutine gets a big buffer.
  */
-static void malloc_buf(TREE_ROOT *root, int size)
+static void MallocBuf(TREE_ROOT *root, int size)
 {
    struct s_mem *mem;
 
@@ -90,7 +90,7 @@ TREE_ROOT *new_tree(int count)
       size = MAX_BUF_SIZE;
    }
    Dmsg2(400, "count=%d size=%d\n", count, size);
-   malloc_buf(root, size);
+   MallocBuf(root, size);
    root->cached_path_len = -1;
    root->cached_path = GetPoolMemory(PM_FNAME);
    root->type = TN_ROOT;
@@ -116,7 +116,7 @@ static TREE_NODE *new_tree_node(TREE_ROOT *root)
 /*
  * This routine can be called to release the previously allocated tree node.
  */
-static void free_tree_node(TREE_ROOT *root)
+static void FreeTreeNode(TREE_ROOT *root)
 {
    int asize = BALIGN(sizeof(TREE_NODE));
    root->mem->rem += asize;
@@ -128,7 +128,7 @@ void TreeRemoveNode(TREE_ROOT *root, TREE_NODE *node)
    int asize = BALIGN(sizeof(TREE_NODE));
    node->parent->child.remove(node);
    if ((root->mem->mem - asize) == (char *)node) {
-      free_tree_node(root);
+      FreeTreeNode(root);
    } else {
       Dmsg0(0, "Can't release tree node\n");
    }
@@ -151,7 +151,7 @@ static char *tree_alloc(TREE_ROOT *root, int size)
       } else {
          mb_size = MAX_BUF_SIZE / 2;
       }
-      malloc_buf(root, mb_size);
+      MallocBuf(root, mb_size);
    }
    root->mem->rem -= asize;
    buf = root->mem->mem;
@@ -232,7 +232,7 @@ TREE_NODE *insert_tree_node(char *path, char *fname, int type,
       p = (char *)last_path_separator(path);  /* separate path and filename */
       if (p) {
          fname = p + 1;               /* set new filename */
-         *p = '\0';                   /* terminate new path */
+         *p = '\0';                   /* Terminate new path */
       }
    } else {
       p = NULL;
@@ -297,7 +297,7 @@ TREE_NODE *make_tree_path(char *path, TREE_ROOT *root)
    p = (char *)last_path_separator(path);
    if (p) {
       fname = p + 1;
-      *p = 0;                         /* terminate path */
+      *p = 0;                         /* Terminate path */
       parent = make_tree_path(path, root);
       *p = '/';                       /* restore full name */
    } else {
@@ -311,7 +311,7 @@ TREE_NODE *make_tree_path(char *path, TREE_ROOT *root)
    return node;
 }
 
-static int node_compare(void *item1, void *item2)
+static int NodeCompare(void *item1, void *item2)
 {
    TREE_NODE *tn1 = (TREE_NODE *)item1;
    TREE_NODE *tn2 = (TREE_NODE *)item2;
@@ -335,9 +335,9 @@ static TREE_NODE *search_and_insert_tree_node(char *fname, int type,
 
    node = new_tree_node(root);
    node->fname = fname;
-   found_node = (TREE_NODE *)parent->child.insert(node, node_compare);
+   found_node = (TREE_NODE *)parent->child.insert(node, NodeCompare);
    if (found_node != node) {          /* already in list */
-      free_tree_node(root);           /* free node allocated above */
+      FreeTreeNode(root);           /* free node allocated above */
       found_node->inserted = false;
       return found_node;
    }
@@ -366,13 +366,13 @@ static TREE_NODE *search_and_insert_tree_node(char *fname, int type,
    return node;
 }
 
-static void tree_getpath_item(TREE_NODE *node, POOLMEM *&path)
+static void TreeGetpathItem(TREE_NODE *node, POOLMEM *&path)
 {
    if (!node) {
       return;
    }
 
-   tree_getpath_item(node->parent, path);
+   TreeGetpathItem(node->parent, path);
 
    /*
     * Fixup for Win32. If we have a Win32 directory and
@@ -412,7 +412,7 @@ POOLMEM *tree_getpath(TREE_NODE *node)
    /*
     * Fill the path with the full path.
     */
-   tree_getpath_item(node, path);
+   TreeGetpathItem(node, path);
 
    return path;
 }

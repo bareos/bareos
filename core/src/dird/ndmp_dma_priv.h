@@ -119,7 +119,7 @@ bool NdmpBuildStorageJob(JobControlRecord *jcr, StorageResource *store, bool ini
 bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr, StorageResource *store, ClientResource *client,
                            bool init_tape, bool init_robot, int operation, struct ndm_job_param *job);
 
-extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg);
+extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg);
 void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
 
 /*
@@ -133,21 +133,21 @@ void NdmpConvertFstat(ndmp9_file_stat *fstat, int32_t FileIndex,
 /*
  * FHDB using LMDB.
  */
-void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog);
-void ndmp_fhdb_lmdb_unregister(struct ndmlog *ixlog);
-void ndmp_fhdb_lmdb_process_db(struct ndmlog *ixlog);
+void NdmpFhdbLmdbRegister(struct ndmlog *ixlog);
+void NdmpFhdbLmdbUnregister(struct ndmlog *ixlog);
+void NdmpFhdbLmdbProcessDb(struct ndmlog *ixlog);
 
 /*
  * FHDB using in memory tree.
  */
-void ndmp_fhdb_mem_register(struct ndmlog *ixlog);
-void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog);
-void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog);
+void NdmpFhdbMemRegister(struct ndmlog *ixlog);
+void NdmpFhdbMemUnregister(struct ndmlog *ixlog);
+void NdmpFhdbMemProcessDb(struct ndmlog *ixlog);
 
 /*
  * NDMP Media Info in DB storage and retrieval
  */
 bool StoreNdmmediaInfoInDatabase(ndmmedia *media, JobControlRecord  *jcr);
 bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *jcr);
-extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
+extern "C" int BndmpFhdbAddFile(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
 #endif

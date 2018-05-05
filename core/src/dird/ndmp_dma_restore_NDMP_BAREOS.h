@@ -23,6 +23,6 @@
 #define BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
 
 bool DoNdmpRestoreInit(JobControlRecord *jcr);
-bool do_ndmp_restore(JobControlRecord *jcr);
+bool DoNdmpRestore(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_

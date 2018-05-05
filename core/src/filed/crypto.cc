@@ -40,7 +40,7 @@ const bool have_sha2 = true;
 const bool have_sha2 = false;
 #endif
 
-static void unser_crypto_packet_len(RestoreCipherContext *ctx)
+static void UnserCryptoPacketLen(RestoreCipherContext *ctx)
 {
    unser_declare;
    if (ctx->packet_len == 0 && ctx->buf_len >= CRYPTO_LEN_SIZE) {
@@ -214,7 +214,7 @@ bool VerifySignature(JobControlRecord *jcr, r_ctx &rctx)
              * Make sure we don't modify JobBytes by saving and restoring it
              */
             saved_bytes = jcr->JobBytes;
-            if (FindOneFile(jcr, jcr->ff, do_file_digest, jcr->last_fname, (dev_t)-1, 1) != 0) {
+            if (FindOneFile(jcr, jcr->ff, DoFileDigest, jcr->last_fname, (dev_t)-1, 1) != 0) {
                Jmsg(jcr, M_ERROR, 0, _("Digest one file failed for file: %s\n"),
                     jcr->last_fname);
                jcr->JobBytes = saved_bytes;
@@ -310,7 +310,7 @@ again:
 
    cipher_ctx->buf_len += decrypted_len;
 
-   unser_crypto_packet_len(cipher_ctx);
+   UnserCryptoPacketLen(cipher_ctx);
    Dmsg1(500, "Crypto unser block size=%d\n", cipher_ctx->packet_len - CRYPTO_LEN_SIZE);
    wsize = cipher_ctx->packet_len - CRYPTO_LEN_SIZE;
    /*
@@ -349,7 +349,7 @@ again:
    }
    /*
     * The packet was successfully written, reset the length so that the next
-    * packet length may be re-read by unser_crypto_packet_len()
+    * packet length may be re-read by UnserCryptoPacketLen()
     */
    cipher_ctx->packet_len = 0;
 
@@ -582,7 +582,7 @@ bool DecryptData(JobControlRecord *jcr, char **data, uint32_t *length, RestoreCi
     * as long as Bareos's block size is not significantly smaller than the
     * encryption block size (extremely unlikely!)
     */
-   unser_crypto_packet_len(cipher_ctx);
+   UnserCryptoPacketLen(cipher_ctx);
    Dmsg1(500, "Crypto unser block size=%d\n", cipher_ctx->packet_len - CRYPTO_LEN_SIZE);
 
    if (cipher_ctx->packet_len == 0 || cipher_ctx->buf_len < cipher_ctx->packet_len) {

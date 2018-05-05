@@ -107,7 +107,7 @@ static void ping_watchdog()
    P(timer_mutex);
    pthread_cond_signal(&timer);
    V(timer_mutex);
-   bmicrosleep(0, 100);
+   Bmicrosleep(0, 100);
 }
 
 /*

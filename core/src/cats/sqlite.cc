@@ -59,9 +59,9 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * When using mult_db_connections = true,
  * sqlite can be BUSY. We just need sleep a little in this case.
  */
-static int sqlite_busy_handler(void *arg, int calls)
+static int SqliteBusyHandler(void *arg, int calls)
 {
-   bmicrosleep(0, 500);
+   Bmicrosleep(0, 500);
    return 1;
 }
 
@@ -196,7 +196,7 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord *jcr)
 
       Dmsg0(300, "sqlite_open\n");
       if (!db_handle_) {
-         bmicrosleep(1, 0);
+         Bmicrosleep(1, 0);
       }
    }
    if (db_handle_ == NULL) {
@@ -211,7 +211,7 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord *jcr)
    /*
     * Set busy handler to wait when we use mult_db_connections = true
     */
-   sqlite3_busy_handler(db_handle_, sqlite_busy_handler, NULL);
+   sqlite3_busy_handler(db_handle_, SqliteBusyHandler, NULL);
 
 #if defined(SQLITE3_INIT_QUERY)
    SqlQueryWithoutHandler(SQLITE3_INIT_QUERY);
@@ -354,7 +354,7 @@ void BareosDbSqlite::EndTransaction(JobControlRecord *jcr)
 
 struct rh_data {
    BareosDbSqlite *mdb;
-   DB_RESULT_HANDLER *result_handler;
+   DB_RESULT_HANDLER *ResultHandler;
    void *ctx;
    bool initialized;
 };
@@ -362,7 +362,7 @@ struct rh_data {
 /**
  * Convert SQLite's callback into BAREOS DB callback
  */
-static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, char **col_names)
+static int SqliteResultHandler(void *arh_data, int num_fields, char **rows, char **col_names)
 {
    struct rh_data *rh_data = (struct rh_data *)arh_data;
 
@@ -374,8 +374,8 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
       rh_data->mdb->SetColumnNames(col_names, num_fields);
       rh_data->initialized = true;
    }
-   if (rh_data->result_handler) {
-      (*(rh_data->result_handler))(rh_data->ctx, num_fields, rows);
+   if (rh_data->ResultHandler) {
+      (*(rh_data->ResultHandler))(rh_data->ctx, num_fields, rows);
    }
 
    return 0;
@@ -383,9 +383,9 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
 
 /**
  * Submit a general SQL command (cmd), and for each row returned,
- * the result_handler is called with the ctx.
+ * the ResultHandler is called with the ctx.
  */
-bool BareosDbSqlite::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbSqlite::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    bool retval = false;
    int status;
@@ -403,9 +403,9 @@ bool BareosDbSqlite::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *r
    rh_data.ctx = ctx;
    rh_data.mdb = this;
    rh_data.initialized = false;
-   rh_data.result_handler = result_handler;
+   rh_data.ResultHandler = ResultHandler;
 
-   status = sqlite3_exec(db_handle_, query, sqlite_result_handler,
+   status = sqlite3_exec(db_handle_, query, SqliteResultHandler,
                          (void *)&rh_data, &lowlevel_errmsg_);
 
    if (status != SQLITE_OK) {
@@ -529,7 +529,7 @@ SQL_FIELD *BareosDbSqlite::SqlFetchField(void)
           * estimation.
           */
          len = MAX(cstrlen(sql_field_.name), 80/num_fields_);
-         sql_field_.max_length = len;
+         sql_field_.MaxLength = len;
 
          field_number_++;
          sql_field_.type = 0;  /* not numeric */
@@ -553,22 +553,22 @@ SQL_FIELD *BareosDbSqlite::SqlFetchField(void)
       for (i = 0; i < num_fields_; i++) {
          Dmsg1(500, "filling field %d\n", i);
          fields_[i].name = result_[i];
-         fields_[i].max_length = cstrlen(fields_[i].name);
+         fields_[i].MaxLength = cstrlen(fields_[i].name);
          for (j = 1; j <= num_rows_; j++) {
             if (result_[i + num_fields_ * j]) {
                len = (uint32_t)cstrlen(result_[i + num_fields_ * j]);
             } else {
                len = 0;
             }
-            if (len > fields_[i].max_length) {
-               fields_[i].max_length = len;
+            if (len > fields_[i].MaxLength) {
+               fields_[i].MaxLength = len;
             }
          }
          fields_[i].type = 0;
          fields_[i].flags = 1;        /* not null */
 
          Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
+               fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
       }
    }
 

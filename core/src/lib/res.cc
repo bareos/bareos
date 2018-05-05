@@ -172,7 +172,7 @@ static void scan_types(LEX *lc, MessagesResource *msg, int dest_code,
          str = &lc->str[0];
       }
       for (i = 0; msg_types[i].name; i++) {
-         if (bstrcasecmp(str, msg_types[i].name)) {
+         if (Bstrcasecmp(str, msg_types[i].name)) {
             msg_type = msg_types[i].token;
             found = true;
             break;
@@ -204,7 +204,7 @@ static void scan_types(LEX *lc, MessagesResource *msg, int dest_code,
 /*
  * Store Messages Destination information
  */
-static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreMsgs(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    char *cmd = NULL,
@@ -213,7 +213,7 @@ static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
    int dest_len;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
-   Dmsg2(900, "store_msgs pass=%d code=%d\n", pass, item->code);
+   Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
 
    tsf = res_all->res_msgs.timestamp_format;
    if (pass == 1) {
@@ -300,7 +300,7 @@ static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
             }
             PmStrcat(dest, lc->str);
             dest_len += lc->str_len;
-            Dmsg2(900, "store_msgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
+            Dmsg2(900, "StoreMsgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
             token = LexGetToken(lc, BCT_SKIP_EOL);
             if (token == BCT_COMMA) {
                continue;           /* Get another destination */
@@ -327,7 +327,7 @@ static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
          PmStrcpy(dest, lc->str);
          dest_len = lc->str_len;
          token = LexGetToken(lc, BCT_SKIP_EOL);
-         Dmsg1(900, "store_msgs dest=%s:\n", NPRT(dest));
+         Dmsg1(900, "StoreMsgs dest=%s:\n", NPRT(dest));
          if (token != BCT_EQUALS) {
             scan_err1(lc, _("expected an =, got: %s"), lc->str);
             return;
@@ -344,14 +344,14 @@ static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
    ScanToEol(lc);
    SetBit(index, res_all->hdr.item_present);
    ClearBit(index, res_all->hdr.inherit_content);
-   Dmsg0(900, "Done store_msgs\n");
+   Dmsg0(900, "Done StoreMsgs\n");
 }
 
 /*
  * This routine is ONLY for resource names
  * Store a name at specified address.
  */
-static void store_name(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreName(LEX *lc, ResourceItem *item, int index, int pass)
 {
    POOLMEM *msg = GetPoolMemory(PM_EMSG);
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
@@ -380,7 +380,7 @@ static void store_name(LEX *lc, ResourceItem *item, int index, int pass)
  * Store a name string at specified address
  * A name string is limited to MAX_RES_NAME_LENGTH
  */
-static void store_strname(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreStrname(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
@@ -405,7 +405,7 @@ static void store_strname(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a string at specified address
  */
-static void store_str(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreStr(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
@@ -427,7 +427,7 @@ static void store_str(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a string at specified address
  */
-static void store_stdstr(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreStdstr(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
@@ -451,7 +451,7 @@ static void store_stdstr(LEX *lc, ResourceItem *item, int index, int pass)
  * shell expansion except if the string begins with a vertical
  * bar (i.e. it will likely be passed to the shell later).
  */
-static void store_dir(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreDir(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
@@ -473,7 +473,7 @@ static void store_dir(LEX *lc, ResourceItem *item, int index, int pass)
    ClearBit(index, res_all->hdr.inherit_content);
 }
 
-static void store_stdstrdir(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreStdstrdir(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
@@ -542,7 +542,7 @@ static void store_md5password(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a password at specified address in MD5 coding
  */
-static void store_clearpassword(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreClearpassword(LEX *lc, ResourceItem *item, int index, int pass)
 {
    s_password *pwd;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
@@ -568,7 +568,7 @@ static void store_clearpassword(LEX *lc, ResourceItem *item, int index, int pass
  * If we are in pass 2, do a lookup of the
  * resource.
  */
-static void store_res(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreRes(LEX *lc, ResourceItem *item, int index, int pass)
 {
    CommonResourceHeader *res;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
@@ -599,7 +599,7 @@ static void store_res(LEX *lc, ResourceItem *item, int index, int pass)
  *
  * If we are in pass 2, do a lookup of the resource.
  */
-static void store_alist_res(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAlistRes(LEX *lc, ResourceItem *item, int index, int pass)
 {
    CommonResourceHeader *res;
    int i = 0;
@@ -651,7 +651,7 @@ static void store_alist_res(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a string in an alist.
  */
-static void store_alist_str(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAlistStr(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
@@ -695,7 +695,7 @@ static void store_alist_str(LEX *lc, ResourceItem *item, int index, int pass)
  * with a vertical bar (i.e. it will likely be passed to the
  * shell later).
  */
-static void store_alist_dir(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreAlistDir(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
@@ -740,7 +740,7 @@ static void store_alist_dir(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a list of plugin names to load by the daemon on startup.
  */
-static void store_plugin_names(LEX *lc, ResourceItem *item, int index, int pass)
+static void StorePluginNames(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
    char *p, *plugin_name, *plugin_names;
@@ -783,7 +783,7 @@ static void store_plugin_names(LEX *lc, ResourceItem *item, int index, int pass)
  * Note, here item points to the main resource (e.g. Job, not
  *  the jobdefs, which we look up).
  */
-static void store_defs(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreDefs(LEX *lc, ResourceItem *item, int index, int pass)
 {
    CommonResourceHeader *res;
 
@@ -968,7 +968,7 @@ static void store_size64(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a speed in bytes/s
  */
-static void store_speed(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreSpeed(LEX *lc, ResourceItem *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
 }
@@ -976,7 +976,7 @@ static void store_speed(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a time period in seconds
  */
-static void store_time(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreTime(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    utime_t utime;
@@ -1023,14 +1023,14 @@ static void store_time(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a yes/no in a bit field
  */
-static void store_bit(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreBit(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    LexGetToken(lc, BCT_NAME);
-   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
       SetBit(item->code, item->bitvalue);
-   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
       ClearBit(item->code, item->bitvalue);
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
@@ -1044,14 +1044,14 @@ static void store_bit(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store a bool in a bit field
  */
-static void store_bool(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreBool(LEX *lc, ResourceItem *item, int index, int pass)
 {
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    LexGetToken(lc, BCT_NAME);
-   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
       *item->boolvalue = true;
-   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
       *(item->boolvalue) = false;
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
@@ -1065,7 +1065,7 @@ static void store_bool(LEX *lc, ResourceItem *item, int index, int pass)
 /*
  * Store Tape Label Type (BAREOS, ANSI, IBM)
  */
-static void store_label(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreLabel(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
@@ -1075,7 +1075,7 @@ static void store_label(LEX *lc, ResourceItem *item, int index, int pass)
     * Store the label pass 2 so that type is defined
     */
    for (i = 0; tapelabels[i].name; i++) {
-      if (bstrcasecmp(lc->str, tapelabels[i].name)) {
+      if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
          *(item->ui32value) = tapelabels[i].token;
          i = 0;
          break;
@@ -1123,7 +1123,7 @@ static void store_label(LEX *lc, ResourceItem *item, int index, int pass)
  *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
  *   = { ipv4 { port = 4711 } }
  */
-static void store_addresses(LEX * lc, ResourceItem * item, int index, int pass)
+static void StoreAddresses(LEX * lc, ResourceItem * item, int index, int pass)
 {
    int token;
    int exist;
@@ -1150,10 +1150,10 @@ static void store_addresses(LEX * lc, ResourceItem * item, int index, int pass)
       if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
          scan_err1(lc, _("Expected a string, got: %s"), lc->str);
       }
-      if (bstrcasecmp("ip", lc->str) || bstrcasecmp("ipv4", lc->str)) {
+      if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
          family = AF_INET;
 #ifdef HAVE_IPV6
-      } else if (bstrcasecmp("ipv6", lc->str)) {
+      } else if (Bstrcasecmp("ipv6", lc->str)) {
          family = AF_INET6;
       } else {
          scan_err1(lc, _("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
@@ -1178,13 +1178,13 @@ static void store_addresses(LEX * lc, ResourceItem * item, int index, int pass)
          if (token != BCT_IDENTIFIER) {
             scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
          }
-         if (bstrcasecmp("port", lc->str)) {
+         if (Bstrcasecmp("port", lc->str)) {
             next_line = PORTLINE;
             if (exist & PORTLINE) {
                scan_err0(lc, _("Only one port per address block"));
             }
             exist |= PORTLINE;
-         } else if (bstrcasecmp("addr", lc->str)) {
+         } else if (Bstrcasecmp("addr", lc->str)) {
             next_line = ADDRLINE;
             if (exist & ADDRLINE) {
                scan_err0(lc, _("Only one addr per address block"));
@@ -1234,7 +1234,7 @@ static void store_addresses(LEX * lc, ResourceItem * item, int index, int pass)
    }
 }
 
-static void store_addresses_address(LEX * lc, ResourceItem * item, int index, int pass)
+static void StoreAddressesAddress(LEX * lc, ResourceItem * item, int index, int pass)
 {
    int token;
    char errmsg[1024];
@@ -1251,7 +1251,7 @@ static void store_addresses_address(LEX * lc, ResourceItem * item, int index, in
    }
 }
 
-static void store_addresses_port(LEX * lc, ResourceItem * item, int index, int pass)
+static void StoreAddressesPort(LEX * lc, ResourceItem * item, int index, int pass)
 {
    int token;
    char errmsg[1024];
@@ -1275,40 +1275,40 @@ bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (type) {
    case CFG_TYPE_STR:
-      store_str(lc, item, index, pass);
+      StoreStr(lc, item, index, pass);
       break;
    case CFG_TYPE_DIR:
-      store_dir(lc, item, index, pass);
+      StoreDir(lc, item, index, pass);
       break;
    case CFG_TYPE_STDSTR:
-      store_stdstr(lc, item, index, pass);
+      StoreStdstr(lc, item, index, pass);
       break;
    case CFG_TYPE_STDSTRDIR:
-      store_stdstrdir(lc, item, index, pass);
+      StoreStdstrdir(lc, item, index, pass);
       break;
    case CFG_TYPE_MD5PASSWORD:
       store_md5password(lc, item, index, pass);
       break;
    case CFG_TYPE_CLEARPASSWORD:
-      store_clearpassword(lc, item, index, pass);
+      StoreClearpassword(lc, item, index, pass);
       break;
    case CFG_TYPE_NAME:
-      store_name(lc, item, index, pass);
+      StoreName(lc, item, index, pass);
       break;
    case CFG_TYPE_STRNAME:
-      store_strname(lc, item, index, pass);
+      StoreStrname(lc, item, index, pass);
       break;
    case CFG_TYPE_RES:
-      store_res(lc, item, index, pass);
+      StoreRes(lc, item, index, pass);
       break;
    case CFG_TYPE_ALIST_RES:
-      store_alist_res(lc, item, index, pass);
+      StoreAlistRes(lc, item, index, pass);
       break;
    case CFG_TYPE_ALIST_STR:
-      store_alist_str(lc, item, index, pass);
+      StoreAlistStr(lc, item, index, pass);
       break;
    case CFG_TYPE_ALIST_DIR:
-      store_alist_dir(lc, item, index, pass);
+      StoreAlistDir(lc, item, index, pass);
       break;
    case CFG_TYPE_INT16:
       store_int16(lc, item, index, pass);
@@ -1323,19 +1323,19 @@ bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass)
       store_pint32(lc, item, index, pass);
       break;
    case CFG_TYPE_MSGS:
-      store_msgs(lc, item, index, pass);
+      StoreMsgs(lc, item, index, pass);
       break;
    case CFG_TYPE_INT64:
       store_int64(lc, item, index, pass);
       break;
    case CFG_TYPE_BIT:
-      store_bit(lc, item, index, pass);
+      StoreBit(lc, item, index, pass);
       break;
    case CFG_TYPE_BOOL:
-      store_bool(lc, item, index, pass);
+      StoreBool(lc, item, index, pass);
       break;
    case CFG_TYPE_TIME:
-      store_time(lc, item, index, pass);
+      StoreTime(lc, item, index, pass);
       break;
    case CFG_TYPE_SIZE64:
       store_size64(lc, item, index, pass);
@@ -1344,25 +1344,25 @@ bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass)
       store_size32(lc, item, index, pass);
       break;
    case CFG_TYPE_SPEED:
-      store_speed(lc, item, index, pass);
+      StoreSpeed(lc, item, index, pass);
       break;
    case CFG_TYPE_DEFS:
-      store_defs(lc, item, index, pass);
+      StoreDefs(lc, item, index, pass);
       break;
    case CFG_TYPE_LABEL:
-      store_label(lc, item, index, pass);
+      StoreLabel(lc, item, index, pass);
       break;
    case CFG_TYPE_ADDRESSES:
-      store_addresses(lc, item, index, pass);
+      StoreAddresses(lc, item, index, pass);
       break;
    case CFG_TYPE_ADDRESSES_ADDRESS:
-      store_addresses_address(lc, item, index, pass);
+      StoreAddressesAddress(lc, item, index, pass);
       break;
    case CFG_TYPE_ADDRESSES_PORT:
-      store_addresses_port(lc, item, index, pass);
+      StoreAddressesPort(lc, item, index, pass);
       break;
    case CFG_TYPE_PLUGIN_NAMES:
-      store_plugin_names(lc, item, index, pass);
+      StorePluginNames(lc, item, index, pass);
       break;
    default:
       return false;
@@ -1383,7 +1383,7 @@ void IndentConfigItem(PoolMem &cfg_str, int level, const char *config_item, bool
    PmStrcat(cfg_str, config_item);
 }
 
-static inline void print_config_size(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+static inline void PrintConfigSize(ResourceItem *item, PoolMem &cfg_str, bool inherited)
 {
    PoolMem temp;
    PoolMem volspec;   /* vol specification string*/
@@ -1429,7 +1429,7 @@ static inline void print_config_size(ResourceItem *item, PoolMem &cfg_str, bool 
    IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 }
 
-static inline void print_config_time(ResourceItem *item, PoolMem &cfg_str, bool inherited)
+static inline void PrintConfigTime(ResourceItem *item, PoolMem &cfg_str, bool inherited)
 {
    PoolMem temp;
    PoolMem timespec;
@@ -1564,7 +1564,7 @@ bool MessagesResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool
    return true;
 }
 
-static inline bool has_default_value(ResourceItem *item)
+static inline bool HasDefaultValue(ResourceItem *item)
 {
    bool is_default = false;
 
@@ -1611,8 +1611,8 @@ static inline bool has_default_value(ResourceItem *item)
                is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
                break;
             case CFG_TYPE_BOOL: {
-               bool default_value = bstrcasecmp(item->default_value, "true") ||
-                                    bstrcasecmp(item->default_value, "yes");
+               bool default_value = Bstrcasecmp(item->default_value, "true") ||
+                                    Bstrcasecmp(item->default_value, "yes");
 
                is_default = (*item->boolvalue == default_value);
                break;
@@ -1727,7 +1727,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
          print_item = true;
       }
 
-      if (!has_default_value(&items[i])) {
+      if (!HasDefaultValue(&items[i])) {
             print_item = true;
       } else {
          if ((items[i].flags & CFG_ITEM_DEFAULT) && verbose) {
@@ -1796,7 +1796,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
                 * Supress printing default value.
                 */
                if (items[i].flags & CFG_ITEM_DEFAULT) {
-                  if (bstrcasecmp(items[i].default_value, tapelabels[j].name)) {
+                  if (Bstrcasecmp(items[i].default_value, tapelabels[j].name)) {
                      break;
                   }
                }
@@ -1846,12 +1846,12 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
       case CFG_TYPE_SIZE64:
       case CFG_TYPE_SIZE32:
          if (print_item) {
-            print_config_size(&items[i], cfg_str, inherited);
+            PrintConfigSize(&items[i], cfg_str, inherited);
          }
          break;
       case CFG_TYPE_TIME:
          if (print_item) {
-            print_config_time(&items[i], cfg_str, inherited);
+            PrintConfigTime(&items[i], cfg_str, inherited);
          }
          break;
       case CFG_TYPE_BOOL:

@@ -217,7 +217,7 @@ void OutputFormatter::ArrayEnd(const char *name)
    }
 }
 
-void OutputFormatter::decoration(const char *fmt, ...)
+void OutputFormatter::Decoration(const char *fmt, ...)
 {
    PoolMem string;
    va_list arg_ptr;
@@ -228,7 +228,7 @@ void OutputFormatter::decoration(const char *fmt, ...)
       break;
    default:
       va_start(arg_ptr, fmt);
-      string.bvsprintf(fmt, arg_ptr);
+      string.Bvsprintf(fmt, arg_ptr);
       result_message_plain->strcat(string);
       va_end(arg_ptr);
       break;
@@ -474,7 +474,7 @@ void OutputFormatter::AddOffsetFilterTuple(int offset)
    filters->append(tuple);
 }
 
-void OutputFormatter::add_acl_filter_tuple(int column, int acltype)
+void OutputFormatter::AddAclFilterTuple(int column, int acltype)
 {
    of_filter_tuple *tuple;
 

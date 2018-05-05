@@ -148,7 +148,7 @@ var_mvxprintf(
             else if (c == 'd') {
                 /* expand "%d" */
                 d = (int)va_arg(ap, int);
-                bsnprintf(ibuf, sizeof(ibuf), "%d", d); /* explicitly secure */
+                Bsnprintf(ibuf, sizeof(ibuf), "%d", d); /* explicitly secure */
                 cp = ibuf;
                 n = strlen(cp);
             }
@@ -573,7 +573,7 @@ expand_hex(
 */
 
 /* forward declarations */
-static int parse_variable(var_t *var, var_parse_t *ctx, const char *begin, const char *end, tokenbuf_t *result);
+static int ParseVariable(var_t *var, var_parse_t *ctx, const char *begin, const char *end, tokenbuf_t *result);
 static int parse_numexp (var_t *var, var_parse_t *ctx, const char *begin, const char *end, int *result, int *failed);
 static int parse_name   (var_t *var, var_parse_t *ctx, const char *begin, const char *end);
 
@@ -682,7 +682,7 @@ parse_opargtext_or_variable(
             }
             p += rc;
         }
-        rc = parse_variable(var, ctx, p, end, &tmp);
+        rc = ParseVariable(var, ctx, p, end, &tmp);
         if (rc < 0)
             goto error_return;
         if (rc > 0) {
@@ -732,7 +732,7 @@ parse_exptext_or_variable(
         }
 
         /* try to parse variable construct */
-        rc = parse_variable(var, ctx, p, end, &tmp);
+        rc = ParseVariable(var, ctx, p, end, &tmp);
         if (rc < 0)
             goto error_return;
         if (rc > 0) {
@@ -783,7 +783,7 @@ parse_substext_or_variable(
         }
 
         /* try to parse substitution text */
-        rc = parse_variable(var, ctx, p, end, &tmp);
+        rc = ParseVariable(var, ctx, p, end, &tmp);
         if (rc < 0)
             goto error_return;
         if (rc > 0) {
@@ -1688,7 +1688,7 @@ parse_numexp_operand(
         /* parse variable with forced expansion */
         ctx = var_parse_push(ctx, &myctx);
         ctx->force_expand = 1;
-        rc = parse_variable(var, ctx, p, end, &tmp);
+        rc = ParseVariable(var, ctx, p, end, &tmp);
         ctx = var_parse_pop(ctx);
 
         if (rc == VAR_ERR_UNDEFINED_VARIABLE) {
@@ -1696,7 +1696,7 @@ parse_numexp_operand(
             /* parse variable without forced expansion */
             ctx = var_parse_push(ctx, &myctx);
             ctx->force_expand = 0;
-            rc = parse_variable(var, ctx, p, end, &tmp);
+            rc = ParseVariable(var, ctx, p, end, &tmp);
             ctx = var_parse_pop(ctx);
             if (rc < 0)
                 return rc;
@@ -1922,7 +1922,7 @@ static int parse_variable_complex(
         }
 
         /* parse an (embedded) variable */
-        rc = parse_variable(var, ctx, p, end, &tmp);
+        rc = ParseVariable(var, ctx, p, end, &tmp);
         if (rc < 0)
             goto error_return;
         if (rc > 0) {
@@ -2056,7 +2056,7 @@ error_return:
 }
 
 /* parse variable construct ("$name" or "${name...}") */
-static int parse_variable(
+static int ParseVariable(
     var_t *var, var_parse_t *ctx,
     const char *begin, const char *end,
     tokenbuf_t *result)
@@ -2348,7 +2348,7 @@ parse_input(
 
         /* try to parse a variable construct */
         tokenbuf_init(&result);
-        rc = parse_variable(var, ctx, p, end, &result);
+        rc = ParseVariable(var, ctx, p, end, &result);
         if (rc > 0) {
             if (!tokenbuf_merge(output, &result)) {
                 tokenbuf_free(&result);
@@ -2586,7 +2586,7 @@ var_expand(
 
     /* post-processing */
     if (rc >= 0) {
-        /* always EOS-terminate output for convinience reasons
+        /* always EOS-Terminate output for convinience reasons
            but do not count the EOS-terminator in the length */
         if (!tokenbuf_append(&output, "\0", 1)) {
             tokenbuf_free(&output);

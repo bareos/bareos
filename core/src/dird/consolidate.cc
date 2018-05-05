@@ -55,7 +55,7 @@ bool DoConsolidateInit(JobControlRecord *jcr)
  * Start a Virtual(Full) Job that creates a new virtual backup
  * containing the jobids given in jcr->vf_jobids
  */
-static inline void start_new_consolidation_job(JobControlRecord *jcr, char *jobname)
+static inline void StartNewConsolidationJob(JobControlRecord *jcr, char *jobname)
 {
    JobId_t jobid;
    UaContext *ua;
@@ -84,7 +84,7 @@ static inline void start_new_consolidation_job(JobControlRecord *jcr, char *jobn
  * Returns: false on failure
  *          true  on success
  */
-bool do_consolidate(JobControlRecord *jcr)
+bool DoConsolidate(JobControlRecord *jcr)
 {
    char *p;
    JobResource *job;
@@ -281,7 +281,7 @@ bool do_consolidate(JobControlRecord *jcr)
          PmStrcpy(jcr->vf_jobids, p);
 
          Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"), job->name());
-         start_new_consolidation_job(jcr, job->name());
+         StartNewConsolidationJob(jcr, job->name());
       }
    }
 

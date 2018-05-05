@@ -70,11 +70,11 @@ public:
 
 DLL_IMP_EXP void InitReservationsLock();
 DLL_IMP_EXP void TermReservationsLock();
-DLL_IMP_EXP void _lock_reservations(const char *file = "**Unknown**", int line = 0);
+DLL_IMP_EXP void _lockReservations(const char *file = "**Unknown**", int line = 0);
 DLL_IMP_EXP void _unLockReservations();
-DLL_IMP_EXP void _lock_volumes(const char *file = "**Unknown**", int line = 0);
+DLL_IMP_EXP void _lockVolumes(const char *file = "**Unknown**", int line = 0);
 DLL_IMP_EXP void _unLockVolumes();
-DLL_IMP_EXP void _lock_read_volumes(const char *file = "**Unknown**", int line = 0);
+DLL_IMP_EXP void _lockReadVolumes(const char *file = "**Unknown**", int line = 0);
 DLL_IMP_EXP void _unLockReadVolumes();
 DLL_IMP_EXP void UnreserveDevice(DeviceControlRecord *dcr);
 DLL_IMP_EXP bool FindSuitableDeviceForJob(JobControlRecord *jcr, ReserveContext &rctx);
@@ -90,7 +90,7 @@ DLL_IMP_EXP extern int read_vol_list_lock_count;
          do { Dmsg3(sd_debuglevel, "LockReservations at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     reservations_lock_count); \
-              _lock_reservations(__FILE__, __LINE__); \
+              _lockReservations(__FILE__, __LINE__); \
               Dmsg0(sd_debuglevel, "LockReservations: got lock\n"); \
          } while (0)
 #define UnlockReservations() \
@@ -102,7 +102,7 @@ DLL_IMP_EXP extern int read_vol_list_lock_count;
          do { Dmsg3(sd_debuglevel, "LockVolumes at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     vol_list_lock_count); \
-              _lock_volumes(__FILE__, __LINE__); \
+              _lockVolumes(__FILE__, __LINE__); \
               Dmsg0(sd_debuglevel, "LockVolumes: got lock\n"); \
          } while (0)
 #define UnlockVolumes() \
@@ -114,7 +114,7 @@ DLL_IMP_EXP extern int read_vol_list_lock_count;
          do { Dmsg3(sd_debuglevel, "LockReadVolumes at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     read_vol_list_lock_count); \
-              _lock_read_volumes(__FILE__, __LINE__); \
+              _lockReadVolumes(__FILE__, __LINE__); \
               Dmsg0(sd_debuglevel, "LockReadVolumes: got lock\n"); \
          } while (0)
 #define UnlockReadVolumes() \
@@ -123,11 +123,11 @@ DLL_IMP_EXP extern int read_vol_list_lock_count;
                     read_vol_list_lock_count); \
               _unLockReadVolumes(); } while (0)
 #else
-#define LockReservations() _lock_reservations(__FILE__, __LINE__)
+#define LockReservations() _lockReservations(__FILE__, __LINE__)
 #define UnlockReservations() _unLockReservations()
-#define LockVolumes() _lock_volumes(__FILE__, __LINE__)
+#define LockVolumes() _lockVolumes(__FILE__, __LINE__)
 #define UnlockVolumes() _unLockVolumes()
-#define LockReadVolumes() _lock_read_volumes(__FILE__, __LINE__)
+#define LockReadVolumes() _lockReadVolumes(__FILE__, __LINE__)
 #define UnlockReadVolumes() _unLockReadVolumes()
 #endif
 

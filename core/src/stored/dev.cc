@@ -130,7 +130,7 @@ const char *Device::mode_to_str(int mode)
    static char buf[100];
 
    if (mode < 1 || mode > 4) {
-      bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
+      Bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
       return buf;
    }
 
@@ -895,11 +895,11 @@ void Device::ClearSlot()
  * Returns: false on failure
  *          true  on success
  */
-bool Device::reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock)
+bool Device::Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock)
 {
    if (!IsOpen()) {
       dev_errno = EBADF;
-      Mmsg0(errmsg, _("Bad call to reposition. Device not open\n"));
+      Mmsg0(errmsg, _("Bad call to Reposition. Device not open\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }

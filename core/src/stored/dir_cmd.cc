@@ -129,49 +129,49 @@ static char OKsecureerase[] =
    "2000 OK SDSecureEraseCmd %s \n";
 
 /* Imported functions */
-extern bool finish_cmd(JobControlRecord *jcr);
+extern bool FinishCmd(JobControlRecord *jcr);
 extern bool job_cmd(JobControlRecord *jcr);
 extern bool nextRunCmd(JobControlRecord *jcr);
-extern bool dotstatus_cmd(JobControlRecord *jcr);
-//extern bool query_cmd(JobControlRecord *jcr);
-extern bool status_cmd(JobControlRecord *sjcr);
+extern bool DotstatusCmd(JobControlRecord *jcr);
+//extern bool QueryCmd(JobControlRecord *jcr);
+extern bool StatusCmd(JobControlRecord *sjcr);
 extern bool use_cmd(JobControlRecord *jcr);
-extern bool stats_cmd(JobControlRecord *jcr);
+extern bool StatsCmd(JobControlRecord *jcr);
 
-extern bool do_job_run(JobControlRecord *jcr);
-extern bool do_mac_run(JobControlRecord *jcr);
+extern bool DoJobRun(JobControlRecord *jcr);
+extern bool DoMacRun(JobControlRecord *jcr);
 extern void terminate_child();
 
 /* Forward referenced functions */
-//static bool action_on_purge_cmd(JobControlRecord *jcr);
-static bool bootstrap_cmd(JobControlRecord *jcr);
-static bool cancel_cmd(JobControlRecord *cjcr);
-static bool changer_cmd(JobControlRecord *jcr);
+//static bool ActionOnPurgeCmd(JobControlRecord *jcr);
+static bool BootstrapCmd(JobControlRecord *jcr);
+static bool CancelCmd(JobControlRecord *cjcr);
+static bool ChangerCmd(JobControlRecord *jcr);
 static bool die_cmd(JobControlRecord *jcr);
-static bool label_cmd(JobControlRecord *jcr);
-static bool listen_cmd(JobControlRecord *jcr);
-static bool mount_cmd(JobControlRecord *jcr);
-static bool passive_cmd(JobControlRecord *jcr);
-static bool pluginoptions_cmd(JobControlRecord *jcr);
-static bool readlabel_cmd(JobControlRecord *jcr);
-static bool resolve_cmd(JobControlRecord *jcr);
-static bool relabel_cmd(JobControlRecord *jcr);
-static bool release_cmd(JobControlRecord *jcr);
-static bool replicate_cmd(JobControlRecord *jcr);
+static bool LabelCmd(JobControlRecord *jcr);
+static bool ListenCmd(JobControlRecord *jcr);
+static bool MountCmd(JobControlRecord *jcr);
+static bool PassiveCmd(JobControlRecord *jcr);
+static bool PluginoptionsCmd(JobControlRecord *jcr);
+static bool ReadlabelCmd(JobControlRecord *jcr);
+static bool ResolveCmd(JobControlRecord *jcr);
+static bool RelabelCmd(JobControlRecord *jcr);
+static bool ReleaseCmd(JobControlRecord *jcr);
+static bool ReplicateCmd(JobControlRecord *jcr);
 static bool RunCmd(JobControlRecord *jcr);
-static bool secureerasereq_cmd(JobControlRecord *jcr);
-static bool setbandwidth_cmd(JobControlRecord *jcr);
-static bool setdebug_cmd(JobControlRecord *jcr);
-static bool unmount_cmd(JobControlRecord *jcr);
+static bool SecureerasereqCmd(JobControlRecord *jcr);
+static bool SetbandwidthCmd(JobControlRecord *jcr);
+static bool SetdebugCmd(JobControlRecord *jcr);
+static bool UnmountCmd(JobControlRecord *jcr);
 
 static DeviceControlRecord *find_device(JobControlRecord *jcr, PoolMem &dev_name,
                         drive_number_t drive, BlockSizes *blocksizes);
-static void read_volume_label(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, slot_number_t slot);
+static void ReadVolumeLabel(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, slot_number_t slot);
 static void label_volume_if_ok(DeviceControlRecord *dcr, char *oldname,
                                char *newname, char *poolname,
                                slot_number_t Slot, bool relabel);
-static int try_autoload_device(JobControlRecord *jcr, DeviceControlRecord *dcr, slot_number_t slot, const char *VolName);
-static void send_dir_busy_message(BareosSocket *dir, Device *dev);
+static int TryAutoloadDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, slot_number_t slot, const char *VolName);
+static void SendDirBusyMessage(BareosSocket *dir, Device *dev);
 
 struct s_cmds {
    const char *cmd;
@@ -185,33 +185,33 @@ struct s_cmds {
  * Keywords are sorted first longest match when the keywords start with the same string.
  */
 static struct s_cmds cmds[] = {
-// { "action_on_purge",  action_on_purge_cmd, false },
-   { "autochanger", changer_cmd, false },
-   { "bootstrap", bootstrap_cmd, false },
-   { "cancel", cancel_cmd, false },
+// { "action_on_purge",  ActionOnPurgeCmd, false },
+   { "autochanger", ChangerCmd, false },
+   { "bootstrap", BootstrapCmd, false },
+   { "cancel", CancelCmd, false },
    { ".die", die_cmd, false },
-   { "finish", finish_cmd, false },         /**< End of backup */
+   { "finish", FinishCmd, false },         /**< End of backup */
    { "JobId=", job_cmd, false },            /**< Start Job */
-   { "label", label_cmd, false },           /**< Label a tape */
-   { "listen", listen_cmd, false },         /**< Listen for an incoming Storage Job */
-   { "mount", mount_cmd, false },
+   { "label", LabelCmd, false },           /**< Label a tape */
+   { "listen", ListenCmd, false },         /**< Listen for an incoming Storage Job */
+   { "mount", MountCmd, false },
    { "nextrun", nextRunCmd, false },       /**< Prepare for next backup/restore part of same Job */
-   { "passive", passive_cmd, false },
-   { "pluginoptions", pluginoptions_cmd, false },
-// { "query", query_cmd, false },
-   { "readlabel", readlabel_cmd, false },
-   { "relabel", relabel_cmd, false },       /**< Relabel a tape */
-   { "release", release_cmd, false },
-   { "resolve", resolve_cmd, false },
-   { "replicate", replicate_cmd, false },   /**< Replicate data to an external SD */
+   { "passive", PassiveCmd, false },
+   { "pluginoptions", PluginoptionsCmd, false },
+// { "query", QueryCmd, false },
+   { "readlabel", ReadlabelCmd, false },
+   { "relabel", RelabelCmd, false },       /**< Relabel a tape */
+   { "release", ReleaseCmd, false },
+   { "resolve", ResolveCmd, false },
+   { "replicate", ReplicateCmd, false },   /**< Replicate data to an external SD */
    { "run", RunCmd, false },               /**< Start of Job */
-   { "getSecureEraseCmd", secureerasereq_cmd, false },
-   { "setbandwidth=", setbandwidth_cmd, false },
-   { "setdebug=", setdebug_cmd, false },    /**< Set debug level */
-   { "stats", stats_cmd, false },
-   { "status", status_cmd, true },
-   { ".status", dotstatus_cmd, true },
-   { "unmount", unmount_cmd, false },
+   { "getSecureEraseCmd", SecureerasereqCmd, false },
+   { "setbandwidth=", SetbandwidthCmd, false },
+   { "setdebug=", SetdebugCmd, false },    /**< Set debug level */
+   { "stats", StatsCmd, false },
+   { "status", StatusCmd, true },
+   { ".status", DotstatusCmd, true },
+   { "unmount", UnmountCmd, false },
    { "use storage=", use_cmd, false },
    { NULL, NULL, false } /**< list terminator */
 };
@@ -258,7 +258,7 @@ void *handle_director_connection(BareosSocket *dir)
    /*
     * This is a connection from the Director, so setup a JobControlRecord
     */
-   jcr = new_jcr(sizeof(JobControlRecord), stored_free_jcr); /* create Job Control Record */
+   jcr = new_jcr(sizeof(JobControlRecord), StoredFreeJcr); /* create Job Control Record */
    NewPlugins(jcr);                            /* instantiate plugins */
    jcr->dir_bsock = dir;                        /* save Director bsock */
    jcr->dir_bsock->SetJcr(jcr);
@@ -313,7 +313,7 @@ void *handle_director_connection(BareosSocket *dir)
        * Ensure that device initialization is complete
        */
       while (!init_done) {
-         bmicrosleep(1, 0);
+         Bmicrosleep(1, 0);
       }
 
       found = false;
@@ -382,7 +382,7 @@ static bool die_cmd(JobControlRecord *jcr)
  * replies the configured secure erase command
  * or "*None*"
  */
-static bool secureerasereq_cmd(JobControlRecord *jcr) {
+static bool SecureerasereqCmd(JobControlRecord *jcr) {
    BareosSocket *dir = jcr->dir_bsock;
 
    Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
@@ -393,7 +393,7 @@ static bool secureerasereq_cmd(JobControlRecord *jcr) {
 /**
  * Set bandwidth limit as requested by the Director
  */
-static bool setbandwidth_cmd(JobControlRecord *jcr)
+static bool SetbandwidthCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    int64_t bw = 0;
@@ -430,13 +430,13 @@ static bool setbandwidth_cmd(JobControlRecord *jcr)
 /**
  * Set debug level as requested by the Director
  */
-static bool setdebug_cmd(JobControlRecord *jcr)
+static bool SetdebugCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    int32_t level, trace_flag, timestamp_flag;
    int scan;
 
-   Dmsg1(10, "setdebug_cmd: %s", dir->msg);
+   Dmsg1(10, "SetdebugCmd: %s", dir->msg);
    scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
    if (scan != 3) {
       scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
@@ -466,7 +466,7 @@ static bool setdebug_cmd(JobControlRecord *jcr)
  *   Be careful, we switch to using the job's JobControlRecord! So, using
  *   BSOCKs on that jcr can have two threads in the same code.
  */
-static bool cancel_cmd(JobControlRecord *cjcr)
+static bool CancelCmd(JobControlRecord *cjcr)
 {
    BareosSocket *dir = cjcr->dir_bsock;
    int oldStatus;
@@ -569,7 +569,7 @@ bail_out:
 /**
  * Resolve a hostname
  */
-static bool resolve_cmd(JobControlRecord *jcr)
+static bool ResolveCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    dlist *addr_list;
@@ -666,7 +666,7 @@ static bool do_label(JobControlRecord *jcr, bool relabel)
             Dmsg0(400, "Can relabel. CanStealLock\n");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
          } else if (dev->IsBusy() || dev->IsBlocked()) {
-            send_dir_busy_message(dir, dev);
+            SendDirBusyMessage(dir, dev);
          } else {                     /* device not being used */
             Dmsg0(400, "Can relabel. device not used\n");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
@@ -677,7 +677,7 @@ static bool do_label(JobControlRecord *jcr, bool relabel)
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
       }
    } else {
-      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      /* NB dir->msg gets clobbered in BnetFsend, so save command */
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3903 Error scanning label command: %s\n"), jcr->errmsg);
    }
@@ -692,12 +692,12 @@ static bool do_label(JobControlRecord *jcr, bool relabel)
 /**
  * Label a Volume
  */
-static bool label_cmd(JobControlRecord *jcr)
+static bool LabelCmd(JobControlRecord *jcr)
 {
    return do_label(jcr, false);
 }
 
-static bool relabel_cmd(JobControlRecord *jcr)
+static bool RelabelCmd(JobControlRecord *jcr)
 {
    return do_label(jcr, true);
 }
@@ -723,8 +723,8 @@ static void label_volume_if_ok(DeviceControlRecord *dcr, char *oldname,
    StealDeviceLock(dev, &hold, BST_WRITING_LABEL);
    Dmsg1(100, "Stole device %s lock, writing label.\n", dev->print_name());
 
-   Dmsg0(90, "try_autoload_device - looking for volume_info\n");
-   switch (try_autoload_device(dcr->jcr, dcr, slot, volname)) {
+   Dmsg0(90, "TryAutoloadDevice - looking for volume_info\n");
+   switch (TryAutoloadDevice(dcr->jcr, dcr, slot, volname)) {
    case -1:
       goto cleanup;
    case -2:
@@ -807,7 +807,7 @@ static void label_volume_if_ok(DeviceControlRecord *dcr, char *oldname,
       break;
    default:
       dir->fsend(_("3913 Cannot label Volume. "
-                   "Unknown status %d from read_volume_label()\n"), label_status);
+                   "Unknown status %d from ReadVolumeLabel()\n"), label_status);
       break;
    }
 
@@ -831,7 +831,7 @@ bail_out:
  *
  *  Enter with the mutex set
  */
-static bool read_label(DeviceControlRecord *dcr)
+static bool ReadLabel(DeviceControlRecord *dcr)
 {
    int ok;
    JobControlRecord *jcr = dcr->jcr;
@@ -941,7 +941,7 @@ static DeviceControlRecord *find_device(JobControlRecord *jcr, PoolMem &devname,
 /**
  * Mount command from Director
  */
-static bool mount_cmd(JobControlRecord *jcr)
+static bool MountCmd(JobControlRecord *jcr)
 {
    PoolMem devname;
    BareosSocket *dir = jcr->dir_bsock;
@@ -981,7 +981,7 @@ static bool mount_cmd(JobControlRecord *jcr)
          case BST_UNMOUNTED:
             Dmsg2(100, "Unmounted changer=%d slot=%hd\n", dev->IsAutochanger(), slot);
             if (dev->IsAutochanger() && slot > 0) {
-               try_autoload_device(jcr, dcr, slot, "");
+               TryAutoloadDevice(jcr, dcr, slot, "");
             }
             /* We freed the device, so reopen it and wake any waiting threads */
             if (!dev->open(dcr, OPEN_READ_ONLY)) {
@@ -997,7 +997,7 @@ static bool mount_cmd(JobControlRecord *jcr)
             if (dev->blocked() == BST_UNMOUNTED) {
                /* We blocked the device, so unblock it */
                Dmsg0(100, "Unmounted. Unblocking device\n");
-               read_label(dcr);       /* this should not be necessary */
+               ReadLabel(dcr);       /* this should not be necessary */
                UnblockDevice(dev);
             } else {
                Dmsg0(100, "Unmounted waiting for mount. Attempting to wake thread\n");
@@ -1025,7 +1025,7 @@ static bool mount_cmd(JobControlRecord *jcr)
          case BST_NOT_BLOCKED:
             Dmsg2(100, "Not blocked changer=%d slot=%hd\n", dev->IsAutochanger(), slot);
             if (dev->IsAutochanger() && slot > 0) {
-               try_autoload_device(jcr, dcr, slot, "");
+               TryAutoloadDevice(jcr, dcr, slot, "");
             }
             if (dev->IsOpen()) {
                if (dev->IsLabeled()) {
@@ -1039,7 +1039,7 @@ static bool mount_cmd(JobControlRecord *jcr)
                   dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"), dev->print_name(), dev->bstrerror());
                   break;
                }
-               read_label(dcr);
+               ReadLabel(dcr);
                if (dev->IsLabeled()) {
                   dir->fsend(_("3001 Device %s is already mounted with Volume \"%s\"\n"), dev->print_name(), dev->VolHdr.VolumeName);
                } else {
@@ -1087,7 +1087,7 @@ static bool mount_cmd(JobControlRecord *jcr)
 /**
  * unmount command from Director
  */
-static bool unmount_cmd(JobControlRecord *jcr)
+static bool UnmountCmd(JobControlRecord *jcr)
 {
    PoolMem devname;
    BareosSocket *dir = jcr->dir_bsock;
@@ -1137,7 +1137,7 @@ static bool unmount_cmd(JobControlRecord *jcr)
             dir->fsend(_("3903 Device \"%s\" is being labeled.\n"), dev->print_name());
 
          } else if (dev->IsBusy()) {
-            send_dir_busy_message(dir, dev);
+            SendDirBusyMessage(dir, dev);
          } else {                     /* device not being used */
             Dmsg0(90, "Device not in use, unmounting\n");
             /* On FreeBSD, I am having ASSERT() failures in BlockDevice()
@@ -1164,7 +1164,7 @@ static bool unmount_cmd(JobControlRecord *jcr)
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
    } else {
-      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      /* NB dir->msg gets clobbered in BnetFsend, so save command */
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3907 Error scanning unmount command: %s\n"), jcr->errmsg);
    }
@@ -1181,7 +1181,7 @@ static bool unmount_cmd(JobControlRecord *jcr)
  *
  * It is currently disabled
  */
-static bool action_on_purge_cmd(JobControlRecord *jcr)
+static bool ActionOnPurgeCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
 
@@ -1217,7 +1217,7 @@ done:
  *   the operator the chance to change the tape anytime before the
  *   next job starts.
  */
-static bool release_cmd(JobControlRecord *jcr)
+static bool ReleaseCmd(JobControlRecord *jcr)
 {
    PoolMem devname;
    BareosSocket *dir = jcr->dir_bsock;
@@ -1260,7 +1260,7 @@ static bool release_cmd(JobControlRecord *jcr)
                dev->print_name());
 
          } else if (dev->IsBusy()) {
-            send_dir_busy_message(dir, dev);
+            SendDirBusyMessage(dir, dev);
          } else {                     /* device not being used */
             Dmsg0(90, "Device not in use, releasing\n");
             dcr->ReleaseVolume();
@@ -1273,7 +1273,7 @@ static bool release_cmd(JobControlRecord *jcr)
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
    } else {
-      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      /* NB dir->msg gets clobbered in BnetFsend, so save command */
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3927 Error scanning release command: %s\n"), jcr->errmsg);
    }
@@ -1284,7 +1284,7 @@ static bool release_cmd(JobControlRecord *jcr)
 static pthread_mutex_t bsr_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t bsr_uniq = 0;
 
-static inline bool get_bootstrap_file(JobControlRecord *jcr, BareosSocket *sock)
+static inline bool GetBootstrapFile(JobControlRecord *jcr, BareosSocket *sock)
 {
    POOLMEM *fname = GetPoolMemory(PM_FNAME);
    FILE *bs;
@@ -1338,15 +1338,15 @@ bail_out:
    return sock->fsend(OK_bootstrap);
 }
 
-static bool bootstrap_cmd(JobControlRecord *jcr)
+static bool BootstrapCmd(JobControlRecord *jcr)
 {
-   return get_bootstrap_file(jcr, jcr->dir_bsock);
+   return GetBootstrapFile(jcr, jcr->dir_bsock);
 }
 
 /**
  * Autochanger command from Director
  */
-static bool changer_cmd(JobControlRecord *jcr)
+static bool ChangerCmd(JobControlRecord *jcr)
 {
    slot_number_t src_slot, dst_slot;
    PoolMem devname;
@@ -1395,7 +1395,7 @@ static bool changer_cmd(JobControlRecord *jcr)
                AutochangerCmd(dcr, dir, cmd);
             }
          } else if (dev->IsBusy() || dev->IsBlocked()) {
-            send_dir_busy_message(dir, dev);
+            SendDirBusyMessage(dir, dev);
          } else {                     /* device not being used */
             if (is_transfer) {
                AutochangerTransferCmd(dcr, dir, src_slot, dst_slot);
@@ -1419,7 +1419,7 @@ static bool changer_cmd(JobControlRecord *jcr)
 /**
  * Read and return the Volume label
  */
-static bool readlabel_cmd(JobControlRecord *jcr)
+static bool ReadlabelCmd(JobControlRecord *jcr)
 {
    PoolMem devname;
    BareosSocket *dir = jcr->dir_bsock;
@@ -1434,15 +1434,15 @@ static bool readlabel_cmd(JobControlRecord *jcr)
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */
          if (!dev->IsOpen()) {
-            read_volume_label(jcr, dcr, dev, slot);
+            ReadVolumeLabel(jcr, dcr, dev, slot);
             dev->close(dcr);
          /* Under certain "safe" conditions, we can steal the lock */
          } else if (dev->CanStealLock()) {
-            read_volume_label(jcr, dcr, dev, slot);
+            ReadVolumeLabel(jcr, dcr, dev, slot);
          } else if (dev->IsBusy() || dev->IsBlocked()) {
-            send_dir_busy_message(dir, dev);
+            SendDirBusyMessage(dir, dev);
          } else {                     /* device not being used */
-            read_volume_label(jcr, dcr, dev, slot);
+            ReadVolumeLabel(jcr, dcr, dev, slot);
          }
          dev->Unlock();
          FreeDcr(dcr);
@@ -1462,7 +1462,7 @@ static bool readlabel_cmd(JobControlRecord *jcr)
  *
  *  Enter with the mutex set
  */
-static void read_volume_label(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, slot_number_t Slot)
+static void ReadVolumeLabel(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, slot_number_t Slot)
 {
    BareosSocket *dir = jcr->dir_bsock;
    bsteal_lock_t hold;
@@ -1470,7 +1470,7 @@ static void read_volume_label(JobControlRecord *jcr, DeviceControlRecord *dcr, D
    dcr->SetDev(dev);
    StealDeviceLock(dev, &hold, BST_WRITING_LABEL);
 
-   switch (try_autoload_device(dcr->jcr, dcr, Slot, "")) {
+   switch (TryAutoloadDevice(dcr->jcr, dcr, Slot, "")) {
    case -1:
    case -2:
       goto bail_out;
@@ -1505,7 +1505,7 @@ bail_out:
  *         -1 on error on autochanger
  *         -2 on error locking the autochanger
  */
-static int try_autoload_device(JobControlRecord *jcr, DeviceControlRecord *dcr, slot_number_t Slot, const char *VolName)
+static int TryAutoloadDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, slot_number_t Slot, const char *VolName)
 {
    BareosSocket *dir = jcr->dir_bsock;
 
@@ -1516,7 +1516,7 @@ static int try_autoload_device(JobControlRecord *jcr, DeviceControlRecord *dcr, 
    return AutoloadDevice(dcr, 0, dir);
 }
 
-static void send_dir_busy_message(BareosSocket *dir, Device *dev)
+static void SendDirBusyMessage(BareosSocket *dir, Device *dev)
 {
    if (dev->IsBlocked()) {
       switch (dev->blocked()) {
@@ -1549,7 +1549,7 @@ static void send_dir_busy_message(BareosSocket *dir, Device *dev)
    }
 }
 
-static inline void set_storage_auth_key(JobControlRecord *jcr, char *key)
+static inline void SetStorageAuthKey(JobControlRecord *jcr, char *key)
 {
    /*
     * If no key don't update anything
@@ -1573,17 +1573,17 @@ static inline void set_storage_auth_key(JobControlRecord *jcr, char *key)
 /**
  * Listen for incoming replication session from other SD.
  */
-static bool listen_cmd(JobControlRecord *jcr)
+static bool ListenCmd(JobControlRecord *jcr)
 {
    Dsm_check(200);
 
-   return do_listen_run(jcr);
+   return DoListenRun(jcr);
 }
 
 /**
  * Get address of storage daemon from Director
  */
-static bool replicate_cmd(JobControlRecord *jcr)
+static bool ReplicateCmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
    int enable_ssl;                 /* enable ssl to sd */
@@ -1606,7 +1606,7 @@ static bool replicate_cmd(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   set_storage_auth_key(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str());
 
    Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
 
@@ -1676,13 +1676,13 @@ static bool RunCmd(JobControlRecord *jcr)
     * If we do not need the FD, we are doing a migrate, copy, or virtual backup.
     */
    if (jcr->NoClientUsed()) {
-      return do_mac_run(jcr);
+      return DoMacRun(jcr);
    } else {
-      return do_job_run(jcr);
+      return DoJobRun(jcr);
    }
 }
 
-static bool passive_cmd(JobControlRecord *jcr)
+static bool PassiveCmd(JobControlRecord *jcr)
 {
    int filed_port;                 /* file daemon port */
    int enable_ssl;                 /* enable ssl to fd */
@@ -1754,7 +1754,7 @@ bail_out:
    return false;
 }
 
-static bool pluginoptions_cmd(JobControlRecord *jcr)
+static bool PluginoptionsCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    char plugin_options[2048];

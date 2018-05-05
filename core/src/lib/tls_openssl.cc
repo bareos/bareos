@@ -182,7 +182,7 @@ struct TlsCrlReloadContext {
 /*
  * Automatic Certificate Revocation List reload logic.
  */
-static int crl_reloader_new(X509_LOOKUP *ctx)
+static int CrlReloaderNew(X509_LOOKUP *ctx)
 {
    TlsCrlReloadContext *data;
 
@@ -193,7 +193,7 @@ static int crl_reloader_new(X509_LOOKUP *ctx)
    return 1;
 }
 
-static void crl_reloader_free(X509_LOOKUP *ctx)
+static void CrlReloaderFree(X509_LOOKUP *ctx)
 {
    int cnt;
    TlsCrlReloadContext *data;
@@ -219,7 +219,7 @@ static void crl_reloader_free(X509_LOOKUP *ctx)
 /*
  * Load the new content from a Certificate Revocation List (CRL).
  */
-static int crl_reloader_reload_file(X509_LOOKUP *ctx)
+static int CrlReloaderReloadFile(X509_LOOKUP *ctx)
 {
    int cnt, ok = 0;
    struct stat st;
@@ -286,7 +286,7 @@ bail_out:
 /*
  * See if the data in the Certificate Revocation List (CRL) is newer then we loaded before.
  */
-static int crl_reloader_reload_if_newer(X509_LOOKUP *ctx)
+static int CrlReloaderReloadIfNewer(X509_LOOKUP *ctx)
 {
    int ok = 0;
    TlsCrlReloadContext *data;
@@ -302,7 +302,7 @@ static int crl_reloader_reload_if_newer(X509_LOOKUP *ctx)
    }
 
    if (st.st_mtime > data->mtime) {
-      ok = crl_reloader_reload_file(ctx);
+      ok = CrlReloaderReloadFile(ctx);
       if (!ok) {
          goto bail_out;
       }
@@ -316,7 +316,7 @@ bail_out:
 /*
  * Load the data from a Certificate Revocation List (CRL) into memory.
  */
-static int crl_reloader_file_load(X509_LOOKUP *ctx, const char *argp)
+static int CrlReloaderFileLoad(X509_LOOKUP *ctx, const char *argp)
 {
    int ok = 0;
    TlsCrlReloadContext *data;
@@ -327,7 +327,7 @@ static int crl_reloader_file_load(X509_LOOKUP *ctx, const char *argp)
    }
    data->crl_file_name = bstrdup(argp);
 
-   ok = crl_reloader_reload_file(ctx);
+   ok = CrlReloaderReloadFile(ctx);
    if (!ok) {
       goto bail_out;
    }
@@ -337,13 +337,13 @@ bail_out:
    return ok;
 }
 
-static int crl_reloader_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp, long argl, char **ret)
+static int CrlReloaderCtrl(X509_LOOKUP *ctx, int cmd, const char *argp, long argl, char **ret)
 {
    int ok = 0;
 
    switch (cmd) {
    case X509_L_FILE_LOAD:
-      ok = crl_reloader_file_load(ctx, argp);
+      ok = CrlReloaderFileLoad(ctx, argp);
       break;
    default:
       break;
@@ -355,7 +355,7 @@ static int crl_reloader_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp, long a
 /*
  * Check if a CRL entry is expired.
  */
-static int crl_entry_expired(X509_CRL *crl)
+static int CrlEntryExpired(X509_CRL *crl)
 {
    int lastUpdate, nextUpdate;
 
@@ -376,7 +376,7 @@ static int crl_entry_expired(X509_CRL *crl)
 /*
  * Retrieve a CRL entry by Subject.
  */
-static int crl_reloader_get_by_subject(X509_LOOKUP *ctx, int type, X509_NAME *name, X509_OBJECT *ret)
+static int CrlReloaderGetBySubject(X509_LOOKUP *ctx, int type, X509_NAME *name, X509_OBJECT *ret)
 {
    int cnt, ok = 0;
    TlsCrlReloadContext *data = NULL;
@@ -393,7 +393,7 @@ static int crl_reloader_get_by_subject(X509_LOOKUP *ctx, int type, X509_NAME *na
    ret->type = 0;
    ret->data.crl = NULL;
    for (cnt = 0; cnt < MAX_CRLS; cnt++) {
-      if (crl_entry_expired(data->crls[cnt]) && !crl_reloader_reload_if_newer(ctx)) {
+      if (CrlEntryExpired(data->crls[cnt]) && !CrlReloaderReloadIfNewer(ctx)) {
          goto bail_out;
       }
 
@@ -413,7 +413,7 @@ bail_out:
    return ok;
 }
 
-static int load_new_crl_file(X509_LOOKUP *lu, const char *fname)
+static int LoadNewCrlFile(X509_LOOKUP *lu, const char *fname)
 {
    int ok = 0;
 
@@ -427,12 +427,12 @@ static int load_new_crl_file(X509_LOOKUP *lu, const char *fname)
 
 static X509_LOOKUP_METHOD x509_crl_reloader = {
    "CRL file reloader",
-   crl_reloader_new,            /* new */
-   crl_reloader_free,           /* free */
+   CrlReloaderNew,            /* new */
+   CrlReloaderFree,           /* free */
    NULL,                        /* init */
    NULL,                        /* shutdown */
-   crl_reloader_ctrl,           /* ctrl */
-   crl_reloader_get_by_subject, /* get_by_subject */
+   CrlReloaderCtrl,           /* ctrl */
+   CrlReloaderGetBySubject, /* get_by_subject */
    NULL,                        /* get_by_issuer_serial */
    NULL,                        /* get_by_fingerprint */
    NULL                         /* get_by_alias */
@@ -449,7 +449,7 @@ static X509_LOOKUP_METHOD *X509_LOOKUP_crl_reloader(void)
  * OpenSSL has already performed internal certificate verification.
  * We just report any errors that occured.
  */
-static int openssl_verify_peer(int ok, X509_STORE_CTX *store)
+static int OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
 {
    if (!ok) {
       X509 *cert = X509_STORE_CTX_get_current_cert(store);
@@ -496,7 +496,7 @@ static unsigned int psk_server_cb(SSL *ssl,
           * provide the psk.
           */
          if (credentials->get_identity() == std::string(identity)) {
-            int psklen = bsnprintf((char *)psk, max_psk_len, "%s", credentials->get_psk().c_str());
+            int psklen = Bsnprintf((char *)psk, max_psk_len, "%s", credentials->get_psk().c_str());
             result = (psklen < 0) ? result = 0 : result = psklen;
             Dmsg1(100, "psk_server_cb. psk: %s.\n", psk);
         }
@@ -528,7 +528,7 @@ static unsigned int psk_client_cb(SSL *ssl,
           * provide the psk.
           */
          int ret =
-             bsnprintf(identity, max_identity_len, "%s", credentials->get_identity().c_str());
+             Bsnprintf(identity, max_identity_len, "%s", credentials->get_identity().c_str());
 
          if (ret < 0 || (unsigned int)ret > max_identity_len) {
             Dmsg0(100, "Error, identify too long\n");
@@ -536,7 +536,7 @@ static unsigned int psk_client_cb(SSL *ssl,
          }
          Dmsg1(100, "psk_client_cb. identity: %s.\n", identity);
 
-         ret = bsnprintf((char *)psk, max_psk_len, "%s", credentials->get_psk().c_str());
+         ret = Bsnprintf((char *)psk, max_psk_len, "%s", credentials->get_psk().c_str());
          if (ret < 0 || (unsigned int)ret > max_psk_len) {
             Dmsg0(100, "Error, psk too long\n");
             return 0;
@@ -675,7 +675,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, con
       ctx->pem_callback = pem_callback;
       ctx->pem_userdata = pem_userdata;
    } else {
-      ctx->pem_callback = crypto_default_pem_callback;
+      ctx->pem_callback = CryptoDefaultPemCallback;
       ctx->pem_userdata = NULL;
    }
 
@@ -718,7 +718,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, con
          throw std::runtime_error(_("Error loading revocation list file"));
       }
 
-      if (!load_new_crl_file(lookup, (char *)crlfile)) {
+      if (!LoadNewCrlFile(lookup, (char *)crlfile)) {
          OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
          throw std::runtime_error(_("Error loading revocation list file"));
       }
@@ -793,7 +793,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, con
        */
       SSL_CTX_set_verify(ctx->openssl,
                          SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                         openssl_verify_peer);
+                         OpensslVerifyPeer);
    } else {
       SSL_CTX_set_verify(ctx->openssl,
                          SSL_VERIFY_NONE,
@@ -810,7 +810,7 @@ std::shared_ptr<TLS_CONTEXT> TlsCert::CreateClientContext(
                           (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
                           (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
                           (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
-                          tls_pem_callback,
+                          TlsPemCallback,
                           (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
                           nullptr,
                           (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
@@ -824,7 +824,7 @@ std::shared_ptr<TLS_CONTEXT> TlsCert::CreateServerContext(
                           (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
                           (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
                           (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
-                          tls_pem_callback,
+                          TlsPemCallback,
                           (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
                           nullptr,
                           (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
@@ -895,7 +895,7 @@ void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char 
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    SSL *ssl = tls_conn->GetSsl();
    X509 *cert;
@@ -914,14 +914,14 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
    if ((subject = X509_get_subject_name(cert)) != NULL) {
       if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) > 0) {
          char *cn;
-         data[255] = 0; /* NULL terminate data */
+         data[255] = 0; /* NULL Terminate data */
 
          /*
           * Try all the CNs in the list
           */
          foreach_alist(cn, verify_list) {
             Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data, cn);
-            if (bstrcasecmp(data, cn)) {
+            if (Bstrcasecmp(data, cn)) {
                auth_success = true;
             }
          }
@@ -938,7 +938,7 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    int i, j;
    int extensions;
@@ -1025,7 +1025,7 @@ bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn
             for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
                nval = sk_CONF_VALUE_value(val, j);
                if (bstrcmp(nval->name, "DNS")) {
-                  if (bstrcasecmp(nval->value, host)) {
+                  if (Bstrcasecmp(nval->value, host)) {
                      auth_success = true;
                      goto success;
                   }
@@ -1050,7 +1050,7 @@ bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn
             }
             neCN = X509_NAME_get_entry(subject, cnLastPos);
             asn1CN = X509_NAME_ENTRY_get_data(neCN);
-            if (bstrcasecmp((const char*)asn1CN->data, host)) {
+            if (Bstrcasecmp((const char*)asn1CN->data, host)) {
                auth_success = true;
                break;
             }
@@ -1087,8 +1087,8 @@ void FreeTlsConnection(TLS_CONNECTION *tls_conn)
    }
 }
 
-/* Does all the manual labor for tls_bsock_accept() and tls_bsock_connect() */
-static inline bool openssl_bsock_session_start(BareosSocket *bsock, bool server)
+/* Does all the manual labor for TlsBsockAccept() and TlsBsockConnect() */
+static inline bool OpensslBsockSessionStart(BareosSocket *bsock, bool server)
 {
    TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
    int err;
@@ -1153,9 +1153,9 @@ cleanup:
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_connect(BareosSocket *bsock)
+bool TlsBsockConnect(BareosSocket *bsock)
 {
-   return openssl_bsock_session_start(bsock, false);
+   return OpensslBsockSessionStart(bsock, false);
 }
 
 /*
@@ -1163,9 +1163,9 @@ bool tls_bsock_connect(BareosSocket *bsock)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_accept(BareosSocket *bsock)
+bool TlsBsockAccept(BareosSocket *bsock)
 {
-   return openssl_bsock_session_start(bsock, true);
+   return OpensslBsockSessionStart(bsock, true);
 }
 
 /*
@@ -1217,7 +1217,7 @@ void TlsBsockShutdown(BareosSocket *bsock)
 }
 
 /* Does all the manual labor for TlsBsockReadn() and TlsBsockWriten() */
-static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
+static inline int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
     TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
    int flags;
@@ -1255,7 +1255,7 @@ static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nb
                continue;
             }
             if (errno == EAGAIN) {
-               bmicrosleep(0, 20000); /* try again in 20 ms */
+               Bmicrosleep(0, 20000); /* try again in 20 ms */
                continue;
             }
          }
@@ -1300,11 +1300,11 @@ cleanup:
 
 int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
-   return openssl_bsock_readwrite(bsock, ptr, nbytes, true);
+   return OpensslBsockReadwrite(bsock, ptr, nbytes, true);
 }
 
 int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
-   return openssl_bsock_readwrite(bsock, ptr, nbytes, false);
+   return OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
 #endif /* HAVE_TLS  && HAVE_OPENSSL */

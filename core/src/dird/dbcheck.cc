@@ -34,7 +34,7 @@
 #include "dird/dird_conf.h"
 #include "lib/edit.h"
 
-extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 typedef struct s_id_ctx {
    int64_t *Id;                       /* ids to be modified */
@@ -171,7 +171,7 @@ static bool yes_no(const char *prompt, bool batchvalue = true)
       quit = true;
       return false;
    }
-   return (bstrcasecmp(cmd, "yes")) || (bstrcasecmp(cmd, _("yes")));
+   return (Bstrcasecmp(cmd, "yes")) || (Bstrcasecmp(cmd, _("yes")));
 }
 
 static void set_quit()
@@ -198,7 +198,7 @@ static void toggle_verbose()
 }
 
 
-static void print_catalog_details(CatalogResource *catalog, const char *working_dir)
+static void PrintCatalogDetails(CatalogResource *catalog, const char *working_dir)
 {
    POOLMEM *catalog_details = GetPoolMemory(PM_MESSAGE);
 
@@ -224,7 +224,7 @@ static void print_catalog_details(CatalogResource *catalog, const char *working_
    FreePoolMemory(catalog_details);
 }
 
-static int print_name_handler(void *ctx, int num_fields, char **row)
+static int PrintNameHandler(void *ctx, int num_fields, char **row)
 {
    if (row[0]) {
       printf("%s\n", row[0]);
@@ -232,7 +232,7 @@ static int print_name_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-static int get_name_handler(void *ctx, int num_fields, char **row)
+static int GetNameHandler(void *ctx, int num_fields, char **row)
 {
    POOLMEM *name = (POOLMEM *)ctx;
 
@@ -242,35 +242,35 @@ static int get_name_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-static int print_job_handler(void *ctx, int num_fields, char **row)
+static int PrintJobHandler(void *ctx, int num_fields, char **row)
 {
    printf(_("JobId=%s Name=\"%s\" StartTime=%s\n"),
               NPRT(row[0]), NPRT(row[1]), NPRT(row[2]));
    return 0;
 }
 
-static int print_jobmedia_handler(void *ctx, int num_fields, char **row)
+static int PrintJobmediaHandler(void *ctx, int num_fields, char **row)
 {
    printf(_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"),
               NPRT(row[0]), NPRT(row[1]), NPRT(row[2]));
    return 0;
 }
 
-static int print_file_handler(void *ctx, int num_fields, char **row)
+static int PrintFileHandler(void *ctx, int num_fields, char **row)
 {
    printf(_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"),
               NPRT(row[0]), NPRT(row[1]), NPRT(row[2]));
    return 0;
 }
 
-static int print_fileset_handler(void *ctx, int num_fields, char **row)
+static int PrintFilesetHandler(void *ctx, int num_fields, char **row)
 {
    printf(_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"),
               NPRT(row[0]), NPRT(row[1]), NPRT(row[2]));
    return 0;
 }
 
-static int print_client_handler(void *ctx, int num_fields, char **row)
+static int PrintClientHandler(void *ctx, int num_fields, char **row)
 {
    printf(_("Orphaned ClientId=%s Name=\"%s\"\n"),
               NPRT(row[0]), NPRT(row[1]));
@@ -288,7 +288,7 @@ static int print_client_handler(void *ctx, int num_fields, char **row)
 typedef struct s_idx_list {
    char *key_name;
    int  count_key; /* how many times the index meets *key_name */
-   int  count_col; /* how many times meets the desired column name */
+   int  CountCol; /* how many times meets the desired column name */
 } IDX_LIST;
 
 static IDX_LIST idx_list[MAXIDX];
@@ -296,7 +296,7 @@ static IDX_LIST idx_list[MAXIDX];
 /**
  * Called here with each table index to be added to the list
  */
-static int check_idx_handler(void *ctx, int num_fields, char **row)
+static int CheckIdxHandler(void *ctx, int num_fields, char **row)
 {
    /*
     * Table | Non_unique | Key_name | Seq_in_index | Column_name |...
@@ -310,11 +310,11 @@ static int check_idx_handler(void *ctx, int num_fields, char **row)
    key_name = row[2];
    col_name = row[4];
    for(i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)); i++) {
-      if (bstrcasecmp(idx_list[i].key_name, key_name)) {
+      if (Bstrcasecmp(idx_list[i].key_name, key_name)) {
          idx_list[i].count_key++;
          found = true;
-         if (bstrcasecmp(col_name, name)) {
-            idx_list[i].count_col++;
+         if (Bstrcasecmp(col_name, name)) {
+            idx_list[i].CountCol++;
          }
          break;
       }
@@ -327,10 +327,10 @@ static int check_idx_handler(void *ctx, int num_fields, char **row)
       idx_list[i].key_name = (char *)malloc(len);
       bstrncpy(idx_list[i].key_name, key_name, len);
       idx_list[i].count_key = 1;
-      if (bstrcasecmp(col_name, name)) {
-         idx_list[i].count_col = 1;
+      if (Bstrcasecmp(col_name, name)) {
+         idx_list[i].CountCol = 1;
       } else {
-         idx_list[i].count_col = 0;
+         idx_list[i].CountCol = 0;
       }
    }
    return 0;
@@ -339,7 +339,7 @@ static int check_idx_handler(void *ctx, int num_fields, char **row)
 /**
  * Return TRUE if "one column" index over *col_name exists
  */
-static bool check_idx(const char *col_name)
+static bool CheckIdx(const char *col_name)
 {
    int i;
    int found = false;
@@ -348,7 +348,7 @@ static bool check_idx(const char *col_name)
    switch (db->GetTypeIndex()) {
    case SQL_TYPE_MYSQL:
       memset(&idx_list, 0, sizeof(idx_list));
-      if (!db->SqlQuery(query, check_idx_handler, (void *)col_name)) {
+      if (!db->SqlQuery(query, CheckIdxHandler, (void *)col_name)) {
          printf("%s\n", db->strerror());
          fflush(stdout);
       }
@@ -356,7 +356,7 @@ static bool check_idx(const char *col_name)
          /*
           * NOTE : if (idx_list[i].count_key > 1) then index idx_list[i].key_name is "multiple-column" index
           */
-         if ((idx_list[i].count_key == 1) && (idx_list[i].count_col == 1)) {
+         if ((idx_list[i].count_key == 1) && (idx_list[i].CountCol == 1)) {
             /*
              * "one column" index over *col_name found
              */
@@ -386,7 +386,7 @@ static bool create_tmp_idx(const char *idx_name, const char *table_name,
    idx_tmp_name = NULL;
    printf(_("Create temporary index... This may take some time!\n"));
    fflush(stdout);
-   bsnprintf(buf, sizeof(buf), "CREATE INDEX %s ON %s (%s)", idx_name, table_name, col_name);
+   Bsnprintf(buf, sizeof(buf), "CREATE INDEX %s ON %s (%s)", idx_name, table_name, col_name);
    if (verbose) {
       printf("%s\n", buf);
    }
@@ -406,12 +406,12 @@ static bool create_tmp_idx(const char *idx_name, const char *table_name,
 /**
  * Drop temporary index
  */
-static bool drop_tmp_idx(const char *idx_name, const char *table_name)
+static bool DropTmpIdx(const char *idx_name, const char *table_name)
 {
    if (idx_tmp_name != NULL) {
       printf(_("Drop temporary index.\n"));
       fflush(stdout);
-      bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
+      Bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
       if (verbose) {
          printf("%s\n", buf);
       }
@@ -433,7 +433,7 @@ static bool drop_tmp_idx(const char *idx_name, const char *table_name)
 /*
  * Called here with each id to be added to the list
  */
-static int id_list_handler(void *ctx, int num_fields, char **row)
+static int IdListHandler(void *ctx, int num_fields, char **row)
 {
    ID_LIST *lst = (ID_LIST *)ctx;
 
@@ -456,13 +456,13 @@ static int id_list_handler(void *ctx, int num_fields, char **row)
 /*
  * Construct record id list
  */
-static int make_id_list(const char *query, ID_LIST *id_list)
+static int MakeIdList(const char *query, ID_LIST *id_list)
 {
    id_list->num_ids = 0;
    id_list->num_del = 0;
    id_list->tot_ids = 0;
 
-   if (!db->SqlQuery(query, id_list_handler, (void *)id_list)) {
+   if (!db->SqlQuery(query, IdListHandler, (void *)id_list)) {
       printf("%s", db->strerror());
       return 0;
    }
@@ -472,12 +472,12 @@ static int make_id_list(const char *query, ID_LIST *id_list)
 /*
  * Delete all entries in the list
  */
-static int delete_id_list(const char *query, ID_LIST *id_list)
+static int DeleteIdList(const char *query, ID_LIST *id_list)
 {
    char ed1[50];
 
    for (int i = 0; i < id_list->num_ids; i++) {
-      bsnprintf(buf, sizeof(buf), query, edit_int64(id_list->Id[i], ed1));
+      Bsnprintf(buf, sizeof(buf), query, edit_int64(id_list->Id[i], ed1));
       if (verbose) {
          printf(_("Deleting: %s\n"), buf);
       }
@@ -489,7 +489,7 @@ static int delete_id_list(const char *query, ID_LIST *id_list)
 /*
  * Called here with each name to be added to the list
  */
-static int name_list_handler(void *ctx, int num_fields, char **row)
+static int NameListHandler(void *ctx, int num_fields, char **row)
 {
    NameList *name = (NameList *)ctx;
 
@@ -512,13 +512,13 @@ static int name_list_handler(void *ctx, int num_fields, char **row)
 /*
  * Construct name list
  */
-static int make_name_list(const char *query, NameList *name_list)
+static int MakeNameList(const char *query, NameList *name_list)
 {
    name_list->num_ids = 0;
    name_list->num_del = 0;
    name_list->tot_ids = 0;
 
-   if (!db->SqlQuery(query, name_list_handler, (void *)name_list)) {
+   if (!db->SqlQuery(query, NameListHandler, (void *)name_list)) {
       printf("%s", db->strerror());
       return 0;
    }
@@ -528,7 +528,7 @@ static int make_name_list(const char *query, NameList *name_list)
 /*
  * Print names in the list
  */
-static void print_name_list(NameList *name_list)
+static void PrintNameList(NameList *name_list)
 {
    for (int i=0; i < name_list->num_ids; i++) {
       printf("%s\n", name_list->name[i]);
@@ -538,7 +538,7 @@ static void print_name_list(NameList *name_list)
 /*
  * Free names in the list
  */
-static void free_name_list(NameList *name_list)
+static void FreeNameList(NameList *name_list)
 {
    for (int i=0; i < name_list->num_ids; i++) {
       free(name_list->name[i]);
@@ -560,13 +560,13 @@ static void eliminate_duplicate_paths()
    query = "SELECT Path, count(Path) as Count FROM Path "
            "GROUP BY Path HAVING count(Path) > 1";
 
-   if (!make_name_list(query, &name_list)) {
+   if (!MakeNameList(query, &name_list)) {
       exit(1);
    }
    printf(_("Found %d duplicate Path records.\n"), name_list.num_ids);
    fflush(stdout);
    if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
-      print_name_list(&name_list);
+      PrintNameList(&name_list);
    }
    if (quit) {
       return;
@@ -580,11 +580,11 @@ static void eliminate_duplicate_paths()
           * Get all the Ids of each name
           */
          db->EscapeString(NULL, esc_name, name_list.name[i], strlen(name_list.name[i]));
-         bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'", esc_name);
+         Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'", esc_name);
          if (verbose > 1) {
             printf("%s\n", buf);
          }
-         if (!make_id_list(buf, &id_list)) {
+         if (!MakeIdList(buf, &id_list)) {
             exit(1);
          }
          if (verbose) {
@@ -595,13 +595,13 @@ static void eliminate_duplicate_paths()
           */
          for (int j=1; j<id_list.num_ids; j++) {
             char ed1[50], ed2[50];
-            bsnprintf(buf, sizeof(buf), "UPDATE File SET PathId=%s WHERE PathId=%s",
+            Bsnprintf(buf, sizeof(buf), "UPDATE File SET PathId=%s WHERE PathId=%s",
                edit_int64(id_list.Id[0], ed1), edit_int64(id_list.Id[j], ed2));
             if (verbose > 1) {
                printf("%s\n", buf);
             }
             db->SqlQuery(buf, NULL, NULL);
-            bsnprintf(buf, sizeof(buf), "DELETE FROM Path WHERE PathId=%s", ed2);
+            Bsnprintf(buf, sizeof(buf), "DELETE FROM Path WHERE PathId=%s", ed2);
             if (verbose > 2) {
                printf("%s\n", buf);
             }
@@ -610,7 +610,7 @@ static void eliminate_duplicate_paths()
       }
       fflush(stdout);
    }
-   free_name_list(&name_list);
+   FreeNameList(&name_list);
 }
 
 /*
@@ -625,7 +625,7 @@ static void eliminate_orphaned_jobmedia_records()
 
    printf(_("Checking for orphaned JobMedia entries.\n"));
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    /*
@@ -636,11 +636,11 @@ static void eliminate_orphaned_jobmedia_records()
       if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
          for (int i=0; i < id_list.num_ids; i++) {
             char ed1[50];
-            bsnprintf(buf, sizeof(buf),
+            Bsnprintf(buf, sizeof(buf),
 "SELECT JobMedia.JobMediaId,JobMedia.JobId,Media.VolumeName FROM JobMedia,Media "
 "WHERE JobMedia.JobMediaId=%s AND Media.MediaId=JobMedia.MediaId",
                edit_int64(id_list.Id[i], ed1));
-            if (!db->SqlQuery(buf, print_jobmedia_handler, NULL)) {
+            if (!db->SqlQuery(buf, PrintJobmediaHandler, NULL)) {
                printf("%s\n", db->strerror());
             }
          }
@@ -651,11 +651,11 @@ static void eliminate_orphaned_jobmedia_records()
 
       if (fix && id_list.num_ids > 0) {
          printf(_("Deleting %d orphaned JobMedia records.\n"), id_list.num_ids);
-         delete_id_list("DELETE FROM JobMedia WHERE JobMediaId=%s", &id_list);
+         DeleteIdList("DELETE FROM JobMedia WHERE JobMediaId=%s", &id_list);
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query, &id_list)) {
+      if (!MakeIdList(query, &id_list)) {
          exit(1);
       }
    }
@@ -673,7 +673,7 @@ static void eliminate_orphaned_file_records()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    /*
@@ -684,11 +684,11 @@ static void eliminate_orphaned_file_records()
       if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
          for (int i=0; i < id_list.num_ids; i++) {
             char ed1[50];
-            bsnprintf(buf, sizeof(buf),
+            Bsnprintf(buf, sizeof(buf),
 "SELECT File.FileId,File.JobId,File.Name FROM File "
 "WHERE File.FileId=%s",
                edit_int64(id_list.Id[i], ed1));
-            if (!db->SqlQuery(buf, print_file_handler, NULL)) {
+            if (!db->SqlQuery(buf, PrintFileHandler, NULL)) {
                printf("%s\n", db->strerror());
             }
          }
@@ -698,11 +698,11 @@ static void eliminate_orphaned_file_records()
       }
       if (fix && id_list.num_ids > 0) {
          printf(_("Deleting %d orphaned File records.\n"), id_list.num_ids);
-         delete_id_list("DELETE FROM File WHERE FileId=%s", &id_list);
+         DeleteIdList("DELETE FROM File WHERE FileId=%s", &id_list);
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query, &id_list)) {
+      if (!MakeIdList(query, &id_list)) {
          exit(1);
       }
    }
@@ -719,7 +719,7 @@ static void eliminate_orphaned_path_records()
    /*
     * Check the existence of the required "one column" index
     */
-   if (!check_idx("PathId"))  {
+   if (!CheckIdx("PathId"))  {
       if (yes_no(_("Create temporary index? (yes/no): "), true)) {
          /*
           * create temporary index PathId
@@ -735,7 +735,7 @@ static void eliminate_orphaned_path_records()
       printf("%s\n", query.c_str());
    }
    fflush(stdout);
-   if (!make_id_list(query.c_str(), &id_list)) {
+   if (!MakeIdList(query.c_str(), &id_list)) {
       exit(1);
    }
    /*
@@ -747,9 +747,9 @@ static void eliminate_orphaned_path_records()
       if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
          for (int i=0; i < id_list.num_ids; i++) {
             char ed1[50];
-            bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
+            Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
                       edit_int64(id_list.Id[i], ed1));
-            db->SqlQuery(buf, print_name_handler, NULL);
+            db->SqlQuery(buf, PrintNameHandler, NULL);
          }
          fflush(stdout);
       }
@@ -759,18 +759,18 @@ static void eliminate_orphaned_path_records()
       if (fix && id_list.num_ids > 0) {
          printf(_("Deleting %d orphaned Path records.\n"), id_list.num_ids);
          fflush(stdout);
-         delete_id_list("DELETE FROM Path WHERE PathId=%s", &id_list);
+         DeleteIdList("DELETE FROM Path WHERE PathId=%s", &id_list);
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query.c_str(), &id_list)) {
+      if (!MakeIdList(query.c_str(), &id_list)) {
          exit(1);
       }
    }
    /*
     * Drop temporary index idx_tmp_name
     */
-   drop_tmp_idx("idxPIchk", "File");
+   DropTmpIdx("idxPIchk", "File");
 }
 
 static void eliminate_orphaned_fileset_records()
@@ -785,7 +785,7 @@ static void eliminate_orphaned_fileset_records()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    printf(_("Found %d orphaned FileSet records.\n"), id_list.num_ids);
@@ -793,9 +793,9 @@ static void eliminate_orphaned_fileset_records()
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (int i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf), "SELECT FileSetId,FileSet,MD5 FROM FileSet "
+         Bsnprintf(buf, sizeof(buf), "SELECT FileSetId,FileSet,MD5 FROM FileSet "
                       "WHERE FileSetId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_fileset_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintFilesetHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -807,7 +807,7 @@ static void eliminate_orphaned_fileset_records()
    if (fix && id_list.num_ids > 0) {
       printf(_("Deleting %d orphaned FileSet records.\n"), id_list.num_ids);
       fflush(stdout);
-      delete_id_list("DELETE FROM FileSet WHERE FileSetId=%s", &id_list);
+      DeleteIdList("DELETE FROM FileSet WHERE FileSetId=%s", &id_list);
    }
 }
 
@@ -831,16 +831,16 @@ static void eliminate_orphaned_client_records()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    printf(_("Found %d orphaned Client records.\n"), id_list.num_ids);
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (int i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf), "SELECT ClientId,Name FROM Client "
+         Bsnprintf(buf, sizeof(buf), "SELECT ClientId,Name FROM Client "
                       "WHERE ClientId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_client_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintClientHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -852,7 +852,7 @@ static void eliminate_orphaned_client_records()
    if (fix && id_list.num_ids > 0) {
       printf(_("Deleting %d orphaned Client records.\n"), id_list.num_ids);
       fflush(stdout);
-      delete_id_list("DELETE FROM Client WHERE ClientId=%s", &id_list);
+      DeleteIdList("DELETE FROM Client WHERE ClientId=%s", &id_list);
    }
 }
 
@@ -876,7 +876,7 @@ static void eliminate_orphaned_job_records()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    printf(_("Found %d orphaned Job records.\n"), id_list.num_ids);
@@ -884,9 +884,9 @@ static void eliminate_orphaned_job_records()
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (int i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
+         Bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
                       "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_job_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintJobHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -898,13 +898,13 @@ static void eliminate_orphaned_job_records()
    if (fix && id_list.num_ids > 0) {
       printf(_("Deleting %d orphaned Job records.\n"), id_list.num_ids);
       fflush(stdout);
-      delete_id_list("DELETE FROM Job WHERE JobId=%s", &id_list);
+      DeleteIdList("DELETE FROM Job WHERE JobId=%s", &id_list);
       printf(_("Deleting JobMedia records of orphaned Job records.\n"));
       fflush(stdout);
-      delete_id_list("DELETE FROM JobMedia WHERE JobId=%s", &id_list);
+      DeleteIdList("DELETE FROM JobMedia WHERE JobId=%s", &id_list);
       printf(_("Deleting Log records of orphaned Job records.\n"));
       fflush(stdout);
-      delete_id_list("DELETE FROM Log WHERE JobId=%s", &id_list);
+      DeleteIdList("DELETE FROM Log WHERE JobId=%s", &id_list);
    }
 }
 
@@ -919,16 +919,16 @@ static void eliminate_admin_records()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    printf(_("Found %d Admin Job records.\n"), id_list.num_ids);
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (int i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
+         Bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
                       "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_job_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintJobHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -940,7 +940,7 @@ static void eliminate_admin_records()
    if (fix && id_list.num_ids > 0) {
       printf(_("Deleting %d Admin Job records.\n"), id_list.num_ids);
       fflush(stdout);
-      delete_id_list("DELETE FROM Job WHERE JobId=%s", &id_list);
+      DeleteIdList("DELETE FROM Job WHERE JobId=%s", &id_list);
    }
 }
 
@@ -955,16 +955,16 @@ static void eliminate_restore_records()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    printf(_("Found %d Restore Job records.\n"), id_list.num_ids);
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (int i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
+         Bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
                       "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_job_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintJobHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -976,7 +976,7 @@ static void eliminate_restore_records()
    if (fix && id_list.num_ids > 0) {
       printf(_("Deleting %d Restore Job records.\n"), id_list.num_ids);
       fflush(stdout);
-      delete_id_list("DELETE FROM Job WHERE JobId=%s", &id_list);
+      DeleteIdList("DELETE FROM Job WHERE JobId=%s", &id_list);
    }
 }
 
@@ -992,17 +992,17 @@ static void repair_bad_filenames()
       printf("%s\n", query);
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!MakeIdList(query, &id_list)) {
       exit(1);
    }
    printf(_("Found %d bad Filename records.\n"), id_list.num_ids);
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf),
+         Bsnprintf(buf, sizeof(buf),
             "SELECT Name FROM File WHERE FileId=%s",
                 edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_name_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintNameHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -1019,10 +1019,10 @@ static void repair_bad_filenames()
       for (i=0; i < id_list.num_ids; i++) {
          int len;
          char ed1[50];
-         bsnprintf(buf, sizeof(buf),
+         Bsnprintf(buf, sizeof(buf),
             "SELECT Name FROM File WHERE FileId=%s",
                edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, get_name_handler, name)) {
+         if (!db->SqlQuery(buf, GetNameHandler, name)) {
             printf("%s\n", db->strerror());
          }
          /*
@@ -1038,7 +1038,7 @@ static void repair_bad_filenames()
             name[len-1] = 0;
             db->EscapeString(NULL, esc_name, name, len);
          }
-         bsnprintf(buf, sizeof(buf),
+         Bsnprintf(buf, sizeof(buf),
             "UPDATE File SET Name='%s' WHERE FileId=%s",
             esc_name, edit_int64(id_list.Id[i], ed1));
          if (verbose > 1) {
@@ -1062,7 +1062,7 @@ static void repair_bad_paths()
       printf("%s\n", query.c_str());
    }
    fflush(stdout);
-   if (!make_id_list(query.c_str(), &id_list)) {
+   if (!MakeIdList(query.c_str(), &id_list)) {
       exit(1);
    }
    printf(_("Found %d bad Path records.\n"), id_list.num_ids);
@@ -1070,9 +1070,9 @@ static void repair_bad_paths()
    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
       for (i=0; i < id_list.num_ids; i++) {
          char ed1[50];
-         bsnprintf(buf, sizeof(buf),
+         Bsnprintf(buf, sizeof(buf),
             "SELECT Path FROM Path WHERE PathId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, print_name_handler, NULL)) {
+         if (!db->SqlQuery(buf, PrintNameHandler, NULL)) {
             printf("%s\n", db->strerror());
          }
       }
@@ -1089,9 +1089,9 @@ static void repair_bad_paths()
       for (i=0; i < id_list.num_ids; i++) {
          int len;
          char ed1[50];
-         bsnprintf(buf, sizeof(buf),
+         Bsnprintf(buf, sizeof(buf),
             "SELECT Path FROM Path WHERE PathId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db->SqlQuery(buf, get_name_handler, name)) {
+         if (!db->SqlQuery(buf, GetNameHandler, name)) {
             printf("%s\n", db->strerror());
          }
          /*
@@ -1105,7 +1105,7 @@ static void repair_bad_paths()
           */
          len = PmStrcat(name, "/");
          db->EscapeString(NULL, esc_name, name, len);
-         bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
+         Bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
             esc_name, edit_int64(id_list.Id[i], ed1));
          if (verbose > 1) {
             printf("%s\n", buf);
@@ -1252,7 +1252,7 @@ int main (int argc, char *argv[])
          Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
       }
       my_config = new_config_parser();
-      parse_dir_config(my_config, configfile, M_ERROR_TERM);
+      ParseDirConfig(my_config, configfile, M_ERROR_TERM);
       LockRes();
       foreach_res(catalog, R_CATALOG) {
          if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
@@ -1289,7 +1289,7 @@ int main (int argc, char *argv[])
           * Print catalog information and exit (-B)
           */
          if (print_catalog) {
-            print_catalog_details(catalog, me->working_directory);
+            PrintCatalogDetails(catalog, me->working_directory);
             exit(0);
          }
 
@@ -1380,7 +1380,7 @@ int main (int argc, char *argv[])
    /*
     * Drop temporary index idx_tmp_name if it already exists
     */
-   drop_tmp_idx("idxPIchk", "File");
+   DropTmpIdx("idxPIchk", "File");
 
    if (batch) {
       run_all_commands();
@@ -1391,7 +1391,7 @@ int main (int argc, char *argv[])
    /*
     * Drop temporary index idx_tmp_name
     */
-   drop_tmp_idx("idxPIchk", "File");
+   DropTmpIdx("idxPIchk", "File");
 
    db->CloseDatabase(NULL);
    DbFlushBackends();

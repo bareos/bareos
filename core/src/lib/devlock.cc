@@ -121,7 +121,7 @@ int devlock::destroy()
  * Handle cleanup when the read lock condition variable
  * wait is released.
  */
-static void devlock_read_release(void *arg)
+static void DevlockReadRelease(void *arg)
 {
    devlock *rwl = (devlock *)arg;
    rwl->ReadRelease();
@@ -137,7 +137,7 @@ void devlock::ReadRelease()
  * Handle cleanup when the write lock condition variable wait
  * is released.
  */
-static void devlock_write_release(void *arg)
+static void DevlockWriteRelease(void *arg)
 {
    devlock *rwl = (devlock *)arg;
    rwl->WriteRelease();
@@ -165,7 +165,7 @@ int devlock::readlock()
    }
    if (rwl->w_active) {
       rwl->r_wait++;                  /* indicate that we are waiting */
-      pthread_cleanup_push(devlock_read_release, (void *)rwl);
+      pthread_cleanup_push(DevlockReadRelease, (void *)rwl);
       while (rwl->w_active) {
          status = pthread_cond_wait(&rwl->read, &rwl->mutex);
          if (status != 0) {
@@ -232,7 +232,7 @@ int devlock::readunlock()
  * Lock for write access, wait until locked (or error).
  *   Multiple nested write locking is permitted.
  */
-int devlock::writelock(int areason, bool acan_take)
+int devlock::Writelock(int areason, bool acan_take)
 {
    devlock *rwl = this;
    int status;
@@ -251,7 +251,7 @@ int devlock::writelock(int areason, bool acan_take)
    LmgrPreLock(rwl, rwl->priority, __FILE__, __LINE__);
    if (rwl->w_active || rwl->r_active > 0) {
       rwl->w_wait++;                  /* indicate that we are waiting */
-      pthread_cleanup_push(devlock_write_release, (void *)rwl);
+      pthread_cleanup_push(DevlockWriteRelease, (void *)rwl);
       while (rwl->w_active || rwl->r_active > 0) {
          if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
             LmgrDoUnlock(rwl);
@@ -341,7 +341,7 @@ int devlock::writeunlock()
    return (status == 0 ? status2 : status);
 }
 
-int devlock::take_lock(take_lock_t *hold, int areason)
+int devlock::TakeLock(take_lock_t *hold, int areason)
 {
    int status;
 
@@ -360,7 +360,7 @@ int devlock::take_lock(take_lock_t *hold, int areason)
    return status;
 }
 
-int devlock::return_lock(take_lock_t *hold)
+int devlock::ReturnLock(take_lock_t *hold)
 {
    int status, status2;
 

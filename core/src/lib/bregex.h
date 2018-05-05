@@ -61,7 +61,7 @@ extern "C" {
 #define re_syntax             b_re_syntax
 #define re_syntax_table       b_re_syntax_table
 #define ReCompileInitialize b_re_compile_initialize
-#define re_set_syntax         b_re_set_syntax
+#define ReSetSyntax         b_re_set_syntax
 #define re_compile_pattern    b_re_compile_pattern
 #define ReMatch              b_re_match
 #define ReSearch             b_re_search
@@ -150,7 +150,7 @@ extern unsigned char re_syntax_table[256];
 
 void ReCompileInitialize(void);
 
-int re_set_syntax(int syntax);
+int ReSetSyntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
  * syntax is specified by a bit mask of the above defined bits. */
 

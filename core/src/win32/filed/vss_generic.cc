@@ -762,7 +762,7 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
     */
    hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
    while ((unsigned)hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
-      bmicrosleep(5,0);
+      Bmicrosleep(5,0);
       Jmsg(jcr_, M_INFO, 0, "VSS_E_SNAPSHOT_SET_IN_PROGRESS, retrying ...\n");
       hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
    }

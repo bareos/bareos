@@ -138,7 +138,7 @@ char *edit_uint64_with_suffix(uint64_t val, char *buf)
   if (commas >= suffixes) {
      commas = suffixes - 1;
   }
-  bsnprintf(buf, DEFAULT_FORMAT_LENGTH, "%s %s", mbuf, suffix[commas]);
+  Bsnprintf(buf, DEFAULT_FORMAT_LENGTH, "%s %s", mbuf, suffix[commas]);
 
   return buf;
 }
@@ -213,7 +213,7 @@ char *edit_int64_with_commas(int64_t val, char *buf)
 /*
  * Given a string "str", separate the numeric part into str, and the modifier into mod.
  */
-static bool get_modifier(char *str, char *num, int num_len, char *mod, int mod_len)
+static bool GetModifier(char *str, char *num, int num_len, char *mod, int mod_len)
 {
    int i, len, num_begin, num_end, mod_begin, mod_end;
 
@@ -322,7 +322,7 @@ bool DurationToUtime(char *str, utime_t *value)
    };
 
    while (*str) {
-      if (!get_modifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
+      if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
          return false;
       }
 
@@ -386,7 +386,7 @@ char *edit_utime(utime_t val, char *buf, int buf_len)
       times = (uint32_t)(val / mult[i]);
       if (times > 0) {
          val = val - (utime_t)times * mult[i];
-         bsnprintf(mybuf, sizeof(mybuf), "%d %s%s ", times, mod[i], times>1?"s":"");
+         Bsnprintf(mybuf, sizeof(mybuf), "%d %s%s ", times, mod[i], times>1?"s":"");
          bstrncat(buf, mybuf, buf_len);
       }
    }
@@ -394,7 +394,7 @@ char *edit_utime(utime_t val, char *buf, int buf_len)
    if (val == 0 && strlen(buf) == 0) {
       bstrncat(buf, "0 secs", buf_len);
    } else if (val != 0) {
-      bsnprintf(mybuf, sizeof(mybuf), "%d sec%s", (uint32_t)val, val>1?"s":"");
+      Bsnprintf(mybuf, sizeof(mybuf), "%d sec%s", (uint32_t)val, val>1?"s":"");
       bstrncat(buf, mybuf, buf_len);
    }
 
@@ -409,7 +409,7 @@ char *edit_pthread(pthread_t val, char *buf, int buf_len)
 
    bstrncpy(buf, "0x", buf_len);
    for (i = sizeof(val); i; --i) {
-      bsnprintf(mybuf, sizeof(mybuf), "%02x", (unsigned)(ptc[i]));
+      Bsnprintf(mybuf, sizeof(mybuf), "%02x", (unsigned)(ptc[i]));
       bstrncat(buf, mybuf, buf_len);
    }
 
@@ -432,7 +432,7 @@ static bool strunit_to_uint64(char *str, uint64_t *value, const char **mod)
       1000000000                         /* GiB GigaByte */
    };
 
-   if (!get_modifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
+   if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
       return 0;
    }
 

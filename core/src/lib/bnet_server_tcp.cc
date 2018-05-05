@@ -70,7 +70,7 @@ struct s_sockfd {
  * Stop the Threaded Network Server if its realy running in a separate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
  */
-void bnet_stop_thread_server_tcp(pthread_t tid)
+void BnetStopThreadServerTcp(pthread_t tid)
 {
    quit = true;
    if (!pthread_equal(tid, pthread_self())) {
@@ -106,7 +106,7 @@ void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
        */
       if ((status = WorkqDestroy(client_wq)) != 0) {
          berrno be;
-         be.set_errno(status);
+         be.SetErrno(status);
          Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
                be.bstrerror());
       }
@@ -204,7 +204,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
                        ipaddr->build_address_str(curbuf, sizeof(curbuf)),
                        build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
          }
-         bmicrosleep(10, 0);
+         Bmicrosleep(10, 0);
       }
 
       /*
@@ -224,7 +224,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
             Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
                   ntohs(fd_ptr->port), be.bstrerror());
          }
-         bmicrosleep(5, 0);
+         Bmicrosleep(5, 0);
          if (--tmax <= 0) {
             Emsg2(M_ABORT, 0, _("Cannot bind port %d: ERR=%s.\n"), ntohs(fd_ptr->port),
                   be.bstrerror());
@@ -244,7 +244,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
     */
    if ((status = WorkqInit(client_wq, max_clients, handle_client_request)) != 0) {
       berrno be;
-      be.set_errno(status);
+      be.SetErrno(status);
       Emsg1(M_ABORT, 0, _("Could not init client queue: ERR=%s\n"), be.bstrerror());
    }
 
@@ -378,7 +378,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
              */
             if ((status = WorkqAdd(client_wq, (void *)bs, NULL, 0)) != 0) {
                berrno be;
-               be.set_errno(status);
+               be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),
                      be.bstrerror());
             }

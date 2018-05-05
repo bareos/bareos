@@ -35,9 +35,9 @@
 /**
  * Check if access is permitted to item in acl
  */
-bool UaContext::acl_access_ok(int acl, const char *item, bool audit_event)
+bool UaContext::AclAccessOk(int acl, const char *item, bool audit_event)
 {
-   return acl_access_ok(acl, item, strlen(item), audit_event);
+   return AclAccessOk(acl, item, strlen(item), audit_event);
 }
 
 /**
@@ -79,7 +79,7 @@ bail_out:
  * Loop over the items in the alist and verify if they match the given item
  * that access was requested for.
  */
-static inline bool find_in_acl_list(alist *list, int acl, const char *item, int len)
+static inline bool FindInAclList(alist *list, int acl, const char *item, int len)
 {
    int rc;
    regex_t preg;
@@ -113,7 +113,7 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
        * See if this is a deny acl.
        */
       if (*list_value == '!') {
-         if (bstrcasecmp(item, list_value + 1)) {
+         if (Bstrcasecmp(item, list_value + 1)) {
             /*
              * Explicit deny.
              */
@@ -155,13 +155,13 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
          /*
           * Special case *all* gives full access
           */
-         if (bstrcasecmp("*all*", list_value)) {
+         if (Bstrcasecmp("*all*", list_value)) {
             Dmsg2(1400, "Global ACL found in %d %s\n", acl, list_value);
             retval = true;
             goto bail_out;
          }
 
-         if (bstrcasecmp(item, list_value)) {
+         if (Bstrcasecmp(item, list_value)) {
             Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, list_value);
             retval = true;
             goto bail_out;
@@ -208,7 +208,7 @@ bail_out:
 /**
  * This version expects the length of the item which we must check.
  */
-bool UaContext::acl_access_ok(int acl, const char *item, int len, bool audit_event)
+bool UaContext::AclAccessOk(int acl, const char *item, int len, bool audit_event)
 {
    bool retval = false;
 
@@ -236,7 +236,7 @@ bool UaContext::acl_access_ok(int acl, const char *item, int len, bool audit_eve
       goto bail_out;
    }
 
-   retval = find_in_acl_list(cons->ACL_lists[acl], acl, item, len);
+   retval = FindInAclList(cons->ACL_lists[acl], acl, item, len);
 
    /*
     * If we didn't find a matching ACL try to use the profiles this console is connected to.
@@ -245,7 +245,7 @@ bool UaContext::acl_access_ok(int acl, const char *item, int len, bool audit_eve
       ProfileResource *profile;
 
       foreach_alist(profile, cons->profiles) {
-         retval = find_in_acl_list(profile->ACL_lists[acl], acl, item, len);
+         retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
 
          /*
           * If we found a match break the loop.
@@ -258,7 +258,7 @@ bool UaContext::acl_access_ok(int acl, const char *item, int len, bool audit_eve
 
 bail_out:
    if (audit_event && !retval) {
-      log_audit_event_acl_failure(acl, item);
+      LogAuditEventAclFailure(acl, item);
    }
 
    return retval;
@@ -267,7 +267,7 @@ bail_out:
 /**
  * This function returns if the authentication has any acl restrictions for a certain acltype.
  */
-bool UaContext::acl_no_restrictions(int acl)
+bool UaContext::AclNoRestrictions(int acl)
 {
    const char *list_value;
    ProfileResource *profile;
@@ -287,7 +287,7 @@ bool UaContext::acl_no_restrictions(int acl)
             return false;
          }
 
-         if (bstrcasecmp("*all*", list_value)) {
+         if (Bstrcasecmp("*all*", list_value)) {
             return true;
          }
       }
@@ -302,7 +302,7 @@ bool UaContext::acl_no_restrictions(int acl)
                return false;
             }
 
-            if (bstrcasecmp("*all*", list_value)) {
+            if (Bstrcasecmp("*all*", list_value)) {
                return true;
             }
          }
@@ -349,7 +349,7 @@ int UaContext::RcodeToAcltype(int rcode)
 /**
  * This checks the right ACL if the UA has access to the wanted resource.
  */
-bool UaContext::is_res_allowed(CommonResourceHeader *res)
+bool UaContext::IsResAllowed(CommonResourceHeader *res)
 {
    int acl;
 
@@ -360,10 +360,10 @@ bool UaContext::is_res_allowed(CommonResourceHeader *res)
        * to the right ACL we check if the Command ACL has access to the
        * configure command just as we do for suppressing sensitive data.
        */
-      return acl_access_ok(Command_ACL, "configure", false);
+      return AclAccessOk(Command_ACL, "configure", false);
    }
 
-   return acl_access_ok(acl, res->name, false);
+   return AclAccessOk(acl, res->name, false);
 }
 
 /**
@@ -380,11 +380,11 @@ CommonResourceHeader *UaContext::GetResWithName(int rcode, const char *name, boo
        * to the right ACL we check if the Command ACL has access to the
        * configure command just as we do for suppressing sensitive data.
        */
-      if (!acl_access_ok(Command_ACL, "configure", false)) {
+      if (!AclAccessOk(Command_ACL, "configure", false)) {
          goto bail_out;
       }
    } else {
-      if (!acl_access_ok(acl, name, audit_event)) {
+      if (!AclAccessOk(acl, name, audit_event)) {
          goto bail_out;
       }
    }

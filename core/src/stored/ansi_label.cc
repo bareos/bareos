@@ -34,12 +34,12 @@
 #include "include/jcr.h"
 
 /* Imported functions */
-void ascii_to_ebcdic(char *dst, char *src, int count);
-void ebcdic_to_ascii(char *dst, char *src, int count);
+void AsciiToEbcdic(char *dst, char *src, int count);
+void EbcdicToAscii(char *dst, char *src, int count);
 
 /* Forward referenced functions */
 static char *ansi_date(time_t td, char *buf);
-static bool same_label_names(char *bareos_name, char *ansi_name);
+static bool SameLabelNames(char *bareos_name, char *ansi_name);
 
 /**
  * We read an ANSI label and compare the Volume name. We require
@@ -116,7 +116,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
                /*
                 * Try EBCDIC
                 */
-               ebcdic_to_ascii(label, label, sizeof(label));
+               EbcdicToAscii(label, label, sizeof(label));
                if (bstrncmp("VOL1", label, 4)) {
                   ok = true;;
                   dev->label_type = B_IBM_LABEL;
@@ -136,7 +136,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
           * Compare Volume Names allow special wild card
           */
          if (VolName && *VolName && *VolName != '*') {
-            if (!same_label_names(VolName, &label[4])) {
+            if (!SameLabelNames(VolName, &label[4])) {
                char *p = &label[4];
                char *q;
 
@@ -164,7 +164,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
          break;
       case 1:
          if (dev->label_type == B_IBM_LABEL) {
-            ebcdic_to_ascii(label, label, sizeof(label));
+            EbcdicToAscii(label, label, sizeof(label));
          }
 
          if (status != 80 || !bstrncmp("HDR1", label, 4)) {
@@ -191,7 +191,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
          break;
       case 2:
          if (dev->label_type == B_IBM_LABEL) {
-            ebcdic_to_ascii(label, label, sizeof(label));
+            EbcdicToAscii(label, label, sizeof(label));
          }
 
          if (status != 80 || !bstrncmp("HDR2", label, 4)) {
@@ -208,7 +208,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
          }
 
          if (dev->label_type == B_IBM_LABEL) {
-            ebcdic_to_ascii(label, label, sizeof(label));
+            EbcdicToAscii(label, label, sizeof(label));
          }
 
          if (status != 80 || !bstrncmp("HDR", label, 3)) {
@@ -342,7 +342,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
           * Write VOL1 label
           */
          if (label_type == B_IBM_LABEL) {
-            ascii_to_ebcdic(label, label, sizeof(label));
+            AsciiToEbcdic(label, label, sizeof(label));
          } else {
             label[79] = '3';                /* ANSI label flag */
          }
@@ -381,7 +381,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
        * Write HDR1 label
        */
       if (label_type == B_IBM_LABEL) {
-         ascii_to_ebcdic(label, label, sizeof(label));
+         AsciiToEbcdic(label, label, sizeof(label));
       }
 
       /*
@@ -419,7 +419,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
        */
       if (label_type == B_IBM_LABEL) {
          label[4] = 'V';
-         ascii_to_ebcdic(label, label, sizeof(label));
+         AsciiToEbcdic(label, label, sizeof(label));
       }
       status = dev->write(label, sizeof(label));
       if (status != sizeof(label)) {
@@ -455,7 +455,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
 /**
  * Check a Bareos Volume name against an ANSI Volume name
  */
-static bool same_label_names(char *bareos_name, char *ansi_name)
+static bool SameLabelNames(char *bareos_name, char *ansi_name)
 {
    char *a = ansi_name;
    char *b = bareos_name;
@@ -502,7 +502,7 @@ static char *ansi_date(time_t td, char *buf)
       td = time(NULL);
    }
    tm = gmtime(&td);
-   bsnprintf(buf, 10, " %05d ", 1000 * (tm->tm_year + 1900 - 2000) + tm->tm_yday);
+   Bsnprintf(buf, 10, " %05d ", 1000 * (tm->tm_year + 1900 - 2000) + tm->tm_yday);
 
    return buf;
 }

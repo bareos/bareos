@@ -154,7 +154,7 @@ void UpdateDeviceTapealert(const char *devname, uint64_t flags, utime_t now)
          tape_alert->timestamp, dev_stats->DevName, tape_alert->flags);
 }
 
-static inline void update_device_statistics(const char *devname, Device *dev, utime_t now)
+static inline void UpdateDeviceStatistics(const char *devname, Device *dev, utime_t now)
 {
    bool found = false;
    struct device_statistics *dev_stats = NULL;
@@ -374,7 +374,7 @@ void *statistics_thread_runner(void *arg)
 
                dev = device->dev;
                if (dev && dev->initiated) {
-                  update_device_statistics(device->name(), dev, now);
+                  UpdateDeviceStatistics(device->name(), dev, now);
                }
             }
          }
@@ -463,7 +463,7 @@ void StopStatisticsThread()
    }
 }
 
-bool stats_cmd(JobControlRecord *jcr)
+bool StatsCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    PoolMem msg(PM_MESSAGE);

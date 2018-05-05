@@ -64,11 +64,11 @@ const char *get_signal_name(int sig)
 }
 
 /* defined in jcr.c */
-extern void dbg_print_jcr(FILE *fp);
+extern void DbgPrintJcr(FILE *fp);
 /* defined in plugins.c */
-extern void dbg_print_plugin(FILE *fp);
+extern void DbgPrintPlugin(FILE *fp);
 /* defined in lockmgr.c */
-extern void dbg_print_lock(FILE *fp);
+extern void DbgPrintLock(FILE *fp);
 
 /*
  * !!! WARNING !!!
@@ -92,9 +92,9 @@ static void dbg_print_bareos()
    /* Print also BareosDb and RWLOCK structure
     * Can add more info about JobControlRecord with DbgJcrAddHook()
     */
-   dbg_print_lock(fp);
-   dbg_print_jcr(fp);
-   dbg_print_plugin(fp);
+   DbgPrintLock(fp);
+   DbgPrintJcr(fp);
+   DbgPrintPlugin(fp);
 
    if (fp != stderr) {
 #define direct_print
@@ -123,7 +123,7 @@ static void dbg_print_bareos()
 /*
  * Handle signals here
  */
-extern "C" void signal_handler(int sig)
+extern "C" void SignalHandler(int sig)
 {
    static int already_dead = 0;
    int chld_status = -1;
@@ -242,7 +242,7 @@ extern "C" void signal_handler(int sig)
          Dmsg0(500, "Done waitpid\n");
       } else {
          Dmsg0(500, "Doing sleep\n");
-         bmicrosleep(30, 0);
+         Bmicrosleep(30, 0);
       }
       if (WEXITSTATUS(chld_status) == 0) {
          fprintf(stderr, _("It looks like the traceback worked...\n"));
@@ -302,7 +302,7 @@ void InitStackDump(void)
 /*
  * Initialize signals
  */
-void InitSignals(void terminate(int sig))
+void InitSignals(void Terminate(int sig))
 {
    struct sigaction sighandle;
    struct sigaction sigignore;
@@ -310,7 +310,7 @@ void InitSignals(void terminate(int sig))
 #ifdef _sys_nsig
    int i;
 
-   exit_handler = terminate;
+   exit_handler = Terminate;
    if (BA_NSIG < _sys_nsig) {
       Emsg2(M_ABORT, 0, _("BA_NSIG too small (%d) should be (%d)\n"), BA_NSIG, _sys_nsig);
    }
@@ -319,7 +319,7 @@ void InitSignals(void terminate(int sig))
       sig_names[i] = _sys_siglist[i];
    }
 #else
-   exit_handler = terminate;
+   exit_handler = Terminate;
    sig_names[0] = _("UNKNOWN SIGNAL");
    sig_names[SIGHUP] = _("Hangup");
    sig_names[SIGINT] = _("Interrupt");
@@ -385,7 +385,7 @@ void InitSignals(void terminate(int sig))
     * Now setup signal handlers
     */
    sighandle.sa_flags = 0;
-   sighandle.sa_handler = signal_handler;
+   sighandle.sa_handler = SignalHandler;
    sigfillset(&sighandle.sa_mask);
    sigignore.sa_flags = 0;
    sigignore.sa_handler = SIG_IGN;

@@ -45,7 +45,7 @@
 static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *jcr, char *dev_name,
                                    const char *VolumeName, bool readonly);
 static DeviceResource *find_device_res(char *device_name, bool readonly);
-static void my_free_jcr(JobControlRecord *jcr);
+static void MyFreeJcr(JobControlRecord *jcr);
 
 /* Global variables */
 char SD_IMP_EXP *configfile;
@@ -59,7 +59,7 @@ JobControlRecord *setup_jcr(const char *name, char *dev_name,
                BootStrapRecord *bsr, DirectorResource *director, DeviceControlRecord *dcr,
                const char *VolumeName, bool readonly)
 {
-   JobControlRecord *jcr = new_jcr(sizeof(JobControlRecord), my_free_jcr);
+   JobControlRecord *jcr = new_jcr(sizeof(JobControlRecord), MyFreeJcr);
 
    jcr->bsr = bsr;
    jcr->director = director;
@@ -187,7 +187,7 @@ static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *j
  * Called here when freeing JobControlRecord so that we can get rid
  *  of "daemon" specific memory allocated.
  */
-static void my_free_jcr(JobControlRecord *jcr)
+static void MyFreeJcr(JobControlRecord *jcr)
 {
    if (jcr->job_name) {
       FreePoolMemory(jcr->job_name);

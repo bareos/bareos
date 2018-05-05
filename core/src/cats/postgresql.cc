@@ -213,7 +213,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord *jcr)
    }
 
    if (db_port_) {
-      bsnprintf(buf, sizeof(buf), "%d", db_port_);
+      Bsnprintf(buf, sizeof(buf), "%d", db_port_);
       port = buf;
    } else {
       port = NULL;
@@ -241,7 +241,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord *jcr)
          break;
       }
 
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
    }
 
    Dmsg0(50, "pg_real_connect done\n");
@@ -511,9 +511,9 @@ void BareosDbPostgresql::EndTransaction(JobControlRecord *jcr)
 
 /**
  * Submit a general SQL command (cmd), and for each row returned,
- * the result_handler is called with the ctx.
+ * the ResultHandler is called with the ctx.
  */
-bool BareosDbPostgresql::BigSqlQuery(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbPostgresql::BigSqlQuery(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    SQL_ROW row;
    bool retval = false;
@@ -523,10 +523,10 @@ bool BareosDbPostgresql::BigSqlQuery(const char *query, DB_RESULT_HANDLER *resul
 
    /* This code handles only SELECT queries */
    if (!bstrncasecmp(query, "SELECT", 6)) {
-      return SqlQueryWithHandler(query, result_handler, ctx);
+      return SqlQueryWithHandler(query, ResultHandler, ctx);
    }
 
-   if (!result_handler) {       /* no need of big_query without handler */
+   if (!ResultHandler) {       /* no need of big_query without handler */
       return false;
    }
 
@@ -550,7 +550,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char *query, DB_RESULT_HANDLER *resul
       }
       while ((row = SqlFetchRow()) != NULL) {
          Dmsg1(500, "Fetching %d rows\n", num_rows_);
-         if (result_handler(ctx, num_fields_, row))
+         if (ResultHandler(ctx, num_fields_, row))
             break;
       }
       PQclear(result_);
@@ -575,9 +575,9 @@ bail_out:
 
 /**
  * Submit a general SQL command (cmd), and for each row returned,
- * the result_handler is called with the ctx.
+ * the ResultHandler is called with the ctx.
  */
-bool BareosDbPostgresql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbPostgresql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    SQL_ROW row;
    bool retval = true;
@@ -594,11 +594,11 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLE
 
    Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
 
-   if (result_handler != NULL) {
+   if (ResultHandler != NULL) {
       Dmsg0(500, "SqlQueryWithHandler invoking handler\n");
       while ((row = SqlFetchRow()) != NULL) {
          Dmsg0(500, "SqlQueryWithHandler SqlFetchRow worked\n");
-         if (result_handler(ctx, num_fields_, row))
+         if (ResultHandler(ctx, num_fields_, row))
             break;
       }
       SqlFreeResult();
@@ -645,7 +645,7 @@ retry_query:
       if (result_) {
          break;
       }
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
    }
 
    status_ = PQresultStatus(result_);
@@ -854,7 +854,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char *query, const cha
     *
     * everything else can use the PostgreSQL formula.
     */
-   if (bstrcasecmp(table_name, "basefiles")) {
+   if (Bstrcasecmp(table_name, "basefiles")) {
       bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
    } else {
       bstrncpy(sequence, table_name, sizeof(sequence));
@@ -864,7 +864,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char *query, const cha
    }
 
    bstrncat(sequence, "_seq", sizeof(sequence));
-   bsnprintf(getkeyval_query, sizeof(getkeyval_query), "SELECT currval('%s')", sequence);
+   Bsnprintf(getkeyval_query, sizeof(getkeyval_query), "SELECT currval('%s')", sequence);
 
    Dmsg1(500, "SqlInsertAutokeyRecord executing query '%s'\n", getkeyval_query);
    for (i = 0; i < 10; i++) {
@@ -872,7 +872,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char *query, const cha
       if (pg_result) {
          break;
       }
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
    }
    if (!pg_result) {
       Dmsg1(50, "Query failed: %s\n", getkeyval_query);
@@ -899,7 +899,7 @@ bail_out:
 SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
 {
    int i, j;
-   int max_length;
+   int MaxLength;
    int this_length;
 
    Dmsg0(500, "SqlFetchField starts\n");
@@ -922,7 +922,7 @@ SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
          /*
           * For a given column, find the max length.
           */
-         max_length = 0;
+         MaxLength = 0;
          for (j = 0; j < num_rows_; j++) {
             if (PQgetisnull(result_, j, i)) {
                 this_length = 4;        /* "NULL" */
@@ -930,14 +930,14 @@ SQL_FIELD *BareosDbPostgresql::SqlFetchField(void)
                 this_length = cstrlen(PQgetvalue(result_, j, i));
             }
 
-            if (max_length < this_length) {
-               max_length = this_length;
+            if (MaxLength < this_length) {
+               MaxLength = this_length;
             }
          }
-         fields_[i].max_length = max_length;
+         fields_[i].MaxLength = MaxLength;
 
          Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
+               fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
       }
    }
 
@@ -1055,7 +1055,7 @@ bool BareosDbPostgresql::SqlBatchStart(JobControlRecord *jcr)
       if (result_) {
          break;
       }
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
    }
    if (!result_) {
       Dmsg1(50, "Query failed: %s\n", query);

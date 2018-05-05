@@ -45,8 +45,8 @@
 #define O_CTG 0
 #endif
 
-static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofile);
-static int path_already_seen(JobControlRecord *jcr, char *path, int pnl);
+static int SeparatePathAndFile(JobControlRecord *jcr, char *fname, char *ofile);
+static int PathAlreadySeen(JobControlRecord *jcr, char *path, int pnl);
 
 /**
  * Create the file, or the directory
@@ -179,7 +179,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
        *   not already exist.  Below, we will split to
        *   do the file type specific work
        */
-      pnl = separate_path_and_file(jcr, attr->fname, attr->ofname);
+      pnl = SeparatePathAndFile(jcr, attr->fname, attr->ofname);
       if (pnl < 0) {
          return CF_ERROR;
       }
@@ -191,9 +191,9 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
       if (pnl > 0) {
          char savechr;
          savechr = attr->ofname[pnl];
-         attr->ofname[pnl] = 0;                 /* terminate path */
+         attr->ofname[pnl] = 0;                 /* Terminate path */
 
-         if (!path_already_seen(jcr, attr->ofname, pnl)) {
+         if (!PathAlreadySeen(jcr, attr->ofname, pnl)) {
             Dmsg1(400, "Make path %s\n", attr->ofname);
             /*
              * If we need to make the directory, ensure that it is with
@@ -229,7 +229,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
          if (bopen(bfd, attr->ofname, flags, 0, attr->statp.st_rdev) < 0) {
             berrno be;
 
-            be.set_errno(bfd->berrno);
+            be.SetErrno(bfd->berrno);
             Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"), attr->ofname, be.bstrerror());
             Dmsg2(100,"Could not create %s: ERR=%s\n", attr->ofname, be.bstrerror());
 
@@ -307,7 +307,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
             Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
                berrno be;
-               be.set_errno(bfd->berrno);
+               be.SetErrno(bfd->berrno);
                Qmsg2(jcr, M_ERROR, 0, _("Could not open %s: ERR=%s\n"),
                      attr->ofname, be.bstrerror());
                Dmsg2(400, "Could not open %s: ERR=%s\n", attr->ofname, be.bstrerror());
@@ -434,7 +434,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
          }
          if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0, attr->statp.st_rdev) < 0) {
             berrno be;
-            be.set_errno(bfd->berrno);
+            be.SetErrno(bfd->berrno);
 #ifdef HAVE_WIN32
             /*
              * Check for trying to create a drive, if so, skip
@@ -483,7 +483,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
  *           0  no path
  *           -1 filename is zero length
  */
-static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofile)
+static int SeparatePathAndFile(JobControlRecord *jcr, char *fname, char *ofile)
 {
    char *f, *p, *q;
    int fnl, pnl;
@@ -509,7 +509,7 @@ static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofil
    if (IsPathSeparator(*f)) {
       f++;
    }
-   *q = 0;                         /* terminate string */
+   *q = 0;                         /* Terminate string */
 
    fnl = q - f;
    if (fnl == 0) {
@@ -527,7 +527,7 @@ static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofil
  * Primitive caching of path to prevent recreating a pathname
  *   each time as long as we remain in the same directory.
  */
-static int path_already_seen(JobControlRecord *jcr, char *path, int pnl)
+static int PathAlreadySeen(JobControlRecord *jcr, char *path, int pnl)
 {
    if (!jcr->cached_path) {
       jcr->cached_path = GetPoolMemory(PM_FNAME);

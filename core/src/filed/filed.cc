@@ -38,7 +38,7 @@
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
-extern bool parse_fd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseFdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
@@ -234,7 +234,7 @@ int main (int argc, char *argv[])
    }
 
    my_config = new_config_parser();
-   parse_fd_config(my_config, configfile, M_ERROR_TERM);
+   ParseFdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
       my_config->DumpResources(prtmsg, NULL);
@@ -309,7 +309,7 @@ void TerminateFiled(int sig)
    static bool already_here = false;
 
    if (already_here) {
-      bmicrosleep(2, 0);              /* yield */
+      Bmicrosleep(2, 0);              /* yield */
       exit(1);                        /* prevent loops */
    }
    already_here = true;

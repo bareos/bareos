@@ -22,6 +22,6 @@
 #define BAREOS_STORED_SD_CMDS_H_
 
 void *handle_stored_connection(BareosSocket *sd, char *job_name);
-bool do_listen_run(JobControlRecord *jcr);
+bool DoListenRun(JobControlRecord *jcr);
 
 #endif // BAREOS_STORED_SD_CMDS_H_

@@ -25,11 +25,11 @@
 #include "dird/ua.h"
 
 bool PruneFiles(UaContext *ua, ClientResource *client, PoolResource *pool);
-bool prune_jobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType);
+bool PruneJobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType);
 bool PruneVolume(UaContext *ua, MediaDbRecord *mr);
-int job_delete_handler(void *ctx, int num_fields, char **row);
-int del_count_handler(void *ctx, int num_fields, char **row);
-int file_delete_handler(void *ctx, int num_fields, char **row);
+int JobDeleteHandler(void *ctx, int num_fields, char **row);
+int DelCountHandler(void *ctx, int num_fields, char **row);
+int FileDeleteHandler(void *ctx, int num_fields, char **row);
 int GetPruneListForVolume(UaContext *ua, MediaDbRecord *mr, del_ctx *del);
 int ExcludeRunningJobsFromList(del_ctx *prune_list);
 

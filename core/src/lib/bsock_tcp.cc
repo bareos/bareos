@@ -133,7 +133,7 @@ bool BareosSocketTCP::connect(JobControlRecord * jcr, int retry_interval, utime_
                "Could not connect to %s on %s:%d. ERR=%s\n"
                "Retrying ...\n"), name, host, port, be.bstrerror());
       }
-      bmicrosleep(retry_interval, 0);
+      Bmicrosleep(retry_interval, 0);
       now = time(NULL);
       if (begin_time + max_retry_time <= now) {
          Qmsg4(jcr, M_FATAL, 0, _("Unable to connect to %s on %s:%d. ERR=%s\n"),
@@ -285,7 +285,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
       /*
        * Keep socket from timing out from inactivity
        */
-      set_keepalive(jcr, sockfd, use_keepalive_, heart_beat, heart_beat);
+      SetKeepalive(jcr, sockfd, use_keepalive_, heart_beat, heart_beat);
 
       /*
        * Connect to server
@@ -329,7 +329,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
 }
 
 
-bool BareosSocketTCP::set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
+bool BareosSocketTCP::SetKeepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
 {
    int value = int(enable);
 
@@ -378,7 +378,7 @@ bool BareosSocketTCP::set_keepalive(JobControlRecord *jcr, int sockfd, bool enab
 }
 
 
-bool BareosSocketTCP::send_packet(int32_t *hdr, int32_t pktsiz)
+bool BareosSocketTCP::SendPacket(int32_t *hdr, int32_t pktsiz)
 {
    Enter(400);
 
@@ -478,7 +478,7 @@ bool BareosSocketTCP::send()
    if (o_msglen <= 0) {
       pktsiz = header_length;                /* signal, no data */
       *hdr = htonl(o_msglen);                /* store signal */
-      ok = send_packet(hdr, pktsiz);
+      ok = SendPacket(hdr, pktsiz);
    } else {
       /*
        * msg might be to long for a single Bareos packet.
@@ -501,7 +501,7 @@ bool BareosSocketTCP::send()
          }
 
          *hdr = htonl(packet_msglen);        /* store length */
-         ok = send_packet(hdr, pktsiz);
+         ok = SendPacket(hdr, pktsiz);
          written += packet_msglen;
          hdr = (int32_t *)(msg + written - (int)header_length);
       }
@@ -646,11 +646,11 @@ int32_t BareosSocketTCP::recv()
    }
 
    /*
-    * Always add a zero by to properly terminate any string that was send to us.
+    * Always add a zero by to properly Terminate any string that was send to us.
     * Note, we ensured above that the buffer is at least one byte longer than
     * the message length.
     */
-   msg[nbytes] = 0; /* terminate in case it is a string */
+   msg[nbytes] = 0; /* Terminate in case it is a string */
 
    /*
     * The following uses *lots* of resources so turn it on only for serious debugging.
@@ -1007,7 +1007,7 @@ int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
             continue;
          }
          if (errno == EAGAIN) {
-            bmicrosleep(0, 20000); /* try again in 20ms */
+            Bmicrosleep(0, 20000); /* try again in 20ms */
             continue;
          }
       }

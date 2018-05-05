@@ -172,7 +172,7 @@ bool BareosSocket::signal(int signal)
 /**
  * Despool spooled attributes
  */
-bool BareosSocket::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
+bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize)
 {
    int32_t pktsiz;
    size_t nbytes;
@@ -202,13 +202,13 @@ bool BareosSocket::despool(void update_attr_spool_size(ssize_t size), ssize_t ts
             berrno be;
             Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
             Qmsg1(get_jcr(), M_FATAL, 0, _("read attr spool error. ERR=%s\n"), be.bstrerror());
-            update_attr_spool_size(tsize - last);
+            UpdateAttrSpoolSize(tsize - last);
             return false;
          }
 
          size += nbytes;
          if ((++count & 0x3F) == 0) {
-            update_attr_spool_size(size - last);
+            UpdateAttrSpoolSize(size - last);
             last = size;
          }
       }
@@ -218,7 +218,7 @@ bool BareosSocket::despool(void update_attr_spool_size(ssize_t size), ssize_t ts
          return false;
       }
    }
-   update_attr_spool_size(tsize - last);
+   UpdateAttrSpoolSize(tsize - last);
 
    return true;
 }
@@ -258,7 +258,7 @@ bool BareosSocket::fsend(const char *fmt, ...)
    for (;;) {
       maxlen = SizeofPoolMemory(msg) - 1;
       va_start(arg_ptr, fmt);
-      msglen = bvsnprintf(msg, maxlen, fmt, arg_ptr);
+      msglen = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (msglen >= 0 && msglen < (maxlen - 5)) {
          break;
@@ -316,7 +316,7 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
    Dmsg1(6, ">dird: %s", dir->msg);
    if (dir->recv() <= 0) {
       dir->StopTimer();
-      bsnprintf(response, response_len, _("Bad response to Hello command: ERR=%s\n"
+      Bsnprintf(response, response_len, _("Bad response to Hello command: ERR=%s\n"
                                           "The Director at \"%s:%d\" is probably not running.\n"),
                 dir->bstrerror(), dir->host(), dir->port());
       return false;
@@ -325,18 +325,18 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
    dir->StopTimer();
    Dmsg1(10, "<dird: %s", dir->msg);
    if (!bstrncmp(dir->msg, OKhello, sizeof(OKhello) - 1)) {
-      bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"),
+      Bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"),
                 dir->host(), dir->port());
       return false;
    } else {
-      bsnprintf(response, response_len, "%s", dir->msg);
+      Bsnprintf(response, response_len, "%s", dir->msg);
    }
 
    return true;
 
 bail_out:
    dir->StopTimer();
-   bsnprintf(response, response_len, _("Authorization problem with Director at \"%s:%d\"\n"
+   Bsnprintf(response, response_len, _("Authorization problem with Director at \"%s:%d\"\n"
                                        "Most likely the passwords do not agree.\n"
                                        "If you are using TLS, there may have been a certificate "
                                        "validation error during the TLS handshake.\n"
@@ -611,11 +611,11 @@ void BareosSocket::ControlBwlimit(int bytes)
        * Sleep the right number of usecs.
        */
       while (1) {
-         bmicrosleep(0, usec_sleep);
+         Bmicrosleep(0, usec_sleep);
          now = GetCurrentBtime();
 
          /*
-          * See if we slept enough or that bmicrosleep() returned early.
+          * See if we slept enough or that Bmicrosleep() returned early.
           */
          if ((now - last_tick_) < usec_sleep) {
             usec_sleep -= (now - last_tick_);

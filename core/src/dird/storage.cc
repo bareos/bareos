@@ -493,7 +493,7 @@ bool SelectNextRstore(JobControlRecord *jcr, bootstrap_info &info)
          jcr->setJobStatus(JS_Running);
          return true;
       }
-      bmicrosleep(10, 0);          /* Sleep 10 secs */
+      Bmicrosleep(10, 0);          /* Sleep 10 secs */
       if (JobCanceled(jcr)) {
          FreeRstorage(jcr);
          return false;
@@ -517,7 +517,7 @@ void StorageStatus(UaContext *ua, StorageResource *store, char *cmd)
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      return do_ndmp_storage_status(ua, store, cmd);
+      return DoNdmpStorageStatus(ua, store, cmd);
    default:
       break;
    }
@@ -526,7 +526,7 @@ void StorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 /**
  * Simple comparison function for binary insert of vol_list_t
  */
-int storage_compare_vol_list_entry(void *e1, void *e2)
+int StorageCompareVolListEntry(void *e1, void *e2)
 {
    vol_list_t *v1, *v2;
 
@@ -543,7 +543,7 @@ int storage_compare_vol_list_entry(void *e1, void *e2)
    }
 }
 
-static inline void free_vol_list(changer_vol_list_t *vol_list)
+static inline void FreeVolList(changer_vol_list_t *vol_list)
 {
    vol_list_t *vl;
 
@@ -557,7 +557,7 @@ static inline void free_vol_list(changer_vol_list_t *vol_list)
       delete vol_list->contents;
       vol_list->contents = NULL;
    } else {
-      Dmsg0(100, "free_vol_list: vol_list->contents already empty\n");
+      Dmsg0(100, "FreeVolList: vol_list->contents already empty\n");
    }
 }
 
@@ -604,7 +604,7 @@ changer_vol_list_t *get_vol_list_from_storage(UaContext *ua, StorageResource *st
        */
       Dmsg0(100, "Freeing volume list\n");
       if (store->rss->vol_list->reference_count == 0) {
-         free_vol_list(store->rss->vol_list);
+         FreeVolList(store->rss->vol_list);
       } else {
          /*
           * Need to cleanup but things are still referenced.
@@ -817,7 +817,7 @@ void StorageReleaseVolList(StorageResource *store, changer_vol_list_t *vol_list)
           * It seems this is a release of an uncached version of the vol_list.
           * We just destroy this vol_list as there are no more references to it.
           */
-         free_vol_list(vol_list);
+         FreeVolList(vol_list);
          free(vol_list);
       }
    }
@@ -834,7 +834,7 @@ void StorageFreeVolList(StorageResource *store, changer_vol_list_t *vol_list)
 
    Dmsg1(100, "Freeing volume list at %p\n", vol_list);
 
-   free_vol_list(vol_list);
+   FreeVolList(vol_list);
 
    /*
     * Clear the cached vol_list if needed.
@@ -863,7 +863,7 @@ void InvalidateVolList(StorageResource *store)
        * us the moment there are no more references.
        */
       if (store->rss->vol_list->reference_count == 0) {
-         free_vol_list(store->rss->vol_list);
+         FreeVolList(store->rss->vol_list);
       } else {
          store->rss->vol_list = NULL;
       }
@@ -875,7 +875,7 @@ void InvalidateVolList(StorageResource *store)
 /**
  * Simple comparison function for binary insert of storage_mapping_t
  */
-int compare_storage_mapping(void *e1, void *e2)
+int CompareStorageMapping(void *e1, void *e2)
 {
    storage_mapping_t *m1, *m2;
 

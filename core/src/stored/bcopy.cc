@@ -40,10 +40,10 @@
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
-static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
+static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
 static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 
@@ -172,7 +172,7 @@ int main (int argc, char *argv[])
    working_directory = wd;
 
    my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
@@ -278,7 +278,7 @@ static bool RecordCb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
     *
     */
    if (rec->FileIndex < 0) {
-      get_session_record(in_dcr->dev, rec, &sessrec);
+      GetSessionRecord(in_dcr->dev, rec, &sessrec);
 
       if (verbose > 1) {
          DumpLabelRecord(in_dcr->dev, rec, true);
@@ -355,7 +355,7 @@ static bool RecordCb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
    return true;
 }
 
-static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
+static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
    const char *rtype;
    memset(sessrec, 0, sizeof(SESSION_LABEL));

@@ -46,7 +46,7 @@
  * daemon accessed via the NDMP protocol or query the TAPE and ROBOT
  * agent of a native NDMP server.
  */
-void do_ndmp_storage_status(UaContext *ua, StorageResource *store, char *cmd)
+void DoNdmpStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 {
    /*
     * See if the storage is just a NDMP instance of a normal storage daemon.
@@ -72,7 +72,7 @@ void do_ndmp_storage_status(UaContext *ua, StorageResource *store, char *cmd)
 /**
  * Interface function which glues the logging infra of the NDMP lib for debugging.
  */
-extern "C" void ndmp_robot_status_handler(struct ndmlog *log, char *tag, int lev, char *msg)
+extern "C" void NdmpRobotStatusHandler(struct ndmlog *log, char *tag, int lev, char *msg)
 {
    NIS *nis;
 
@@ -90,7 +90,7 @@ extern "C" void ndmp_robot_status_handler(struct ndmlog *log, char *tag, int lev
 /**
  * Generic cleanup function that can be used after a successfull or failed NDMP Job ran.
  */
-static void cleanup_ndmp_session(struct ndm_session *ndmp_sess)
+static void CleanupNdmpSession(struct ndm_session *ndmp_sess)
 {
    /*
     * Destroy the session.
@@ -109,7 +109,7 @@ static void cleanup_ndmp_session(struct ndm_session *ndmp_sess)
 /**
  * Generic function to run a storage Job on a remote NDMP server.
  */
-static bool ndmp_run_storage_job(JobControlRecord *jcr, StorageResource *store, struct ndm_session *ndmp_sess, struct ndm_job_param *ndmp_job)
+static bool NdmpRunStorageJob(JobControlRecord *jcr, StorageResource *store, struct ndm_session *ndmp_sess, struct ndm_job_param *ndmp_job)
 {
    NIS *nis;
 
@@ -118,7 +118,7 @@ static bool ndmp_run_storage_job(JobControlRecord *jcr, StorageResource *store, 
 
    ndmp_sess->param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(ndmp_sess->param, 0, sizeof(struct ndm_session_param));
-   ndmp_sess->param->log.deliver = ndmp_robot_status_handler;
+   ndmp_sess->param->log.deliver = NdmpRobotStatusHandler;
    nis = (NIS *)malloc(sizeof(NIS));
    memset(nis, 0, sizeof(NIS));
    ndmp_sess->param->log_level = NativeToNdmpLoglevel(me->ndmp_loglevel, debug_level, nis);
@@ -173,7 +173,7 @@ bail_out:
 /**
  * Generic function to get the current element status of a NDMP robot.
  */
-static bool get_robot_element_status(JobControlRecord *jcr, StorageResource *store, struct ndm_session **ndmp_sess)
+static bool GetRobotElementStatus(JobControlRecord *jcr, StorageResource *store, struct ndm_session **ndmp_sess)
 {
    struct ndm_job_param ndmp_job;
 
@@ -200,7 +200,7 @@ static bool get_robot_element_status(JobControlRecord *jcr, StorageResource *sto
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
       return false;
    }
    ndmp_job.have_robot = 1;
@@ -212,8 +212,8 @@ static bool get_robot_element_status(JobControlRecord *jcr, StorageResource *sto
    *ndmp_sess = (struct ndm_session *)malloc(sizeof(struct ndm_session));
    memset(*ndmp_sess, 0, sizeof(struct ndm_session));
 
-   if (!ndmp_run_storage_job(jcr, store, *ndmp_sess, &ndmp_job)) {
-      cleanup_ndmp_session(*ndmp_sess);
+   if (!NdmpRunStorageJob(jcr, store, *ndmp_sess, &ndmp_job)) {
+      CleanupNdmpSession(*ndmp_sess);
       return false;
    }
 
@@ -223,7 +223,7 @@ static bool get_robot_element_status(JobControlRecord *jcr, StorageResource *sto
 /**
  * Get the volume names from a smc_element_descriptor.
  */
-static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
+static void FillVolumeName(vol_list_t *vl, struct smc_element_descriptor *edp)
 {
    if (edp->PVolTag) {
       vl->VolName = bstrdup((char *)edp->primary_vol_tag->volume_id);
@@ -245,7 +245,7 @@ static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
  * the fact if things are full or empty as that data is kind of volatile
  * and you should use a vol_list for that.
  */
-static void ndmp_fill_storage_mappings(StorageResource *store, struct ndm_session *ndmp_sess)
+static void NdmpFillStorageMappings(StorageResource *store, struct ndm_session *ndmp_sess)
 {
    drive_number_t drive;
    slot_number_t slot,
@@ -286,7 +286,7 @@ static void ndmp_fill_storage_mappings(StorageResource *store, struct ndm_sessio
       }
       mapping->Index = edp->element_address;
 
-      store->rss->storage_mappings->binary_insert(mapping, compare_storage_mapping);
+      store->rss->storage_mappings->binary_insert(mapping, CompareStorageMapping);
    }
 
    /*
@@ -334,7 +334,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
    dlist *vol_list = NULL;
 
    ua->WarningMsg(_("get ndmp_vol_list...\n"));
-   if (!get_robot_element_status(ua->jcr, store, &ndmp_sess)) {
+   if (!GetRobotElementStatus(ua->jcr, store, &ndmp_sess)) {
       return (dlist *)NULL;
    }
 
@@ -342,7 +342,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
     * If we have no storage mappings create them now from the data we just retrieved.
     */
    if (!store->rss->storage_mappings) {
-      ndmp_fill_storage_mappings(store, ndmp_sess);
+      NdmpFillStorageMappings(store, ndmp_sess);
    }
 
    /*
@@ -370,7 +370,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
             vl->Type = slot_type_normal;
             if (edp->Full) {
                vl->Content = slot_content_full;
-               fill_volume_name(vl, edp);
+               FillVolumeName(vl, edp);
             } else {
                vl->Content = slot_content_empty;
             }
@@ -396,7 +396,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
                continue;
             } else {
                vl->Content = slot_content_full;
-               fill_volume_name(vl, edp);
+               FillVolumeName(vl, edp);
             }
             break;
          default:
@@ -422,7 +422,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
             vl->Index = edp->element_address;
             if (edp->Full) {
                vl->Content = slot_content_full;
-               fill_volume_name(vl, edp);
+               FillVolumeName(vl, edp);
             } else {
                vl->Content = slot_content_empty;
             }
@@ -435,7 +435,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
             vl->Index = edp->element_address;
             if (edp->Full) {
                vl->Content = slot_content_full;
-               fill_volume_name(vl, edp);
+               FillVolumeName(vl, edp);
             } else {
                vl->Content = slot_content_empty;
             }
@@ -463,7 +463,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
                vl->Content = slot_content_full;
                slot_mapping = LookupStorageMapping(store, slot_type_normal, PHYSICAL_TO_LOGICAL, edp->src_se_addr);
                vl->Loaded = slot_mapping;
-               fill_volume_name(vl, edp);
+               FillVolumeName(vl, edp);
             } else {
                vl->Content = slot_content_empty;
             }
@@ -488,7 +488,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
                vl->Index, vl->Slot, vl->Loaded, vl->Type, vl->Content);
       }
 
-      vol_list->binary_insert(vl, storage_compare_vol_list_entry);
+      vol_list->binary_insert(vl, StorageCompareVolListEntry);
    }
 
    if (vol_list->size() == 0) {
@@ -496,7 +496,7 @@ dlist *ndmp_get_vol_list(UaContext *ua, StorageResource *store, bool listall, bo
       vol_list = NULL;
    }
 
-   cleanup_ndmp_session(ndmp_sess);
+   CleanupNdmpSession(ndmp_sess);
 
    return vol_list;
 }
@@ -508,13 +508,13 @@ bool NdmpUpdateStorageMappings(JobControlRecord* jcr, StorageResource *store)
 {
    struct ndm_session *ndmp_sess;
 
-   if (!get_robot_element_status(jcr, store, &ndmp_sess)) {
+   if (!GetRobotElementStatus(jcr, store, &ndmp_sess)) {
       return false;
    }
 
-   ndmp_fill_storage_mappings(store, ndmp_sess);
+   NdmpFillStorageMappings(store, ndmp_sess);
 
-   cleanup_ndmp_session(ndmp_sess);
+   CleanupNdmpSession(ndmp_sess);
 
    return true;
 
@@ -527,13 +527,13 @@ bool NdmpUpdateStorageMappings(UaContext *ua, StorageResource *store)
 {
    struct ndm_session *ndmp_sess;
 
-   if (!get_robot_element_status(ua->jcr, store, &ndmp_sess)) {
+   if (!GetRobotElementStatus(ua->jcr, store, &ndmp_sess)) {
       return false;
    }
 
-   ndmp_fill_storage_mappings(store, ndmp_sess);
+   NdmpFillStorageMappings(store, ndmp_sess);
 
-   cleanup_ndmp_session(ndmp_sess);
+   CleanupNdmpSession(ndmp_sess);
 
    return true;
 }
@@ -663,7 +663,7 @@ bool NdmpTransferVolume(UaContext *ua, StorageResource *store,
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
       return retval;
    }
    ndmp_job.have_robot = 1;
@@ -675,14 +675,14 @@ bool NdmpTransferVolume(UaContext *ua, StorageResource *store,
    ndmp_sess = (struct ndm_session *)malloc(sizeof(struct ndm_session));
    memset(ndmp_sess, 0, sizeof(struct ndm_session));
 
-   if (!ndmp_run_storage_job(ua->jcr, store, ndmp_sess, &ndmp_job)) {
-      cleanup_ndmp_session(ndmp_sess);
+   if (!NdmpRunStorageJob(ua->jcr, store, ndmp_sess, &ndmp_job)) {
+      CleanupNdmpSession(ndmp_sess);
       return retval;
    }
 
    retval = true;
 
-   cleanup_ndmp_session(ndmp_sess);
+   CleanupNdmpSession(ndmp_sess);
 
    return retval;
 }
@@ -790,7 +790,7 @@ bool NdmpAutochangerVolumeOperation(UaContext *ua, StorageResource *store, const
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
       return retval;
    }
    ndmp_job.have_robot = 1;
@@ -802,14 +802,14 @@ bool NdmpAutochangerVolumeOperation(UaContext *ua, StorageResource *store, const
    ndmp_sess = (struct ndm_session *)malloc(sizeof(struct ndm_session));
    memset(ndmp_sess, 0, sizeof(struct ndm_session));
 
-   if (!ndmp_run_storage_job(ua->jcr, store, ndmp_sess, &ndmp_job)) {
-      cleanup_ndmp_session(ndmp_sess);
+   if (!NdmpRunStorageJob(ua->jcr, store, ndmp_sess, &ndmp_job)) {
+      CleanupNdmpSession(ndmp_sess);
       return retval;
    }
 
    retval = true;
 
-   cleanup_ndmp_session(ndmp_sess);
+   CleanupNdmpSession(ndmp_sess);
 
    return retval;
 }
@@ -852,7 +852,7 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
       Dmsg0(100,"NdmpSendLabelRequest: no robot to use\n");
       return retval;
    }
@@ -864,7 +864,7 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
     */
    ndmp_job.tape_device = lookup_ndmp_drive(store, drive);
    if (!ndmp_job.tape_device) {
-      actuallyfree(ndmp_job.robot_target);
+      Actuallyfree(ndmp_job.robot_target);
    }
 
    /*
@@ -892,14 +892,14 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
    ndmp_sess = (struct ndm_session *)malloc(sizeof(struct ndm_session));
    memset(ndmp_sess, 0, sizeof(struct ndm_session));
 
-   if (!ndmp_run_storage_job(ua->jcr, store, ndmp_sess, &ndmp_job)) {
-      cleanup_ndmp_session(ndmp_sess);
+   if (!NdmpRunStorageJob(ua->jcr, store, ndmp_sess, &ndmp_job)) {
+      CleanupNdmpSession(ndmp_sess);
       return retval;
    }
 
    retval = true;
 
-   cleanup_ndmp_session(ndmp_sess);
+   CleanupNdmpSession(ndmp_sess);
 
    return retval;
 }
@@ -907,7 +907,7 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
 /**
  * Dummy entry points when NDMP not enabled.
  */
-void do_ndmp_storage_status(UaContext *ua, StorageResource *store, char *cmd)
+void DoNdmpStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

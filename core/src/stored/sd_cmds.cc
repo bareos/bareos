@@ -54,9 +54,9 @@ static char serrmsg[] =
 /* Imported functions */
 
 /* Forward referenced SD commands */
-static bool start_replication_session(JobControlRecord *jcr);
-static bool replicate_data(JobControlRecord *jcr);
-static bool end_replication_session(JobControlRecord *jcr);
+static bool StartReplicationSession(JobControlRecord *jcr);
+static bool ReplicateData(JobControlRecord *jcr);
+static bool EndReplicationSession(JobControlRecord *jcr);
 
 struct s_cmds {
    const char *cmd;
@@ -67,9 +67,9 @@ struct s_cmds {
  * The following are the recognized commands from the Remote Storage daemon
  */
 static struct s_cmds sd_cmds[] = {
-   { "start replicate", start_replication_session },
-   { "replicate data", replicate_data },
-   { "end replicate", end_replication_session },
+   { "start replicate", StartReplicationSession },
+   { "replicate data", ReplicateData },
+   { "end replicate", EndReplicationSession },
    { NULL, NULL } /* list terminator */
 };
 
@@ -104,10 +104,10 @@ void *handle_stored_connection(BareosSocket *sd, char *job_name)
    JobControlRecord *jcr;
 
 /**
- * With the following bmicrosleep on, running the
+ * With the following Bmicrosleep on, running the
  * SD under the debugger fails.
  */
-// bmicrosleep(0, 50000);             /* wait 50 millisecs */
+// Bmicrosleep(0, 50000);             /* wait 50 millisecs */
    if (!(jcr = get_jcr_by_full_name(job_name))) {
       Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
@@ -156,7 +156,7 @@ void *handle_stored_connection(BareosSocket *sd, char *job_name)
 /**
  * Now talk to the SD and do what he says
  */
-static void do_sd_commands(JobControlRecord *jcr)
+static void DoSdCommands(JobControlRecord *jcr)
 {
    int i, status;
    bool found, quit;
@@ -224,7 +224,7 @@ static void do_sd_commands(JobControlRecord *jcr)
  * - Read a command from the Storage daemon
  * - Execute it
  */
-bool do_listen_run(JobControlRecord *jcr)
+bool DoListenRun(JobControlRecord *jcr)
 {
    char ec1[30];
    int errstat = 0;
@@ -273,7 +273,7 @@ bool do_listen_run(JobControlRecord *jcr)
       }
    }
 
-   do_sd_commands(jcr);
+   DoSdCommands(jcr);
 
    jcr->end_time = time(NULL);
 
@@ -299,7 +299,7 @@ cleanup:
 /**
  * Start of replication.
  */
-static bool start_replication_session(JobControlRecord *jcr)
+static bool StartReplicationSession(JobControlRecord *jcr)
 {
    BareosSocket *sd = jcr->store_bsock;
 
@@ -326,7 +326,7 @@ static bool start_replication_session(JobControlRecord *jcr)
  *    Open Data Channel and receive Data for archiving
  *    Write the Data to the archive device
  */
-static bool replicate_data(JobControlRecord *jcr)
+static bool ReplicateData(JobControlRecord *jcr)
 {
    BareosSocket *sd = jcr->store_bsock;
 
@@ -359,7 +359,7 @@ static bool replicate_data(JobControlRecord *jcr)
 /**
  * End a replication session.
  */
-static bool end_replication_session(JobControlRecord *jcr)
+static bool EndReplicationSession(JobControlRecord *jcr)
 {
    BareosSocket *sd = jcr->store_bsock;
 

@@ -42,9 +42,9 @@
  * N.B. This is a two pass parser, so if you malloc() a string in a "store" routine,
  * you must ensure to do it during only one of the two passes, or to free it between.
  *
- * Also, note that the resource record is malloced and saved in save_resource()
+ * Also, note that the resource record is malloced and saved in SaveResource()
  * during pass 1. Anything that you want saved after pass two (e.g. resource pointers)
- * must explicitly be done in save_resource. Take a look at the Job resource in
+ * must explicitly be done in SaveResource. Take a look at the Job resource in
  * src/dird/dird_conf.c to see how it is done.
  *
  * Kern Sibbald, January MM
@@ -93,7 +93,7 @@ void ConfigurationParser::init(const char *cf,
                   LEX_ERROR_HANDLER *ScanError,
                   LEX_WARNING_HANDLER *scan_warning,
                   INIT_RES_HANDLER *init_res,
-                  STORE_RES_HANDLER *store_res,
+                  STORE_RES_HANDLER *StoreRes,
                   PRINT_RES_HANDLER *print_res,
                   int32_t err_type,
                   void *vres_all,
@@ -111,7 +111,7 @@ void ConfigurationParser::init(const char *cf,
    scan_error_ = ScanError;
    scan_warning_ = scan_warning;
    init_res_ = init_res;
-   store_res_ = store_res;
+   store_res_ = StoreRes;
    print_res_ = print_res;
    err_type_ = err_type;
    res_all_ = vres_all;
@@ -304,8 +304,8 @@ bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_
                   goto bail_out;
                }
                /* save resource */
-               if (!save_resource(res_type, items, pass)) {
-                  scan_err0(lc, _("save_resource failed"));
+               if (!SaveResource(res_type, items, pass)) {
+                  scan_err0(lc, _("SaveResource failed"));
                   goto bail_out;
                }
                break;
@@ -331,7 +331,7 @@ bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_
       if (debug_level >= 900 && pass == 2) {
          int i;
          for (i = r_first_; i <= r_last_; i++) {
-            dump_resource(i, res_head_[i-r_first_], prtmsg, NULL, false);
+            DumpResource(i, res_head_[i-r_first_], prtmsg, NULL, false);
          }
       }
 
@@ -359,7 +359,7 @@ const char *ConfigurationParser::get_resource_type_name(int code)
    return res_to_str(code);
 }
 
-int ConfigurationParser::get_resource_table_index(int resource_type)
+int ConfigurationParser::GetResourceTableIndex(int resource_type)
 {
    int rindex = -1;
 
@@ -373,7 +373,7 @@ int ConfigurationParser::get_resource_table_index(int resource_type)
 ResourceTable *ConfigurationParser::get_resource_table(int resource_type)
 {
    ResourceTable *result = NULL;
-   int rindex = get_resource_table_index(resource_type);
+   int rindex = GetResourceTableIndex(resource_type);
 
    if (rindex >= 0) {
       result = &resources_[rindex];
@@ -388,7 +388,7 @@ ResourceTable *ConfigurationParser::get_resource_table(const char *resource_type
    int i;
 
    for (i = 0; resources_[i].name; i++) {
-      if (bstrcasecmp(resources_[i].name, resource_type_name)) {
+      if (Bstrcasecmp(resources_[i].name, resource_type_name)) {
          result = &resources_[i];
       }
    }
@@ -402,7 +402,7 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem *items, const char *i
    int i;
 
    for (i = 0; items[i].name; i++) {
-      if (bstrcasecmp(items[i].name, item)) {
+      if (Bstrcasecmp(items[i].name, item)) {
          result = i;
          break;
       }
@@ -470,7 +470,7 @@ static inline void set_env(const char *key, const char *value)
 }
 #endif
 
-bool ConfigurationParser::get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename)
+bool ConfigurationParser::GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename)
 {
    bool found = false;
 
@@ -491,7 +491,7 @@ bool ConfigurationParser::get_config_file(PoolMem &full_path, const char *config
    return found;
 }
 
-bool ConfigurationParser::get_config_include_path(PoolMem &full_path, const char *config_dir)
+bool ConfigurationParser::GetConfigIncludePath(PoolMem &full_path, const char *config_dir)
 {
    bool found = false;
 
@@ -532,10 +532,10 @@ bool ConfigurationParser::FindConfigPath(PoolMem &full_path)
       /*
        * No path is given, so use the defaults.
        */
-      found = get_config_file(full_path, get_default_configdir(), config_default_filename_);
+      found = GetConfigFile(full_path, get_default_configdir(), config_default_filename_);
       if (!found) {
          config_path_file.strcpy(full_path);
-         found = get_config_include_path(full_path, get_default_configdir());
+         found = GetConfigIncludePath(full_path, get_default_configdir());
       }
       if (!found) {
          Jmsg2(NULL, M_ERROR, 0,
@@ -548,10 +548,10 @@ bool ConfigurationParser::FindConfigPath(PoolMem &full_path)
        * Path is given and exists.
        */
       if (PathIsDirectory(cf_)) {
-         found = get_config_file(full_path, cf_, config_default_filename_);
+         found = GetConfigFile(full_path, cf_, config_default_filename_);
          if (!found) {
             config_path_file.strcpy(full_path);
-            found = get_config_include_path(full_path, cf_);
+            found = GetConfigIncludePath(full_path, cf_);
          }
          if (!found) {
             Jmsg3(NULL, M_ERROR, 0,
@@ -571,7 +571,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem &full_path)
        * If config_default_filename_ is not set,
        * cf_ may contain what is expected in config_default_filename_.
        */
-      found = get_config_file(full_path, get_default_configdir(), cf_);
+      found = GetConfigFile(full_path, get_default_configdir(), cf_);
       if (!found) {
          Jmsg2(NULL, M_ERROR, 0,
                _("Failed to find configuration files at \"%s\" and \"%s\".\n"),
@@ -689,18 +689,18 @@ void ConfigurationParser::InitResource(int type,
              */
             switch (items[i].type) {
             case CFG_TYPE_BIT:
-               if (bstrcasecmp(items[i].default_value, "on")) {
+               if (Bstrcasecmp(items[i].default_value, "on")) {
                   SetBit(items[i].code, items[i].bitvalue);
-               } else if (bstrcasecmp(items[i].default_value, "off")) {
+               } else if (Bstrcasecmp(items[i].default_value, "off")) {
                   ClearBit(items[i].code, items[i].bitvalue);
                }
                break;
             case CFG_TYPE_BOOL:
-               if (bstrcasecmp(items[i].default_value, "yes") ||
-                   bstrcasecmp(items[i].default_value, "true")) {
+               if (Bstrcasecmp(items[i].default_value, "yes") ||
+                   Bstrcasecmp(items[i].default_value, "true")) {
                   *(items[i].boolvalue) = true;
-               } else if (bstrcasecmp(items[i].default_value, "no") ||
-                          bstrcasecmp(items[i].default_value, "false")) {
+               } else if (Bstrcasecmp(items[i].default_value, "no") ||
+                          Bstrcasecmp(items[i].default_value, "false")) {
                   *(items[i].boolvalue) = false;
                }
                break;
@@ -763,7 +763,7 @@ void ConfigurationParser::InitResource(int type,
                break;
             }
             case CFG_TYPE_ADDRESSES:
-               init_default_addresses(items[i].dlistvalue, items[i].default_value);
+               InitDefaultAddresses(items[i].dlistvalue, items[i].default_value);
                break;
             default:
                /*
@@ -905,7 +905,7 @@ void ConfigurationParser::DumpResources(void sendit(void *sock, const char *fmt,
 {
    for (int i = r_first_; i <= r_last_; i++) {
       if (res_head_[i - r_first_]) {
-         dump_resource(i,res_head_[i - r_first_],sendit, sock, hide_sensitive_data);
+         DumpResource(i,res_head_[i - r_first_],sendit, sock, hide_sensitive_data);
       }
    }
 }

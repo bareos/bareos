@@ -67,7 +67,7 @@ extern char paranoid[];
 #if defined(TLI) || defined(PTX) || defined(TLI_SEQUENT)
 extern void fromhost();                 /* get/validate client host info */
 #else
-#define fromhost sock_host              /* no TLI support needed */
+#define fromhost SockHost              /* no TLI support needed */
 #endif
 
 extern int HostsAccess(struct request_info *); /* access control */
@@ -132,7 +132,7 @@ extern char *eval_server();             /* whatever is available */
 
 /* Socket-specific methods, including DNS hostname lookups. */
 
-extern void sock_host(struct request_info *);
+extern void SockHost(struct request_info *);
 extern void sock_hostname();            /* translate address to hostname */
 extern void sock_hostaddr();            /* address to printable address */
 #define sock_methods(r) \
@@ -151,11 +151,11 @@ extern void tli_host();                 /* look up endpoint addresses etc. */
   */
 
 #ifdef __STDC__
-extern void tcpd_warn(char *, ...);     /* report problem and proceed */
-extern void tcpd_jump(char *, ...);     /* report problem and jump */
+extern void TcpdWarn(char *, ...);     /* report problem and proceed */
+extern void TcpdJump(char *, ...);     /* report problem and jump */
 #else
-extern void tcpd_warn();
-extern void tcpd_jump();
+extern void TcpdWarn();
+extern void TcpdJump();
 #endif
 
 struct tcpd_context {

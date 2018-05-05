@@ -38,7 +38,7 @@ bool NativeTransferVolume(UaContext *ua, StorageResource *store,
                             slot_number_t src_slot, slot_number_t dst_slot);
 bool NativeAutochangerVolumeOperation(UaContext *ua, StorageResource *store, const char *operation,
                                          drive_number_t drive, slot_number_t slot);
-bool send_bwlimit_to_sd(JobControlRecord *jcr, const char *Job);
+bool SendBwlimitToSd(JobControlRecord *jcr, const char *Job);
 bool SendSecureEraseReqToSd(JobControlRecord *jcr);
 bool DoStorageResolve(UaContext *ua, StorageResource *store);
 bool DoStoragePluginOptions(JobControlRecord *jcr);

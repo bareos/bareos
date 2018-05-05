@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_UA_TREE_H_
 #define BAREOS_DIRD_UA_TREE_H_
 
-bool user_select_files_from_tree(TreeContext *tree);
-int insert_tree_handler(void *ctx, int num_fields, char **row);
+bool UserSelectFilesFromTree(TreeContext *tree);
+int InsertTreeHandler(void *ctx, int num_fields, char **row);
 
 #endif // BAREOS_DIRD_UA_TREE_H_

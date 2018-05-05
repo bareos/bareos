@@ -29,6 +29,6 @@ int CreatePool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_o
 void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord *mr, PoolDbRecord *pr);
 bool SetPooldbrReferences(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool);
 void SetPooldbrFromPoolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op);
-int update_pool_references(JobControlRecord *jcr, BareosDb *db, PoolResource *pool);
+int UpdatePoolReferences(JobControlRecord *jcr, BareosDb *db, PoolResource *pool);
 
 #endif // BAREOS_DIRD_UA_DB_H_

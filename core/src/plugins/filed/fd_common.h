@@ -45,7 +45,7 @@
 #endif
 
 DLL_IMP_EXP void *reallymalloc(const char *fname, int lineno, unsigned int nbytes);
-DLL_IMP_EXP void reallyfree(const char *file, int line, void *fp);
+DLL_IMP_EXP void Reallyfree(const char *file, int line, void *fp);
 
 #ifdef SMARTALLOC
 #ifndef bmalloc

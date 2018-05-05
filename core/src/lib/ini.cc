@@ -69,7 +69,7 @@ const char *ini_get_store_code(int type)
 /*
  * Get storage type from handler name.
  */
-int ini_get_store_type(const char *key)
+int IniGetStoreType(const char *key)
 {
    int i;
 
@@ -85,7 +85,7 @@ int ini_get_store_type(const char *key)
  * Handle data type. Import/Export
  * ----------------------------------------------------------------
  */
-static bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
+static bool IniStoreStr(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
    if (!lc) {
       Mmsg(inifile->edit, "%s", item->val.strval);
@@ -105,7 +105,7 @@ static bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
    return true;
 }
 
-static bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
+static bool IniStoreName(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
    if (!lc) {
       Mmsg(inifile->edit, "%s", item->val.nameval);
@@ -119,7 +119,7 @@ static bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
    return true;
 }
 
-static bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
+static bool IniStoreAlistStr(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
    alist *list;
    if (!lc) {
@@ -203,7 +203,7 @@ static bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item)
    return true;
 }
 
-static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
+static bool IniStoreBool(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
    if (!lc) {
       Mmsg(inifile->edit, "%s", item->val.boolval?"yes":"no");
@@ -212,9 +212,9 @@ static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (LexGetToken(lc, BCT_NAME) == BCT_ERROR) {
       return false;
    }
-   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
       item->val.boolval = true;
-   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
       item->val.boolval = false;
    } else {
       /*
@@ -240,7 +240,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
    while (1) {
       maxlen = buf.size() - 1;
       va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -284,7 +284,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    while (1) {
       maxlen = buf.size() - 1;
       va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -369,7 +369,7 @@ int ConfigFile::GetItem(const char *name)
    }
 
    for (int i = 0; i < MAX_INI_ITEMS && items[i].name; i++) {
-      if (bstrcasecmp(name, items[i].name)) {
+      if (Bstrcasecmp(name, items[i].name)) {
          return i;
       }
    }
@@ -380,7 +380,7 @@ int ConfigFile::GetItem(const char *name)
  * Dump a buffer to a file in the working directory
  * Needed to unserialise() a config
  */
-bool ConfigFile::dump_string(const char *buf, int32_t len)
+bool ConfigFile::DumpString(const char *buf, int32_t len)
 {
    FILE *fp;
    bool ret = false;
@@ -406,7 +406,7 @@ bool ConfigFile::dump_string(const char *buf, int32_t len)
 /*
  * Dump the item table format to a text file (used by plugin)
  */
-bool ConfigFile::serialize(const char *fname)
+bool ConfigFile::Serialize(const char *fname)
 {
    FILE *fp;
    int32_t len;
@@ -422,7 +422,7 @@ bool ConfigFile::serialize(const char *fname)
       return ret;
    }
 
-   len = serialize(&tmp);
+   len = Serialize(&tmp);
    if (fwrite(tmp.c_str(), len, 1, fp) == 1) {
       ret = true;
    }
@@ -434,7 +434,7 @@ bool ConfigFile::serialize(const char *fname)
 /*
  * Dump the item table format to a text file (used by plugin)
  */
-int ConfigFile::serialize(PoolMem *buf)
+int ConfigFile::Serialize(PoolMem *buf)
 {
    int len;
    PoolMem tmp(PM_MESSAGE);
@@ -474,7 +474,7 @@ int ConfigFile::serialize(PoolMem *buf)
 /*
  * Dump the item table content to a text file (used by director)
  */
-int ConfigFile::dump_results(PoolMem *buf)
+int ConfigFile::DumpResults(PoolMem *buf)
 {
    int len;
    PoolMem tmp(PM_MESSAGE);
@@ -504,16 +504,16 @@ int ConfigFile::dump_results(PoolMem *buf)
             ini_store_pint64(NULL, this, &items[i]);
             break;
          case INI_CFG_TYPE_NAME:
-            ini_store_name(NULL, this, &items[i]);
+            IniStoreName(NULL, this, &items[i]);
             break;
          case INI_CFG_TYPE_STR:
-            ini_store_str(NULL, this, &items[i]);
+            IniStoreStr(NULL, this, &items[i]);
             break;
          case INI_CFG_TYPE_BOOL:
-            ini_store_bool(NULL, this, &items[i]);
+            IniStoreBool(NULL, this, &items[i]);
             break;
          case INI_CFG_TYPE_ALIST_STR:
-            ini_store_alist_str(NULL, this, &items[i]);
+            IniStoreAlistStr(NULL, this, &items[i]);
             break;
          default:
             break;
@@ -557,7 +557,7 @@ bool ConfigFile::parse(const char *fname)
          continue;
       }
       for (i = 0; items[i].name; i++) {
-         if (bstrcasecmp(items[i].name, lc->str)) {
+         if (Bstrcasecmp(items[i].name, lc->str)) {
             if ((token = LexGetToken(lc, BCT_EQUALS)) == BCT_ERROR) {
                Dmsg1(dbglevel, "in BCT_IDENT got token=%s\n",
                      lex_tok_to_str(token));
@@ -583,16 +583,16 @@ bool ConfigFile::parse(const char *fname)
                ret = ini_store_pint64(lc, this, &items[i]);
                break;
             case INI_CFG_TYPE_NAME:
-               ret = ini_store_name(lc, this, &items[i]);
+               ret = IniStoreName(lc, this, &items[i]);
                break;
             case INI_CFG_TYPE_STR:
-               ret = ini_store_str(lc, this, &items[i]);
+               ret = IniStoreStr(lc, this, &items[i]);
                break;
             case INI_CFG_TYPE_BOOL:
-               ret = ini_store_bool(lc, this, &items[i]);
+               ret = IniStoreBool(lc, this, &items[i]);
                break;
             case INI_CFG_TYPE_ALIST_STR:
-               ret = ini_store_alist_str(lc, this, &items[i]);
+               ret = IniStoreAlistStr(lc, this, &items[i]);
                break;
             default:
                break;
@@ -636,7 +636,7 @@ bool ConfigFile::parse(const char *fname)
  * Variable1 = @PINT32@
  * ...
  */
-bool ConfigFile::unserialize(const char *fname)
+bool ConfigFile::UnSerialize(const char *fname)
 {
    int token, i, nb = 0;
    bool ret = false;
@@ -677,11 +677,11 @@ bool ConfigFile::unserialize(const char *fname)
          break;
       }
 
-      if (bstrcasecmp("optprompt", lc->str)) {
+      if (Bstrcasecmp("optprompt", lc->str)) {
          assign = &(items[nb].comment);
-      } else if (bstrcasecmp("optdefault", lc->str)) {
+      } else if (Bstrcasecmp("optdefault", lc->str)) {
          assign = &(items[nb].default_value);
-      } else if (bstrcasecmp("optrequired", lc->str)) {
+      } else if (Bstrcasecmp("optrequired", lc->str)) {
          items[nb].required = true;               /* Don't use argument */
          ScanToEol(lc);
          continue;
@@ -708,7 +708,7 @@ bool ConfigFile::unserialize(const char *fname)
          *assign = bstrdup(lc->str);
 
       } else {
-         if ((items[nb].type = ini_get_store_type(lc->str)) == 0) {
+         if ((items[nb].type = IniGetStoreType(lc->str)) == 0) {
             scan_err1(lc, "expected a data type, got: %s", lc->str);
             break;
          }

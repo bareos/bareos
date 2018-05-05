@@ -103,7 +103,7 @@ struct b_plugin_ctx {
    Plugin *plugin;                                 /* pointer to plugin of which this is an instance off */
 };
 
-static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
+static inline bool IsEventEnabled(bpContext *ctx, bsdEventType eventType)
 {
    b_plugin_ctx *b_ctx;
    if (!ctx) {
@@ -117,7 +117,7 @@ static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
    return BitIsSet(eventType, b_ctx->events);
 }
 
-static inline bool is_plugin_disabled(bpContext *ctx)
+static inline bool IsPluginDisabled(bpContext *ctx)
 {
    b_plugin_ctx *b_ctx;
    if (!ctx) {
@@ -131,13 +131,13 @@ static inline bool is_plugin_disabled(bpContext *ctx)
 }
 
 #ifdef needed
-static inline bool is_plugin_disabled(JobControlRecord *jcr)
+static inline bool IsPluginDisabled(JobControlRecord *jcr)
 {
-   return is_plugin_disabled(jcr->plugin_ctx);
+   return IsPluginDisabled(jcr->plugin_ctx);
 }
 #endif
 
-static bool is_ctx_good(bpContext *ctx, JobControlRecord *&jcr, b_plugin_ctx *&bctx)
+static bool IsCtxGood(bpContext *ctx, JobControlRecord *&jcr, b_plugin_ctx *&bctx)
 {
    if (!ctx) {
       return false;
@@ -255,12 +255,12 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bsdEventType even
 {
    bool stop = false;
 
-   if (!is_event_enabled(ctx, eventType)) {
+   if (!IsEventEnabled(ctx, eventType)) {
       Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
       goto bail_out;
    }
 
-   if (is_plugin_disabled(ctx)) {
+   if (IsPluginDisabled(ctx)) {
       Dmsg0(debuglevel, "Plugin disabled.\n");
       goto bail_out;
    }
@@ -377,7 +377,7 @@ bail_out:
 /**
  * Print to file the plugin info.
  */
-void dump_sd_plugin(Plugin *plugin, FILE *fp)
+void DumpSdPlugin(Plugin *plugin, FILE *fp)
 {
    genpInfo *info;
 
@@ -395,7 +395,7 @@ void dump_sd_plugin(Plugin *plugin, FILE *fp)
    fprintf(fp, "\tdescription=%s\n", NPRTB(info->plugin_description));
 }
 
-static void dump_sd_plugins(FILE *fp)
+static void DumpSdPlugins(FILE *fp)
 {
    DumpPlugins(sd_plugin_list, fp);
 }
@@ -435,8 +435,8 @@ void LoadSdPlugins(const char *plugin_dir, alist *plugin_names)
    }
 
    Dmsg1(debuglevel, "num plugins=%d\n", sd_plugin_list->size());
-   DbgPluginAddHook(dump_sd_plugin);
-   DbgPrintPluginAddHook(dump_sd_plugins);
+   DbgPluginAddHook(DumpSdPlugin);
+   DbgPrintPluginAddHook(DumpSdPlugins);
 }
 
 void UnloadSdPlugins(void)
@@ -448,7 +448,7 @@ void UnloadSdPlugins(void)
 
 int ListSdPlugins(PoolMem &msg)
 {
-   return list_plugins(sd_plugin_list, msg);
+   return ListPlugins(sd_plugin_list, msg);
 }
 
 /**
@@ -460,7 +460,7 @@ static bool IsPluginCompatible(Plugin *plugin)
    genpInfo *info = (genpInfo *)plugin->pinfo;
    Dmsg0(50, "IsPluginCompatible called\n");
    if (debug_level >= 50) {
-      dump_sd_plugin(plugin, stdin);
+      DumpSdPlugin(plugin, stdin);
    }
    if (!bstrcmp(info->plugin_magic, SD_PLUGIN_MAGIC)) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"),
@@ -477,8 +477,8 @@ static bool IsPluginCompatible(Plugin *plugin)
            plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
       return false;
    }
-   if (!bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
-       !bstrcasecmp(info->plugin_license, "AGPLv3")) {
+   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
+       !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -890,7 +890,7 @@ static bRC bareosGetInstanceCount(bpContext *ctx, int *ret)
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
 
-   if (!is_ctx_good(ctx, jcr, bctx)) {
+   if (!IsCtxGood(ctx, jcr, bctx)) {
       goto bail_out;
    }
 
@@ -931,7 +931,7 @@ static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
    }
 
    va_start(arg_ptr, fmt);
-   buffer.bvsprintf(fmt, arg_ptr);
+   buffer.Bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
    Jmsg(jcr, type, mtime, "%s", buffer.c_str());
 
@@ -945,7 +945,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
    PoolMem buffer(PM_MESSAGE);
 
    va_start(arg_ptr, fmt);
-   buffer.bvsprintf(fmt, arg_ptr);
+   buffer.Bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
    d_msg(file, line, level, "%s", buffer.c_str());
 

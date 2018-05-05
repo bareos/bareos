@@ -255,7 +255,7 @@ mount_next_vol:
       if (dev->IsFile() && dev->IsRemovable()) {
          bool ok = true;
          Dmsg0(150, "call scan_dir_for_vol\n");
-         if (ok && dev->scan_dir_for_volume(dcr)) {
+         if (ok && dev->ScanDirForVolume(dcr)) {
             if (dev->open(dcr, mode)) {
                break;                    /* got a valid volume */
             }
@@ -277,7 +277,7 @@ mount_next_vol:
     * Now check the volume label to make sure we have the right tape mounted
     */
 read_volume:
-   switch (check_volume_label(ask, autochanger)) {
+   switch (CheckVolumeLabel(ask, autochanger)) {
    case check_next_vol:
       Dmsg0(50, "SetUnload\n");
       dev->SetUnload();                 /* want a different Volume */
@@ -330,7 +330,7 @@ read_volume:
     */
    recycle = bstrcmp(dev->VolCatInfo.VolCatStatus, "Recycle");
    if (dev->VolHdr.LabelType == PRE_LABEL || recycle) {
-      if (!dcr->rewrite_volume_label(recycle)) {
+      if (!dcr->RewriteVolumeLabel(recycle)) {
          MarkVolumeInError();
          goto mount_next_vol;
       }
@@ -435,7 +435,7 @@ bool DeviceControlRecord::find_a_volume()
    return dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE);
 }
 
-int DeviceControlRecord::check_volume_label(bool &ask, bool &autochanger)
+int DeviceControlRecord::CheckVolumeLabel(bool &ask, bool &autochanger)
 {
    DeviceControlRecord *dcr = this;
    int vol_label_status;

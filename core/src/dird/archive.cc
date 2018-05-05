@@ -50,7 +50,7 @@ bool DoArchiveInit(JobControlRecord *jcr)
  * Returns: false on failure
  *          true  on success
  */
-bool do_archive(JobControlRecord *jcr)
+bool DoArchive(JobControlRecord *jcr)
 {
    jcr->jr.JobId = jcr->JobId;
 

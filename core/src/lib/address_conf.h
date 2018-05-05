@@ -75,18 +75,18 @@ class DLL_IMP_EXP IPADDR : public SmartAlloc {
    dlink link;
 };
 
-DLL_IMP_EXP void init_default_addresses(dlist ** addr, const char *port);
+DLL_IMP_EXP void InitDefaultAddresses(dlist ** addr, const char *port);
 DLL_IMP_EXP void FreeAddresses(dlist * addrs);
 
 DLL_IMP_EXP const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
-DLL_IMP_EXP int get_first_port_net_order(dlist * addrs);
+DLL_IMP_EXP int GetFirstPortNetOrder(dlist * addrs);
 DLL_IMP_EXP int GetFirstPortHostOrder(dlist * addrs);
 
 DLL_IMP_EXP int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen);
 DLL_IMP_EXP const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port=true);
 
-DLL_IMP_EXP int sockaddr_get_port_net_order(const struct sockaddr *sa);
+DLL_IMP_EXP int SockaddrGetPortNetOrder(const struct sockaddr *sa);
 DLL_IMP_EXP int SockaddrGetPort(const struct sockaddr *sa);
 DLL_IMP_EXP char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len);
 #ifdef WIN32

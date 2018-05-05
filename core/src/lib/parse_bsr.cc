@@ -34,12 +34,12 @@ typedef BootStrapRecord * (ITEM_HANDLER)(LEX *lc, BootStrapRecord *bsr);
 
 static BootStrapRecord *store_vol(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_mediatype(LEX *lc, BootStrapRecord *bsr);
-static BootStrapRecord *store_device(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *StoreDevice(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_client(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_job(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_jobid(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_count(LEX *lc, BootStrapRecord *bsr);
-static BootStrapRecord *store_jobtype(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *StoreJobtype(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_joblevel(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_findex(LEX *lc, BootStrapRecord *bsr);
 static BootStrapRecord *store_sessid(LEX *lc, BootStrapRecord *bsr);
@@ -70,7 +70,7 @@ struct kw_items items[] = {
    { "jobid", store_jobid },
    { "count", store_count },
    { "fileindex", store_findex },
-   { "jobtype", store_jobtype },
+   { "jobtype", StoreJobtype },
    { "joblevel", store_joblevel },
    { "volsessionid", store_sessid },
    { "volsessiontime", store_sesstime },
@@ -81,7 +81,7 @@ struct kw_items items[] = {
    { "voladdr", store_voladdr },
    { "stream", store_stream },
    { "slot", store_slot },
-   { "device", store_device },
+   { "device", StoreDevice },
    { "fileregex", store_fileregex },
    { "storage", store_nothing },
    { NULL, NULL }
@@ -110,7 +110,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
    while (1) {
       maxlen = buf.size() - 1;
       va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -145,7 +145,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    while (1) {
       maxlen = buf.size() - 1;
       va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -167,7 +167,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    }
 }
 
-static inline bool is_fast_rejection_ok(BootStrapRecord *bsr)
+static inline bool IsFastRejectionOk(BootStrapRecord *bsr)
 {
    /*
     * Although, this can be optimized, for the moment, require
@@ -182,7 +182,7 @@ static inline bool is_fast_rejection_ok(BootStrapRecord *bsr)
    return true;
 }
 
-static inline bool is_positioning_ok(BootStrapRecord *bsr)
+static inline bool IsPositioningOk(BootStrapRecord *bsr)
 {
    /*
     * Every bsr should have a volfile entry and a volblock entry
@@ -220,7 +220,7 @@ BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *fname)
          continue;
       }
       for (i=0; items[i].name; i++) {
-         if (bstrcasecmp(items[i].name, lc->str)) {
+         if (Bstrcasecmp(items[i].name, lc->str)) {
             token = LexGetToken(lc, BCT_ALL);
             Dmsg1 (300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
             if (token != BCT_EQUALS) {
@@ -254,8 +254,8 @@ BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *fname)
       root_bsr = NULL;
    }
    if (root_bsr) {
-      root_bsr->use_fast_rejection = is_fast_rejection_ok(root_bsr);
-      root_bsr->use_positioning = is_positioning_ok(root_bsr);
+      root_bsr->use_fast_rejection = IsFastRejectionOk(root_bsr);
+      root_bsr->use_positioning = IsPositioningOk(root_bsr);
    }
    for (bsr=root_bsr; bsr; bsr=bsr->next) {
       bsr->root = root_bsr;
@@ -343,7 +343,7 @@ static BootStrapRecord *store_nothing(LEX *lc, BootStrapRecord *bsr)
 /*
  * Shove the Device name in each Volume in the current bsr
  */
-static BootStrapRecord *store_device(LEX *lc, BootStrapRecord *bsr)
+static BootStrapRecord *StoreDevice(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
@@ -546,7 +546,7 @@ static BootStrapRecord *store_fileregex(LEX *lc, BootStrapRecord *bsr)
    return bsr;
 }
 
-static BootStrapRecord *store_jobtype(LEX *lc, BootStrapRecord *bsr)
+static BootStrapRecord *StoreJobtype(LEX *lc, BootStrapRecord *bsr)
 {
    /* *****FIXME****** */
    Pmsg0(-1, _("JobType not yet implemented\n"));
@@ -818,31 +818,31 @@ static BootStrapRecord *store_exclude(LEX *lc, BootStrapRecord *bsr)
    return bsr;
 }
 
-static inline void dump_volfile(BsrVolumeFile *volfile)
+static inline void DumpVolfile(BsrVolumeFile *volfile)
 {
    if (volfile) {
       Pmsg2(-1, _("VolFile     : %u-%u\n"), volfile->sfile, volfile->efile);
-      dump_volfile(volfile->next);
+      DumpVolfile(volfile->next);
    }
 }
 
-static inline void dump_volblock(BsrVolumeBlock *volblock)
+static inline void DumpVolblock(BsrVolumeBlock *volblock)
 {
    if (volblock) {
       Pmsg2(-1, _("VolBlock    : %u-%u\n"), volblock->sblock, volblock->eblock);
-      dump_volblock(volblock->next);
+      DumpVolblock(volblock->next);
    }
 }
 
-static inline void dump_voladdr(BsrVolumeAddress *voladdr)
+static inline void DumpVoladdr(BsrVolumeAddress *voladdr)
 {
    if (voladdr) {
       Pmsg2(-1, _("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
-      dump_voladdr(voladdr->next);
+      DumpVoladdr(voladdr->next);
    }
 }
 
-static inline void dump_findex(BsrFileIndex *FileIndex)
+static inline void DumpFindex(BsrFileIndex *FileIndex)
 {
    if (FileIndex) {
       if (FileIndex->findex == FileIndex->findex2) {
@@ -850,11 +850,11 @@ static inline void dump_findex(BsrFileIndex *FileIndex)
       } else {
          Pmsg2(-1, _("FileIndex   : %u-%u\n"), FileIndex->findex, FileIndex->findex2);
       }
-      dump_findex(FileIndex->next);
+      DumpFindex(FileIndex->next);
    }
 }
 
-static inline void dump_jobid(BsrJobid *jobid)
+static inline void DumpJobid(BsrJobid *jobid)
 {
    if (jobid) {
       if (jobid->JobId == jobid->JobId2) {
@@ -862,11 +862,11 @@ static inline void dump_jobid(BsrJobid *jobid)
       } else {
          Pmsg2(-1, _("JobId       : %u-%u\n"), jobid->JobId, jobid->JobId2);
       }
-      dump_jobid(jobid->next);
+      DumpJobid(jobid->next);
    }
 }
 
-static inline void dump_sessid(BsrSessionId *sessid)
+static inline void DumpSessid(BsrSessionId *sessid)
 {
    if (sessid) {
       if (sessid->sessid == sessid->sessid2) {
@@ -874,26 +874,26 @@ static inline void dump_sessid(BsrSessionId *sessid)
       } else {
          Pmsg2(-1, _("SessId      : %u-%u\n"), sessid->sessid, sessid->sessid2);
       }
-      dump_sessid(sessid->next);
+      DumpSessid(sessid->next);
    }
 }
 
-static inline void dump_volume(BsrVolume *volume)
+static inline void DumpVolume(BsrVolume *volume)
 {
    if (volume) {
       Pmsg1(-1, _("VolumeName  : %s\n"), volume->VolumeName);
       Pmsg1(-1, _("  MediaType : %s\n"), volume->MediaType);
       Pmsg1(-1, _("  Device    : %s\n"), volume->device);
       Pmsg1(-1, _("  Slot      : %d\n"), volume->Slot);
-      dump_volume(volume->next);
+      DumpVolume(volume->next);
    }
 }
 
-static inline void dump_client(BsrClient *client)
+static inline void DumpClient(BsrClient *client)
 {
    if (client) {
       Pmsg1(-1, _("Client      : %s\n"), client->ClientName);
-      dump_client(client->next);
+      DumpClient(client->next);
    }
 }
 
@@ -905,11 +905,11 @@ static inline void dump_job(BsrJob *job)
    }
 }
 
-static inline void dump_sesstime(BsrSessionTime *sesstime)
+static inline void DumpSesstime(BsrSessionTime *sesstime)
 {
    if (sesstime) {
       Pmsg1(-1, _("SessTime    : %u\n"), sesstime->sesstime);
-      dump_sesstime(sesstime->next);
+      DumpSesstime(sesstime->next);
    }
 }
 
@@ -924,16 +924,16 @@ void DumpBsr(BootStrapRecord *bsr, bool recurse)
    }
    Pmsg1(-1,    _("Next        : 0x%x\n"), bsr->next);
    Pmsg1(-1,    _("Root bsr    : 0x%x\n"), bsr->root);
-   dump_volume(bsr->volume);
-   dump_sessid(bsr->sessid);
-   dump_sesstime(bsr->sesstime);
-   dump_volfile(bsr->volfile);
-   dump_volblock(bsr->volblock);
-   dump_voladdr(bsr->voladdr);
-   dump_client(bsr->client);
-   dump_jobid(bsr->JobId);
+   DumpVolume(bsr->volume);
+   DumpSessid(bsr->sessid);
+   DumpSesstime(bsr->sesstime);
+   DumpVolfile(bsr->volfile);
+   DumpVolblock(bsr->volblock);
+   DumpVoladdr(bsr->voladdr);
+   DumpClient(bsr->client);
+   DumpJobid(bsr->JobId);
    dump_job(bsr->job);
-   dump_findex(bsr->FileIndex);
+   DumpFindex(bsr->FileIndex);
    if (bsr->count) {
       Pmsg1(-1, _("count       : %u\n"), bsr->count);
       Pmsg1(-1, _("found       : %u\n"), bsr->found);
@@ -952,10 +952,10 @@ void DumpBsr(BootStrapRecord *bsr, bool recurse)
 /*
  * Free bsr resources
  */
-static inline void free_bsr_item(BootStrapRecord *bsr)
+static inline void FreeBsrItem(BootStrapRecord *bsr)
 {
    if (bsr) {
-      free_bsr_item(bsr->next);
+      FreeBsrItem(bsr->next);
       free(bsr);
    }
 }
@@ -963,20 +963,20 @@ static inline void free_bsr_item(BootStrapRecord *bsr)
 /*
  * Remove a single item from the bsr tree
  */
-static inline void remove_bsr(BootStrapRecord *bsr)
+static inline void RemoveBsr(BootStrapRecord *bsr)
 {
-   free_bsr_item((BootStrapRecord *)bsr->volume);
-   free_bsr_item((BootStrapRecord *)bsr->client);
-   free_bsr_item((BootStrapRecord *)bsr->sessid);
-   free_bsr_item((BootStrapRecord *)bsr->sesstime);
-   free_bsr_item((BootStrapRecord *)bsr->volfile);
-   free_bsr_item((BootStrapRecord *)bsr->volblock);
-   free_bsr_item((BootStrapRecord *)bsr->voladdr);
-   free_bsr_item((BootStrapRecord *)bsr->JobId);
-   free_bsr_item((BootStrapRecord *)bsr->job);
-   free_bsr_item((BootStrapRecord *)bsr->FileIndex);
-   free_bsr_item((BootStrapRecord *)bsr->JobType);
-   free_bsr_item((BootStrapRecord *)bsr->JobLevel);
+   FreeBsrItem((BootStrapRecord *)bsr->volume);
+   FreeBsrItem((BootStrapRecord *)bsr->client);
+   FreeBsrItem((BootStrapRecord *)bsr->sessid);
+   FreeBsrItem((BootStrapRecord *)bsr->sesstime);
+   FreeBsrItem((BootStrapRecord *)bsr->volfile);
+   FreeBsrItem((BootStrapRecord *)bsr->volblock);
+   FreeBsrItem((BootStrapRecord *)bsr->voladdr);
+   FreeBsrItem((BootStrapRecord *)bsr->JobId);
+   FreeBsrItem((BootStrapRecord *)bsr->job);
+   FreeBsrItem((BootStrapRecord *)bsr->FileIndex);
+   FreeBsrItem((BootStrapRecord *)bsr->JobType);
+   FreeBsrItem((BootStrapRecord *)bsr->JobLevel);
    if (bsr->fileregex) {
       bfree(bsr->fileregex);
    }
@@ -1011,7 +1011,7 @@ void FreeBsr(BootStrapRecord *bsr)
    /*
     * Remove (free) current bsr
     */
-   remove_bsr(bsr);
+   RemoveBsr(bsr);
 
    /*
     * Now get the next one

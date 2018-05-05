@@ -48,7 +48,7 @@ drive_number_t GetStorageDrive(UaContext *ua, StorageResource *store);
 slot_number_t GetStorageSlot(UaContext *ua, StorageResource *store);
 int GetMediaType(UaContext *ua, char *MediaType, int max_media);
 bool GetPoolDbr(UaContext *ua, PoolDbRecord *pr, const char *argk = "pool");
-bool get_storage_dbr(UaContext *ua, StorageDbRecord *sr, const char *argk = "storage");
+bool GetStorageDbr(UaContext *ua, StorageDbRecord *sr, const char *argk = "storage");
 bool GetClientDbr(UaContext *ua, ClientDbRecord *cr);
 PoolResource *get_pool_resource(UaContext *ua);
 JobResource *get_restore_job(UaContext *ua);

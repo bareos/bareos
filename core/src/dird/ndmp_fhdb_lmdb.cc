@@ -370,7 +370,7 @@ bail_out:
 /**
  * This glues the NDMP File Handle DB with internal code.
  */
-void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
+void NdmpFhdbLmdbRegister(struct ndmlog *ixlog)
 {
    NIS *nis = (NIS *)ixlog->ctx;
    struct ndm_fhdb_callbacks fhdb_callbacks;
@@ -378,13 +378,13 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
    /*
     * Register the FileHandleDB callbacks.
     */
-   fhdb_callbacks.add_file = bndmp_fhdb_add_file;
+   fhdb_callbacks.add_file = BndmpFhdbAddFile;
    fhdb_callbacks.add_dir = bndmp_fhdb_lmdb_add_dir;
    fhdb_callbacks.add_node = bndmp_fhdb_lmdb_add_node;
    fhdb_callbacks.add_dirnode_root = bndmp_fhdb_lmdb_add_dirnode_root;
    ndmfhdb_register_callbacks(ixlog, &fhdb_callbacks);
 
-   Dmsg0(100, "ndmp_fhdb_lmdb_register\n");
+   Dmsg0(100, "NdmpFhdbLmdbRegister\n");
 
    if (nis->save_filehist) {
       int result;
@@ -478,7 +478,7 @@ bail_out:
    }
 }
 
-void ndmp_fhdb_lmdb_unregister(struct ndmlog *ixlog)
+void NdmpFhdbLmdbUnregister(struct ndmlog *ixlog)
 {
    NIS *nis = (NIS *)ixlog->ctx;
    struct fhdb_state *fhdb_state = (struct fhdb_state *)nis->fhdb_state;
@@ -527,7 +527,7 @@ void ndmp_fhdb_lmdb_unregister(struct ndmlog *ixlog)
    }
 }
 
-static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
+static inline void CalculatePath(uint64_t node, fhdb_state *fhdb_state)
 {
    PoolMem temp;
    int result = 0;
@@ -536,7 +536,7 @@ static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
    struct fhdb_payload *payload;
    bool root_node_reached = false;
 
-   Dmsg1(100, "calculate_path for node %llu\n", node);
+   Dmsg1(100, "CalculatePath for node %llu\n", node);
 
    PmStrcpy(fhdb_state->path, "");
    while (!result && !root_node_reached) {
@@ -572,7 +572,7 @@ static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
    }
 }
 
-static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
+static inline void ProcessLmdb(NIS *nis, struct fhdb_state *fhdb_state)
 {
    int result;
    uint64_t node;
@@ -605,7 +605,7 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
          node = *(uint64_t *)rkey.mv_data;
 
          if (ndmp_fstat.node.valid == NDMP9_VALIDITY_VALID) {
-            calculate_path(payload->dir_node, fhdb_state);
+            CalculatePath(payload->dir_node, fhdb_state);
             NdmpConvertFstat(&ndmp_fstat, nis->FileIndex, &FileType, attribs);
 
             PmStrcpy(full_path, nis->filesystem);
@@ -637,7 +637,7 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
    }
 }
 
-void ndmp_fhdb_lmdb_process_db(struct ndmlog *ixlog)
+void NdmpFhdbLmdbProcessDb(struct ndmlog *ixlog)
 {
    int result;
    NIS *nis = (NIS *)ixlog->ctx;
@@ -647,7 +647,7 @@ void ndmp_fhdb_lmdb_process_db(struct ndmlog *ixlog)
       return;
    }
 
-   Dmsg0(100, "ndmp_fhdb_lmdb_process_db called\n");
+   Dmsg0(100, "NdmpFhdbLmdbProcessDb called\n");
 
    /*
     * Commit any pending write transactions.
@@ -676,7 +676,7 @@ void ndmp_fhdb_lmdb_process_db(struct ndmlog *ixlog)
 
    Jmsg0(nis->jcr, M_INFO, 0,  "Now processing lmdb database\n");
 
-   process_lmdb(nis, fhdb_state);
+   ProcessLmdb(nis, fhdb_state);
 
    Jmsg0(nis->jcr, M_INFO, 0,  "Processing lmdb database done\n");
 }

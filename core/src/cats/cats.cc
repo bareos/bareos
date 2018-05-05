@@ -46,7 +46,7 @@ bool BareosDb::MatchDatabase(const char *db_driver, const char *db_name,
    bool match;
 
    if (db_driver) {
-      match = bstrcasecmp(db_driver_, db_driver) &&
+      match = Bstrcasecmp(db_driver_, db_driver) &&
               bstrcmp(db_name_, db_name) &&
               bstrcmp(db_address_, db_address) &&
               db_port_ == db_port;
@@ -143,7 +143,7 @@ void BareosDb::_lock_db(const char *file, int line)
  * same thread up to the number of times that thread called
  * DbLock()/
  */
-void BareosDb::_unlock_db(const char *file, int line)
+void BareosDb::_unlockDb(const char *file, int line)
 {
    int errstat;
 
@@ -202,11 +202,11 @@ void BareosDb::EscapeString(JobControlRecord *jcr, char *snew, char *old, int le
 char *BareosDb::escape_object(JobControlRecord *jcr, char *old, int len)
 {
    int length;
-   int max_length;
+   int MaxLength;
 
-   max_length = (len * 4) / 3;
-   esc_obj = CheckPoolMemorySize(esc_obj, max_length + 1);
-   length = bin_to_base64(esc_obj, max_length, old, len, true);
+   MaxLength = (len * 4) / 3;
+   esc_obj = CheckPoolMemorySize(esc_obj, MaxLength + 1);
+   length = bin_to_base64(esc_obj, MaxLength, old, len, true);
    esc_obj[length] = '\0';
 
    return esc_obj;

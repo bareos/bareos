@@ -166,7 +166,7 @@ bool StorageDaemonDeviceControlRecord::dir_update_changer(JobControlRecord *jcr,
  *  Returns: true  on success and vol info in dcr->VolCatInfo
  *           false on failure
  */
-static bool do_get_volume_info(DeviceControlRecord *dcr)
+static bool DoGetVolumeInfo(DeviceControlRecord *dcr)
 {
     JobControlRecord *jcr = dcr->jcr;
     BareosSocket *dir = jcr->dir_bsock;
@@ -215,7 +215,7 @@ static bool do_get_volume_info(DeviceControlRecord *dcr)
        }
     }
 
-    Dmsg4(debuglevel, "do_get_volume_info return true slot=%d Volume=%s, "
+    Dmsg4(debuglevel, "DoGetVolumeInfo return true slot=%d Volume=%s, "
                   "VolminBlocksize=%u VolMaxBlocksize=%u\n",
           vol.Slot, vol.VolCatName, vol.VolMinBlocksize, vol.VolMaxBlocksize);
     Dmsg2(debuglevel, "setting dcr->VolMinBlocksize(%u) to vol.VolMinBlocksize(%u)\n",
@@ -254,7 +254,7 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw wri
               (writing == GET_VOL_INFO_FOR_WRITE) ? 1 : 0);
    Dmsg1(debuglevel, ">dird %s", dir->msg);
    UnbashSpaces(getVolCatName());
-   ok = do_get_volume_info(this);
+   ok = DoGetVolumeInfo(this);
    V(vol_info_mutex);
 
    return ok;
@@ -299,7 +299,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
        UnbashSpaces(unwanted_volumes.c_str());
        Dmsg1(debuglevel, ">dird %s", dir->msg);
 
-       if (do_get_volume_info(this)) {
+       if (DoGetVolumeInfo(this)) {
           if (vol_index == 1) {
              PmStrcpy(unwanted_volumes, VolumeName);
           } else {
@@ -401,7 +401,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool upda
     * Do not lock device here because it may be locked from label
     */
    if (!jcr->IsCanceled()) {
-      if (!do_get_volume_info(this)) {
+      if (!DoGetVolumeInfo(this)) {
          Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
          Dmsg2(debuglevel, _("Didn't get vol info vol=%s: ERR=%s"),
             vol->VolCatName, jcr->errmsg);
@@ -512,7 +512,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateFileAttributes(DeviceRecord *rec
 
    dir->msg = CheckPoolMemorySize(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + sizeof(DeviceRecord) + record->data_len + 1);
-   dir->msglen = bsnprintf(dir->msg, sizeof(FileAttributes) +
+   dir->msglen = Bsnprintf(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + 1, FileAttributes, jcr->Job);
    SerBegin(dir->msg + dir->msglen, 0);
    ser_uint32(record->VolSessionId);

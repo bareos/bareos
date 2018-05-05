@@ -37,7 +37,7 @@
 ConfigurationParser *my_config = NULL;             /* Our Global config */
 
 /* Imported function from tray_conf.cpp */
-extern bool parse_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Static variables */
 static QApplication* app = NULL;
@@ -66,7 +66,7 @@ static void usage()
 #endif
 }
 
-static void parse_command_line(int argc, char* argv[], cl_opts& cl)
+static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
 {
    int ch;
    while ((ch = getopt(argc, argv, "bc:d:th?f:s:x:")) != -1) {
@@ -167,7 +167,7 @@ void intHandler(int)
    exit(0);
 }
 
-static void init_environment(int argc, char* argv[])
+static void InitEnvironment(int argc, char* argv[])
 {
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -189,10 +189,10 @@ static void init_environment(int argc, char* argv[])
  */
 int main(int argc, char *argv[])
 {
-   init_environment(argc, argv);
+   InitEnvironment(argc, argv);
 
    cl_opts cl; // remember some command line options
-   parse_command_line(argc, argv, cl);
+   ParseCommandLine(argc, argv, cl);
 
    if (cl.export_config_schema) {
       PoolMem buffer;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 
    // read the config file
    my_config = new_config_parser();
-   parse_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
+   ParseTmonConfig(my_config, cl.configfile, M_ERROR_TERM);
 
    if (cl.export_config) {
       my_config->DumpResources(prtmsg, NULL);

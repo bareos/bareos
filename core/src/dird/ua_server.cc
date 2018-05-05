@@ -50,7 +50,7 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
 {
    JobControlRecord *jcr;
 
-   jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
 
    /*
     * The job and defaults are not really used, but we set them up to ensure that
@@ -107,7 +107,7 @@ void *handle_UA_client_request(BareosSocket *user)
          DequeueMessages(ua->jcr);
 
          if (!ua->quit) {
-            if (console_msg_pending && ua->acl_access_ok(Command_ACL, "messages")) {
+            if (console_msg_pending && ua->AclAccessOk(Command_ACL, "messages")) {
                if (ua->auto_display_messages) {
                   PmStrcpy(ua->cmd, "messages");
                   DotMessagesCmd(ua, ua->cmd);

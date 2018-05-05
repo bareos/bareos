@@ -237,7 +237,7 @@ typedef struct {
    PyObject *flags;                   /* Bareos internal flags */
    bool no_read;                      /* During the save, the file should not be saved */
    bool portable;                     /* set if data format is portable */
-   bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
+   bool accurate_found;               /* Found in accurate list (valid after CheckChanges()) */
    char *cmd;                         /* Command */
    time_t save_time;                  /* Start of incremental time */
    uint32_t delta_seq;                /* Delta sequence number */

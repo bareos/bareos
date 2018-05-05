@@ -36,7 +36,7 @@ void FreePairedStorage(JobControlRecord *jcr);
 bool HasPairedStorage(JobControlRecord *jcr);
 bool SelectNextRstore(JobControlRecord *jcr, bootstrap_info &info);
 void StorageStatus(UaContext *ua, StorageResource *store, char *cmd);
-int storage_compare_vol_list_entry(void *e1, void *e2);
+int StorageCompareVolListEntry(void *e1, void *e2);
 changer_vol_list_t *get_vol_list_from_storage(UaContext *ua, StorageResource *store,
                                               bool listall, bool scan, bool cached = true);
 slot_number_t GetNumSlots(UaContext *ua, StorageResource *store);
@@ -50,7 +50,7 @@ vol_list_t *vol_is_loaded_in_drive(StorageResource *store, changer_vol_list_t *v
 void StorageReleaseVolList(StorageResource *store, changer_vol_list_t *vol_list);
 void StorageFreeVolList(StorageResource *store, changer_vol_list_t *vol_list);
 void InvalidateVolList(StorageResource *store);
-int compare_storage_mapping(void *e1, void *e2);
+int CompareStorageMapping(void *e1, void *e2);
 slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
                                      s_mapping_type map_type, slot_number_t slot);
 #endif // BAREOS_DIRD_STORAGE_H_

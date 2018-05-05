@@ -52,7 +52,7 @@ static POOLMEM *substitute_prompts(UaContext *ua,
  *   SQL statement possibly terminated by ;
  *   :next query prompt
  */
-bool query_cmd(UaContext *ua, const char *cmd)
+bool QueryCmd(UaContext *ua, const char *cmd)
 {
    FILE *fd = NULL;
    POOLMEM *query = GetPoolMemory(PM_MESSAGE);
@@ -249,7 +249,7 @@ static POOLMEM *substitute_prompts(UaContext *ua, POOLMEM *query, char **prompt,
 /**
  * Get general SQL query for Catalog
  */
-bool sqlquery_cmd(UaContext *ua, const char *cmd)
+bool SqlqueryCmd(UaContext *ua, const char *cmd)
 {
    PoolMem query(PM_MESSAGE);
    int len;

@@ -52,7 +52,7 @@
 #define LDOUBLE double
 #endif
 
-int bvsnprintf(char *buffer, int32_t maxlen, const char *format, va_list args);
+int Bvsnprintf(char *buffer, int32_t maxlen, const char *format, va_list args);
 static int32_t fmtstr(char *buffer, int32_t currlen, int32_t maxlen,
                    const char *value, int flags, int min, int max);
 static int32_t fmtwstr(char *buffer, int32_t currlen, int32_t maxlen,
@@ -118,19 +118,19 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
   disable %n for security reasons.
  */
 
-int bsnprintf(char *str, int32_t size, const char *fmt,  ...)
+int Bsnprintf(char *str, int32_t size, const char *fmt,  ...)
 {
    va_list   arg_ptr;
    int len;
 
    va_start(arg_ptr, fmt);
-   len = bvsnprintf(str, size, fmt, arg_ptr);
+   len = Bvsnprintf(str, size, fmt, arg_ptr);
    va_end(arg_ptr);
    return len;
 }
 
 
-int bvsnprintf(char *buffer, int32_t maxlen, const char *format, va_list args)
+int Bvsnprintf(char *buffer, int32_t maxlen, const char *format, va_list args)
 {
    char ch;
    int64_t value;

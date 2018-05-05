@@ -48,7 +48,7 @@
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
 static void do_scan(void);
@@ -60,12 +60,12 @@ static bool CreateMediaRecord(BareosDb *db, MediaDbRecord *mr, VOLUME_LABEL *vl)
 static bool UpdateMediaRecord(BareosDb *db, MediaDbRecord *mr);
 static bool CreatePoolRecord(BareosDb *db, PoolDbRecord *pr);
 static JobControlRecord *CreateJobRecord(BareosDb *db, JobDbRecord *mr, SESSION_LABEL *label, DeviceRecord *rec);
-static bool update_job_record(BareosDb *db, JobDbRecord *mr, SESSION_LABEL *elabel, DeviceRecord *rec);
+static bool UpdateJobRecord(BareosDb *db, JobDbRecord *mr, SESSION_LABEL *elabel, DeviceRecord *rec);
 static bool CreateClientRecord(BareosDb *db, ClientDbRecord *cr);
 static bool CreateFilesetRecord(BareosDb *db, FileSetDbRecord *fsr);
 static bool CreateJobmediaRecord(BareosDb *db, JobControlRecord *jcr);
 static JobControlRecord *create_jcr(JobDbRecord *jr, DeviceRecord *rec, uint32_t JobId);
-static bool update_digest_record(BareosDb *db, char *digest, DeviceRecord *rec, int type);
+static bool UpdateDigestRecord(BareosDb *db, char *digest, DeviceRecord *rec, int type);
 
 /* Local variables */
 static Device *dev = NULL;
@@ -271,7 +271,7 @@ int main (int argc, char *argv[])
    }
 
    my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
@@ -381,7 +381,7 @@ int main (int argc, char *argv[])
  * the end of writing a tape by wiffling through the attached
  * jcrs creating jobmedia records.
  */
-static bool bscan_mount_next_read_volume(DeviceControlRecord *dcr)
+static bool BscanMountNextReadVolume(DeviceControlRecord *dcr)
 {
    bool status;
    Device *dev = dcr->dev;
@@ -443,7 +443,7 @@ static void do_scan()
    /*
     * Detach bscan's jcr as we are not a real Job on the tape
     */
-   ReadRecords(bjcr->read_dcr, RecordCb, bscan_mount_next_read_volume);
+   ReadRecords(bjcr->read_dcr, RecordCb, BscanMountNextReadVolume);
 
    if (update_db) {
       db->WriteBatchFileRecords(bjcr); /* used by bulk batch file insert */
@@ -456,7 +456,7 @@ static void do_scan()
  * Returns: true  if OK
  *          false if error
  */
-static inline bool unpack_restore_object(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, RestoreObjectDbRecord *rop)
+static inline bool UnpackRestoreObject(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, RestoreObjectDbRecord *rop)
 {
    char *bp;
    uint32_t JobFiles;
@@ -723,7 +723,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
             /*
              * Do the final update to the Job record
              */
-            update_job_record(db, &jr, &elabel, rec);
+            UpdateJobRecord(db, &jr, &elabel, rec);
 
             mjcr->end_time = jr.EndTime;
             mjcr->setJobStatus(JS_Terminated);
@@ -829,7 +829,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
       break;
 
    case STREAM_RESTORE_OBJECT:
-      if (!unpack_restore_object(bjcr, rec->Stream, rec->data, rec->data_len, &rop)) {
+      if (!UnpackRestoreObject(bjcr, rec->Stream, rec->data, rec->data_len, &rop)) {
          Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
       }
       rop.FileIndex = mjcr->FileId;
@@ -900,7 +900,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
       if (verbose > 1) {
          Pmsg1(000, _("Got MD5 record: %s\n"), digest);
       }
-      update_digest_record(db, digest, rec, CRYPTO_DIGEST_MD5);
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_MD5);
       break;
 
    case STREAM_SHA1_DIGEST:
@@ -908,7 +908,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
       if (verbose > 1) {
          Pmsg1(000, _("Got SHA1 record: %s\n"), digest);
       }
-      update_digest_record(db, digest, rec, CRYPTO_DIGEST_SHA1);
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA1);
       break;
 
    case STREAM_SHA256_DIGEST:
@@ -916,7 +916,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
       if (verbose > 1) {
          Pmsg1(000, _("Got SHA256 record: %s\n"), digest);
       }
-      update_digest_record(db, digest, rec, CRYPTO_DIGEST_SHA256);
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA256);
       break;
 
    case STREAM_SHA512_DIGEST:
@@ -924,7 +924,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
       if (verbose > 1) {
          Pmsg1(000, _("Got SHA512 record: %s\n"), digest);
       }
-      update_digest_record(db, digest, rec, CRYPTO_DIGEST_SHA512);
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA512);
       break;
 
    case STREAM_ENCRYPTED_SESSION_DATA:
@@ -1020,7 +1020,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
  *  Called from main FreeJcr() routine in src/lib/jcr.c so
  *  that we can do our Director specific cleanup of the jcr.
  */
-static void bscan_free_jcr(JobControlRecord *jcr)
+static void BscanFreeJcr(JobControlRecord *jcr)
 {
    Dmsg0(200, "Start bscan FreeJcr\n");
 
@@ -1325,7 +1325,7 @@ static JobControlRecord *CreateJobRecord(BareosDb *db, JobDbRecord *jr, SESSION_
 /**
  * Simulate the database call that updates the Job at Job termination time.
  */
-static bool update_job_record(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *elabel,
+static bool UpdateJobRecord(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *elabel,
                               DeviceRecord *rec)
 {
    struct date_time dt;
@@ -1478,7 +1478,7 @@ static bool CreateJobmediaRecord(BareosDb *db, JobControlRecord *mjcr)
 /**
  * Simulate the database call that updates the MD5/SHA1 record
  */
-static bool update_digest_record(BareosDb *db, char *digest, DeviceRecord *rec, int type)
+static bool UpdateDigestRecord(BareosDb *db, char *digest, DeviceRecord *rec, int type)
 {
    JobControlRecord *mjcr;
 
@@ -1522,7 +1522,7 @@ static JobControlRecord *create_jcr(JobDbRecord *jr, DeviceRecord *rec, uint32_t
     * Transfer as much as possible to the Job JobControlRecord. Most important is
     *   the JobId and the ClientId.
     */
-   jobjcr = new_jcr(sizeof(JobControlRecord), bscan_free_jcr);
+   jobjcr = new_jcr(sizeof(JobControlRecord), BscanFreeJcr);
    jobjcr->setJobType(jr->JobType);
    jobjcr->setJobLevel(jr->JobLevel);
    jobjcr->JobStatus = jr->JobStatus;

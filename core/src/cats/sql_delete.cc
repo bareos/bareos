@@ -119,7 +119,7 @@ struct s_del_ctx {
  *  is allowed to get to MAX_DEL_LIST_LEN to limit the
  *  maximum malloc'ed memory.
  */
-static int delete_handler(void *ctx, int num_fields, char **row)
+static int DeleteHandler(void *ctx, int num_fields, char **row)
 {
    struct s_del_ctx *del = (struct s_del_ctx *)ctx;
 
@@ -145,7 +145,7 @@ static int delete_handler(void *ctx, int num_fields, char **row)
  *       We call it from relabel and delete volume=, both ensure
  *       that the volume is properly purged.
  */
-static int do_media_purge(BareosDb *mdb, MediaDbRecord *mr)
+static int DoMediaPurge(BareosDb *mdb, MediaDbRecord *mr)
 {
    int i;
    char ed1[50];
@@ -167,7 +167,7 @@ static int do_media_purge(BareosDb *mdb, MediaDbRecord *mr)
    }
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
 
-   mdb->SqlQuery(query.c_str(), delete_handler, (void *)&del);
+   mdb->SqlQuery(query.c_str(), DeleteHandler, (void *)&del);
 
    for (i = 0; i < del.num_ids; i++) {
       Dmsg1(400, "Delete JobId=%d\n", del.JobId[i]);
@@ -202,7 +202,7 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr)
    /* Do purge if not already purged */
    if (!bstrcmp(mr->VolStatus, "Purged")) {
       /* Delete associated records */
-      do_media_purge(this, mr);
+      DoMediaPurge(this, mr);
    }
 
    Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
@@ -220,7 +220,7 @@ bail_out:
  * media record itself. But the media status
  * is changed to "Purged".
  */
-bool BareosDb::purge_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
+bool BareosDb::PurgeMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
 
@@ -232,7 +232,7 @@ bool BareosDb::purge_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
    /*
     * Delete associated records
     */
-   do_media_purge(this, mr);           /* Note, always purge */
+   DoMediaPurge(this, mr);           /* Note, always purge */
 
    /*
     * Mark Volume as purged

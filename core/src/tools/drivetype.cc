@@ -35,7 +35,7 @@ static void usage()
 {
    fprintf(stderr, _(
 "\n"
-"Usage: drivetype [-v] path ...\n"
+"Usage: Drivetype [-v] path ...\n"
 "\n"
 "       Print the drive type a given file/directory is on.\n"
 "       The following options are supported:\n"
@@ -49,12 +49,12 @@ static void usage()
    exit(1);
 }
 
-int display_drive(char *drive, bool display_local, int verbose)
+int DisplayDrive(char *drive, bool display_local, int verbose)
 {
    char dt[100];
    int status = 0;
 
-   if (drivetype(drive, dt, sizeof(dt))) {
+   if (Drivetype(drive, dt, sizeof(dt))) {
       if (display_local) {      /* in local mode, display only harddrive */
          if (bstrcmp(dt, "fixed")) {
             printf("%s\n", drive);
@@ -111,8 +111,8 @@ main (int argc, char *const *argv)
    if (argc < 1 && display_all) {
       /* Try all letters */
       for (drive = 'A'; drive <= 'Z'; drive++) {
-         bsnprintf(buf, sizeof(buf), "%c:/", drive);
-         display_drive(buf, display_local, verbose);
+         Bsnprintf(buf, sizeof(buf), "%c:/", drive);
+         DisplayDrive(buf, display_local, verbose);
       }
       exit(status);
    }
@@ -122,7 +122,7 @@ main (int argc, char *const *argv)
    }
 
    for (i = 0; i < argc; --argc, ++argv) {
-      status += display_drive(*argv, display_local, verbose);
+      status += DisplayDrive(*argv, display_local, verbose);
    }
    exit(status);
 }

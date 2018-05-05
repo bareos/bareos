@@ -101,8 +101,8 @@ const bool have_fastlz = true;
 const bool have_fastlz = false;
 #endif
 
-static void free_signature(r_ctx &rctx);
-static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx);
+static void FreeSignature(r_ctx &rctx);
+static bool ClosePreviousStream(JobControlRecord *jcr, r_ctx &rctx);
 
 int32_t ExtractData(JobControlRecord *jcr, BareosWinFilePacket *bfd, POOLMEM *buf, int32_t buflen,
                      uint64_t *addr, char *flags, int32_t stream, RestoreCipherContext *cipher_ctx);
@@ -111,7 +111,7 @@ int32_t ExtractData(JobControlRecord *jcr, BareosWinFilePacket *bfd, POOLMEM *bu
  * Close a bfd check that we are at the expected file offset.
  * Makes use of some code from SetAttributes().
  */
-static int bclose_chksize(JobControlRecord *jcr, BareosWinFilePacket *bfd, boffset_t osize)
+static int BcloseChksize(JobControlRecord *jcr, BareosWinFilePacket *bfd, boffset_t osize)
 {
    char ec1[50], ec2[50];
    boffset_t fsize;
@@ -127,7 +127,7 @@ static int bclose_chksize(JobControlRecord *jcr, BareosWinFilePacket *bfd, boffs
    return 0;
 }
 
-static inline bool restore_finderinfo(JobControlRecord *jcr, POOLMEM *buf, int32_t buflen)
+static inline bool RestoreFinderinfo(JobControlRecord *jcr, POOLMEM *buf, int32_t buflen)
 {
 #ifdef HAVE_DARWIN_OS
    struct attrlist attrList;
@@ -157,7 +157,7 @@ static inline bool restore_finderinfo(JobControlRecord *jcr, POOLMEM *buf, int32
 /**
  * Cleanup of delayed restore stack with streams for later processing.
  */
-static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
+static inline void DropDelayedDataStreams(r_ctx &rctx, bool reuse)
 {
    DelayedDataStream *dds;
 
@@ -179,7 +179,7 @@ static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
 /**
  * Push a data stream onto the delayed restore stack for later processing.
  */
-static inline void push_delayed_data_stream(r_ctx &rctx, BareosSocket *sd)
+static inline void PushDelayedDataStream(r_ctx &rctx, BareosSocket *sd)
 {
    DelayedDataStream *dds;
 
@@ -200,7 +200,7 @@ static inline void push_delayed_data_stream(r_ctx &rctx, BareosSocket *sd)
  * Perform a restore of an ACL using the stream received.
  * This can either be a delayed restore or direct restore.
  */
-static inline bool do_restore_acl(JobControlRecord *jcr,
+static inline bool do_reStoreAcl(JobControlRecord *jcr,
                                   int stream,
                                   char *content,
                                   uint32_t content_length)
@@ -286,7 +286,7 @@ static inline bool do_restore_xattr(JobControlRecord *jcr,
  * attributes otherwise we might clear some security flags
  * by setting the attributes.
  */
-static inline bool pop_delayed_data_streams(JobControlRecord *jcr, r_ctx &rctx)
+static inline bool PopDelayedDataStreams(JobControlRecord *jcr, r_ctx &rctx)
 {
    DelayedDataStream *dds;
 
@@ -333,7 +333,7 @@ static inline bool pop_delayed_data_streams(JobControlRecord *jcr, r_ctx &rctx)
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
-         if (!do_restore_acl(jcr, dds->stream, dds->content, dds->content_length)) {
+         if (!do_reStoreAcl(jcr, dds->stream, dds->content, dds->content_length)) {
             goto bail_out;
          }
          free(dds->content);
@@ -378,7 +378,7 @@ bail_out:
    /*
     * Destroy the content of the stack and (re)initialize it for a new use.
     */
-   drop_delayed_data_streams(rctx, true);
+   DropDelayedDataStreams(rctx, true);
 
    return false;
 }
@@ -532,7 +532,7 @@ void DoRestore(JobControlRecord *jcr)
       if (rctx.prev_stream != rctx.stream) {
          if (IsBopen(&rctx.forkbfd)) {
             DeallocateForkCipher(rctx);
-            bclose_chksize(jcr, &rctx.forkbfd, rctx.fork_size);
+            BcloseChksize(jcr, &rctx.forkbfd, rctx.fork_size);
          }
          /*
           * Use an impossible value and set a proper one below
@@ -550,7 +550,7 @@ void DoRestore(JobControlRecord *jcr)
          /*
           * if any previous stream open, close it
           */
-         if (!close_previous_stream(jcr, rctx)) {
+         if (!ClosePreviousStream(jcr, rctx)) {
             goto bail_out;
          }
 
@@ -896,7 +896,7 @@ void DoRestore(JobControlRecord *jcr)
 
       case STREAM_HFSPLUS_ATTRIBUTES:
          if (have_darwin_os) {
-            if (!restore_finderinfo(jcr, sd->msg, sd->msglen)) {
+            if (!RestoreFinderinfo(jcr, sd->msg, sd->msglen)) {
                continue;
             }
          } else {
@@ -943,9 +943,9 @@ void DoRestore(JobControlRecord *jcr)
              * the restore of acls till a later stage.
              */
             if (jcr->last_type != FT_DIREND) {
-               push_delayed_data_stream(rctx, sd);
+               PushDelayedDataStream(rctx, sd);
             } else {
-               if (!do_restore_acl(jcr, rctx.stream, sd->msg, sd->msglen)) {
+               if (!do_reStoreAcl(jcr, rctx.stream, sd->msg, sd->msglen)) {
                   goto bail_out;
                }
             }
@@ -982,7 +982,7 @@ void DoRestore(JobControlRecord *jcr)
              * the restore of xattr till a later stage.
              */
             if (jcr->last_type != FT_DIREND) {
-               push_delayed_data_stream(rctx, sd);
+               PushDelayedDataStream(rctx, sd);
             } else {
                if (!do_restore_xattr(jcr, rctx.stream, sd->msg, sd->msglen)) {
                   goto bail_out;
@@ -1020,7 +1020,7 @@ void DoRestore(JobControlRecord *jcr)
           */
          if (rctx.sig) {
             Jmsg0(jcr, M_ERROR, 0, _("Unexpected cryptographic signature data stream.\n"));
-            free_signature(rctx);
+            FreeSignature(rctx);
             continue;
          }
          /*
@@ -1046,7 +1046,7 @@ void DoRestore(JobControlRecord *jcr)
          break;
 
       case STREAM_PLUGIN_NAME:
-         if (!close_previous_stream(jcr, rctx)) {
+         if (!ClosePreviousStream(jcr, rctx)) {
             goto bail_out;
          }
          Dmsg1(50, "restore stream_plugin_name=%s\n", sd->msg);
@@ -1057,7 +1057,7 @@ void DoRestore(JobControlRecord *jcr)
          break;                    /* these are sent by Director */
 
       default:
-         if (!close_previous_stream(jcr, rctx)) {
+         if (!ClosePreviousStream(jcr, rctx)) {
             goto bail_out;
          }
          Jmsg(jcr, M_WARNING, 0, _("Unknown stream=%d ignored. This shouldn't happen!\n"),
@@ -1072,10 +1072,10 @@ void DoRestore(JobControlRecord *jcr)
     * archive since we just hit an end of file, so close the file.
     */
    if (IsBopen(&rctx.forkbfd)) {
-      bclose_chksize(jcr, &rctx.forkbfd, rctx.fork_size);
+      BcloseChksize(jcr, &rctx.forkbfd, rctx.fork_size);
    }
 
-   if (!close_previous_stream(jcr, rctx)) {
+   if (!ClosePreviousStream(jcr, rctx)) {
       goto bail_out;
    }
    jcr->setJobStatus(JS_Terminated);
@@ -1130,7 +1130,7 @@ ok_out:
    /*
     * Free Signature & Crypto Data
     */
-   free_signature(rctx);
+   FreeSignature(rctx);
    FreeSession(rctx);
    if (jcr->crypto.digest) {
       CryptoDigestFree(jcr->crypto.digest);
@@ -1178,7 +1178,7 @@ ok_out:
     * Free the delayed stream stack list.
     */
    if (rctx.delayed_streams) {
-      drop_delayed_data_streams(rctx, false);
+      DropDelayedDataStreams(rctx, false);
       delete rctx.delayed_streams;
    }
 
@@ -1189,9 +1189,9 @@ ok_out:
    FreeAttr(rctx.attr);
 }
 
-int do_file_digest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
+int DoFileDigest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
-   Dmsg1(50, "do_file_digest jcr=%p\n", jcr);
+   Dmsg1(50, "DoFileDigest jcr=%p\n", jcr);
    return (DigestFile(jcr, ff_pkt, jcr->crypto.digest));
 }
 
@@ -1319,7 +1319,7 @@ int32_t ExtractData(JobControlRecord *jcr, BareosWinFilePacket *bfd, POOLMEM *bu
       }
       /*
        * The packet was successfully written, reset the length so that the next
-       * packet length may be re-read by unser_crypto_packet_len()
+       * packet length may be re-read by UnserCryptoPacketLen()
        */
       cipher_ctx->packet_len = 0;
    }
@@ -1333,7 +1333,7 @@ bail_out:
 /**
  * If extracting, close any previous stream
  */
-static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx)
+static bool ClosePreviousStream(JobControlRecord *jcr, r_ctx &rctx)
 {
    /*
     * If extracting, it was from previous stream, so
@@ -1367,7 +1367,7 @@ static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx)
       /*
        * Now perform the delayed restore of some specific data streams.
        */
-      if (!pop_delayed_data_streams(jcr, rctx)) {
+      if (!PopDelayedDataStreams(jcr, rctx)) {
          return false;
       }
 
@@ -1380,7 +1380,7 @@ static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx)
       /*
        * Free Signature
        */
-      free_signature(rctx);
+      FreeSignature(rctx);
       FreeSession(rctx);
       ClearAllBits(FO_MAX, rctx.jcr->ff->flags);
       Dmsg0(130, "Stop extracting.\n");
@@ -1392,7 +1392,7 @@ static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx)
    return true;
 }
 
-static void free_signature(r_ctx &rctx)
+static void FreeSignature(r_ctx &rctx)
 {
    if (rctx.sig) {
       CryptoSignFree(rctx.sig);

@@ -183,7 +183,7 @@ DLL_IMP_EXP int WINAPI WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, P
    /*
     * Now process Windows command line options. Most of these options
     *  are single shot -- i.e. we accept one option, do something and
-    *  terminate.
+    *  Terminate.
     */
    for (i = 0; i < (int)strlen(cmdLine); i++) {
       char *p = &cmdLine[i];
@@ -316,7 +316,7 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
    TerminateApp(0);
 
    /* Should not get here */
-   pthread_kill(main_tid, SIGTERM);   /* ask main thread to terminate */
+   pthread_kill(main_tid, SIGTERM);   /* ask main thread to Terminate */
    sleep(1);
    kill(main_pid, SIGTERM);           /* kill main thread */
    _exit(0);
@@ -355,7 +355,7 @@ int BareosAppMain()
 
    /* Call the Unix Bareos daemon */
    BareosMain(num_command_args, command_args);
-   PostQuitMessage(0);                /* terminate our main message loop */
+   PostQuitMessage(0);                /* Terminate our main message loop */
 
    WSACleanup();
    _exit(0);
@@ -366,9 +366,9 @@ void PauseMsg(const char *file, const char *func, int line, const char *msg)
 {
    char buf[1000];
    if (msg) {
-      bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
+      Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
    } else {
-      bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
+      Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
    }
    MessageBox(NULL, buf, "Pause", MB_OK);
 }

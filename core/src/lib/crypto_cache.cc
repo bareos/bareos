@@ -313,7 +313,7 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
 /*
  * Dump the content of the crypto cache to a filedescriptor.
  */
-void dump_crypto_cache(int fd)
+void DumpCryptoCache(int fd)
 {
    int len;
    PoolMem msg(PM_MESSAGE);
@@ -370,7 +370,7 @@ void dump_crypto_cache(int fd)
 /*
  * Reset all entries in the cache to the current time.
  */
-void reset_crypto_cache(void)
+void ResetCryptoCache(void)
 {
    time_t now;
    crypto_cache_entry_t *cce;

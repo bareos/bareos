@@ -174,7 +174,7 @@ static ResourceTable resources[] = {
 /**
  * Dump contents of resource
  */
-void dump_resource(int type, CommonResourceHeader *reshdr,
+void DumpResource(int type, CommonResourceHeader *reshdr,
                    void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
@@ -207,7 +207,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
    sendit(sock, "%s", buf.c_str());
 
    if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
+      DumpResource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }
 }
 
@@ -417,7 +417,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-bool save_resource(int type, ResourceItem *items, int pass)
+bool SaveResource(int type, ResourceItem *items, int pass)
 {
    UnionOfResources *res;
    int rindex = type - R_FIRST;
@@ -540,7 +540,7 @@ static struct s_kw CryptoCiphers[] = {
    { NULL, 0 }
 };
 
-static void store_cipher(LEX *lc, ResourceItem *item, int index, int pass)
+static void StoreCipher(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
    LexGetToken(lc, BCT_NAME);
@@ -549,7 +549,7 @@ static void store_cipher(LEX *lc, ResourceItem *item, int index, int pass)
     * Scan Crypto Ciphers name.
     */
    for (i = 0; CryptoCiphers[i].name; i++) {
-      if (bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
+      if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
          *(uint32_t *)(item->value) = CryptoCiphers[i].token;
          i = 0;
          break;
@@ -567,14 +567,14 @@ static void store_cipher(LEX *lc, ResourceItem *item, int index, int pass)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function InitResource, for more generic handling.
  */
-static void init_resource_cb(ResourceItem *item, int pass)
+static void InitResourceCb(ResourceItem *item, int pass)
 {
    switch (pass) {
    case 1:
       switch (item->type) {
       case CFG_TYPE_CIPHER:
          for (int i = 0; CryptoCiphers[i].name; i++) {
-            if (bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
+            if (Bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
                *(uint32_t *)(item->value) = CryptoCiphers[i].token;
             }
          }
@@ -592,11 +592,11 @@ static void init_resource_cb(ResourceItem *item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
+static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (item->type) {
    case CFG_TYPE_CIPHER:
-      store_cipher(lc, item, index, pass);
+      StoreCipher(lc, item, index, pass);
       break;
    default:
       break;
@@ -608,8 +608,8 @@ void InitFdConfig(ConfigurationParser *config, const char *configfile, int exit_
    config->init(configfile,
                 NULL,
                 NULL,
-                init_resource_cb,
-                parse_config_cb,
+                InitResourceCb,
+                ParseConfigCb,
                 NULL,
                 exit_code,
                 (void *)&res_all,
@@ -622,7 +622,7 @@ void InitFdConfig(ConfigurationParser *config, const char *configfile, int exit_
    config->SetConfigIncludeDir("bareos-fd.d");
 }
 
-bool parse_fd_config(ConfigurationParser *config, const char *configfile, int exit_code)
+bool ParseFdConfig(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    InitFdConfig(config, configfile, exit_code);
    return config->ParseConfig();

@@ -121,7 +121,7 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
    /*
     * Open message channel with the Storage daemon
     */
-   Dmsg2(100, "bnet_connect to Storage daemon %s:%d\n", store->address, store->SDport);
+   Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address, store->SDport);
    sd->SetSourceAddress(me->DIRsrc_addr);
    if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
                     store->address, NULL, store->SDport, verbose)) {
@@ -501,7 +501,7 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
                vl->Index, vl->Slot, vl->Loaded, vl->Type, vl->Content);
       }
 
-      vol_list->binary_insert(vl, storage_compare_vol_list_entry);
+      vol_list->binary_insert(vl, StorageCompareVolListEntry);
       continue;
 
 parse_error:
@@ -910,7 +910,7 @@ bool SendSecureEraseReqToSd(JobControlRecord *jcr) {
    return true;
 }
 
-bool send_bwlimit_to_sd(JobControlRecord *jcr, const char *Job)
+bool SendBwlimitToSd(JobControlRecord *jcr, const char *Job)
 {
    BareosSocket *sd = jcr->store_bsock;
 

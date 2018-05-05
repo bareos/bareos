@@ -304,7 +304,7 @@ bail_out:
  * Returns: false on failure
  *          true  on success with id in sr->StorageId
  */
-bool BareosDb::create_storage_record(JobControlRecord *jcr, StorageDbRecord *sr)
+bool BareosDb::CreateStorageRecord(JobControlRecord *jcr, StorageDbRecord *sr)
 {
    SQL_ROW row;
    bool retval = false;
@@ -372,7 +372,7 @@ bail_out:
  * Returns: false on failure
  *          true  on success
  */
-bool BareosDb::create_mediatype_record(JobControlRecord *jcr, MediaTypeDbRecord *mr)
+bool BareosDb::CreateMediatypeRecord(JobControlRecord *jcr, MediaTypeDbRecord *mr)
 {
    bool retval = false;
    int num_rows;
@@ -1260,7 +1260,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::create_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem)
+bool BareosDb::CreateNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem)
 {
    bool retval = false;
    char ed1[50], ed2[50];

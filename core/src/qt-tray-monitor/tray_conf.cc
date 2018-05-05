@@ -176,7 +176,7 @@ static ResourceTable resources[] = {
 /*
  * Dump contents of resource
  */
-void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *sock, const char *fmt, ...),
+void DumpResource(int type, CommonResourceHeader *reshdr, void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
    PoolMem buf;
@@ -201,7 +201,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *soc
    sendit(sock, "%s", buf.c_str());
 
    if (recurse && res->res_monitor.hdr.next) {
-      dump_resource(type, res->res_monitor.hdr.next, sendit, sock, hide_sensitive_data, verbose);
+      DumpResource(type, res->res_monitor.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }
 }
 
@@ -281,7 +281,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-bool save_resource(int type, ResourceItem *items, int pass)
+bool SaveResource(int type, ResourceItem *items, int pass)
 {
    UnionOfResources *res;
    int rindex = type - R_FIRST;
@@ -322,7 +322,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
       case R_CONSOLE_FONT:
          break;
       default:
-         Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
+         Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"), type);
          error = 1;
          break;
       }
@@ -391,7 +391,7 @@ void InitTmonConfig(ConfigurationParser *config, const char *configfile, int exi
    config->SetConfigIncludeDir("tray-monitor.d");
 }
 
-bool parse_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code)
+bool ParseTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    InitTmonConfig(config, configfile, exit_code);
    return config->ParseConfig();

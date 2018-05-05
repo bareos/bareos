@@ -49,7 +49,7 @@ struct ListItem {
    char *buf;
 };
 
-static int my_compare(void *item1, void *item2)
+static int MyCompare(void *item1, void *item2)
 {
    MYJCR *jcr1, *jcr2;
    int comp;
@@ -62,7 +62,7 @@ static int my_compare(void *item1, void *item2)
 /*
  * we expect, that the list is filled with strings of numbers from 0 to n.
  */
-void test_foreach_dlist(dlist *list)
+void TestForeachDlist(dlist *list)
 {
    ListItem *val = NULL;
    char buf[30];
@@ -78,7 +78,7 @@ void test_foreach_dlist(dlist *list)
    }
 }
 
-void dlist_fill(dlist *list, int max)
+void DlistFill(dlist *list, int max)
 {
    ListItem *jcr = NULL;
    char buf[30];
@@ -96,7 +96,7 @@ void dlist_fill(dlist *list, int max)
    }
 }
 
-void free_item(ListItem *item)
+void FreeItem(ListItem *item)
 {
    if (item) {
       free(item->buf);
@@ -104,7 +104,7 @@ void free_item(ListItem *item)
    }
 }
 
-void free_dlist(dlist *list)
+void FreeDlist(dlist *list)
 {
    ListItem *val = NULL;
    int number = list->size();
@@ -112,7 +112,7 @@ void free_dlist(dlist *list)
    for(int i=number; i>0; i--) {
       val = (ListItem *)list->last();
       list->remove(val);
-      free_item(val);
+      FreeItem(val);
    }
 
    EXPECT_EQ(list->size(), 0);
@@ -128,40 +128,40 @@ void test_dlist_dynamic() {
    //EXPECT_EQ(list->size(), 0);
 
    // does foreach work for NULL?
-   test_foreach_dlist(list);
+   TestForeachDlist(list);
 
    // create empty list
    list = New(dlist());
    EXPECT_EQ(list->size(), 0);
 
    // does foreach work for empty lists?
-   test_foreach_dlist(list);
+   TestForeachDlist(list);
 
    // fill the list
-   dlist_fill(list, 20);
+   DlistFill(list, 20);
    EXPECT_EQ(list->size(), 20);
-   test_foreach_dlist(list);
+   TestForeachDlist(list);
 
    // verify and remove the latest entries
    EXPECT_EQ(list->size(), 20);
    item = (ListItem *)list->last();
    list->remove(item);
    EXPECT_STREQ(item->buf, "19");
-   free_item(item);
+   FreeItem(item);
 
    EXPECT_EQ(list->size(), 19);
    item = (ListItem *)list->last();
    list->remove(item);
    EXPECT_STREQ(item->buf, "18");
-   free_item(item);
+   FreeItem(item);
 
    // added more entires
-   dlist_fill(list, 20);
-   test_foreach_dlist(list);
+   DlistFill(list, 20);
+   TestForeachDlist(list);
 
    EXPECT_EQ(list->size(), 38);
 
-   free_dlist(list);
+   FreeDlist(list);
 }
 
 TEST(dlist, dlist) {
@@ -248,7 +248,7 @@ TEST(dlist, dlist) {
             count++;
             jcr = (MYJCR *)malloc(sizeof(MYJCR));
             jcr->buf = bstrdup(buf);
-            jcr1 = (MYJCR *)jcr_chain->binary_insert(jcr, my_compare);
+            jcr1 = (MYJCR *)jcr_chain->binary_insert(jcr, MyCompare);
             EXPECT_EQ(jcr, jcr1);
             buf[1]--;
          }
@@ -262,17 +262,17 @@ TEST(dlist, dlist) {
    jcr = (MYJCR *)malloc(sizeof(MYJCR));
    strcpy(buf, "a");
    jcr->buf = bstrdup(buf);
-   ASSERT_EQ(NULL,(jcr_chain->binary_search(jcr, my_compare)));
+   ASSERT_EQ(NULL,(jcr_chain->binary_search(jcr, MyCompare)));
    free(jcr->buf);
    strcpy(buf, "ZZZZZZZZZZZZZZZZ");
    jcr->buf = bstrdup(buf);
-   ASSERT_EQ(NULL,(jcr_chain->binary_search(jcr, my_compare)));
+   ASSERT_EQ(NULL,(jcr_chain->binary_search(jcr, MyCompare)));
    free(jcr->buf);
    free(jcr);
 
 
    foreach_dlist (jcr, jcr_chain) {
-      if (!jcr_chain->binary_search(jcr, my_compare)) {
+      if (!jcr_chain->binary_search(jcr, MyCompare)) {
          printf("Dlist binary_search item not found = %s\n", jcr->buf);
          exit (1);
       }

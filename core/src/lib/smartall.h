@@ -46,9 +46,9 @@ DLL_IMP_EXP extern void *sm_malloc(const char *fname, int lineno, unsigned int n
             *actuallycalloc(unsigned int nelem, unsigned int elsize),
             *actuallyrealloc(void *ptr, unsigned int size);
 DLL_IMP_EXP extern void sm_free(const char *fname, int lineno, void *fp);
-DLL_IMP_EXP extern void actuallyfree(void *cp),
-            sm_dump(bool bufdump, bool in_use=false), sm_static(int mode);
-DLL_IMP_EXP extern void sm_new_owner(const char *fname, int lineno, char *buf);
+DLL_IMP_EXP extern void Actuallyfree(void *cp),
+            sm_dump(bool bufdump, bool in_use=false), SmStatic(int mode);
+DLL_IMP_EXP extern void SmNewOwner(const char *fname, int lineno, char *buf);
 
 #ifdef SMCHECK
 #define Dsm_check(lvl) if ((lvl)<=debug_level) sm_check(__FILE__, __LINE__, true)
@@ -75,13 +75,13 @@ extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
 /* If SMARTALLOC is disabled, define its special calls to default to
    the standard routines.  */
 
-#define actuallyfree(x)      free(x)
+#define Actuallyfree(x)      free(x)
 #define actuallymalloc(x)    malloc(x)
 #define actuallycalloc(x,y)  calloc(x,y)
 #define actuallyrealloc(x,y) realloc(x,y)
 #define sm_dump(x, false)
-#define sm_static(x)
-#define sm_new_owner(a, b, c)
+#define SmStatic(x)
+#define SmNewOwner(a, b, c)
 #define sm_malloc(f, l, n)     malloc(n)
 #define sm_free(f, l, n)       free(n)
 #define sm_check(f, l, fl)

@@ -198,7 +198,7 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord *jcr, JobDbRecord *jr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_client_record(JobControlRecord *jcr, ClientDbRecord *cr)
+bool BareosDb::UpdateClientRecord(JobControlRecord *jcr, ClientDbRecord *cr)
 {
    bool retval = false;
    char ed1[50], ed2[50];
@@ -286,7 +286,7 @@ bool BareosDb::UpdatePoolRecord(JobControlRecord *jcr, PoolDbRecord *pr)
    return retval;
 }
 
-bool BareosDb::update_storage_record(JobControlRecord *jcr, StorageDbRecord *sr)
+bool BareosDb::UpdateStorageRecord(JobControlRecord *jcr, StorageDbRecord *sr)
 {
    bool retval;
    char ed1[50];
@@ -401,7 +401,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::update_media_defaults(JobControlRecord *jcr, MediaDbRecord *mr)
+bool BareosDb::UpdateMediaDefaults(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];

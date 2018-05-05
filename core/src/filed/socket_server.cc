@@ -58,7 +58,7 @@ static void *handle_connection_request(void *arg)
 
    if (bs->recv() <= 0) {
       Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
+      Bmicrosleep(5, 0);   /* make user wait 5 seconds */
       bs->close();
       delete bs;
       return NULL;
@@ -116,7 +116,7 @@ void StopSocketServer(bool wait)
 {
    Dmsg0(100, "StopSocketServer\n");
    if (sock_fds) {
-      bnet_stop_thread_server_tcp(tcp_server_tid);
+      BnetStopThreadServerTcp(tcp_server_tid);
       /*
        * before thread_servers terminates,
        * it calls cleanup_bnet_thread_server_tcp

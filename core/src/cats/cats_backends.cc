@@ -74,7 +74,7 @@ static inline backend_interface_mapping_t *lookup_backend_interface_mapping(cons
             return backend_interface_mapping;
          }
       } else {
-         if (bstrcasecmp(interface_name, backend_interface_mapping->interface_name)) {
+         if (Bstrcasecmp(interface_name, backend_interface_mapping->interface_name)) {
             return backend_interface_mapping;
          }
       }

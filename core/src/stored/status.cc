@@ -57,14 +57,14 @@ static void sendit(const char *msg, int len, StatusPacket *sp);
 static void sendit(PoolMem &msg, int len, StatusPacket *sp);
 static void sendit(const char *msg, int len, void *arg);
 
-static void send_blocked_status(Device *dev, StatusPacket *sp);
-static void send_device_status(Device *dev, StatusPacket *sp);
-static void list_terminated_jobs(StatusPacket *sp);
-static void list_running_jobs(StatusPacket *sp);
-static void list_jobs_waiting_on_reservation(StatusPacket *sp);
-static void list_status_header(StatusPacket *sp);
-static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames);
-static void list_volumes(StatusPacket *sp, const char *devicenames);
+static void SendBlockedStatus(Device *dev, StatusPacket *sp);
+static void SendDeviceStatus(Device *dev, StatusPacket *sp);
+static void ListTerminatedJobs(StatusPacket *sp);
+static void ListRunningJobs(StatusPacket *sp);
+static void ListJobsWaitingOnReservation(StatusPacket *sp);
+static void ListStatusHeader(StatusPacket *sp);
+static void ListDevices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames);
+static void ListVolumes(StatusPacket *sp, const char *devicenames);
 
 static const char *level_to_str(int level);
 
@@ -76,34 +76,34 @@ static void OutputStatus(JobControlRecord *jcr, StatusPacket *sp, const char *de
    int len;
    PoolMem msg(PM_MESSAGE);
 
-   list_status_header(sp);
+   ListStatusHeader(sp);
 
    /*
     * List running jobs
     */
-   list_running_jobs(sp);
+   ListRunningJobs(sp);
 
    /*
     * List jobs stuck in reservation system
     */
-   list_jobs_waiting_on_reservation(sp);
+   ListJobsWaitingOnReservation(sp);
 
    /*
     * List terminated jobs
     */
-   list_terminated_jobs(sp);
+   ListTerminatedJobs(sp);
 
    /*
     * List devices
     */
-   list_devices(jcr, sp, devicenames);
+   ListDevices(jcr, sp, devicenames);
 
    if (!sp->api) {
       len = Mmsg(msg, _("Used Volume status:\n"));
       sendit(msg, len, sp);
    }
 
-   list_volumes(sp, devicenames);
+   ListVolumes(sp, devicenames);
    if (!sp->api) {
       len = PmStrcpy(msg, "====\n\n");
       sendit(msg, len, sp);
@@ -116,7 +116,7 @@ static void OutputStatus(JobControlRecord *jcr, StatusPacket *sp, const char *de
    }
 }
 
-static void list_resources(StatusPacket *sp)
+static void ListResources(StatusPacket *sp)
 {
 #ifdef when_working
    int len;
@@ -127,7 +127,7 @@ static void list_resources(StatusPacket *sp)
       sendit(msg, len, sp);
    }
 
-   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->r_first_], sp, false);
+   DumpResource(R_DEVICE, resources[R_DEVICE - my_config->r_first_], sp, false);
 
    if (!sp->api) {
       len = PmStrcpy(msg, "====\n\n");
@@ -160,12 +160,12 @@ static find_device(char *devname)
 }
 #endif
 
-static bool need_to_list_device(const char *devicenames, const char *devicename)
+static bool NeedToListDevice(const char *devicenames, const char *devicename)
 {
    char *cur, *bp;
    PoolMem namelist;
 
-   Dmsg2(200, "need_to_list_device devicenames %s, devicename %s\n",
+   Dmsg2(200, "NeedToListDevice devicenames %s, devicename %s\n",
          devicenames, devicename);
 
    /*
@@ -183,26 +183,26 @@ static bool need_to_list_device(const char *devicenames, const char *devicename)
          *bp++ = '\0';
       }
 
-      if (bstrcasecmp(cur, devicename)) {
+      if (Bstrcasecmp(cur, devicename)) {
          return true;
       }
 
       cur = bp;
    }
 
-   Dmsg0(200, "need_to_list_device no listing needed\n");
+   Dmsg0(200, "NeedToListDevice no listing needed\n");
 
    return false;
 }
 
-static bool need_to_list_device(const char *devicenames, DeviceResource *device)
+static bool NeedToListDevice(const char *devicenames, DeviceResource *device)
 {
    /*
     * See if we are requested to list an explicit device name.
     * e.g. this happens when people address one particular device in
     * a autochanger via its own storage definition or an non autochanger device.
     */
-   if (!need_to_list_device(devicenames, device->name())) {
+   if (!NeedToListDevice(devicenames, device->name())) {
       /*
        * See if this device is part of an autochanger.
        */
@@ -210,7 +210,7 @@ static bool need_to_list_device(const char *devicenames, DeviceResource *device)
          /*
           * See if we need to list this particular device part of the given autochanger.
           */
-         if (!need_to_list_device(devicenames, device->changer_res->name())) {
+         if (!NeedToListDevice(devicenames, device->changer_res->name())) {
             return false;
          }
       } else {
@@ -264,7 +264,7 @@ static void get_device_specific_status(DeviceResource *device,
    FreePoolMemory(dst.status);
 }
 
-static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
+static void ListDevices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
 {
    int len;
    int bpb;
@@ -283,7 +283,7 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
       /*
        * See if we need to list this autochanger.
        */
-      if (devicenames && !need_to_list_device(devicenames, changer->name())) {
+      if (devicenames && !NeedToListDevice(devicenames, changer->name())) {
          continue;
       }
 
@@ -302,7 +302,7 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
    }
 
    foreach_res(device, R_DEVICE) {
-      if (devicenames && !need_to_list_device(devicenames, device)) {
+      if (devicenames && !NeedToListDevice(devicenames, device)) {
          continue;
       }
 
@@ -353,7 +353,7 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
          get_device_specific_status(device, sp);
          trigger_device_status_hook(jcr, device, sp, bsdEventDriveStatus);
 
-         send_blocked_status(dev, sp);
+         SendBlockedStatus(dev, sp);
 
          if (dev->CanAppend()) {
             bpb = dev->VolCatInfo.VolCatBlocks;
@@ -393,7 +393,7 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
          if (dev) {
             len = Mmsg(msg, _("\nDevice %s is not open.\n"), dev->print_name());
             sendit(msg, len, sp);
-            send_blocked_status(dev, sp);
+            SendBlockedStatus(dev, sp);
          } else {
             len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"), device->name());
             sendit(msg, len, sp);
@@ -417,7 +417,7 @@ static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *de
 /*
  * List Volumes
  */
-static void list_volumes(StatusPacket *sp, const char *devicenames)
+static void ListVolumes(StatusPacket *sp, const char *devicenames)
 {
    int len;
    VolumeReservationItem *vol;
@@ -427,7 +427,7 @@ static void list_volumes(StatusPacket *sp, const char *devicenames)
       Device *dev = vol->dev;
 
       if (dev) {
-         if (devicenames && !need_to_list_device(devicenames, dev->device)) {
+         if (devicenames && !NeedToListDevice(devicenames, dev->device)) {
             continue;
          }
 
@@ -449,7 +449,7 @@ static void list_volumes(StatusPacket *sp, const char *devicenames)
       Device *dev = vol->dev;
 
       if (dev) {
-         if (devicenames && !need_to_list_device(devicenames, dev->device)) {
+         if (devicenames && !NeedToListDevice(devicenames, dev->device)) {
             continue;
          }
 
@@ -468,7 +468,7 @@ static void list_volumes(StatusPacket *sp, const char *devicenames)
    endeach_read_vol(vol);
 }
 
-static void list_status_header(StatusPacket *sp)
+static void ListStatusHeader(StatusPacket *sp)
 {
    int len;
    PoolMem msg(PM_MESSAGE);
@@ -560,7 +560,7 @@ static void list_status_header(StatusPacket *sp)
    }
 }
 
-static void send_blocked_status(Device *dev, StatusPacket *sp)
+static void SendBlockedStatus(Device *dev, StatusPacket *sp)
 {
    int len;
    PoolMem msg(PM_MESSAGE);
@@ -637,11 +637,11 @@ static void send_blocked_status(Device *dev, StatusPacket *sp)
       }
    }
    if (debug_level > 1) {
-      send_device_status(dev, sp);
+      SendDeviceStatus(dev, sp);
    }
 }
 
-static void send_device_status(Device *dev, StatusPacket *sp)
+static void SendDeviceStatus(Device *dev, StatusPacket *sp)
 {
    int len;
    DeviceControlRecord *dcr = NULL;
@@ -720,7 +720,7 @@ static void send_device_status(Device *dev, StatusPacket *sp)
    sendit(msg, len, sp);
 }
 
-static void list_running_jobs(StatusPacket *sp)
+static void ListRunningJobs(StatusPacket *sp)
 {
    JobControlRecord *jcr;
    DeviceControlRecord *dcr, *rdcr;
@@ -836,7 +836,7 @@ static void list_running_jobs(StatusPacket *sp)
 /*
  * Send any reservation messages queued for this jcr
  */
-static inline void send_drive_reserve_messages(JobControlRecord *jcr, StatusPacket *sp)
+static inline void SendDriveReserveMessages(JobControlRecord *jcr, StatusPacket *sp)
 {
    int i;
    alist *msgs;
@@ -861,7 +861,7 @@ bail_out:
    jcr->unlock();
 }
 
-static void list_jobs_waiting_on_reservation(StatusPacket *sp)
+static void ListJobsWaitingOnReservation(StatusPacket *sp)
 {
    int len;
    JobControlRecord *jcr;
@@ -876,7 +876,7 @@ static void list_jobs_waiting_on_reservation(StatusPacket *sp)
       if (!jcr->reserve_msgs) {
          continue;
       }
-      send_drive_reserve_messages(jcr, sp);
+      SendDriveReserveMessages(jcr, sp);
    }
    endeach_jcr(jcr);
 
@@ -886,7 +886,7 @@ static void list_jobs_waiting_on_reservation(StatusPacket *sp)
    }
 }
 
-static void list_terminated_jobs(StatusPacket *sp)
+static void ListTerminatedJobs(StatusPacket *sp)
 {
    int len;
    char level[10];
@@ -1078,7 +1078,7 @@ static void sendit(PoolMem &msg, int len, StatusPacket *sp)
 /**
  * Status command from Director
  */
-bool status_cmd(JobControlRecord *jcr)
+bool StatusCmd(JobControlRecord *jcr)
 {
    PoolMem devicenames;
    StatusPacket sp;
@@ -1105,7 +1105,7 @@ bool status_cmd(JobControlRecord *jcr)
 /**
  * .status command from Director
  */
-bool dotstatus_cmd(JobControlRecord *jcr)
+bool DotstatusCmd(JobControlRecord *jcr)
 {
    JobControlRecord *njcr;
    PoolMem cmd;
@@ -1126,7 +1126,7 @@ bool dotstatus_cmd(JobControlRecord *jcr)
 
    Dmsg1(200, "cmd=%s\n", cmd.c_str());
 
-   if (bstrcasecmp(cmd.c_str(), "current")) {
+   if (Bstrcasecmp(cmd.c_str(), "current")) {
       dir->fsend(OKdotstatus, cmd.c_str());
       foreach_jcr(njcr) {
          if (njcr->JobId != 0) {
@@ -1134,36 +1134,36 @@ bool dotstatus_cmd(JobControlRecord *jcr)
          }
       }
       endeach_jcr(njcr);
-   } else if (bstrcasecmp(cmd.c_str(), "last")) {
+   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
       dir->fsend(OKdotstatus, cmd.c_str());
       if ((last_jobs) && (last_jobs->size() > 0)) {
          job = (s_last_job*)last_jobs->last();
          dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
       }
-   } else if (bstrcasecmp(cmd.c_str(), "header")) {
+   } else if (Bstrcasecmp(cmd.c_str(), "header")) {
        sp.api = true;
-       list_status_header(&sp);
-   } else if (bstrcasecmp(cmd.c_str(), "running")) {
+       ListStatusHeader(&sp);
+   } else if (Bstrcasecmp(cmd.c_str(), "running")) {
        sp.api = true;
-       list_running_jobs(&sp);
-   } else if (bstrcasecmp(cmd.c_str(), "waitreservation")) {
+       ListRunningJobs(&sp);
+   } else if (Bstrcasecmp(cmd.c_str(), "waitreservation")) {
        sp.api = true;
-       list_jobs_waiting_on_reservation(&sp);
-   } else if (bstrcasecmp(cmd.c_str(), "devices")) {
+       ListJobsWaitingOnReservation(&sp);
+   } else if (Bstrcasecmp(cmd.c_str(), "devices")) {
        sp.api = true;
-       list_devices(jcr, &sp, NULL);
-   } else if (bstrcasecmp(cmd.c_str(), "volumes")) {
+       ListDevices(jcr, &sp, NULL);
+   } else if (Bstrcasecmp(cmd.c_str(), "volumes")) {
        sp.api = true;
-       list_volumes(&sp, NULL);
-   } else if (bstrcasecmp(cmd.c_str(), "spooling")) {
+       ListVolumes(&sp, NULL);
+   } else if (Bstrcasecmp(cmd.c_str(), "spooling")) {
        sp.api = true;
        ListSpoolStats(sendit, &sp);
-   } else if (bstrcasecmp(cmd.c_str(), "terminated")) {
+   } else if (Bstrcasecmp(cmd.c_str(), "terminated")) {
        sp.api = true;
-       list_terminated_jobs(&sp);
-   } else if (bstrcasecmp(cmd.c_str(), "resources")) {
+       ListTerminatedJobs(&sp);
+   } else if (Bstrcasecmp(cmd.c_str(), "resources")) {
        sp.api = true;
-       list_resources(&sp);
+       ListResources(&sp);
    } else {
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 Unknown arg in .status command: %s\n"), jcr->errmsg);

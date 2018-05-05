@@ -20,12 +20,12 @@
 */
 
 bool InitFileset(JobControlRecord *jcr);
-void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool IsFile);
+void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile);
 findIncludeExcludeItem *get_incexe(JobControlRecord *jcr);
-void set_incexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe);
+void SetIncexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe);
 int AddRegexToFileset(JobControlRecord *jcr, const char *item, int type);
 int AddWildToFileset(JobControlRecord *jcr, const char *item, int type);
 int AddOptionsToFileset(JobControlRecord *jcr, const char *item);
-void add_fileset(JobControlRecord *jcr, const char *item);
+void AddFileset(JobControlRecord *jcr, const char *item);
 bool TermFileset(JobControlRecord *jcr);
 

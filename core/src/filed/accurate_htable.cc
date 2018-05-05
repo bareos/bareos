@@ -106,7 +106,7 @@ accurate_payload *BareosAccurateFilelistHtable::lookup_payload(char *fname)
    return (temp) ? &temp->payload : NULL;
 }
 
-bool BareosAccurateFilelistHtable::update_payload(char *fname, accurate_payload *payload)
+bool BareosAccurateFilelistHtable::UpdatePayload(char *fname, accurate_payload *payload)
 {
    /*
     * Nothing to do.
@@ -164,7 +164,7 @@ bool BareosAccurateFilelistHtable::SendDeletedList()
 
    foreach_htable(elt, file_list_) {
       if (BitIsSet(elt->payload.filenr, seen_bitmap_) ||
-          plugin_check_file(jcr_, elt->fname)) {
+          PluginCheckFile(jcr_, elt->fname)) {
          continue;
       }
       Dmsg1(debuglevel, "deleted fname=%s\n", elt->fname);

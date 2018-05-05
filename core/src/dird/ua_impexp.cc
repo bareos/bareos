@@ -332,7 +332,7 @@ static inline changer_vol_list_t *scan_slots_for_volnames(UaContext *ua,
              * Lookup the drive in the old list.
              */
             vls.Index = vl1->Index;
-            vl2 = (vol_list_t *)vol_list->contents->binary_search((void *)&vls, storage_compare_vol_list_entry);
+            vl2 = (vol_list_t *)vol_list->contents->binary_search((void *)&vls, StorageCompareVolListEntry);
             if (vl2 &&
                 vl2->Content == slot_content_full &&
                 vl2->Loaded == vl1->Loaded) {
@@ -380,7 +380,7 @@ static inline changer_vol_list_t *scan_slots_for_volnames(UaContext *ua,
              * Lookup the slot in the old list.
              */
             vls.Index = vl1->Index;
-            vl2 = (vol_list_t *)vol_list->contents->binary_search((void *)&vls, storage_compare_vol_list_entry);
+            vl2 = (vol_list_t *)vol_list->contents->binary_search((void *)&vls, StorageCompareVolListEntry);
             if (vl2 &&
                 vl2->Content == slot_content_full &&
                 vl2->Slot == vl1->Slot) {
@@ -537,7 +537,7 @@ static inline slot_number_t get_slot_list_using_volnames(UaContext *ua,
     * or more volume= cmdline parameters.
     */
    for (i = arg; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], "volume")) {
+      if (Bstrcasecmp(ua->argk[i], "volume")) {
          /*
           * Parse a volumelist e.g. vol1|vol2 and a single volume e.g. vol1
           */
@@ -878,7 +878,7 @@ static char *move_volumes_in_autochanger(UaContext *ua,
     */
    switch (operation) {
    case VOLUME_EXPORT:
-      update_inchanger_for_export(ua, store, vol_list, src_slot_list);
+      UpdateInchangerForExport(ua, store, vol_list, src_slot_list);
       break;
    default:
       break;
@@ -980,7 +980,7 @@ static char *move_volumes_in_autochanger(UaContext *ua,
  * - export of normal slots into export slots
  * - move from one normal slot to another normal slot
  */
-static bool perform_move_operation(UaContext *ua, enum e_move_op operation)
+static bool PerformMoveOperation(UaContext *ua, enum e_move_op operation)
 {
    bool scan;
    UnifiedStorageResource store;
@@ -1290,7 +1290,7 @@ static bool perform_move_operation(UaContext *ua, enum e_move_op operation)
     */
    if (visited_slot_list && count_enabled_slots(visited_slot_list, max_slots) > 0) {
       Dmsg0(100, "Updating database with new info for visited slots\n");
-      update_slots_from_vol_list(ua, store.store, vol_list, visited_slot_list);
+      UpdateSlotsFromVolList(ua, store.store, vol_list, visited_slot_list);
    }
 
    retval = true;
@@ -1317,17 +1317,17 @@ bail_out:
 /**
  * Import volumes from Import/Export Slots into normal Slots.
  */
-bool import_cmd(UaContext *ua, const char *cmd)
+bool ImportCmd(UaContext *ua, const char *cmd)
 {
-   return perform_move_operation(ua, VOLUME_IMPORT);
+   return PerformMoveOperation(ua, VOLUME_IMPORT);
 }
 
 /**
  * Export volumes from normal slots to Import/Export Slots.
  */
-bool export_cmd(UaContext *ua, const char *cmd)
+bool ExportCmd(UaContext *ua, const char *cmd)
 {
-   return perform_move_operation(ua, VOLUME_EXPORT);
+   return PerformMoveOperation(ua, VOLUME_EXPORT);
 }
 
 /**
@@ -1335,5 +1335,5 @@ bool export_cmd(UaContext *ua, const char *cmd)
  */
 bool move_cmd(UaContext *ua, const char *cmd)
 {
-   return perform_move_operation(ua, VOLUME_MOVE);
+   return PerformMoveOperation(ua, VOLUME_MOVE);
 }

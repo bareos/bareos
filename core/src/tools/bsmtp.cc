@@ -117,7 +117,7 @@ static char *cleanup_addr(char *addr, char *buf, int buf_len)
 /*
  *  examine message from server
  */
-static void get_response(void)
+static void GetResponse(void)
 {
     char buf[1000];
 
@@ -167,7 +167,7 @@ static void chat(const char *fmt, ...)
     if (debug_level >= 10) {
        fflush(stdout);
     }
-    get_response();
+    GetResponse();
 }
 
 
@@ -199,9 +199,9 @@ _("\n"
 /*
  * Return the offset west from localtime to UTC in minutes
  * Same as timezone.tz_minuteswest
- *   Unix tz_offset coded by:  Attila Fülöp
+ *   Unix TzOffset coded by:  Attila Fülöp
  */
-static long tz_offset(time_t lnow, struct tm &tm)
+static long TzOffset(time_t lnow, struct tm &tm)
 {
 #if defined(HAVE_WIN32)
 #if defined(HAVE_MINGW)
@@ -230,7 +230,7 @@ __MINGW_IMPORT long     _dstbias;
 #endif
 }
 
-static void get_date_string(char *buf, int buf_len)
+static void GetDateString(char *buf, int buf_len)
 {
    time_t now = time(NULL);
    struct tm tm;
@@ -238,9 +238,9 @@ static void get_date_string(char *buf, int buf_len)
    long my_timezone;
 
    /* Add RFC822 date */
-   blocaltime(&now, &tm);
+   Blocaltime(&now, &tm);
 
-   my_timezone = tz_offset(now, tm);
+   my_timezone = TzOffset(now, tm);
    strftime(buf, buf_len, "%a, %d %b %Y %H:%M:%S", &tm);
    snprintf(tzbuf, sizeof(tzbuf), " %+2.2ld%2.2ld", -my_timezone / 60, labs(my_timezone) % 60);
    strcat(buf, tzbuf);              /* add +0100 */
@@ -472,7 +472,7 @@ lookup_host:
    if ((res = getaddrinfo(mailhost, mail_port, &hints, &ai)) != 0) {
       Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"),
             mailhost, gai_strerror(res));
-      if (!bstrcasecmp(mailhost, "localhost")) {
+      if (!Bstrcasecmp(mailhost, "localhost")) {
          Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
          mailhost = "localhost";
          goto lookup_host;
@@ -507,7 +507,7 @@ lookup_host:
    if ((hp = gethostbyname(mailhost)) == NULL) {
       Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"),
             mailhost, strerror(errno));
-      if (!bstrcasecmp(mailhost, "localhost")) {
+      if (!Bstrcasecmp(mailhost, "localhost")) {
          Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
          mailhost = "localhost";
          goto lookup_host;
@@ -578,7 +578,7 @@ lookup_host:
     *   in them already, we do not enclose the string in < >, otherwise
     *   we do.
     */
-   get_response(); /* banner */
+   GetResponse(); /* banner */
    chat("HELO %s\r\n", my_hostname);
    chat("MAIL FROM:%s\r\n", cleanup_addr(from_addr, buf, sizeof(buf)));
 
@@ -651,7 +651,7 @@ lookup_host:
       Dmsg0(10, "Content-Type: text/plain; charset=UTF-8\r\n");
    }
 
-   get_date_string(buf, sizeof(buf));
+   GetDateString(buf, sizeof(buf));
    fprintf(sfp, "Date: %s\r\n", buf);
    Dmsg1(10, "Date: %s\r\n", buf);
 

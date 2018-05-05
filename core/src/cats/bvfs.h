@@ -65,17 +65,17 @@ public:
    virtual ~Bvfs();
 
    void SetJobid(JobId_t id);
-   void set_jobids(char *ids);
+   void SetJobids(char *ids);
 
-   void set_limit(uint32_t max) {
+   void SetLimit(uint32_t max) {
       limit = max;
    }
 
-   void set_offset(uint32_t nb) {
+   void SetOffset(uint32_t nb) {
       offset = nb;
    }
 
-   void set_pattern(char *p) {
+   void SetPattern(char *p) {
       uint32_t len = strlen(p);
       pattern = CheckPoolMemorySize(pattern, len * 2 + 1);
       db->EscapeString(jcr, pattern, p, len);
@@ -105,15 +105,15 @@ public:
 
    void update_cache();
 
-   void set_see_all_versions(bool val) {
+   void SetSeeAllVersions(bool val) {
       see_all_versions = val;
    }
 
-   void set_see_copies(bool val) {
+   void SetSeeCopies(bool val) {
       see_copies = val;
    }
 
-   void set_handler(DB_RESULT_HANDLER *h, void *ctx) {
+   void SetHandler(DB_RESULT_HANDLER *h, void *ctx) {
       list_entries = h;
       user_data = ctx;
    }
@@ -146,10 +146,10 @@ public:
                              char *output_table);
 
    /* Drop previous restore list */
-   bool drop_restore_list(char *output_table);
+   bool DropRestoreList(char *output_table);
 
    /* for internal use */
-   int _handle_path(void *, int, char **);
+   int _handlePath(void *, int, char **);
 
 private:
    Bvfs(const Bvfs &);               /* prohibit pass by value */

@@ -45,10 +45,10 @@
 #include "lib/edit.h"
 
 /* Forward referenced functions */
-static bool purge_files_from_client(UaContext *ua, ClientResource *client);
-static bool purge_jobs_from_client(UaContext *ua, ClientResource *client);
-static bool purge_quota_from_client(UaContext *ua, ClientResource *client);
-static bool action_on_purge_cmd(UaContext *ua, const char *cmd);
+static bool PurgeFilesFromClient(UaContext *ua, ClientResource *client);
+static bool PurgeJobsFromClient(UaContext *ua, ClientResource *client);
+static bool PurgeQuotaFromClient(UaContext *ua, ClientResource *client);
+static bool ActionOnPurgeCmd(UaContext *ua, const char *cmd);
 
 static const char *select_jobsfiles_from_client =
    "SELECT JobId FROM Job "
@@ -63,7 +63,7 @@ static const char *select_jobs_from_client =
  * Purge records from database
  *
  */
-bool purge_cmd(UaContext *ua, const char *cmd)
+bool PurgeCmd(UaContext *ua, const char *cmd)
 {
    int i;
    ClientResource *client;
@@ -117,19 +117,19 @@ bool purge_cmd(UaContext *ua, const char *cmd)
     * Instead of checking all of this,
     * we require full permissions to all of these resources.
     */
-   if (ua->acl_has_restrictions(Client_ACL)) {
+   if (ua->AclHasRestrictions(Client_ACL)) {
       ua->ErrorMsg(permission_denied_message, "client");
       return false;
    }
-   if (ua->acl_has_restrictions(Job_ACL)) {
+   if (ua->AclHasRestrictions(Job_ACL)) {
       ua->ErrorMsg(permission_denied_message, "job");
       return false;
    }
-   if (ua->acl_has_restrictions(Pool_ACL)) {
+   if (ua->AclHasRestrictions(Pool_ACL)) {
       ua->ErrorMsg(permission_denied_message, "pool");
       return false;
    }
-   if (ua->acl_has_restrictions(Storage_ACL)) {
+   if (ua->AclHasRestrictions(Storage_ACL)) {
       ua->ErrorMsg(permission_denied_message, "storage");
       return false;
    }
@@ -156,7 +156,7 @@ bool purge_cmd(UaContext *ua, const char *cmd)
       case 2:                         /* client */
          client = get_client_resource(ua);
          if (client) {
-            purge_files_from_client(ua, client);
+            PurgeFilesFromClient(ua, client);
          }
          return true;
       case 3:                         /* Volume */
@@ -172,7 +172,7 @@ bool purge_cmd(UaContext *ua, const char *cmd)
       case 0:                         /* client */
          client = get_client_resource(ua);
          if (client) {
-            purge_jobs_from_client(ua, client);
+            PurgeJobsFromClient(ua, client);
          }
          return true;
       case 1:                         /* Volume */
@@ -215,7 +215,7 @@ bool purge_cmd(UaContext *ua, const char *cmd)
        * Perform ActionOnPurge (action=truncate)
        */
       if (FindArg(ua, "action") >= 0) {
-         return action_on_purge_cmd(ua, ua->cmd);
+         return ActionOnPurgeCmd(ua, ua->cmd);
       }
       return true;
    /* Quota */
@@ -224,7 +224,7 @@ bool purge_cmd(UaContext *ua, const char *cmd)
       case 0:                         /* client */
          client = get_client_resource(ua);
          if (client) {
-            purge_quota_from_client(ua, client);
+            PurgeQuotaFromClient(ua, client);
          }
          return true;
       }
@@ -236,13 +236,13 @@ bool purge_cmd(UaContext *ua, const char *cmd)
    case 0:                            /* files */
       client = get_client_resource(ua);
       if (client) {
-         purge_files_from_client(ua, client);
+         PurgeFilesFromClient(ua, client);
       }
       break;
    case 1:                            /* jobs */
       client = get_client_resource(ua);
       if (client) {
-         purge_jobs_from_client(ua, client);
+         PurgeJobsFromClient(ua, client);
       }
       break;
    case 2:                            /* Volume */
@@ -253,7 +253,7 @@ bool purge_cmd(UaContext *ua, const char *cmd)
    case 3:
       client = get_client_resource(ua); /* Quota */
       if (client) {
-         purge_quota_from_client(ua, client);
+         PurgeQuotaFromClient(ua, client);
       }
    }
    return true;
@@ -267,7 +267,7 @@ bool purge_cmd(UaContext *ua, const char *cmd)
  * the JobIds meeting the prune conditions, then delete all File records
  * pointing to each of those JobIds.
  */
-static bool purge_files_from_client(UaContext *ua, ClientResource *client)
+static bool PurgeFilesFromClient(UaContext *ua, ClientResource *client)
 {
    struct del_ctx del;
    PoolMem query(PM_MESSAGE);
@@ -288,7 +288,7 @@ static bool purge_files_from_client(UaContext *ua, ClientResource *client)
 
    Mmsg(query, select_jobsfiles_from_client, edit_int64(cr.ClientId, ed1));
    Dmsg1(050, "select sql=%s\n", query.c_str());
-   ua->db->SqlQuery(query.c_str(), file_delete_handler, (void *)&del);
+   ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void *)&del);
 
    if (del.num_ids == 0) {
       ua->WarningMsg(_("No Files found for client %s to purge from %s catalog.\n"),
@@ -318,7 +318,7 @@ static bool purge_files_from_client(UaContext *ua, ClientResource *client)
  * temporary tables are needed. We simply make an in memory list of
  * the JobIds then delete the Job, Files, and JobMedia records in that list.
  */
-static bool purge_jobs_from_client(UaContext *ua, ClientResource *client)
+static bool PurgeJobsFromClient(UaContext *ua, ClientResource *client)
 {
    struct del_ctx del;
    PoolMem query(PM_MESSAGE);
@@ -341,7 +341,7 @@ static bool purge_jobs_from_client(UaContext *ua, ClientResource *client)
 
    Mmsg(query, select_jobs_from_client, edit_int64(cr.ClientId, ed1));
    Dmsg1(150, "select sql=%s\n", query.c_str());
-   ua->db->SqlQuery(query.c_str(), job_delete_handler, (void *)&del);
+   ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void *)&del);
 
    if (del.num_ids == 0) {
       ua->WarningMsg(_("No Jobs found for client %s to purge from %s catalog.\n"),
@@ -465,7 +465,7 @@ void PurgeFilesFromJobList(UaContext *ua, del_ctx &del)
  * end up creating it!
  */
 
-static bool purge_quota_from_client(UaContext *ua, ClientResource *client)
+static bool PurgeQuotaFromClient(UaContext *ua, ClientResource *client)
 {
    ClientDbRecord cr;
 
@@ -501,7 +501,7 @@ static bool purge_quota_from_client(UaContext *ua, ClientResource *client)
  *  => Search through PriorJobId in jobid and
  *                    PriorJobId in PriorJobId (jobid)
  */
-void upgrade_copies(UaContext *ua, char *jobs)
+void UpgradeCopies(UaContext *ua, char *jobs)
 {
    PoolMem query(PM_MESSAGE);
 
@@ -559,7 +559,7 @@ void PurgeJobsFromCatalog(UaContext *ua, char *jobs)
    ua->db->SqlQuery(query.c_str());
    Dmsg1(050, "Delete JobStats sql=%s\n", query.c_str());
 
-   upgrade_copies(ua, jobs);
+   UpgradeCopies(ua, jobs);
 
    /* Now remove the Job record itself */
    Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
@@ -659,7 +659,7 @@ bool IsVolumePurged(UaContext *ua, MediaDbRecord *mr, bool force)
    cnt.count = 0;
    Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%s LIMIT 1",
         edit_int64(mr->MediaId, ed1));
-   if (!ua->db->SqlQuery(query.c_str(), del_count_handler, (void *)&cnt)) {
+   if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, (void *)&cnt)) {
       ua->ErrorMsg("%s", ua->db->strerror());
       Dmsg0(050, "Count failed\n");
       goto bail_out;
@@ -761,7 +761,7 @@ static void do_truncate_on_purge(UaContext *ua, MediaDbRecord *mr,
  * Implement Bareos bconsole command  purge action
  * purge action= pool= volume= storage= devicetype=
  */
-static bool action_on_purge_cmd(UaContext *ua, const char *cmd)
+static bool ActionOnPurgeCmd(UaContext *ua, const char *cmd)
 {
    bool allpools = false;
    drive_number_t drive = -1;
@@ -785,9 +785,9 @@ static bool action_on_purge_cmd(UaContext *ua, const char *cmd)
     * Look at arguments
     */
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("allpools"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("allpools"))) {
          allpools = true;
-      } else if (bstrcasecmp(ua->argk[i], NT_("volume")) &&
+      } else if (Bstrcasecmp(ua->argk[i], NT_("volume")) &&
                  IsNameValid(ua->argv[i])) {
          ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
          if (!*volumes.c_str()) {
@@ -796,14 +796,14 @@ static bool action_on_purge_cmd(UaContext *ua, const char *cmd)
             Mmsg(buf, ",'%s'", esc);
          }
          PmStrcat(volumes, buf.c_str());
-      } else if (bstrcasecmp(ua->argk[i], NT_("devicetype")) &&
+      } else if (Bstrcasecmp(ua->argk[i], NT_("devicetype")) &&
                  ua->argv[i]) {
          bstrncpy(mr.MediaType, ua->argv[i], sizeof(mr.MediaType));
 
-      } else if (bstrcasecmp(ua->argk[i], NT_("drive")) && ua->argv[i]) {
+      } else if (Bstrcasecmp(ua->argk[i], NT_("drive")) && ua->argv[i]) {
          drive = atoi(ua->argv[i]);
 
-      } else if (bstrcasecmp(ua->argk[i], NT_("action")) &&
+      } else if (Bstrcasecmp(ua->argk[i], NT_("action")) &&
                  IsNameValid(ua->argv[i])) {
          action=ua->argv[i];
       }
@@ -880,7 +880,7 @@ static bool action_on_purge_cmd(UaContext *ua, const char *cmd)
       mr.MediaId = results[i];
       if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
          /* TODO: ask for drive and change Pool */
-         if (bstrcasecmp("truncate", action) || bstrcasecmp("all", action)) {
+         if (Bstrcasecmp("truncate", action) || Bstrcasecmp("all", action)) {
             do_truncate_on_purge(ua, &mr, pr.Name, store->dev_name(), drive, sd);
          }
       } else {

@@ -40,7 +40,7 @@ extern "C" {
 
 #ifndef TEST_RW_TRY_LOCK
 #ifndef TEST_RWLOCK
-void test_rwlock(void **state) {
+void TestRwlock(void **state) {
    (void) state; /* unused */
 }
 #endif
@@ -162,7 +162,7 @@ void *thread_routine(void *arg)
    return NULL;
 }
 
-void test_rwlock(void **state) {
+void TestRwlock(void **state) {
    (void) state; /* unused */
 //int main (int argc, char *argv[])
 //{
@@ -340,7 +340,7 @@ void *thread_routine (void *arg)
 
 
 
-void test_rwlock(void **state) {
+void TestRwlock(void **state) {
    (void) state; /* unused */
 
 

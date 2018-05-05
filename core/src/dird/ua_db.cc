@@ -77,7 +77,7 @@ bool OpenClientDb(UaContext *ua, bool use_private)
          if (ua->catalog && ua->catalog != catalog) {
             CloseDb(ua);
          }
-         if (!ua->acl_access_ok(Catalog_ACL, catalog->name(), true)) {
+         if (!ua->AclAccessOk(Catalog_ACL, catalog->name(), true)) {
             ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }
@@ -97,7 +97,7 @@ bool OpenClientDb(UaContext *ua, bool use_private)
          if (ua->catalog && ua->catalog != catalog) {
             CloseDb(ua);
          }
-         if (!ua->acl_access_ok(Catalog_ACL, catalog->name(), true)) {
+         if (!ua->AclAccessOk(Catalog_ACL, catalog->name(), true)) {
             ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }
@@ -361,7 +361,7 @@ void SetPooldbrFromPoolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op)
 /**
  * set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog
  */
-int update_pool_references(JobControlRecord *jcr, BareosDb *db, PoolResource *pool)
+int UpdatePoolReferences(JobControlRecord *jcr, BareosDb *db, PoolResource *pool)
 {
    PoolDbRecord pr;
 

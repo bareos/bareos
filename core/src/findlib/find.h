@@ -147,7 +147,7 @@ struct findFOPTS {
    alist wildbase;                    /**< Wild card strings for basenames */
    alist base;                        /**< List of base names */
    alist fstype;                      /**< File system type limitation */
-   alist drivetype;                   /**< Drive type limitation */
+   alist Drivetype;                   /**< Drive type limitation */
 };
 
 /**
@@ -227,7 +227,7 @@ struct FindFilesPacket {
    int ff_errno;                      /**< Errno */
    BareosWinFilePacket bfd;                         /**< Bareos file descriptor */
    time_t save_time;                  /**< Start of incremental time */
-   bool accurate_found;               /**< Found in the accurate hash (valid after check_changes()) */
+   bool accurate_found;               /**< Found in the accurate hash (valid after CheckChanges()) */
    bool dereference;                  /**< Follow links (not implemented) */
    bool null_output_device;           /**< Using null output device */
    bool incremental;                  /**< Incremental save */
@@ -239,7 +239,7 @@ struct FindFilesPacket {
    struct s_excluded_file *excluded_files_list;
    struct s_excluded_file *excluded_paths_list;
    findFILESET *fileset;
-   int (*file_save)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
+   int (*FileSave)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
    int (*PluginSave)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
    bool (*CheckFct)(JobControlRecord *, FindFilesPacket *); /**< Optionnal user fct to check file changes */
 
@@ -275,8 +275,8 @@ DLL_IMP_EXP FindFilesPacket *init_find_files();
 DLL_IMP_EXP void SetFindOptions(FindFilesPacket *ff, bool incremental, time_t mtime);
 DLL_IMP_EXP void SetFindChangedFunction(FindFilesPacket *ff, bool CheckFct(JobControlRecord *jcr, FindFilesPacket *ff));
 DLL_IMP_EXP int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff, int file_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool),
-               int plugin_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
-DLL_IMP_EXP bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
+               int PluginSub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
+DLL_IMP_EXP bool MatchFiles(JobControlRecord *jcr, FindFilesPacket *ff, int sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
 DLL_IMP_EXP int TermFindFiles(FindFilesPacket *ff);
 DLL_IMP_EXP bool IsInFileset(FindFilesPacket *ff);
 DLL_IMP_EXP bool AcceptFile(FindFilesPacket *ff);

@@ -39,7 +39,7 @@ extern "C" {
 #include "include/bareos.h"
 #include "findlib/find.h"
 
-void test_drivetype(void **state) {
+void TestDrivetype(void **state) {
 #ifdef HAVE_WIN32
    char *driveletters_to_check[] = {"/" , "c:\\", "d:\\", NULL};
 
@@ -48,11 +48,11 @@ void test_drivetype(void **state) {
    char dt[1000];
 
    while (*p) {
-      assert_true(drivetype(*p, dt, sizeof(dt)));
+      assert_true(Drivetype(*p, dt, sizeof(dt)));
       printf("%s\t%s\n", dt, *p);
       p++;
    }
 #else
-   printf ("drivetype only makes sense on windows, doing nothing on UNIX/Linux\n");
+   printf ("Drivetype only makes sense on windows, doing nothing on UNIX/Linux\n");
 #endif
 }

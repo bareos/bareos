@@ -135,7 +135,7 @@ class DLL_IMP_EXP TlsCert : public TlsBase {
 
    virtual uint32_t GetPolicy() const override;
 
-   int (*tls_pem_callback)(char *buf, int size, const void *userdata);
+   int (*TlsPemCallback)(char *buf, int size, const void *userdata);
 
    bool GetVerifyPeer() const override { return VerifyPeer; }
    alist *GetVerifyList() const override { return AllowedCns; }

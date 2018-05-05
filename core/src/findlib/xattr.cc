@@ -197,7 +197,7 @@ uint32_t SerializeXattrStream(JobControlRecord *jcr,
              expected_serialize_len + 10);
 
    /*
-    * Walk the list of xattrs and serialize the data.
+    * Walk the list of xattrs and Serialize the data.
     */
    foreach_alist(current_xattr, xattr_value_list) {
       /*
@@ -228,7 +228,7 @@ uint32_t SerializeXattrStream(JobControlRecord *jcr,
    return xattr_data->u.build->content_length;
 }
 
-bxattr_exit_code UnserializeXattrStream(JobControlRecord *jcr,
+bxattr_exit_code UnSerializeXattrStream(JobControlRecord *jcr,
                                           xattr_data_t *xattr_data,
                                           char *content,
                                           uint32_t content_length,
@@ -587,9 +587,9 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
          Mmsg1(jcr->errmsg,
-               _("Failed to serialize extended attributes on file \"%s\"\n"),
+               _("Failed to Serialize extended attributes on file \"%s\"\n"),
                xattr_data->last_fname);
-         Dmsg1(100, "Failed to serialize extended attributes on file \"%s\"\n",
+         Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
                xattr_data->last_fname);
          goto bail_out;
       }
@@ -625,7 +625,7 @@ static bxattr_exit_code aix_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (UnserializeXattrStream(jcr,
+   if (UnSerializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -807,7 +807,7 @@ static bxattr_exit_code irix_build_xattr_streams(JobControlRecord *jcr,
             current_xattr->name_length = strlen(xattr_naming_spaces[cnt].name) +
                                          strlen(attrlist_ent->a_name) + 1;
             current_xattr->name = (char *)malloc(current_xattr->name_length);
-            bsnprintf(current_xattr->name, current_xattr->name_length, "%s%s",
+            Bsnprintf(current_xattr->name, current_xattr->name_length, "%s%s",
                       xattr_naming_spaces[cnt].name, attrlist_ent->a_name);
 
             expected_serialize_len += sizeof(current_xattr->name_length) +
@@ -920,9 +920,9 @@ ok_continue:
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
          Mmsg1(jcr->errmsg,
-               _("Failed to serialize extended attributes on file \"%s\"\n"),
+               _("Failed to Serialize extended attributes on file \"%s\"\n"),
                xattr_data->last_fname);
-         Dmsg1(100, "Failed to serialize extended attributes on file \"%s\"\n",
+         Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
                xattr_data->last_fname);
          goto bail_out;
       }
@@ -959,7 +959,7 @@ static bxattr_exit_code irix_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (UnserializeXattrStream(jcr,
+   if (UnSerializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -1394,9 +1394,9 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
          Mmsg1(jcr->errmsg,
-               _("Failed to serialize extended attributes on file \"%s\"\n"),
+               _("Failed to Serialize extended attributes on file \"%s\"\n"),
                xattr_data->last_fname);
-         Dmsg1(100, "Failed to serialize extended attributes on file \"%s\"\n",
+         Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
                xattr_data->last_fname);
          goto bail_out;
       }
@@ -1432,7 +1432,7 @@ static bxattr_exit_code generic_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (UnserializeXattrStream(jcr,
+   if (UnSerializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -1705,7 +1705,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
           * First make a xattr tuple of the current namespace and the name of
           * the xattr. e.g. something like user.<attrname> or system.<attrname>
           */
-         bsnprintf(current_attrtuple, sizeof(current_attrtuple), "%s.%s",
+         Bsnprintf(current_attrtuple, sizeof(current_attrtuple), "%s.%s",
                    current_attrnamespace, current_attrname);
 
          /*
@@ -1856,7 +1856,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
       /*
        * Drop the local copy of the current_attrnamespace.
        */
-      actuallyfree(current_attrnamespace);
+      Actuallyfree(current_attrnamespace);
       current_attrnamespace = NULL;
 
       /*
@@ -1878,9 +1878,9 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
          Mmsg1(jcr->errmsg,
-               _("Failed to serialize extended attributes on file \"%s\"\n"),
+               _("Failed to Serialize extended attributes on file \"%s\"\n"),
                xattr_data->last_fname);
-         Dmsg1(100, "Failed to serialize extended attributes on file \"%s\"\n",
+         Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
                xattr_data->last_fname);
          goto bail_out;
       }
@@ -1895,7 +1895,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
 
 bail_out:
    if (current_attrnamespace != NULL) {
-      actuallyfree(current_attrnamespace);
+      Actuallyfree(current_attrnamespace);
    }
    if (xattr_list != NULL) {
       free(xattr_list);
@@ -1921,7 +1921,7 @@ static bxattr_exit_code bsd_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (UnserializeXattrStream(jcr,
+   if (UnSerializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -2227,9 +2227,9 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
                                  expected_serialize_len,
                                  xattr_value_list) < expected_serialize_len) {
          Mmsg1(jcr->errmsg,
-               _("Failed to serialize extended attributes on file \"%s\"\n"),
+               _("Failed to Serialize extended attributes on file \"%s\"\n"),
                xattr_data->last_fname);
-         Dmsg1(100, "Failed to serialize extended attributes on file \"%s\"\n",
+         Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
                xattr_data->last_fname);
          goto bail_out;
       }
@@ -2265,7 +2265,7 @@ static bxattr_exit_code tru64_parse_xattr_streams(JobControlRecord *jcr,
 
    xattr_value_list = New(alist(10, not_owned_by_alist));
 
-   if (UnserializeXattrStream(jcr,
+   if (UnSerializeXattrStream(jcr,
 			        xattr_data,
                                 content,
                                 content_length,
@@ -2512,7 +2512,7 @@ static inline void add_xattr_link_cache_entry(xattr_data_t *xattr_data,
    xattr_data->u.build->link_cache->append(ptr);
 }
 
-static inline void drop_xattr_link_cache(xattr_data_t *xattr_data)
+static inline void DropXattrLinkCache(xattr_data_t *xattr_data)
 {
    xattr_link_cache_entry_t *ptr;
 
@@ -2543,7 +2543,7 @@ static inline void drop_xattr_link_cache(xattr_data_t *xattr_data)
  * - nvpair has data type of 'nvlist'
  * - default data type.
  */
-static bool solaris_has_non_transient_extensible_attributes(int fd)
+static bool SolarisHasNonTransientExtensibleAttributes(int fd)
 {
    boolean_t value;
    data_type_t type;
@@ -2606,7 +2606,7 @@ bail_out:
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
-static bool acl_is_trivial(int count, aclent_t *entries)
+static bool AclIsTrivial(int count, aclent_t *entries)
 {
    int n;
    aclent_t *ace;
@@ -2718,7 +2718,7 @@ static bxattr_exit_code solaris_save_xattr_acl(JobControlRecord *jcr,
       /*
        * See if there is a non trivial acl on the file.
        */
-      if (!acl_is_trivial(n, acls)) {
+      if (!AclIsTrivial(n, acls)) {
          if ((*acl_text = acltotext(acls, n)) == NULL) {
             berrno be;
 
@@ -2791,7 +2791,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
    char buffer[XATTR_BUFSIZ];
    bxattr_exit_code retval = bxattr_exit_error;
 
-   bsnprintf(target_attrname, sizeof(target_attrname), "%s%s", xattr_namespace, attrname);
+   Bsnprintf(target_attrname, sizeof(target_attrname), "%s%s", xattr_namespace, attrname);
 
    /*
     * Get the stats of the extended or extensible attribute.
@@ -2834,7 +2834,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
        * Encode the stat struct into an ASCII representation.
        */
       EncodeStat(attribs, &st, sizeof(st), 0, stream);
-      cnt = bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c",
+      cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c",
                       target_attrname, 0, attribs, 0,
                       (acl_text) ? acl_text : "", 0);
       break;
@@ -2857,7 +2857,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
           * out of the function.
           */
          EncodeStat(attribs, &st, sizeof(st), 0, stream);
-         cnt = bsnprintf(buffer, sizeof(buffer),
+         cnt = Bsnprintf(buffer, sizeof(buffer),
                          "%s%c%s%c%s%c",
                          target_attrname, 0, attribs, 0,
                          (acl_text) ? acl_text : "", 0);
@@ -2871,7 +2871,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
           * Encode the stat struct into an ASCII representation.
           */
          EncodeStat(attribs, &st, sizeof(st), 0, stream);
-         cnt = bsnprintf(buffer, sizeof(buffer),
+         cnt = Bsnprintf(buffer, sizeof(buffer),
                          "%s%c%s%c%s%c",
                          target_attrname, 0, attribs, 0,
                          (acl_text) ? acl_text : "", 0);
@@ -2890,7 +2890,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
              * Generate a xattr encoding with the reference to the target in there.
              */
             EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
-            cnt = bsnprintf(buffer, sizeof(buffer),
+            cnt = Bsnprintf(buffer, sizeof(buffer),
                             "%s%c%s%c%s%c",
                             target_attrname, 0, attribs, 0, xlce->target, 0);
             PmMemcpy(xattr_data->u.build->content, buffer, cnt);
@@ -2922,7 +2922,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
        * Encode the stat struct into an ASCII representation.
        */
       EncodeStat(attribs, &st, sizeof(st), 0, stream);
-      cnt = bsnprintf(buffer, sizeof(buffer),
+      cnt = Bsnprintf(buffer, sizeof(buffer),
                      "%s%c%s%c%s%c",
                      target_attrname, 0, attribs, 0, (acl_text) ? acl_text : "", 0);
 
@@ -2973,7 +2973,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
        * Generate a xattr encoding with the reference to the target in there.
        */
       EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
-      cnt = bsnprintf(buffer, sizeof(buffer),
+      cnt = Bsnprintf(buffer, sizeof(buffer),
                       "%s%c%s%c%s%c",
                       target_attrname, 0, attribs, 0, link_source, 0);
       PmMemcpy(xattr_data->u.build->content, buffer, cnt);
@@ -3114,7 +3114,7 @@ static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
    if (attr_parent) {
       name = attr_parent;
       if (xattr_namespace) {
-         bsnprintf(current_xattr_namespace, sizeof(current_xattr_namespace), "%s%s/",
+         Bsnprintf(current_xattr_namespace, sizeof(current_xattr_namespace), "%s%s/",
                    xattr_namespace, attr_parent);
       } else {
          bstrncpy(current_xattr_namespace, "/", sizeof(current_xattr_namespace));
@@ -3248,7 +3248,7 @@ static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
           * Determine if there are non-transient system attributes at the toplevel.
           * We need to provide a fd to the open file.
           */
-         if (!solaris_has_non_transient_extensible_attributes(filefd)) {
+         if (!SolarisHasNonTransientExtensibleAttributes(filefd)) {
             Dmsg3(400, "Skipping transient extensible attributes %s%s on file \"%s\"\n",
                current_xattr_namespace, dp->d_name, xattr_data->last_fname);
             continue;
@@ -3770,7 +3770,7 @@ static bxattr_exit_code solaris_build_xattr_streams(JobControlRecord *jcr,
       retval = solaris_save_xattrs(jcr, xattr_data, NULL, NULL);
       chdir(cwd);
       if (xattr_data->u.build->link_cache) {
-         drop_xattr_link_cache(xattr_data);
+         DropXattrLinkCache(xattr_data);
       }
    }
    return retval;

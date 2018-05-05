@@ -43,7 +43,7 @@
 #include "include/bareos.h"
 #include <math.h>
 
-void blocaltime(const time_t *time, struct tm *tm)
+void Blocaltime(const time_t *time, struct tm *tm)
 {
    /* ***FIXME**** localtime_r() should be user configurable */
    (void)localtime_r(time, tm);
@@ -57,7 +57,7 @@ char *bstrftime(char *dt, int maxlen, utime_t utime, const char *fmt)
    time_t time = (time_t)utime;
    struct tm tm;
 
-   blocaltime(&time, &tm);
+   Blocaltime(&time, &tm);
    if (fmt) {
       strftime(dt, maxlen, fmt, &tm);
    } else {
@@ -231,13 +231,13 @@ int TmWoy(time_t stime)
    struct tm tm;
 
    memset(&tm, 0, sizeof(struct tm));
-   blocaltime(&stime, &tm);
+   Blocaltime(&stime, &tm);
    tm_yday = tm.tm_yday;
    tm.tm_mon = 0;
    tm.tm_mday = 4;
    tm.tm_isdst = 0;                   /* 4 Jan is not DST */
    time4 = mktime(&tm);
-   blocaltime(&time4, &tm);
+   Blocaltime(&time4, &tm);
    fty = 1 - tm.tm_wday;
    if (fty <= 0) {
       fty += 7;
@@ -252,7 +252,7 @@ int TmWoy(time_t stime)
 /*
  * Deprecated. Do not use.
  */
-void get_current_time(struct date_time *dt)
+void GetCurrentTime(struct date_time *dt)
 {
    struct tm tm;
    time_t now;
@@ -434,7 +434,7 @@ void TmDecode(struct date_time *dt,
 }
 
 
-/*  date_time_compare  --  Compare two dates and times and return
+/*  DateTimeCompare  --  Compare two dates and times and return
                            the relationship as follows:
 
                                     -1    dt1 < dt2
@@ -443,7 +443,7 @@ void TmDecode(struct date_time *dt,
 */
 
 /* Deprecated. Do not use. */
-int date_time_compare(struct date_time *dt1, struct date_time *dt2)
+int DateTimeCompare(struct date_time *dt1, struct date_time *dt2)
 {
     if (dt1->julian_day_number == dt2->julian_day_number) {
         if (dt1->julian_day_fraction == dt2->julian_day_fraction) {

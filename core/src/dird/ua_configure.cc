@@ -30,7 +30,7 @@
 #include "dird.h"
 #include "dird/ua_select.h"
 
-static void configure_lex_error_handler(const char *file, int line, LEX *lc, PoolMem &msg)
+static void ConfigureLexErrorHandler(const char *file, int line, LEX *lc, PoolMem &msg)
 {
    UaContext *ua;
 
@@ -41,7 +41,7 @@ static void configure_lex_error_handler(const char *file, int line, LEX *lc, Poo
    }
 }
 
-static void configure_lex_error_handler(const char *file, int line, LEX *lc, const char *msg, ...)
+static void ConfigureLexErrorHandler(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    /*
     * This function is an error handler, used by lex.
@@ -50,10 +50,10 @@ static void configure_lex_error_handler(const char *file, int line, LEX *lc, con
    va_list ap;
 
    va_start(ap, msg);
-   buf.bvsprintf(msg, ap);
+   buf.Bvsprintf(msg, ap);
    va_end(ap);
 
-   configure_lex_error_handler(file, line, lc, buf);
+   ConfigureLexErrorHandler(file, line, lc, buf);
 }
 
 static inline bool configure_write_resource(const char *filename, const char *resourcetype,
@@ -162,7 +162,7 @@ static inline bool configure_create_resource_string(UaContext *ua, int first_par
          ua->ErrorMsg("Missing value for directive \"%s\"\n", ua->argk[i]);
          return false;
       }
-      if (bstrcasecmp(ua->argk[i], "name")) {
+      if (Bstrcasecmp(ua->argk[i], "name")) {
          resourcename.strcat(ua->argv[i]);
       }
       if (!config_add_directive(ua, res_table, ua->argk[i], ua->argv[i], resource)) {
@@ -179,7 +179,7 @@ static inline bool configure_create_resource_string(UaContext *ua, int first_par
    return true;
 }
 
-static inline bool configure_create_fd_resource_string(UaContext *ua, PoolMem &resource, const char *clientname)
+static inline bool ConfigureCreateFdResourceString(UaContext *ua, PoolMem &resource, const char *clientname)
 {
    ClientResource *client;
    s_password *password;
@@ -215,7 +215,7 @@ static inline bool configure_create_fd_resource_string(UaContext *ua, PoolMem &r
  * Create a bareos-fd director resource file
  * that corresponds to our client definition.
  */
-static inline bool configure_create_fd_resource(UaContext *ua, const char *clientname)
+static inline bool ConfigureCreateFdResource(UaContext *ua, const char *clientname)
 {
    PoolMem resource(PM_MESSAGE);
    PoolMem filename_tmp(PM_FNAME);
@@ -227,7 +227,7 @@ static inline bool configure_create_fd_resource(UaContext *ua, const char *clien
    const bool create_directories = true;
    const bool overwrite = true;
 
-   if (!configure_create_fd_resource_string(ua, resource, clientname)) {
+   if (!ConfigureCreateFdResourceString(ua, resource, clientname)) {
       return false;
    }
 
@@ -276,7 +276,7 @@ static inline bool configure_create_fd_resource(UaContext *ua, const char *clien
  *
  * This way, the existing parsing functionality is used.
  */
-static inline bool configure_add_resource(UaContext *ua, int first_parameter, ResourceTable *res_table)
+static inline bool ConfigureAddResource(UaContext *ua, int first_parameter, ResourceTable *res_table)
 {
    PoolMem resource(PM_MESSAGE);
    PoolMem name(PM_MESSAGE);
@@ -306,7 +306,7 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
       return false;
    }
 
-   if (!my_config->ParseConfigFile(filename_tmp.c_str(), ua, configure_lex_error_handler, NULL, M_ERROR)) {
+   if (!my_config->ParseConfigFile(filename_tmp.c_str(), ua, ConfigureLexErrorHandler, NULL, M_ERROR)) {
       unlink(filename_tmp.c_str());
       my_config->RemoveResource(res_table->rcode, name.c_str());
       return false;
@@ -344,7 +344,7 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
     * When adding a client, also create the client configuration file.
     */
    if (res_table->rcode==R_CLIENT) {
-      configure_create_fd_resource(ua, name.c_str());
+      ConfigureCreateFdResource(ua, name.c_str());
    }
 
    ua->send->ObjectStart("add");
@@ -357,7 +357,7 @@ static inline bool configure_add_resource(UaContext *ua, int first_parameter, Re
    return true;
 }
 
-static inline bool configure_add(UaContext *ua, int resource_type_parameter)
+static inline bool ConfigureAdd(UaContext *ua, int resource_type_parameter)
 {
    bool result = false;
    ResourceTable *res_table = NULL;
@@ -374,41 +374,41 @@ static inline bool configure_add(UaContext *ua, int resource_type_parameter)
    }
 
    ua->send->ObjectStart("configure");
-   result = configure_add_resource(ua, resource_type_parameter+1, res_table);
+   result = ConfigureAddResource(ua, resource_type_parameter+1, res_table);
    ua->send->ObjectEnd("configure");
 
    return result;
 }
 
-static inline void configure_export_usage(UaContext *ua)
+static inline void ConfigureExportUsage(UaContext *ua)
 {
    ua->ErrorMsg(_("usage: configure export client=<clientname>\n"));
 }
 
-static inline bool configure_export(UaContext *ua)
+static inline bool ConfigureExport(UaContext *ua)
 {
    bool result = false;
    int i;
 
    i = FindArgWithValue(ua, NT_("client"));
    if (i < 0) {
-      configure_export_usage(ua);
+      ConfigureExportUsage(ua);
       return false;
    }
 
    if (!ua->GetClientResWithName(ua->argv[i])) {
-      configure_export_usage(ua);
+      ConfigureExportUsage(ua);
       return false;
    }
 
    ua->send->ObjectStart("configure");
-   result = configure_create_fd_resource(ua, ua->argv[i]);
+   result = ConfigureCreateFdResource(ua, ua->argv[i]);
    ua->send->ObjectEnd("configure");
 
    return result;
 }
 
-bool configure_cmd(UaContext *ua, const char *cmd)
+bool ConfigureCmd(UaContext *ua, const char *cmd)
 {
    bool result = false;
 
@@ -428,10 +428,10 @@ bool configure_cmd(UaContext *ua, const char *cmd)
       return false;
    }
 
-   if (bstrcasecmp(ua->argk[1], NT_("add"))) {
-      result = configure_add(ua, 2);
-   } else if (bstrcasecmp(ua->argk[1], NT_("export"))) {
-      result = configure_export(ua);
+   if (Bstrcasecmp(ua->argk[1], NT_("add"))) {
+      result = ConfigureAdd(ua, 2);
+   } else if (Bstrcasecmp(ua->argk[1], NT_("export"))) {
+      result = ConfigureExport(ua);
    } else {
       ua->ErrorMsg(_("invalid subcommand %s.\n"), ua->argk[1]);
       return false;

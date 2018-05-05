@@ -21,7 +21,7 @@
 #ifndef BAREOS_FINDLIB_MATCH_H_
 #define BAREOS_FINDLIB_MATCH_H_
 
-DLL_IMP_EXP void init_include_exclude_files(FindFilesPacket *ff);
+DLL_IMP_EXP void InitIncludeExcludeFiles(FindFilesPacket *ff);
 DLL_IMP_EXP void TermIncludeExcludeFiles(FindFilesPacket *ff);
 DLL_IMP_EXP void AddFnameToIncludeList(FindFilesPacket *ff, int prefixed, const char *fname);
 DLL_IMP_EXP void AddFnameToExcludeList(FindFilesPacket *ff, const char *fname);

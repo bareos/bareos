@@ -163,7 +163,7 @@ bool job_cmd(JobControlRecord *jcr)
    /*
     * Pass back an authorization key for the File daemon
     */
-   bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
+   Bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
    MakeSessionKey(auth_key, seed, 1);
    dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
    Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
@@ -176,7 +176,7 @@ bool job_cmd(JobControlRecord *jcr)
    return true;
 }
 
-bool do_job_run(JobControlRecord *jcr)
+bool DoJobRun(JobControlRecord *jcr)
 {
    struct timeval tv;
    struct timezone tz;
@@ -275,7 +275,7 @@ bool nextRunCmd(JobControlRecord *jcr)
       /*
        * Pass back a new authorization key for the File daemon
        */
-      bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
+      Bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
       MakeSessionKey(auth_key, seed, 1);
       dir->fsend(OK_nextrun, auth_key);
       Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
@@ -338,7 +338,7 @@ bool nextRunCmd(JobControlRecord *jcr)
    }
 }
 
-bool finish_cmd(JobControlRecord *jcr)
+bool FinishCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    char ec1[30];
@@ -394,7 +394,7 @@ bool finish_cmd(JobControlRecord *jcr)
  *    not closed on an error.
  *
  */
-bool query_cmd(JobControlRecord *jcr)
+bool QueryCmd(JobControlRecord *jcr)
 {
    PoolMem dev_name, VolumeName, MediaType, ChangerName;
    BareosSocket *dir = jcr->dir_bsock;
@@ -460,13 +460,13 @@ bool query_cmd(JobControlRecord *jcr)
  * Destroy the Job Control Record and associated
  * resources (sockets).
  */
-void stored_free_jcr(JobControlRecord *jcr)
+void StoredFreeJcr(JobControlRecord *jcr)
 {
    Dmsg0(200, "Start stored FreeJcr\n");
    Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
 
    if (jcr->dir_bsock) {
-      Dmsg2(800, "Send terminate jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Send Terminate jid=%d %p\n", jcr->JobId, jcr);
       jcr->dir_bsock->signal(BNET_EOD);
       jcr->dir_bsock->signal(BNET_TERMINATE);
    }

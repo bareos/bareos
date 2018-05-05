@@ -67,6 +67,6 @@ extern int WorkqInit(
                     );
 extern int WorkqDestroy(workq_t *wq);
 extern int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority);
-extern int workq_remove(workq_t *wq, workq_ele_t *work_item);
+extern int WorkqRemove(workq_t *wq, workq_ele_t *work_item);
 
 #endif /* BAREOS_LIB_WORKQ_H_ */

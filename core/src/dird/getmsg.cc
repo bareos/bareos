@@ -71,11 +71,11 @@ static char Device_update[] =
 static char OK_msg[] =
    "1000 OK\n";
 
-static void set_jcr_sd_job_status(JobControlRecord *jcr, int SDJobStatus)
+static void SetJcrSdJobStatus(JobControlRecord *jcr, int SDJobStatus)
 {
    bool set_waittime = false;
 
-   Dmsg2(800, "set_jcr_sd_job_status(%s, %c)\n", jcr->Job, SDJobStatus);
+   Dmsg2(800, "SetJcrSdJobStatus(%s, %c)\n", jcr->Job, SDJobStatus);
 
    /*
     * If wait state is new, we keep current time for watchdog MaxWaitTime
@@ -158,7 +158,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
       Dmsg2(200, "BgetDirmsg %d: %s\n", n, bs->msg);
 
       if (bs->IsStop() || bs->IsTimedOut()) {
-         return n;                    /* error or terminate */
+         return n;                    /* error or Terminate */
       }
       if (n == BNET_SIGNAL) {          /* handle signal */
          /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
@@ -292,7 +292,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
          int JobStatus;
          char Job[MAX_NAME_LENGTH];
          if (sscanf(bs->msg, Job_status, &Job, &JobStatus) == 2) {
-            set_jcr_sd_job_status(jcr, JobStatus); /* current status */
+            SetJcrSdJobStatus(jcr, JobStatus); /* current status */
          } else {
             Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          }

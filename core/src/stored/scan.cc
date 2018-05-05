@@ -34,7 +34,7 @@
 static bool IsVolumeNameLegal(char *name);
 
 
-bool Device::scan_dir_for_volume(DeviceControlRecord *dcr)
+bool Device::ScanDirForVolume(DeviceControlRecord *dcr)
 {
    DIR* dp;
    struct dirent *result;

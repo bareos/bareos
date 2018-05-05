@@ -45,14 +45,14 @@
 /* Imported functions */
 
 /* Forward referenced functions */
-static bool prune_directory(UaContext *ua, ClientResource *client);
-static bool prune_stats(UaContext *ua, utime_t retention);
-static bool grow_del_list(struct del_ctx *del);
+static bool PruneDirectory(UaContext *ua, ClientResource *client);
+static bool PruneStats(UaContext *ua, utime_t retention);
+static bool GrowDelList(struct del_ctx *del);
 
 /**
  * Called here to count entries to be deleted
  */
-int del_count_handler(void *ctx, int num_fields, char **row)
+int DelCountHandler(void *ctx, int num_fields, char **row)
 {
    struct s_count_ctx *cnt = (struct s_count_ctx *)ctx;
 
@@ -72,24 +72,24 @@ int del_count_handler(void *ctx, int num_fields, char **row)
  *  is allowed to get to MAX_DEL_LIST_LEN to limit the
  *  maximum malloc'ed memory.
  */
-int job_delete_handler(void *ctx, int num_fields, char **row)
+int JobDeleteHandler(void *ctx, int num_fields, char **row)
 {
    struct del_ctx *del = (struct del_ctx *)ctx;
 
-   if (!grow_del_list(del)) {
+   if (!GrowDelList(del)) {
       return 1;
    }
    del->JobId[del->num_ids] = (JobId_t)str_to_int64(row[0]);
-   Dmsg2(60, "job_delete_handler row=%d val=%d\n", del->num_ids, del->JobId[del->num_ids]);
+   Dmsg2(60, "JobDeleteHandler row=%d val=%d\n", del->num_ids, del->JobId[del->num_ids]);
    del->PurgedFiles[del->num_ids++] = (char)str_to_int64(row[1]);
    return 0;
 }
 
-int file_delete_handler(void *ctx, int num_fields, char **row)
+int FileDeleteHandler(void *ctx, int num_fields, char **row)
 {
    struct del_ctx *del = (struct del_ctx *)ctx;
 
-   if (!grow_del_list(del)) {
+   if (!GrowDelList(del)) {
       return 1;
    }
    del->JobId[del->num_ids++] = (JobId_t)str_to_int64(row[0]);
@@ -100,7 +100,7 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
 /**
  * Prune records from database
  */
-bool prune_cmd(UaContext *ua, const char *cmd)
+bool PruneCmd(UaContext *ua, const char *cmd)
 {
    ClientResource *client;
    PoolResource *pool;
@@ -124,11 +124,11 @@ bool prune_cmd(UaContext *ua, const char *cmd)
     * we require full permission on jobs and storages.
     * Client and Pool permissions are checked at the individual subcommands.
     */
-   if (ua->acl_has_restrictions(Job_ACL)) {
+   if (ua->AclHasRestrictions(Job_ACL)) {
       ua->ErrorMsg(permission_denied_message, "job");
       return false;
    }
-   if (ua->acl_has_restrictions(Storage_ACL)) {
+   if (ua->AclHasRestrictions(Storage_ACL)) {
       ua->ErrorMsg(permission_denied_message, "storage");
       return false;
    }
@@ -158,7 +158,7 @@ bool prune_cmd(UaContext *ua, const char *cmd)
          return false;
       }
 
-      if ((FindArgWithValue(ua, NT_("pool")) >= 0) || ua->acl_has_restrictions(Pool_ACL)) {
+      if ((FindArgWithValue(ua, NT_("pool")) >= 0) || ua->AclHasRestrictions(Pool_ACL)) {
          pool = get_pool_resource(ua);
       } else {
          pool = NULL;
@@ -185,7 +185,7 @@ bool prune_cmd(UaContext *ua, const char *cmd)
          return false;
       }
 
-      if ((FindArgWithValue(ua, NT_("pool")) >= 0) || ua->acl_has_restrictions(Pool_ACL)) {
+      if ((FindArgWithValue(ua, NT_("pool")) >= 0) || ua->AclHasRestrictions(Pool_ACL)) {
          pool = get_pool_resource(ua);
       } else {
          pool = NULL;
@@ -216,11 +216,11 @@ bool prune_cmd(UaContext *ua, const char *cmd)
          return false;
       }
 
-      return prune_jobs(ua, client, pool, jobtype);
+      return PruneJobs(ua, client, pool, jobtype);
    }
    case 2: /* prune volume */
 
-      if (ua->acl_has_restrictions(Client_ACL)) {
+      if (ua->AclHasRestrictions(Client_ACL)) {
          ua->ErrorMsg(permission_denied_message, "client");
          return false;
       }
@@ -246,11 +246,11 @@ bool prune_cmd(UaContext *ua, const char *cmd)
 
       retention = me->stats_retention;
 
-      if (ua->acl_has_restrictions(Client_ACL)) {
+      if (ua->AclHasRestrictions(Client_ACL)) {
          ua->ErrorMsg(permission_denied_message, "client");
          return false;
       }
-      if (ua->acl_has_restrictions(Pool_ACL)) {
+      if (ua->AclHasRestrictions(Pool_ACL)) {
          ua->ErrorMsg(permission_denied_message, "pool");
          return false;
       }
@@ -259,15 +259,15 @@ bool prune_cmd(UaContext *ua, const char *cmd)
          return false;
       }
 
-      return prune_stats(ua, retention);
+      return PruneStats(ua, retention);
    case 4: /* prune directory */
 
-      if (ua->acl_has_restrictions(Pool_ACL)) {
+      if (ua->AclHasRestrictions(Pool_ACL)) {
          ua->ErrorMsg(permission_denied_message, "pool");
          return false;
       }
 
-      if ((FindArgWithValue(ua, NT_("client")) >= 0) || ua->acl_has_restrictions(Client_ACL)) {
+      if ((FindArgWithValue(ua, NT_("client")) >= 0) || ua->AclHasRestrictions(Client_ACL)) {
          if (!(client = get_client_resource(ua))) {
             return false;
          }
@@ -275,7 +275,7 @@ bool prune_cmd(UaContext *ua, const char *cmd)
          client = NULL;
       }
 
-      return prune_directory(ua, client);
+      return PruneDirectory(ua, client);
    default:
       break;
    }
@@ -286,7 +286,7 @@ bool prune_cmd(UaContext *ua, const char *cmd)
 /**
  * Prune Directory meta data records from the database.
  */
-static bool prune_directory(UaContext *ua, ClientResource *client)
+static bool PruneDirectory(UaContext *ua, ClientResource *client)
 {
    int i, len;
    ClientDbRecord cr;
@@ -416,7 +416,7 @@ bail_out:
 /**
  * Prune Job stat records from the database.
  */
-static bool prune_stats(UaContext *ua, utime_t retention)
+static bool PruneStats(UaContext *ua, utime_t retention)
 {
    char ed1[50];
    char dt[MAX_TIME_LENGTH];
@@ -538,7 +538,7 @@ bool PruneFiles(UaContext *ua, ClientResource *client, PoolResource *pool)
         sql_from.c_str(), sql_where.c_str());
    Dmsg1(050, "select sql=%s\n", query.c_str());
    cnt.count = 0;
-   if (!ua->db->SqlQuery(query.c_str(), del_count_handler, (void *)&cnt)) {
+   if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, (void *)&cnt)) {
       ua->ErrorMsg("%s", ua->db->strerror());
       Dmsg0(050, "Count failed\n");
       goto bail_out;
@@ -564,7 +564,7 @@ bool PruneFiles(UaContext *ua, ClientResource *client, PoolResource *pool)
    Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s",
         sql_from.c_str(), sql_where.c_str());
    Dmsg1(050, "select sql=%s\n", query.c_str());
-   ua->db->SqlQuery(query.c_str(), file_delete_handler, (void *)&del);
+   ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void *)&del);
 
    PurgeFilesFromJobList(ua, del);
 
@@ -580,12 +580,12 @@ bail_out:
    return 1;
 }
 
-static void drop_temp_tables(UaContext *ua)
+static void DropTempTables(UaContext *ua)
 {
    ua->db->SqlQuery(BareosDb::SQL_QUERY_drop_deltabs);
 }
 
-static bool create_temp_tables(UaContext *ua)
+static bool CreateTempTables(UaContext *ua)
 {
    /* Create temp tables and indicies */
    if (!ua->db->SqlQuery(BareosDb::SQL_QUERY_create_deltabs)) {
@@ -603,7 +603,7 @@ static bool create_temp_tables(UaContext *ua)
    return true;
 }
 
-static bool grow_del_list(struct del_ctx *del)
+static bool GrowDelList(struct del_ctx *del)
 {
    if (del->num_ids == MAX_DEL_LIST_LEN) {
       return false;
@@ -626,7 +626,7 @@ struct accurate_check_ctx {
 /**
  * row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
  */
-static int job_select_handler(void *ctx, int num_fields, char **row)
+static int JobSelectHandler(void *ctx, int num_fields, char **row)
 {
    alist *lst = (alist *)ctx;
    struct accurate_check_ctx *res;
@@ -681,7 +681,7 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
  *
  * For Restore Jobs there are no restrictions.
  */
-static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResource *pool)
+static bool PruneBackupJobs(UaContext *ua, ClientResource *client, PoolResource *pool)
 {
    PoolMem query(PM_MESSAGE);
    PoolMem sql_where(PM_MESSAGE);
@@ -709,10 +709,10 @@ static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResourc
    }
 
    /* Drop any previous temporary tables still there */
-   drop_temp_tables(ua);
+   DropTempTables(ua);
 
    /* Create temp tables and indicies */
-   if (!create_temp_tables(ua)) {
+   if (!CreateTempTables(ua)) {
       goto bail_out;
    }
 
@@ -761,11 +761,11 @@ static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResourc
       );
 
    /*
-    * The job_select_handler will skip jobs or filesets that are no longer
+    * The JobSelectHandler will skip jobs or filesets that are no longer
     * in the configuration file. Interesting ClientId/FileSetId will be
     * added to jobids_check.
     */
-   if (!ua->db->SqlQuery(query.c_str(), job_select_handler, jobids_check)) {
+   if (!ua->db->SqlQuery(query.c_str(), JobSelectHandler, jobids_check)) {
       ua->ErrorMsg("%s", ua->db->strerror());
    }
 
@@ -799,7 +799,7 @@ static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResourc
          "ORDER BY JobTDate DESC LIMIT 1",
         sql_from.c_str(), sql_where.c_str());
 
-   if (!ua->db->SqlQuery(query.c_str(), db_list_handler, &jobids)) {
+   if (!ua->db->SqlQuery(query.c_str(), DbListHandler, &jobids)) {
       ua->ErrorMsg("%s", ua->db->strerror());
    }
 
@@ -828,7 +828,7 @@ static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResourc
    Mmsg(query,
         "SELECT DISTINCT DelCandidates.JobId,DelCandidates.PurgedFiles "
           "FROM DelCandidates");
-   if (!ua->db->SqlQuery(query.c_str(), job_delete_handler, (void *)&del)) {
+   if (!ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void *)&del)) {
       ua->ErrorMsg("%s", ua->db->strerror());
    }
 
@@ -842,7 +842,7 @@ static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResourc
     }
 
 bail_out:
-   drop_temp_tables(ua);
+   DropTempTables(ua);
    DbUnlock(ua->db);
    if (del.JobId) {
       free(del.JobId);
@@ -859,11 +859,11 @@ bail_out:
 /**
  * Dispatch to the right prune jobs function.
  */
-bool prune_jobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType)
+bool PruneJobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType)
 {
    switch (JobType) {
    case JT_BACKUP:
-      return prune_backup_jobs(ua, client, pool);
+      return PruneBackupJobs(ua, client, pool);
    default:
       return true;
    }
@@ -932,7 +932,7 @@ int GetPruneListForVolume(UaContext *ua, MediaDbRecord *mr, del_ctx *del)
    Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period, ed2);
    Dmsg1(050, "Query=%s\n", query.c_str());
 
-   if (!ua->db->SqlQuery(query.c_str(), file_delete_handler, (void *)del)) {
+   if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void *)del)) {
       if (ua->verbose) {
          ua->ErrorMsg("%s", ua->db->strerror());
       }

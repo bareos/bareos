@@ -37,7 +37,7 @@ struct RbListJobControlRecord {
    char *buf;
 };
 
-static int rblist_compare(void *item1, void *item2)
+static int RblistCompare(void *item1, void *item2)
 {
    RbListJobControlRecord *jcr1, *jcr2;
    int comp;
@@ -70,7 +70,7 @@ TEST(rblist,rblist){
             jcr = (RbListJobControlRecord *)malloc(sizeof(RbListJobControlRecord));
             memset(jcr, 0, sizeof(RbListJobControlRecord));
             jcr->buf = bstrdup(buf);
-            jcr1 = (RbListJobControlRecord *)jcr_chain->insert((void *)jcr, rblist_compare);
+            jcr1 = (RbListJobControlRecord *)jcr_chain->insert((void *)jcr, RblistCompare);
             if (jcr != jcr1) {
                Dmsg2(000, "Insert of %s vs %s failed.\n", jcr->buf, jcr1->buf);
             }
@@ -90,7 +90,7 @@ TEST(rblist,rblist){
    memset(jcr, 0, sizeof(RbListJobControlRecord));
 
    jcr->buf = bstrdup("a");
-   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, RblistCompare))) {
       printf("One less failed!!!! Got: %s\n", jcr1->buf);
    } else {
       printf("One less: OK\n");
@@ -98,7 +98,7 @@ TEST(rblist,rblist){
    free(jcr->buf);
 
    jcr->buf = bstrdup("ZZZZZZZZZZZZZZZZ");
-   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, RblistCompare))) {
       printf("One greater failed!!!! Got:%s\n", jcr1->buf);
    } else {
       printf("One greater: OK\n");
@@ -106,7 +106,7 @@ TEST(rblist,rblist){
    free(jcr->buf);
 
    jcr->buf = bstrdup("AAA");
-   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, RblistCompare))) {
       printf("Search for AAA got %s\n", jcr1->buf);
    } else {
       printf("Search for AAA not found\n");
@@ -114,7 +114,7 @@ TEST(rblist,rblist){
    free(jcr->buf);
 
    jcr->buf = bstrdup("ZZZ");
-   if ((jcr1 = (RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1 = (RbListJobControlRecord *)jcr_chain->search((void *)jcr, RblistCompare))) {
       printf("Search for ZZZ got %s\n", jcr1->buf);
    } else {
       printf("Search for ZZZ not found\n");
@@ -125,7 +125,7 @@ TEST(rblist,rblist){
 
    printf("Find each of %d items in tree.\n", count);
    for (jcr=(RbListJobControlRecord *)jcr_chain->first(); jcr; (jcr=(RbListJobControlRecord *)jcr_chain->next((void *)jcr)) ) {
-      if (!jcr_chain->search((void *)jcr, rblist_compare)) {
+      if (!jcr_chain->search((void *)jcr, RblistCompare)) {
          printf("rblist binary_search item not found = %s\n", jcr->buf);
       }
    }

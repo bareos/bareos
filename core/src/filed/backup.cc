@@ -64,11 +64,11 @@ const bool have_xattr = false;
 #endif
 
 /* Forward referenced functions */
-int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
+int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
                      DIGEST *digest, DIGEST *signature_digest);
 bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
-static void close_vss_backup_session(JobControlRecord *jcr);
+static void CloseVssBackupSession(JobControlRecord *jcr);
 
 /**
  * Find all the requested files and send them
@@ -123,7 +123,7 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
     * In accurate mode, we overload the find_one check function
     */
    if (jcr->accurate) {
-      SetFindChangedFunction((FindFilesPacket *)jcr->ff, accurate_check_file);
+      SetFindChangedFunction((FindFilesPacket *)jcr->ff, AccurateCheckFile);
    }
 
    StartHeartbeatMonitor(jcr);
@@ -145,9 +145,9 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
    }
 
    /**
-    * Subroutine save_file() is called for each file
+    * Subroutine SaveFile() is called for each file
     */
-   if (!FindFiles(jcr, (FindFilesPacket *)jcr->ff, save_file, PluginSave)) {
+   if (!FindFiles(jcr, (FindFilesPacket *)jcr->ff, SaveFile, PluginSave)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);
    }
@@ -161,7 +161,7 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
            jcr->xattr_data->u.build->nr_errors);
    }
 
-   close_vss_backup_session(jcr);
+   CloseVssBackupSession(jcr);
 
    AccurateFinish(jcr);              /* send deleted or base file list to SD */
 
@@ -198,7 +198,7 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
 /**
  * Save OSX specific resource forks and finder info.
  */
-static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
+static inline bool SaveRsrcAndFinder(b_save_ctx &bsctx)
 {
    char flags[FOPTS_BYTES];
    int rsrc_stream;
@@ -268,7 +268,7 @@ bail_out:
  *   determined a different way!!!!!!  What happens if
  *   sha2 was available during backup but not restore?
  */
-static inline bool setup_encryption_digests(b_save_ctx &bsctx)
+static inline bool SetupEncryptionDigests(b_save_ctx &bsctx)
 {
    bool retval = false;
    // TODO landonf: Allow the user to specify the digest algorithm
@@ -336,7 +336,7 @@ bail_out:
 /**
  * Terminate the signing digest and send it to the Storage daemon
  */
-static inline bool terminate_signing_digest(b_save_ctx &bsctx)
+static inline bool TerminateSigningDigest(b_save_ctx &bsctx)
 {
    uint32_t size = 0;
    bool retval = false;
@@ -397,7 +397,7 @@ bail_out:
 /**
  * Terminate any digest and send it to Storage daemon
  */
-static inline bool terminate_digest(b_save_ctx &bsctx)
+static inline bool TerminateDigest(b_save_ctx &bsctx)
 {
    uint32_t size;
    bool retval = false;
@@ -436,7 +436,7 @@ bail_out:
    return retval;
 }
 
-static inline bool do_backup_acl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
+static inline bool DoBackupAcl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    bacl_exit_code retval;
 
@@ -444,9 +444,9 @@ static inline bool do_backup_acl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    jcr->acl_data->last_fname = jcr->last_fname;
 
    if (jcr->IsPlugin()) {
-      retval = plugin_build_acl_streams(jcr, jcr->acl_data, ff_pkt);
+      retval = PluginBuildAclStreams(jcr, jcr->acl_data, ff_pkt);
    } else {
-      retval = build_acl_streams(jcr, jcr->acl_data, ff_pkt);
+      retval = BuildAclStreams(jcr, jcr->acl_data, ff_pkt);
    }
 
    switch (retval) {
@@ -470,7 +470,7 @@ static inline bool do_backup_acl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    return true;
 }
 
-static inline bool do_backup_xattr(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
+static inline bool DoBackupXattr(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    bxattr_exit_code retval;
 
@@ -513,7 +513,7 @@ static inline bool do_backup_xattr(JobControlRecord *jcr, FindFilesPacket *ff_pk
  *          0 if error
  *         -1 to ignore file/directory (not used here)
  */
-int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
+int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    bool do_read = false;
    bool plugin_started = false;
@@ -655,7 +655,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Digests and encryption are only useful if there's file data
     */
    if (has_file_data) {
-      if (!setup_encryption_digests(bsctx)) {
+      if (!SetupEncryptionDigests(bsctx)) {
          goto good_rtn;
       }
    }
@@ -821,7 +821,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       if (ff_pkt->type != FT_LNKSAVED &&
          (S_ISREG(ff_pkt->statp.st_mode) &&
           BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
-         if (!save_rsrc_and_finder(bsctx)) {
+         if (!SaveRsrcAndFinder(bsctx)) {
             goto bail_out;
          }
       }
@@ -832,7 +832,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     */
    if (have_acl) {
       if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
-         if (!do_backup_acl(jcr, ff_pkt)) {
+         if (!DoBackupAcl(jcr, ff_pkt)) {
             goto bail_out;
          }
       }
@@ -843,7 +843,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     */
    if (have_xattr) {
       if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
-         if (!do_backup_xattr(jcr, ff_pkt)) {
+         if (!DoBackupXattr(jcr, ff_pkt)) {
             goto bail_out;
          }
       }
@@ -853,7 +853,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Terminate the signing digest and send it to the Storage daemon
     */
    if (bsctx.signing_digest) {
-      if (!terminate_signing_digest(bsctx)) {
+      if (!TerminateSigningDigest(bsctx)) {
          goto bail_out;
       }
    }
@@ -862,7 +862,7 @@ int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
     * Terminate any digest and send it to Storage daemon
     */
    if (bsctx.digest) {
-      if (!terminate_digest(bsctx)) {
+      if (!TerminateDigest(bsctx)) {
          goto bail_out;
       }
    }
@@ -909,7 +909,7 @@ bail_out:
 /**
  * Handle the data just read and send it to the SD after doing any postprocessing needed.
  */
-static inline bool send_data_to_sd(b_ctx *bctx)
+static inline bool SendDataToSd(b_ctx *bctx)
 {
    BareosSocket *sd = bctx->jcr->store_bsock;
    bool need_more_data;
@@ -1058,7 +1058,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG u
    if (ulLength <= (ULONG)bctx->rsize) {
       sd->msglen = ulLength;
       memcpy(bctx->rbuf, pbData, ulLength);
-      if (!send_data_to_sd(bctx)) {
+      if (!SendDataToSd(bctx)) {
          return ERROR_NET_WRITE_FAULT;
       }
    } else {
@@ -1070,7 +1070,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG u
       while (ulLength > 0) {
          sd->msglen = MIN((ULONG)bctx->rsize, ulLength);
          memcpy(bctx->rbuf, pbData + offset, sd->msglen);
-         if (!send_data_to_sd(bctx)) {
+         if (!SendDataToSd(bctx)) {
             return ERROR_NET_WRITE_FAULT;
          }
 
@@ -1085,7 +1085,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG u
 /**
  * Send the content of an Encrypted file on an EFS filesystem.
  */
-static inline bool send_encrypted_data(b_ctx &bctx)
+static inline bool SendEncryptedData(b_ctx &bctx)
 {
    bool retval = false;
 
@@ -1113,7 +1113,7 @@ bail_out:
 /**
  * Send the content of a file on anything but an EFS filesystem.
  */
-static inline bool send_plain_data(b_ctx &bctx)
+static inline bool SendPlainData(b_ctx &bctx)
 {
    bool retval = false;
    BareosSocket *sd = bctx.jcr->store_bsock;
@@ -1122,7 +1122,7 @@ static inline bool send_plain_data(b_ctx &bctx)
     * Read the file data
     */
    while ((sd->msglen = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
-      if (!send_data_to_sd(&bctx)) {
+      if (!SendDataToSd(&bctx)) {
          goto bail_out;
       }
    }
@@ -1211,16 +1211,16 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
    }
 
    if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_ENCRYPTED) {
-      if (!send_encrypted_data(bctx)) {
+      if (!SendEncryptedData(bctx)) {
          goto bail_out;
       }
    } else {
-      if (!send_plain_data(bctx)) {
+      if (!SendPlainData(bctx)) {
          goto bail_out;
       }
    }
 #else
-   if (!send_plain_data(bctx)) {
+   if (!SendPlainData(bctx)) {
       goto bail_out;
    }
 #endif
@@ -1578,7 +1578,7 @@ void UnstripPath(FindFilesPacket *ff_pkt)
    }
 }
 
-static void close_vss_backup_session(JobControlRecord *jcr)
+static void CloseVssBackupSession(JobControlRecord *jcr)
 {
 #if defined(WIN32_VSS)
    /*
@@ -1618,7 +1618,7 @@ static void close_vss_backup_session(JobControlRecord *jcr)
          ff_pkt->object = BSTR_2_str(metadata);
          ff_pkt->object_len = (wcslen(metadata) + 1) * sizeof(wchar_t);
          ff_pkt->object_index = (int)time(NULL);
-         save_file(jcr, ff_pkt, true);
+         SaveFile(jcr, ff_pkt, true);
      }
    }
 #endif

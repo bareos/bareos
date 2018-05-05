@@ -51,9 +51,9 @@ static const bool no_tape_write_test = true;
 static const bool no_tape_write_test = false;
 #endif
 
-static bool terminate_writing_volume(DeviceControlRecord *dcr);
-static bool do_new_file_bookkeeping(DeviceControlRecord *dcr);
-static void reread_last_block(DeviceControlRecord *dcr);
+static bool TerminateWritingVolume(DeviceControlRecord *dcr);
+static bool DoNewFileBookkeeping(DeviceControlRecord *dcr);
+static void RereadLastBlock(DeviceControlRecord *dcr);
 
 bool forge_on = false;                /* proceed inspite of I/O errors */
 
@@ -235,7 +235,7 @@ static uint32_t SerBlockHeader(DeviceBlock *block, bool DoChecksum)
 }
 
 /**
- * Unserialize the block header for reading block.
+ * UnSerialize the block header for reading block.
  * This includes setting all the buffer pointers correctly.
  *
  * Returns: false on failure (not a block)
@@ -543,8 +543,8 @@ bool DeviceControlRecord::WriteBlockToDev()
       }
       Jmsg(jcr, M_INFO, 0, _("User defined maximum volume capacity %s exceeded on device %s.\n"),
             edit_uint64_with_commas(max_cap, ed1),  dev->print_name());
-      terminate_writing_volume(dcr);
-      reread_last_block(dcr);   /* DEBUG */
+      TerminateWritingVolume(dcr);
+      RereadLastBlock(dcr);   /* DEBUG */
       dev->dev_errno = ENOSPC;
 
       return false;
@@ -561,7 +561,7 @@ bool DeviceControlRecord::WriteBlockToDev()
          Dmsg0(50, "WEOF error in max file size.\n");
          Jmsg(jcr, M_FATAL, 0, _("Unable to write EOF. ERR=%s\n"),
             dev->bstrerror());
-         terminate_writing_volume(dcr);
+         TerminateWritingVolume(dcr);
          dev->dev_errno = ENOSPC;
          return false;
       }
@@ -569,7 +569,7 @@ bool DeviceControlRecord::WriteBlockToDev()
          return false;
       }
 
-      if (!do_new_file_bookkeeping(dcr)) {
+      if (!DoNewFileBookkeeping(dcr)) {
          /*
           * Error message already sent
           */
@@ -598,7 +598,7 @@ bool DeviceControlRecord::WriteBlockToDev()
          berrno be;
          Dmsg4(100, "===== write retry=%d status=%d errno=%d: ERR=%s\n",
                retry, status, errno, be.bstrerror());
-         bmicrosleep(5, 0);    /* pause a bit if busy or lots of errors */
+         Bmicrosleep(5, 0);    /* pause a bit if busy or lots of errors */
          dev->clrerror(-1);
       }
       status = dev->write(block->buf, (size_t)wlen);
@@ -649,7 +649,7 @@ bool DeviceControlRecord::WriteBlockToDev()
       } else {
          berrno be;
 
-         be.set_errno(dev->dev_errno);
+         be.SetErrno(dev->dev_errno);
          Mmsg5(dev->errmsg, _("Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
                dev->fd(), dev->file, dev->block_num, dev->print_name(), be.bstrerror());
       }
@@ -663,18 +663,18 @@ bool DeviceControlRecord::WriteBlockToDev()
       if (debug_level >= 100) {
          berrno be;
 
-         be.set_errno(dev->dev_errno);
+         be.SetErrno(dev->dev_errno);
          Dmsg7(100, "=== Write error. fd=%d size=%u rtn=%d dev_blk=%d blk_blk=%d errno=%d: ERR=%s\n",
                dev->fd(), wlen, status, dev->block_num, block->BlockNumber, dev->dev_errno,
                be.bstrerror(dev->dev_errno));
       }
 
-      ok = terminate_writing_volume(dcr);
+      ok = TerminateWritingVolume(dcr);
       if (!ok && !forge_on) {
          return false;
       }
       if (ok) {
-         reread_last_block(dcr);
+         RereadLastBlock(dcr);
       }
       return false;
    }
@@ -719,12 +719,12 @@ bool DeviceControlRecord::WriteBlockToDev()
    dev->file_addr += wlen;            /* update file address */
    dev->file_size += wlen;
 
-   Dmsg2(1300, "write_block: wrote block %d bytes=%d\n", dev->block_num, wlen);
+   Dmsg2(1300, "WriteBlock: wrote block %d bytes=%d\n", dev->block_num, wlen);
    EmptyBlock(block);
    return true;
 }
 
-static void reread_last_block(DeviceControlRecord *dcr)
+static void RereadLastBlock(DeviceControlRecord *dcr)
 {
 #define CHECK_LAST_BLOCK
 #ifdef  CHECK_LAST_BLOCK
@@ -812,7 +812,7 @@ static void reread_last_block(DeviceControlRecord *dcr)
  * If this routine is called, we do our bookkeeping and
  * then assure that the volume will not be written any more.
  */
-static bool terminate_writing_volume(DeviceControlRecord *dcr)
+static bool TerminateWritingVolume(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    bool ok = true;
@@ -846,7 +846,7 @@ static bool terminate_writing_volume(DeviceControlRecord *dcr)
       ok = false;
       Dmsg0(50, "Error updating volume info.\n");
    }
-   Dmsg1(50, "DirUpdateVolumeInfo terminate writing -- %s\n", ok?"OK":"ERROR");
+   Dmsg1(50, "DirUpdateVolumeInfo Terminate writing -- %s\n", ok?"OK":"ERROR");
 
    /*
     * Walk through all attached dcrs setting flag to call
@@ -874,7 +874,7 @@ static bool terminate_writing_volume(DeviceControlRecord *dcr)
    }
 
    dev->SetAteot();                  /* no more writing this tape */
-   Dmsg1(50, "*** Leave terminate_writing_volume -- %s\n", ok?"OK":"ERROR");
+   Dmsg1(50, "*** Leave TerminateWritingVolume -- %s\n", ok?"OK":"ERROR");
    return ok;
 }
 
@@ -883,7 +883,7 @@ static bool terminate_writing_volume(DeviceControlRecord *dcr)
  *  also done for disk files to generate the jobmedia records for
  *  quick seeking.
  */
-static bool do_new_file_bookkeeping(DeviceControlRecord *dcr)
+static bool DoNewFileBookkeeping(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -896,14 +896,14 @@ static bool do_new_file_bookkeeping(DeviceControlRecord *dcr)
       dev->dev_errno = EIO;
       Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
            dcr->getVolCatName(), jcr->Job);
-      terminate_writing_volume(dcr);
+      TerminateWritingVolume(dcr);
       dev->dev_errno = EIO;
       return false;
    }
    dev->VolCatInfo.VolCatFiles = dev->file;
    if (!dcr->DirUpdateVolumeInfo(false, false)) {
       Dmsg0(50, "Error from update_vol_info.\n");
-      terminate_writing_volume(dcr);
+      TerminateWritingVolume(dcr);
       dev->dev_errno = EIO;
       return false;
    }
@@ -996,7 +996,7 @@ reread:
          berrno be;
          Dmsg4(100, "===== read retry=%d status=%d errno=%d: ERR=%s\n",
                retry, status, errno, be.bstrerror());
-         bmicrosleep(10, 0);    /* pause a bit if busy or lots of errors */
+         Bmicrosleep(10, 0);    /* pause a bit if busy or lots of errors */
          dev->clrerror(-1);
       }
       status = dev->read(block->buf, (size_t)block->buf_len);
@@ -1072,7 +1072,7 @@ reread:
    }
 
    /*
-    * If the block is bigger than the buffer, we reposition for
+    * If the block is bigger than the buffer, we Reposition for
     *  re-reading the block, allocate a buffer of the correct size,
     *  and go re-read.
     */
@@ -1083,7 +1083,7 @@ reread:
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       Pmsg1(000, "%s", dev->errmsg);
       /*
-       * Attempt to reposition to re-read the block
+       * Attempt to Reposition to re-read the block
        */
       if (dev->IsTape()) {
          Dmsg0(250, "BootStrapRecord for reread; block too big for buffer.\n");

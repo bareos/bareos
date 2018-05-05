@@ -49,24 +49,24 @@
 
 extern void *start_heap;
 
-static void list_scheduled_jobs(UaContext *ua);
-static void list_running_jobs(UaContext *ua);
-static void list_terminated_jobs(UaContext *ua);
-static void list_connected_clients(UaContext *ua);
-static void do_director_status(UaContext *ua);
-static void do_scheduler_status(UaContext *ua);
-static bool do_subscription_status(UaContext *ua);
-static void do_all_status(UaContext *ua);
-static void status_slots(UaContext *ua, StorageResource *store);
-static void status_content_api(UaContext *ua, StorageResource *store);
-static void status_content_json(UaContext *ua, StorageResource *store);
+static void ListScheduledJobs(UaContext *ua);
+static void ListRunningJobs(UaContext *ua);
+static void ListTerminatedJobs(UaContext *ua);
+static void ListConnectedClients(UaContext *ua);
+static void DoDirectorStatus(UaContext *ua);
+static void DoSchedulerStatus(UaContext *ua);
+static bool DoSubscriptionStatus(UaContext *ua);
+static void DoAllStatus(UaContext *ua);
+static void StatusSlots(UaContext *ua, StorageResource *store);
+static void StatusContentApi(UaContext *ua, StorageResource *store);
+static void StatusContentJson(UaContext *ua, StorageResource *store);
 
 static char OKdotstatus[] =
    "1000 OK .status\n";
 static char DotStatusJob[] =
    "JobId=%s JobStatus=%c JobErrors=%d\n";
 
-static void client_status(UaContext *ua, ClientResource *client, char *cmd)
+static void ClientStatus(UaContext *ua, ClientResource *client, char *cmd)
 {
    switch (client->Protocol) {
    case APT_NATIVE:
@@ -85,7 +85,7 @@ static void client_status(UaContext *ua, ClientResource *client, char *cmd)
 /**
  * .status command
  */
-bool dot_status_cmd(UaContext *ua, const char *cmd)
+bool DotStatusCmd(UaContext *ua, const char *cmd)
 {
    StorageResource *store;
    ClientResource *client;
@@ -101,45 +101,45 @@ bool dot_status_cmd(UaContext *ua, const char *cmd)
       return false;
    }
 
-   if (bstrcasecmp(ua->argk[1], "dir")) {
-      if (bstrcasecmp(ua->argk[2], "current")) {
+   if (Bstrcasecmp(ua->argk[1], "dir")) {
+      if (Bstrcasecmp(ua->argk[2], "current")) {
          ua->SendMsg(OKdotstatus, ua->argk[2]);
          foreach_jcr(njcr) {
-            if (njcr->JobId != 0 && ua->acl_access_ok(Job_ACL, njcr->res.job->name())) {
+            if (njcr->JobId != 0 && ua->AclAccessOk(Job_ACL, njcr->res.job->name())) {
                ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1), njcr->JobStatus, njcr->JobErrors);
             }
          }
          endeach_jcr(njcr);
-      } else if (bstrcasecmp(ua->argk[2], "last")) {
+      } else if (Bstrcasecmp(ua->argk[2], "last")) {
          ua->SendMsg(OKdotstatus, ua->argk[2]);
          if ((last_jobs) && (last_jobs->size() > 0)) {
             job = (s_last_job*)last_jobs->last();
-            if (ua->acl_access_ok(Job_ACL, job->Job)) {
+            if (ua->AclAccessOk(Job_ACL, job->Job)) {
                ua->SendMsg(DotStatusJob, edit_int64(job->JobId, ed1), job->JobStatus, job->Errors);
             }
          }
-      } else if (bstrcasecmp(ua->argk[2], "header")) {
+      } else if (Bstrcasecmp(ua->argk[2], "header")) {
           ListDirStatusHeader(ua);
-      } else if (bstrcasecmp(ua->argk[2], "scheduled")) {
-          list_scheduled_jobs(ua);
-      } else if (bstrcasecmp(ua->argk[2], "running")) {
-          list_running_jobs(ua);
-      } else if (bstrcasecmp(ua->argk[2], "terminated")) {
-          list_terminated_jobs(ua);
+      } else if (Bstrcasecmp(ua->argk[2], "scheduled")) {
+          ListScheduledJobs(ua);
+      } else if (Bstrcasecmp(ua->argk[2], "running")) {
+          ListRunningJobs(ua);
+      } else if (Bstrcasecmp(ua->argk[2], "terminated")) {
+          ListTerminatedJobs(ua);
       } else {
          ua->SendMsg("1900 Bad .status command, wrong argument.\n");
          return false;
       }
-   } else if (bstrcasecmp(ua->argk[1], "client")) {
+   } else if (Bstrcasecmp(ua->argk[1], "client")) {
       client = get_client_resource(ua);
       if (client) {
          if (ua->argc == 3) {
             statuscmd = ua->argk[2];
          }
          Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(statuscmd));
-         client_status(ua, client, statuscmd);
+         ClientStatus(ua, client, statuscmd);
       }
-   } else if (bstrcasecmp(ua->argk[1], "storage")) {
+   } else if (Bstrcasecmp(ua->argk[1], "storage")) {
       store = get_storage_resource(ua);
       if (store) {
          if (ua->argc == 3) {
@@ -158,7 +158,7 @@ bool dot_status_cmd(UaContext *ua, const char *cmd)
 /**
  * status command
  */
-bool status_cmd(UaContext *ua, const char *cmd)
+bool StatusCmd(UaContext *ua, const char *cmd)
 {
    StorageResource *store;
    ClientResource *client;
@@ -168,23 +168,23 @@ bool status_cmd(UaContext *ua, const char *cmd)
    Dmsg1(20, "status:%s:\n", cmd);
 
    for (i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("all"))) {
-         do_all_status(ua);
+      if (Bstrcasecmp(ua->argk[i], NT_("all"))) {
+         DoAllStatus(ua);
          return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("dir"), 3)) {
-         do_director_status(ua);
+         DoDirectorStatus(ua);
          return true;
-      } else if (bstrcasecmp(ua->argk[i], NT_("client"))) {
+      } else if (Bstrcasecmp(ua->argk[i], NT_("client"))) {
          client = get_client_resource(ua);
          if (client) {
-            client_status(ua, client, NULL);
+            ClientStatus(ua, client, NULL);
          }
          return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
-         do_scheduler_status(ua);
+         DoSchedulerStatus(ua);
          return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("sub"), 3)) {
-         if (do_subscription_status(ua)) {
+         if (DoSubscriptionStatus(ua)) {
             return true;
          } else {
             return false;
@@ -200,13 +200,13 @@ bool status_cmd(UaContext *ua, const char *cmd)
             if (FindArg(ua, NT_("slots")) > 0) {
                switch (ua->api) {
                case API_MODE_OFF:
-                  status_slots(ua, store);
+                  StatusSlots(ua, store);
                   break;
                case API_MODE_ON:
-                  status_content_api(ua, store);
+                  StatusContentApi(ua, store);
                   break;
                case API_MODE_JSON:
-                  status_content_json(ua, store);
+                  StatusContentJson(ua, store);
                   break;
                }
             } else {
@@ -234,7 +234,7 @@ bool status_cmd(UaContext *ua, const char *cmd)
       Dmsg1(20, "item=%d\n", item);
       switch (item) {
       case 0:                         /* Director */
-         do_director_status(ua);
+         DoDirectorStatus(ua);
          break;
       case 1:
          store = select_storage_resource(ua);
@@ -245,14 +245,14 @@ bool status_cmd(UaContext *ua, const char *cmd)
       case 2:
          client = select_client_resource(ua);
          if (client) {
-            client_status(ua, client, NULL);
+            ClientStatus(ua, client, NULL);
          }
          break;
       case 3:
-         do_scheduler_status(ua);
+         DoSchedulerStatus(ua);
          break;
       case 4:
-         do_all_status(ua);
+         DoAllStatus(ua);
          break;
       default:
          break;
@@ -261,7 +261,7 @@ bool status_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static void do_all_status(UaContext *ua)
+static void DoAllStatus(UaContext *ua)
 {
    StorageResource *store, **unique_store;
    ClientResource *client, **unique_client;
@@ -269,7 +269,7 @@ static void do_all_status(UaContext *ua)
    bool found;
    int32_t previous_JobStatus = 0;
 
-   do_director_status(ua);
+   DoDirectorStatus(ua);
 
    /* Count Storage items */
    LockRes();
@@ -282,7 +282,7 @@ static void do_all_status(UaContext *ua)
    i = 0;
    foreach_res(store, R_STORAGE) {
       found = false;
-      if (!ua->acl_access_ok(Storage_ACL, store->name())) {
+      if (!ua->AclAccessOk(Storage_ACL, store->name())) {
          continue;
       }
       for (j = 0; j < i; j++) {
@@ -319,7 +319,7 @@ static void do_all_status(UaContext *ua)
    i = 0;
    foreach_res(client, R_CLIENT) {
       found = false;
-      if (!ua->acl_access_ok(Client_ACL, client->name())) {
+      if (!ua->AclAccessOk(Client_ACL, client->name())) {
          continue;
       }
       for (j = 0; j < i; j++) {
@@ -340,7 +340,7 @@ static void do_all_status(UaContext *ua)
 
    /* Call each unique File daemon */
    for (j = 0; j < i; j++) {
-      client_status(ua, unique_client[j], NULL);
+      ClientStatus(ua, unique_client[j], NULL);
       ua->jcr->JobStatus = previous_JobStatus;
    }
    free(unique_client);
@@ -423,7 +423,7 @@ static bool show_scheduled_preview(UaContext *ua, ScheduleResource *sched,
          /*
           * Find time (time_t) job is to be run
           */
-         blocaltime(&time_to_check, &tm);        /* Reset tm structure */
+         Blocaltime(&time_to_check, &tm);        /* Reset tm structure */
          tm.tm_min = run->minute;                /* Set run minute */
          tm.tm_sec = 0;                          /* Zero secs */
 
@@ -528,7 +528,7 @@ static bool show_scheduled_preview(UaContext *ua, ScheduleResource *sched,
  * Return true if (number of clients < number of subscriptions), else
  * return false
  */
-static bool do_subscription_status(UaContext *ua)
+static bool DoSubscriptionStatus(UaContext *ua)
 {
    int available;
    bool retval = false;
@@ -561,7 +561,7 @@ bail_out:
    return retval;
 }
 
-static void do_scheduler_status(UaContext *ua)
+static void DoSchedulerStatus(UaContext *ua)
 {
    int i;
    int max_date_len = 0;
@@ -633,7 +633,7 @@ static void do_scheduler_status(UaContext *ua)
          continue;
       }
 
-      if (!ua->acl_access_ok(Schedule_ACL, sched->hdr.name)) {
+      if (!ua->AclAccessOk(Schedule_ACL, sched->hdr.name)) {
          continue;
       }
 
@@ -652,7 +652,7 @@ static void do_scheduler_status(UaContext *ua)
          }
       } else {
          foreach_res(job, R_JOB) {
-            if (!ua->acl_access_ok(Job_ACL, job->hdr.name)) {
+            if (!ua->AclAccessOk(Job_ACL, job->hdr.name)) {
                continue;
             }
 
@@ -694,7 +694,7 @@ static void do_scheduler_status(UaContext *ua)
 start_again:
    time_to_check = start;
    while (time_to_check < stop) {
-      blocaltime(&time_to_check, &tm);
+      Blocaltime(&time_to_check, &tm);
 
       if (client || job) {
          /*
@@ -710,7 +710,7 @@ start_again:
          } else {
             LockRes();
             foreach_res(job, R_JOB) {
-               if (!ua->acl_access_ok(Job_ACL, job->hdr.name)) {
+               if (!ua->AclAccessOk(Job_ACL, job->hdr.name)) {
                   continue;
                }
 
@@ -736,7 +736,7 @@ start_again:
                continue;
             }
 
-            if (!ua->acl_access_ok(Schedule_ACL, sched->hdr.name)) {
+            if (!ua->AclAccessOk(Schedule_ACL, sched->hdr.name)) {
                continue;
             }
 
@@ -766,31 +766,31 @@ start_again:
    ua->SendMsg("====\n");
 }
 
-static void do_director_status(UaContext *ua)
+static void DoDirectorStatus(UaContext *ua)
 {
    ListDirStatusHeader(ua);
 
    /*
     * List scheduled Jobs
     */
-   list_scheduled_jobs(ua);
+   ListScheduledJobs(ua);
 
    /*
     * List running jobs
     */
-   list_running_jobs(ua);
+   ListRunningJobs(ua);
 
    /*
     * List terminated jobs
     */
-   list_terminated_jobs(ua);
+   ListTerminatedJobs(ua);
 
-   list_connected_clients(ua);
+   ListConnectedClients(ua);
 
    ua->SendMsg("====\n");
 }
 
-static void prt_runhdr(UaContext *ua)
+static void PrtRunhdr(UaContext *ua)
 {
    if (!ua->api) {
       ua->SendMsg(_("\nScheduled Jobs:\n"));
@@ -810,7 +810,7 @@ struct sched_pkt {
    StorageResource *store;
 };
 
-static void prt_runtime(UaContext *ua, sched_pkt *sp)
+static void PrtRuntime(UaContext *ua, sched_pkt *sp)
 {
    char dt[MAX_TIME_LENGTH];
    const char *level_ptr;
@@ -872,7 +872,7 @@ static void prt_runtime(UaContext *ua, sched_pkt *sp)
 /**
  * Sort items by runtime, priority
  */
-static int compare_by_runtime_priority(void *item1, void *item2)
+static int CompareByRuntimePriority(void *item1, void *item2)
 {
    sched_pkt *p1 = (sched_pkt *)item1;
    sched_pkt *p2 = (sched_pkt *)item2;
@@ -895,7 +895,7 @@ static int compare_by_runtime_priority(void *item1, void *item2)
 /**
  * Find all jobs to be run in roughly the next 24 hours.
  */
-static void list_scheduled_jobs(UaContext *ua)
+static void ListScheduledJobs(UaContext *ua)
 {
    utime_t runtime;
    RunResource *run;
@@ -924,7 +924,7 @@ static void list_scheduled_jobs(UaContext *ua)
     */
    LockRes();
    foreach_res(job, R_JOB) {
-      if (!ua->acl_access_ok(Job_ACL, job->name()) ||
+      if (!ua->AclAccessOk(Job_ACL, job->name()) ||
           !job->enabled ||
           (job->client && !job->client->enabled)) {
          continue;
@@ -940,7 +940,7 @@ static void list_scheduled_jobs(UaContext *ua)
             priority = run->Priority;
          }
          if (!hdr_printed) {
-            prt_runhdr(ua);
+            PrtRunhdr(ua);
             hdr_printed = true;
          }
          sp = (sched_pkt *)malloc(sizeof(sched_pkt));
@@ -952,13 +952,13 @@ static void list_scheduled_jobs(UaContext *ua)
          GetJobStorage(&store, job, run);
          sp->store = store.store;
          Dmsg3(250, "job=%s store=%s MediaType=%s\n", job->name(), sp->store->name(), sp->store->media_type);
-         sched.binary_insert_multiple(sp, compare_by_runtime_priority);
+         sched.BinaryInsertMultiple(sp, CompareByRuntimePriority);
          num_jobs++;
       }
    } /* end for loop over resources */
    UnlockRes();
    foreach_dlist(sp, &sched) {
-      prt_runtime(ua, sp);
+      PrtRuntime(ua, sp);
    }
    if (num_jobs == 0 && !ua->api) {
       ua->SendMsg(_("No Scheduled Jobs.\n"));
@@ -967,7 +967,7 @@ static void list_scheduled_jobs(UaContext *ua)
    Dmsg0(200, "Leave list_sched_jobs_runs()\n");
 }
 
-static void list_running_jobs(UaContext *ua)
+static void ListRunningJobs(UaContext *ua)
 {
    JobControlRecord *jcr;
    int njobs = 0;
@@ -1006,7 +1006,7 @@ static void list_running_jobs(UaContext *ua)
       ua->SendMsg(_("======================================================================\n"));
    }
    foreach_jcr(jcr) {
-      if (jcr->JobId == 0 || !ua->acl_access_ok(Job_ACL, jcr->res.job->name())) {
+      if (jcr->JobId == 0 || !ua->AclAccessOk(Job_ACL, jcr->res.job->name())) {
          continue;
       }
       njobs++;
@@ -1195,7 +1195,7 @@ static void list_running_jobs(UaContext *ua)
    Dmsg0(200, "leave list_run_jobs()\n");
 }
 
-static void list_terminated_jobs(UaContext *ua)
+static void ListTerminatedJobs(UaContext *ua)
 {
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
    char level[10];
@@ -1224,7 +1224,7 @@ static void list_terminated_jobs(UaContext *ua)
          }
       }
 
-      if (!ua->acl_access_ok(Job_ACL, JobName)) {
+      if (!ua->AclAccessOk(Job_ACL, JobName)) {
          continue;
       }
 
@@ -1287,18 +1287,18 @@ static void list_terminated_jobs(UaContext *ua)
 }
 
 
-static void list_connected_clients(UaContext *ua)
+static void ListConnectedClients(UaContext *ua)
 {
    Connection *connection = NULL;
    alist *connections = NULL;
    const char *separator = "====================";
    char dt[MAX_TIME_LENGTH];
 
-   ua->send->decoration("\n");
-   ua->send->decoration("Client Initiated Connections (waiting for jobs):\n");
+   ua->send->Decoration("\n");
+   ua->send->Decoration("Client Initiated Connections (waiting for jobs):\n");
    connections = get_client_connections()->get_as_alist();
-   ua->send->decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol", "Authenticated", "Name");
-   ua->send->decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator, separator, separator, separator);
+   ua->send->Decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol", "Authenticated", "Name");
+   ua->send->Decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator, separator, separator, separator);
    ua->send->ArrayStart("client-connection");
    foreach_alist(connection, connections) {
       ua->send->ObjectStart();
@@ -1308,12 +1308,12 @@ static void list_connected_clients(UaContext *ua)
       ua->send->ObjectKeyValue("authenticated", connection->authenticated(), "%-20d");
       ua->send->ObjectKeyValue("name", connection->name(), "%-40s");
       ua->send->ObjectEnd();
-      ua->send->decoration("\n");
+      ua->send->Decoration("\n");
    }
    ua->send->ArrayEnd("client-connection");
 }
 
-static void content_send_info_api(UaContext *ua, char type, int Slot, char *vol_name)
+static void ContentSendInfoApi(UaContext *ua, char type, int Slot, char *vol_name)
 {
    char ed1[50], ed2[50], ed3[50];
    PoolDbRecord pr;
@@ -1343,7 +1343,7 @@ static void content_send_info_api(UaContext *ua, char type, int Slot, char *vol_
    }
 }
 
-static void content_send_info_json(UaContext *ua, const char *type, int Slot, char *vol_name)
+static void ContentSendInfoJson(UaContext *ua, const char *type, int Slot, char *vol_name)
 {
    PoolDbRecord pr;
    MediaDbRecord mr;
@@ -1421,7 +1421,7 @@ static void content_send_info_json(UaContext *ua, const char *type, int Slot, ch
  * S|2||||||||
  * S|3|3|vol4|15869952|Append|LTO1-ANSI|Inc|1250858907|1282394907
  */
-static void status_content_api(UaContext *ua, StorageResource *store)
+static void StatusContentApi(UaContext *ua, StorageResource *store)
 {
    vol_list_t *vl1, *vl2;
    changer_vol_list_t *vol_list = NULL;
@@ -1459,10 +1459,10 @@ static void status_content_api(UaContext *ua, StorageResource *store)
          case slot_content_full:
             switch (vl1->Type) {
             case slot_type_normal:
-               content_send_info_api(ua, 'S', vl1->Slot, vl1->VolName);
+               ContentSendInfoApi(ua, 'S', vl1->Slot, vl1->VolName);
                break;
             case slot_type_import:
-               content_send_info_api(ua, 'I', vl1->Slot, vl1->VolName);
+               ContentSendInfoApi(ua, 'I', vl1->Slot, vl1->VolName);
                break;
             default:
                break;
@@ -1477,10 +1477,10 @@ static void status_content_api(UaContext *ua, StorageResource *store)
             if (vl2) {
                switch (vl1->Type) {
                case slot_type_normal:
-                  content_send_info_api(ua, 'S', vl1->Slot, vl2->VolName);
+                  ContentSendInfoApi(ua, 'S', vl1->Slot, vl2->VolName);
                   break;
                case slot_type_import:
-                  content_send_info_api(ua, 'I', vl1->Slot, vl2->VolName);
+                  ContentSendInfoApi(ua, 'I', vl1->Slot, vl2->VolName);
                   break;
                default:
                   break;
@@ -1517,7 +1517,7 @@ bail_out:
    return;
 }
 
-static void status_content_json(UaContext *ua, StorageResource *store)
+static void StatusContentJson(UaContext *ua, StorageResource *store)
 {
    vol_list_t *vl1, *vl2;
    changer_vol_list_t *vol_list = NULL;
@@ -1559,10 +1559,10 @@ static void status_content_json(UaContext *ua, StorageResource *store)
          case slot_content_full:
             switch (vl1->Type) {
             case slot_type_normal:
-               content_send_info_json(ua, "slot", vl1->Slot, vl1->VolName);
+               ContentSendInfoJson(ua, "slot", vl1->Slot, vl1->VolName);
                break;
             case slot_type_import:
-               content_send_info_json(ua, "import_slot", vl1->Slot, vl1->VolName);
+               ContentSendInfoJson(ua, "import_slot", vl1->Slot, vl1->VolName);
                break;
             default:
                break;
@@ -1577,10 +1577,10 @@ static void status_content_json(UaContext *ua, StorageResource *store)
             if (vl2) {
                switch (vl1->Type) {
                case slot_type_normal:
-                  content_send_info_json(ua, "slot", vl1->Slot, vl2->VolName);
+                  ContentSendInfoJson(ua, "slot", vl1->Slot, vl2->VolName);
                   break;
                case slot_type_import:
-                  content_send_info_json(ua, "import_slot", vl1->Slot, vl2->VolName);
+                  ContentSendInfoJson(ua, "import_slot", vl1->Slot, vl2->VolName);
                   break;
                default:
                   break;
@@ -1629,7 +1629,7 @@ bail_out:
 /**
  * Print slots from AutoChanger
  */
-static void status_slots(UaContext *ua, StorageResource *store)
+static void StatusSlots(UaContext *ua, StorageResource *store)
 {
    PoolDbRecord pr;
    MediaDbRecord mr;

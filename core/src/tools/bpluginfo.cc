@@ -179,7 +179,7 @@ void bareosFree(void *ctx, const char *file, int line, void *mem)
 /*
  * displays a short help
  */
-void print_help(int argc, char *argv[])
+void PrintHelp(int argc, char *argv[])
 {
 
    printf("\n"
@@ -205,7 +205,7 @@ progdata *allocpdata(void)
 }
 
 /* releases all allocated program data resources */
-void freepdata(progdata *pdata)
+void Freepdata(progdata *pdata)
 {
 
    if (pdata->pluginfile) {
@@ -257,7 +257,7 @@ void ParseArgs(progdata *pdata, int argc, char *argv[])
 
       case '?':
       default:
-         print_help(argc, argv);
+         PrintHelp(argc, argv);
          exit(0);
       }
    }
@@ -265,7 +265,7 @@ void ParseArgs(progdata *pdata, int argc, char *argv[])
    argv += optind;
 
    if (argc < 1) {
-      print_help(argc, argv);
+      PrintHelp(argc, argv);
       exit(0);
    }
 
@@ -304,7 +304,7 @@ void ParseArgs(progdata *pdata, int argc, char *argv[])
  * output:
  *    int - enum plugintype
  */
-int getplugintype(progdata *pdata)
+int Getplugintype(progdata *pdata)
 {
 
    ASSERT_NVAL_RET_V(pdata, ERRORPLUGIN);
@@ -339,7 +339,7 @@ int getplugintype(progdata *pdata)
  * output:
  *    printed info
  */
-void dump_pluginfo(progdata *pdata)
+void DumpPluginfo(progdata *pdata)
 {
 
    ASSERT_NVAL_RET(pdata);
@@ -389,7 +389,7 @@ void dump_pluginfo(progdata *pdata)
  * output:
  *    printed info
  */
-void dump_plugfuncs(progdata *pdata)
+void DumpPlugfuncs(progdata *pdata)
 {
 
    ASSERT_NVAL_RET(pdata);
@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
    pdata->pluginhandle = dlopen(pdata->pluginfile, RTLD_LAZY);
    if (pdata->pluginhandle == NULL) {
       printf("\nCannot load a plugin: %s\n\n", dlerror());
-      freepdata(pdata);
+      Freepdata(pdata);
       exit(1);
    }
 
@@ -534,7 +534,7 @@ int main(int argc, char *argv[])
    if (loadplugfunc == NULL) {
       printf("\nCannot find loadPlugin function: %s\n", dlerror());
       printf("\nWhether the file is a really Bareos plugin?\n\n");
-      freepdata(pdata);
+      Freepdata(pdata);
       exit(2);
    }
 
@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
    if (unloadplugfunc == NULL) {
       printf("\nCannot find unloadPlugin function: %s\n", dlerror());
       printf("\nWhether the file is a really Bareos plugin?\n\n");
-      freepdata(pdata);
+      Freepdata(pdata);
       exit(3);
    }
 
@@ -552,13 +552,13 @@ int main(int argc, char *argv[])
 
    loadplugfunc(&binfos, &bfuncs, (void **)&pdata->pinfo, (void **)&pdata->pfuncs);
 
-   pdata->bplugtype = getplugintype(pdata);
+   pdata->bplugtype = Getplugintype(pdata);
 
    if (!pdata->listfunc) {
-      dump_pluginfo(pdata);
+      DumpPluginfo(pdata);
    }
    if ((!pdata->listinfo && pdata->listfunc) || pdata->verbose) {
-      dump_plugfuncs(pdata);
+      DumpPlugfuncs(pdata);
    }
    printf("\n");
 
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
 
    dlclose(pdata->pluginhandle);
 
-   freepdata(pdata);
+   Freepdata(pdata);
 
    return 0;
 }

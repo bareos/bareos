@@ -99,13 +99,13 @@ BareosDbDBI::BareosDbDBI(JobControlRecord *jcr,
    DbiFieldGet *field;
 
    p = (char *)(db_driver + 4);
-   if (bstrcasecmp(p, "mysql")) {
+   if (Bstrcasecmp(p, "mysql")) {
       db_type_ = SQL_TYPE_MYSQL;
       bstrncpy(new_db_driver, "mysql", sizeof(new_db_driver));
-   } else if (bstrcasecmp(p, "postgresql")) {
+   } else if (Bstrcasecmp(p, "postgresql")) {
       db_type_ = SQL_TYPE_POSTGRESQL;
       bstrncpy(new_db_driver, "pgsql", sizeof(new_db_driver));
-   } else if (bstrcasecmp(p, "sqlite3")) {
+   } else if (Bstrcasecmp(p, "sqlite3")) {
       db_type_ = SQL_TYPE_SQLITE3;
       bstrncpy(new_db_driver, "sqlite3", sizeof(new_db_driver));
    } else {
@@ -222,7 +222,7 @@ bool BareosDbDBI::OpenDatabase(JobControlRecord *jcr)
    }
 
    if (db_port_) {
-      bsnprintf(buf, sizeof(buf), "%d", db_port_);
+      Bsnprintf(buf, sizeof(buf), "%d", db_port_);
       port = buf;
    } else {
       port = NULL;
@@ -283,7 +283,7 @@ bool BareosDbDBI::OpenDatabase(JobControlRecord *jcr)
       dbi_conn_error(db_handle_, &dbi_errmsg);
       Dmsg1(50, "dbi error: %s\n", dbi_errmsg);
 
-      bmicrosleep(5, 0);
+      Bmicrosleep(5, 0);
    }
 
    if (dbstat != 0 ) {
@@ -622,9 +622,9 @@ void BareosDbDBI::EndTransaction(JobControlRecord *jcr)
 
 /**
  * Submit a general SQL command (cmd), and for each row returned,
- * the result_handler is called with the ctx.
+ * the ResultHandler is called with the ctx.
  */
-bool BareosDbDBI::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbDBI::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    bool retval = true;
    SQL_ROW row;
@@ -641,11 +641,11 @@ bool BareosDbDBI::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *resu
 
    Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
 
-   if (result_handler != NULL) {
+   if (ResultHandler != NULL) {
       Dmsg0(500, "SqlQueryWithHandler invoking handler\n");
       while ((row = SqlFetchRow()) != NULL) {
          Dmsg0(500, "SqlQueryWithHandler SqlFetchRow worked\n");
-         if (result_handler(ctx, num_fields_, row))
+         if (ResultHandler(ctx, num_fields_, row))
             break;
       }
       SqlFreeResult();
@@ -825,7 +825,7 @@ static char *dbi_getvalue(dbi_result *result, int row_number, unsigned int colum
          break;
       case DBI_TYPE_STRING:
          if(field_length) {
-            field_length = bsnprintf(buf, field_length + 1, "%s",
+            field_length = Bsnprintf(buf, field_length + 1, "%s",
             dbi_result_get_string(result, field_name));
          } else {
             buf[0] = 0;
@@ -837,7 +837,7 @@ static char *dbi_getvalue(dbi_result *result, int row_number, unsigned int colum
           * following, change this to what BAREOS expected
           */
          if(field_length) {
-            field_length = bsnprintf(buf, field_length + 1, "%s",
+            field_length = Bsnprintf(buf, field_length + 1, "%s",
                   dbi_result_get_binary(result, field_name));
          } else {
             buf[0] = 0;
@@ -850,10 +850,10 @@ static char *dbi_getvalue(dbi_result *result, int row_number, unsigned int colum
          last = dbi_result_get_datetime(result, field_name);
 
          if(last == -1) {
-                field_length = bsnprintf(buf, 20, "0000-00-00 00:00:00");
+                field_length = Bsnprintf(buf, 20, "0000-00-00 00:00:00");
          } else {
-            blocaltime(&last, &tm);
-            field_length = bsnprintf(buf, 20, "%04d-%02d-%02d %02d:%02d:%02d",
+            Blocaltime(&last, &tm);
+            field_length = Bsnprintf(buf, 20, "%04d-%02d-%02d %02d:%02d:%02d",
                   (tm.tm_year + 1900), (tm.tm_mon + 1), tm.tm_mday,
                   tm.tm_hour, tm.tm_min, tm.tm_sec);
          }
@@ -1007,7 +1007,7 @@ uint64_t BareosDbDBI::SqlInsertAutokeyRecord(const char *query, const char *tabl
     * everything else can use the PostgreSQL formula.
     */
    if (db_type_ == SQL_TYPE_POSTGRESQL) {
-      if (bstrcasecmp(table_name, "basefiles")) {
+      if (Bstrcasecmp(table_name, "basefiles")) {
          bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
       } else {
          bstrncpy(sequence, table_name, sizeof(sequence));
@@ -1033,7 +1033,7 @@ uint64_t BareosDbDBI::SqlInsertAutokeyRecord(const char *query, const char *tabl
  *
  *  use dbi_result_seek_row to search in result set
  */
-static int dbi_getisnull(dbi_result *result, int row_number, int column_number) {
+static int DbiGetisnull(dbi_result *result, int row_number, int column_number) {
    int i;
 
    if (row_number == 0) {
@@ -1054,7 +1054,7 @@ SQL_FIELD *BareosDbDBI::SqlFetchField(void)
 {
    int i, j;
    int dbi_index;
-   int max_length;
+   int MaxLength;
    int this_length;
    char *cbuf = NULL;
 
@@ -1082,9 +1082,9 @@ SQL_FIELD *BareosDbDBI::SqlFetchField(void)
          /*
           * For a given column, find the max length.
           */
-         max_length = 0;
+         MaxLength = 0;
          for (j = 0; j < num_rows_; j++) {
-            if (dbi_getisnull(result_, j, dbi_index)) {
+            if (DbiGetisnull(result_, j, dbi_index)) {
                 this_length = 4;        /* "NULL" */
             } else {
                cbuf = dbi_getvalue(result_, j, dbi_index);
@@ -1095,14 +1095,14 @@ SQL_FIELD *BareosDbDBI::SqlFetchField(void)
                free(cbuf);
             }
 
-            if (max_length < this_length) {
-               max_length = this_length;
+            if (MaxLength < this_length) {
+               MaxLength = this_length;
             }
          }
-         fields_[i].max_length = max_length;
+         fields_[i].MaxLength = MaxLength;
 
          Dmsg4(500, "SqlFetchField finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
+               fields_[i].name, fields_[i].MaxLength, fields_[i].type, fields_[i].flags);
       }
    }
 
@@ -1238,7 +1238,7 @@ bool BareosDbDBI::SqlBatchStart(JobControlRecord *jcr)
          if (result_) {
             break;
          }
-         bmicrosleep(5, 0);
+         Bmicrosleep(5, 0);
       }
       if (!result_) {
          Dmsg1(50, "Query failed: %s\n", query);

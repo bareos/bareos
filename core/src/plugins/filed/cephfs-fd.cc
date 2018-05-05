@@ -772,7 +772,7 @@ static bRC endBackupFile(bpContext *ctx)
 /**
  * Strip any backslashes in the string.
  */
-static inline void strip_back_slashes(char *value)
+static inline void StripBackSlashes(char *value)
 {
    char *bp;
 
@@ -793,11 +793,11 @@ static inline void strip_back_slashes(char *value)
 /**
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_string_if_null(char **destination, char *value)
+static inline void SetStringIfNull(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
-      strip_back_slashes(*destination);
+      StripBackSlashes(*destination);
    }
 }
 
@@ -811,7 +811,7 @@ static inline void SetString(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
-   strip_back_slashes(*destination);
+   StripBackSlashes(*destination);
 }
 
 /**
@@ -905,7 +905,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       } while (bp);
 
       for (i = 0; plugin_arguments[i].name; i++) {
-         if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+         if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
             char **str_destination = NULL;
 
             switch (plugin_arguments[i].type) {
@@ -924,7 +924,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              */
             if (str_destination) {
                if (keep_existing) {
-                  set_string_if_null(str_destination, argument_value);
+                  SetStringIfNull(str_destination, argument_value);
                } else {
                   SetString(str_destination, argument_value);
                }
@@ -1198,7 +1198,7 @@ static bRC endRestoreFile(bpContext *ctx)
  * We don't use cephfs_mkdirs as we want to keep track which
  * directories got created by us.
  */
-static inline bool cephfs_makedirs(plugin_ctx *p_ctx, const char *directory)
+static inline bool CephfsMakedirs(plugin_ctx *p_ctx, const char *directory)
 {
    char *bp;
    struct stat st;
@@ -1235,7 +1235,7 @@ static inline bool cephfs_makedirs(plugin_ctx *p_ctx, const char *directory)
                /*
                 * Make sure our parent exists.
                 */
-               retval = cephfs_makedirs(p_ctx, new_directory.c_str());
+               retval = CephfsMakedirs(p_ctx, new_directory.c_str());
                if (!retval) {
                   return false;
                }
@@ -1354,7 +1354,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (bp) {
             *bp = '\0';
             if (strlen(parent_dir.c_str())) {
-               if (!cephfs_makedirs(p_ctx, parent_dir.c_str())) {
+               if (!CephfsMakedirs(p_ctx, parent_dir.c_str())) {
                   rp->create_status = CF_ERROR;
                   goto bail_out;
                }
@@ -1406,7 +1406,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       break;
    case FT_DIRBEGIN:
    case FT_DIREND:
-      if (!cephfs_makedirs(p_ctx, rp->ofname)) {
+      if (!CephfsMakedirs(p_ctx, rp->ofname)) {
          rp->create_status = CF_ERROR;
       } else {
          rp->create_status = CF_CREATED;

@@ -82,7 +82,7 @@ uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx);
 void DisplayBsrInfo(UaContext *ua, RestoreContext &rx);
 uint32_t WriteBsr(UaContext *ua, RestoreContext &rx, PoolMem *buffer);
 void AddFindex(RestoreBootstrapRecord *bsr, uint32_t JobId, int32_t findex);
-void add_findex_all(RestoreBootstrapRecord *bsr, uint32_t JobId);
+void AddFindexAll(RestoreBootstrapRecord *bsr, uint32_t JobId);
 RestoreBootstrapRecordFileIndex *new_findex();
 void MakeUniqueRestoreFilename(UaContext *ua, POOLMEM *&fname);
 void PrintBsr(UaContext *ua, RestoreContext &rx);

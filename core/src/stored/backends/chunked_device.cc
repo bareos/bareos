@@ -59,19 +59,19 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * ClearInflightChunk() - Clear the inflight flag for a chunk.
  * IsInflightChunk() - Is a chunk current inflight to the backing store.
  * NrInflightChunks() - Number of chunks inflight to the backing store.
- * setup_chunk() - Setup a chunked volume for reading or writing.
- * read_chunked() - Read a chunked volume.
- * write_chunked() - Write a chunked volume.
+ * SetupChunk() - Setup a chunked volume for reading or writing.
+ * ReadChunked() - Read a chunked volume.
+ * WriteChunked() - Write a chunked volume.
  * close_chunk() - Close a chunked volume.
- * truncate_chunked_volume() - Truncate a chunked volume.
+ * TruncateChunkedVolume() - Truncate a chunked volume.
  * ChunkedVolumeSize() - Get the current size of a volume.
  * LoadChunk() - Make sure we have the right chunk in memory.
  *
  * It also demands that the inheriting class implements the
  * following methods:
  *
- * flush_remote_chunk() - Flush a chunk to the remote backing store.
- * read_remote_chunk() - Read a chunk from the remote backing store.
+ * FlushRemoteChunk() - Flush a chunk to the remote backing store.
+ * ReadRemoteChunk() - Read a chunk from the remote backing store.
  * chunked_remote_volume_size - Return the current size of a volume.
  * TruncateRemoteChunkedVolume() - Truncate a chunked volume on the
  *                                    remote backing store.
@@ -341,7 +341,7 @@ int chunked_device::NrInflightChunks()
 /*
  * Call back function for comparing two chunk_io_requests.
  */
-static int compare_chunk_io_request(void *item1, void *item2)
+static int CompareChunkIoRequest(void *item1, void *item2)
 {
    ocbuf_item *ocbuf1 = (ocbuf_item *)item1;
    ocbuf_item *ocbuf2 = (ocbuf_item *)item2;
@@ -368,7 +368,7 @@ static int compare_chunk_io_request(void *item1, void *item2)
 /*
  * Call back function for updating two chunk_io_requests.
  */
-static void update_chunk_io_request(void *item1, void *item2)
+static void UpdateChunkIoRequest(void *item1, void *item2)
 {
    chunk_io_request *chunk1 = (chunk_io_request *)item1;
    chunk_io_request *chunk2 = (chunk_io_request *)item2;
@@ -395,7 +395,7 @@ static void update_chunk_io_request(void *item1, void *item2)
 /*
  * Enqueue a chunk flush request onto the ordered circular buffer.
  */
-bool chunked_device::enqueue_chunk(chunk_io_request *request)
+bool chunked_device::EnqueueChunk(chunk_io_request *request)
 {
    chunk_io_request *new_request,
                     *enqueued_request;
@@ -426,8 +426,8 @@ bool chunked_device::enqueue_chunk(chunk_io_request *request)
     */
    enqueued_request = (chunk_io_request *)cb_->enqueue(new_request,
                                                         sizeof(chunk_io_request),
-                                                        compare_chunk_io_request,
-                                                        update_chunk_io_request,
+                                                        CompareChunkIoRequest,
+                                                        UpdateChunkIoRequest,
                                                         false, /* use_reserved_slot */
                                                         false /* no_signal */);
 
@@ -489,7 +489,7 @@ bool chunked_device::DequeueChunk()
             new_request->chunk, new_request->volname,
             edit_pthread(pthread_self(), ed1, sizeof(ed1)));
 
-      if (!flush_remote_chunk(new_request)) {
+      if (!FlushRemoteChunk(new_request)) {
           chunk_io_request *enqueued_request;
 
           /*
@@ -526,8 +526,8 @@ bool chunked_device::DequeueChunk()
           */
          enqueued_request = (chunk_io_request *)cb_->enqueue(new_request,
                                                               sizeof(chunk_io_request),
-                                                              compare_chunk_io_request,
-                                                              update_chunk_io_request,
+                                                              CompareChunkIoRequest,
+                                                              UpdateChunkIoRequest,
                                                               true, /* use_reserved_slot */
                                                               true /* no_signal */);
          /*
@@ -587,9 +587,9 @@ bool chunked_device::FlushChunk(bool release_chunk, bool move_to_next_chunk)
    request.release = release_chunk;
 
    if (io_threads_) {
-      retval = enqueue_chunk(&request);
+      retval = EnqueueChunk(&request);
    } else {
-      retval = flush_remote_chunk(&request);
+      retval = FlushRemoteChunk(&request);
    }
 
    /*
@@ -645,7 +645,7 @@ bool chunked_device::ReadChunk()
 
    current_chunk_->end_offset = current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
 
-   if (!read_remote_chunk(&request)) {
+   if (!ReadRemoteChunk(&request)) {
       /*
        * If the chunk doesn't exist on the backing store it has a size of 0 bytes.
        */
@@ -659,7 +659,7 @@ bool chunked_device::ReadChunk()
 /*
  * Setup a chunked volume for reading or writing.
  */
-int chunked_device::setup_chunk(const char *pathname, int flags, int mode)
+int chunked_device::SetupChunk(const char *pathname, int flags, int mode)
 {
    /*
     * If device is (re)opened and we are put into readonly mode because
@@ -734,7 +734,7 @@ int chunked_device::setup_chunk(const char *pathname, int flags, int mode)
 /*
  * Read a chunked volume.
  */
-ssize_t chunked_device::read_chunked(int fd, void *buffer, size_t count)
+ssize_t chunked_device::ReadChunked(int fd, void *buffer, size_t count)
 {
    ssize_t retval = 0;
 
@@ -868,7 +868,7 @@ bail_out:
 /*
  * Write a chunked volume.
  */
-ssize_t chunked_device::write_chunked(int fd, const void *buffer, size_t count)
+ssize_t chunked_device::WriteChunked(int fd, const void *buffer, size_t count)
 {
    ssize_t retval = 0;
 
@@ -1024,7 +1024,7 @@ int chunked_device::close_chunk()
 /*
  * Truncate a chunked volume.
  */
-bool chunked_device::truncate_chunked_volume(DeviceControlRecord *dcr)
+bool chunked_device::TruncateChunkedVolume(DeviceControlRecord *dcr)
 {
    if (current_chunk_->opened) {
       if (!TruncateRemoteChunkedVolume(dcr)) {
@@ -1053,7 +1053,7 @@ bool chunked_device::truncate_chunked_volume(DeviceControlRecord *dcr)
    return true;
 }
 
-static int compare_volume_name(void *item1, void *item2)
+static int CompareVolumeName(void *item1, void *item2)
 {
    const char *volname = (const char *)item2;
    chunk_io_request *request = (chunk_io_request *)item1;
@@ -1084,7 +1084,7 @@ ssize_t chunked_device::ChunkedVolumeSize()
              * inflight and as such we need to look at the last chunk that is still not
              * uploaded of the volume.
              */
-            request = (chunk_io_request *)cb_->peek(PEEK_LAST, current_volname_, compare_volume_name);
+            request = (chunk_io_request *)cb_->peek(PEEK_LAST, current_volname_, CompareVolumeName);
             if (request) {
                ssize_t retval;
 
@@ -1119,7 +1119,7 @@ ssize_t chunked_device::ChunkedVolumeSize()
              * on the ordered circular list.
              */
             do {
-               bmicrosleep(INFLIGT_RETRY_TIME, 0);
+               Bmicrosleep(INFLIGT_RETRY_TIME, 0);
             } while (NrInflightChunks() > 0 && --retries > 0);
 
             /*
@@ -1152,7 +1152,7 @@ ssize_t chunked_device::ChunkedVolumeSize()
    return chunked_remote_volume_size();
 }
 
-static int clone_io_request(void *item1, void *item2)
+static int CloneIoRequest(void *item1, void *item2)
 {
    chunk_io_request *src = (chunk_io_request *)item1;
    chunk_io_request *dst = (chunk_io_request *)item2;
@@ -1219,7 +1219,7 @@ bool chunked_device::LoadChunk()
                 * be cloned it will return NULL. If data is cloned we use that and skip the call to
                 * read the data from the backing store as that will not have the latest data anyway.
                 */
-               if (cb_->peek(PEEK_CLONE, &request, clone_io_request) == &request) {
+               if (cb_->peek(PEEK_CLONE, &request, CloneIoRequest) == &request) {
                   goto bail_out;
                }
             }
@@ -1238,7 +1238,7 @@ bool chunked_device::LoadChunk()
                 * it up by retrying the PEEK_CLONE on the ordered circular list.
                 */
                do {
-                  bmicrosleep(INFLIGT_RETRY_TIME, 0);
+                  Bmicrosleep(INFLIGT_RETRY_TIME, 0);
                } while (IsInflightChunk(&request) && --retries > 0);
 
                /*
@@ -1285,7 +1285,7 @@ bail_out:
    return true;
 }
 
-static int list_io_request(void *request, void *data)
+static int ListIoRequest(void *request, void *data)
 {
    chunk_io_request *io_request = (chunk_io_request *)request;
    bsdDevStatTrig *dst = (bsdDevStatTrig *)data;
@@ -1313,7 +1313,7 @@ bool chunked_device::DeviceStatus(bsdDevStatTrig *dst)
          /*
           * Peek on the ordered circular queue and list all pending requests.
           */
-         cb_->peek(PEEK_LIST, dst, list_io_request);
+         cb_->peek(PEEK_LIST, dst, ListIoRequest);
       } else {
          dst->status_length = PmStrcpy(dst->status, _("No Pending IO flush requests\n"));
       }

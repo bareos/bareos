@@ -135,23 +135,23 @@ void StopHeartbeatMonitor(JobControlRecord *jcr)
    }
    /* Wait max 10 secs for heartbeat thread to start */
    while (!jcr->hb_started && cnt++ < 200) {
-      bmicrosleep(0, 50000);         /* wait for start */
+      Bmicrosleep(0, 50000);         /* wait for start */
    }
 
    if (jcr->hb_started) {
-      jcr->hb_bsock->SetTimedOut();       /* set timed_out to terminate read */
-      jcr->hb_bsock->SetTerminated();      /* set to terminate read */
+      jcr->hb_bsock->SetTimedOut();       /* set timed_out to Terminate read */
+      jcr->hb_bsock->SetTerminated();      /* set to Terminate read */
    }
 
    if (jcr->hb_dir_bsock) {
-      jcr->hb_dir_bsock->SetTimedOut();     /* set timed_out to terminate read */
-      jcr->hb_dir_bsock->SetTerminated();    /* set to terminate read */
+      jcr->hb_dir_bsock->SetTimedOut();     /* set timed_out to Terminate read */
+      jcr->hb_dir_bsock->SetTerminated();    /* set to Terminate read */
    }
 
    if (jcr->hb_started) {
       Dmsg0(100, "Send kill to heartbeat id\n");
       pthread_kill(jcr->heartbeat_id, TIMEOUT_SIGNAL);  /* make heartbeat thread go away */
-      bmicrosleep(0, 50000);
+      Bmicrosleep(0, 50000);
    }
    cnt = 0;
 
@@ -160,7 +160,7 @@ void StopHeartbeatMonitor(JobControlRecord *jcr)
     */
    while (jcr->hb_started && cnt++ < 200) {
       pthread_kill(jcr->heartbeat_id, TIMEOUT_SIGNAL);  /* make heartbeat thread go away */
-      bmicrosleep(0, 500000);
+      Bmicrosleep(0, 500000);
    }
 
    if (jcr->hb_bsock) {
@@ -208,7 +208,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
          }
          last_heartbeat = now;
       }
-      bmicrosleep(next, 0);
+      Bmicrosleep(next, 0);
    }
    dir->close();
    jcr->hb_bsock.reset();

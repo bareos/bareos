@@ -22,8 +22,8 @@
 #ifndef BAREOS_DIRD_UA_IMPEXP_H_
 #define BAREOS_DIRD_UA_IMPEXP_H_
 
-bool import_cmd(UaContext *ua, const char *cmd);
-bool export_cmd(UaContext *ua, const char *cmd);
+bool ImportCmd(UaContext *ua, const char *cmd);
+bool ExportCmd(UaContext *ua, const char *cmd);
 bool move_cmd(UaContext *ua, const char *cmd);
 
 #endif // BAREOS_DIRD_UA_IMPEXP_H_

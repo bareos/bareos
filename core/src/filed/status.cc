@@ -38,9 +38,9 @@ extern void *start_heap;
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
 
 /* Forward referenced functions */
-static void list_terminated_jobs(StatusPacket *sp);
-static void list_running_jobs(StatusPacket *sp);
-static void list_status_header(StatusPacket *sp);
+static void ListTerminatedJobs(StatusPacket *sp);
+static void ListRunningJobs(StatusPacket *sp);
+static void ListStatusHeader(StatusPacket *sp);
 static void sendit(PoolMem &msg, int len, StatusPacket *sp);
 static const char *level_to_str(int level);
 
@@ -68,12 +68,12 @@ static int privs = 0;
  */
 static void OutputStatus(StatusPacket *sp)
 {
-   list_status_header(sp);
-   list_running_jobs(sp);
-   list_terminated_jobs(sp);
+   ListStatusHeader(sp);
+   ListRunningJobs(sp);
+   ListTerminatedJobs(sp);
 }
 
-static void list_status_header(StatusPacket *sp)
+static void ListStatusHeader(StatusPacket *sp)
 {
    int len;
    char dt[MAX_TIME_LENGTH];
@@ -159,13 +159,13 @@ static void list_status_header(StatusPacket *sp)
       sendit(msg, len, sp);
    }
 
-   len = list_fd_plugins(msg);
+   len = ListFdPlugins(msg);
    if (len > 0) {
       sendit(msg, len, sp);
    }
 }
 
-static void list_running_jobs_plain(StatusPacket *sp)
+static void ListRunningJobsPlain(StatusPacket *sp)
 {
    JobControlRecord *njcr;
    int len, sec, bps;
@@ -252,7 +252,7 @@ static void list_running_jobs_plain(StatusPacket *sp)
    sendit(msg, len, sp);
 }
 
-static void list_running_jobs_api(StatusPacket *sp)
+static void ListRunningJobsApi(StatusPacket *sp)
 {
    JobControlRecord *njcr;
    int len, sec, bps;
@@ -317,16 +317,16 @@ static void list_running_jobs_api(StatusPacket *sp)
    endeach_jcr(njcr);
 }
 
-static void  list_running_jobs(StatusPacket *sp)
+static void  ListRunningJobs(StatusPacket *sp)
 {
    if (sp->api) {
-      list_running_jobs_api(sp);
+      ListRunningJobsApi(sp);
    } else {
-      list_running_jobs_plain(sp);
+      ListRunningJobsPlain(sp);
    }
 }
 
-static void list_terminated_jobs(StatusPacket *sp)
+static void ListTerminatedJobs(StatusPacket *sp)
 {
    int len;
    struct s_last_job *je;
@@ -454,7 +454,7 @@ static void sendit(PoolMem &msg, int len, StatusPacket *sp)
 /**
  * Status command from Director
  */
-bool status_cmd(JobControlRecord *jcr)
+bool StatusCmd(JobControlRecord *jcr)
 {
    BareosSocket *user = jcr->dir_bsock;
    StatusPacket sp;
@@ -471,7 +471,7 @@ bool status_cmd(JobControlRecord *jcr)
 /**
  * .status command from Director
  */
-bool qstatus_cmd(JobControlRecord *jcr)
+bool QstatusCmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *cmd;
@@ -506,15 +506,15 @@ bool qstatus_cmd(JobControlRecord *jcr)
          job = (s_last_job*)last_jobs->last();
          dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
       }
-   } else if (bstrcasecmp(cmd, "header")) {
+   } else if (Bstrcasecmp(cmd, "header")) {
        sp.api = true;
-       list_status_header(&sp);
-   } else if (bstrcasecmp(cmd, "running")) {
+       ListStatusHeader(&sp);
+   } else if (Bstrcasecmp(cmd, "running")) {
        sp.api = true;
-       list_running_jobs(&sp);
-   } else if (bstrcasecmp(cmd, "terminated")) {
+       ListRunningJobs(&sp);
+   } else if (Bstrcasecmp(cmd, "terminated")) {
        sp.api = true;
-       list_terminated_jobs(&sp);
+       ListTerminatedJobs(&sp);
    } else {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);

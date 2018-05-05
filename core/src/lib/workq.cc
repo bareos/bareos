@@ -213,13 +213,13 @@ int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
  *    if you want to cancel it, you need to provide some external means
  *    of doing so.
  */
-int workq_remove(workq_t *wq, workq_ele_t *work_item)
+int WorkqRemove(workq_t *wq, workq_ele_t *work_item)
 {
    int status, found = 0;
    pthread_t id;
    workq_ele_t *item, *prev;
 
-   Dmsg0(1400, "workq_remove\n");
+   Dmsg0(1400, "WorkqRemove\n");
    if (wq->valid != WORKQ_VALID) {
       return EINVAL;
    }
@@ -265,7 +265,7 @@ int workq_remove(workq_t *wq, workq_ele_t *work_item)
       wq->num_workers++;
    }
    V(wq->mutex);
-   Dmsg0(1400, "Return workq_remove\n");
+   Dmsg0(1400, "Return WorkqRemove\n");
    return status;
 }
 

@@ -157,7 +157,7 @@ void SetSecureEraseCmdline(const char *cmdline)
  * to recall this routine if he/she REALLY wants to sleep the
  * requested time.
  */
-int bmicrosleep(int32_t sec, int32_t usec)
+int Bmicrosleep(int32_t sec, int32_t usec)
 {
    struct timespec timeout;
    struct timeval tv;
@@ -305,7 +305,7 @@ bool bstrncmp(const char *s1, const char *s2, int n)
    return strncmp(s1, s2, n) == 0;
 }
 
-bool bstrcasecmp(const char *s1, const char *s2)
+bool Bstrcasecmp(const char *s1, const char *s2)
 {
    if (s1 == s2) return true;
    if (s1 == NULL || s2 == NULL) return false;
@@ -450,13 +450,13 @@ void *bcalloc(size_t size1, size_t size2)
 /*
  * Implement snprintf
  */
-int bsnprintf(char *str, int32_t size, const char *fmt,  ...)
+int Bsnprintf(char *str, int32_t size, const char *fmt,  ...)
 {
    va_list   arg_ptr;
    int len;
 
    va_start(arg_ptr, fmt);
-   len = bvsnprintf(str, size, fmt, arg_ptr);
+   len = Bvsnprintf(str, size, fmt, arg_ptr);
    va_end(arg_ptr);
    return len;
 }
@@ -464,7 +464,7 @@ int bsnprintf(char *str, int32_t size, const char *fmt,  ...)
 /*
  * Implement vsnprintf()
  */
-int bvsnprintf(char *str, int32_t size, const char  *format, va_list ap)
+int Bvsnprintf(char *str, int32_t size, const char  *format, va_list ap)
 {
 #ifdef HAVE_VSNPRINTF
    int len;
@@ -951,7 +951,7 @@ bool PathIsDirectory(PoolMem &path)
    return PathIsDirectory(path.c_str());
 }
 
-bool path_is_absolute(const char *path)
+bool PathIsAbsolute(const char *path)
 {
    if (!path || !strlen(path)) {
       /*
@@ -982,9 +982,9 @@ bool path_is_absolute(const char *path)
    return false;
 }
 
-bool path_is_absolute(PoolMem &path)
+bool PathIsAbsolute(PoolMem &path)
 {
-   return path_is_absolute(path.c_str());
+   return PathIsAbsolute(path.c_str());
 }
 
 bool PathContainsDirectory(const char *path)
@@ -1097,7 +1097,7 @@ bool PathAppend(PoolMem &path, PoolMem &extra)
  * based on
  * src/findlib/mkpath.c:bool makedir(...)
  */
-static bool path_mkdir(char *path, mode_t mode)
+static bool PathMkdir(char *path, mode_t mode)
 {
    if (PathExists(path)) {
       Dmsg1(500, "skipped, path %s already exists.\n", path);
@@ -1178,7 +1178,7 @@ bool PathCreate(const char *apath, mode_t mode)
       char save_p;
       save_p = *p;
       *p = 0;
-      if (!path_mkdir(path, mode)) {
+      if (!PathMkdir(path, mode)) {
          goto bail_out;
       }
       *p = save_p;
@@ -1187,7 +1187,7 @@ bool PathCreate(const char *apath, mode_t mode)
       }
    }
 
-   if (!path_mkdir(path, mode)) {
+   if (!PathMkdir(path, mode)) {
       goto bail_out;
    }
 
@@ -1208,8 +1208,8 @@ bool PathCreate(PoolMem &path, mode_t mode)
 #if defined(HAVE_SUN_OS)
 
 /*
- * If libc doesn't have addrtosymstr emulate it.
- * Solaris 11 has addrtosymstr in libc older
+ * If libc doesn't have Addrtosymstr emulate it.
+ * Solaris 11 has Addrtosymstr in libc older
  * Solaris versions don't have this.
  */
 #ifndef HAVE_ADDRTOSYMSTR
@@ -1221,24 +1221,24 @@ bool PathCreate(PoolMem &path, mode_t mode)
 #endif
 #include <sys/machelf.h>
 
-static int addrtosymstr(void *pc, char *buffer, int size)
+static int Addrtosymstr(void *pc, char *buffer, int size)
 {
    Dl_info info;
    Sym *sym;
 
    if (dladdr1(pc, &info, (void **)&sym, RTLD_DL_SYMENT) == 0) {
-      return (bsnprintf(buffer, size, "[0x%p]", pc));
+      return (Bsnprintf(buffer, size, "[0x%p]", pc));
    }
 
    if ((info.dli_fname != NULL && info.dli_sname != NULL) &&
       ((uintptr_t)pc - (uintptr_t)info.dli_saddr < sym->st_size)) {
-      return (bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]",
+      return (Bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]",
                         info.dli_fname,
                         info.dli_sname,
                         (unsigned long)pc - (unsigned long)info.dli_saddr,
                         pc));
    } else {
-      return (bsnprintf(buffer, size, "%s'0x%p [0x%p]",
+      return (Bsnprintf(buffer, size, "%s'0x%p [0x%p]",
                         info.dli_fname,
                         (unsigned long)pc - (unsigned long)info.dli_fbase,
                         pc));
@@ -1264,7 +1264,7 @@ static char **backtrace_symbols(void *const *array, int size)
    ret_buffer = (char **)actuallymalloc(bufferlen);
    if (ret_buffer) {
       for (i = 0; i < size; i++) {
-         (void) addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
+         (void) Addrtosymstr(array[i], linebuffer, sizeof(linebuffer));
          ret_buffer[i] = (char *)actuallymalloc(len = strlen(linebuffer) + 1);
          strcpy(ret_buffer[i], linebuffer);
          bufferlen += len;
@@ -1408,9 +1408,9 @@ void stack_trace()
          /* didn't find the mangled name, just print the whole line */
          Pmsg1(000, "    %s\n", stack_strings[i]);
       }
-      actuallyfree(function);
+      Actuallyfree(function);
    }
-   actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+   Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
 /*
@@ -1481,7 +1481,7 @@ void stack_trace()
                /*
                 * Need more space for demangled function name.
                 */
-               actuallyfree(function);
+               Actuallyfree(function);
                sz = sz * 2;
                function = (char *)actuallymalloc(sz);
                continue;
@@ -1497,9 +1497,9 @@ void stack_trace()
           */
          Pmsg1(000, "    %s\n", stack_strings[i]);
       }
-      actuallyfree(function);
+      Actuallyfree(function);
    }
-   actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
+   Actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
 #else

@@ -77,7 +77,7 @@ static char OK_media[] =
 static char OK_create[] =
    "1000 OK CreateJobMedia\n";
 
-static int send_volume_info_to_storage_daemon(JobControlRecord *jcr, BareosSocket *sd, MediaDbRecord *mr)
+static int SendVolumeInfoToStorageDaemon(JobControlRecord *jcr, BareosSocket *sd, MediaDbRecord *mr)
 {
    int status;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
@@ -158,7 +158,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
        * Send Find Media response to Storage daemon
        */
       if (ok) {
-         send_volume_info_to_storage_daemon(jcr, bs, &mr);
+         SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
       } else {
          bs->fsend(_("1901 No Media.\n"));
          Dmsg0(500, "1901 No Media.\n");
@@ -208,7 +208,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
             /*
              * Send Find Media response to Storage daemon
              */
-            send_volume_info_to_storage_daemon(jcr, bs, &mr);
+            SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
          } else {
             /* Not suitable volume */
             bs->fsend(_("1998 Volume \"%s\" catalog status is %s, %s.\n"), mr.VolumeName,
@@ -331,7 +331,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
          Dmsg0(400, "send error\n");
       } else {
          (void)HasVolumeExpired(jcr, &mr);
-         send_volume_info_to_storage_daemon(jcr, bs, &mr);
+         SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
       }
 
 bail_out:
@@ -380,7 +380,7 @@ bail_out:
  * packet, VolSessionId, VolSessionTime, FileIndex, file type, and file name to
  * store in the catalog.
  */
-static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
+static void UpdateAttribute(JobControlRecord *jcr, char *msg, int32_t msglen)
 {
    unser_declare;
    uint32_t VolSessionId, VolSessionTime;
@@ -671,7 +671,7 @@ void CatalogUpdate(JobControlRecord *jcr, BareosSocket *bs)
       goto bail_out;
    }
 
-   update_attribute(jcr, bs->msg, bs->msglen);
+   UpdateAttribute(jcr, bs->msg, bs->msglen);
 
 bail_out:
    if (jcr->IsJobCanceled()) {
@@ -734,7 +734,7 @@ bool DespoolAttributesFromFile(JobControlRecord *jcr, const char *file)
       }
 
       if (!jcr->IsJobCanceled()) {
-         update_attribute(jcr, msg, msglen);
+         UpdateAttribute(jcr, msg, msglen);
          if (jcr->IsJobCanceled()) {
             goto bail_out;
          }

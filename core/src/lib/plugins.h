@@ -99,7 +99,7 @@ DLL_IMP_EXP bool LoadPlugins(void *binfo, void *bfuncs, alist *plugin_list,
                   const char *type, bool IsPluginCompatible(Plugin *plugin));
 DLL_IMP_EXP void UnloadPlugins(alist *plugin_list);
 DLL_IMP_EXP void UnloadPlugin(alist *plugin_list, Plugin *plugin, int index);
-DLL_IMP_EXP int list_plugins(alist *plugin_list, PoolMem &msg);
+DLL_IMP_EXP int ListPlugins(alist *plugin_list, PoolMem &msg);
 
 /* Each daemon can register a debug hook that will be called
  * after a fatal signal

@@ -269,7 +269,7 @@ struct CompressionContext {
 };
 
 struct job_callback_item {
-   void (*job_end_cb)(JobControlRecord *jcr, void *);
+   void (*JobEndCb)(JobControlRecord *jcr, void *);
    void *ctx;
 };
 
@@ -659,7 +659,7 @@ DLL_IMP_EXP extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_partial_name(char *Job);
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_full_name(char *Job);
 DLL_IMP_EXP extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
-DLL_IMP_EXP extern void set_jcr_job_status(JobControlRecord *jcr, int JobStatus);
+DLL_IMP_EXP extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
 DLL_IMP_EXP extern int DLL_IMP_EXP num_jobs_run;
 
 #ifdef DEBUG

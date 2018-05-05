@@ -24,7 +24,7 @@
 int MatchBsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec,
               SESSION_LABEL *sesrec, JobControlRecord *jcr);
 int MatchBsrBlock(BootStrapRecord *bsr, DeviceBlock *block);
-void position_bsr_block(BootStrapRecord *bsr, DeviceBlock *block);
+void PositionBsrBlock(BootStrapRecord *bsr, DeviceBlock *block);
 BootStrapRecord *find_next_bsr(BootStrapRecord *root_bsr, Device *dev);
 bool IsThisBsrDone(BootStrapRecord *bsr, DeviceRecord *rec);
 uint64_t GetBsrStartAddr(BootStrapRecord *bsr,

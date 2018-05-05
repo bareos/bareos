@@ -208,4 +208,4 @@ DLL_IMP_EXP bool GetHangup(void);
 DLL_IMP_EXP void SetTimestamp(int timestamp_flag);
 DLL_IMP_EXP bool GetTimestamp(void);
 DLL_IMP_EXP void SetDbType(const char *name);
-DLL_IMP_EXP void register_message_callback(void msg_callback(int type, char *msg));
+DLL_IMP_EXP void RegisterMessageCallback(void msg_callback(int type, char *msg));

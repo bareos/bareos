@@ -93,7 +93,7 @@ struct RbListJobControlRecord {
    char *buf;
 };
 
-static int rblist_compare(void *item1, void *item2)
+static int RblistCompare(void *item1, void *item2)
 {
    RbListJobControlRecord *jcr1, *jcr2;
    int comp;

@@ -624,7 +624,7 @@ static char *apply_rp_codes(bpContext *ctx)
 /**
  * Strip any backslashes in the string.
  */
-static inline void strip_back_slashes(char *value)
+static inline void StripBackSlashes(char *value)
 {
    char *bp;
 
@@ -645,11 +645,11 @@ static inline void strip_back_slashes(char *value)
 /**
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_string_if_null(char **destination, char *value)
+static inline void SetStringIfNull(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
-      strip_back_slashes(*destination);
+      StripBackSlashes(*destination);
    }
 }
 
@@ -663,7 +663,7 @@ static inline void SetString(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
-   strip_back_slashes(*destination);
+   StripBackSlashes(*destination);
 }
 
 /**
@@ -787,7 +787,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                /*
                 * Keep the first value, ignore any next setting.
                 */
-               set_string_if_null(str_destination, argument);
+               SetStringIfNull(str_destination, argument);
             } else {
                /*
                 * Overwrite any existing value.
@@ -854,7 +854,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                      /*
                       * Keep the first value, ignore any next setting.
                       */
-                     set_string_if_null(str_destination, argument_value);
+                     SetStringIfNull(str_destination, argument_value);
                   } else {
                      /*
                       * Overwrite any existing value.

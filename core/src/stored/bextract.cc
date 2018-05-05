@@ -45,9 +45,9 @@
 #include "lib/bsignal.h"
 #include "include/jcr.h"
 
-extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
-static void do_extract(char *devname);
+static void DoExtract(char *devname);
 static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 static Device *dev = NULL;
@@ -209,7 +209,7 @@ int main (int argc, char *argv[])
    }
 
    my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
@@ -233,7 +233,7 @@ int main (int argc, char *argv[])
    }
 
    where = argv[1];
-   do_extract(argv[0]);
+   DoExtract(argv[0]);
 
    if (bsr) {
       FreeBsr(bsr);
@@ -254,7 +254,7 @@ int main (int argc, char *argv[])
 /*
  * Cleanup of delayed restore stack with streams for later processing.
  */
-static inline void drop_delayed_data_streams()
+static inline void DropDelayedDataStreams()
 {
    DelayedDataStream *dds;
 
@@ -273,7 +273,7 @@ static inline void drop_delayed_data_streams()
 /*
  * Push a data stream onto the delayed restore stack for later processing.
  */
-static inline void push_delayed_data_stream(int stream, char *content, uint32_t content_length)
+static inline void PushDelayedDataStream(int stream, char *content, uint32_t content_length)
 {
    DelayedDataStream *dds;
 
@@ -297,7 +297,7 @@ static inline void push_delayed_data_stream(int stream, char *content, uint32_t 
  * attributes otherwise we might clear some security flags
  * by setting the attributes.
  */
-static inline void pop_delayed_data_streams()
+static inline void PopDelayedDataStreams()
 {
    DelayedDataStream *dds;
 
@@ -379,13 +379,13 @@ static inline void pop_delayed_data_streams()
    return;
 }
 
-static void close_previous_stream(void)
+static void ClosePreviousStream(void)
 {
-   pop_delayed_data_streams();
+   PopDelayedDataStreams();
    SetAttributes(jcr, attr, &bfd);
 }
 
-static void do_extract(char *devname)
+static void DoExtract(char *devname)
 {
    struct stat statp;
    uint32_t decompress_buf_size;
@@ -437,7 +437,7 @@ static void do_extract(char *devname)
     * archive since we just hit an end of file, so close the file.
     */
    if (IsBopen(&bfd)) {
-      close_previous_stream();
+      ClosePreviousStream();
    }
    FreeAttr(attr);
 
@@ -445,7 +445,7 @@ static void do_extract(char *devname)
    FreePoolMemory(xattr_data.last_fname);
 
    if (delayed_streams) {
-      drop_delayed_data_streams();
+      DropDelayedDataStreams();
       delete delayed_streams;
    }
 
@@ -506,7 +506,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
          if (!IsBopen(&bfd)) {
             Emsg0(M_ERROR, 0, _("Logic error output file should be open but is not.\n"));
          }
-         close_previous_stream();
+         ClosePreviousStream();
          extract = false;
       }
 
@@ -546,7 +546,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
             fileAddr = 0;
             break;
          case CF_CREATED:
-            close_previous_stream();
+            ClosePreviousStream();
             PrintLsOutput(jcr, attr);
             num_files++;
             fileAddr = 0;
@@ -683,7 +683,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
    case STREAM_ACL_HURD_ACCESS_ACL:
       if (extract) {
          PmStrcpy(acl_data.last_fname, attr->fname);
-         push_delayed_data_stream(rec->maskedStream, rec->data, rec->data_len);
+         PushDelayedDataStream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
 
@@ -700,7 +700,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
    case STREAM_XATTR_NETBSD:
       if (extract) {
          PmStrcpy(xattr_data.last_fname, attr->fname);
-         push_delayed_data_stream(rec->maskedStream, rec->data, rec->data_len);
+         PushDelayedDataStream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
 
@@ -715,7 +715,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
          if (!IsBopen(&bfd)) {
             Emsg0(M_ERROR, 0, _("Logic error output file should be open but is not.\n"));
          }
-         close_previous_stream();
+         ClosePreviousStream();
          extract = false;
       }
       Jmsg(jcr, M_ERROR, 0, _("Unknown stream=%d ignored. This shouldn't happen!\n"),

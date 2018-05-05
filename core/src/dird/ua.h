@@ -88,10 +88,10 @@ private:
    /*
     * Methods
     */
-   bool acl_access_ok(int acl, const char *item, int len, bool audit_event = false);
+   bool AclAccessOk(int acl, const char *item, int len, bool audit_event = false);
    int RcodeToAcltype(int rcode);
-   void log_audit_event_acl_failure(int acl, const char *item);
-   void log_audit_event_acl_success(int acl, const char *item);
+   void LogAuditEventAclFailure(int acl, const char *item);
+   void LogAuditEventAclSuccess(int acl, const char *item);
    void SetCommandDefinition(ua_cmdstruct *cmdstruct) { cmddef = cmdstruct; }
 
 public:
@@ -104,14 +104,14 @@ public:
    /*
     * ACL check method.
     */
-   bool acl_access_ok(int rcode, const char *item, bool audit_event = false);
-   bool acl_no_restrictions(int acl);
-   bool acl_has_restrictions(int acl) { return !acl_no_restrictions(acl); }
+   bool AclAccessOk(int rcode, const char *item, bool audit_event = false);
+   bool AclNoRestrictions(int acl);
+   bool AclHasRestrictions(int acl) { return !AclNoRestrictions(acl); }
 
    /*
     * Resource retrieval methods including check on ACL.
     */
-   bool is_res_allowed(CommonResourceHeader *res);
+   bool IsResAllowed(CommonResourceHeader *res);
    CommonResourceHeader *GetResWithName(int rcode, const char *name, bool audit_event = false, bool lock = true);
    PoolResource *GetPoolResWithName(const char *name, bool audit_event = true, bool lock = true);
    StorageResource *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
@@ -139,7 +139,7 @@ public:
 };
 
 /*
- * Context for insert_tree_handler()
+ * Context for InsertTreeHandler()
  */
 struct TreeContext {
    TREE_ROOT *root;                   /**< Root */
@@ -217,7 +217,7 @@ public:
    char *regexwhere;
    char *restore_client_name;
    char *since;
-   char *store_name;
+   char *StoreName;
    char *verify_job_name;
    char *when;
    char *where;

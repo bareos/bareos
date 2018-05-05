@@ -77,7 +77,7 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
    // TODO: Check if JobId is Zero as this indicates error
 
    if (jcr->db->GetNdmpEnvironmentString(jcr, JobId,
-                           ndmp_env_handler, &job->env_tab)) {
+                           NdmpEnvHandler, &job->env_tab)) {
       /*
        * extract ndmp_filesystem from environment
        */
@@ -254,7 +254,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord *jcr, struct ndm_job_param *job
 /**
  * Execute native NDMP restore.
  */
-static bool do_ndmp_native_restore(JobControlRecord *jcr)
+static bool DoNdmpNativeRestore(JobControlRecord *jcr)
 {
    int cnt;
    BareosSocket *sd;
@@ -293,7 +293,7 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
     */
    ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-   ndmp_sess.param->log.deliver = ndmp_loghandler;
+   ndmp_sess.param->log.deliver = NdmpLoghandler;
    ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
    nis->jcr = jcr;
    ndmp_sess.param->log.ctx = nis;
@@ -370,7 +370,7 @@ static bool do_ndmp_native_restore(JobControlRecord *jcr)
     */
    ndmp_sess.control_acb->job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_sess.control_acb->job.robot_target, jcr->res.rstore->ndmp_changer_device) != 0) {
-      actuallyfree(ndmp_sess.control_acb->job.robot_target);
+      Actuallyfree(ndmp_sess.control_acb->job.robot_target);
       Dmsg0(100,"no robot to use\n");
       goto bail_out;
    }
@@ -483,7 +483,7 @@ bail_out:
 /*
  * Run a NDMP restore session.
  */
-bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
+bool DoNdmpRestoreNdmpNative(JobControlRecord *jcr)
 {
    JobDbRecord rjr;                       /* restore job record */
    int status;
@@ -510,7 +510,7 @@ bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
     */
    Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
-   if (!do_ndmp_native_restore(jcr)) {
+   if (!DoNdmpNativeRestore(jcr)) {
       goto bail_out;
    }
 

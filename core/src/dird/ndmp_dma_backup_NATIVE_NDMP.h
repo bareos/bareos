@@ -23,6 +23,6 @@
 #define BAREOS_DIRD_NDMP_DMA_BACKUP_NATIVE_NDMP_H_
 
 bool DoNdmpBackupInitNdmpNative(JobControlRecord *jcr);
-bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr);
+bool DoNdmpBackupNdmpNative(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_NDMP_DMA_BACKUP_NATIVE_NDMP_H_

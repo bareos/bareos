@@ -34,7 +34,7 @@
 #include "lib/edit.h"
 
 /* Dummy functions */
-int generate_job_event(JobControlRecord *jcr, const char *event) { return 1; }
+int GenerateJobEvent(JobControlRecord *jcr, const char *event) { return 1; }
 void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
 
 /* Global variables */
@@ -43,9 +43,9 @@ int attrs = 0;
 static JobControlRecord *jcr;
 static int num_files = 0;
 
-static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool);
+static int PrintFile(JobControlRecord *jcr, FindFilesPacket *ff, bool);
 static void PrintLsOutput(char *fname, char *link, int type, struct stat *statp);
-static int count_files(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
+static int CountFiles(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
 
 static void usage()
 {
@@ -169,9 +169,9 @@ int main(int argc, char *const *argv)
       fclose(fd);
    }
    if (quiet) {
-      match_files(jcr, ff, count_files);
+      MatchFiles(jcr, ff, CountFiles);
    } else {
-      match_files(jcr, ff, print_file);
+      MatchFiles(jcr, ff, PrintFile);
    }
    printf(_("Files seen = %d\n"), num_files);
    TermIncludeExcludeFiles(ff);
@@ -185,13 +185,13 @@ int main(int argc, char *const *argv)
    exit(0);
 }
 
-static int count_files(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
+static int CountFiles(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
    num_files++;
    return 1;
 }
 
-static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
+static int PrintFile(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
 
    switch (ff->type) {

@@ -84,7 +84,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
    while (1) {
       maxlen = buf.size() - 1;
       va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -129,7 +129,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    while (1) {
       maxlen = buf.size() - 1;
       va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
       va_end(ap);
 
       if (len < 0 || len >= (maxlen - 5)) {
@@ -269,7 +269,7 @@ static inline LEX *lex_add(LEX *lf,
 }
 
 #ifdef HAVE_GLOB
-static inline bool is_wildcard_string(const char* string)
+static inline bool IsWildcardString(const char* string)
 {
    return (strchr(string, '*') || strchr(string, '?'));
 }
@@ -319,7 +319,7 @@ LEX *lex_open_file(LEX *lf,
       memset(&fileglob, 0, sizeof(fileglob));
       globrc = glob(filename, 0, NULL, &fileglob);
 
-      if ((globrc == GLOB_NOMATCH) && (is_wildcard_string(filename))) {
+      if ((globrc == GLOB_NOMATCH) && (IsWildcardString(filename))) {
          /*
           * fname is a wildcard string, but no matching files have been found.
           * Ignore this include statement and continue.
@@ -434,7 +434,7 @@ static void add_str(LEX *lf, int ch)
 /*
  * Begin the string
  */
-static void begin_str(LEX *lf, int ch)
+static void BeginStr(LEX *lf, int ch)
 {
    lf->str_len = 0;
    lf->str[0] = 0;
@@ -562,7 +562,7 @@ int LexGetToken(LEX *lf, int expect)
             } else {
                lf->state = lex_identifier;
             }
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          }
          if (B_ISDIGIT(ch)) {
@@ -571,7 +571,7 @@ int LexGetToken(LEX *lf, int expect)
             } else {
                lf->state = lex_number;
             }
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          }
          Dmsg0(debuglevel, "Enter lex_none switch\n");
@@ -585,23 +585,23 @@ int LexGetToken(LEX *lf, int expect)
             break;
          case '{':
             token = BCT_BOB;
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          case '}':
             token = BCT_EOB;
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          case '"':
             lf->state = lex_quoted_string;
-            begin_str(lf, 0);
+            BeginStr(lf, 0);
             break;
          case '=':
             token = BCT_EQUALS;
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          case ',':
             token = BCT_COMMA;
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          case ';':
             if (expect != BCT_SKIP_EOL) {
@@ -618,10 +618,10 @@ int LexGetToken(LEX *lf, int expect)
             /* In NO_EXTERN mode, @ is part of a string */
             if (lf->options & LOPT_NO_EXTERN) {
                lf->state = lex_string;
-               begin_str(lf, ch);
+               BeginStr(lf, ch);
             } else {
                lf->state = lex_include;
-               begin_str(lf, 0);
+               BeginStr(lf, 0);
             }
             break;
          case 0xEF: /* probably a UTF-8 BOM */
@@ -630,7 +630,7 @@ int LexGetToken(LEX *lf, int expect)
             if (lf->line_no != 1 || lf->col_no != 1)
             {
                lf->state = lex_string;
-               begin_str(lf, ch);
+               BeginStr(lf, ch);
             } else {
                bom_bytes_seen = 1;
                if (ch == 0xEF) {
@@ -646,7 +646,7 @@ int LexGetToken(LEX *lf, int expect)
             break;
          default:
             lf->state = lex_string;
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          }
          break;
@@ -720,7 +720,7 @@ int LexGetToken(LEX *lf, int expect)
          } else if (ch == L_EOF) {
             token = BCT_ERROR;
             lf->state = lex_none;
-            begin_str(lf, ch);
+            BeginStr(lf, ch);
             break;
          }
          /* Some non-alpha character => string */
@@ -882,7 +882,7 @@ int LexGetToken(LEX *lf, int expect)
             token = BCT_ERROR;
             break;
          }
-         *p++ = 0;                       /* terminate first half of range */
+         *p++ = 0;                       /* Terminate first half of range */
          lf->u.pint32_val  = scan_pint(lf, lf->str);
          lf->u2.pint32_val = scan_pint(lf, p);
          token = BCT_PINT32_RANGE;
@@ -957,7 +957,7 @@ int LexGetToken(LEX *lf, int expect)
             token = BCT_ERROR;
             break;
          }
-         *p++ = 0;                       /* terminate first half of range */
+         *p++ = 0;                       /* Terminate first half of range */
          lf->u.pint64_val  = scan_pint64(lf, lf->str);
          lf->u2.pint64_val = scan_pint64(lf, p);
          token = BCT_PINT64_RANGE;

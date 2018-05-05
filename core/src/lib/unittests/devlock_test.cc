@@ -34,7 +34,7 @@
 
 #ifndef TEST_RW_TRY_LOCK
 #ifndef TEST_RWLOCK
-void test_devlock(void **state) {
+void TestDevlock(void **state) {
    (void) state; /* unused */
 }
 #endif
@@ -89,7 +89,7 @@ void *thread_routine(void *arg)
        * lock).
        */
 //      if ((iteration % self->interval) == 0) {
-         status = writelock(&data[element].lock);
+         status = Writelock(&data[element].lock);
          if (status != 0) {
             berrno be;
             printf("Write lock failed. ERR=%s\n", be.bstrerror(status));
@@ -98,7 +98,7 @@ void *thread_routine(void *arg)
          data[element].data = self->thread_num;
          data[element].writes++;
          self->writes++;
-         status = writelock(&data[element].lock);
+         status = Writelock(&data[element].lock);
          if (status != 0) {
             berrno be;
             printf("Write lock failed. ERR=%s\n", be.bstrerror(status));
@@ -156,7 +156,7 @@ void *thread_routine(void *arg)
    return NULL;
 }
 
-void test_devlock(void **state) {
+void TestDevlock(void **state) {
 //int main (int argc, char *argv[])
 //{
     int count;
@@ -332,7 +332,7 @@ void *thread_routine (void *arg)
     return NULL;
 }
 
-void test_devlock(void **state) {
+void TestDevlock(void **state) {
 //int main (int argc, char *argv[])
 //{
     int count, data_count;

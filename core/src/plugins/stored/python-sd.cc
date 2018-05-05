@@ -350,7 +350,7 @@ bail_out:
 /**
  * Strip any backslashes in the string.
  */
-static inline void strip_back_slashes(char *value)
+static inline void StripBackSlashes(char *value)
 {
    char *bp;
 
@@ -379,10 +379,10 @@ static inline int64_t parse_integer(const char *argument_value)
 /**
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
-static inline bool parse_boolean(const char *argument_value)
+static inline bool ParseBoolean(const char *argument_value)
 {
-   if (bstrcasecmp(argument_value, "yes") ||
-       bstrcasecmp(argument_value, "true")) {
+   if (Bstrcasecmp(argument_value, "yes") ||
+       Bstrcasecmp(argument_value, "true")) {
       return true;
    } else {
       return false;
@@ -399,7 +399,7 @@ static inline void SetString(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
-   strip_back_slashes(*destination);
+   StripBackSlashes(*destination);
 }
 
 /**
@@ -479,7 +479,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
 
       found = false;
       for (i = 0; plugin_arguments[i].name; i++) {
-         if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+         if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
             int64_t *int_destination = NULL;
             char **str_destination = NULL;
             bool *bool_destination = NULL;
@@ -507,7 +507,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
             }
 
             if (bool_destination) {
-               *bool_destination = parse_boolean(argument_value);
+               *bool_destination = ParseBoolean(argument_value);
             }
 
             /*

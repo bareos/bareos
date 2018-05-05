@@ -55,7 +55,7 @@ struct TlsConnection {
    gnutls_session_t gnutls_state;
 };
 
-static inline bool load_dhfile_data(TLS_CONTEXT *ctx, const char *dhfile)
+static inline bool LoadDhfileData(TLS_CONTEXT *ctx, const char *dhfile)
 {
    FILE *fp;
    int error;
@@ -216,7 +216,7 @@ TLS_CONTEXT *new_tls_context(const char *CaCertfile,
    }
 
    if (dhfile) {
-      if (!load_dhfile_data(ctx, dhfile)) {
+      if (!LoadDhfileData(ctx, dhfile)) {
          Jmsg1(NULL, M_ERROR, 0,
                _("Failed to load DH file %s\n"),
                dhfile);
@@ -254,31 +254,31 @@ void FreeTlsContext(TLS_CONTEXT *ctx)
    free(ctx);
 }
 
-bool get_tls_require(TLS_CONTEXT *ctx)
+bool GetTlsRequire(TLS_CONTEXT *ctx)
 {
    return (ctx) ? ctx->tls_require : false;
 }
 
-void set_tls_require(TLS_CONTEXT *ctx, bool value)
+void SetTlsRequire(TLS_CONTEXT *ctx, bool value)
 {
    if (ctx) {
       ctx->tls_require = value;
    }
 }
 
-bool get_tls_enable(TLS_CONTEXT *ctx)
+bool GetTlsEnable(TLS_CONTEXT *ctx)
 {
    return (ctx) ? ctx->tls_enable : false;
 }
 
-void set_tls_enable(TLS_CONTEXT *ctx, bool value)
+void SetTlsEnable(TLS_CONTEXT *ctx, bool value)
 {
    if (ctx) {
       ctx->tls_enable = value;
    }
 }
 
-bool get_tls_verify_peer(TLS_CONTEXT *ctx)
+bool GetTlsVerifyPeer(TLS_CONTEXT *ctx)
 {
    return (ctx) ? ctx->VerifyPeer : false;
 }
@@ -286,7 +286,7 @@ bool get_tls_verify_peer(TLS_CONTEXT *ctx)
 /*
  * Certs are not automatically verified during the handshake.
  */
-static inline bool tls_cert_verify(TLS_CONNECTION *tls_conn)
+static inline bool TlsCertVerify(TLS_CONNECTION *tls_conn)
 {
    unsigned int status = 0;
    int error;
@@ -337,7 +337,7 @@ static inline bool tls_cert_verify(TLS_CONNECTION *tls_conn)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    char *cn;
    int error, cnt;
@@ -384,7 +384,7 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
       }
 
       /*
-       * NULL terminate data.
+       * NULL Terminate data.
        */
       cannonicalname[255] = '\0';
 
@@ -394,7 +394,7 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
        */
       foreach_alist(cn, verify_list) {
          Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", cannonicalname, cn);
-         if (bstrcasecmp(cn, cannonicalname)) {
+         if (Bstrcasecmp(cn, cannonicalname)) {
             auth_success = true;
             break;
          }
@@ -416,7 +416,7 @@ bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, 
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    int error;
    unsigned int list_size;
@@ -545,7 +545,7 @@ void FreeTlsConnection(TLS_CONNECTION *tls_conn)
    free(tls_conn);
 }
 
-static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
+static inline bool GnutlsBsockSessionStart(BareosSocket *bsock, bool server)
 {
    int flags, error;
    bool status = true;
@@ -597,7 +597,7 @@ static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
       }
 
       if (tls_conn->ctx->VerifyPeer) {
-         if (!tls_cert_verify(tls_conn)) {
+         if (!TlsCertVerify(tls_conn)) {
             status = false;
             goto cleanup;
          }
@@ -620,9 +620,9 @@ cleanup:
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_connect(BareosSocket *bsock)
+bool TlsBsockConnect(BareosSocket *bsock)
 {
-   return gnutls_bsock_session_start(bsock, false);
+   return GnutlsBsockSessionStart(bsock, false);
 }
 
 /*
@@ -630,9 +630,9 @@ bool tls_bsock_connect(BareosSocket *bsock)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_accept(BareosSocket *bsock)
+bool TlsBsockAccept(BareosSocket *bsock)
 {
-   return gnutls_bsock_session_start(bsock, true);
+   return GnutlsBsockSessionStart(bsock, true);
 }
 
 void TlsBsockShutdown(BareosSocket *bsock)
@@ -643,7 +643,7 @@ void TlsBsockShutdown(BareosSocket *bsock)
 }
 
 /* Does all the manual labor for TlsBsockReadn() and TlsBsockWriten() */
-static inline int gnutls_bsock_readwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
+static inline int GnutlsBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
    TLS_CONNECTION *tls_conn = bsock->tls_conn;
    int error;
@@ -722,11 +722,11 @@ cleanup:
 
 int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
-   return gnutls_bsock_readwrite(bsock, ptr, nbytes, true);
+   return GnutlsBsockReadwrite(bsock, ptr, nbytes, true);
 }
 
 int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
-   return gnutls_bsock_readwrite(bsock, ptr, nbytes, false);
+   return GnutlsBsockReadwrite(bsock, ptr, nbytes, false);
 }
 #endif /* HAVE_TLS && HAVE_GNUTLS */

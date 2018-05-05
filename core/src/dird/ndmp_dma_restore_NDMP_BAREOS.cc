@@ -265,7 +265,7 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
    /*
     * Lookup the environment stack saved during the backup so we can restore it.
     */
-   if (!jcr->db->GetNdmpEnvironmentString(jcr, &jcr->jr, ndmp_env_handler, &job->env_tab)) {
+   if (!jcr->db->GetNdmpEnvironmentString(jcr, &jcr->jr, NdmpEnvHandler, &job->env_tab)) {
       /*
        * Fallback code try to build a environment stack that is good enough to
        * restore this NDMP backup. This is used when the data is not available in
@@ -324,7 +324,7 @@ static inline bool fill_restore_environment(JobControlRecord *jcr,
          /*
           * See if the original path matches.
           */
-         if (bstrcasecmp(item, ndmp_filesystem)) {
+         if (Bstrcasecmp(item, ndmp_filesystem)) {
             int k, l;
             FileOptions *fo;
 
@@ -439,7 +439,7 @@ bool DoNdmpRestoreInit(JobControlRecord *jcr)
    return true;
 }
 
-static inline int ndmp_wait_for_job_termination(JobControlRecord *jcr)
+static inline int NdmpWaitForJobTermination(JobControlRecord *jcr)
 {
    jcr->setJobStatus(JS_Running);
 
@@ -481,7 +481,7 @@ static inline int ndmp_wait_for_job_termination(JobControlRecord *jcr)
  * restore.  E.g. your Full is stored on tape, and Incrementals
  * on disk.
  */
-static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
+static inline bool DoNdmpRestoreBootstrap(JobControlRecord *jcr)
 {
    int cnt;
    BareosSocket *sd;
@@ -683,7 +683,7 @@ static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
 
             ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
             memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-            ndmp_sess.param->log.deliver = ndmp_loghandler;
+            ndmp_sess.param->log.deliver = NdmpLoghandler;
             ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
             nis->jcr = jcr;
             ndmp_sess.param->log.ctx = nis;
@@ -850,7 +850,7 @@ bail_out:
 /**
  * Run a NDMP restore session.
  */
-bool do_ndmp_restore(JobControlRecord *jcr)
+bool DoNdmpRestore(JobControlRecord *jcr)
 {
    JobDbRecord rjr;                       /* restore job record */
    int status;
@@ -887,14 +887,14 @@ bool do_ndmp_restore(JobControlRecord *jcr)
    /*
     * Read the bootstrap file and do the restore
     */
-   if (!do_ndmp_restore_bootstrap(jcr)) {
+   if (!DoNdmpRestoreBootstrap(jcr)) {
       goto bail_out;
    }
 
    /*
     * Wait for Job Termination
     */
-   status = ndmp_wait_for_job_termination(jcr);
+   status = NdmpWaitForJobTermination(jcr);
    NdmpRestoreCleanup(jcr, status);
    return true;
 
@@ -910,13 +910,13 @@ bool DoNdmpRestoreInit(JobControlRecord *jcr)
    return false;
 }
 
-bool do_ndmp_restore(JobControlRecord *jcr)
+bool DoNdmpRestore(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
+bool DoNdmpRestoreNdmpNative(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

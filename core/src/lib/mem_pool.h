@@ -47,9 +47,9 @@ DLL_IMP_EXP POOLMEM *sm_realloc_pool_memory(const char *fname, int line, POOLMEM
 #define CheckPoolMemorySize(buf,size) sm_check_pool_memory_size(__FILE__, __LINE__, buf, size)
 DLL_IMP_EXP POOLMEM *sm_check_pool_memory_size(const char *fname, int line, POOLMEM *buf, int32_t size);
 
-#define FreePoolMemory(x) sm_free_pool_memory(__FILE__, __LINE__, x)
-#define FreeMemory(x) sm_free_pool_memory(__FILE__, __LINE__, x)
-DLL_IMP_EXP void sm_free_pool_memory(const char *fname, int line, POOLMEM *buf);
+#define FreePoolMemory(x) SmFreePoolMemory(__FILE__, __LINE__, x)
+#define FreeMemory(x) SmFreePoolMemory(__FILE__, __LINE__, x)
+DLL_IMP_EXP void SmFreePoolMemory(const char *fname, int line, POOLMEM *buf);
 
 #else
 
@@ -109,7 +109,7 @@ public:
    void toLower();
    size_t strlen() { return ::strlen(mem); }
    int bsprintf(const char *fmt, ...);
-   int bvsprintf(const char *fmt, va_list arg_ptr);
+   int Bvsprintf(const char *fmt, va_list arg_ptr);
 };
 
 DLL_IMP_EXP int PmStrcat(POOLMEM *&pm, const char *str);

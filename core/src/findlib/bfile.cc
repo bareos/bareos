@@ -54,9 +54,9 @@ void PauseMsg(const char *file, const char *func, int line, const char *msg)
 {
    char buf[1000];
    if (msg) {
-      bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
+      Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
    } else {
-      bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
+      Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
    }
    MessageBox(NULL, buf, "Pause", MB_OK);
 }
@@ -497,7 +497,7 @@ HANDLE BgetHandle(BareosWinFilePacket *bfd)
 #define OVERWRITE_HIDDEN 4
 #endif
 
-static inline int bopen_encrypted(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode)
+static inline int BopenEncrypted(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode)
 {
    bool is_dir;
    ULONG ulFlags = 0;
@@ -567,7 +567,7 @@ static inline int bopen_encrypted(BareosWinFilePacket *bfd, const char *fname, i
    return bfd->mode == BF_CLOSED ? -1 : 1;
 }
 
-static inline int bopen_nonencrypted(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode)
+static inline int BopenNonencrypted(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode)
 {
    POOLMEM *win32_fname;
    POOLMEM *win32_fname_wchar;
@@ -776,9 +776,9 @@ int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, d
     * For that we need some special handling.
     */
    if (rdev & FILE_ATTRIBUTE_ENCRYPTED) {
-      return bopen_encrypted(bfd, fname, flags, mode);
+      return BopenEncrypted(bfd, fname, flags, mode);
    } else {
-      return bopen_nonencrypted(bfd, fname, flags, mode);
+      return BopenNonencrypted(bfd, fname, flags, mode);
    }
 }
 
@@ -786,7 +786,7 @@ int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, d
  * Returns  0 on success
  *         -1 on error
  */
-static inline int bclose_encrypted(BareosWinFilePacket *bfd)
+static inline int BcloseEncrypted(BareosWinFilePacket *bfd)
 {
    if (bfd->mode == BF_CLOSED) {
       Dmsg0(50, "=== BFD already closed.\n");
@@ -809,7 +809,7 @@ static inline int bclose_encrypted(BareosWinFilePacket *bfd)
  * Returns  0 on success
  *         -1 on error
  */
-static inline int bclose_nonencrypted(BareosWinFilePacket *bfd)
+static inline int BcloseNonencrypted(BareosWinFilePacket *bfd)
 {
    int status = 0;
 
@@ -878,9 +878,9 @@ all_done:
 int bclose(BareosWinFilePacket *bfd)
 {
    if (bfd->encrypted) {
-      return bclose_encrypted(bfd);
+      return BcloseEncrypted(bfd);
    } else {
-      return bclose_nonencrypted(bfd);
+      return BcloseNonencrypted(bfd);
    }
 }
 

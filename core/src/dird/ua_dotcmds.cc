@@ -59,7 +59,7 @@ extern bool quit_cmd(UaContext *ua, const char *cmd);
 #endif
 
 /* ua_output.c */
-extern void do_messages(UaContext *ua, const char *cmd);
+extern void DoMessages(UaContext *ua, const char *cmd);
 
 struct authorization_mapping {
    const char *type;
@@ -78,14 +78,14 @@ static authorization_mapping authorization_mappings[] = {
    { NULL, 0 },
 };
 
-bool dot_authorized_cmd(UaContext *ua, const char *cmd)
+bool DotAuthorizedCmd(UaContext *ua, const char *cmd)
 {
    bool retval = false;
 
    for (int i = 1; i < ua->argc; i++) {
       for (int j = 0; authorization_mappings[j].type; j++) {
-         if (bstrcasecmp(ua->argk[i], authorization_mappings[j].type)) {
-            if (ua->argv[i] && ua->acl_access_ok(authorization_mappings[j].acl_type, ua->argv[i], false)) {
+         if (Bstrcasecmp(ua->argk[i], authorization_mappings[j].type)) {
+            if (ua->argv[i] && ua->AclAccessOk(authorization_mappings[j].acl_type, ua->argv[i], false)) {
                retval = true;
             } else {
                retval = false;
@@ -105,7 +105,7 @@ bool dot_authorized_cmd(UaContext *ua, const char *cmd)
    return retval;
 }
 
-bool dot_bvfs_update_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsUpdateCmd(UaContext *ua, const char *cmd)
 {
    int pos;
 
@@ -125,7 +125,7 @@ bool dot_bvfs_update_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_bvfs_clear_cache_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsClearCacheCmd(UaContext *ua, const char *cmd)
 {
    if (!OpenClientDb(ua, true)) {
       return 1;
@@ -143,7 +143,7 @@ bool dot_bvfs_clear_cache_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static int bvfs_stat(UaContext *ua, char *lstat, int32_t *LinkFI)
+static int BvfsStat(UaContext *ua, char *lstat, int32_t *LinkFI)
 {
    struct stat statp;
    char en1[30], en2[30];
@@ -168,7 +168,7 @@ static int bvfs_stat(UaContext *ua, char *lstat, int32_t *LinkFI)
    return 0;
 }
 
-static int bvfs_result_handler(void *ctx, int fields, char **row)
+static int BvfsResultHandler(void *ctx, int fields, char **row)
 {
    UaContext *ua = (UaContext *)ctx;
    char *fileid=row[BVFS_FileId];
@@ -200,7 +200,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->ObjectKeyValue("lstat", lstat, "%s\t");
       ua->send->ObjectKeyValue("Name", path, "%s\n");
       ua->send->ObjectKeyValue("Fullpath", row[BVFS_Name]);
-      bvfs_stat(ua, lstat, &LinkFI);
+      BvfsStat(ua, lstat, &LinkFI);
       ua->send->ObjectKeyValue("LinkFileIndex", LinkFI);
       ua->send->ObjectEnd();
   } else if (BvfsIsVersion(row)) {
@@ -213,7 +213,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->ObjectKeyValue("MD5", row[BVFS_Md5], "%s\t");
       ua->send->ObjectKeyValue("VolumeName", row[BVFS_VolName], "%s\t");
       ua->send->ObjectKeyValue("VolumeInChanger", str_to_uint64(row[BVFS_VolInchanger]), "%lld\n");
-      bvfs_stat(ua, lstat, &LinkFI);
+      BvfsStat(ua, lstat, &LinkFI);
       ua->send->ObjectEnd();
    } else if (BvfsIsFile(row)) {
       ua->send->ObjectStart();
@@ -223,7 +223,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->ObjectKeyValue("JobId", str_to_uint64(jobid), "%lld\t");
       ua->send->ObjectKeyValue("lstat", lstat, "%s\t");
       ua->send->ObjectKeyValue("Name", row[BVFS_Name], "%s\n");
-      bvfs_stat(ua, lstat, &LinkFI);
+      BvfsStat(ua, lstat, &LinkFI);
       ua->send->ObjectKeyValue("LinkFileIndex", LinkFI);
       ua->send->ObjectEnd();
    }
@@ -231,7 +231,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    return 0;
 }
 
-static inline bool bvfs_parse_arg_version(UaContext *ua, char **client, char **fname, bool *versions, bool *copies)
+static inline bool BvfsParseArgVersion(UaContext *ua, char **client, char **fname, bool *versions, bool *copies)
 {
    *fname = NULL;
    *client = NULL;
@@ -239,21 +239,21 @@ static inline bool bvfs_parse_arg_version(UaContext *ua, char **client, char **f
    *copies = false;
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("name")) ||
-          bstrcasecmp(ua->argk[i], NT_("fname")) ||
-          bstrcasecmp(ua->argk[i], NT_("filename"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("name")) ||
+          Bstrcasecmp(ua->argk[i], NT_("fname")) ||
+          Bstrcasecmp(ua->argk[i], NT_("filename"))) {
          *fname = ua->argv[i];
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("client"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("client"))) {
          *client = ua->argv[i];
       }
 
-      if (copies && bstrcasecmp(ua->argk[i], NT_("copies"))) {
+      if (copies && Bstrcasecmp(ua->argk[i], NT_("copies"))) {
          *copies = true;
       }
 
-      if (versions && bstrcasecmp(ua->argk[i], NT_("versions"))) {
+      if (versions && Bstrcasecmp(ua->argk[i], NT_("versions"))) {
          *versions = true;
       }
    }
@@ -261,7 +261,7 @@ static inline bool bvfs_parse_arg_version(UaContext *ua, char **client, char **f
    return (*client && *fname);
 }
 
-static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jobid, int *limit, int *offset)
+static bool BvfsParseArg(UaContext *ua, DBId_t *pathid, char **path, char **jobid, int *limit, int *offset)
 {
    *pathid = 0;
    *limit = 2000;
@@ -270,29 +270,29 @@ static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jo
    *jobid = NULL;
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("pathid"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("pathid"))) {
          if (ua->argv[i] && Is_a_number(ua->argv[i])) {
             *pathid = str_to_int64(ua->argv[i]);
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("path"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("path"))) {
          *path = ua->argv[i];
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
          if (ua->argv[i] && Is_a_number_list(ua->argv[i])) {
             *jobid = ua->argv[i];
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("limit"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("limit"))) {
          if (ua->argv[i] && Is_a_number(ua->argv[i])) {
             *limit = str_to_int64(ua->argv[i]);
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("offset"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("offset"))) {
          if (ua->argv[i] && Is_a_number(ua->argv[i])) {
             *offset = str_to_int64(ua->argv[i]);
          }
@@ -315,7 +315,7 @@ static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jo
  * ACLs e.g. comparing the JobName against the Job_ACL and the client
  * against the Client_ACL.
  */
-static inline bool bvfs_validate_jobid(UaContext *ua, const char *jobid, bool audit_event)
+static inline bool BvfsValidateJobid(UaContext *ua, const char *jobid, bool audit_event)
 {
    JobDbRecord jr;
    ClientDbRecord cr;
@@ -325,14 +325,14 @@ static inline bool bvfs_validate_jobid(UaContext *ua, const char *jobid, bool au
    jr.JobId = str_to_int64(jobid);
 
    if (ua->db->GetJobRecord(ua->jcr, &jr)) {
-      if (!ua->acl_access_ok(Job_ACL, jr.Name, audit_event)) {
+      if (!ua->AclAccessOk(Job_ACL, jr.Name, audit_event)) {
          goto bail_out;
       }
 
       if (jr.ClientId) {
          cr.ClientId = jr.ClientId;
          if (ua->db->GetClientRecord(ua->jcr, &cr)) {
-            if (!ua->acl_access_ok(Client_ACL, cr.Name, audit_event)) {
+            if (!ua->AclAccessOk(Client_ACL, cr.Name, audit_event)) {
                goto bail_out;
             }
          }
@@ -347,9 +347,9 @@ bail_out:
 
 /**
  * This returns in filtered_jobids the list of allowed jobids in the
- * jobids variable under the current ACLs e.g. using bvfs_validate_jobid().
+ * jobids variable under the current ACLs e.g. using BvfsValidateJobid().
  */
-static bool bvfs_validate_jobids(UaContext *ua, const char *jobids, PoolMem &filtered_jobids, bool audit_event)
+static bool BvfsValidateJobids(UaContext *ua, const char *jobids, PoolMem &filtered_jobids, bool audit_event)
 {
    int cnt = 0;
    char *cur_id, *bp;
@@ -368,7 +368,7 @@ static bool bvfs_validate_jobids(UaContext *ua, const char *jobids, PoolMem &fil
       /*
        * See if this JobId is allowed under the current ACLs.
        */
-      if (bvfs_validate_jobid(ua, cur_id, audit_event)) {
+      if (BvfsValidateJobid(ua, cur_id, audit_event)) {
          if (!cnt) {
             PmStrcpy(filtered_jobids, cur_id);
          } else {
@@ -389,7 +389,7 @@ static bool bvfs_validate_jobids(UaContext *ua, const char *jobids, PoolMem &fil
 /**
  * .bvfs_cleanup path=b2XXXXX
  */
-bool dot_bvfs_cleanup_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsCleanupCmd(UaContext *ua, const char *cmd)
 {
    int i;
 
@@ -403,7 +403,7 @@ bool dot_bvfs_cleanup_cmd(UaContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
-   fs.drop_restore_list(ua->argv[i]);
+   fs.DropRestoreList(ua->argv[i]);
 
    return true;
 }
@@ -411,7 +411,7 @@ bool dot_bvfs_cleanup_cmd(UaContext *ua, const char *cmd)
 /**
  * .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
  */
-bool dot_bvfs_restore_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsRestoreCmd(UaContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    char *empty = (char *)"";
@@ -422,18 +422,18 @@ bool dot_bvfs_restore_cmd(UaContext *ua, const char *cmd)
    PoolMem filtered_jobids(PM_FNAME);
 
    fileid = dirid = hardlink = empty;
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
+   if (!BvfsParseArg(ua, &pathid, &path, &jobid, &limit, &offset)) {
       ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
-   if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
+   if (!BvfsValidateJobids(ua, jobid, filtered_jobids, true)) {
       ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
 
    Bvfs fs(ua->jcr, ua->db);
-   fs.set_jobids(filtered_jobids.c_str());
+   fs.SetJobids(filtered_jobids.c_str());
 
    if ((i = FindArgWithValue(ua, "fileid")) >= 0) {
       fileid = ua->argv[i];
@@ -458,7 +458,7 @@ bool dot_bvfs_restore_cmd(UaContext *ua, const char *cmd)
  * .bvfs_lsfiles jobid=1,2,3,4 path=/
  * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  */
-bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsLsfilesCmd(UaContext *ua, const char *cmd)
 {
    int i;
    DBId_t pathid = 0;
@@ -467,12 +467,12 @@ bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
    char *path = NULL, *jobid = NULL;
    PoolMem filtered_jobids(PM_FNAME);
 
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
+   if (!BvfsParseArg(ua, &pathid, &path, &jobid, &limit, &offset)) {
       ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
-   if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
+   if (!BvfsValidateJobids(ua, jobid, filtered_jobids, true)) {
       ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
@@ -486,11 +486,11 @@ bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
-   fs.set_jobids(filtered_jobids.c_str());
-   fs.set_handler(bvfs_result_handler, ua);
-   fs.set_limit(limit);
+   fs.SetJobids(filtered_jobids.c_str());
+   fs.SetHandler(BvfsResultHandler, ua);
+   fs.SetLimit(limit);
    if (pattern) {
-      fs.set_pattern(pattern);
+      fs.SetPattern(pattern);
    }
    if (pathid) {
       fs.ChDir(pathid);
@@ -498,7 +498,7 @@ bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
       fs.ChDir(path);
    }
 
-   fs.set_offset(offset);
+   fs.SetOffset(offset);
 
    ua->send->ArrayStart("files");
    fs.ls_files();
@@ -512,19 +512,19 @@ bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
  * .bvfs_lsdirs jobid=1,2,3,4 path=/
  * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
  */
-bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsLsdirsCmd(UaContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    int limit = 2000, offset = 0;
    char *path = NULL, *jobid = NULL;
    PoolMem filtered_jobids(PM_FNAME);
 
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
+   if (!BvfsParseArg(ua, &pathid, &path, &jobid, &limit, &offset)) {
       ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return true;              /* not enough param */
    }
 
-   if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
+   if (!BvfsValidateJobids(ua, jobid, filtered_jobids, true)) {
       ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
@@ -534,7 +534,7 @@ bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
-   fs.set_jobids(filtered_jobids.c_str());
+   fs.SetJobids(filtered_jobids.c_str());
 
    if (pathid) {
       fs.ChDir(pathid);
@@ -545,9 +545,9 @@ bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
       }
    }
 
-   fs.set_handler(bvfs_result_handler, ua);
-   fs.set_offset(offset);
-   fs.set_limit(limit);
+   fs.SetHandler(BvfsResultHandler, ua);
+   fs.SetOffset(offset);
+   fs.SetLimit(limit);
 
    ua->send->ArrayStart("directories");
    fs.ls_dirs();
@@ -562,24 +562,24 @@ bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
  * jobid isn't used.
  * versions is set, but not used.
  */
-bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsVersionsCmd(UaContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    int limit = 2000, offset = 0;
    char *path = NULL, *jobid = NULL, *client = NULL, *fname = NULL;
    bool copies = false, versions = false;
 
-   if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
+   if (!BvfsParseArg(ua, &pathid, &path, &jobid, &limit, &offset)) {
       ua->ErrorMsg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
-   if (!bvfs_parse_arg_version(ua, &client, &fname, &versions, &copies)) {
+   if (!BvfsParseArgVersion(ua, &client, &fname, &versions, &copies)) {
       ua->ErrorMsg("Can't find client or fname argument\n");
       return false;              /* not enough param */
    }
 
-   if (!ua->acl_access_ok(Client_ACL, client)) {
+   if (!ua->AclAccessOk(Client_ACL, client)) {
       ua->ErrorMsg(_("Unauthorized command from this console.\n"));
       return false;
    }
@@ -589,11 +589,11 @@ bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
-   fs.set_see_all_versions(versions);
-   fs.set_see_copies(copies);
-   fs.set_handler(bvfs_result_handler, ua);
-   fs.set_limit(limit);
-   fs.set_offset(offset);
+   fs.SetSeeAllVersions(versions);
+   fs.SetSeeCopies(copies);
+   fs.SetHandler(BvfsResultHandler, ua);
+   fs.SetLimit(limit);
+   fs.SetOffset(offset);
    ua->send->ArrayStart("versions");
    if (pathid) {
       fs.GetAllFileVersions(pathid, fname, client);
@@ -613,7 +613,7 @@ bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd)
  * .bvfs_get_jobids ujobid=JobName
  *  -> returns needed jobids to restore
  */
-bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
+bool DotBvfsGetJobidsCmd(UaContext *ua, const char *cmd)
 {
    int pos;
    JobDbRecord jr;
@@ -682,7 +682,7 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
          /*
           * Make sure the FileSet is allowed under the current ACLs.
           */
-         if (!ua->acl_access_ok(FileSet_ACL, fs.FileSet, false)) {
+         if (!ua->AclAccessOk(FileSet_ACL, fs.FileSet, false)) {
             continue;
          }
 
@@ -697,7 +697,7 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
       }
    }
 
-   bvfs_validate_jobids(ua, jobids.list, filtered_jobids, false);
+   BvfsValidateJobids(ua, jobids.list, filtered_jobids, false);
    switch (ua->api) {
    case API_MODE_JSON: {
       char *cur_id, *bp;
@@ -727,16 +727,16 @@ bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_getmsgs_cmd(UaContext *ua, const char *cmd)
+bool DotGetmsgsCmd(UaContext *ua, const char *cmd)
 {
    if (console_msg_pending) {
-      do_messages(ua, cmd);
+      DoMessages(ua, cmd);
    }
    return 1;
 }
 
 #ifdef DEVELOPER
-static void do_storage_cmd(UaContext *ua, StorageResource *store, const char *cmd)
+static void DoStorageCmd(UaContext *ua, StorageResource *store, const char *cmd)
 {
    BareosSocket *sd;
    JobControlRecord *jcr = ua->jcr;
@@ -762,7 +762,7 @@ static void do_storage_cmd(UaContext *ua, StorageResource *store, const char *cm
    return;
 }
 
-static void do_client_cmd(UaContext *ua, ClientResource *client, const char *cmd)
+static void DoClientCmd(UaContext *ua, ClientResource *client, const char *cmd)
 {
    BareosSocket *fd;
 
@@ -793,7 +793,7 @@ static void do_client_cmd(UaContext *ua, ClientResource *client, const char *cmd
  * .dump (sm_dump)
  * .exit (no arg => .quit)
  */
-bool dot_admin_cmds(UaContext *ua, const char *cmd)
+bool DotAdminCmds(UaContext *ua, const char *cmd)
 {
    int i, a;
    JobControlRecord *jcr = NULL;
@@ -827,12 +827,12 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
     * General debug?
     */
    for (i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], "dir") ||
-          bstrcasecmp(ua->argk[i], "director")) {
+      if (Bstrcasecmp(ua->argk[i], "dir") ||
+          Bstrcasecmp(ua->argk[i], "director")) {
          dir = true;
       }
-      if (bstrcasecmp(ua->argk[i], "client") ||
-          bstrcasecmp(ua->argk[i], "fd")) {
+      if (Bstrcasecmp(ua->argk[i], "client") ||
+          Bstrcasecmp(ua->argk[i], "fd")) {
          client = NULL;
          if (ua->argv[i]) {
             client = ua->GetClientResWithName(ua->argv[i]);
@@ -842,9 +842,9 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
          }
       }
 
-      if (bstrcasecmp(ua->argk[i], NT_("store")) ||
-          bstrcasecmp(ua->argk[i], NT_("storage")) ||
-          bstrcasecmp(ua->argk[i], NT_("sd"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("store")) ||
+          Bstrcasecmp(ua->argk[i], NT_("storage")) ||
+          Bstrcasecmp(ua->argk[i], NT_("sd"))) {
          store = NULL;
          if (ua->argv[i]) {
             store = ua->GetStoreResWithName(ua->argv[i]);
@@ -887,13 +887,13 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
          ua->WarningMsg(_("Storage has non-native protocol.\n"));
          break;
       default:
-         do_storage_cmd(ua, store, remote_cmd);
+         DoStorageCmd(ua, store, remote_cmd);
          break;
       }
    }
 
    if (client) {
-      do_client_cmd(ua, client, remote_cmd);
+      DoClientCmd(ua, client, remote_cmd);
    }
 
    if (dir) {
@@ -929,21 +929,21 @@ bool dot_admin_cmds(UaContext *ua, const char *cmd)
 /**
  * Dummy routine for non-development version
  */
-bool dot_admin_cmds(UaContext *ua, const char *cmd)
+bool DotAdminCmds(UaContext *ua, const char *cmd)
 {
    ua->ErrorMsg(_("Unknown command: %s\n"), ua->argk[0]);
    return true;
 }
 #endif
 
-bool dot_jobdefs_cmd(UaContext *ua, const char *cmd)
+bool DotJobdefsCmd(UaContext *ua, const char *cmd)
 {
    JobResource *jobdefs;
 
    LockRes();
    ua->send->ArrayStart("jobdefs");
    foreach_res(jobdefs, R_JOBDEFS) {
-      if (ua->acl_access_ok(Job_ACL, jobdefs->name())) {
+      if (ua->AclAccessOk(Job_ACL, jobdefs->name())) {
          ua->send->ObjectStart();
          ua->send->ObjectKeyValue("name", jobdefs->name(), "%s\n");
          ua->send->ObjectEnd();
@@ -959,7 +959,7 @@ bool dot_jobdefs_cmd(UaContext *ua, const char *cmd)
  * Can use an argument to filter on JobType
  * .jobs [type=B]
  */
-bool dot_jobs_cmd(UaContext *ua, const char *cmd)
+bool DotJobsCmd(UaContext *ua, const char *cmd)
 {
    int pos;
    JobResource *job;
@@ -978,7 +978,7 @@ bool dot_jobs_cmd(UaContext *ua, const char *cmd)
    ua->send->ArrayStart("jobs");
    foreach_res(job, R_JOB) {
       if (!type || type == job->JobType) {
-         if (ua->acl_access_ok(Job_ACL, job->name())) {
+         if (ua->AclAccessOk(Job_ACL, job->name())) {
             if (enabled && !job->enabled) {
                continue;
             }
@@ -999,7 +999,7 @@ bool dot_jobs_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_jobstatus_cmd(UaContext *ua, const char *cmd)
+bool DotJobstatusCmd(UaContext *ua, const char *cmd)
 {
    bool retval = false;
    PoolMem select;
@@ -1027,14 +1027,14 @@ bool dot_jobstatus_cmd(UaContext *ua, const char *cmd)
    return retval;
 }
 
-bool dot_filesets_cmd(UaContext *ua, const char *cmd)
+bool DotFilesetsCmd(UaContext *ua, const char *cmd)
 {
    FilesetResource *fs;
 
    LockRes();
    ua->send->ArrayStart("filesets");
    foreach_res(fs, R_FILESET) {
-      if (ua->acl_access_ok(FileSet_ACL, fs->name())) {
+      if (ua->AclAccessOk(FileSet_ACL, fs->name())) {
          ua->send->ObjectStart();
          ua->send->ObjectKeyValue("name", fs->name(), "%s\n");
          ua->send->ObjectEnd();
@@ -1046,14 +1046,14 @@ bool dot_filesets_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_catalogs_cmd(UaContext *ua, const char *cmd)
+bool DotCatalogsCmd(UaContext *ua, const char *cmd)
 {
    CatalogResource *cat;
 
    LockRes();
    ua->send->ArrayStart("catalogs");
    foreach_res(cat, R_CATALOG) {
-      if (ua->acl_access_ok(Catalog_ACL, cat->name())) {
+      if (ua->AclAccessOk(Catalog_ACL, cat->name())) {
          ua->send->ObjectStart();
          ua->send->ObjectKeyValue("name", cat->name(), "%s\n");
          ua->send->ObjectEnd();
@@ -1065,7 +1065,7 @@ bool dot_catalogs_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_clients_cmd(UaContext *ua, const char *cmd)
+bool DotClientsCmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
@@ -1077,7 +1077,7 @@ bool dot_clients_cmd(UaContext *ua, const char *cmd)
    LockRes();
    ua->send->ArrayStart("clients");
    foreach_res(client, R_CLIENT) {
-      if (ua->acl_access_ok(Client_ACL, client->name())) {
+      if (ua->AclAccessOk(Client_ACL, client->name())) {
          if (enabled && !client->enabled) {
             continue;
          }
@@ -1097,7 +1097,7 @@ bool dot_clients_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_consoles_cmd(UaContext *ua, const char *cmd)
+bool DotConsolesCmd(UaContext *ua, const char *cmd)
 {
    ConsoleResource *console;
 
@@ -1114,7 +1114,7 @@ bool dot_consoles_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_msgs_cmd(UaContext *ua, const char *cmd)
+bool DotMsgsCmd(UaContext *ua, const char *cmd)
 {
    MessagesResource *msgs = NULL;
 
@@ -1131,7 +1131,7 @@ bool dot_msgs_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_pools_cmd(UaContext *ua, const char *cmd)
+bool DotPoolsCmd(UaContext *ua, const char *cmd)
 {
    int pos, length;
    PoolResource *pool;
@@ -1146,7 +1146,7 @@ bool dot_pools_cmd(UaContext *ua, const char *cmd)
    LockRes();
    ua->send->ArrayStart("pools");
    foreach_res(pool, R_POOL) {
-      if (ua->acl_access_ok(Pool_ACL, pool->name())) {
+      if (ua->AclAccessOk(Pool_ACL, pool->name())) {
          if (pos == -1 || bstrncasecmp(pool->pool_type, ua->argv[pos], length)) {
             ua->send->ObjectStart();
             ua->send->ObjectKeyValue("name", pool->name(), "%s\n");
@@ -1160,7 +1160,7 @@ bool dot_pools_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_storage_cmd(UaContext *ua, const char *cmd)
+bool DotStorageCmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
@@ -1172,7 +1172,7 @@ bool dot_storage_cmd(UaContext *ua, const char *cmd)
    LockRes();
    ua->send->ArrayStart("storages");
    foreach_res(store, R_STORAGE) {
-      if (ua->acl_access_ok(Storage_ACL, store->name())) {
+      if (ua->AclAccessOk(Storage_ACL, store->name())) {
          if (enabled && !store->enabled) {
             continue;
          }
@@ -1192,7 +1192,7 @@ bool dot_storage_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_profiles_cmd(UaContext *ua, const char *cmd)
+bool DotProfilesCmd(UaContext *ua, const char *cmd)
 {
    ProfileResource *profile;
 
@@ -1209,7 +1209,7 @@ bool dot_profiles_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_aop_cmd(UaContext *ua, const char *cmd)
+bool DotAopCmd(UaContext *ua, const char *cmd)
 {
    ua->send->ArrayStart("actiononpurge");
    for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
@@ -1222,7 +1222,7 @@ bool dot_aop_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_types_cmd(UaContext *ua, const char *cmd)
+bool DotTypesCmd(UaContext *ua, const char *cmd)
 {
    ua->send->ArrayStart("jobtypes");
    for (int i = 0; jobtypes[i].type_name; i++) {
@@ -1243,22 +1243,22 @@ bool dot_types_cmd(UaContext *ua, const char *cmd)
  * of new signals that indicate whether or not the command
  * succeeded.
  */
-bool dot_api_cmd(UaContext *ua, const char *cmd)
+bool DotApiCmd(UaContext *ua, const char *cmd)
 {
    if (ua->argc == 1) {
       ua->api = 1;
    } else if ((ua->argc >= 2) && (ua->argc <= 3)) {
-      if (bstrcasecmp(ua->argk[1], "off") || bstrcasecmp(ua->argk[1], "0")) {
+      if (Bstrcasecmp(ua->argk[1], "off") || Bstrcasecmp(ua->argk[1], "0")) {
          ua->api = API_MODE_OFF;
          ua->batch = false;
-      } else if (bstrcasecmp(ua->argk[1], "on") || bstrcasecmp(ua->argk[1], "1")) {
+      } else if (Bstrcasecmp(ua->argk[1], "on") || Bstrcasecmp(ua->argk[1], "1")) {
          ua->api = API_MODE_ON;
          ua->batch = false;
-      } else if (bstrcasecmp(ua->argk[1], "json") || bstrcasecmp(ua->argk[1], "2")) {
+      } else if (Bstrcasecmp(ua->argk[1], "json") || Bstrcasecmp(ua->argk[1], "2")) {
          ua->api = API_MODE_JSON;
          ua->batch = true;
          if ((ua->argc == 3) && (FindArgWithValue(ua, "compact") == 2)) {
-            if (bstrcasecmp(ua->argv[2], "yes")) {
+            if (Bstrcasecmp(ua->argv[2], "yes")) {
                ua->send->SetCompact(true);
             } else {
                ua->send->SetCompact(false);
@@ -1277,7 +1277,7 @@ bool dot_api_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-static int sql_handler(void *ctx, int num_field, char **row)
+static int SqlHandler(void *ctx, int num_field, char **row)
 {
    UaContext *ua = (UaContext *)ctx;
    PoolMem rows(PM_MESSAGE);
@@ -1302,7 +1302,7 @@ static int sql_handler(void *ctx, int num_field, char **row)
    return 0;
 }
 
-bool dot_sql_cmd(UaContext *ua, const char *cmd)
+bool DotSqlCmd(UaContext *ua, const char *cmd)
 {
    int pos;
    bool retval = false;
@@ -1322,7 +1322,7 @@ bool dot_sql_cmd(UaContext *ua, const char *cmd)
       /*
        * BAT uses the ".sql" command and expects this format
        */
-      retval = ua->db->SqlQuery(ua->argv[pos], sql_handler, (void *)ua);
+      retval = ua->db->SqlQuery(ua->argv[pos], SqlHandler, (void *)ua);
       break;
    default:
       /*
@@ -1340,7 +1340,7 @@ bool dot_sql_cmd(UaContext *ua, const char *cmd)
    return retval;
 }
 
-static int one_handler(void *ctx, int num_field, char **row)
+static int OneHandler(void *ctx, int num_field, char **row)
 {
    UaContext *ua = (UaContext *)ctx;
 
@@ -1351,14 +1351,14 @@ static int one_handler(void *ctx, int num_field, char **row)
    return 0;
 }
 
-bool dot_mediatypes_cmd(UaContext *ua, const char *cmd)
+bool DotMediatypesCmd(UaContext *ua, const char *cmd)
 {
    if (!OpenClientDb(ua)) {
       return true;
    }
 
    ua->send->ArrayStart("mediatypes");
-   if (!ua->db->SqlQuery("SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType", one_handler, (void *)ua)) {
+   if (!ua->db->SqlQuery("SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType", OneHandler, (void *)ua)) {
       ua->ErrorMsg(_("List MediaType failed: ERR=%s\n"), ua->db->strerror());
    }
    ua->send->ArrayEnd("mediatypes");
@@ -1366,14 +1366,14 @@ bool dot_mediatypes_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_media_cmd(UaContext *ua, const char *cmd)
+bool DotMediaCmd(UaContext *ua, const char *cmd)
 {
    if (!OpenClientDb(ua)) {
       return true;
    }
 
    ua->send->ArrayStart("media");
-   if (!ua->db->SqlQuery("SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName", one_handler, (void *)ua)) {
+   if (!ua->db->SqlQuery("SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName", OneHandler, (void *)ua)) {
       ua->ErrorMsg(_("List Media failed: ERR=%s\n"), ua->db->strerror());
    }
    ua->send->ArrayEnd("media");
@@ -1381,7 +1381,7 @@ bool dot_media_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_schedule_cmd(UaContext *ua, const char *cmd)
+bool DotScheduleCmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
@@ -1393,7 +1393,7 @@ bool dot_schedule_cmd(UaContext *ua, const char *cmd)
    LockRes();
    ua->send->ArrayStart("schedules");
    foreach_res(sched, R_SCHEDULE) {
-      if (ua->acl_access_ok(Schedule_ACL, sched->name())) {
+      if (ua->AclAccessOk(Schedule_ACL, sched->name())) {
          if (enabled && !sched->enabled) {
             continue;
          }
@@ -1413,14 +1413,14 @@ bool dot_schedule_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_locations_cmd(UaContext *ua, const char *cmd)
+bool DotLocationsCmd(UaContext *ua, const char *cmd)
 {
    if (!OpenClientDb(ua)) {
       return true;
    }
 
    ua->send->ArrayStart("locations");
-   if (!ua->db->SqlQuery( "SELECT DISTINCT Location FROM Location ORDER BY Location", one_handler, (void *)ua)) {
+   if (!ua->db->SqlQuery( "SELECT DISTINCT Location FROM Location ORDER BY Location", OneHandler, (void *)ua)) {
       ua->ErrorMsg(_("List Location failed: ERR=%s\n"), ua->db->strerror());
    }
    ua->send->ArrayEnd("locations");
@@ -1428,7 +1428,7 @@ bool dot_locations_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_levels_cmd(UaContext *ua, const char *cmd)
+bool DotLevelsCmd(UaContext *ua, const char *cmd)
 {
    /*
     * Note some levels are blank, which means none is needed
@@ -1451,7 +1451,7 @@ bool dot_levels_cmd(UaContext *ua, const char *cmd)
        * Assume that first argument is the Job Type
        */
       for (int i = 0; jobtypes[i].type_name; i++) {
-         if (bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
+         if (Bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
             jobtype = jobtypes[i].job_type;
             break;
          }
@@ -1472,7 +1472,7 @@ bool dot_levels_cmd(UaContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_volstatus_cmd(UaContext *ua, const char *cmd)
+bool DotVolstatusCmd(UaContext *ua, const char *cmd)
 {
    ua->send->ArrayStart("volstatus");
    for (int i = 0; VolumeStatus[i].name; i++) {
@@ -1488,7 +1488,7 @@ bool dot_volstatus_cmd(UaContext *ua, const char *cmd)
 /**
  * Return default values for a job
  */
-bool dot_defaults_cmd(UaContext *ua, const char *cmd)
+bool DotDefaultsCmd(UaContext *ua, const char *cmd)
 {
    char ed1[50];
    int pos = 0;

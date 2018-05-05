@@ -66,7 +66,7 @@ void FreeGuidList(guid_list *list)
    free(list);
 }
 
-static int uid_compare(void *item1, void *item2)
+static int UidCompare(void *item1, void *item2)
 {
    guitem *i1 = (guitem *)item1;
    guitem *i2 = (guitem *)item2;
@@ -79,7 +79,7 @@ static int uid_compare(void *item1, void *item2)
    }
 }
 
-static int gid_compare(void *item1, void *item2)
+static int GidCompare(void *item1, void *item2)
 {
    guitem *i1 = (guitem *)item1;
    guitem *i2 = (guitem *)item2;
@@ -93,7 +93,7 @@ static int gid_compare(void *item1, void *item2)
 }
 
 
-static void get_uidname(uid_t uid, guitem *item)
+static void GetUidname(uid_t uid, guitem *item)
 {
 #ifndef HAVE_WIN32
    struct passwd *pwbuf;
@@ -106,7 +106,7 @@ static void get_uidname(uid_t uid, guitem *item)
 #endif
 }
 
-static void get_gidname(gid_t gid, guitem *item)
+static void GetGidname(gid_t gid, guitem *item)
 {
 #ifndef HAVE_WIN32
    struct group *grbuf;
@@ -126,18 +126,18 @@ char *guid_list::uid_to_name(uid_t uid, char *name, int maxlen)
    sitem.uid = uid;
    char buf[50];
 
-   item = (guitem *)uid_list->binary_search(&sitem, uid_compare);
+   item = (guitem *)uid_list->binary_search(&sitem, UidCompare);
    Dmsg2(900, "uid=%d item=%p\n", uid, item);
    if (!item) {
       item = (guitem *)malloc(sizeof(guitem));
       item->uid = uid;
       item->name = NULL;
-      get_uidname(uid, item);
+      GetUidname(uid, item);
       if (!item->name) {
          item->name = bstrdup(edit_int64(uid, buf));
          Dmsg2(900, "set uid=%d name=%s\n", uid, item->name);
       }
-      fitem = (guitem *)uid_list->binary_insert(item, uid_compare);
+      fitem = (guitem *)uid_list->binary_insert(item, UidCompare);
       if (fitem != item) {               /* item already there this shouldn't happen */
          free(item->name);
          free(item);
@@ -154,16 +154,16 @@ char *guid_list::gid_to_name(gid_t gid, char *name, int maxlen)
    sitem.gid = gid;
    char buf[50];
 
-   item = (guitem *)gid_list->binary_search(&sitem, gid_compare);
+   item = (guitem *)gid_list->binary_search(&sitem, GidCompare);
    if (!item) {
       item = (guitem *)malloc(sizeof(guitem));
       item->gid = gid;
       item->name = NULL;
-      get_gidname(gid, item);
+      GetGidname(gid, item);
       if (!item->name) {
          item->name = bstrdup(edit_int64(gid, buf));
       }
-      fitem = (guitem *)gid_list->binary_insert(item, gid_compare);
+      fitem = (guitem *)gid_list->binary_insert(item, GidCompare);
       if (fitem != item) {               /* item already there this shouldn't happen */
          free(item->name);
          free(item);

@@ -50,7 +50,7 @@
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Exported variables */
 int quit = 0;
@@ -85,12 +85,12 @@ static void fillcmd();
 static void qfillcmd();
 static void statcmd();
 static void unfillcmd();
-static int flush_block(DeviceBlock *block, int dump);
-static bool quickie_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
-static bool compare_blocks(DeviceBlock *last_block, DeviceBlock *block);
-static bool my_mount_next_read_volume(DeviceControlRecord *dcr);
+static int FlushBlock(DeviceBlock *block, int dump);
+static bool QuickieCb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool CompareBlocks(DeviceBlock *last_block, DeviceBlock *block);
+static bool MyMountNextReadVolume(DeviceControlRecord *dcr);
 static void scan_blocks();
-static void set_volume_name(const char *VolName, int volnum);
+static void SetVolumeName(const char *VolName, int volnum);
 static void rawfill_cmd();
 static bool open_the_device();
 static void autochangercmd();
@@ -142,7 +142,7 @@ static int vol_num = 0;
 static JobControlRecord *jcr = NULL;
 
 static void usage();
-static void terminate_btape(int sig);
+static void TerminateBtape(int sig);
 int GetCmd(const char *prompt);
 
 
@@ -179,7 +179,7 @@ int main(int margc, char *margv[])
          sizeof(boffset_t));
    }
    x32 = 123456789;
-   bsnprintf(buf, sizeof(buf), "%u", x32);
+   Bsnprintf(buf, sizeof(buf), "%u", x32);
    i = bsscanf(buf, "%lu", &y32);
    if (i != 1 || x32 != y32) {
       Pmsg3(-1, _("32 bit printf/scanf problem. i=%d x32=%u y32=%u\n"), i, x32, y32);
@@ -188,7 +188,7 @@ int main(int margc, char *margv[])
    x64 = 123456789;
    x64 = x64 << 32;
    x64 += 123456789;
-   bsnprintf(buf, sizeof(buf), "%" llu, x64);
+   Bsnprintf(buf, sizeof(buf), "%" llu, x64);
    i = bsscanf(buf, "%llu", &y64);
    if (i != 1 || x64 != y64) {
       Pmsg3(-1, _("64 bit printf/scanf problem. i=%d x64=%" llu " y64=%" llu "\n"),
@@ -262,13 +262,13 @@ int main(int margc, char *margv[])
    args = GetPoolMemory(PM_FNAME);
 
    if (signals) {
-      InitSignals(terminate_btape);
+      InitSignals(TerminateBtape);
    }
 
    daemon_start_time = time(NULL);
 
    my_config = new_config_parser();
-   parse_sd_config(my_config, configfile, M_ERROR_TERM);
+   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
@@ -322,10 +322,10 @@ int main(int margc, char *margv[])
    Dmsg0(200, "Do tape commands\n");
    do_tape_cmds();
 
-   terminate_btape(exit_code);
+   TerminateBtape(exit_code);
 }
 
-static void terminate_btape(int status)
+static void TerminateBtape(int status)
 {
    Dsm_check(200);
    FreeJcr(jcr);
@@ -409,7 +409,7 @@ static void init_speed()
    jcr->JobBytes=0;
 }
 
-static void print_speed(uint64_t bytes)
+static void PrintSpeed(uint64_t bytes)
 {
    char ec1[50], ec2[50];
    uint64_t rate;
@@ -437,7 +437,7 @@ typedef enum {
    FILL_ZERO
 } fill_mode_t;
 
-static void fill_buffer(fill_mode_t mode, char *buf, uint32_t len)
+static void FillBuffer(fill_mode_t mode, char *buf, uint32_t len)
 {
    int fd;
    switch (mode) {
@@ -464,7 +464,7 @@ static void fill_buffer(fill_mode_t mode, char *buf, uint32_t len)
    }
 }
 
-static void mix_buffer(fill_mode_t mode, char *data, uint32_t len)
+static void MixBuffer(fill_mode_t mode, char *data, uint32_t len)
 {
    uint32_t i;
    uint32_t *lp = (uint32_t *)data;
@@ -909,7 +909,7 @@ bail_out:
    return rc;
 }
 
-static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
+static bool SpeedTestRaw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 {
    DeviceBlock *block = dcr->block;
    int status;
@@ -919,7 +919,7 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
    nb_gb *= 1024*1024*1024;      /* convert size from nb to GB */
 
    init_total_speed();
-   fill_buffer(mode, block->buf, block->buf_len);
+   FillBuffer(mode, block->buf, block->buf_len);
 
    Pmsg3(0, _("Begin writing %i files of %sB with raw blocks of %u bytes.\n"),
          nb, edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
@@ -934,7 +934,7 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
                fflush(stdout);
             }
 
-            mix_buffer(mode, block->buf, block->buf_len);
+            MixBuffer(mode, block->buf, block->buf_len);
 
             jcr->JobBytes += status;
 
@@ -949,7 +949,7 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
       }
       printf("\n");
       weofcmd();
-      print_speed(jcr->JobBytes);
+      PrintSpeed(jcr->JobBytes);
    }
    print_total_speed();
    printf("\n");
@@ -957,7 +957,7 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 }
 
 
-static bool speed_test_bareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
+static bool SpeedTestBareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 {
    DeviceBlock *block = dcr->block;
    char ed1[200];
@@ -974,7 +974,7 @@ static bool speed_test_bareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
    rec->data = CheckPoolMemorySize(rec->data, block->buf_len);
    rec->data_len = block->buf_len-100;
 
-   fill_buffer(mode, rec->data, rec->data_len);
+   FillBuffer(mode, rec->data, rec->data_len);
 
    Pmsg3(0, _("Begin writing %i files of %sB with blocks of %u bytes.\n"),
          nb, edit_uint64_with_suffix(nb_gb, ed1), block->buf_len);
@@ -999,11 +999,11 @@ static bool speed_test_bareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
          }
          written += dev->VolCatInfo.VolCatBytes - last_bytes;
          last_bytes = dev->VolCatInfo.VolCatBytes;
-         mix_buffer(mode, rec->data, rec->data_len);
+         MixBuffer(mode, rec->data, rec->data_len);
       }
       printf("\n");
       weofcmd();
-      print_speed(written);
+      PrintSpeed(written);
    }
    print_total_speed();
    printf("\n");
@@ -1016,10 +1016,10 @@ bail_out:
 }
 
 /* TODO: use UaContext */
-static int btape_find_arg(const char *keyword)
+static int BtapeFindArg(const char *keyword)
 {
    for (int i=1; i<argc; i++) {
-      if (bstrcasecmp(keyword, argk[i])) {
+      if (Bstrcasecmp(keyword, argk[i])) {
          return i;
       }
    }
@@ -1040,7 +1040,7 @@ static void speed_test()
    uint32_t file_size=0, nb_file=3;
    int32_t i;
 
-   i = btape_find_arg("file_size");
+   i = BtapeFindArg("file_size");
    if (i > 0) {
       file_size = atoi(argv[i]);
       if (file_size > 100) {
@@ -1048,24 +1048,24 @@ static void speed_test()
       }
    }
 
-   i = btape_find_arg("nb_file");
+   i = BtapeFindArg("nb_file");
    if (i > 0) {
       nb_file = atoi(argv[i]);
    }
 
-   if (btape_find_arg("skip_zero") > 0) {
+   if (BtapeFindArg("skip_zero") > 0) {
       do_zero = false;
    }
 
-   if (btape_find_arg("skip_random") > 0) {
+   if (BtapeFindArg("skip_random") > 0) {
       do_random = false;
    }
 
-   if (btape_find_arg("skip_raw") > 0) {
+   if (BtapeFindArg("skip_raw") > 0) {
       do_raw = false;
    }
 
-   if (btape_find_arg("skip_block") > 0) {
+   if (BtapeFindArg("skip_block") > 0) {
       do_block = false;
    }
 
@@ -1075,11 +1075,11 @@ static void speed_test()
          Pmsg0(0, _("Test with zero data, should give the "
                     "maximum throughput.\n"));
          if (file_size) {
-            ok(speed_test_raw(FILL_ZERO, file_size, nb_file));
+            ok(SpeedTestRaw(FILL_ZERO, file_size, nb_file));
          } else {
-            ok(speed_test_raw(FILL_ZERO, 1, nb_file));
-            ok(speed_test_raw(FILL_ZERO, 2, nb_file));
-            ok(speed_test_raw(FILL_ZERO, 4, nb_file));
+            ok(SpeedTestRaw(FILL_ZERO, 1, nb_file));
+            ok(SpeedTestRaw(FILL_ZERO, 2, nb_file));
+            ok(SpeedTestRaw(FILL_ZERO, 4, nb_file));
          }
       }
 
@@ -1087,11 +1087,11 @@ static void speed_test()
          Pmsg0(0, _("Test with random data, should give the minimum "
                     "throughput.\n"));
          if (file_size) {
-            ok(speed_test_raw(FILL_RANDOM, file_size, nb_file));
+            ok(SpeedTestRaw(FILL_RANDOM, file_size, nb_file));
          } else {
-            ok(speed_test_raw(FILL_RANDOM, 1, nb_file));
-            ok(speed_test_raw(FILL_RANDOM, 2, nb_file));
-            ok(speed_test_raw(FILL_RANDOM, 4, nb_file));
+            ok(SpeedTestRaw(FILL_RANDOM, 1, nb_file));
+            ok(SpeedTestRaw(FILL_RANDOM, 2, nb_file));
+            ok(SpeedTestRaw(FILL_RANDOM, 4, nb_file));
          }
       }
    }
@@ -1101,11 +1101,11 @@ static void speed_test()
       if (do_zero) {
          Pmsg0(0, _("Test with zero data and bareos block structure.\n"));
          if (file_size) {
-            ok(speed_test_bareos(FILL_ZERO, file_size, nb_file));
+            ok(SpeedTestBareos(FILL_ZERO, file_size, nb_file));
          } else {
-            ok(speed_test_bareos(FILL_ZERO, 1, nb_file));
-            ok(speed_test_bareos(FILL_ZERO, 2, nb_file));
-               ok(speed_test_bareos(FILL_ZERO, 4, nb_file));
+            ok(SpeedTestBareos(FILL_ZERO, 1, nb_file));
+            ok(SpeedTestBareos(FILL_ZERO, 2, nb_file));
+               ok(SpeedTestBareos(FILL_ZERO, 4, nb_file));
          }
       }
 
@@ -1113,11 +1113,11 @@ static void speed_test()
          Pmsg0(0, _("Test with random data, should give the minimum "
                     "throughput.\n"));
          if (file_size) {
-            ok(speed_test_bareos(FILL_RANDOM, file_size, nb_file));
+            ok(SpeedTestBareos(FILL_RANDOM, file_size, nb_file));
          } else {
-            ok(speed_test_bareos(FILL_RANDOM, 1, nb_file));
-            ok(speed_test_bareos(FILL_RANDOM, 2, nb_file));
-            ok(speed_test_bareos(FILL_RANDOM, 4, nb_file));
+            ok(SpeedTestBareos(FILL_RANDOM, 1, nb_file));
+            ok(SpeedTestBareos(FILL_RANDOM, 2, nb_file));
+            ok(SpeedTestBareos(FILL_RANDOM, 4, nb_file));
          }
       }
    }
@@ -1360,7 +1360,7 @@ static bool position_test()
          continue;
       }
       Pmsg2(-1, _("Reposition to file:block %d:%d\n"), file, blk);
-      if (!dev->reposition(dcr, file, blk)) {
+      if (!dev->Reposition(dcr, file, blk)) {
          Pmsg0(0, _("Reposition error.\n"));
          goto bail_out;
       }
@@ -1583,7 +1583,7 @@ try_again:
     * Start with sleep_time 0 then increment by 30 seconds if we get
     * a failure.
     */
-   bmicrosleep(sleep_time, 0);
+   Bmicrosleep(sleep_time, 0);
    if (!dev->rewind(dcr) || !dev->weof(1)) {
       Pmsg1(0, _("Bad status from rewind. ERR=%s\n"), dev->bstrerror());
       dev->clrerror(-1);
@@ -2264,7 +2264,7 @@ static void fillcmd()
    write_eof = dev->max_file_size / REC_SIZE; /*compute when we add EOF*/
    ASSERT(write_eof > 0);
 
-   set_volume_name("TestVolume1", 1);
+   SetVolumeName("TestVolume1", 1);
    dcr->DirAskSysopToCreateAppendableVolume();
    dev->SetAppend();                 /* force volume to be relabeled */
 
@@ -2300,7 +2300,7 @@ static void fillcmd()
    /*
     * Put some random data in the record
     */
-   fill_buffer(FILL_RANDOM, rec.data, rec.data_len);
+   FillBuffer(FILL_RANDOM, rec.data, rec.data_len);
 
    /*
     * Generate data as if from File daemon, write to device
@@ -2323,7 +2323,7 @@ static void fillcmd()
       rec.maskedStream = STREAM_FILE_DATA;
 
       /* Mix up the data just a bit */
-      mix_buffer(FILL_RANDOM, rec.data, rec.data_len);
+      MixBuffer(FILL_RANDOM, rec.data, rec.data_len);
 
       Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
          rec.FileIndex, rec.VolSessionId,
@@ -2338,7 +2338,7 @@ static void fillcmd()
                     rec.remainder);
 
          /* Write block to tape */
-         if (!flush_block(block, 1)) {
+         if (!FlushBlock(block, 1)) {
             Pmsg0(000, _("Flush block failed.\n"));
             exit_code = 1;
             break;
@@ -2364,7 +2364,7 @@ static void fillcmd()
             now = time(NULL);
             bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
             Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
-            flush_block(block, 0);
+            FlushBlock(block, 0);
 #ifdef needed_xxx
             dev->weof(1);
 #endif
@@ -2565,7 +2565,7 @@ static bool do_unfill()
       }
    }
 
-   set_volume_name("TestVolume1", 1);
+   SetVolumeName("TestVolume1", 1);
 
    if (!simple) {
       /* Multiple Volume tape */
@@ -2603,10 +2603,10 @@ static bool do_unfill()
    Pmsg2(-1, _("Reading the first 10000 records from %u:%u.\n"),
       dev->file, dev->block_num);
    quickie_count = 0;
-   ReadRecords(dcr, quickie_cb, my_mount_next_read_volume);
+   ReadRecords(dcr, QuickieCb, MyMountNextReadVolume);
    Pmsg4(-1, _("Reposition from %u:%u to %u:%u\n"), dev->file, dev->block_num,
          last_file, last_block_num);
-   if (!dev->reposition(dcr, last_file, last_block_num)) {
+   if (!dev->Reposition(dcr, last_file, last_block_num)) {
       Pmsg1(-1, _("Reposition error. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2615,7 +2615,7 @@ static bool do_unfill()
       Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
-   if (compare_blocks(last_block, block)) {
+   if (CompareBlocks(last_block, block)) {
       if (simple) {
          Pmsg0(-1, _("\nThe last block on the tape matches. Test succeeded.\n\n"));
          rc = true;
@@ -2638,7 +2638,7 @@ static bool do_unfill()
       dev->offline();
    }
 
-   set_volume_name("TestVolume2", 2);
+   SetVolumeName("TestVolume2", 2);
 
    autochanger = AutoloadDevice(dcr, 1, NULL);
    if (autochanger != 1) {
@@ -2658,7 +2658,7 @@ static bool do_unfill()
     * on the previous tape.
     */
    Pmsg2(-1, _("Reposition from %u:%u to 0:1\n"), dev->file, dev->block_num);
-   if (!dev->reposition(dcr, 0, 1)) {
+   if (!dev->Reposition(dcr, 0, 1)) {
       Pmsg1(-1, _("Reposition error. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2667,14 +2667,14 @@ static bool do_unfill()
       Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
-   if (compare_blocks(first_block, block)) {
+   if (CompareBlocks(first_block, block)) {
       Pmsg0(-1, _("\nThe first block on the second tape matches.\n\n"));
    }
 
    /* Now find and compare the last block */
    Pmsg4(-1, _("Reposition from %u:%u to %u:%u\n"), dev->file, dev->block_num,
          last_file, last_block_num);
-   if (!dev->reposition(dcr, last_file, last_block_num)) {
+   if (!dev->Reposition(dcr, last_file, last_block_num)) {
       Pmsg1(-1, _("Reposition error. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2683,7 +2683,7 @@ static bool do_unfill()
       Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
-   if (compare_blocks(last_block, block)) {
+   if (CompareBlocks(last_block, block)) {
       Pmsg0(-1, _("\nThe last block on the second tape matches. Test succeeded.\n\n"));
       rc = true;
    }
@@ -2702,7 +2702,7 @@ bail_out:
 }
 
 /* Read 10000 records then stop */
-static bool quickie_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
+static bool QuickieCb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    Device *dev = dcr->dev;
    quickie_count++;
@@ -2712,7 +2712,7 @@ static bool quickie_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
    return quickie_count < 10000;
 }
 
-static bool compare_blocks(DeviceBlock *last_block, DeviceBlock *block)
+static bool CompareBlocks(DeviceBlock *last_block, DeviceBlock *block)
 {
    char *p, *q;
    union {
@@ -2755,7 +2755,7 @@ static bool compare_blocks(DeviceBlock *last_block, DeviceBlock *block)
  *   not it is full. If the tape fills, attempt to
  *   acquire another tape.
  */
-static int flush_block(DeviceBlock *block, int dump)
+static int FlushBlock(DeviceBlock *block, int dump)
 {
    char ec1[50], ec2[50];
    uint64_t rate;
@@ -2892,7 +2892,7 @@ static void qfillcmd()
       }
    }
    printf("\n");
-   print_speed(dev->VolCatInfo.VolCatBytes);
+   PrintSpeed(dev->VolCatInfo.VolCatBytes);
    weofcmd();
    if (dev->HasCap(CAP_TWOEOF)) {
       weofcmd();
@@ -2915,7 +2915,7 @@ static void rawfill_cmd()
    uint32_t *p;
    int my_errno;
 
-   fill_buffer(FILL_RANDOM, block->buf, block->buf_len);
+   FillBuffer(FILL_RANDOM, block->buf, block->buf_len);
    init_speed();
 
    p = (uint32_t *)block->buf;
@@ -2929,7 +2929,7 @@ static void rawfill_cmd()
             fflush(stdout);
          }
 
-         mix_buffer(FILL_RANDOM, block->buf, block->buf_len);
+         MixBuffer(FILL_RANDOM, block->buf, block->buf_len);
 
          jcr->JobBytes += status;
          continue;
@@ -2942,7 +2942,7 @@ static void rawfill_cmd()
    printf(_("Write failed at block %u. status=%d ERR=%s\n"), block_num, status,
       be.bstrerror(my_errno));
 
-   print_speed(jcr->JobBytes);
+   PrintSpeed(jcr->JobBytes);
    weofcmd();
 }
 
@@ -3114,9 +3114,9 @@ bool BTAPE_DCR::DirAskSysopToCreateAppendableVolume()
 
    Dmsg0(20, "Enter DirAskSysopToCreateAppendableVolume\n");
    if (stop == 0) {
-      set_volume_name("TestVolume1", 1);
+      SetVolumeName("TestVolume1", 1);
    } else {
-      set_volume_name("TestVolume2", 2);
+      SetVolumeName("TestVolume2", 2);
    }
    /* Close device so user can use autochanger if desired */
    if (dev->HasCap(CAP_OFFLINEUNMOUNT)) {
@@ -3147,14 +3147,14 @@ DeviceControlRecord *BTAPE_DCR::get_new_spooling_dcr()
    return dcr;
 }
 
-static bool my_mount_next_read_volume(DeviceControlRecord *dcr)
+static bool MyMountNextReadVolume(DeviceControlRecord *dcr)
 {
    char ec1[50], ec2[50];
    uint64_t rate;
    JobControlRecord *jcr = dcr->jcr;
    DeviceBlock *block = dcr->block;
 
-   Dmsg0(20, "Enter my_mount_next_read_volume\n");
+   Dmsg0(20, "Enter MyMountNextReadVolume\n");
    Pmsg2(000, _("End of Volume \"%s\" %d records.\n"), dcr->VolumeName,
       quickie_count);
 
@@ -3178,7 +3178,7 @@ static bool my_mount_next_read_volume(DeviceControlRecord *dcr)
       return false;
    }
 
-   set_volume_name("TestVolume2", 2);
+   SetVolumeName("TestVolume2", 2);
 
    dev->close(dcr);
    if (!AcquireDeviceForRead(dcr)) {
@@ -3188,7 +3188,7 @@ static bool my_mount_next_read_volume(DeviceControlRecord *dcr)
    return true;                    /* next volume mounted */
 }
 
-static void set_volume_name(const char *VolName, int volnum)
+static void SetVolumeName(const char *VolName, int volnum)
 {
    DeviceControlRecord *dcr = jcr->dcr;
    volumename = VolName;

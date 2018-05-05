@@ -222,7 +222,7 @@ int main(int argc, char *const *argv)
       /*
        * Dump the content of the cache.
        */
-      dump_crypto_cache(1);
+      DumpCryptoCache(1);
 
       FlushCryptoCache();
       goto bail_out;
@@ -280,7 +280,7 @@ int main(int argc, char *const *argv)
       /*
        * Reset all entries.
        */
-      reset_crypto_cache();
+      ResetCryptoCache();
 
       /*
        * Write out the new cache entries.

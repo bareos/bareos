@@ -87,8 +87,8 @@ int get_win32_driveletters(findFILESET *fileset, char *szDrives)
     * filled by the plugin. VSS can only snapshot fixed drives.
     */
    for (nCount = 0; nCount < 27 && szDrives[nCount]; nCount++) {
-      bsnprintf(drive, sizeof(drive), "%c:\\", szDrives[nCount]);
-      if (drivetype(drive, dt, sizeof(dt))) {
+      Bsnprintf(drive, sizeof(drive), "%c:\\", szDrives[nCount]);
+      if (Drivetype(drive, dt, sizeof(dt))) {
          if (bstrcmp(dt, "fixed")) {
             continue;
          }
@@ -134,7 +134,7 @@ int get_win32_driveletters(findFILESET *fileset, char *szDrives)
                /*
                 * Lookup the drive type.
                 */
-               if (drivetype(drive, dt, sizeof(dt))) {
+               if (Drivetype(drive, dt, sizeof(dt))) {
                   if (bstrcmp(dt, "fixed")) {
                      /*
                       * Always add in uppercase
@@ -217,7 +217,7 @@ int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps)
    return cnt;
 }
 
-static inline bool wanted_drive_type(const char *drive, findIncludeExcludeItem *incexe)
+static inline bool WantedDriveType(const char *drive, findIncludeExcludeItem *incexe)
 {
    int i,j;
    char dt[16];
@@ -228,28 +228,28 @@ static inline bool wanted_drive_type(const char *drive, findIncludeExcludeItem *
    /*
     * Lookup the drive type.
     */
-   if (!drivetype(drive, dt, sizeof(dt))) {
+   if (!Drivetype(drive, dt, sizeof(dt))) {
       return false;
    }
 
    /*
     * We start the loop with done set to false and wanted
-    * to true so when there are no drivetype selections we
-    * select any drivetype.
+    * to true so when there are no Drivetype selections we
+    * select any Drivetype.
     */
    for (i = 0; !done && i < incexe->opts_list.size(); i++) {
       fo = (findFOPTS *)incexe->opts_list.get(i);
 
       /*
-       * If there is any drivetype selection set the default
+       * If there is any Drivetype selection set the default
        * selection to false.
        */
-      if (fo->drivetype.size()) {
+      if (fo->Drivetype.size()) {
          wanted = false;
       }
 
-      for (j = 0; !done && j < fo->drivetype.size(); j++) {
-         if (bstrcasecmp(dt, (char *)fo->drivetype.get(j))) {
+      for (j = 0; !done && j < fo->Drivetype.size(); j++) {
+         if (Bstrcasecmp(dt, (char *)fo->Drivetype.get(j))) {
             wanted = true;
             done = true;
          }
@@ -290,10 +290,10 @@ bool expand_win32_fileset(findFILESET *fileset)
                bp = drives;
                while (bp && strlen(bp) > 0) {
                   /*
-                   * Apply any drivetype selection to the currently
+                   * Apply any Drivetype selection to the currently
                    * processed item.
                    */
-                  if (wanted_drive_type(bp, incexe)) {
+                  if (WantedDriveType(bp, incexe)) {
                      if (*(bp + 2) == '\\') {
                         *(bp + 2) = '/';       /* 'x:\' -> 'x:/' */
                      }
@@ -319,7 +319,7 @@ bool expand_win32_fileset(findFILESET *fileset)
    return true;
 }
 
-static inline int count_include_list_file_entries(FindFilesPacket *ff)
+static inline int CountIncludeListFileEntries(FindFilesPacket *ff)
 {
    int cnt = 0;
    findFILESET *fileset;
@@ -360,7 +360,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
     * If we do not have "File = " directives (e.g. only plugin calls)
     * we do not create excludes for the NotForBackup RegKey
     */
-   if (count_include_list_file_entries(ff) == 0 ) {
+   if (CountIncludeListFileEntries(ff) == 0 ) {
       Qmsg(jcr, M_INFO, 1, _("Fileset has no \"File=\" directives, ignoring FilesNotToBackup Registry key\n"));
       return true;
    }
@@ -598,7 +598,7 @@ static DWORD WINAPI receive_efs_data(PBYTE pbData, PVOID pvCallbackContext, PULO
 /**
  * Copy thread cancel handler.
  */
-static void copy_cleanup_thread(void *data)
+static void CopyCleanupThread(void *data)
 {
    CopyThreadContext *context = (CopyThreadContext *)data;
 
@@ -619,7 +619,7 @@ static void *copy_thread(void *data)
    /*
     * When we get canceled make sure we run the cleanup function.
     */
-   pthread_cleanup_push(copy_cleanup_thread, data);
+   pthread_cleanup_push(CopyCleanupThread, data);
 
    while (1) {
       /*
@@ -661,7 +661,7 @@ bail_out:
 /**
  * Create a copy thread that restores the EFS data.
  */
-static inline bool setup_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd)
+static inline bool SetupCopyThread(JobControlRecord *jcr, BareosWinFilePacket *bfd)
 {
    int nr_save_elements;
    CopyThreadContext *new_context;
@@ -720,7 +720,7 @@ int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, c
     * If no copy thread started do it now.
     */
    if (!jcr->cp_thread) {
-      if (!setup_copy_thread(jcr, bfd)) {
+      if (!SetupCopyThread(jcr, bfd)) {
          Jmsg0(jcr, M_FATAL, 0, _("Failed to start encrypted data restore copy thread\n"));
          return -1;
       }

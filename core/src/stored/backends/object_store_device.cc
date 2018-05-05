@@ -60,7 +60,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Generic log function that glues libdroplet with BAREOS.
  */
-static void object_store_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+static void ObjectStoreLogfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
    switch (level) {
    case DPL_DEBUG:
@@ -81,7 +81,7 @@ static void object_store_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const ch
 /**
  * Map the droplet errno's to system ones.
  */
-static inline int droplet_errno_to_system_errno(dpl_status_t status)
+static inline int DropletErrnoToSystemErrno(dpl_status_t status)
 {
    switch (status) {
    case DPL_ENOENT:
@@ -131,7 +131,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
          return -1;
       }
 
-      dpl_set_log_func(object_store_logfunc);
+      dpl_set_log_func(ObjectStoreLogfunc);
       droplet_reference_count++;
    }
    V(mutex);
@@ -196,7 +196,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
        * Strip any .profile prefix from the libdroplet profile name.
        */
       len = strlen(profile_);
-      if (len > 8 && bstrcasecmp(profile_ + (len - 8), ".profile")) {
+      if (len > 8 && Bstrcasecmp(profile_ + (len - 8), ".profile")) {
          profile_[len - 8] = '\0';
       }
    }
@@ -317,7 +317,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
       Mmsg2(errmsg, _("Failed to open %s using dpl_open(): ERR=%s.\n"),
             getVolCatName(), dpl_status_str(status));
       vfd_ = NULL;
-      return droplet_errno_to_system_errno(status);
+      return DropletErrnoToSystemErrno(status);
    }
 
 bail_out:
@@ -343,7 +343,7 @@ ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
       default:
          Mmsg2(errmsg, _("Failed to read %s using dpl_read(): ERR=%s.\n"),
                getVolCatName(), dpl_status_str(status));
-         return droplet_errno_to_system_errno(status);
+         return DropletErrnoToSystemErrno(status);
       }
    } else {
       errno = EBADF;
@@ -367,7 +367,7 @@ ssize_t object_store_device::d_write(int fd, const void *buffer, size_t count)
       default:
          Mmsg2(errmsg, _("Failed to write %s using dpl_write(): ERR=%s.\n"),
                getVolCatName(), dpl_status_str(status));
-         return droplet_errno_to_system_errno(status);
+         return DropletErrnoToSystemErrno(status);
       }
    } else {
       errno = EBADF;
@@ -387,7 +387,7 @@ int object_store_device::d_close(int fd)
          return 0;
       default:
          vfd_ = NULL;
-         return droplet_errno_to_system_errno(status);
+         return DropletErrnoToSystemErrno(status);
       }
    } else {
       errno = EBADF;
@@ -403,7 +403,7 @@ int object_store_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 /**
  * Open a directory on the object store and find out size information for a file.
  */
-static inline size_t object_store_get_file_size(dpl_ctx_t *ctx, const char *filename)
+static inline size_t ObjectStoreGetFileSize(dpl_ctx_t *ctx, const char *filename)
 {
    void *dir_hdl;
    dpl_status_t status;
@@ -419,7 +419,7 @@ static inline size_t object_store_get_file_size(dpl_ctx_t *ctx, const char *file
    }
 
    while (!dpl_eof(dir_hdl)) {
-      if (bstrcasecmp(dirent.name, filename)) {
+      if (Bstrcasecmp(dirent.name, filename)) {
          filesize = dirent.size;
          break;
       }
@@ -442,7 +442,7 @@ boffset_t object_store_device::d_lseek(DeviceControlRecord *dcr, boffset_t offse
    case SEEK_END: {
       size_t filesize;
 
-      filesize = object_store_get_file_size(ctx_, getVolCatName());
+      filesize = ObjectStoreGetFileSize(ctx_, getVolCatName());
       if (filesize >= 0) {
          offset_ = filesize + offset;
       } else {

@@ -83,9 +83,9 @@ private:
 #endif
    ssize_t VolumeSize();
 #ifdef HAVE_RADOS_STRIPER
-   bool truncate_striper_volume(DeviceControlRecord *dcr);
+   bool TruncateStriperVolume(DeviceControlRecord *dcr);
 #endif
-   bool truncate_volume(DeviceControlRecord *dcr);
+   bool TruncateVolume(DeviceControlRecord *dcr);
 
 public:
    /*

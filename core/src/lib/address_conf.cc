@@ -210,7 +210,7 @@ const char *IPADDR::build_config_str(char *buf, int blen)
 
    switch (GetFamily()) {
    case AF_INET:
-      bsnprintf(buf, blen, "      ipv4 = {\n"
+      Bsnprintf(buf, blen, "      ipv4 = {\n"
                            "         addr = %s\n"
                            "         port = %hu\n"
                            "      }",
@@ -218,7 +218,7 @@ const char *IPADDR::build_config_str(char *buf, int blen)
                 GetPortHostOrder());
       break;
    case AF_INET6:
-      bsnprintf(buf, blen, "      ipv6 = {\n"
+      Bsnprintf(buf, blen, "      ipv6 = {\n"
                            "         addr = %s\n"
                            "         port = %hu\n"
                            "      }",
@@ -238,11 +238,11 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
    if (print_port) {
       switch (GetFamily()) {
       case AF_INET:
-         bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
+         Bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
                    get_address(tmp, sizeof(tmp) - 1), GetPortHostOrder());
          break;
       case AF_INET6:
-         bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
+         Bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
                    get_address(tmp, sizeof(tmp) - 1), GetPortHostOrder());
          break;
       default:
@@ -251,11 +251,11 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
    } else {
       switch (GetFamily()) {
       case AF_INET:
-         bsnprintf(buf, blen, "host[ipv4;%s] ",
+         Bsnprintf(buf, blen, "host[ipv4;%s] ",
                    get_address(tmp, sizeof(tmp) - 1));
          break;
       case AF_INET6:
-         bsnprintf(buf, blen, "host[ipv6;%s] ",
+         Bsnprintf(buf, blen, "host[ipv6;%s] ",
                    get_address(tmp, sizeof(tmp) - 1));
          break;
       default:
@@ -276,7 +276,7 @@ const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_po
    IPADDR *p;
    foreach_dlist(p, addrs) {
       char tmp[1024];
-      int len = bsnprintf(work, blen, "%s", p->build_address_str(tmp, sizeof(tmp), print_port));
+      int len = Bsnprintf(work, blen, "%s", p->build_address_str(tmp, sizeof(tmp), print_port));
       if (len < 0)
          break;
       work += len;
@@ -290,7 +290,7 @@ const char *get_first_address(dlist *addrs, char *outputbuf, int outlen)
    return ((IPADDR *)(addrs->first()))->get_address(outputbuf, outlen);
 }
 
-int get_first_port_net_order(dlist *addrs)
+int GetFirstPortNetOrder(dlist *addrs)
 {
    if (!addrs) {
       return 0;
@@ -332,7 +332,7 @@ int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int
          if (iaddr->GetType() == IPADDR::R_DEFAULT) {
             def = iaddr;
          } else if (iaddr->GetType() != type) {
-            bsnprintf(buf, buflen,
+            Bsnprintf(buf, buflen,
                       _("the old style addresses cannot be mixed with new style"));
             return 0;
          }
@@ -354,7 +354,7 @@ int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int
          if (s) {
             port = s->s_port;
          } else {
-            bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
+            Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
             return 0;
          }
       }
@@ -363,7 +363,7 @@ int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int
    const char *myerrstr;
    hostaddrs = bnet_host2ipaddrs(hostname_str, family, &myerrstr);
    if (!hostaddrs) {
-      bsnprintf(buf, buflen, _("can't resolve hostname(%s) %s"), hostname_str,
+      Bsnprintf(buf, buflen, _("can't resolve hostname(%s) %s"), hostname_str,
                 myerrstr);
       return 0;
    }
@@ -409,7 +409,7 @@ int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int
    return 1;
 }
 
-void init_default_addresses(dlist **out, const char *port)
+void InitDefaultAddresses(dlist **out, const char *port)
 {
    char buf[1024];
    unsigned short sport = str_to_int32(port);
@@ -429,7 +429,7 @@ void FreeAddresses(dlist * addrs)
    delete addrs;
 }
 
-int sockaddr_get_port_net_order(const struct sockaddr *client_addr)
+int SockaddrGetPortNetOrder(const struct sockaddr *client_addr)
 {
    if (client_addr->sa_family == AF_INET) {
       return ((struct sockaddr_in *)client_addr)->sin_port;

@@ -46,7 +46,7 @@ extern void unix_name_to_win32(POOLMEM *&win32_name, const char *name);
 
 /* Forward referenced subroutines */
 static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
-void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *ofile);
+void WinError(JobControlRecord *jcr, const char *prefix, POOLMEM *ofile);
 #endif /* HAVE_WIN32 */
 
 /**
@@ -208,7 +208,7 @@ int SelectDataStream(FindFilesPacket *ff_pkt, bool compatible)
 /**
  * Restore all file attributes like owner, mode and file times.
  */
-static inline bool restore_file_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
+static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
 {
    bool ok = true;
    bool suppress_errors;
@@ -472,7 +472,7 @@ bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket 
 #endif
    } else {
       if (!ofd->cmd_plugin) {
-         ok = restore_file_attributes(jcr, attr, ofd);
+         ok = RestoreFileAttributes(jcr, attr, ofd);
 
 #ifdef HAVE_CHFLAGS
          /**
@@ -572,7 +572,7 @@ int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff
       FreePoolMemory(pwszBuf);
 
       if (!b) {
-         win_error(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
+         WinError(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
          return STREAM_UNIX_ATTRIBUTES;
       }
    } else {
@@ -581,7 +581,7 @@ int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff
 
       if (!p_GetFileAttributesExA(ff_pkt->sys_fname, GetFileExInfoStandard,
                               (LPVOID)&atts)) {
-         win_error(jcr, "GetFileAttributesExA:", ff_pkt->sys_fname);
+         WinError(jcr, "GetFileAttributesExA:", ff_pkt->sys_fname);
          return STREAM_UNIX_ATTRIBUTES;
       }
    }
@@ -694,7 +694,7 @@ static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, Bareos
     * Restore file attributes and times on the restored file.
     */
    if (!win32_restore_file_attributes(attr->ofname, BgetHandle(ofd), &atts)) {
-      win_error(jcr, "win32_restore_file_attributes:", attr->ofname);
+      WinError(jcr, "win32_restore_file_attributes:", attr->ofname);
    }
 
    if (IsBopen(ofd)) {
@@ -704,7 +704,7 @@ static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, Bareos
    return true;
 }
 
-void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *win32_ofile)
+void WinError(JobControlRecord *jcr, const char *prefix, POOLMEM *win32_ofile)
 {
    DWORD lerror = GetLastError();
    LPTSTR msg;
@@ -721,7 +721,7 @@ void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *win32_ofile)
    LocalFree(msg);
 }
 
-void win_error(JobControlRecord *jcr, const char *prefix, DWORD lerror)
+void WinError(JobControlRecord *jcr, const char *prefix, DWORD lerror)
 {
    LPTSTR msg;
    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,

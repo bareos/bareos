@@ -40,7 +40,7 @@
 #endif
 
 /* Forward referenced functions */
-static int set_options(findFOPTS *fo, const char *opts);
+static int SetOptions(findFOPTS *fo, const char *opts);
 
 /**
  * callback function for edit_job_codes
@@ -111,7 +111,7 @@ static void append_file(JobControlRecord *jcr, findIncludeExcludeItem *incexe,
  * Add fname to include/exclude fileset list. First check for
  * | and < and if necessary perform command.
  */
-void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool IsFile)
+void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile)
 {
    findFILESET *fileset = jcr->ff->fileset;
    char *p;
@@ -180,7 +180,7 @@ findIncludeExcludeItem *get_incexe(JobControlRecord *jcr)
    return NULL;
 }
 
-void set_incexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe)
+void SetIncexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe)
 {
    findFILESET *fileset = jcr->ff->fileset;
    fileset->incexe = incexe;
@@ -251,12 +251,12 @@ int AddOptionsToFileset(JobControlRecord *jcr, const char *item)
 {
    findFOPTS *current_opts = start_options(jcr->ff);
 
-   set_options(current_opts, item);
+   SetOptions(current_opts, item);
 
    return state_options;
 }
 
-void add_fileset(JobControlRecord *jcr, const char *item)
+void AddFileset(JobControlRecord *jcr, const char *item)
 {
    FindFilesPacket *ff = jcr->ff;
    findFILESET *fileset = ff->fileset;
@@ -313,11 +313,11 @@ void add_fileset(JobControlRecord *jcr, const char *item)
       break;
    case 'F':                             /* File */
       state = state_include;
-      add_file_to_fileset(jcr, item, true);
+      AddFileToFileset(jcr, item, true);
       break;
    case 'P':                             /* Plugin */
       state = state_include;
-      add_file_to_fileset(jcr, item, false);
+      AddFileToFileset(jcr, item, false);
       break;
    case 'R':                             /* Regex */
       state = AddRegexToFileset(jcr, item, subcode);
@@ -333,7 +333,7 @@ void add_fileset(JobControlRecord *jcr, const char *item)
       if (subcode == ' ') {
          current_opts->fstype.append(bstrdup(item));
       } else if (subcode == 'D') {
-         current_opts->drivetype.append(bstrdup(item));
+         current_opts->Drivetype.append(bstrdup(item));
       } else {
          state = state_error;
       }
@@ -426,8 +426,8 @@ bool TermFileset(JobControlRecord *jcr)
          for (int k = 0; k < fo->fstype.size(); k++) {
             Dmsg1(400, "X %s\n", (char *)fo->fstype.get(k));
          }
-         for (int k = 0; k < fo->drivetype.size(); k++) {
-            Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
+         for (int k = 0; k < fo->Drivetype.size(); k++) {
+            Dmsg1(400, "XD %s\n", (char *)fo->Drivetype.get(k));
          }
          if (fo->plugin) {
             Dmsg1(400, "G %s\n", (char *)fo->plugin);
@@ -479,8 +479,8 @@ bool TermFileset(JobControlRecord *jcr)
          for (int k = 0; k < fo->fstype.size(); k++) {
             Dmsg1(400, "X %s\n", (char *)fo->fstype.get(k));
          }
-         for (int k = 0; k < fo->drivetype.size(); k++) {
-            Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
+         for (int k = 0; k < fo->Drivetype.size(); k++) {
+            Dmsg1(400, "XD %s\n", (char *)fo->Drivetype.get(k));
          }
       }
       dlistString *node;
@@ -516,7 +516,7 @@ bool TermFileset(JobControlRecord *jcr)
  *  "compile" time in filed/job.c, and keep only a bit mask
  *  and the Verify options.
  */
-static int set_options(findFOPTS *fo, const char *opts)
+static int SetOptions(findFOPTS *fo, const char *opts)
 {
    int j;
    const char *p;

@@ -34,7 +34,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord *jcr,
                               int32_t FileIndex,
                               const char *restore_prefix,
                               const char *ndmp_filesystem);
-int ndmp_env_handler(void *ctx, int num_fields, char **row);
+int NdmpEnvHandler(void *ctx, int num_fields, char **row);
 bool ExtractPostRestoreStats(JobControlRecord *jcr,
                                 struct ndm_session *sess);
 void NdmpRestoreCleanup(JobControlRecord *jcr, int TermCode);

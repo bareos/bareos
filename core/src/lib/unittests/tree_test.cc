@@ -144,7 +144,7 @@ void FillDirectoryTree(char *path, TREE_ROOT *root, TREE_NODE *parent)
 #define MAXPATHLEN 2000
 #endif
 
-void print_tree(char *path, TREE_NODE *tree)
+void PrintTree(char *path, TREE_NODE *tree)
 {
    char buf[MAXPATHLEN];
    char *termchr;
@@ -173,17 +173,17 @@ void print_tree(char *path, TREE_NODE *tree)
    case TN_NEWDIR:
    case TN_DIR:
    case TN_DIR_NLS:
-      bsnprintf(buf, sizeof(buf), "%s/%s", path, tree->fname);
-      print_tree(buf, first_child(tree));
+      Bsnprintf(buf, sizeof(buf), "%s/%s", path, tree->fname);
+      PrintTree(buf, first_child(tree));
       break;
    case TN_ROOT:
-      print_tree(path, first_child(tree));
+      PrintTree(path, first_child(tree));
       break;
    default:
       Pmsg1(000, "Unknown node type %d\n", tree->type);
    }
 
-   print_tree(path, tree->sibling_);
+   PrintTree(path, tree->sibling_);
 
    return;
 }

@@ -38,12 +38,12 @@
 #include "lib/edit.h"
 
 /* Forward referenced subroutines */
-static void select_job_level(UaContext *ua, JobControlRecord *jcr);
-static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
-static void select_where_regexp(UaContext *ua, JobControlRecord *jcr);
-static bool scan_command_line_arguments(UaContext *ua, RunContext &rc);
-static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
-static int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
+static void SelectJobLevel(UaContext *ua, JobControlRecord *jcr);
+static bool DisplayJobParameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
+static void SelectWhereRegexp(UaContext *ua, JobControlRecord *jcr);
+static bool ScanCommandLineArguments(UaContext *ua, RunContext &rc);
+static bool ResetRestoreContext(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
+static int ModifyJobParameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
 
 /* Imported variables */
 extern struct s_kw ReplaceOptions[];
@@ -367,7 +367,7 @@ int DoRunCmd(UaContext *ua, const char *cmd)
       return 0;
    }
 
-   if (!scan_command_line_arguments(ua, rc)) {
+   if (!ScanCommandLineArguments(ua, rc)) {
       return 0;
    }
 
@@ -380,7 +380,7 @@ int DoRunCmd(UaContext *ua, const char *cmd)
     * Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr() before returning.
     */
    if (!jcr) {
-      jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
+      jcr = new_jcr(sizeof(JobControlRecord), DirdFreeJcr);
       SetJcrDefaults(jcr, rc.job);
       jcr->unlink_bsr = ua->jcr->unlink_bsr;    /* copy unlink flag from caller */
       ua->jcr->unlink_bsr = false;
@@ -403,7 +403,7 @@ int DoRunCmd(UaContext *ua, const char *cmd)
    }
 
 try_again:
-   if (!reset_restore_context(ua, jcr, rc)) {
+   if (!ResetRestoreContext(ua, jcr, rc)) {
       goto bail_out;
    }
 
@@ -440,7 +440,7 @@ try_again:
     * Prompt User to see if all run job parameters are correct, and
     * allow him to modify them.
     */
-   if (!display_job_parameters(ua, jcr, rc)) {
+   if (!DisplayJobParameters(ua, jcr, rc)) {
       goto bail_out;
    }
 
@@ -483,7 +483,7 @@ try_again:
       (bstrncasecmp(ua->cmd, "mod ", 4) && strlen(ua->cmd) > 6)) {
       ParseUaArgs(ua);
       rc.mod = true;
-      if (!scan_command_line_arguments(ua, rc)) {
+      if (!ScanCommandLineArguments(ua, rc)) {
          return 0;
       }
       goto try_again;
@@ -492,7 +492,7 @@ try_again:
    /*
     * Allow the user to modify the settings
     */
-   status = modify_job_parameters(ua, jcr, rc);
+   status = ModifyJobParameters(ua, jcr, rc);
    switch (status) {
    case 0:
       goto try_again;
@@ -550,7 +550,7 @@ bool RunCmd(UaContext *ua, const char *cmd)
    return (DoRunCmd(ua, ua->cmd) != 0);
 }
 
-int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
+int ModifyJobParameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
 {
    int opt;
 
@@ -602,7 +602,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
       switch (DoPrompt(ua, "", _("Select parameter to modify"), NULL, 0)) {
       case 0:
          /* Level */
-         select_job_level(ua, jcr);
+         SelectJobLevel(ua, jcr);
          switch (jcr->getJobType()) {
          case JT_BACKUP:
             if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
@@ -773,7 +773,7 @@ int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
       case 10:
          /* File relocation/Plugin Options depending on JobType */
          if (jcr->is_JobType(JT_RESTORE)) {
-            select_where_regexp(ua, jcr);
+            SelectWhereRegexp(ua, jcr);
             goto try_again;
          } else if (jcr->is_JobType(JT_BACKUP)) {
             if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
@@ -837,7 +837,7 @@ try_again:
  * Reset the restore context.
  * This subroutine can be called multiple times, so it must keep any prior settings.
  */
-static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
+static bool ResetRestoreContext(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
 {
    jcr->res.verify_job = rc.verify_job;
    jcr->res.previous_job = rc.previous_job;
@@ -924,7 +924,7 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
    if (rc.replace) {
       jcr->replace = 0;
       for (int i = 0; ReplaceOptions[i].name; i++) {
-         if (bstrcasecmp(rc.replace, ReplaceOptions[i].name)) {
+         if (Bstrcasecmp(rc.replace, ReplaceOptions[i].name)) {
             jcr->replace = ReplaceOptions[i].token;
          }
       }
@@ -1029,7 +1029,7 @@ static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunConte
    return true;
 }
 
-static void select_where_regexp(UaContext *ua, JobControlRecord *jcr)
+static void SelectWhereRegexp(UaContext *ua, JobControlRecord *jcr)
 {
    alist *regs;
    char *strip_prefix, *add_prefix, *add_suffix, *rwhere;
@@ -1167,7 +1167,7 @@ bail_out_reg:
    }
 }
 
-static void select_job_level(UaContext *ua, JobControlRecord *jcr)
+static void SelectJobLevel(UaContext *ua, JobControlRecord *jcr)
 {
    if (jcr->is_JobType(JT_BACKUP)) {
       StartPrompt(ua, _("Levels:\n"));
@@ -1231,7 +1231,7 @@ static void select_job_level(UaContext *ua, JobControlRecord *jcr)
    return;
 }
 
-static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
+static bool DisplayJobParameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
 {
    char ec1[30];
    JobResource *job = rc.job;
@@ -1729,7 +1729,7 @@ static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunCont
    return true;
 }
 
-static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
+static bool ScanCommandLineArguments(UaContext *ua, RunContext &rc)
 {
    bool kw_ok;
    int i, j;
@@ -1775,7 +1775,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
    rc.job_name = NULL;
    rc.pool_name = NULL;
    rc.next_pool_name = NULL;
-   rc.store_name = NULL;
+   rc.StoreName = NULL;
    rc.client_name = NULL;
    rc.restore_client_name = NULL;
    rc.fileset_name = NULL;
@@ -1795,7 +1795,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
        * Keep looking until we find a good keyword
        */
       for (j = 0; !kw_ok && kw[j]; j++) {
-         if (bstrcasecmp(ua->argk[i], kw[j])) {
+         if (Bstrcasecmp(ua->argk[i], kw[j])) {
             /*
              * Note, yes and run have no value, so do not fail
              */
@@ -1848,11 +1848,11 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                break;
             case 6: /* storage */
             case 7: /* sd */
-               if (rc.store_name) {
+               if (rc.StoreName) {
                   ua->SendMsg(_("Storage specified twice.\n"));
                   return false;
                }
-               rc.store_name = ua->argv[i];
+               rc.StoreName = ua->argv[i];
                kw_ok = true;
                break;
             case 8: /* regexwhere */
@@ -1861,7 +1861,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                   return false;
                }
                rc.regexwhere = ua->argv[i];
-               if (!ua->acl_access_ok(Where_ACL, rc.regexwhere, true)) {
+               if (!ua->AclAccessOk(Where_ACL, rc.regexwhere, true)) {
                   ua->SendMsg(_("No authorization for \"regexwhere\" specification.\n"));
                   return false;
                }
@@ -1873,7 +1873,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                   return false;
                }
                rc.where = ua->argv[i];
-               if (!ua->acl_access_ok(Where_ACL, rc.where, true)) {
+               if (!ua->AclAccessOk(Where_ACL, rc.where, true)) {
                   ua->SendMsg(_("No authoriztion for \"where\" specification.\n"));
                   return false;
                }
@@ -1992,7 +1992,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
                   return false;
                }
                rc.plugin_options = ua->argv[i];
-               if (!ua->acl_access_ok(PluginOptions_ACL, rc.plugin_options, true)) {
+               if (!ua->AclAccessOk(PluginOptions_ACL, rc.plugin_options, true)) {
                   ua->SendMsg(_("No authorization for \"PluginOptions\" specification.\n"));
                   return false;
                }
@@ -2136,12 +2136,12 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       Dmsg1(100, "Using next pool %s\n", rc.next_pool->name());
    }
 
-   if (rc.store_name) {
-      rc.store->store = ua->GetStoreResWithName(rc.store_name);
+   if (rc.StoreName) {
+      rc.store->store = ua->GetStoreResWithName(rc.StoreName);
       PmStrcpy(rc.store->store_source, _("command line"));
       if (!rc.store->store) {
-         if (*rc.store_name != 0) {
-            ua->WarningMsg(_("Storage \"%s\" not found.\n"), rc.store_name);
+         if (*rc.StoreName != 0) {
+            ua->WarningMsg(_("Storage \"%s\" not found.\n"), rc.StoreName);
          }
          rc.store->store = select_storage_resource(ua);
          PmStrcpy(rc.store->store_source, _("user selection"));
@@ -2162,7 +2162,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
       if (!rc.store->store) {
          ua->ErrorMsg(_("No storage specified.\n"));
          return false;
-      } else if (!ua->acl_access_ok(Storage_ACL, rc.store->store->name(), true)) {
+      } else if (!ua->AclAccessOk(Storage_ACL, rc.store->store->name(), true)) {
          ua->ErrorMsg(_("No authorization. Storage \"%s\".\n"), rc.store->store->name());
          return false;
       }
@@ -2183,7 +2183,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
    }
 
    if (rc.client) {
-      if (!ua->acl_access_ok(Client_ACL, rc.client->name(), true)) {
+      if (!ua->AclAccessOk(Client_ACL, rc.client->name(), true)) {
          ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->name());
          return false;
       } else {
@@ -2204,7 +2204,7 @@ static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
    }
 
    if (rc.client) {
-      if (!ua->acl_access_ok(Client_ACL, rc.client->name(), true)) {
+      if (!ua->AclAccessOk(Client_ACL, rc.client->name(), true)) {
          ua->ErrorMsg(_("No authorization. Client \"%s\".\n"), rc.client->name());
          return false;
       } else {

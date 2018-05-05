@@ -115,7 +115,7 @@
  * Default PEM encryption passphrase callback.
  * Returns an empty password.
  */
-int crypto_default_pem_callback(char *buf, int size, const void *userdata)
+int CryptoDefaultPemCallback(char *buf, int size, const void *userdata)
 {
    bstrncpy(buf, "", size);
    return (strlen(buf));

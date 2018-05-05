@@ -22,6 +22,6 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_NATIVE_H_
 #define BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_NATIVE_H_
 
-bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr);
+bool DoNdmpRestoreNdmpNative(JobControlRecord *jcr);
 
 #endif // BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_NATIVE_H_

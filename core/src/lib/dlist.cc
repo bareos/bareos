@@ -197,7 +197,7 @@ void *dlist::binary_insert(void *item, int compare(void *item1, void *item2))
  *  Insert an item in the list, regardless if it is unique
  *  or not.
  */
-void dlist::binary_insert_multiple(void *item, int compare(void *item1, void *item2))
+void dlist::BinaryInsertMultiple(void *item, int compare(void *item1, void *item2))
 {
    void *ins_item = binary_insert(item, compare);
    /* If identical, insert after the one found */

@@ -78,7 +78,7 @@ static char OKpassiveclient[] =
 static char OKbootstrap[] =
    "3000 OK bootstrap\n";
 
-static void build_restore_command(JobControlRecord *jcr, PoolMem &ret)
+static void BuildRestoreCommand(JobControlRecord *jcr, PoolMem &ret)
 {
    char replace, *where, *cmd;
    char empty = '\0';
@@ -128,7 +128,7 @@ static void build_restore_command(JobControlRecord *jcr, PoolMem &ret)
  *   restore.  E.g. your Full is stored on tape, and Incrementals
  *   on disk.
  */
-static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
+static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
 {
    StorageResource *store;
    ClientResource *client;
@@ -136,14 +136,14 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
    BareosSocket *fd = NULL;
    BareosSocket *sd = NULL;
    bool first_time = true;
-   PoolMem restore_cmd(PM_MESSAGE);
+   PoolMem RestoreCmd(PM_MESSAGE);
    char *connection_target_address;
 
    client = jcr->res.client;
    /*
     * This command is used for each part
     */
-   build_restore_command(jcr, restore_cmd);
+   BuildRestoreCommand(jcr, RestoreCmd);
 
    /*
     * Open the bootstrap file
@@ -334,7 +334,7 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
           * Only FD version 52 and later understand the sending of plugin options.
           */
          if (jcr->FDVersion >= FD_VERSION_52) {
-            if (!send_plugin_options(jcr)) {
+            if (!SendPluginOptions(jcr)) {
                Dmsg0(000, "FAIL: Send plugin options\n");
                goto bail_out;
             }
@@ -351,13 +351,13 @@ static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
             }
          }
 
-         if (!send_restore_objects(jcr, 0, true)) {
+         if (!SendRestoreObjects(jcr, 0, true)) {
             Dmsg0(000, "FAIL: Send restore objects\n");
             goto bail_out;
          }
       }
 
-      fd->fsend("%s", restore_cmd.c_str());
+      fd->fsend("%s", RestoreCmd.c_str());
 
       if (!response(jcr, fd, OKrestore, "Restore", DISPLAY_ERROR)) {
          goto bail_out;
@@ -411,7 +411,7 @@ bool DoNativeRestoreInit(JobControlRecord *jcr)
  *  Returns:  false on failure
  *            true on success
  */
-bool do_native_restore(JobControlRecord *jcr)
+bool DoNativeRestore(JobControlRecord *jcr)
 {
    JobDbRecord rjr;                       /* restore job record */
    int status;
@@ -441,7 +441,7 @@ bool do_native_restore(JobControlRecord *jcr)
    /*
     * Read the bootstrap file and do the restore
     */
-   if (!do_native_restore_bootstrap(jcr)) {
+   if (!DoNativeRestoreBootstrap(jcr)) {
       goto bail_out;
    }
 

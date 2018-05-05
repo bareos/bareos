@@ -467,7 +467,7 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord *jcr, JobId_t JobId, Volum
  * Returns: -1 on failure
  *          number on success
  */
-int BareosDb::get_num_pool_records(JobControlRecord *jcr)
+int BareosDb::GetNumPoolRecords(JobControlRecord *jcr)
 {
    int retval = 0;
 
@@ -524,7 +524,7 @@ int BareosDb::GetPoolIds(JobControlRecord *jcr, int *num_ids, DBId_t **ids)
  *  Returns 0: on failure
  *          1: on success
  */
-int BareosDb::get_storage_ids(JobControlRecord *jcr, int *num_ids, DBId_t *ids[])
+int BareosDb::GetStorageIds(JobControlRecord *jcr, int *num_ids, DBId_t *ids[])
 {
    SQL_ROW row;
    int retval = 0;
@@ -906,7 +906,7 @@ int BareosDb::GetFilesetRecord(JobControlRecord *jcr, FileSetDbRecord *fsr)
  * Returns: -1 on failure
  *          number on success
  */
-int BareosDb::get_num_media_records(JobControlRecord *jcr)
+int BareosDb::GetNumMediaRecords(JobControlRecord *jcr)
 {
    int retval = 0;
 
@@ -1202,7 +1202,7 @@ static void strip_md5(char *q)
  * TODO: See if we can do the SORT only if needed (as an argument)
  */
 bool BareosDb::GetFileList(JobControlRecord *jcr, char *jobids, bool use_md5, bool use_delta,
-                         DB_RESULT_HANDLER *result_handler, void *ctx)
+                         DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    PoolMem query(PM_MESSAGE);
    PoolMem query2(PM_MESSAGE);
@@ -1240,7 +1240,7 @@ bool BareosDb::GetFileList(JobControlRecord *jcr, char *jobids, bool use_md5, bo
 
    Dmsg1(100, "q=%s\n", query.c_str());
 
-   return BigSqlQuery(query.c_str(), result_handler, ctx);
+   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
 }
 
 /**
@@ -1255,7 +1255,7 @@ bool BareosDb::GetUsedBaseJobids(JobControlRecord *jcr, POOLMEM *jobids, db_list
  "  FROM Job JOIN BaseFiles USING (JobId) "
  " WHERE Job.HasBase = 1 "
  "   AND Job.JobId IN (%s) ", jobids);
-   return SqlQueryWithHandler(query.c_str(), db_list_handler, result);
+   return SqlQueryWithHandler(query.c_str(), DbListHandler, result);
 }
 
 /**
@@ -1356,7 +1356,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord *jcr, JobDbRecord *jr, db_list
    } else {
       Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate", jobid);
    }
-   SqlQueryWithHandler(query.c_str(), db_list_handler, jobids);
+   SqlQueryWithHandler(query.c_str(), DbListHandler, jobids);
    Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->list);
    retval = true;
 
@@ -1366,7 +1366,7 @@ bail_out:
    return retval;
 }
 
-bool BareosDb::GetBaseFileList(JobControlRecord *jcr, bool use_md5, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::GetBaseFileList(JobControlRecord *jcr, bool use_md5, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    PoolMem query(PM_MESSAGE);
 
@@ -1378,7 +1378,7 @@ bool BareosDb::GetBaseFileList(JobControlRecord *jcr, bool use_md5, DB_RESULT_HA
    if (!use_md5) {
       strip_md5(query.c_str());
    }
-   return BigSqlQuery(query.c_str(), result_handler, ctx);
+   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
 }
 
 bool BareosDb::GetBaseJobid(JobControlRecord *jcr, JobDbRecord *jr, JobId_t *jobid)
@@ -1440,7 +1440,7 @@ bool BareosDb::GetVolumeJobids(JobControlRecord *jcr, MediaDbRecord *mr, db_list
    DbLock(this);
    Mmsg(cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%s",
         edit_int64(mr->MediaId, ed1));
-   retval = SqlQueryWithHandler(cmd, db_list_handler, lst);
+   retval = SqlQueryWithHandler(cmd, DbListHandler, lst);
    DbUnlock(this);
    return retval;
 }
@@ -1598,7 +1598,7 @@ bool BareosDb::GetQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cdbr)
  * Returns dumplevel on success
  *         0: on failure
  */
-int BareosDb::get_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem)
+int BareosDb::GetNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];
@@ -1650,7 +1650,7 @@ bail_out:
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    PoolMem query(PM_FNAME);
    char ed1[50];
@@ -1664,7 +1664,7 @@ bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB
                "WHERE JobId='%s' ",
                edit_uint64(JobId, ed1));
 
-   retval = SqlQueryWithHandler(query.c_str(), result_handler, ctx);
+   retval = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
 
    return retval;
 }
@@ -1676,7 +1676,7 @@ bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *ResultHandler, void *ctx)
 {
    PoolMem query(PM_MESSAGE);
    char ed1[50], ed2[50];
@@ -1710,7 +1710,7 @@ bool BareosDb::GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, 
                edit_uint64(JobId, ed1),
                edit_uint64(jr->FileIndex, ed2));
 
-   retval = SqlQueryWithHandler(query.c_str(), result_handler, ctx);
+   retval = SqlQueryWithHandler(query.c_str(), ResultHandler, ctx);
 
 bail_out:
    return retval;

@@ -69,7 +69,7 @@
 /**
  * Entry points when compiled without support for ACLs or on an unsupported platform.
  */
-bacl_exit_code build_acl_streams(JobControlRecord *jcr,
+bacl_exit_code BuildAclStreams(JobControlRecord *jcr,
                                  acl_data_t *acl_data,
                                  FindFilesPacket *ff_pkt)
 {
@@ -88,7 +88,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord *jcr,
 /**
  * Send an ACL stream to the SD.
  */
-bacl_exit_code send_acl_stream(JobControlRecord *jcr, acl_data_t *acl_data, int stream)
+bacl_exit_code SendAclStream(JobControlRecord *jcr, acl_data_t *acl_data, int stream)
 {
    BareosSocket *sd = jcr->store_bsock;
    POOLMEM *msgsave;
@@ -150,7 +150,7 @@ bacl_exit_code send_acl_stream(JobControlRecord *jcr, acl_data_t *acl_data, int 
 #include <sys/access.h>
 #include <sys/acl.h>
 
-static bool acl_is_trivial(struct acl *acl)
+static bool AclIsTrivial(struct acl *acl)
 {
    return (acl_last(acl) != acl->acl_ext ? false : true);
 }
@@ -280,7 +280,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
     */
    switch (type.u64) {
    case ACL_AIXC:
-      if (acl_is_trivial((struct acl *)aclbuf)) {
+      if (AclIsTrivial((struct acl *)aclbuf)) {
          retval = bacl_exit_ok;
          goto bail_out;
       }
@@ -337,10 +337,10 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
    acl_data->u.build->content_length = strlen(acl_data->u.build->content) + 1;
    switch (type.u64) {
    case ACL_AIXC:
-      retval = send_acl_stream(jcr, acl_data, STREAM_ACL_AIX_AIXC);
+      retval = SendAclStream(jcr, acl_data, STREAM_ACL_AIX_AIXC);
       break;
    case ACL_NFS4:
-      retval = send_acl_stream(jcr, acl_data, STREAM_ACL_AIX_NFS4);
+      retval = SendAclStream(jcr, acl_data, STREAM_ACL_AIX_NFS4);
       break;
    }
 
@@ -534,8 +534,8 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
    if ((acl_text = acl_get(acl_data->last_fname)) != NULL) {
       acl_data->u.build->content_length =
       PmStrcpy(acl_data->u.build->content, acl_text);
-      actuallyfree(acl_text);
-      return send_acl_stream(jcr, acl_data, STREAM_ACL_AIX_TEXT);
+      Actuallyfree(acl_text);
+      return SendAclStream(jcr, acl_data, STREAM_ACL_AIX_TEXT);
    }
    return bacl_exit_error;
 }
@@ -617,7 +617,7 @@ static bacl_exit_code (*os_parse_acl_streams)
 /**
  * Some generic functions used by multiple OSes.
  */
-static acl_type_t bac_to_os_acltype(bacl_type acltype)
+static acl_type_t BacToOsAcltype(bacl_type acltype)
 {
    acl_type_t ostype;
 
@@ -663,7 +663,7 @@ static acl_type_t bac_to_os_acltype(bacl_type acltype)
    return ostype;
 }
 
-static int acl_count_entries(acl_t acl)
+static int AclCountEntries(acl_t acl)
 {
    int count = 0;
 #if defined(HAVE_FREEBSD_OS) || \
@@ -699,7 +699,7 @@ static int acl_count_entries(acl_t acl)
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
-static bool acl_is_trivial(acl_t acl)
+static bool AclIsTrivial(acl_t acl)
 {
   /*
    * acl is trivial if it has only the following entries:
@@ -789,7 +789,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
    char *acl_text;
    bacl_exit_code retval = bacl_exit_ok;
 
-   ostype = bac_to_os_acltype(acltype);
+   ostype = BacToOsAcltype(acltype);
    acl = acl_get_file(acl_data->last_fname, ostype);
    if (acl) {
       /**
@@ -801,7 +801,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
        * For all other implmentations we check if there are more then
        * zero entries in the acl returned.
        */
-      if (acl_count_entries(acl) <= 0) {
+      if (AclCountEntries(acl) <= 0) {
          goto bail_out;
       }
 
@@ -809,7 +809,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
        * Make sure this is not just a trivial ACL.
        */
 #if !defined(HAVE_DARWIN_OS)
-      if (acltype == BACL_TYPE_ACCESS && acl_is_trivial(acl)) {
+      if (acltype == BACL_TYPE_ACCESS && AclIsTrivial(acl)) {
          /*
           * The ACLs simply reflect the (already known) standard permissions
           * So we don't send an ACL stream to the SD.
@@ -909,7 +909,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord *jcr,
    /*
     * If we get empty default ACLs, clear ACLs now
     */
-   ostype = bac_to_os_acltype(acltype);
+   ostype = BacToOsAcltype(acltype);
    if (ostype == ACL_TYPE_DEFAULT && strlen(content) == 0) {
       if (acl_delete_def_file(acl_data->last_fname) == 0) {
          return bacl_exit_ok;
@@ -1060,7 +1060,7 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord *jcr,
 #endif
 
    if (acl_data->u.build->content_length > 0) {
-      return send_acl_stream(jcr, acl_data, STREAM_ACL_DARWIN_ACCESS_ACL);
+      return SendAclStream(jcr, acl_data, STREAM_ACL_DARWIN_ACCESS_ACL);
    }
    return bacl_exit_ok;
 }
@@ -1192,7 +1192,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
          return bacl_exit_fatal;
 
       if (acl_data->u.build->content_length > 0) {
-         if (send_acl_stream(jcr, acl_data, STREAM_ACL_FREEBSD_NFS4_ACL) == bacl_exit_fatal)
+         if (SendAclStream(jcr, acl_data, STREAM_ACL_FREEBSD_NFS4_ACL) == bacl_exit_fatal)
             return bacl_exit_fatal;
       }
       break;
@@ -1204,7 +1204,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
          return bacl_exit_fatal;
 
       if (acl_data->u.build->content_length > 0) {
-         if (send_acl_stream(jcr, acl_data, STREAM_ACL_FREEBSD_ACCESS_ACL) == bacl_exit_fatal)
+         if (SendAclStream(jcr, acl_data, STREAM_ACL_FREEBSD_ACCESS_ACL) == bacl_exit_fatal)
             return bacl_exit_fatal;
       }
 
@@ -1215,7 +1215,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
          if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT) == bacl_exit_fatal)
             return bacl_exit_fatal;
          if (acl_data->u.build->content_length > 0) {
-            if (send_acl_stream(jcr, acl_data, STREAM_ACL_FREEBSD_DEFAULT_ACL) == bacl_exit_fatal)
+            if (SendAclStream(jcr, acl_data, STREAM_ACL_FREEBSD_DEFAULT_ACL) == bacl_exit_fatal)
                return bacl_exit_fatal;
          }
       }
@@ -1361,7 +1361,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord *jcr,
       return bacl_exit_fatal;
 
    if (acl_data->u.build->content_length > 0) {
-      if (send_acl_stream(jcr, acl_data, os_access_acl_streams[0]) == bacl_exit_fatal)
+      if (SendAclStream(jcr, acl_data, os_access_acl_streams[0]) == bacl_exit_fatal)
          return bacl_exit_fatal;
    }
 
@@ -1372,7 +1372,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord *jcr,
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT) == bacl_exit_fatal)
          return bacl_exit_fatal;
       if (acl_data->u.build->content_length > 0) {
-         if (send_acl_stream(jcr, acl_data, os_default_acl_streams[0]) == bacl_exit_fatal)
+         if (SendAclStream(jcr, acl_data, os_default_acl_streams[0]) == bacl_exit_fatal)
             return bacl_exit_fatal;
       }
    }
@@ -1448,7 +1448,7 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord *jcr,
    if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS) == bacl_exit_fatal) {
       return bacl_exit_error;
    if (acl_data->u.build->content_length > 0) {
-      if (!send_acl_stream(jcr, acl_data, STREAM_ACL_TRU64_ACCESS_ACL))
+      if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_ACCESS_ACL))
          return bacl_exit_error;
    }
    /*
@@ -1458,7 +1458,7 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord *jcr,
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT) == bacl_exit_fatal) {
          return bacl_exit_error;
       if (acl_data->u.build->content_length > 0) {
-         if (!send_acl_stream(jcr, acl_data, STREAM_ACL_TRU64_DEFAULT_ACL))
+         if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_DEFAULT_ACL))
             return bacl_exit_error;
       }
       /**
@@ -1470,7 +1470,7 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord *jcr,
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT_DIR) == bacl_exit_fatal) {
          return bacl_exit_error;
       if (acl_data->u.build->content_length > 0) {
-         if (!send_acl_stream(jcr, acl_data, STREAM_ACL_TRU64_DEFAULT_DIR_ACL))
+         if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_DEFAULT_DIR_ACL))
             return bacl_exit_error;
       }
    }
@@ -1532,7 +1532,7 @@ static int os_default_acl_streams[1] = {
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
-static bool acl_is_trivial(int count, struct acl_entry *entries, struct stat sb)
+static bool AclIsTrivial(int count, struct acl_entry *entries, struct stat sb)
 {
    int n;
    struct acl_entry ace
@@ -1602,7 +1602,7 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
       return bacl_exit_ok;
    }
    if ((n = getacl(acl_data->last_fname, n, acls)) > 0) {
-      if (acl_is_trivial(n, acls, ff_pkt->statp)) {
+      if (AclIsTrivial(n, acls, ff_pkt->statp)) {
          /*
           * The ACLs simply reflect the (already known) standard permissions
           * So we don't send an ACL stream to the SD.
@@ -1614,9 +1614,9 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
       if ((acl_text = acltostr(n, acls, FORM_SHORT)) != NULL) {
          acl_data->u.build->content_length =
          PmStrcpy(acl_data->u.build->content, acl_text);
-         actuallyfree(acl_text);
+         Actuallyfree(acl_text);
 
-         return send_acl_stream(jcr, acl_data, STREAM_ACL_HPUX_ACL_ENTRY);
+         return SendAclStream(jcr, acl_data, STREAM_ACL_HPUX_ACL_ENTRY);
       }
 
       berrno be;
@@ -1848,14 +1848,14 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
    if ((acl_text = acl_totext(aclp, flags)) != NULL) {
       acl_data->u.build->content_length =
       PmStrcpy(acl_data->u.build->content, acl_text);
-      actuallyfree(acl_text);
+      Actuallyfree(acl_text);
 
       switch (acl_type(aclp)) {
       case ACLENT_T:
-         stream_status = send_acl_stream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
+         stream_status = SendAclStream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
          break;
       case ACE_T:
-         stream_status = send_acl_stream(jcr, acl_data, STREAM_ACL_SOLARIS_ACE);
+         stream_status = SendAclStream(jcr, acl_data, STREAM_ACL_SOLARIS_ACE);
          break;
       default:
          break;
@@ -2028,7 +2028,7 @@ static int os_default_acl_streams[1] = {
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
-static bool acl_is_trivial(int count, aclent_t *entries)
+static bool AclIsTrivial(int count, aclent_t *entries)
 {
    int n;
    aclent_t *ace;
@@ -2063,7 +2063,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
 
    acls = (aclent_t *)malloc(n * sizeof(aclent_t));
    if (acl(acl_data->last_fname, GETACL, n, acls) == n) {
-      if (acl_is_trivial(n, acls)) {
+      if (AclIsTrivial(n, acls)) {
          /*
           * The ACLs simply reflect the (already known) standard permissions
           * So we don't send an ACL stream to the SD.
@@ -2077,9 +2077,9 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
       if ((acl_text = acltotext(acls, n)) != NULL) {
          acl_data->u.build->content_length =
          PmStrcpy(acl_data->u.build->content, acl_text);
-         actuallyfree(acl_text);
+         Actuallyfree(acl_text);
          free(acls);
-         return send_acl_stream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
+         return SendAclStream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
       }
 
       berrno be;
@@ -2124,7 +2124,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
 
       switch (errno) {
       case ENOENT:
-         actuallyfree(acls);
+         Actuallyfree(acls);
          return bacl_exit_ok;
       default:
          Mmsg2(jcr->errmsg,
@@ -2132,11 +2132,11 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
                acl_data->last_fname, be.bstrerror());
          Dmsg3(100, "acl(SETACL) error acl=%s file=%s ERR=%s\n",
                content, acl_data->last_fname, be.bstrerror());
-         actuallyfree(acls);
+         Actuallyfree(acls);
          return bacl_exit_error;
       }
    }
-   actuallyfree(acls);
+   Actuallyfree(acls);
    return bacl_exit_ok;
 }
 #endif /* HAVE_EXTENDED_ACL */
@@ -2204,7 +2204,7 @@ static bacl_exit_code afs_build_acl_streams(JobControlRecord *jcr,
    }
    acl_data->u.build->content_length =
    PmStrcpy(acl_data->u.build->content, acl_text);
-   return send_acl_stream(jcr, acl_data, STREAM_ACL_AFS_TEXT);
+   return SendAclStream(jcr, acl_data, STREAM_ACL_AFS_TEXT);
 }
 
 static bacl_exit_code afs_parse_acl_stream(JobControlRecord *jcr,
@@ -2243,7 +2243,7 @@ static bacl_exit_code afs_parse_acl_stream(JobControlRecord *jcr,
 /**
  * Read and send an ACL for the last encountered file.
  */
-bacl_exit_code build_acl_streams(JobControlRecord *jcr,
+bacl_exit_code BuildAclStreams(JobControlRecord *jcr,
                                  acl_data_t *acl_data,
                                  FindFilesPacket *ff_pkt)
 {

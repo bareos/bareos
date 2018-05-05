@@ -53,7 +53,7 @@ RestoreBootstrapRecordFileIndex *new_findex()
 /**
  * Free all BootStrapRecord FileIndex entries
  */
-static inline void free_findex(RestoreBootstrapRecordFileIndex *fi)
+static inline void FreeFindex(RestoreBootstrapRecordFileIndex *fi)
 {
    RestoreBootstrapRecordFileIndex *next;
    for ( ; fi; fi=next) {
@@ -65,7 +65,7 @@ static inline void free_findex(RestoreBootstrapRecordFileIndex *fi)
 /**
  * Get storage device name from Storage resource
  */
-static bool get_storage_device(char *device, char *storage)
+static bool GetStorageDevice(char *device, char *storage)
 {
    StorageResource *store;
    if (storage[0] == 0) {
@@ -86,7 +86,7 @@ static bool get_storage_device(char *device, char *storage)
 /**
  * Print a BootStrapRecord entry into a memory buffer.
  */
-static void print_bsr_item(PoolMem *pool_buf, const char *fmt, ...)
+static void PrintBsrItem(PoolMem *pool_buf, const char *fmt, ...)
 {
    va_list arg_ptr;
    int len, maxlen;
@@ -95,7 +95,7 @@ static void print_bsr_item(PoolMem *pool_buf, const char *fmt, ...)
    while (1) {
       maxlen = item.MaxSize() - 1;
       va_start(arg_ptr, fmt);
-      len = bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
+      len = Bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
       if (len < 0 || len >= (maxlen - 5)) {
          item.ReallocPm(maxlen + maxlen / 2);
@@ -132,10 +132,10 @@ static inline uint32_t write_findex(RestoreBootstrapRecordFileIndex *fi,
          findex = fi->findex < FirstIndex ? FirstIndex : fi->findex;
          findex2 = fi->findex2 > LastIndex ? LastIndex : fi->findex2;
          if (findex == findex2) {
-            print_bsr_item(buffer, "FileIndex=%d\n", findex);
+            PrintBsrItem(buffer, "FileIndex=%d\n", findex);
             count++;
          } else {
-            print_bsr_item(buffer, "FileIndex=%d-%d\n", findex, findex2);
+            PrintBsrItem(buffer, "FileIndex=%d-%d\n", findex, findex2);
             count += findex2 - findex + 1;
          }
       }
@@ -183,7 +183,7 @@ void FreeBsr(RestoreBootstrapRecord *bsr)
    RestoreBootstrapRecord *next;
 
    while (bsr) {
-      free_findex(bsr->fi);
+      FreeFindex(bsr->fi);
 
       if (bsr->VolParams) {
          free(bsr->VolParams);
@@ -307,7 +307,7 @@ bail_out:
    return count;
 }
 
-static void display_vol_info(UaContext *ua, RestoreContext &rx, JobId_t JobId)
+static void DisplayVolInfo(UaContext *ua, RestoreContext &rx, JobId_t JobId)
 {
    int i;
    RestoreBootstrapRecord *bsr;
@@ -322,7 +322,7 @@ static void display_vol_info(UaContext *ua, RestoreContext &rx, JobId_t JobId)
 
       for (i = 0; i < bsr->VolCount; i++) {
          if (bsr->VolParams[i].VolumeName[0]) {
-            if (!get_storage_device(Device, bsr->VolParams[i].Storage)) {
+            if (!GetStorageDevice(Device, bsr->VolParams[i].Storage)) {
                Device[0] = 0;
             }
             if (bsr->VolParams[i].InChanger && bsr->VolParams[i].Slot) {
@@ -361,13 +361,13 @@ void DisplayBsrInfo(UaContext *ua, RestoreContext &rx)
       /*
        * Print Volumes in any order
        */
-      display_vol_info(ua, rx, 0);
+      DisplayVolInfo(ua, rx, 0);
    } else {
       /*
        * Ensure that the volumes are printed in JobId order
        */
       for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0; ) {
-         display_vol_info(ua, rx, JobId);
+         DisplayVolInfo(ua, rx, JobId);
       }
    }
 
@@ -417,25 +417,25 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord *bsr, UaContext *ua,
                                bsr->VolParams[i].MediaType);
       }
 
-      print_bsr_item(buffer, "Storage=\"%s\"\n", bsr->VolParams[i].Storage);
-      print_bsr_item(buffer, "Volume=\"%s\"\n", bsr->VolParams[i].VolumeName);
-      print_bsr_item(buffer, "MediaType=\"%s\"\n", bsr->VolParams[i].MediaType);
+      PrintBsrItem(buffer, "Storage=\"%s\"\n", bsr->VolParams[i].Storage);
+      PrintBsrItem(buffer, "Volume=\"%s\"\n", bsr->VolParams[i].VolumeName);
+      PrintBsrItem(buffer, "MediaType=\"%s\"\n", bsr->VolParams[i].MediaType);
 
       if (bsr->fileregex) {
-         print_bsr_item(buffer, "FileRegex=%s\n", bsr->fileregex);
+         PrintBsrItem(buffer, "FileRegex=%s\n", bsr->fileregex);
       }
 
-      if (get_storage_device(device, bsr->VolParams[i].Storage)) {
-         print_bsr_item(buffer, "Device=\"%s\"\n", device);
+      if (GetStorageDevice(device, bsr->VolParams[i].Storage)) {
+         PrintBsrItem(buffer, "Device=\"%s\"\n", device);
       }
 
       if (bsr->VolParams[i].Slot > 0) {
-         print_bsr_item(buffer, "Slot=%d\n", bsr->VolParams[i].Slot);
+         PrintBsrItem(buffer, "Slot=%d\n", bsr->VolParams[i].Slot);
       }
 
-      print_bsr_item(buffer, "VolSessionId=%u\n", bsr->VolSessionId);
-      print_bsr_item(buffer, "VolSessionTime=%u\n", bsr->VolSessionTime);
-      print_bsr_item(buffer, "VolAddr=%s-%s\n", edit_uint64(bsr->VolParams[i].StartAddr, ed1),
+      PrintBsrItem(buffer, "VolSessionId=%u\n", bsr->VolSessionId);
+      PrintBsrItem(buffer, "VolSessionTime=%u\n", bsr->VolSessionTime);
+      PrintBsrItem(buffer, "VolAddr=%s-%s\n", edit_uint64(bsr->VolParams[i].StartAddr, ed1),
                      edit_uint64(bsr->VolParams[i].EndAddr, ed2));
 //    Dmsg2(100, "bsr VolParam FI=%u LI=%u\n",
 //          bsr->VolParams[i].FirstIndex, bsr->VolParams[i].LastIndex);
@@ -443,7 +443,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord *bsr, UaContext *ua,
       count = write_findex(bsr->fi, bsr->VolParams[i].FirstIndex,
                            bsr->VolParams[i].LastIndex, buffer);
       if (count) {
-         print_bsr_item(buffer, "Count=%u\n", count);
+         PrintBsrItem(buffer, "Count=%u\n", count);
       }
 
       total_count += count;
@@ -646,7 +646,7 @@ void AddFindex(RestoreBootstrapRecord *bsr, uint32_t JobId, int32_t findex)
  * Here we are only dealing with JobId's and the FileIndexes
  * associated with those JobIds.
  */
-void add_findex_all(RestoreBootstrapRecord *bsr, uint32_t JobId)
+void AddFindexAll(RestoreBootstrapRecord *bsr, uint32_t JobId)
 {
    RestoreBootstrapRecord *nbsr;
    RestoreBootstrapRecordFileIndex *fi;
@@ -744,7 +744,7 @@ bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info)
       if (ua->argc != 1) {
          continue;
       }
-      if (bstrcasecmp(ua->argk[0], "Storage")) {
+      if (Bstrcasecmp(ua->argk[0], "Storage")) {
          bstrncpy(info.storage, ua->argv[0], MAX_NAME_LENGTH);
          break;
       }
@@ -760,7 +760,7 @@ bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info)
  * the current one. We compare the name and the address:port.
  * Returns true if we use the same storage.
  */
-static inline bool is_on_same_storage(JobControlRecord *jcr, char *new_one)
+static inline bool IsOnSameStorage(JobControlRecord *jcr, char *new_one)
 {
    StorageResource *new_store;
 
@@ -812,7 +812,7 @@ static inline bool is_on_same_storage(JobControlRecord *jcr, char *new_one)
  * Returns true if we need to change the storage, and it set the new
  * Storage resource name in "storage" arg.
  */
-static inline bool check_for_new_storage(JobControlRecord *jcr, bootstrap_info &info)
+static inline bool CheckForNewStorage(JobControlRecord *jcr, bootstrap_info &info)
 {
    UaContext *ua = info.ua;
 
@@ -821,11 +821,11 @@ static inline bool check_for_new_storage(JobControlRecord *jcr, bootstrap_info &
       return false;
    }
 
-   if (bstrcasecmp(ua->argk[0], "Storage")) {
+   if (Bstrcasecmp(ua->argk[0], "Storage")) {
       /*
        * Continue if this is a volume from the same storage.
        */
-      if (is_on_same_storage(jcr, ua->argv[0])) {
+      if (IsOnSameStorage(jcr, ua->argv[0])) {
          return false;
       }
 
@@ -859,7 +859,7 @@ bool SendBootstrapFile(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info
    pos = ftello(bs);
 
    while (fgets(ua->cmd, UA_CMD_SIZE, bs)) {
-      if (check_for_new_storage(jcr, info)) {
+      if (CheckForNewStorage(jcr, info)) {
          /*
           * Otherwise, we need to contact another storage daemon.
           * Reset bs to the beginning of the current segment.
