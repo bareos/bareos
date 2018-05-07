@@ -27,7 +27,7 @@ cd cmake-build
 if [ -f CMakeCache.txt  ] ; then
   echo  "CMakeCache.txt exist, not calling cmake"
 else
-   cmake  .. \
+   cmake  ../../core \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_INSTALL_PREFIX:PATH=${1}/usr \
       -DCMAKE_INSTALL_LIBDIR:PATH=${1}/usr/lib \
