@@ -154,7 +154,6 @@ FILE_PATTERNS          = *.c \
 RECURSIVE              = YES
 EXCLUDE                = bareos-webui/aclocal.m4 \
                          bareos-webui/AGPL-3.0.txt \
-                         bareos-webui/AUTHORS \
                          bareos-webui/autogen.sh \
                          bareos-webui/composer.phar \
                          bareos-webui/configure \

@@ -1,7 +1,7 @@
 #
 # spec file for package  bareos-vmware-plugin
 #
-# Copyright (c) 2015-2017 Bareos GmbH & Co KG
+# Copyright (c) 2015-2018 Bareos GmbH & Co KG
 
 # bareos-vadp-dumper must be main project,
 # as the package with debug info gets the name of the main package.
@@ -117,7 +117,7 @@ make
 %dir %{_libdir}/bareos/
 %{_libdir}/bareos/plugins/
 %{_sbindir}/vmware_cbt_tool.py
-%doc AUTHORS LICENSE README.md
+%doc LICENSE README.md
 
 #%%files -n bareos-vmware-vix-disklib
 #/usr/lib/vmware-vix-disklib/lib64
