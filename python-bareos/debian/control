@@ -1,0 +1,13 @@
+Source: python-bareos
+Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
+Section: python
+Priority: optional
+Build-Depends: dh-python, debhelper (>= 7.4.3), python-all (>= 2.6.6-3), python-setuptools (>= 0.6b3)
+Standards-Version: 3.9.1
+
+Package: python-bareos
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: Backup Archiving REcovery Open Sourced - Python module
+ This packages contains a python module to interact with a Bareos backup system.
+ It also includes some tools based on this module.
