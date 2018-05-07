@@ -138,12 +138,15 @@ static void ReloadJobEndCb(JobControlRecord *jcr, void *ctx)
 
    foreach_alist_index(i, table, reload_table) {
       if (table == (resource_table_reference *)ctx) {
-         if (--table->JobCount <= 0) {
-            Dmsg0(100, "Last reference to old configuration, removing saved configuration\n");
-            FreeSavedResources(table);
-            reload_table->remove(i);
-            free(table);
-            break;
+         if (table->JobCount) {
+            table->JobCount--;
+            if (table->JobCount == 0) {
+               Dmsg1(100, "Last reference to old configuration table: %#010x\n", table);
+               FreeSavedResources(table);
+               reload_table->remove(i);
+               free(table);
+               break;
+            }
          }
       }
    }
@@ -565,32 +568,12 @@ static bool init_sighandler_sighup()
    return retval;
 }
 
-/**
- * The algorithm used is as follows: we count how many jobs are
- * running and mark the running jobs to make a callback on
- * exiting. The old config is saved with the reload table
- * id in a reload table. The new configuration is read. Now, as
- * each job exits, it calls back to the ReloadJobEndCb(), which
- * decrements the count of open jobs for the given reload table.
- * When the count goes to zero, we release those resources.
- * This allows us to have pointers into the resource table (from
- * jobs), and once they exit and all the pointers are released, we
- * release the old table. Note, if no new jobs are running since the
- * last reload, then the old resources will be immediately release.
- * A console is considered a job because it may have pointers to
- * resources, but a SYSTEM job is not since it *should* not have any
- * permanent pointers to resources.
- */
 bool do_reload_config()
 {
-   static bool already_here = false;
-   bool ok = false;
+   static bool is_reloading = false;
    bool reloaded = false;
-   JobControlRecord *jcr;
-   int njobs = 0;                     /* Number of running jobs */
-   resource_table_reference prev_config;
 
-   if (already_here) {
+   if (is_reloading) {
       /*
        * Note: don't use Jmsg here, as it could produce a race condition
        * on multiple parallel reloads
@@ -598,58 +581,46 @@ bool do_reload_config()
       Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return false;
    }
-   already_here = true;
+   is_reloading = true;
+
+   StopStatisticsThread();
 
    LockJobs();
    LockRes();
 
-   /*
-    * Flush the sql connection pools.
-    */
    DbSqlPoolFlush();
 
-   /*
-    * Save the previous config so we can restore it.
-    */
+   resource_table_reference prev_config;
    prev_config.res_table = my_config->save_resources();
    prev_config.JobCount = 0;
 
-   /*
-    * Start parsing the new config.
-    */
    Dmsg0(100, "Reloading config file\n");
-   ok = ParseDirConfig(my_config, configfile, M_ERROR);
+   bool ok = ParseDirConfig(my_config, configfile, M_ERROR);
+
    if (!ok || !check_resources() || !CheckCatalog(UPDATE_CATALOG) || !InitializeSqlPooling()) {
-      int num;
-      resource_table_reference failed_config;
 
       Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
-      /*
-       * Save the config we were not able to load.
-       */
-      failed_config.res_table = my_config->save_resources();
+      resource_table_reference temp_config;
+      temp_config.res_table = my_config->save_resources();
 
-      /*
-       * Now restore old resource values,
-       */
-      num = my_config->r_last_ - my_config->r_first_ + 1;
-      for (int i = 0; i < num; i++) {
+      int num_rcodes = my_config->r_last_ - my_config->r_first_ + 1;
+      for (int i = 0; i < num_rcodes; i++) {
+         // restore original config
          my_config->res_head_[i] = prev_config.res_table[i];
       }
 
-      /*
-       * Reset director resource to old config as check_resources() changed it
-       */
+      // me is changed above by check_resources()
       me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
 
-      /*
-       * Destroy the content of the failed config load.
-       */
-      FreeSavedResources(&failed_config);
+      FreeSavedResources(&temp_config);
       goto bail_out;
-   } else {
+
+   } else { // parse config ok
+
+      JobControlRecord *jcr;
+      int num_running_jobs = 0;
       resource_table_reference *new_table = NULL;
 
       InvalidateSchedules();
@@ -661,42 +632,30 @@ bool do_reload_config()
             }
             new_table->JobCount++;
             RegisterJobEndCallback(jcr, ReloadJobEndCb, (void *)new_table);
-            njobs++;
+            num_running_jobs++;
          }
       }
       endeach_jcr(jcr);
       reloaded = true;
 
-      /*
-       * Reset globals
-       */
       SetWorkingDirectory(me->working_directory);
       Dmsg0(10, "Director's configuration file reread.\n");
 
-      if (njobs > 0) {
-         /*
-          * See if we already initialized the alist.
-          */
+      if (num_running_jobs > 0) {
          if (!reload_table) {
             reload_table = New(alist(10, not_owned_by_alist));
          }
-
-         /*
-          * Push the saved resource info onto the alist.
-          */
          reload_table->push(new_table);
-      } else {
-         /*
-          * There are no running Jobs so we don't need to keep the old config around.
-          */
+      } else { // no jobs running
          FreeSavedResources(&prev_config);
       }
+      StartStatisticsThread();
    }
 
 bail_out:
    UnlockRes();
    UnlockJobs();
-   already_here = false;
+   is_reloading = false;
    return reloaded;
 }
 

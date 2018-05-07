@@ -45,7 +45,6 @@ static char TapeAlerts[] =
 static char JobStats[] =
    "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
 
-/* Static globals */
 static bool quit = false;
 static bool statistics_initialized = false;
 static bool need_flush = true;
@@ -68,18 +67,12 @@ static inline bool LookupDevice(JobControlRecord *jcr, const char *device_name, 
 
    memset(&dr, 0, sizeof(dr));
 
-   /*
-    * See if we can use the cached DeviceId.
-    */
    if (cached_device.StorageId == StorageId &&
        bstrcmp(cached_device.device_name, device_name)) {
       *DeviceId = cached_device.DeviceId;
       return true;
    }
 
-   /*
-    * Find or create device record
-    */
    dr.StorageId = StorageId;
    bstrncpy(dr.Name, device_name, sizeof(dr.Name));
    if (!jcr->db->CreateDeviceRecord(jcr, &dr)){
@@ -89,9 +82,6 @@ static inline bool LookupDevice(JobControlRecord *jcr, const char *device_name, 
 
    Dmsg3(200, "Deviceid of \"%s\" on StorageId %d is %d\n", dr.Name, dr.StorageId, dr.DeviceId);
 
-   /*
-    * Cache the result.
-    */
    bstrncpy(cached_device.device_name, device_name, sizeof(cached_device.device_name));
    cached_device.StorageId = StorageId;
    cached_device.DeviceId = dr.DeviceId;
@@ -103,19 +93,12 @@ bail_out:
    return false;
 }
 
-/**
- * Wait for the next run.
- */
 static inline void wait_for_next_run()
 {
    struct timeval tv;
    struct timezone tz;
    struct timespec timeout;
 
-   /*
-    * Wait for a next run. Normally this waits exactly me->stats_collect_interval seconds.
-    * It can be interrupted when signaled by the StopStatisticsThread() function.
-    */
    gettimeofday(&tv, &tz);
    timeout.tv_nsec = tv.tv_usec * 1000;
    timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
@@ -125,27 +108,20 @@ static inline void wait_for_next_run()
    V(mutex);
 }
 
-/**
- * Entry point for a separate statistics thread.
- */
 extern "C"
-void *statistics_thread_runner(void *arg)
+void *statistics_thread(void *arg)
 {
    JobControlRecord *jcr;
    utime_t now;
    PoolMem current_store(PM_NAME);
 
+   Dmsg0(200, "Starting statistics thread\n");
+
    memset(&cached_device, 0, sizeof(struct cached_device));
    PmStrcpy(current_store, "");
 
-   /*
-    * Create a dummy JobControlRecord for the statistics thread.
-    */
    jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
-   /*
-    * Open a connection to the database for storing long term statistics.
-    */
    jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
    jcr->db = db_sql_get_pooled_connection(jcr,
                                           jcr->res.catalog->db_driver,
@@ -164,33 +140,21 @@ void *statistics_thread_runner(void *arg)
       goto bail_out;
    }
 
-   /*
-    * Do our work as long as we are not signaled to quit.
-    */
    while (!quit) {
       now = (utime_t)time(NULL);
 
       Dmsg1(200, "statistics_thread_runner: Doing work at %ld\n", now);
 
-      /*
-       * Do nothing if no job is running currently.
-       */
       if (JobCount() == 0) {
          if (!need_flush) {
             Dmsg0(200, "statistics_thread_runner: do nothing as no jobs are running\n");
             wait_for_next_run();
             continue;
          } else {
-            /*
-             * Flush any pending statistics data one more time and then sleep until new jobs start running.
-             */
             Dmsg0(200, "statistics_thread_runner: flushing pending statistics\n");
             need_flush = false;
          }
       } else {
-         /*
-          * We have running jobs so on a next run we still need to flush any collected data.
-          */
          need_flush = true;
       }
 
@@ -227,12 +191,9 @@ void *statistics_thread_runner(void *arg)
             continue;
          }
 
-         /*
-          * Try connecting 2 times with a max time to wait of 1 seconds.
-          * We don't want to lock the resources to long. And as the stored
-          * will cache the stats anyway we can always try collecting things
-          * in the next run.
-          */
+         constexpr int retries = 2;
+         constexpr int timeout_secs= 1;
+
          jcr->res.rstore = store;
          if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
             UnlockRes();
@@ -323,21 +284,20 @@ void *statistics_thread_runner(void *arg)
             }
          }
 
-         /*
-          * Disconnect.
-          */
          jcr->store_bsock->close();
          delete jcr->store_bsock;
          jcr->store_bsock = NULL;
-      }
+
+      } // while (1)
 
       wait_for_next_run();
-   }
 
-   DbSqlClosePooledConnection(jcr, jcr->db);
+   } // while(!quit)
 
 bail_out:
    FreeJcr(jcr);
+
+   Dmsg0(200, "Finished statistics thread\n");
 
    return NULL;
 }
@@ -350,7 +310,9 @@ int StartStatisticsThread(void)
       return 0;
    }
 
-   if ((status = pthread_create(&statistics_tid, NULL, statistics_thread_runner, NULL)) != 0) {
+   quit = false;
+
+   if ((status = pthread_create(&statistics_tid, NULL, statistics_thread, NULL)) != 0) {
       return status;
    }
 
@@ -374,9 +336,6 @@ void StopStatisticsThread()
 
 void stats_job_started()
 {
-   /*
-    * A new Job was started so we need to flush any pending statistics the next run.
-    */
    if (statistics_initialized) {
       need_flush = true;
    }
