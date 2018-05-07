@@ -1,0 +1,47 @@
+Source: bareos-vmware
+Section: admin
+Priority: extra
+Maintainer: packager@bareos.com
+Build-Depends:
+  cmake (>= 3.0.0),
+  debhelper (>= 8.0.0),
+  libjansson-dev,
+  bareos-vmware-vix-disklib-dev
+Standards-Version: 3.9.3
+Homepage: http://www.bareos.org/
+Vcs-Git: git://github.com/bareos/bareos.git
+Vcs-Browser: https://github.com/bareos/bareos-vmware
+
+Package: bareos-vmware-plugin
+Architecture: any
+Depends:  bareos-vadp-dumper, bareos-filedaemon-python-plugin (>= 15.2), python-pyvmomi
+Description: Bareos VMware plugin 
+ Uses the VMware API to take snapshots of running VMs and takes
+ full and incremental backup so snapshots. Restore of a snapshot
+ is currently supported to the origin VM.
+
+Package: bareos-vadp-dumper
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: vStorage APIs for Data Protection Dumper program
+ Uses vStorage API to connect to VMWare and dump data like virtual disks snapshots
+ to be used by other programs.
+
+#Package: bareos-vmware-vix-disklib
+#Architecture: any
+#Section: libs
+#Depends: ${shlibs:Depends}, ${misc:Depends}
+#Description: VMware vix disklib distributable libraries
+# The Virtual Disk Development Kit (VDDK) is a collection of C/C++ libraries,
+# code samples, utilities, and documentation to help you create and access
+# VMware virtual disk storage. The VDDK is useful in conjunction with the
+# vSphere API for writing backup and recovery software, or similar applications.
+# This package only contains the distributable code to comply with
+# https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
+
+Package: bareos-vmware-plugin-compat
+Architecture: any
+Depends:  bareos-vmware-plugin
+Description: Bareos VMware plugin compatibility
+ Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
+
