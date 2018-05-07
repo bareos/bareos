@@ -1,12 +1,5 @@
-[BAREOS](http://www.bareos.org/) is a fork of the Bacula project.
-
-If you want to contribute somethings to this repo please read our contribution
-policy at https://www.bareos.org/en/howto-contribute.html
-
-This source code has the following changes (highlevel) compared with
-Bacula 5.2.13 (original version forked.):
-
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
+Release 18.2.x
+==============
 
 Release 17.2.x
 ==============
