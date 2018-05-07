@@ -317,107 +317,133 @@ function formatJobStatus(data) {
    switch(data) {
       // Non-fatal error
       case 'e':
-         output = '<span class="label label-danger">' + iJS._("Failure") + '</span>';
+         jobstatus_e = iJS._("Non-fatal error");
+         output = '<span class="label label-danger" title="' + jobstatus_e + '">' + iJS._("Failure") + '</span>';
          break;
       // Terminated with errors
       case 'E':
-         output = '<span class="label label-danger">' + iJS._("Failure") + '</span>';
+         jobstatus_E = iJS._("Job terminated in error");
+         output = '<span class="label label-danger" title="' + jobstatus_E + '">' + iJS._("Failure") + '</span>';
          break;
       // Fatal error
       case 'f':
-         output = '<span class="label label-danger">' + iJS._("Failure") + '</span>';
+         jobstatus_f = iJS._("Fatal error");
+         output = '<span class="label label-danger" title="' + jobstatus_f + '">' + iJS._("Failure") + '</span>';
          break;
       // Terminated successful
       case 'T':
-         output = '<span class="label label-success">' + iJS._("Success") + '</span>';
+         jobstatus_T = iJS._("Terminated normally");
+         output = '<span class="label label-success" title="' + jobstatus_T + '">' + iJS._("Success") + '</span>';
          break;
       // Running
       case 'R':
-         output = '<span class="label label-info">' + iJS._("Running") + '</span>';
+         jobstatus_R = iJS._("Running");
+         output = '<span class="label label-info" title="' + jobstatus_R + '">' + iJS._("Running") + '</span>';
          break;
       // Created no yet running
       case 'C':
-         output = '<span class="label label-default">' + iJS._("Queued") + '</span>';
+         jobstatus_C = iJS._("Created but not yet running");
+         output = '<span class="label label-default" title="' + jobstatus_C + '">' + iJS._("Queued") + '</span>';
          break;
       // Blocked
       case 'B':
-         output = '<span class="label label-warning">' + iJS._("Blocked") + '</span>';
+         jobstatus_B = iJS._("Blocked");
+         output = '<span class="label label-warning" title="' + jobstatus_B + '">' + iJS._("Blocked") + '</span>';
          break;
       // Verify found differences
       case 'D':
-         output = '<span class="label label-warning">' + iJS._("Verify found differences") + '</span>';
+         jobstatus_D = iJS._("Verify differences");
+         output = '<span class="label label-warning" title="' + jobstatus_D + '">' + iJS._("Verify found differences") + '</span>';
          break;
       // Canceled by user
       case 'A':
-         output = '<span class="label label-warning">' + iJS._("Canceled") + '</span>';
+         jobstatus_A = iJS._("Canceled by user");
+         output = '<span class="label label-warning" title="' + jobstatus_A + '">' + iJS._("Canceled") + '</span>';
          break;
       // Waiting for client
       case 'F':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_F = iJS._("Waiting on File daemon");
+         output = '<span class="label label-default" title="' + jobstatus_F + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for storage daemon
       case 'S':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_S = iJS._("Waiting on the Storage daemon");
+         output = '<span class="label label-default" title="' + jobstatus_S + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for new media
       case 'm':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_m = iJS._("Waiting for new media");
+         output = '<span class="label label-default" title="' + jobstatus_m + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for media mount
       case 'M':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_M = iJS._("Waiting for Mount");
+         output = '<span class="label label-default" title="' + jobstatus_M + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for storage resource
       case 's':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_s = iJS._("Waiting for storage resource");
+         output = '<span class="label label-default" title="' + jobstatus_s + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for job resource
       case 'j':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_j = iJS._("Waiting for job resource");
+         output = '<span class="label label-default" title="' + jobstatus_j + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for client resource
       case 'c':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_c = iJS._("Waiting for Client resource");
+         output = '<span class="label label-default" title="' + jobstatus_c + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting on maximum jobs
       case 'd':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_d = iJS._("Waiting for maximum jobs");
+         output = '<span class="label label-default" title="' + jobstatus_d + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting on starttime
       case 't':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_t = iJS._("Waiting for start time");
+         output = '<span class="label label-default" title="' + jobstatus_t + '">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting on higher priority jobs
       case 'p':
-         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
+         jobstatus_p = iJS._("Waiting for higher priority jobs to finish");
+         output = '<span class="label label-default" title="' + jobstatus_p + '">' + iJS._("Waiting") + '</span>';
          break;
       // SD despooling attributes
       case 'a':
-         output = '<span class="label label-info">' + iJS._("SD despooling attributes") + '</span>';
+         jobstatus_a = iJS._("SD despooling attributes");
+         output = '<span class="label label-info" title="' + jobstatus_a + '">' + iJS._("SD despooling attributes") + '</span>';
          break;
       // Doing batch insert file records
       case 'i':
-         output = '<span class="label label-info">' + iJS._("Doing batch insert file records") + '</span>';
+         jobstatus_i = iJS._("Doing batch insert file records");
+         output = '<span class="label label-info" title="' + jobstatus_i + '">' + iJS._("Doing batch insert file records") + '</span>';
          break;
       // Incomplete
       case 'I':
-         output = '<span class="label label-primary">' + iJS._("Incomplete") + '</span>';
+         jobstatus_I = iJS._("Incomplete Job");
+         output = '<span class="label label-primary" title="' + jobstatus_I + '">' + iJS._("Incomplete") + '</span>';
          break;
       // Committing data
       case 'L':
-         output = '<span class="label label-info">' + iJS._("Committing data") + '</span>';
+         jobstatus_L = iJS._("Committing data (last despool)");
+         output = '<span class="label label-info" title="' + jobstatus_L + '">' + iJS._("Committing data") + '</span>';
          break;
       // Terminated with warnings
       case 'W':
-         output = '<span class="label label-warning">' + iJS._("Warning") + '</span>';
+         jobstatus_W = iJS._("Terminated normally with warnings");
+         output = '<span class="label label-warning" title="' + jobstatus_W + '">' + iJS._("Warning") + '</span>';
          break;
       // Doing data despooling
       case 'l':
-         output = '<span class="label label-info">' + iJS._("Doing data despooling") + '</span>';
+         jobstatus_l = iJS._("Doing data despooling");
+         output = '<span class="label label-info" title="' + jobstatus_l +'">' + iJS._("Doing data despooling") + '</span>';
          break;
       // Queued waiting for device
       case 'q':
-         output = '<span class="label label-default">' + iJS._("Queued waiting for device") + '</span>';
+         jobstatus_q = iJS._("Queued waiting for device");
+         output = '<span class="label label-default" title="' + jobsttaus_q + '">' + iJS._("Queued waiting for device") + '</span>';
          break;
       default:
          output = '<span class="label label-primary">' + data + '</span>';

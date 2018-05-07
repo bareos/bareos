@@ -418,8 +418,17 @@ class JobController extends AbstractActionController
       elseif($data == "jobs" && $status == "successful") {
          try {
             $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'T', $period, null); // Terminated
+            $result = $jobs_T;
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+      }
+      elseif($data == "jobs" && $status == "warning") {
+         try {
+            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'A', $period, null); // Terminated
             $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'W', $period, null); // Terminated with warnings
-            $result = array_merge($jobs_T, $jobs_W);
+            $result = array_merge($jobs_A, $jobs_W);
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -427,11 +436,10 @@ class JobController extends AbstractActionController
       }
       elseif($data == "jobs" && $status == "unsuccessful") {
          try {
-            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'A', $period, null); // Canceled jobs
             $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'E', $period, null); //
             $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'e', $period, null); //
             $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, $jobname, 'f', $period, null); //
-            $result = array_merge($jobs_A, $jobs_E, $jobs_e, $jobs_f);
+            $result = array_merge($jobs_E, $jobs_e, $jobs_f);
          }
          catch(Exception $e) {
             echo $e->getMessage();
