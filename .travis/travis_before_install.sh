@@ -1,6 +1,7 @@
 #!/bin/bash
 
 sudo apt-get -qq update
+cd core
 dpkg-checkbuilddeps 2> /tmp/dpkg-builddeps || true
 cat /tmp/dpkg-builddeps
 sed -e "s/^.*:.*:\s//" -e "s/\s([^)]*)//g" /tmp/dpkg-builddeps > /tmp/build_depends
