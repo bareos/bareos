@@ -1,4 +1,4 @@
-# <img src="https://github.com/bareos/bareos-webui/blob/master/public/img/bareos.png" alt="Bareos" />
+# <img src="https://raw.githubusercontent.com/bareos/bareos/master/webui/public/img/bareos.png" alt="Bareos" />
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
 
