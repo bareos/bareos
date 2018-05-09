@@ -124,12 +124,15 @@ static void reload_job_end_cb(JCR *jcr, void *ctx)
 
    foreach_alist_index(i, table, reload_table) {
       if (table == (resource_table_reference *)ctx) {
-         if (--table->job_count <= 0) {
-            Dmsg0(100, "Last reference to old configuration, removing saved configuration\n");
-            free_saved_resources(table);
-            reload_table->remove(i);
-            free(table);
-            break;
+         if (table->job_count) {
+            table->job_count--;
+            if (table->job_count == 0) {
+               Dmsg0(100, "Last reference to old configuration, removing saved configuration\n");
+               free_saved_resources(table);
+               reload_table->remove(i);
+               free(table);
+               break;
+            }
          }
       }
    }
@@ -455,14 +458,14 @@ static
 #endif
 void terminate_dird(int sig)
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
 
-   if (already_here) {                /* avoid recursive temination problems */
+   if (is_reloading) {                /* avoid recursive temination problems */
       bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
 
-   already_here = true;
+   is_reloading = true;
    debug_level = 0;                   /* turn off debug */
 
    destroy_configure_usage_string();
@@ -510,9 +513,9 @@ void terminate_dird(int sig)
 extern "C"
 void sighandler_reload_config(int sig, siginfo_t *siginfo, void *ptr)
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
 
-   if (already_here) {
+   if (is_reloading) {
       /*
        * Note: don't use Jmsg here, as it could produce a race condition
        * on multiple parallel reloads
@@ -520,9 +523,9 @@ void sighandler_reload_config(int sig, siginfo_t *siginfo, void *ptr)
       Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return;
    }
-   already_here = true;
+   is_reloading = true;
    do_reload_config();
-   already_here = false;
+   is_reloading = false;
 }
 #endif
 
@@ -569,14 +572,14 @@ static bool init_sighandler_sighup()
  */
 bool do_reload_config()
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
    bool ok = false;
    bool reloaded = false;
    JCR *jcr;
-   int njobs = 0;                     /* Number of running jobs */
+   int num_running_jobs = 0;                     /* Number of running jobs */
    resource_table_reference prev_config;
 
-   if (already_here) {
+   if (is_reloading) {
       /*
        * Note: don't use Jmsg here, as it could produce a race condition
        * on multiple parallel reloads
@@ -584,19 +587,15 @@ bool do_reload_config()
       Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return false;
    }
-   already_here = true;
+   is_reloading = true;
+
+   stop_statistics_thread();
 
    lock_jobs();
    LockRes();
 
-   /*
-    * Flush the sql connection pools.
-    */
    db_sql_pool_flush();
 
-   /*
-    * Save the previous config so we can restore it.
-    */
    prev_config.res_table = my_config->save_resources();
    prev_config.job_count = 0;
 
@@ -617,17 +616,13 @@ bool do_reload_config()
        */
       failed_config.res_table = my_config->save_resources();
 
-      /*
-       * Now restore old resource values,
-       */
       num = my_config->m_r_last - my_config->m_r_first + 1;
       for (int i = 0; i < num; i++) {
+         // restore original config
          my_config->m_res_head[i] = prev_config.res_table[i];
       }
 
-      /*
-       * Reset director resource to old config as check_resources() changed it
-       */
+      // me changed above in check_resources()
       me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
 
       /*
@@ -647,7 +642,7 @@ bool do_reload_config()
             }
             new_table->job_count++;
             register_job_end_callback(jcr, reload_job_end_cb, (void *)new_table);
-            njobs++;
+            num_running_jobs++;
          }
       }
       endeach_jcr(jcr);
@@ -659,7 +654,7 @@ bool do_reload_config()
       set_working_directory(me->working_directory);
       Dmsg0(10, "Director's configuration file reread.\n");
 
-      if (njobs > 0) {
+      if (num_running_jobs > 0) {
          /*
           * See if we already initialized the alist.
           */
@@ -677,12 +672,13 @@ bool do_reload_config()
           */
          free_saved_resources(&prev_config);
       }
+      start_statistics_thread();
    }
 
 bail_out:
    UnlockRes();
    unlock_jobs();
-   already_here = false;
+   is_reloading = false;
    return reloaded;
 }
 

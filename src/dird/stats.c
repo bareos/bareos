@@ -125,11 +125,13 @@ static inline void wait_for_next_run()
  * Entry point for a separate statistics thread.
  */
 extern "C"
-void *statistics_thread_runner(void *arg)
+void *statistics_thread(void *arg)
 {
    JCR *jcr;
    utime_t now;
    POOL_MEM current_store(PM_NAME);
+
+   Dmsg0(200, "Starting statistics thread\n");
 
    memset(&cached_device, 0, sizeof(struct cached_device));
    pm_strcpy(current_store, "");
@@ -166,21 +168,21 @@ void *statistics_thread_runner(void *arg)
    while (!quit) {
       now = (utime_t)time(NULL);
 
-      Dmsg1(200, "statistics_thread_runner: Doing work at %ld\n", now);
+      Dmsg1(200, "statistics_thread: Doing work at %ld\n", now);
 
       /*
        * Do nothing if no job is running currently.
        */
       if (job_count() == 0) {
          if (!need_flush) {
-            Dmsg0(200, "statistics_thread_runner: do nothing as no jobs are running\n");
+            Dmsg0(200, "statistics_thread: do nothing as no jobs are running\n");
             wait_for_next_run();
             continue;
          } else {
             /*
              * Flush any pending statistics data one more time and then sleep until new jobs start running.
              */
-            Dmsg0(200, "statistics_thread_runner: flushing pending statistics\n");
+            Dmsg0(200, "statistics_thread: flushing pending statistics\n");
             need_flush = false;
          }
       } else {
@@ -325,15 +327,15 @@ void *statistics_thread_runner(void *arg)
          jcr->store_bsock->close();
          delete jcr->store_bsock;
          jcr->store_bsock = NULL;
-      }
+      } // while 1
 
       wait_for_next_run();
-   }
-
-   db_sql_close_pooled_connection(jcr, jcr->db);
+   } // while(!quit)
 
 bail_out:
    free_jcr(jcr);
+
+   Dmsg0(200, "Finished statistics thread\n");
 
    return NULL;
 }
@@ -346,7 +348,9 @@ int start_statistics_thread(void)
       return 0;
    }
 
-   if ((status = pthread_create(&statistics_tid, NULL, statistics_thread_runner, NULL)) != 0) {
+   quit = false;
+
+   if ((status = pthread_create(&statistics_tid, NULL, statistics_thread, NULL)) != 0) {
       return status;
    }
 
