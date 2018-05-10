@@ -30,4 +30,3 @@ else
    sudo apt-get -qq update
    sudo apt-get install -y --force-yes bareos bareos-database-$DB
 fi
-cd ..
