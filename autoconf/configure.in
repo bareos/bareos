@@ -866,6 +866,7 @@ AC_CHECK_FUNCS(lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown
 AC_CHECK_FUNCS(mmap nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
 
+AC_CHECK_HEADER(cephfs/ceph_statx.h, [AC_DEFINE(HAVE_CEPHFS_CEPH_STATX_H, 1, [Define to 1 if you have the <cephfs/ceph_statx.h> header file.])] , )
 
 
 dnl ---------------------------------------------------------------------------

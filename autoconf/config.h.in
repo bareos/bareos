@@ -124,6 +124,9 @@
 /* Define to 1 if you have cephfs lib */
 #undef HAVE_CEPHFS
 
+/* Define to 1 if you have the <cephfs/ceph_statx.h> header file. */
+#undef HAVE_CEPHFS_CEPH_STATX_H
+
 /* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
 #undef HAVE_CFLOCALECOPYCURRENT
