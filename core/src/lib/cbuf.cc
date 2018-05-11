@@ -31,7 +31,7 @@
 /*
  * Initialize a new circular buffer.
  */
-int circbuf::init(int capacity)
+int CircularBuffer::init(int capacity)
 {
    if (pthread_mutex_init(&lock_, NULL) != 0) {
       return -1;
@@ -63,7 +63,7 @@ int circbuf::init(int capacity)
 /*
  * Destroy a circular buffer.
  */
-void circbuf::destroy()
+void CircularBuffer::destroy()
 {
    pthread_cond_destroy(&notempty_);
    pthread_cond_destroy(&notfull_);
@@ -77,7 +77,7 @@ void circbuf::destroy()
 /*
  * Enqueue a new item into the circular buffer.
  */
-int circbuf::enqueue(void *data)
+int CircularBuffer::enqueue(void *data)
 {
    if (pthread_mutex_lock(&lock_) != 0) {
       return -1;
@@ -106,7 +106,7 @@ int circbuf::enqueue(void *data)
 /*
  * Dequeue an item from the circular buffer.
  */
-void *circbuf::dequeue()
+void *CircularBuffer::dequeue()
 {
    void *data = NULL;
 
@@ -147,7 +147,7 @@ bail_out:
  * Make sure there is a free next slot available on the circular buffer.
  * So the next enqueue will not block but we block now until one is available.
  */
-int circbuf::NextSlot()
+int CircularBuffer::NextSlot()
 {
    if (pthread_mutex_lock(&lock_) != 0) {
       return -1;
@@ -169,7 +169,7 @@ int circbuf::NextSlot()
  * Flush the circular buffer. Any waiting consumer will be wakened and will
  * see we are in flush state.
  */
-int circbuf::flush()
+int CircularBuffer::flush()
 {
    if (pthread_mutex_lock(&lock_) != 0) {
       return -1;

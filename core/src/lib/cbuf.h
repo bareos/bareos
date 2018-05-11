@@ -29,7 +29,7 @@
 
 #define QSIZE 10              /**< # of pointers in the queue */
 
-class DLL_IMP_EXP circbuf : public SmartAlloc {
+class DLL_IMP_EXP CircularBuffer : public SmartAlloc {
    int size_;
    int next_in_;
    int next_out_;
@@ -41,8 +41,8 @@ class DLL_IMP_EXP circbuf : public SmartAlloc {
    void **data_;             /**< Circular buffer of pointers */
 
 public:
-   circbuf(int capacity = QSIZE);
-   ~circbuf();
+   CircularBuffer(int capacity = QSIZE);
+   ~CircularBuffer();
    int init(int capacity);
    void destroy();
    int enqueue(void *data);
@@ -58,7 +58,7 @@ public:
 /**
  * Constructor
  */
-inline circbuf::circbuf(int capacity)
+inline CircularBuffer::CircularBuffer(int capacity)
 {
    data_ = NULL;
    init(capacity);
@@ -67,7 +67,7 @@ inline circbuf::circbuf(int capacity)
 /**
  * Destructor
  */
-inline circbuf::~circbuf()
+inline CircularBuffer::~CircularBuffer()
 {
    destroy();
 }

@@ -1067,7 +1067,7 @@ static int CompareVolumeName(void *item1, void *item2)
 ssize_t chunked_device::ChunkedVolumeSize()
 {
    /*
-    * See if we are using io-threads or not and the ordered circbuf is created.
+    * See if we are using io-threads or not and the ordered CircularBuffer is created.
     * We try to make sure that nothing of the volume being requested is still inflight as then
     * the chunked_remote_volume_size() method will fail to determine the size of the data as
     * its not fully stored on the backing store yet.
@@ -1197,7 +1197,7 @@ bool chunked_device::LoadChunk()
       current_chunk_->start_offset = start_offset;
 
       /*
-       * See if we are using io-threads or not and the ordered circbuf is created.
+       * See if we are using io-threads or not and the ordered CircularBuffer is created.
        * We try to make sure that nothing of the volume being requested is still inflight as then
        * the ReadChunk() method will fail to read the data as its not stored on the backing
        * store yet.
@@ -1303,7 +1303,7 @@ static int ListIoRequest(void *request, void *data)
 bool chunked_device::DeviceStatus(bsdDevStatTrig *dst)
 {
    /*
-    * See if we are using io-threads or not and the ordered circbuf is created and not empty.
+    * See if we are using io-threads or not and the ordered CircularBuffer is created and not empty.
     */
    dst->status_length = 0;
    if (io_threads_ > 0 && cb_) {

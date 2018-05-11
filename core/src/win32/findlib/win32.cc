@@ -558,7 +558,7 @@ struct CopyThreadContext {
    BareosWinFilePacket *bfd;                            /* Filehandle */
    int nr_save_elements;                  /* Number of save items in save_data */
    CopyThreadSaveData *save_data;        /* To save data (cached structure build during restore) */
-   circbuf *cb;                           /* Circular buffer for passing work to copy thread */
+   CircularBuffer *cb;                           /* Circular buffer for passing work to copy thread */
    bool started;                          /* Copy thread consuming data */
    bool flushed;                          /* Copy thread flushed data */
    pthread_t thread_id;                   /* Id of copy thread */
@@ -669,7 +669,7 @@ static inline bool SetupCopyThread(JobControlRecord *jcr, BareosWinFilePacket *b
    new_context = (CopyThreadContext *)malloc(sizeof(CopyThreadContext));
    new_context->started = false;
    new_context->flushed = false;
-   new_context->cb = New(circbuf);
+   new_context->cb = New(CircularBuffer);
 
    nr_save_elements = new_context->cb->capacity();
    new_context->save_data = (CopyThreadSaveData *)malloc(nr_save_elements * sizeof(CopyThreadSaveData));
@@ -708,7 +708,7 @@ bail_out:
  */
 int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length)
 {
-   circbuf *cb;
+   CircularBuffer *cb;
    int slotnr;
    CopyThreadSaveData *save_data;
 
