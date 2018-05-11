@@ -192,7 +192,10 @@ extern "C" {
 #include "compat.h"
 #endif
 
+#ifndef _GLIBCXX_GTHREAD_USE_WEAK
 #define _GLIBCXX_GTHREAD_USE_WEAK 0
+#endif
+
 #include <list>
 #include <vector>
 #include <map>

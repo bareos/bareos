@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,11 +29,10 @@
 #define BUILD_PLUGIN
 
 #include "include/bareos.h"
-#include "fd_plugins.h"
-#include "fd_common.h"
-
-#undef _POSIX_C_SOURCE
 #include <Python.h>
+#include "filed/fd_plugins.h"
+#include "plugins/filed/fd_common.h"
+
 
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
