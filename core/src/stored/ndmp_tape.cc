@@ -1269,13 +1269,13 @@ bail_out:
 
 /**
  * Create a separate thread that accepts NDMP connections.
- * We don't use the Bareos native bnet_thread_server_tcp which
+ * We don't use the Bareos native BnetThreadServerTcp which
  * uses the bsock class which is a bit to much overhead
  * for simple sockets which we need and has all kinds of
  * extra features likes TLS and keep-alive support etc.
  * which wouldn't work for NDMP anyhow.
  *
- * So this is a bnet_thread_server_tcp put on a diet which
+ * So this is a BnetThreadServerTcp put on a diet which
  * also contains the absolute minimum code needed to
  * have a robust connection handler.
  */
@@ -1324,7 +1324,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    }
 
    char allbuf[256 * 10];
-   Dmsg1(100, "Addresses %s\n", build_addresses_str(ntsa->addr_list, allbuf, sizeof(allbuf)));
+   Dmsg1(100, "Addresses %s\n", BuildAddressesString(ntsa->addr_list, allbuf, sizeof(allbuf)));
 
 #ifdef HAVE_POLL
    nfds = 0;
@@ -1341,13 +1341,13 @@ extern "C" void *ndmp_thread_server(void *arg)
        */
       for (tlog= 60; (fd_ptr->fd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
          if (tlog <= 0) {
-            berrno be;
+            BErrNo be;
             char curbuf[256];
             Emsg3(M_ABORT, 0,
                   _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
                   be.bstrerror(),
                   ipaddr->build_address_str(curbuf, sizeof(curbuf)),
-                  build_addresses_str(ntsa->addr_list, allbuf, sizeof(allbuf)));
+                  BuildAddressesString(ntsa->addr_list, allbuf, sizeof(allbuf)));
          }
          Bmicrosleep(10, 0);
       }
@@ -1357,7 +1357,7 @@ extern "C" void *ndmp_thread_server(void *arg)
        */
       if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR,
                     (sockopt_val_t)&turnon, sizeof(turnon)) < 0) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_WARNING, 0,
                _("Cannot set SO_REUSEADDR on socket: %s\n"),
                be.bstrerror());
@@ -1365,7 +1365,7 @@ extern "C" void *ndmp_thread_server(void *arg)
 
       tmax = 30 * (60 / 5);    /* wait 30 minutes max */
       for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0; tlog -= 5) {
-         berrno be;
+         BErrNo be;
          if (tlog <= 0) {
             tlog = 2 * 60;         /* Complain every 2 minutes */
             Emsg2(M_WARNING, 0,
@@ -1390,7 +1390,7 @@ extern "C" void *ndmp_thread_server(void *arg)
     * Start work queue thread
     */
    if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, handle_ndmp_client_request)) != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       Emsg1(M_ABORT, 0,
             _("Could not init ndmp client queue: ERR=%s\n"),
@@ -1428,7 +1428,7 @@ extern "C" void *ndmp_thread_server(void *arg)
 
       errno = 0;
       if ((status = select(maxfd + 1, &sockset, NULL, NULL, NULL)) < 0) {
-         berrno be;                   /* capture errno */
+         BErrNo be;                   /* capture errno */
          if (errno == EINTR) {
             continue;
          }
@@ -1443,7 +1443,7 @@ extern "C" void *ndmp_thread_server(void *arg)
 
       errno = 0;
       if ((status = poll(pfds, nfds, -1)) < 0) {
-         berrno be;                   /* capture errno */
+         BErrNo be;                   /* capture errno */
          if (errno == EINTR) {
             continue;
          }
@@ -1473,7 +1473,7 @@ extern "C" void *ndmp_thread_server(void *arg)
                V(mutex);
                Jmsg2(NULL, M_SECURITY, 0,
                      _("Connection from %s:%d refused by hosts.access\n"),
-                     sockaddr_to_ascii(&cli_addr, buf, sizeof(buf)),
+                     SockaddrToAscii(&cli_addr, buf, sizeof(buf)),
                      SockaddrGetPort(&cli_addr));
                close(new_sockfd);
                continue;
@@ -1486,7 +1486,7 @@ extern "C" void *ndmp_thread_server(void *arg)
              */
             if (setsockopt(new_sockfd, SOL_SOCKET, SO_KEEPALIVE,
                           (sockopt_val_t)&turnon, sizeof(turnon)) < 0) {
-               berrno be;
+               BErrNo be;
                Emsg1(M_WARNING, 0,
                      _("Cannot set SO_KEEPALIVE on socket: %s\n"),
                      be.bstrerror());
@@ -1496,7 +1496,7 @@ extern "C" void *ndmp_thread_server(void *arg)
              * See who client is. i.e. who connected to us.
              */
             P(mutex);
-            sockaddr_to_ascii(&cli_addr, buf, sizeof(buf));
+            SockaddrToAscii(&cli_addr, buf, sizeof(buf));
             V(mutex);
 
             struct ndmp_session_handle *new_handle;
@@ -1511,7 +1511,7 @@ extern "C" void *ndmp_thread_server(void *arg)
              * Queue client to be served
              */
             if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL, 0)) != 0) {
-               berrno be;
+               BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to ndmp client queue: ERR=%s\n"),
                      be.bstrerror());
@@ -1533,7 +1533,7 @@ extern "C" void *ndmp_thread_server(void *arg)
     * Stop work queue thread
     */
    if ((status = WorkqDestroy(ntsa->client_wq)) != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       Emsg1(M_FATAL, 0,
             _("Could not destroy ndmp client queue: ERR=%s\n"),

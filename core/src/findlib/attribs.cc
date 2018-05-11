@@ -232,7 +232,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
 #ifdef HAVE_FCHOWN
    if (file_is_open) {
       if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -242,7 +242,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
    {
 #endif
       if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -255,7 +255,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
 #ifdef HAVE_FCHMOD
    if (file_is_open) {
       if (fchmod(ofd->fid, attr->statp.st_mode) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -269,7 +269,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
 #else
       if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
 #endif
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -289,7 +289,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
       restore_times[1].tv_usec = 0;
 
       if (futimes(ofd->fid, restore_times) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -305,7 +305,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
       restore_times[1].tv_nsec = 0;
 
       if (futimens(ofd->fid, restore_times) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -323,7 +323,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
       restore_times[1].tv_usec = 0;
 
       if (lutimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -337,7 +337,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
       restore_times[1].tv_usec = 0;
 
       if (utimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -349,7 +349,7 @@ static inline bool RestoreFileAttributes(JobControlRecord *jcr, Attributes *attr
       restore_times.modtime = attr->statp.st_mtime;
 
       if (utime(attr->ofname, &restore_times) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -456,7 +456,7 @@ bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket 
        * Change owner of link, not of real file
        */
       if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -464,7 +464,7 @@ bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket 
 
 #ifdef HAVE_LCHMOD
       if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
-         berrno be;
+         BErrNo be;
 
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
@@ -483,7 +483,7 @@ bool SetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket 
           * fail.
           */
          if (chflags(attr->ofname, attr->statp.st_flags) < 0 && !suppress_errors) {
-            berrno be;
+            BErrNo be;
             Jmsg2(jcr, M_ERROR, 0, _("Unable to set file flags %s: ERR=%s\n"), attr->ofname, be.bstrerror());
             ok = false;
          }
@@ -533,7 +533,7 @@ int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff
    }
    p = attribsEx;
    if (BitIsSet(FO_HFSPLUS, ff_pkt->flags)) {
-      p += to_base64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
+      p += ToBase64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
    }
    *p = 0;
 #else
@@ -593,23 +593,23 @@ int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff
     */
    atts.dwFileAttributes = ff_pkt->statp.st_rdev;
 
-   p += to_base64((uint64_t)atts.dwFileAttributes, p);
+   p += ToBase64((uint64_t)atts.dwFileAttributes, p);
    *p++ = ' ';                        /* separate fields with a space */
    li.LowPart = atts.ftCreationTime.dwLowDateTime;
    li.HighPart = atts.ftCreationTime.dwHighDateTime;
-   p += to_base64((uint64_t)li.QuadPart, p);
+   p += ToBase64((uint64_t)li.QuadPart, p);
    *p++ = ' ';
    li.LowPart = atts.ftLastAccessTime.dwLowDateTime;
    li.HighPart = atts.ftLastAccessTime.dwHighDateTime;
-   p += to_base64((uint64_t)li.QuadPart, p);
+   p += ToBase64((uint64_t)li.QuadPart, p);
    *p++ = ' ';
    li.LowPart = atts.ftLastWriteTime.dwLowDateTime;
    li.HighPart = atts.ftLastWriteTime.dwHighDateTime;
-   p += to_base64((uint64_t)li.QuadPart, p);
+   p += ToBase64((uint64_t)li.QuadPart, p);
    *p++ = ' ';
-   p += to_base64((uint64_t)atts.nFileSizeHigh, p);
+   p += ToBase64((uint64_t)atts.nFileSizeHigh, p);
    *p++ = ' ';
-   p += to_base64((uint64_t)atts.nFileSizeLow, p);
+   p += ToBase64((uint64_t)atts.nFileSizeLow, p);
    *p = 0;
 
    return STREAM_UNIX_ATTRIBUTES_EX;
@@ -659,28 +659,28 @@ static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, Bareos
       Dmsg2(100, "Attribs %s = %s\n", attr->ofname, attr->attrEx);
    }
 
-   p += from_base64(&val, p);
+   p += FromBase64(&val, p);
    plug(atts.dwFileAttributes, val);
    p++;                               /* skip space */
-   p += from_base64(&val, p);
+   p += FromBase64(&val, p);
    li.QuadPart = val;
    atts.ftCreationTime.dwLowDateTime = li.LowPart;
    atts.ftCreationTime.dwHighDateTime = li.HighPart;
    p++;                               /* skip space */
-   p += from_base64(&val, p);
+   p += FromBase64(&val, p);
    li.QuadPart = val;
    atts.ftLastAccessTime.dwLowDateTime = li.LowPart;
    atts.ftLastAccessTime.dwHighDateTime = li.HighPart;
    p++;                               /* skip space */
-   p += from_base64(&val, p);
+   p += FromBase64(&val, p);
    li.QuadPart = val;
    atts.ftLastWriteTime.dwLowDateTime = li.LowPart;
    atts.ftLastWriteTime.dwHighDateTime = li.HighPart;
    p++;
-   p += from_base64(&val, p);
+   p += FromBase64(&val, p);
    plug(atts.nFileSizeHigh, val);
    p++;
-   p += from_base64(&val, p);
+   p += FromBase64(&val, p);
    plug(atts.nFileSizeLow, val);
 
    /** At this point, we have reconstructed the WIN32_FILE_ATTRIBUTE_DATA pkt */

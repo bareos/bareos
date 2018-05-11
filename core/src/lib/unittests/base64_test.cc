@@ -67,9 +67,9 @@ TEST(base64, base64) {
 
 
    fname = (char*)BINARYNAME;
-   base64_init();
+   Base64Init();
    if (lstat(fname, &statp) < 0) {
-      berrno be;
+      BErrNo be;
       printf("Cannot stat %s: %s\n", fname, be.bstrerror(errno));
    }
    EncodeStat(where, &statp, sizeof(statp), 0, 0);
@@ -78,9 +78,9 @@ TEST(base64, base64) {
 
 #ifdef xxx
    p = where;
-   p += to_base64((int64_t)(statp.st_atime), p);
+   p += ToBase64((int64_t)(statp.st_atime), p);
    *p++ = ' ';
-   p += to_base64((int64_t)t, p);
+   p += ToBase64((int64_t)t, p);
    printf("%s %s\n", fname, where);
 
    printf("%s %lld\n", "st_dev", (int64_t)statp.st_dev);
@@ -117,5 +117,5 @@ TEST(base64, base64) {
          statp.st_mtime != statn.st_mtime ||
          statp.st_ctime != statn.st_ctime
          );
-   to_base64(UINT32_MAX, where);
+   ToBase64(UINT32_MAX, where);
 }

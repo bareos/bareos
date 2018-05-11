@@ -37,7 +37,7 @@ DLL_IMP_EXP bool db_sql_pool_initialize(const char *db_drivername,
                             int validate_timeout);
 DLL_IMP_EXP void DbSqlPoolDestroy(void);
 DLL_IMP_EXP void DbSqlPoolFlush(void);
-DLL_IMP_EXP BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
+DLL_IMP_EXP BareosDb *DbSqlGetNonPooledConnection(JobControlRecord *jcr,
                                        const char *db_drivername,
                                        const char *db_name,
                                        const char *db_user,
@@ -50,7 +50,7 @@ DLL_IMP_EXP BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
                                        bool try_reconnect,
                                        bool exit_on_fatal,
                                        bool need_private = false);
-DLL_IMP_EXP BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
+DLL_IMP_EXP BareosDb *DbSqlGetPooledConnection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,

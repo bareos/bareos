@@ -162,7 +162,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
       }
       if (n == BNET_SIGNAL) {          /* handle signal */
          /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
-         switch (bs->msglen) {
+         switch (bs->message_length) {
          case BNET_EOD:            /* end of data */
             return n;
          case BNET_EOD_POLL:
@@ -190,7 +190,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
             bs->fsend("btime %s\n", edit_uint64(GetCurrentBtime(),ed1));
             break;
          default:
-            Jmsg1(jcr, M_WARNING, 0, _("BgetDirmsg: unknown bnet signal %d\n"), bs->msglen);
+            Jmsg1(jcr, M_WARNING, 0, _("BgetDirmsg: unknown bnet signal %d\n"), bs->message_length);
             return n;
          }
          continue;
@@ -380,7 +380,7 @@ static char *find_msg_start(char *msg)
  *  Returns: false on failure
  *           true  on success
  */
-bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *cmd, e_prtmsg prtmsg)
+bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *cmd, e_prtmsg PrintMessage)
 {
    int n;
 
@@ -391,13 +391,13 @@ bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *c
       if (bstrcmp(bs->msg, resp)) {
          return true;
       }
-      if (prtmsg == DISPLAY_ERROR) {
+      if (PrintMessage == DISPLAY_ERROR) {
          Jmsg(jcr, M_FATAL, 0, _("Bad response to %s command: wanted %s, got %s\n"),
             cmd, resp, bs->msg);
       }
       return false;
    }
    Jmsg(jcr, M_FATAL, 0, _("Socket error on %s command: ERR=%s\n"),
-         cmd, bnet_strerror(bs));
+         cmd, BnetStrerror(bs));
    return false;
 }

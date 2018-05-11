@@ -800,7 +800,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             }
 
             if ((errstat = RwlInit(&res->res_changer.changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
-               berrno be;
+               BErrNo be;
                Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"), be.bstrerror(errstat));
             }
          }

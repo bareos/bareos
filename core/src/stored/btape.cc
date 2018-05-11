@@ -73,7 +73,7 @@ int exit_code = 0;
 
 /* Forward referenced subroutines */
 static void do_tape_cmds();
-static void helpcmd();
+static void HelpCmd();
 static void scancmd();
 static void rewindcmd();
 static void clearcmd();
@@ -250,7 +250,7 @@ int main(int margc, char *margv[])
 
       case '?':
       default:
-         helpcmd();
+         HelpCmd();
          exit(0);
 
       }
@@ -502,7 +502,7 @@ bail_out:
 }
 
 
-void quitcmd()
+void QuitCmd()
 {
    quit = 1;
 }
@@ -875,13 +875,13 @@ static bool re_read_block_test()
    }
    Pmsg0(0, _("Backspace record OK.\n"));
    if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
-      berrno be;
+      BErrNo be;
       Pmsg1(0, _("Read block failed! ERR=%s\n"), be.bstrerror(dev->dev_errno));
       goto bail_out;
    }
    memset(rec->data, 0, rec->data_len);
    if (!ReadRecordFromBlock(dcr, rec)) {
-      berrno be;
+      BErrNo be;
       Pmsg1(0, _("Read block failed! ERR=%s\n"), be.bstrerror(dev->dev_errno));
       goto bail_out;
    }
@@ -941,7 +941,7 @@ static bool SpeedTestRaw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
          } else {
             my_errno = errno;
             printf("\n");
-            berrno be;
+            BErrNo be;
             printf(_("Write failed at block %u. status=%d ERR=%s\n"), block_num,
                    status, be.bstrerror(my_errno));
             return false;
@@ -1248,7 +1248,7 @@ static bool write_read_test()
    for (uint32_t i = 1; i <= 2 * num_recs; i++) {
 read_again:
       if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
-         berrno be;
+         BErrNo be;
          if (dev->AtEof()) {
             Pmsg0(-1, _("Got EOF on tape.\n"));
             if (i == num_recs+1) {
@@ -1260,7 +1260,7 @@ read_again:
       }
       memset(rec->data, 0, rec->data_len);
       if (!ReadRecordFromBlock(dcr, rec)) {
-         berrno be;
+         BErrNo be;
          Pmsg2(0, _("Read record failed. Block %d! ERR=%s\n"), i, be.bstrerror(dev->dev_errno));
          goto bail_out;
       }
@@ -1366,7 +1366,7 @@ static bool position_test()
       }
 read_again:
       if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
-         berrno be;
+         BErrNo be;
          if (dev->AtEof()) {
             Pmsg0(-1, _("Got EOF on tape.\n"));
             if (!got_eof) {
@@ -1391,7 +1391,7 @@ read_again:
       }
       memset(rec->data, 0, rec->data_len);
       if (!ReadRecordFromBlock(dcr, rec)) {
-         berrno be;
+         BErrNo be;
          Pmsg1(0, _("Read record failed! ERR=%s\n"), be.bstrerror(dev->dev_errno));
          goto bail_out;
       }
@@ -1525,7 +1525,7 @@ try_again:
    if (status == 0) {
       loaded = atoi(results);
    } else {
-      berrno be;
+      BErrNo be;
       Pmsg1(-1, _("3991 Bad autochanger command: %s\n"), changer);
       Pmsg2(-1, _("3991 result=\"%s\": ERR=%s\n"), results, be.bstrerror(status));
       goto bail_out;
@@ -1547,7 +1547,7 @@ try_again:
       status = RunProgram(changer, timeout, results);
       Pmsg2(-1, _("unload status=%s %d\n"), status==0?_("OK"):_("Bad"), status);
       if (status != 0) {
-         berrno be;
+         BErrNo be;
          Pmsg1(-1, _("3992 Bad autochanger command: %s\n"), changer);
          Pmsg2(-1, _("3992 result=\"%s\": ERR=%s\n"), results, be.bstrerror(status));
       }
@@ -1570,7 +1570,7 @@ try_again:
       Pmsg2(-1,  _("3303 Autochanger \"load %d %d\" status is OK.\n"),
             slot, dev->drive);
    } else {
-      berrno be;
+      BErrNo be;
       Pmsg1(-1, _("3993 Bad autochanger command: %s\n"), changer);
       Pmsg2(-1, _("3993 result=\"%s\": ERR=%s\n"), results, be.bstrerror(status));
       goto bail_out;
@@ -1965,7 +1965,7 @@ static void rrcmd()
    if (status > 0 && status <= len) {
       errno = 0;
    }
-   berrno be;
+   BErrNo be;
    Pmsg3(0, _("Read of %d bytes gives status=%d. ERR=%s\n"),
       len, status, be.bstrerror());
    free(buf);
@@ -1997,7 +1997,7 @@ static void scancmd()
    Pmsg1(0, _("Starting scan at file %u\n"), dev->file);
    for (;;) {
       if ((status = read(dev->fd(), buf, sizeof(buf))) < 0) {
-         berrno be;
+         BErrNo be;
          dev->clrerror(-1);
          Mmsg2(dev->errmsg, _("read error on %s. ERR=%s.\n"),
             dev->dev_name, be.bstrerror());
@@ -2443,7 +2443,7 @@ static void fillcmd()
       Pmsg2(0, _("Wrote state file last_block_num1=%d last_block_num2=%d\n"),
          last_block_num1, last_block_num2);
    } else {
-      berrno be;
+      BErrNo be;
       Pmsg2(0, _("Could not create state file: %s ERR=%s\n"), buf,
                  be.bstrerror());
       exit_code = 1;
@@ -2510,7 +2510,7 @@ static void unfillcmd()
           return;
        }
    } else {
-      berrno be;
+      BErrNo be;
       Pmsg2(-1, _("\nCould not find the state file: %s ERR=%s\n"
              "You must redo the fill command.\n"), buf, be.bstrerror());
       exit_code = 1;
@@ -2938,7 +2938,7 @@ static void rawfill_cmd()
    }
    my_errno = errno;
    printf("\n");
-   berrno be;
+   BErrNo be;
    printf(_("Write failed at block %u. status=%d ERR=%s\n"), block_num, status,
       be.bstrerror(my_errno));
 
@@ -2961,10 +2961,10 @@ static struct cmdstruct commands[] = {
  {NT_("unfill"),    unfillcmd,    _("read filled tape")},
  {NT_("fsf"),       fsfcmd,       _("forward space a file")},
  {NT_("fsr"),       fsrcmd,       _("forward space a record")},
- {NT_("help"),      helpcmd,      _("print this command")},
+ {NT_("help"),      HelpCmd,      _("print this command")},
  {NT_("label"),     labelcmd,     _("write a Bareos label to the tape")},
  {NT_("load"),      loadcmd,      _("load a tape")},
- {NT_("quit"),      quitcmd,      _("quit btape")},
+ {NT_("quit"),      QuitCmd,      _("quit btape")},
  {NT_("rawfill"),   rawfill_cmd,  _("use write() to fill tape")},
  {NT_("readlabel"), readlabelcmd, _("read and print the Bareos tape label")},
  {NT_("rectest"),   rectestcmd,   _("test record handling functions")},
@@ -3007,7 +3007,7 @@ do_tape_cmds()
    }
 }
 
-static void helpcmd()
+static void HelpCmd()
 {
    unsigned int i;
    usage();

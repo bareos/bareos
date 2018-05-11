@@ -57,13 +57,13 @@ void drop(char *uname, char *gname, bool keep_readall_caps)
 
    if (uname) {
       if ((passw = getpwnam(uname)) == NULL) {
-         berrno be;
+         BErrNo be;
          Emsg2(M_ERROR_TERM, 0, _("Could not find userid=%s: ERR=%s\n"), uname,
             be.bstrerror());
       }
    } else {
       if ((passw = getpwuid(getuid())) == NULL) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_ERROR_TERM, 0, _("Could not find password entry. ERR=%s\n"),
             be.bstrerror());
       } else {
@@ -76,14 +76,14 @@ void drop(char *uname, char *gname, bool keep_readall_caps)
    gid = passw->pw_gid;
    if (gname) {
       if ((group = getgrnam(gname)) == NULL) {
-         berrno be;
+         BErrNo be;
          Emsg2(M_ERROR_TERM, 0, _("Could not find group=%s: ERR=%s\n"), gname,
             be.bstrerror());
       }
       gid = group->gr_gid;
    }
    if (initgroups(username, gid)) {
-      berrno be;
+      BErrNo be;
       if (gname) {
          Emsg3(M_ERROR_TERM, 0, _("Could not initgroups for group=%s, userid=%s: ERR=%s\n"),
             gname, username, be.bstrerror());
@@ -94,7 +94,7 @@ void drop(char *uname, char *gname, bool keep_readall_caps)
    }
    if (gname) {
       if (setgid(gid)) {
-         berrno be;
+         BErrNo be;
          Emsg2(M_ERROR_TERM, 0, _("Could not set group=%s: ERR=%s\n"), gname,
             be.bstrerror());
       }
@@ -104,19 +104,19 @@ void drop(char *uname, char *gname, bool keep_readall_caps)
       cap_t caps;
 
       if (prctl(PR_SET_KEEPCAPS, 1)) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_ERROR_TERM, 0, _("prctl failed: ERR=%s\n"), be.bstrerror());
       }
       if (setreuid(uid, uid)) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_ERROR_TERM, 0, _("setreuid failed: ERR=%s\n"), be.bstrerror());
       }
       if (!(caps = cap_from_text("cap_dac_read_search=ep"))) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_ERROR_TERM, 0, _("cap_from_text failed: ERR=%s\n"), be.bstrerror());
       }
       if (cap_set_proc(caps) < 0) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_ERROR_TERM, 0, _("cap_set_proc failed: ERR=%s\n"), be.bstrerror());
       }
       cap_free(caps);
@@ -124,7 +124,7 @@ void drop(char *uname, char *gname, bool keep_readall_caps)
       Emsg0(M_ERROR_TERM, 0, _("Keep readall caps not implemented this OS or missing libraries.\n"));
 #endif
    } else if (setuid(uid)) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ERROR_TERM, 0, _("Could not set specified userid: %s\n"), username);
    }
 #endif

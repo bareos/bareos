@@ -175,16 +175,16 @@ static const char *record_digest_to_str(PoolMem &resultbuffer, const DeviceRecor
 
    switch (rec->maskedStream) {
       case STREAM_MD5_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_MD5_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_MD5_SIZE, true);
          break;
       case STREAM_SHA1_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA1_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA1_SIZE, true);
          break;
       case STREAM_SHA256_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA256_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA256_SIZE, true);
          break;
       case STREAM_SHA512_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA512_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA512_SIZE, true);
          break;
       default:
          return "";

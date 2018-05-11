@@ -296,7 +296,7 @@ LEX *lex_open_file(LEX *lf,
 
    if (filename[0] == '|') {
       bpipe_filename = bstrdup(filename);
-      if ((bpipe = open_bpipe(bpipe_filename + 1, 0, "rb")) == NULL) {
+      if ((bpipe = OpenBpipe(bpipe_filename + 1, 0, "rb")) == NULL) {
          free(bpipe_filename);
          return NULL;
       }
@@ -783,7 +783,7 @@ int LexGetToken(LEX *lf, int expect)
             lf->state = lex_none;
             lf = lex_open_file(lf, lf->str, lf->ScanError, lf->scan_warning);
             if (lf == NULL) {
-               berrno be;
+               BErrNo be;
                scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
                   lfori->str, be.bstrerror());
                return BCT_ERROR;
@@ -811,7 +811,7 @@ int LexGetToken(LEX *lf, int expect)
             lf->state = lex_none;
             lf = lex_open_file(lf, lf->str, lf->ScanError, lf->scan_warning);
             if (lf == NULL) {
-               berrno be;
+               BErrNo be;
                scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
                   lfori->str, be.bstrerror());
                return BCT_ERROR;

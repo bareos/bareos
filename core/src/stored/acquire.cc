@@ -610,7 +610,7 @@ bool ReleaseDevice(DeviceControlRecord *dcr)
          /*
           * Wait maximum 5 minutes
           */
-         bpipe = open_bpipe(alert, 60 * 5, "r");
+         bpipe = OpenBpipe(alert, 60 * 5, "r");
          if (bpipe) {
             while (bfgets(line, bpipe->rfd)) {
                Jmsg(jcr, M_ALERT, 0, _("Alert: %s"), line);
@@ -620,7 +620,7 @@ bool ReleaseDevice(DeviceControlRecord *dcr)
             status = errno;
          }
          if (status != 0) {
-            berrno be;
+            BErrNo be;
             Jmsg(jcr, M_ALERT, 0, _("3997 Bad alert command: %s: ERR=%s.\n"), alert, be.bstrerror(status));
          }
 
@@ -691,14 +691,14 @@ DeviceControlRecord::DeviceControlRecord()
    tid = pthread_self();
    spool_fd = -1;
    if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
    }
 
    if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());

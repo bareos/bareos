@@ -169,7 +169,7 @@ void IPADDR::SetAddrAny()
 #endif
 }
 
-void IPADDR::set_addr4(struct in_addr *ip4)
+void IPADDR::SetAddr4(struct in_addr *ip4)
 {
    if (saddr->sa_family != AF_INET) {
       Emsg1(M_ERROR_TERM, 0, _("It was tried to assign a ipv6 address to a ipv4(%d)\n"), saddr->sa_family);
@@ -178,7 +178,7 @@ void IPADDR::set_addr4(struct in_addr *ip4)
 }
 
 #ifdef HAVE_IPV6
-void IPADDR::set_addr6(struct in6_addr *ip6)
+void IPADDR::SetAddr6(struct in6_addr *ip6)
 {
    if (saddr->sa_family != AF_INET6) {
       Emsg1(M_ERROR_TERM, 0, _("It was tried to assign a ipv4 address to a ipv6(%d)\n"), saddr->sa_family);
@@ -187,7 +187,7 @@ void IPADDR::set_addr6(struct in6_addr *ip6)
 }
 #endif
 
-const char *IPADDR::get_address(char *outputbuf, int outlen)
+const char *IPADDR::GetAddress(char *outputbuf, int outlen)
 {
    outputbuf[0] = '\0';
 #ifdef HAVE_INET_NTOP
@@ -204,7 +204,7 @@ const char *IPADDR::get_address(char *outputbuf, int outlen)
    return outputbuf;
 }
 
-const char *IPADDR::build_config_str(char *buf, int blen)
+const char *IPADDR::BuildConfigString(char *buf, int blen)
 {
    char tmp[1024];
 
@@ -214,7 +214,7 @@ const char *IPADDR::build_config_str(char *buf, int blen)
                            "         addr = %s\n"
                            "         port = %hu\n"
                            "      }",
-                get_address(tmp, sizeof(tmp) - 1),
+                GetAddress(tmp, sizeof(tmp) - 1),
                 GetPortHostOrder());
       break;
    case AF_INET6:
@@ -222,7 +222,7 @@ const char *IPADDR::build_config_str(char *buf, int blen)
                            "         addr = %s\n"
                            "         port = %hu\n"
                            "      }",
-                get_address(tmp, sizeof(tmp) - 1),
+                GetAddress(tmp, sizeof(tmp) - 1),
                 GetPortHostOrder());
       break;
    default:
@@ -239,11 +239,11 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
       switch (GetFamily()) {
       case AF_INET:
          Bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
-                   get_address(tmp, sizeof(tmp) - 1), GetPortHostOrder());
+                   GetAddress(tmp, sizeof(tmp) - 1), GetPortHostOrder());
          break;
       case AF_INET6:
          Bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
-                   get_address(tmp, sizeof(tmp) - 1), GetPortHostOrder());
+                   GetAddress(tmp, sizeof(tmp) - 1), GetPortHostOrder());
          break;
       default:
          break;
@@ -252,11 +252,11 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
       switch (GetFamily()) {
       case AF_INET:
          Bsnprintf(buf, blen, "host[ipv4;%s] ",
-                   get_address(tmp, sizeof(tmp) - 1));
+                   GetAddress(tmp, sizeof(tmp) - 1));
          break;
       case AF_INET6:
          Bsnprintf(buf, blen, "host[ipv6;%s] ",
-                   get_address(tmp, sizeof(tmp) - 1));
+                   GetAddress(tmp, sizeof(tmp) - 1));
          break;
       default:
          break;
@@ -266,7 +266,7 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
    return buf;
 }
 
-const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port/*=true*/)
+const char *BuildAddressesString(dlist *addrs, char *buf, int blen, bool print_port/*=true*/)
 {
    if (!addrs || addrs->size() == 0) {
       bstrncpy(buf, "", blen);
@@ -285,9 +285,9 @@ const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_po
    return buf;
 }
 
-const char *get_first_address(dlist *addrs, char *outputbuf, int outlen)
+const char *GetFirstAddress(dlist *addrs, char *outputbuf, int outlen)
 {
-   return ((IPADDR *)(addrs->first()))->get_address(outputbuf, outlen);
+   return ((IPADDR *)(addrs->first()))->GetAddress(outputbuf, outlen);
 }
 
 int GetFirstPortNetOrder(dlist *addrs)
@@ -361,7 +361,7 @@ int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int
    }
 
    const char *myerrstr;
-   hostaddrs = bnet_host2ipaddrs(hostname_str, family, &myerrstr);
+   hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
    if (!hostaddrs) {
       Bsnprintf(buf, buflen, _("can't resolve hostname(%s) %s"), hostname_str,
                 myerrstr);
@@ -455,7 +455,7 @@ int SockaddrGetPort(const struct sockaddr *client_addr)
    return -1;
 }
 
-char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len)
+char *SockaddrToAscii(const struct sockaddr *sa, char *buf, int len)
 {
 #ifdef HAVE_INET_NTOP
    /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */

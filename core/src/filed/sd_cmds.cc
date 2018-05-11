@@ -41,9 +41,9 @@ void *handle_stored_connection(BareosSocket *sd)
    /*
     * Do a sanity check on the message received
     */
-   if (sd->msglen < 25 || sd->msglen > 256) {
+   if (sd->message_length < 25 || sd->message_length > 256) {
       Dmsg1(000, "<filed: %s", sd->msg);
-      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), sd->who(), sd->msglen);
+      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), sd->who(), sd->message_length);
       Bmicrosleep(5, 0);   /* make user wait 5 seconds */
       sd->close();
       delete sd;

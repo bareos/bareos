@@ -482,7 +482,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     */
    hr = CreateVssBackupComponents_((IVssBackupComponents**)&pVssObject_);
    if (FAILED(hr)) {
-      berrno be;
+      BErrNo be;
       Dmsg2(0, "VSSClientGeneric::Initialize: CreateVssBackupComponents returned 0x%08X. ERR=%s\n",
             hr, be.bstrerror(b_errno_win32));
       JmsgVssApiStatus(jcr_, M_FATAL, hr, "CreateVssBackupComponents");

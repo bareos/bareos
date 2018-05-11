@@ -741,7 +741,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket *bfd, const char *fname,
 
    if (bfd->fh == INVALID_HANDLE_VALUE) {
       bfd->lerror = GetLastError();
-      bfd->berrno = b_errno_win32;
+      bfd->BErrNo = b_errno_win32;
       errno = b_errno_win32;
       bfd->mode = BF_CLOSED;
    }
@@ -905,14 +905,14 @@ ssize_t bread(BareosWinFilePacket *bfd, void *buf, size_t count)
                         1,                  /* Process Security */
                         &bfd->lpContext)) { /* Context */
          bfd->lerror = GetLastError();
-         bfd->berrno = b_errno_win32;
+         bfd->BErrNo = b_errno_win32;
          errno = b_errno_win32;
          return -1;
       }
    } else {
       if (!ReadFile(bfd->fh, buf, count, &bfd->rw_bytes, NULL)) {
          bfd->lerror = GetLastError();
-         bfd->berrno = b_errno_win32;
+         bfd->BErrNo = b_errno_win32;
          errno = b_errno_win32;
          return -1;
       }
@@ -938,14 +938,14 @@ ssize_t bwrite(BareosWinFilePacket *bfd, void *buf, size_t count)
                          1,                  /* Process Security */
                          &bfd->lpContext)) { /* Context */
          bfd->lerror = GetLastError();
-         bfd->berrno = b_errno_win32;
+         bfd->BErrNo = b_errno_win32;
          errno = b_errno_win32;
          return -1;
       }
    } else {
       if (!WriteFile(bfd->fh, buf, count, &bfd->rw_bytes, NULL)) {
          bfd->lerror = GetLastError();
-         bfd->berrno = b_errno_win32;
+         bfd->BErrNo = b_errno_win32;
          errno = b_errno_win32;
          return -1;
       }
@@ -1117,23 +1117,23 @@ int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, d
    if (bfd->fid != -1 && flags & O_NOATIME) {
       int oldflags = fcntl(bfd->fid, F_GETFL, 0);
       if (oldflags == -1) {
-         bfd->berrno = errno;
+         bfd->BErrNo = errno;
          close(bfd->fid);
          bfd->fid = -1;
       } else {
          int ret = fcntl(bfd->fid, F_SETFL, oldflags | O_NOATIME);
         /* EPERM means setting O_NOATIME was not allowed  */
          if (ret == -1 && errno != EPERM) {
-            bfd->berrno = errno;
+            bfd->BErrNo = errno;
             close(bfd->fid);
             bfd->fid = -1;
          }
       }
    }
-   bfd->berrno = errno;
+   bfd->BErrNo = errno;
    bfd->flags_ = flags;
    Dmsg1(400, "Open file %d\n", bfd->fid);
-   errno = bfd->berrno;
+   errno = bfd->BErrNo;
 
    bfd->win32DecompContext.bIsInData = false;
    bfd->win32DecompContext.liNextHeader = 0;
@@ -1196,7 +1196,7 @@ int bclose(BareosWinFilePacket *bfd)
 
       /* Close normal file */
       status = close(bfd->fid);
-      bfd->berrno = errno;
+      bfd->BErrNo = errno;
       bfd->fid = -1;
       bfd->cmd_plugin = false;
    }
@@ -1213,7 +1213,7 @@ ssize_t bread(BareosWinFilePacket *bfd, void *buf, size_t count)
    }
 
    status = read(bfd->fid, buf, count);
-   bfd->berrno = errno;
+   bfd->BErrNo = errno;
    return status;
 }
 
@@ -1225,7 +1225,7 @@ ssize_t bwrite(BareosWinFilePacket *bfd, void *buf, size_t count)
       return plugin_bwrite(bfd, buf, count);
    }
    status = write(bfd->fid, buf, count);
-   bfd->berrno = errno;
+   bfd->BErrNo = errno;
    return status;
 }
 
@@ -1242,7 +1242,7 @@ boffset_t blseek(BareosWinFilePacket *bfd, boffset_t offset, int whence)
       return plugin_blseek(bfd, offset, whence);
    }
    pos = (boffset_t)lseek(bfd->fid, offset, whence);
-   bfd->berrno = errno;
+   bfd->BErrNo = errno;
    return pos;
 }
 #endif

@@ -91,7 +91,7 @@ void *thread_routine(void *arg)
 //      if ((iteration % self->interval) == 0) {
          status = Writelock(&data[element].lock);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
             printf("Write lock failed. ERR=%s\n", be.bstrerror(status));
             exit(1);
          }
@@ -100,7 +100,7 @@ void *thread_routine(void *arg)
          self->writes++;
          status = Writelock(&data[element].lock);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
             printf("Write lock failed. ERR=%s\n", be.bstrerror(status));
             exit(1);
          }
@@ -109,13 +109,13 @@ void *thread_routine(void *arg)
          self->writes++;
          status = writeunlock(&data[element].lock);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
             printf("Write unlock failed. ERR=%s\n", be.bstrerror(status));
             exit(1);
          }
          status = writeunlock(&data[element].lock);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
             printf("Write unlock failed. ERR=%s\n", be.bstrerror(status));
             exit(1);
          }
@@ -129,7 +129,7 @@ void *thread_routine(void *arg)
           */
           status = readlock(&data[element].lock);
           if (status != 0) {
-             berrno be;
+             BErrNo be;
              printf("Read lock failed. ERR=%s\n", be.bstrerror(status));
              exit(1);
           }
@@ -138,7 +138,7 @@ void *thread_routine(void *arg)
              repeats++;
           status = readunlock(&data[element].lock);
           if (status != 0) {
-             berrno be;
+             BErrNo be;
              printf("Read unlock failed. ERR=%s\n", be.bstrerror(status));
              exit(1);
           }
@@ -183,7 +183,7 @@ void TestDevlock(void **state) {
         data[data_count].writes = 0;
         status = RwlInit(&data[data_count].lock);
         if (status != 0) {
-           berrno be;
+           BErrNo be;
            printf("Init rwlock failed. ERR=%s\n", be.bstrerror(status));
            exit(1);
         }
@@ -203,7 +203,7 @@ void TestDevlock(void **state) {
         status = pthread_create (&threads[count].thread_id,
             NULL, thread_routine, (void*)&threads[count]);
         if (status != 0 || (int)threads[count].thread_id == 0) {
-           berrno be;
+           BErrNo be;
            printf("Create thread failed. ERR=%s\n", be.bstrerror(status));
            exit(1);
         }
@@ -216,7 +216,7 @@ void TestDevlock(void **state) {
     for (count = 0; count < THREADS; count++) {
         status = pthread_join (threads[count].thread_id, NULL);
         if (status != 0) {
-           berrno be;
+           BErrNo be;
            printf("Join thread failed. ERR=%s\n", be.bstrerror(status));
            exit(1);
         }

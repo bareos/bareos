@@ -1278,9 +1278,9 @@ int PluginCreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacke
    Dmsg1(debuglevel, "bopen status=%d\n", status);
 
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
-      be.SetErrno(bfd->berrno);
+      be.SetErrno(bfd->BErrNo);
       Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       Dmsg2(debuglevel,"Could not bopen file %s: ERR=%s\n", attr->ofname, be.bstrerror());
@@ -1874,7 +1874,7 @@ static int MyPluginBopen(BareosWinFilePacket *bfd, const char *fname, int flags,
    io.mode = mode;
 
    PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
-   bfd->berrno = io.io_errno;
+   bfd->BErrNo = io.io_errno;
 
    if (io.win32) {
       errno = b_errno_win32;
@@ -1910,7 +1910,7 @@ static int MyPluginBclose(BareosWinFilePacket *bfd)
    io.func = IO_CLOSE;
 
    PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
-   bfd->berrno = io.io_errno;
+   bfd->BErrNo = io.io_errno;
 
    if (io.win32) {
       errno = b_errno_win32;
@@ -1949,7 +1949,7 @@ static ssize_t MyPluginBread(BareosWinFilePacket *bfd, void *buf, size_t count)
 
    PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
    bfd->offset = io.offset;
-   bfd->berrno = io.io_errno;
+   bfd->BErrNo = io.io_errno;
 
    if (io.win32) {
       errno = b_errno_win32;
@@ -1986,7 +1986,7 @@ static ssize_t MyPluginBwrite(BareosWinFilePacket *bfd, void *buf, size_t count)
    io.buf = (char *)buf;
 
    PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
-   bfd->berrno = io.io_errno;
+   bfd->BErrNo = io.io_errno;
 
    if (io.win32) {
       errno = b_errno_win32;
@@ -2021,7 +2021,7 @@ static boffset_t MyPluginBlseek(BareosWinFilePacket *bfd, boffset_t offset, int 
    io.win32 = false;
    io.lerror = 0;
    PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
-   bfd->berrno = io.io_errno;
+   bfd->BErrNo = io.io_errno;
    if (io.win32) {
       errno = b_errno_win32;
    } else {

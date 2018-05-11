@@ -41,7 +41,7 @@ private:
    static const int32_t max_message_len = max_packet_size - header_length;
 
    /* methods -- in bsock_tcp.c */
-   void fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
+   void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                  struct sockaddr *lclient_addr);
    bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
              int port, utime_t heart_beat, int *fatal);

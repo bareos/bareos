@@ -61,7 +61,7 @@ int BgetMsg(BareosSocket *sock)
       }
 
       /* BNET_SIGNAL (-1) return from BnetRecv() => network signal */
-      switch (sock->msglen) {
+      switch (sock->message_length) {
       case BNET_EOD:               /* end of data */
          Dmsg0(messagelevel, "Got BNET_EOD\n");
          return n;
@@ -95,7 +95,7 @@ int BgetMsg(BareosSocket *sock)
          sock->signal(BNET_EOD);
          break;
       default:
-         Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"), sock->msglen);
+         Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"), sock->message_length);
          break;
       }
    }

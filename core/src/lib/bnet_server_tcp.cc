@@ -105,7 +105,7 @@ void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
        * Stop work queue thread
        */
       if ((status = WorkqDestroy(client_wq)) != 0) {
-         berrno be;
+         BErrNo be;
          be.SetErrno(status);
          Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
                be.bstrerror());
@@ -124,7 +124,7 @@ void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
  *
  * At the moment it is impossible to bind to different ports.
  */
-void bnet_thread_server_tcp(dlist *addr_list,
+void BnetThreadServerTcp(dlist *addr_list,
                             int max_clients,
                             alist *sockfds,
                             workq_t *client_wq,
@@ -174,7 +174,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
       }
    }
 
-   Dmsg1(100, "Addresses %s\n", build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
+   Dmsg1(100, "Addresses %s\n", BuildAddressesString(addr_list, allbuf, sizeof(allbuf)));
 
    if (nokeepalive) {
       value = 0;
@@ -197,12 +197,12 @@ void bnet_thread_server_tcp(dlist *addr_list,
        */
       for (tlog= 60; (fd_ptr->fd=socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
          if (tlog <= 0) {
-            berrno be;
+            BErrNo be;
             char curbuf[256];
             Emsg3(M_ABORT, 0, _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
                        be.bstrerror(),
                        ipaddr->build_address_str(curbuf, sizeof(curbuf)),
-                       build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
+                       BuildAddressesString(addr_list, allbuf, sizeof(allbuf)));
          }
          Bmicrosleep(10, 0);
       }
@@ -211,14 +211,14 @@ void bnet_thread_server_tcp(dlist *addr_list,
        * Reuse old sockets
        */
       if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&value, sizeof(value)) < 0) {
-         berrno be;
+         BErrNo be;
          Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
                be.bstrerror());
       }
 
       tmax = 30 * (60 / 5);        /* wait 30 minutes max */
       for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0; tlog -= 5) {
-         berrno be;
+         BErrNo be;
          if (tlog <= 0) {
             tlog = 2 * 60;         /* Complain every 2 minutes */
             Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
@@ -243,7 +243,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
     * Start work queue thread
     */
    if ((status = WorkqInit(client_wq, max_clients, handle_client_request)) != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       Emsg1(M_ABORT, 0, _("Could not init client queue: ERR=%s\n"), be.bstrerror());
    }
@@ -292,7 +292,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
 
       errno = 0;
       if ((status = select(maxfd + 1, &sockset, NULL, NULL, NULL)) < 0) {
-         berrno be;                   /* capture errno */
+         BErrNo be;                   /* capture errno */
          if (errno == EINTR) {
             continue;
          }
@@ -307,7 +307,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
 
       errno = 0;
       if ((status = poll(pfds, nfds, -1)) < 0) {
-         berrno be;                   /* capture errno */
+         BErrNo be;                   /* capture errno */
          if (errno == EINTR) {
             continue;
          }
@@ -337,7 +337,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
                V(mutex);
                Jmsg2(NULL, M_SECURITY, 0,
                      _("Connection from %s:%d refused by hosts.access\n"),
-                     sockaddr_to_ascii(&cli_addr, buf, sizeof(buf)),
+                     SockaddrToAscii(&cli_addr, buf, sizeof(buf)),
                      SockaddrGetPort(&cli_addr));
                close(newsockfd);
                continue;
@@ -349,7 +349,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
              * Receive notification when connection dies.
              */
             if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
-               berrno be;
+               BErrNo be;
                Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
             }
 
@@ -357,7 +357,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
              * See who client is. i.e. who connected to us.
              */
             P(mutex);
-            sockaddr_to_ascii(&cli_addr, buf, sizeof(buf));
+            SockaddrToAscii(&cli_addr, buf, sizeof(buf));
             V(mutex);
 
             BareosSocket *bs;
@@ -377,7 +377,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
              * Queue client to be served
              */
             if ((status = WorkqAdd(client_wq, (void *)bs, NULL, 0)) != 0) {
-               berrno be;
+               BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),
                      be.bstrerror());

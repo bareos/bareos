@@ -84,7 +84,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord *dcr)
       } while (status == -1 && errno == EINTR);
 
       if (status < 0) {
-         berrno be;
+         BErrNo be;
          dev->clrerror(-1);
          Dmsg1(100, "Read device got: ERR=%s\n", be.bstrerror());
          Mmsg2(jcr->errmsg, _("Read error on device %s in ANSI label. ERR=%s\n"),
@@ -349,7 +349,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
 
          status = dev->write(label, sizeof(label));
          if (status != sizeof(label)) {
-            berrno be;
+            BErrNo be;
             Jmsg3(jcr, M_FATAL, 0,  _("Could not write ANSI VOL1 label. Wanted size=%d got=%d ERR=%s\n"),
                   sizeof(label), status, be.bstrerror());
             return false;
@@ -389,7 +389,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
        */
       status = dev->write(label, sizeof(label));
       if (status != sizeof(label)) {
-         berrno be;
+         BErrNo be;
          if (status == -1) {
             dev->clrerror(-1);
             if (dev->dev_errno == 0) {
@@ -423,7 +423,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord *dcr, int type, const char *VolName)
       }
       status = dev->write(label, sizeof(label));
       if (status != sizeof(label)) {
-         berrno be;
+         BErrNo be;
          if (status == -1) {
             dev->clrerror(-1);
             if (dev->dev_errno == 0) {

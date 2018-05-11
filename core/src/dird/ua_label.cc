@@ -223,7 +223,7 @@ static bool GenerateNewEncryptionKey(UaContext *ua, MediaDbRecord *mr)
    /*
     * The passphrase is always base64 encoded.
     */
-   bin_to_base64(mr->EncrKey, sizeof(mr->EncrKey), passphrase, length, true);
+   BinToBase64(mr->EncrKey, sizeof(mr->EncrKey), passphrase, length, true);
 
    free(passphrase);
    return true;

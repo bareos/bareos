@@ -150,7 +150,7 @@ int main (int argc, char *argv[])
 
       case 'e':                    /* exclude list */
          if ((fd = fopen(optarg, "rb")) == NULL) {
-            berrno be;
+            BErrNo be;
             Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
                optarg, be.bstrerror());
             exit(1);
@@ -165,7 +165,7 @@ int main (int argc, char *argv[])
 
       case 'i':                    /* include list */
          if ((fd = fopen(optarg, "rb")) == NULL) {
-            berrno be;
+            BErrNo be;
             Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
                optarg, be.bstrerror());
             exit(1);

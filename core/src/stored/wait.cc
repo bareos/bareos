@@ -128,7 +128,7 @@ int WaitForSysop(DeviceControlRecord *dcr)
       }
 
       if (status == EINVAL) {
-         berrno be;
+         BErrNo be;
          Jmsg1(jcr, M_FATAL, 0, _("pthread timedwait error. ERR=%s\n"), be.bstrerror(status));
          status = W_ERROR;             /* error */
          break;
@@ -173,7 +173,7 @@ int WaitForSysop(DeviceControlRecord *dcr)
        *   return to check if state changed.
        */
       if (status != ETIMEDOUT) {
-         berrno be;
+         BErrNo be;
          Dmsg2(debuglevel, "Wake return. status=%d. ERR=%s\n", status, be.bstrerror(status));
          status = W_WAKE;          /* someone woke us */
          break;

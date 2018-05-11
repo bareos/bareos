@@ -63,7 +63,7 @@ static device_option device_options[] = {
  */
 int elasto_device::d_open(const char *pathname, int flags, int mode)
 {
-   berrno be;
+   BErrNo be;
    int status;
    uint32_t elasto_flags = 0;
    struct elasto_fauth auth;

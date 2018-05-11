@@ -360,7 +360,7 @@ void InitConsoleMsg(const char *wd)
    Bsnprintf(con_fname, sizeof(con_fname), "%s%c%s.conmsg", wd, PathSeparator, my_name);
    fd = open(con_fname, O_CREAT|O_RDWR|O_BINARY, 0600);
    if (fd == -1) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Could not open console message file %s: ERR=%s\n"),
             con_fname, be.bstrerror());
    }
@@ -370,12 +370,12 @@ void InitConsoleMsg(const char *wd)
    close(fd);
    con_fd = fopen(con_fname, "a+b");
    if (!con_fd) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR, 0, _("Could not open console message file %s: ERR=%s\n"),
             con_fname, be.bstrerror());
    }
    if (RwlInit(&con_lock) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ERROR_TERM, 0, _("Could not get con mutex: ERR=%s\n"),
             be.bstrerror());
    }
@@ -489,7 +489,7 @@ static Bpipe *open_mail_pipe(JobControlRecord *jcr, POOLMEM *&cmd, DEST *d)
       Mmsg(cmd, "/usr/lib/sendmail -F BAREOS %s", d->where);
    }
 
-   if ((bpipe = open_bpipe(cmd, 120, "rw"))) {
+   if ((bpipe = OpenBpipe(cmd, 120, "rw"))) {
       /*
        * If we had to use sendmail, add subject
        */
@@ -497,7 +497,7 @@ static Bpipe *open_mail_pipe(JobControlRecord *jcr, POOLMEM *&cmd, DEST *d)
          fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", _("BAREOS Message"));
       }
    } else {
-      berrno be;
+      BErrNo be;
       DeliveryError(_("open mail pipe %s failed: ERR=%s\n"),
                      cmd, be.bstrerror());
    }
@@ -607,7 +607,7 @@ void CloseMsg(JobControlRecord *jcr)
                fputs(line, bpipe->wfd);
             }
             if (!CloseWpipe(bpipe)) {       /* close write pipe sending mail */
-               berrno be;
+               BErrNo be;
                Pmsg1(000, _("close error: ERR=%s\n"), be.bstrerror());
             }
 
@@ -627,7 +627,7 @@ void CloseMsg(JobControlRecord *jcr)
 
             status = CloseBpipe(bpipe);
             if (status != 0 && msgs != daemon_msgs) {
-               berrno be;
+               BErrNo be;
                be.SetErrno(status);
                Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
                DeliveryError(_("Mail program terminated in error.\n"
@@ -740,7 +740,7 @@ static inline bool OpenDestFile(JobControlRecord *jcr, DEST *d, const char *mode
 {
    d->fd = fopen(d->where, mode);
    if (!d->fd) {
-      berrno be;
+      BErrNo be;
       DeliveryError(_("fopen %s failed: ERR=%s\n"), d->where, be.bstrerror());
       return false;
    }
@@ -1056,7 +1056,7 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
                 */
                status = CloseBpipe(bpipe);
                if (status != 0) {
-                  berrno be;
+                  BErrNo be;
                   be.SetErrno(status);
                   DeliveryError(_("Msg delivery error: Operator mail program terminated in error.\n"
                                    "CMD=%s\nERR=%s\n"), mcmd, be.bstrerror());
@@ -1077,7 +1077,7 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
                MakeUniqueMailFilename(jcr, name, d);
                d->fd = fopen(name, "w+b");
                if (!d->fd) {
-                  berrno be;
+                  BErrNo be;
                   DeliveryError(_("Msg delivery error: fopen %s failed: ERR=%s\n"), name,
                            be.bstrerror());
                   FreePoolMemory(name);
@@ -1566,7 +1566,7 @@ void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
       BareosSocket *dir = jcr->dir_bsock;
 
       va_start(ap, fmt);
-      dir->msglen = Bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
+      dir->message_length = Bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
       va_end(ap);
       jcr->dir_bsock->send();
 

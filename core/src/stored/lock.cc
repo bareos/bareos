@@ -400,7 +400,7 @@ void Device::rLock(bool locked)
                edit_pthread(no_wait_id, ed1, sizeof(ed1)),
                edit_pthread(pthread_self(), ed2, sizeof(ed2)));
          if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
-            berrno be;
+            BErrNo be;
             this->Unlock();
             Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
                   be.bstrerror(status));

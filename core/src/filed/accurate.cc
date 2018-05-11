@@ -386,7 +386,7 @@ bool AccurateCmd(JobControlRecord *jcr)
       /**
        * No checksum.
        */
-      if ((fname_length + lstat_length + 2) >= dir->msglen) {
+      if ((fname_length + lstat_length + 2) >= dir->message_length) {
          chksum = NULL;
          chksum_length = 0;
          delta_seq = 0;
@@ -399,7 +399,7 @@ bool AccurateCmd(JobControlRecord *jcr)
           * Sanity check total length of the received msg must be at least
           * total of the 3 lengths calculated + 3 (\0)
           */
-         if ((fname_length + lstat_length + chksum_length + 3) > dir->msglen) {
+         if ((fname_length + lstat_length + chksum_length + 3) > dir->message_length) {
             continue;
          }
       }

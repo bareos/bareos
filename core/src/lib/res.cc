@@ -1952,7 +1952,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
          foreach_dlist(adr, addrs) {
             char tmp[1024];
 
-            adr->build_config_str(tmp, sizeof(tmp));
+            adr->BuildConfigString(tmp, sizeof(tmp));
             PmStrcat(cfg_str, tmp);
             PmStrcat(cfg_str, "\n");
          }

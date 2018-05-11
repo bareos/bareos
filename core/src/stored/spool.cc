@@ -172,7 +172,7 @@ static bool OpenDataSpoolFile(DeviceControlRecord *dcr)
       dcr->spool_fd = spool_fd;
       dcr->jcr->spool_attributes = true;
    } else {
-      berrno be;
+      BErrNo be;
 
       Jmsg(dcr->jcr, M_FATAL, 0, _("Open data spool file %s failed: ERR=%s\n"), name, be.bstrerror());
       FreePoolMemory(name);
@@ -365,7 +365,7 @@ static bool DespoolData(DeviceControlRecord *dcr, bool commit)
    } else {
       lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
       if (ftruncate(rdcr->spool_fd, 0) != 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
          /*
@@ -432,7 +432,7 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord *dcr)
       return RB_EOT;
    } else if (status != (ssize_t)rlen) {
       if (status == -1) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(dcr->jcr, M_FATAL, 0, _("Spool header read error. ERR=%s\n"), be.bstrerror());
       } else {
@@ -557,7 +557,7 @@ static bool WriteSpoolHeader(DeviceControlRecord *dcr)
    for (int retry = 0; retry <= 1; retry++) {
       status = write(dcr->spool_fd, (char*)&hdr, sizeof(hdr));
       if (status == -1) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(jcr, M_FATAL, 0, _("Error writing header to spool file. ERR=%s\n"), be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
@@ -574,7 +574,7 @@ static bool WriteSpoolHeader(DeviceControlRecord *dcr)
             boffset_t   pos = lseek(dcr->spool_fd, 0, SEEK_CUR);
 #endif
             if (ftruncate(dcr->spool_fd, pos - status) != 0) {
-               berrno be;
+               BErrNo be;
 
                Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
               /* Note, try continuing despite ftruncate problem */
@@ -606,7 +606,7 @@ static bool WriteSpoolData(DeviceControlRecord *dcr)
    for (int retry = 0; retry <= 1; retry++) {
       status = write(dcr->spool_fd, block->buf, (size_t)block->binbuf);
       if (status == -1) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(jcr, M_FATAL, 0, _("Error writing data to spool file. ERR=%s\n"), be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
@@ -622,7 +622,7 @@ static bool WriteSpoolData(DeviceControlRecord *dcr)
             boffset_t   pos = lseek(dcr->spool_fd, 0, SEEK_CUR);
 #endif
             if (ftruncate(dcr->spool_fd, pos - status - sizeof(spool_hdr)) != 0) {
-               berrno be;
+               BErrNo be;
 
                Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
                /* Note, try continuing despite ftruncate problem */
@@ -739,7 +739,7 @@ bool CommitAttributeSpool(JobControlRecord *jcr)
    if (AreAttributesSpooled(jcr)) {
       dir = jcr->dir_bsock;
       if ((size = lseek(dir->spool_fd_, 0, SEEK_END)) == -1) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(jcr, M_FATAL, 0, _("lseek on attributes file failed: ERR=%s\n"), be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
@@ -754,7 +754,7 @@ bool CommitAttributeSpool(JobControlRecord *jcr)
           */
          if (size > data_end) {
             if (ftruncate(dir->spool_fd_, data_end) != 0) {
-               berrno be;
+               BErrNo be;
 
                Jmsg(jcr, M_FATAL, 0, _("Truncate on attributes file failed: ERR=%s\n"), be.bstrerror());
                jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
@@ -766,7 +766,7 @@ bool CommitAttributeSpool(JobControlRecord *jcr)
       }
 
       if (size < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(jcr, M_FATAL, 0, _("Fseek on attributes file failed: ERR=%s\n"),
               be.bstrerror());
@@ -807,7 +807,7 @@ static bool OpenAttrSpoolFile(JobControlRecord *jcr, BareosSocket *bs)
    MakeUniqueSpoolFilename(jcr, name, bs->fd_);
    bs->spool_fd_ = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
    if (bs->spool_fd_ == -1) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(jcr, M_FATAL, 0, _("fopen attr spool file %s failed: ERR=%s\n"), name, be.bstrerror());
       jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */

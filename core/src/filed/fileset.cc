@@ -129,9 +129,9 @@ void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile)
       p++;                            /* skip over | */
       fn = GetPoolMemory(PM_FNAME);
       fn = edit_job_codes(jcr, fn, p, "", job_code_callback_filed);
-      bpipe = open_bpipe(fn, 0, "r");
+      bpipe = OpenBpipe(fn, 0, "r");
       if (!bpipe) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"),
             p, be.bstrerror());
          FreePoolMemory(fn);
@@ -143,7 +143,7 @@ void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile)
          append_file(jcr, fileset->incexe, buf, IsFile);
       }
       if ((status = CloseBpipe(bpipe)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. status=%d: ERR=%s\n"),
             p, be.code(status), be.bstrerror(status));
          return;
@@ -153,7 +153,7 @@ void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile)
       Dmsg1(100, "Doing < of '%s' include on client.\n", p + 1);
       p++;                      /* skip over < */
       if ((ffd = fopen(p, "rb")) == NULL) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0,
               _("Cannot open FileSet input file: %s. ERR=%s\n"),
             p, be.bstrerror());

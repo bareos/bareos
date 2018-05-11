@@ -63,7 +63,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
    if (fd == -1) {
       fd = open(device_name, O_RDWR | O_NONBLOCK | O_BINARY);
       if (fd < 0) {
-         berrno be;
+         BErrNo be;
 
          Emsg2(M_ERROR, 0, _("Failed to open %s: ERR=%s\n"),
                device_name, be.bstrerror());
@@ -85,7 +85,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
    rc = ioctl(fd, SG_IO, &io_hdr);
    if (rc <  0) {
-      berrno be;
+      BErrNo be;
 
       Emsg2(M_ERROR, 0, _("Unable to perform SG_IO ioctl on fd %d: ERR=%s\n"),
             fd, be.bstrerror());
@@ -181,7 +181,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
    if (fd == -1) {
       fd = open(device_name, O_RDWR | O_NONBLOCK | O_BINARY);
       if (fd < 0) {
-         berrno be;
+         BErrNo be;
 
          Emsg2(M_ERROR, 0, _("Failed to open %s: ERR=%s\n"),
                device_name, be.bstrerror());
@@ -203,7 +203,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
    rc = ioctl(fd, USCSICMD, &my_cmd);
    if (rc != 0) {
-      berrno be;
+      BErrNo be;
 
       Emsg2(M_ERROR, 0, _("Unable to perform USCSICMD ioctl on fd %d: ERR=%s\n"),
             fd, be.bstrerror());
@@ -284,7 +284,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
     * See what CAM device to use.
     */
    if (cam_get_device(device_name, cam_devicename, sizeof(cam_devicename), &unitnum) == -1) {
-      berrno be;
+      BErrNo be;
 
       Emsg2(M_ERROR, 0, _("Failed to find CAM device for %s: ERR=%s\n"),
             device_name, be.bstrerror());
@@ -293,7 +293,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
    cam_dev = cam_open_spec_device(cam_devicename, unitnum, O_RDWR, NULL);
    if (!cam_dev) {
-      berrno be;
+      BErrNo be;
 
       Emsg2(M_ERROR, 0, _("Failed to open CAM device for %s: ERR=%s\n"),
             device_name, be.bstrerror());
@@ -413,7 +413,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
    if (fd == -1) {
       fd = open(device_name, O_RDWR | O_NONBLOCK| O_BINARY);
       if (fd < 0) {
-         berrno be;
+         BErrNo be;
 
          Emsg2(M_ERROR, 0, _("Failed to open %s: ERR=%s\n"),
                device_name, be.bstrerror());
@@ -434,7 +434,7 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
    rc = ioctl(fd, SCIOCCOMMAND, &req);
    if (rc <  0) {
-      berrno be;
+      BErrNo be;
 
       Emsg2(M_ERROR, 0, _("Unable to perform SCIOCCOMMAND ioctl on fd %d: ERR=%s\n"),
             fd, be.bstrerror());

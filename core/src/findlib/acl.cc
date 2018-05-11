@@ -118,16 +118,16 @@ bacl_exit_code SendAclStream(JobControlRecord *jcr, acl_data_t *acl_data, int st
    Dmsg1(400, "Backing up ACL <%s>\n", acl_data->u.build->content);
    msgsave = sd->msg;
    sd->msg = acl_data->u.build->content;
-   sd->msglen = acl_data->u.build->content_length + 1;
+   sd->message_length = acl_data->u.build->content_length + 1;
    if (!sd->send()) {
       sd->msg = msgsave;
-      sd->msglen = 0;
+      sd->message_length = 0;
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
       return bacl_exit_fatal;
    }
 
-   jcr->JobBytes += sd->msglen;
+   jcr->JobBytes += sd->message_length;
    sd->msg = msgsave;
    if (!sd->signal(BNET_EOD)) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -218,7 +218,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
                 GET_ACLINFO_ONLY,
 #endif
                 &type, NULL, &aclsize, &mode) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -259,7 +259,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
                 0,
 #endif
                 &type, aclbuf, &aclsize, &mode) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -427,7 +427,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
    aclbuf = CheckPoolMemorySize(aclbuf, content_length);
    aclsize = content_length;
    if (aclx_scanStr(content, aclbuf, &aclsize, type) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOSPC:
@@ -477,7 +477,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
    }
 
    if (aclx_put(acl_data->last_fname, SET_ACL, type, aclbuf, aclsize, 0) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -843,7 +843,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
          return bacl_exit_ok;
       }
 
-      berrno be;
+      BErrNo be;
       Mmsg2(jcr->errmsg,
             _("acl_to_text error on file \"%s\": ERR=%s\n"),
             acl_data->last_fname, be.bstrerror());
@@ -853,7 +853,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
       retval = bacl_exit_error;
       goto bail_out;
    } else {
-      berrno be;
+      BErrNo be;
 
       /*
        * Handle errors gracefully.
@@ -914,7 +914,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord *jcr,
       if (acl_delete_def_file(acl_data->last_fname) == 0) {
          return bacl_exit_ok;
       }
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -943,7 +943,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord *jcr,
 
    acl = acl_from_text(content);
    if (acl == NULL) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("acl_from_text error on file \"%s\": ERR=%s\n"),
@@ -965,7 +965,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord *jcr,
       break;
    default:
       if (acl_valid(acl) != 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg2(jcr->errmsg, _("acl_valid error on file \"%s\": ERR=%s\n"),
                acl_data->last_fname, be.bstrerror());
@@ -984,7 +984,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord *jcr,
     * don't save acls of symlinks (which cannot have acls anyhow)
     */
    if (acl_set_file(acl_data->last_fname, ostype, acl) != 0 && acl_data->filetype != FT_LNK) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1116,7 +1116,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
    acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_NFS4);
    switch (acl_enabled) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1145,7 +1145,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
       acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_EXTENDED);
       switch (acl_enabled) {
       case -1: {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -1260,7 +1260,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord *jcr,
 
    switch (acl_enabled) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1562,7 +1562,7 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
    char *acl_text;
 
    if ((n = getacl(acl_data->last_fname, 0, acls)) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
 #if defined(BACL_ENOTSUP)
@@ -1619,7 +1619,7 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
          return SendAclStream(jcr, acl_data, STREAM_ACL_HPUX_ACL_ENTRY);
       }
 
-      berrno be;
+      BErrNo be;
       Mmsg2(jcr->errmsg,
             _("acltostr error on file \"%s\": ERR=%s\n"),
             acl_data->last_fname, be.bstrerror());
@@ -1641,7 +1641,7 @@ static bacl_exit_code hpux_parse_acl_streams(JobControlRecord *jcr,
 
    n = strtoacl(content, 0, NACLENTRIES, acls, ACL_FILEOWNER, ACL_FILEGROUP);
    if (n <= 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("strtoacl error on file \"%s\": ERR=%s\n"),
@@ -1651,7 +1651,7 @@ static bacl_exit_code hpux_parse_acl_streams(JobControlRecord *jcr,
       return bacl_exit_error;
    }
    if (strtoacl(content, n, NACLENTRIES, acls, ACL_FILEOWNER, ACL_FILEGROUP) != n) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("strtoacl error on file \"%s\": ERR=%s\n"),
@@ -1668,7 +1668,7 @@ static bacl_exit_code hpux_parse_acl_streams(JobControlRecord *jcr,
     * don't save acls of symlinks (which cannot have acls anyhow)
     */
    if (setacl(acl_data->last_fname, n, acls) != 0 && acl_data->filetype != FT_LNK) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1789,7 +1789,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
       acl_data->u.build->content_length = 0;
       return bacl_exit_ok;
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1811,7 +1811,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
     * Get ACL info: don't bother allocating space if there is only a trivial ACL.
     */
    if (acl_get(acl_data->last_fname, ACL_NO_TRIVIAL, &aclp) != 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1897,7 +1897,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
                acl_data->last_fname);
          return bacl_exit_error;
       case -1: {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -2082,7 +2082,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
          return SendAclStream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
       }
 
-      berrno be;
+      BErrNo be;
       Mmsg2(jcr->errmsg,
             _("acltotext error on file \"%s\": ERR=%s\n"),
             acl_data->last_fname, be.bstrerror());
@@ -2105,7 +2105,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
 
    acls = aclfromtext(content, &n);
    if (!acls) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("aclfromtext error on file \"%s\": ERR=%s\n"),
@@ -2120,7 +2120,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
     * not have attributes, and the file it is linked to may not yet be restored.
     */
    if (acl(acl_data->last_fname, SETACL, n, acls) == -1 && acl_data->filetype != FT_LNK) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -2193,7 +2193,7 @@ static bacl_exit_code afs_build_acl_streams(JobControlRecord *jcr,
    memset((caddr_t)acl_text, 0, sizeof(acl_text));
 
    if ((error = pioctl(acl_data->last_fname, VIOCGETAL, &vip, 0)) < 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("pioctl VIOCGETAL error on file \"%s\": ERR=%s\n"),
@@ -2222,7 +2222,7 @@ static bacl_exit_code afs_parse_acl_stream(JobControlRecord *jcr,
    vip.out_size = 0;
 
    if ((error = pioctl(acl_data->last_fname, VIOCSETAL, &vip, 0)) < 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("pioctl VIOCSETAL error on file \"%s\": ERR=%s\n"),
@@ -2326,7 +2326,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord *jcr,
    ret = lstat(acl_data->last_fname, &st);
    switch (ret) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:

@@ -112,7 +112,7 @@ void BareosSocket::SetSourceAddress(dlist *src_addr_list)
    IPADDR *addr = NULL;
 
    Dmsg1(100, "All source addresses %s\n",
-         build_addresses_str(src_addr_list, allbuf, sizeof(allbuf)));
+         BuildAddressesString(src_addr_list, allbuf, sizeof(allbuf)));
 
    /*
     * Delete the object we already have, if it's allocated
@@ -138,7 +138,7 @@ bool BareosSocket::SetLocking()
       return true;                      /* already set */
    }
    if ((status = pthread_mutex_init(&mutex_, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Qmsg(jcr_, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
          be.bstrerror(status));
       return false;
@@ -162,7 +162,7 @@ void BareosSocket::ClearLocking()
  */
 bool BareosSocket::signal(int signal)
 {
-   msglen = signal;
+   message_length = signal;
    if (signal == BNET_TERMINATE) {
       suppress_error_msgs_ = true;
    }
@@ -191,16 +191,16 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize
 
    while ((nbytes = read(spool_fd_, (char *)&pktsiz, sizeof(int32_t))) == sizeof(int32_t)) {
       size += sizeof(int32_t);
-      msglen = ntohl(pktsiz);
-      if (msglen > 0) {
-         if (msglen > (int32_t)SizeofPoolMemory(msg)) {
-            msg = ReallocPoolMemory(msg, msglen + 1);
+      message_length = ntohl(pktsiz);
+      if (message_length > 0) {
+         if (message_length > (int32_t)SizeofPoolMemory(msg)) {
+            msg = ReallocPoolMemory(msg, message_length + 1);
          }
 
-         nbytes = read(spool_fd_, msg, msglen);
-         if (nbytes != (size_t)msglen) {
-            berrno be;
-            Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
+         nbytes = read(spool_fd_, msg, message_length);
+         if (nbytes != (size_t)message_length) {
+            BErrNo be;
+            Dmsg2(400, "nbytes=%d message_length=%d\n", nbytes, message_length);
             Qmsg1(get_jcr(), M_FATAL, 0, _("read attr spool error. ERR=%s\n"), be.bstrerror());
             UpdateAttrSpoolSize(tsize - last);
             return false;
@@ -229,7 +229,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize
  */
 const char *BareosSocket::bstrerror()
 {
-   berrno be;
+   BErrNo be;
    if (errmsg == NULL) {
       errmsg = GetPoolMemory(PM_MESSAGE);
    }
@@ -258,9 +258,9 @@ bool BareosSocket::fsend(const char *fmt, ...)
    for (;;) {
       maxlen = SizeofPoolMemory(msg) - 1;
       va_start(arg_ptr, fmt);
-      msglen = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
+      message_length = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
-      if (msglen >= 0 && msglen < (maxlen - 5)) {
+      if (message_length >= 0 && message_length < (maxlen - 5)) {
          break;
       }
       msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);

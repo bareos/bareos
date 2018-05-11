@@ -82,7 +82,7 @@ static void *handle_connection_request(void *arg)
       return handle_stored_connection(bs);
    }
 
-   Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
+   Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
 
    return NULL;
 }
@@ -104,7 +104,7 @@ void StartSocketServer(dlist *addrs)
     * Permit MaxConnections connections.
     */
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp(addrs,
+   BnetThreadServerTcp(addrs,
                           me->MaxConnections,
                           sock_fds,
                           &socket_workq,

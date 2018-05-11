@@ -595,7 +595,7 @@ bool DeviceControlRecord::WriteBlockToDev()
    status = 0;
    do {
       if (retry > 0 && status == -1 && errno == EBUSY) {
-         berrno be;
+         BErrNo be;
          Dmsg4(100, "===== write retry=%d status=%d errno=%d: ERR=%s\n",
                retry, status, errno, be.bstrerror());
          Bmicrosleep(5, 0);    /* pause a bit if busy or lots of errors */
@@ -629,7 +629,7 @@ bool DeviceControlRecord::WriteBlockToDev()
        * simulate an End of Medium.
        */
       if (status == -1) {
-         berrno be;
+         BErrNo be;
          dev->clrerror(-1);
          if (dev->dev_errno == 0) {
             dev->dev_errno = ENOSPC;        /* out of space */
@@ -647,7 +647,7 @@ bool DeviceControlRecord::WriteBlockToDev()
          Jmsg(jcr, M_INFO, 0, _("End of Volume \"%s\" at %u:%u on device %s. Write of %u bytes got %d.\n"),
               dev->getVolCatName(), dev->file, dev->block_num, dev->print_name(), wlen, status);
       } else {
-         berrno be;
+         BErrNo be;
 
          be.SetErrno(dev->dev_errno);
          Mmsg5(dev->errmsg, _("Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
@@ -661,7 +661,7 @@ bool DeviceControlRecord::WriteBlockToDev()
       }
 
       if (debug_level >= 100) {
-         berrno be;
+         BErrNo be;
 
          be.SetErrno(dev->dev_errno);
          Dmsg7(100, "=== Write error. fd=%d size=%u rtn=%d dev_blk=%d blk_blk=%d errno=%d: ERR=%s\n",
@@ -744,13 +744,13 @@ static void RereadLastBlock(DeviceControlRecord *dcr)
        * Now back up over what we wrote and read the last block
        */
       if (!dev->bsf(1)) {
-         berrno be;
+         BErrNo be;
          ok = false;
          Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
               be.bstrerror(dev->dev_errno));
       }
       if (ok && dev->HasCap(CAP_TWOEOF) && !dev->bsf(1)) {
-         berrno be;
+         BErrNo be;
          ok = false;
          Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
               be.bstrerror(dev->dev_errno));
@@ -759,7 +759,7 @@ static void RereadLastBlock(DeviceControlRecord *dcr)
        * Backspace over record
        */
       if (ok && !dev->bsr(1)) {
-         berrno be;
+         BErrNo be;
          ok = false;
          Jmsg(jcr, M_ERROR, 0, _("Backspace record at EOT failed. ERR=%s\n"),
               be.bstrerror(dev->dev_errno));
@@ -993,7 +993,7 @@ reread:
 
    do {
       if ((retry > 0 && status == -1 && errno == EBUSY)) {
-         berrno be;
+         BErrNo be;
          Dmsg4(100, "===== read retry=%d status=%d errno=%d: ERR=%s\n",
                retry, status, errno, be.bstrerror());
          Bmicrosleep(10, 0);    /* pause a bit if busy or lots of errors */
@@ -1004,7 +1004,7 @@ reread:
    } while (status == -1 && (errno == EBUSY || errno == EINTR || errno == EIO) && retry++ < 3);
 
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       dev->clrerror(-1);
       Dmsg1(250, "Read device got: ERR=%s\n", be.bstrerror());

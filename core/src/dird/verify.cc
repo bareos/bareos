@@ -655,13 +655,13 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
       if (JobCanceled(jcr)) {
          goto bail_out;
       }
-      fname = CheckPoolMemorySize(fname, fd->msglen);
-      jcr->fname = CheckPoolMemorySize(jcr->fname, fd->msglen);
+      fname = CheckPoolMemorySize(fname, fd->message_length);
+      jcr->fname = CheckPoolMemorySize(jcr->fname, fd->message_length);
       Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
       if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream,
             fname)) != 3) {
          Jmsg3(jcr, M_FATAL, 0, _("dird<filed: bad attributes, expected 3 fields got %d\n"
-                                  " mslen=%d msg=%s\n"), len, fd->msglen, fd->msg);
+                                  " mslen=%d msg=%s\n"), len, fd->message_length, fd->msg);
          goto bail_out;
       }
       /*
@@ -862,7 +862,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord *jcr, JobId_t JobId)
    }
 
    if (IsBnetError(fd)) {
-      berrno be;
+      BErrNo be;
       Jmsg2(jcr, M_FATAL, 0, _("dir<filed: bad attributes from filed n=%d : %s\n"),
                         n, be.bstrerror());
       goto bail_out;

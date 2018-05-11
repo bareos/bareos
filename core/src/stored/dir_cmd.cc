@@ -269,7 +269,7 @@ void *handle_director_connection(BareosSocket *dir)
     */
    errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_FATAL, 0, _("Unable to init job start cond variable: ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
@@ -279,7 +279,7 @@ void *handle_director_connection(BareosSocket *dir)
     */
    errstat = pthread_cond_init(&jcr->job_end_wait, NULL);
    if (errstat != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_FATAL, 0, _("Unable to init job end cond variable: ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
@@ -579,13 +579,13 @@ static bool ResolveCmd(JobControlRecord *jcr)
 
    sscanf(dir->msg, resolvecmd, &hostname);
 
-   if ((addr_list = bnet_host2ipaddrs(hostname, 0, &errstr)) == NULL) {
+   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
       dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
       goto bail_out;
    }
 
    dir->fsend(_("%s resolves %s to %s\n"), my_name, hostname,
-              build_addresses_str(addr_list, addresses, sizeof(addresses), false));
+              BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
    FreeAddresses(addr_list);
 
 bail_out:
@@ -617,7 +617,7 @@ static bool do_label(JobControlRecord *jcr, bool relabel)
     * limit the temporary buffer to MAX_NAME_LENGTH bytes as
     * we use a sscanf %127s for reading the temorary buffer.
     */
-   len = dir->msglen + 1;
+   len = dir->message_length + 1;
    if (len > MAX_NAME_LENGTH) {
       len = MAX_NAME_LENGTH;
    }
@@ -1303,7 +1303,7 @@ static inline bool GetBootstrapFile(JobControlRecord *jcr, BareosSocket *sock)
    jcr->RestoreBootstrap = fname;
    bs = fopen(fname, "a+b");           /* create file */
    if (!bs) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
            jcr->RestoreBootstrap, be.bstrerror());
       goto bail_out;
@@ -1598,7 +1598,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
       sd->ClearKeepalive();
    }
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
-   sd_auth_key.check_size(dir->msglen);
+   sd_auth_key.check_size(dir->message_length);
 
    if (sscanf(dir->msg, replicatecmd, JobName, stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 5) {

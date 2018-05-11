@@ -62,26 +62,26 @@ int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 static
 #endif
 void TerminateDird(int sig);
-static bool check_resources();
+static bool CheckResources();
 static bool InitializeSqlPooling(void);
-static void cleanup_old_files();
-static bool init_sighandler_sighup();
+static void CleanUpOldFiles();
+static bool InitSighandlerSighup();
 
 /* Exported subroutines */
-extern bool do_reload_config();
+extern bool DoReloadConfig();
 extern void InvalidateSchedules();
 extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
-extern void prtmsg(void *sock, const char *fmt, ...);
+extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
 void InitJobServer(int max_workers);
-void term_job_server();
+void TermJobServer();
 void StoreJobtype(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreProtocoltype(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreLevel(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreReplace(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreMigtype(LEX *lc, ResourceItem *item, int index, int pass);
-void init_device_resources();
+void InitDeviceResources();
 
 static char *runjob = NULL;
 static bool background = true;
@@ -355,7 +355,7 @@ int main (int argc, char *argv[])
    ParseDirConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->DumpResources(prtmsg, NULL);
+      my_config->DumpResources(PrintMessage, NULL);
       goto bail_out;
    }
 
@@ -371,7 +371,7 @@ int main (int argc, char *argv[])
       goto bail_out;
    }
 
-   if (!check_resources()) {
+   if (!CheckResources()) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       goto bail_out;
    }
@@ -421,11 +421,11 @@ int main (int argc, char *argv[])
 
    MyNameIs(0, NULL, me->name());    /* set user defined name */
 
-   cleanup_old_files();
+   CleanUpOldFiles();
 
    p_db_log_insert = (db_log_insert_func)DirDbLogInsert;
 
-   init_sighandler_sighup();
+   InitSighandlerSighup();
 
    InitConsoleMsg(working_directory);
 
@@ -442,7 +442,7 @@ int main (int argc, char *argv[])
 
    DbgJcrAddHook(DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
 
-//   init_device_resources();
+//   InitDeviceResources();
 
    StartStatisticsThread();
 
@@ -493,7 +493,7 @@ void TerminateDird(int sig)
       DeletePidFile(me->pid_directory, "bareos-dir", GetFirstPortHostOrder(me->DIRaddrs));
    }
    TermScheduler();
-   term_job_server();
+   TermJobServer();
 
    if (runjob) {
       free(runjob);
@@ -538,12 +538,12 @@ void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
       return;
    }
    already_here = true;
-   do_reload_config();
+   DoReloadConfig();
    already_here = false;
 }
 #endif
 
-static bool init_sighandler_sighup()
+static bool InitSighandlerSighup()
 {
    bool retval = false;
 #if !defined(HAVE_WIN32)
@@ -568,7 +568,7 @@ static bool init_sighandler_sighup()
    return retval;
 }
 
-bool do_reload_config()
+bool DoReloadConfig()
 {
    static bool is_reloading = false;
    bool reloaded = false;
@@ -597,7 +597,7 @@ bool do_reload_config()
    Dmsg0(100, "Reloading config file\n");
    bool ok = ParseDirConfig(my_config, configfile, M_ERROR);
 
-   if (!ok || !check_resources() || !CheckCatalog(UPDATE_CATALOG) || !InitializeSqlPooling()) {
+   if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG) || !InitializeSqlPooling()) {
 
       Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
@@ -611,7 +611,7 @@ bool do_reload_config()
          my_config->res_head_[i] = prev_config.res_table[i];
       }
 
-      // me is changed above by check_resources()
+      // me is changed above by CheckResources()
       me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
 
       FreeSavedResources(&temp_config);
@@ -768,7 +768,7 @@ static inline bool IsSameStorageDaemon(StorageResource *store1, StorageResource 
  *  **** FIXME **** this routine could be a lot more
  *   intelligent and comprehensive.
  */
-static bool check_resources()
+static bool CheckResources()
 {
    bool OK = true;
    JobResource *job;
@@ -1253,7 +1253,7 @@ bail_out:
    return OK;
 }
 
-static void cleanup_old_files()
+static void CleanUpOldFiles()
 {
    DIR* dp;
    struct dirent *result;
@@ -1267,7 +1267,7 @@ static void cleanup_old_files()
    POOLMEM *basename = GetPoolMemory(PM_MESSAGE);
    regex_t preg1;
    char prbuf[500];
-   berrno be;
+   BErrNo be;
 
    /* Exclude spaces and look for .mail or .restore.xx.bsr files */
    const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail)$";
@@ -1293,7 +1293,7 @@ static void cleanup_old_files()
    }
 
    if (!(dp = opendir(me->working_directory))) {
-      berrno be;
+      BErrNo be;
       Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
             me->working_directory, be.bstrerror());
       goto get_out1;

@@ -3471,7 +3471,7 @@ static void CloseHandleIfValid(HANDLE handle)
    }
 }
 
-Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
+Bpipe *OpenBpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 {
    int mode_read, mode_write;
    SECURITY_ATTRIBUTES saAttr;

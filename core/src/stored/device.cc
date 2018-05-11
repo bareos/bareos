@@ -144,7 +144,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord *dcr, int retries)
     */
    Dmsg0(190, "write label block to dev\n");
    if (!dcr->WriteBlockToDev()) {
-      berrno be;
+      BErrNo be;
       Pmsg1(0, _("WriteBlockToDevice Volume label failed. ERR=%s"),
             be.bstrerror(dev->dev_errno));
       FreeBlock(dcr->block);
@@ -179,7 +179,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord *dcr, int retries)
    /* Write overflow block to device */
    Dmsg0(190, "Write overflow block to dev\n");
    if (!dcr->WriteBlockToDev()) {
-      berrno be;
+      BErrNo be;
       Dmsg1(0, _("WriteBlockToDevice overflow block failed. ERR=%s"),
         be.bstrerror(dev->dev_errno));
       /* Note: recursive call */

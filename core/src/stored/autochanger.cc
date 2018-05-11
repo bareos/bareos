@@ -242,7 +242,7 @@ int AutoloadDevice(DeviceControlRecord *dcr, int writing, BareosSocket *dir)
                dev->vol->ClearSwapping();
             }
          } else {
-            berrno be;
+            BErrNo be;
             be.SetErrno(status);
             Dmsg3(100, "load slot %hd, drive %hd, bad stats=%s.\n", slot, drive,
                be.bstrerror());
@@ -355,7 +355,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord *dcr, bool lock_set)
          }
       }
    } else {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       Jmsg(jcr, M_INFO, 0, _("3991 Bad autochanger \"loaded? drive %hd\" command: "
                              "ERR=%s.\nResults=%s\n"), drive, be.bstrerror(), results.c_str());
@@ -379,7 +379,7 @@ static bool LockChanger(DeviceControlRecord *dcr)
       int errstat;
       Dmsg1(200, "Locking changer %s\n", changer_res->name());
       if ((errstat = RwlWritelock(&changer_res->changer_lock)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg(dcr->jcr, M_ERROR_TERM, 0, _("Lock failure on autochanger. ERR=%s\n"), be.bstrerror(errstat));
       }
 
@@ -407,7 +407,7 @@ static bool UnlockChanger(DeviceControlRecord *dcr)
 
       Dmsg1(200, "Unlocking changer %s\n", changer_res->name());
       if ((errstat = RwlWriteunlock(&changer_res->changer_lock)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg(dcr->jcr, M_ERROR_TERM, 0, _("Unlock failure on autochanger. ERR=%s\n"), be.bstrerror(errstat));
       }
    }
@@ -477,7 +477,7 @@ bool UnloadAutochanger(DeviceControlRecord *dcr, slot_number_t loaded, bool lock
       status = RunProgramFullOutput(changer, timeout, results.addr());
       dcr->VolCatInfo.Slot = slot;
       if (status != 0) {
-         berrno be;
+         BErrNo be;
 
          be.SetErrno(status);
          Jmsg(jcr, M_INFO, 0, _("3995 Bad autochanger \"unload slot %hd, drive %hd\": "
@@ -658,7 +658,7 @@ bool UnloadDev(DeviceControlRecord *dcr, Device *dev, bool lock_set)
    dcr->VolCatInfo.Slot = save_slot;
    dcr->SetDev(save_dev);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       Jmsg(jcr, M_INFO, 0, _("3997 Bad autochanger \"unload slot %hd, drive %hd\": ERR=%s.\n"),
            dev->GetSlot(), dev->drive, be.bstrerror());
@@ -743,7 +743,7 @@ bool AutochangerCmd(DeviceControlRecord *dcr, BareosSocket *dir, const char *cmd
     * Now issue the command
     */
 retry_changercmd:
-   bpipe = open_bpipe(changer, timeout, "r");
+   bpipe = OpenBpipe(changer, timeout, "r");
    if (!bpipe) {
       dir->fsend(_("3996 Open bpipe failed.\n"));
       goto bail_out;            /* TODO: check if we need to return false */
@@ -754,7 +754,7 @@ retry_changercmd:
        * Get output from changer
        */
       while (fgets(dir->msg, len, bpipe->rfd)) {
-         dir->msglen = strlen(dir->msg);
+         dir->message_length = strlen(dir->msg);
          Dmsg1(100, "<stored: %s", dir->msg);
          BnetSend(dir);
       }
@@ -789,7 +789,7 @@ retry_changercmd:
 
    status = CloseBpipe(bpipe);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       dir->fsend(_("3998 Autochanger error: ERR=%s\n"), be.bstrerror());
    }
@@ -834,7 +834,7 @@ bool AutochangerTransferCmd(DeviceControlRecord *dcr, BareosSocket *dir, slot_nu
    /*
     * Now issue the command
     */
-   bpipe = open_bpipe(changer, timeout, "r");
+   bpipe = OpenBpipe(changer, timeout, "r");
    if (!bpipe) {
       dir->fsend(_("3996 Open bpipe failed.\n"));
       goto bail_out;            /* TODO: check if we need to return false */
@@ -844,14 +844,14 @@ bool AutochangerTransferCmd(DeviceControlRecord *dcr, BareosSocket *dir, slot_nu
     * Get output from changer
     */
    while (fgets(dir->msg, len, bpipe->rfd)) {
-      dir->msglen = strlen(dir->msg);
+      dir->message_length = strlen(dir->msg);
       Dmsg1(100, "<stored: %s\n", dir->msg);
       BnetSend(dir);
    }
 
    status = CloseBpipe(bpipe);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
       dir->fsend(_("3998 Autochanger error: ERR=%s\n"), be.bstrerror());
    } else {

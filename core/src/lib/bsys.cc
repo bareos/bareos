@@ -104,9 +104,9 @@ int SecureErase(JobControlRecord *jcr, const char *pathname)
          Jmsg(jcr, M_INFO, 0, _("SecureErase: executing %s\n"), cmdline.c_str());
       }
 
-      bpipe = open_bpipe(cmdline.c_str(), 0, "r");
+      bpipe = OpenBpipe(cmdline.c_str(), 0, "r");
       if (bpipe == NULL) {
-         berrno be;
+         BErrNo be;
 
          if (jcr) {
             Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s could not execute. ERR=%s\n"),
@@ -124,7 +124,7 @@ int SecureErase(JobControlRecord *jcr, const char *pathname)
 
       status = CloseBpipe(bpipe);
       if (status != 0) {
-         berrno be;
+         BErrNo be;
 
          if (jcr) {
             Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s returned non-zero status=%d. ERR=%s\n"),
@@ -384,7 +384,7 @@ void *bmalloc(size_t size)
   buf = malloc(size);
 #endif
   if (buf == NULL) {
-     berrno be;
+     BErrNo be;
      Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
   }
   return buf;
@@ -401,7 +401,7 @@ void *b_malloc(const char *file, int line, size_t size)
   buf = malloc(size);
 #endif
   if (buf == NULL) {
-     berrno be;
+     BErrNo be;
      e_msg(file, line, M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
   }
   return buf;
@@ -425,7 +425,7 @@ void *brealloc (void *buf, size_t size)
    buf = realloc(buf, size);
 #endif
    if (buf == NULL) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
    }
    return buf;
@@ -437,7 +437,7 @@ void *bcalloc(size_t size1, size_t size2)
 
    buf = calloc(size1, size2);
    if (buf == NULL) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Out of memory: ERR=%s\n"), be.bstrerror());
    }
    return buf;
@@ -589,7 +589,7 @@ void CreatePidFile(char *dir, const char *progname, int port)
       if ((pidfd = open(fname, O_RDONLY|O_BINARY, 0)) < 0 ||
            read(pidfd, &pidbuf, sizeof(pidbuf)) < 0 ||
            sscanf(pidbuf, "%d", &oldpid) != 1) {
-         berrno be;
+         BErrNo be;
          Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
                be.bstrerror());
       } else {
@@ -630,7 +630,7 @@ void CreatePidFile(char *dir, const char *progname, int port)
       close(pidfd);
       del_pid_file_ok = true;         /* we created it so we can delete it */
    } else {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
             be.bstrerror());
    }
@@ -688,13 +688,13 @@ void ReadStateFile(char *dir, const char *progname, int port)
     * If file exists, see what we have
     */
    if ((sfd = open(fname, O_RDONLY|O_BINARY)) < 0) {
-      berrno be;
+      BErrNo be;
       Dmsg3(010, "Could not open state file. sfd=%d size=%d: ERR=%s\n",
             sfd, sizeof(hdr), be.bstrerror());
       goto bail_out;
    }
    if ((status = read(sfd, &hdr, hdr_size)) != hdr_size) {
-      berrno be;
+      BErrNo be;
       Dmsg4(010, "Could not read state file. sfd=%d status=%d size=%d: ERR=%s\n",
             sfd, (int)status, hdr_size, be.bstrerror());
       goto bail_out;
@@ -745,13 +745,13 @@ void WriteStateFile(char *dir, const char *progname, int port)
     */
    SecureErase(NULL, fname);
    if ((sfd = open(fname, O_CREAT|O_WRONLY|O_BINARY, 0640)) < 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname, be.bstrerror());
       goto bail_out;
    }
 
    if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
-      berrno be;
+      BErrNo be;
       Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
       goto bail_out;
    }
@@ -759,13 +759,13 @@ void WriteStateFile(char *dir, const char *progname, int port)
    state_hdr.last_jobs_addr = sizeof(state_hdr);
    state_hdr.reserved[0] = WriteLastJobsList(sfd, state_hdr.last_jobs_addr);
    if (lseek(sfd, 0, SEEK_SET) < 0) {
-      berrno be;
+      BErrNo be;
       Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());
       goto bail_out;
    }
 
    if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
-      berrno be;
+      BErrNo be;
       Pmsg1(000, _("Write final hdr error: ERR=%s\n"), be.bstrerror());
       goto bail_out;
    }
@@ -1105,7 +1105,7 @@ static bool PathMkdir(char *path, mode_t mode)
    }
 
    if (mkdir(path, mode) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR, 0, "Falied to create directory %s: ERR=%s\n",
               path, be.bstrerror());
       return false;

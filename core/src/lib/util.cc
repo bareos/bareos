@@ -680,7 +680,7 @@ int DoShellExpansion(char *name, int name_len)
       PmStrcat(cmd, name);
       PmStrcat(cmd, "\"");
       Dmsg1(400, "Send: %s\n", cmd);
-      if ((bpipe = open_bpipe(cmd, 0, "r"))) {
+      if ((bpipe = OpenBpipe(cmd, 0, "r"))) {
          bfgets(line, bpipe->rfd);
          StripTrailingJunk(line);
          status = CloseBpipe(bpipe);

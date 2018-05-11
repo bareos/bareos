@@ -50,14 +50,14 @@ void ReadCryptoCache(const char *cache_file)
    crypto_cache_entry_t *cce = NULL;
 
    if ((fd = open(cache_file, O_RDONLY|O_BINARY)) < 0) {
-      berrno be;
+      BErrNo be;
 
       Dmsg2(010, "Could not open crypto cache file. %s ERR=%s\n", cache_file, be.bstrerror());
       goto bail_out;
    }
 
    if ((status = read(fd, &hdr, hdr_size)) != hdr_size) {
-      berrno be;
+      BErrNo be;
 
       Dmsg4(010, "Could not read crypto cache file. fd=%d status=%d size=%d: ERR=%s\n",
             fd, (int)status, hdr_size, be.bstrerror());
@@ -154,7 +154,7 @@ void WriteCryptoCache(const char *cache_file)
 
    SecureErase(NULL, cache_file);
    if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
-      berrno be;
+      BErrNo be;
 
       Emsg2(M_ERROR, 0, _("Could not create crypto cache file. %s ERR=%s\n"), cache_file, be.bstrerror());
       goto bail_out;
@@ -162,7 +162,7 @@ void WriteCryptoCache(const char *cache_file)
 
    crypto_cache_hdr.nr_entries = cached_crypto_keys->size();
    if (write(fd, &crypto_cache_hdr, sizeof(crypto_cache_hdr)) != sizeof(crypto_cache_hdr)) {
-      berrno be;
+      BErrNo be;
 
       Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
       goto bail_out;
@@ -170,7 +170,7 @@ void WriteCryptoCache(const char *cache_file)
 
    foreach_dlist(cce, cached_crypto_keys) {
       if (write(fd, cce, sizeof(crypto_cache_entry_t)) != sizeof(crypto_cache_entry_t)) {
-         berrno be;
+         BErrNo be;
 
          Dmsg1(000, "Write record error: ERR=%s\n", be.bstrerror());
          goto bail_out;

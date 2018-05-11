@@ -954,7 +954,7 @@ static void InsertOneFileOrDir(UaContext *ua, RestoreContext *rx, char *date, bo
    case '<':
       p++;
       if ((ffd = fopen(p, "rb")) == NULL) {
-         berrno be;
+         BErrNo be;
          ua->ErrorMsg(_("Cannot open file %s: ERR=%s\n"),
             p, be.bstrerror());
          break;

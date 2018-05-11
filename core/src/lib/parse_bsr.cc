@@ -209,7 +209,7 @@ BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *fname)
 
    Dmsg1(300, "Enter parse_bsf %s\n", fname);
    if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Cannot open bootstrap file %s: %s\n"),
             fname, be.bstrerror());
    }

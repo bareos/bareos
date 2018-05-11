@@ -83,7 +83,7 @@ void InitJobServer(int max_workers)
    watchdog_t *wd;
 
    if ((status = JobqInit(&job_queue, max_workers, job_thread)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Could not init job queue: ERR=%s\n"), be.bstrerror(status));
    }
    wd = new_watchdog();
@@ -95,7 +95,7 @@ void InitJobServer(int max_workers)
    RegisterWatchdog(wd);
 }
 
-void term_job_server()
+void TermJobServer()
 {
    JobqDestroy(&job_queue);          /* ignore any errors */
 }
@@ -117,7 +117,7 @@ JobId_t RunJob(JobControlRecord *jcr)
        * Queue the job to be run
        */
       if ((status = JobqAdd(&job_queue, jcr)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0, _("Could not add job queue: ERR=%s\n"), be.bstrerror(status));
          return 0;
       }
@@ -147,7 +147,7 @@ bool SetupJob(JobControlRecord *jcr, bool suppress_output)
     * Initialize termination condition variable
     */
    if ((errstat = pthread_cond_init(&jcr->term_wait, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
       jcr->unlock();
       goto bail_out;
@@ -158,7 +158,7 @@ bool SetupJob(JobControlRecord *jcr, bool suppress_output)
     * Initialize nextrun ready condition variable
     */
    if ((errstat = pthread_cond_init(&jcr->nextrun_ready, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_FATAL, 0, _("Unable to init job nextrun cond variable: ERR=%s\n"), be.bstrerror(errstat));
       jcr->unlock();
       goto bail_out;
@@ -173,7 +173,7 @@ bool SetupJob(JobControlRecord *jcr, bool suppress_output)
     * Open database
     */
    Dmsg0(100, "Open database\n");
-   jcr->db = db_sql_get_pooled_connection(jcr,
+   jcr->db = DbSqlGetPooledConnection(jcr,
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
@@ -1396,7 +1396,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord *jcr)
        * Keep the flag (last arg) set to false otherwise old FileSets will
        * get new MD5 sums and the user will get Full backups on everything
        */
-      bin_to_base64(fsr.MD5, sizeof(fsr.MD5), (char *)digest, MD5HashSize, false);
+      BinToBase64(fsr.MD5, sizeof(fsr.MD5), (char *)digest, MD5HashSize, false);
       bstrncpy(jcr->res.fileset->MD5, fsr.MD5, sizeof(jcr->res.fileset->MD5));
    } else {
       Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));

@@ -40,7 +40,7 @@
  * runtime disabled or at compile time. Or when we run out of
  * pooled connections and need more database connections.
  */
-BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
+BareosDb *DbSqlGetNonPooledConnection(JobControlRecord *jcr,
                                        const char *db_drivername,
                                        const char *db_name,
                                        const char *db_user,
@@ -57,10 +57,10 @@ BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
    BareosDb *mdb;
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-   Dmsg2(100, "db_sql_get_non_pooled_connection allocating 1 new non pooled database connection to database %s, backend type %s\n",
+   Dmsg2(100, "DbSqlGetNonPooledConnection allocating 1 new non pooled database connection to database %s, backend type %s\n",
          db_name, db_drivername);
 #else
-   Dmsg1(100, "db_sql_get_non_pooled_connection allocating 1 new non pooled database connection to database %s\n",
+   Dmsg1(100, "DbSqlGetNonPooledConnection allocating 1 new non pooled database connection to database %s\n",
          db_name);
 #endif
    mdb = db_init_database(jcr,
@@ -361,11 +361,11 @@ static inline void SqlPoolGrow(SqlPoolDescriptor *spd)
          /*
           * Get a new non-pooled connection to the database.
           * We want to add a non pooled connection to the pool as otherwise
-          * we are creating a deadlock as clone_database_connection will
+          * we are creating a deadlock as CloneDatabaseConnection will
           * call sql_pool_get_connection which means a recursive enter into
           * the pooling code and as such the mutex will deadlock.
           */
-         mdb = db_handle->clone_database_connection(NULL, true, false);
+         mdb = db_handle->CloneDatabaseConnection(NULL, true, false);
          if (mdb == NULL) {
             Jmsg(NULL, M_FATAL, 0, "%s", _("Could not init database connection"));
             break;
@@ -530,7 +530,7 @@ static inline SqlPoolEntry *sql_find_first_connection(SqlPoolDescriptor *spd)
 /**
  * Get a new connection from the pool.
  */
-BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
+BareosDb *DbSqlGetPooledConnection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -552,10 +552,10 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
 
    now = time(NULL);
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-   Dmsg2(100, "db_sql_get_pooled_connection get new connection for connection to database %s, backend type %s\n",
+   Dmsg2(100, "DbSqlGetPooledConnection get new connection for connection to database %s, backend type %s\n",
          db_name, db_drivername);
 #else
-   Dmsg1(100, "db_sql_get_pooled_connection get new connection for connection to database %s\n",
+   Dmsg1(100, "DbSqlGetPooledConnection get new connection for connection to database %s\n",
          db_name);
 #endif
 
@@ -563,7 +563,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
     * See if pooling is enabled.
     */
    if (!db_pooling_descriptors) {
-      return db_sql_get_non_pooled_connection(jcr,
+      return DbSqlGetNonPooledConnection(jcr,
                                               db_drivername,
                                               db_name,
                                               db_user,
@@ -624,7 +624,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                 * anyhow when it discarded using DbSqlClosePooledConnection.
                 */
                if (wanted_pool->nr_connections >= wanted_pool->max_connections) {
-                  db_handle = db_sql_get_non_pooled_connection(jcr,
+                  db_handle = DbSqlGetNonPooledConnection(jcr,
                                                                db_drivername,
                                                                db_name,
                                                                db_user,
@@ -640,7 +640,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                   goto bail_out;
                }
 
-               Dmsg0(100, "db_sql_get_pooled_connection trying to grow connection pool for getting free connection\n");
+               Dmsg0(100, "DbSqlGetPooledConnection trying to grow connection pool for getting free connection\n");
                SqlPoolGrow(wanted_pool);
             } else {
                /*
@@ -656,7 +656,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
       /*
        * Pooling not enabled for this connection use non pooling.
        */
-      db_handle = db_sql_get_non_pooled_connection(jcr,
+      db_handle = DbSqlGetNonPooledConnection(jcr,
                                                    db_drivername,
                                                    db_name,
                                                    db_user,
@@ -861,9 +861,9 @@ void DbSqlPoolFlush(void)
 
 /**
  * Get a new connection from the pool.
- * For non pooling we just call db_sql_get_non_pooled_connection.
+ * For non pooling we just call DbSqlGetNonPooledConnection.
  */
-BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
+BareosDb *DbSqlGetPooledConnection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -877,7 +877,7 @@ BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                                    bool exit_on_fatal,
                                    bool need_private)
 {
-   return db_sql_get_non_pooled_connection(jcr,
+   return DbSqlGetNonPooledConnection(jcr,
                                            db_drivername,
                                            db_name,
                                            db_user,

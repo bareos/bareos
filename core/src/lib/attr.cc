@@ -119,7 +119,7 @@ int UnpackAttributesRecord(JobControlRecord *jcr, int32_t stream, char *rec, int
          int64_t val;
          while (*p++ != 0)            /* skip extended attributes */
             { }
-         from_base64(&val, p);
+         FromBase64(&val, p);
          attr->data_stream = (int32_t)val;
       } else {
          while (*p++ != 0)            /* skip extended attributes */

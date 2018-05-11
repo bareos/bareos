@@ -153,7 +153,7 @@ int main (int argc, char *argv[])
 
       case 'e':                    /* exclude list */
          if ((fd = fopen(optarg, "rb")) == NULL) {
-            berrno be;
+            BErrNo be;
             Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
                optarg, be.bstrerror());
             exit(1);
@@ -168,7 +168,7 @@ int main (int argc, char *argv[])
 
       case 'i':                    /* include list */
          if ((fd = fopen(optarg, "rb")) == NULL) {
-            berrno be;
+            BErrNo be;
             Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
                optarg, be.bstrerror());
             exit(1);
@@ -407,7 +407,7 @@ static void DoExtract(char *devname)
     * Make sure where directory exists and that it is a directory
     */
    if (stat(where, &statp) < 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Cannot stat %s. It must exist. ERR=%s\n"),
          where, be.bstrerror());
    }
@@ -466,13 +466,13 @@ static bool StoreData(BareosWinFilePacket *bfd, char *data, const int32_t length
    if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
       SetPortableBackup(bfd);
       if (!processWin32BackupAPIBlock(bfd, data, length)) {
-         berrno be;
+         BErrNo be;
          Emsg2(M_ERROR_TERM, 0, _("Write error on %s: %s\n"),
                attr->ofname, be.bstrerror());
          return false;
       }
    } else if (bwrite(bfd, data, length) != (ssize_t)length) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Write error on %s: %s\n"),
             attr->ofname, be.bstrerror());
       return false;
@@ -575,7 +575,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
             if (fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
-                  berrno be;
+                  BErrNo be;
                   Emsg2(M_ERROR_TERM, 0, _("Seek error on %s: %s\n"),
                      attr->ofname, be.bstrerror());
                }
@@ -614,7 +614,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
             if (fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
-                  berrno be;
+                  BErrNo be;
 
                   Emsg3(M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
                         edit_uint64(fileAddr, ec1), attr->ofname, be.bstrerror());

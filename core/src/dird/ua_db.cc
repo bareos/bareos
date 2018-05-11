@@ -151,7 +151,7 @@ bool OpenDb(UaContext *ua, bool use_private)
 
    ua->jcr->res.catalog = ua->catalog;
    Dmsg0(100, "UA Open database\n");
-   ua->db = db_sql_get_pooled_connection(ua->jcr,
+   ua->db = DbSqlGetPooledConnection(ua->jcr,
                                          ua->catalog->db_driver,
                                          ua->catalog->db_name,
                                          ua->catalog->db_user,

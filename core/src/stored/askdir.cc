@@ -195,7 +195,7 @@ static bool DoGetVolumeInfo(DeviceControlRecord *dcr)
                &vol.VolMinBlocksize, &vol.VolMaxBlocksize);
     if (n != 24) {
        Dmsg3(debuglevel, "Bad response from Dir fields=%d, len=%d: %s",
-             n, dir->msglen, dir->msg);
+             n, dir->message_length, dir->msg);
        Mmsg(jcr->errmsg, _("Error getting Volume info: %s"), dir->msg);
        return false;
     }
@@ -512,16 +512,16 @@ bool StorageDaemonDeviceControlRecord::DirUpdateFileAttributes(DeviceRecord *rec
 
    dir->msg = CheckPoolMemorySize(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + sizeof(DeviceRecord) + record->data_len + 1);
-   dir->msglen = Bsnprintf(dir->msg, sizeof(FileAttributes) +
+   dir->message_length = Bsnprintf(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + 1, FileAttributes, jcr->Job);
-   SerBegin(dir->msg + dir->msglen, 0);
+   SerBegin(dir->msg + dir->message_length, 0);
    ser_uint32(record->VolSessionId);
    ser_uint32(record->VolSessionTime);
    ser_int32(record->FileIndex);
    ser_int32(record->Stream);
    ser_uint32(record->data_len);
    SerBytes(record->data, record->data_len);
-   dir->msglen = SerLength(dir->msg);
+   dir->message_length = SerLength(dir->msg);
    Dmsg1(1800, ">dird %s", dir->msg);    /* Attributes */
 
    return dir->send();
@@ -606,7 +606,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
       }
 
       if (status == W_ERROR) {
-         berrno be;
+         BErrNo be;
          Mmsg0(dev->errmsg, _("pthread error in mount_next_volume.\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
          return false;
@@ -697,7 +697,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
       }
 
       if (status == W_ERROR) {
-         berrno be;
+         BErrNo be;
          Mmsg(dev->errmsg, _("pthread error in mount_volume\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
          return false;

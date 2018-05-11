@@ -507,7 +507,7 @@ void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir)
          break;               /* connection terminated */
       }
 
-      dir->msg[dir->msglen] = 0;
+      dir->msg[dir->message_length] = 0;
       Dmsg1(100, "<dird: %s\n", dir->msg);
       found = false;
       for (int i = 0; cmds[i].cmd; i++) {
@@ -601,7 +601,7 @@ static bool StartProcessDirectorCommands(JobControlRecord *jcr)
    pthread_t thread;
 
    if ((result = pthread_create(&thread, NULL, process_director_commands, (void *)jcr)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"), be.bstrerror(result));
    }
 
@@ -753,7 +753,7 @@ bool StartConnectToDirectorThreads()
             if ((pthread_create_result = pthread_create(thread, NULL, handle_connection_to_director, (void *)dir_res)) == 0) {
                client_initiated_connection_threads->append(thread);
             } else {
-               berrno be;
+               BErrNo be;
                Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"), be.bstrerror(pthread_create_result));
             }
          }
@@ -807,13 +807,13 @@ static bool ResolveCmd(JobControlRecord *jcr)
 
    sscanf(dir->msg, resolvecmd, &hostname);
 
-   if ((addr_list = bnet_host2ipaddrs(hostname, 0, &errstr)) == NULL) {
+   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
       dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
       goto bail_out;
    }
 
    dir->fsend(_("%s resolves %s to %s\n"),my_name, hostname,
-              build_addresses_str(addr_list, addresses, sizeof(addresses), false));
+              BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
    FreeAddresses(addr_list);
 
 bail_out:
@@ -878,7 +878,7 @@ static bool SetauthorizationCmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
    PoolMem sd_auth_key(PM_MESSAGE);
 
-   sd_auth_key.check_size(dir->msglen);
+   sd_auth_key.check_size(dir->message_length);
    if (sscanf(dir->msg, setauthorizationcmd, sd_auth_key.c_str()) != 1) {
       dir->fsend(BADcmd, "setauthorization");
       return false;
@@ -1010,7 +1010,7 @@ static bool job_cmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    PoolMem sd_auth_key(PM_MESSAGE);
-   sd_auth_key.check_size(dir->msglen);
+   sd_auth_key.check_size(dir->message_length);
    const char *os_version;
 
    if (sscanf(dir->msg, jobcmd,  &jcr->JobId, jcr->Job,
@@ -1053,7 +1053,7 @@ static bool RunbeforeCmd(JobControlRecord *jcr)
    }
 
    Dmsg1(100, "RunbeforeCmd: %s", dir->msg);
-   cmd = GetMemory(dir->msglen + 1);
+   cmd = GetMemory(dir->message_length + 1);
    if (sscanf(dir->msg, runbeforecmd, cmd) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunBeforeJob command: %s\n"), jcr->errmsg);
@@ -1116,7 +1116,7 @@ static bool RunafterCmd(JobControlRecord *jcr)
    }
 
    Dmsg1(100, "RunafterCmd: %s", dir->msg);
-   cmd = GetMemory(dir->msglen + 1);
+   cmd = GetMemory(dir->message_length + 1);
    if (sscanf(dir->msg, runaftercmd, cmd) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RunAfter command: %s\n"), jcr->errmsg);
@@ -1157,7 +1157,7 @@ static bool RunscriptCmd(JobControlRecord *jcr)
       return 0;
    }
 
-   msg = GetMemory(dir->msglen + 1);
+   msg = GetMemory(dir->message_length + 1);
    cmd = NewRunscript();
    cmd->SetJobCodeCallback(job_code_callback_filed);
 
@@ -1198,7 +1198,7 @@ static bool PluginoptionsCmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *msg;
 
-   msg = GetMemory(dir->msglen + 1);
+   msg = GetMemory(dir->message_length + 1);
    if (sscanf(dir->msg, pluginoptionscmd, msg) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad Plugin Options command: %s\n"), jcr->errmsg);
@@ -1236,7 +1236,7 @@ static bool RestoreObjectCmd(JobControlRecord *jcr)
       return dir->fsend(OKRestoreObject);
    }
 
-   rop.plugin_name = (char *) malloc (dir->msglen);
+   rop.plugin_name = (char *) malloc (dir->message_length);
    *rop.plugin_name = 0;
 
    if (sscanf(dir->msg, restoreobjcmd, &rop.JobId, &rop.object_len,
@@ -1270,7 +1270,7 @@ static bool RestoreObjectCmd(JobControlRecord *jcr)
    if (dir->recv() < 0) {
       goto bail_out;
    }
-   Dmsg2(100, "Recv Oname object: len=%d Oname=%s\n", dir->msglen, dir->msg);
+   Dmsg2(100, "Recv Oname object: len=%d Oname=%s\n", dir->message_length, dir->msg);
    rop.object_name = bstrdup(dir->msg);
 
    /*
@@ -1447,7 +1447,7 @@ static bool BootstrapCmd(JobControlRecord *jcr)
    jcr->RestoreBootstrap = fname;
    bs = fopen(fname, "a+b");           /* create file */
    if (!bs) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
       /*
@@ -1481,7 +1481,7 @@ static bool LevelCmd(JobControlRecord *jcr)
    POOLMEM *level, *buf = NULL;
    int mtime_only;
 
-   level = GetMemory(dir->msglen+1);
+   level = GetMemory(dir->message_length+1);
    Dmsg1(10, "LevelCmd: %s", dir->msg);
 
    /*
@@ -1521,7 +1521,7 @@ static bool LevelCmd(JobControlRecord *jcr)
       /*
        * We get his UTC since time, then sync the clocks and correct it to agree with our clock.
        */
-      buf = GetMemory(dir->msglen+1);
+      buf = GetMemory(dir->message_length+1);
       utime_t since_time, adj;
       btime_t his_time, bt_start, rt=0, bt_adj=0;
       if (jcr->getJobLevel() == L_NONE) {
@@ -1680,7 +1680,7 @@ static bool StorageCmd(JobControlRecord *jcr)
       sd->ClearKeepalive();
    }
    Dmsg1(100, "StorageCmd: %s", dir->msg);
-   sd_auth_key.check_size(dir->msglen);
+   sd_auth_key.check_size(dir->message_length);
    if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 4) {
       if (sscanf(dir->msg, storaddrv0cmd, stored_addr,
@@ -2067,7 +2067,7 @@ static bool BackupCmd(JobControlRecord *jcr)
                  jcr->pVSSClient->GetDriverName(), (drive_count) ? szWinDriveLetters : "None");
 
             if (!jcr->pVSSClient->CreateSnapshots(szWinDriveLetters, onefs_disabled)) {
-               berrno be;
+               BErrNo be;
                Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"), be.bstrerror());
             } else {
                GeneratePluginEvent(jcr, bEventVssCreateSnapshots);
@@ -2100,7 +2100,7 @@ static bool BackupCmd(JobControlRecord *jcr)
             Jmsg(jcr, M_FATAL, 0, _("No drive letters found for generating VSS snapshots.\n"));
          }
       } else {
-         berrno be;
+         BErrNo be;
 
          Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"), be.bstrerror());
       }
@@ -2351,7 +2351,7 @@ static bool RestoreCmd(JobControlRecord *jcr)
    /*
     * Pickup where string
     */
-   args = GetMemory(dir->msglen+1);
+   args = GetMemory(dir->message_length+1);
    *args = 0;
 
    if (sscanf(dir->msg, restorecmd, &replace, &prefix_links, args) != 3) {
@@ -2433,7 +2433,7 @@ static bool RestoreCmd(JobControlRecord *jcr)
     */
    if (jcr->pVSSClient) {
       if (!jcr->pVSSClient->InitializeForRestore(jcr)) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_WARNING, 0, _("VSS was not initialized properly. VSS support is disabled. ERR=%s\n"), be.bstrerror());
       }
 
@@ -2651,7 +2651,7 @@ bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *c
    }
    if (IsBnetError(sd)) {
       Jmsg2(jcr, M_FATAL, 0, _("Comm error with SD. bad response to %s. ERR=%s\n"),
-         cmd, bnet_strerror(sd));
+         cmd, BnetStrerror(sd));
    } else {
       Jmsg3(jcr, M_FATAL, 0, _("Bad response to %s command. Wanted %s, got %s\n"),
          cmd, resp, sd->msg);

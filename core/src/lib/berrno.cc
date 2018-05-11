@@ -26,10 +26,10 @@
  * @file
  * BAREOS errno handler
  *
- * berrno is a simplistic errno handler that works for
+ * BErrNo is a simplistic errno handler that works for
  * Unix, Win32, and BAREOS bpipes.
  *
- * See berrno.h for how to use berrno.
+ * See BErrNo.h for how to use BErrNo.
  */
 
 #include "include/bareos.h"
@@ -41,12 +41,12 @@ extern int num_execvp_errors;
 extern int execvp_errors[];
 #endif
 
-const char *berrno::bstrerror()
+const char *BErrNo::bstrerror()
 {
    *buf_ = 0;
 #ifdef HAVE_WIN32
    if (berrno_ & b_errno_win32) {
-      format_win32_message();
+      FormatWin32Message();
       return (const char *)buf_;
    }
 #else
@@ -84,7 +84,7 @@ const char *berrno::bstrerror()
    return buf_;
 }
 
-void berrno::format_win32_message()
+void BErrNo::FormatWin32Message()
 {
 #ifdef HAVE_WIN32
    LPVOID msg;

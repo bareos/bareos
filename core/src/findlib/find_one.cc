@@ -285,7 +285,7 @@ bool HasFileChanged(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    }
 
    if (lstat(ff_pkt->fname, &statp) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_WARNING, 0,
            _("Cannot stat file %s: ERR=%s\n"),ff_pkt->fname,be.bstrerror());
       return true;

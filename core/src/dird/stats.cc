@@ -123,7 +123,7 @@ void *statistics_thread(void *arg)
    jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
    jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
-   jcr->db = db_sql_get_pooled_connection(jcr,
+   jcr->db = DbSqlGetPooledConnection(jcr,
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,

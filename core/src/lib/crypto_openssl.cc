@@ -1446,7 +1446,7 @@ int InitCrypto(void)
    int status;
 
    if ((status = OpensslInitThreads()) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0,
         _("Unable to init OpenSSL threading: ERR=%s\n"), be.bstrerror(status));
    }
@@ -1593,7 +1593,7 @@ static struct CRYPTO_dynlock_value *openssl_create_dynamic_mutex (const char *fi
    dynlock = (struct CRYPTO_dynlock_value *)malloc(sizeof(struct CRYPTO_dynlock_value));
 
    if ((status = pthread_mutex_init(&dynlock->mutex, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(status));
    }
 
@@ -1614,7 +1614,7 @@ static void OpensslDestroyDynamicMutex(struct CRYPTO_dynlock_value *dynlock, con
    int status;
 
    if ((status = pthread_mutex_destroy(&dynlock->mutex)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to destroy mutex: ERR=%s\n"), be.bstrerror(status));
    }
 
@@ -1652,7 +1652,7 @@ int OpensslInitThreads (void)
    mutexes = (pthread_mutex_t *) malloc(numlocks * sizeof(pthread_mutex_t));
    for (i = 0; i < numlocks; i++) {
       if ((status = pthread_mutex_init(&mutexes[i], NULL)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg1(NULL, M_FATAL, 0, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(status));
          return status;
       }
@@ -1684,7 +1684,7 @@ void OpensslCleanupThreads(void)
    numlocks = CRYPTO_num_locks();
    for (i = 0; i < numlocks; i++) {
       if ((status = pthread_mutex_destroy(&mutexes[i])) != 0) {
-         berrno be;
+         BErrNo be;
 
          switch (status) {
          case EPERM:

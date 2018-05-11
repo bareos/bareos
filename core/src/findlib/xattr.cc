@@ -115,16 +115,16 @@ bxattr_exit_code SendXattrStream(JobControlRecord *jcr,
    Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->u.build->content);
    msgsave = sd->msg;
    sd->msg = xattr_data->u.build->content;
-   sd->msglen = xattr_data->u.build->content_length;
+   sd->message_length = xattr_data->u.build->content_length;
    if (!sd->send()) {
       sd->msg = msgsave;
-      sd->msglen = 0;
+      sd->message_length = 0;
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
       return bxattr_exit_fatal;
    }
 
-   jcr->JobBytes += sd->msglen;
+   jcr->JobBytes += sd->message_length;
    sd->msg = msgsave;
    if (!sd->signal(BNET_EOD)) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -371,7 +371,7 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
    xattr_list_len = llistea(xattr_data->last_fname, NULL, 0);
    switch (xattr_list_len) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -417,7 +417,7 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
    xattr_list_len = llistea(xattr_data->last_fname, xattr_list, xattr_list_len);
    switch (xattr_list_len) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -467,7 +467,7 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
       xattr_value_len = lgetea(xattr_data->last_fname, bp, NULL, 0);
       switch (xattr_value_len) {
       case -1: {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -520,7 +520,7 @@ static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
 
          xattr_value_len = lgetea(xattr_data->last_fname, bp, current_xattr->value, xattr_value_len);
          if (xattr_value_len < 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
             case ENOENT:
@@ -638,7 +638,7 @@ static bxattr_exit_code aix_parse_xattr_streams(JobControlRecord *jcr,
                  current_xattr->name,
                  current_xattr->value,
                  current_xattr->value_length, 0) != 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -739,7 +739,7 @@ static bxattr_exit_code irix_build_xattr_streams(JobControlRecord *jcr,
       while (1) {
          if (attr_list(xattr_data->last_fname, xattrbuf, ATTR_MAX_VALUELEN,
                        xattr_naming_spaces[cnt].flags, &cursor) != 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
             case ENOENT:
@@ -769,7 +769,7 @@ static bxattr_exit_code irix_build_xattr_streams(JobControlRecord *jcr,
             length = sizeof(dummy);
             if (attr_get(xattr_data->last_fname, attrlist_ent->a_name, dummy,
                          &length, xattr_naming_spaces[cnt].flags) != 0) {
-               berrno be;
+               BErrNo be;
 
                switch (errno) {
                case ENOENT:
@@ -821,7 +821,7 @@ static bxattr_exit_code irix_build_xattr_streams(JobControlRecord *jcr,
              */
             if (attr_get(xattr_data->last_fname, attrlist_ent->a_name, current_xattr->value,
                          &length, xattr_naming_spaces[cnt].flags) != 0) {
-               berrno be;
+               BErrNo be;
 
                switch (errno) {
                case ENOENT:
@@ -1001,7 +1001,7 @@ static bxattr_exit_code irix_parse_xattr_streams(JobControlRecord *jcr,
       bp = strchr(current_xattr->name, '.');
       if (attr_set(xattr_data->last_fname, ++bp, current_xattr->value,
                    current_xattr->value_length, flags) != 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -1164,7 +1164,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
    xattr_list_len = llistxattr(xattr_data->last_fname, NULL, 0);
    switch (xattr_list_len) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1210,7 +1210,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
    xattr_list_len = llistxattr(xattr_data->last_fname, xattr_list, xattr_list_len);
    switch (xattr_list_len) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -1278,7 +1278,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
       xattr_value_len = lgetxattr(xattr_data->last_fname, bp, NULL, 0);
       switch (xattr_value_len) {
       case -1: {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -1330,7 +1330,7 @@ static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
 
          xattr_value_len = lgetxattr(xattr_data->last_fname, bp, current_xattr->value, xattr_value_len);
          if (xattr_value_len < 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
             case ENOENT:
@@ -1442,7 +1442,7 @@ static bxattr_exit_code generic_parse_xattr_streams(JobControlRecord *jcr,
 
    foreach_alist(current_xattr, xattr_value_list) {
       if (lsetxattr(xattr_data->last_fname, current_xattr->name, current_xattr->value, current_xattr->value_length, 0) != 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -1602,7 +1602,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
       xattr_list_len = extattr_list_link(xattr_data->last_fname, attrnamespace, NULL, 0);
       switch (xattr_list_len) {
       case -1: {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -1647,7 +1647,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
                                          xattr_list, xattr_list_len);
       switch (xattr_list_len) {
       case -1: {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -1747,7 +1747,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
                                             current_attrname, NULL, 0);
          switch (xattr_value_len) {
          case -1: {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
             case ENOENT:
@@ -1802,7 +1802,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
                                                current_attrname, current_xattr->value,
                                                xattr_value_len);
             if (xattr_value_len < 0) {
-               berrno be;
+               BErrNo be;
 
                switch (errno) {
                case ENOENT:
@@ -1963,7 +1963,7 @@ static bxattr_exit_code bsd_parse_xattr_streams(JobControlRecord *jcr,
       cnt = extattr_set_link(xattr_data->last_fname, current_attrnamespace,
                              attrname, current_xattr->value, current_xattr->value_length);
       if (cnt < 0 || cnt != (int)current_xattr->value_length) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -2061,7 +2061,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
     */
    switch (xattr_list_len) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case EOPNOTSUPP:
@@ -2097,7 +2097,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
                                    xattrbuf, &xattrbuf_min_size);
          switch (xattr_list_len) {
          case -1: {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
             default:
@@ -2311,7 +2311,7 @@ static bxattr_exit_code tru64_parse_xattr_streams(JobControlRecord *jcr,
    cnt = setproplist(xattr_data->last_fname, 1, xattrbuf_size, xattrbuf);
    switch (cnt) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case EOPNOTSUPP:
@@ -2645,7 +2645,7 @@ static bxattr_exit_code solaris_save_xattr_acl(JobControlRecord *jcr,
        */
       if ((fd != -1 && facl_get(fd, ACL_NO_TRIVIAL, &aclp) != 0) ||
            acl_get(attrname, ACL_NO_TRIVIAL, &aclp) != 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -2697,7 +2697,7 @@ static bxattr_exit_code solaris_save_xattr_acl(JobControlRecord *jcr,
       acls = (aclent_t *)malloc(n * sizeof(aclent_t));
       if ((fd != -1 && facl(fd, GETACL, n, acls) != n) ||
           acl(attrname, GETACL, n, acls) != n) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -2720,7 +2720,7 @@ static bxattr_exit_code solaris_save_xattr_acl(JobControlRecord *jcr,
        */
       if (!AclIsTrivial(n, acls)) {
          if ((*acl_text = acltotext(acls, n)) == NULL) {
-            berrno be;
+            BErrNo be;
 
             Mmsg3(jcr->errmsg,
                   _("Unable to get acl text on xattr %s on file \"%s\": ERR=%s\n"),
@@ -2797,7 +2797,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
     * Get the stats of the extended or extensible attribute.
     */
    if (fstatat(fd, attrname, &st, AT_SYMLINK_NOFOLLOW) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -2930,7 +2930,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
        * Open the extended or extensible attribute file.
        */
       if ((attrfd = openat(fd, attrname, O_RDONLY)) < 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -2953,7 +2953,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
        * Encode the stat struct into an ASCII representation.
        */
       if (readlink(attrname, link_source, sizeof(link_source)) < 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case ENOENT:
@@ -3068,7 +3068,7 @@ static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
     * The recursive call could change our working dir so change back to the wanted workdir.
     */
    if (fchdir(fd) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -3128,7 +3128,7 @@ static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
     * Open the file on which to save the xattrs read-only.
     */
    if ((filefd = open(name, O_RDONLY | O_NONBLOCK)) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:
@@ -3148,7 +3148,7 @@ static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
     * Open the xattr naming space.
     */
    if ((attrdirfd = openat(filefd, ".", O_RDONLY | O_XATTR)) < 0) {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case EINVAL:
@@ -3177,7 +3177,7 @@ static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
    * attributes should be saved.
    */
    if (fchdir(attrdirfd) < 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("Unable to chdir to xattr space on file \"%s\": ERR=%s\n"),
@@ -3198,7 +3198,7 @@ static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
 
    if ((fd = dup(attrdirfd)) == -1 ||
        (dirp = fdopendir(fd)) == (DIR *)NULL) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("Unable to list the xattr space on file \"%s\": ERR=%s\n"),
@@ -3301,7 +3301,7 @@ static bxattr_exit_code solaris_restore_xattr_acl(JobControlRecord *jcr,
 
    if ((fd != -1 && facl_set(fd, aclp) != 0) ||
         acl_set(attrname, aclp) != 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg3(jcr->errmsg,
             _("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"),
@@ -3324,7 +3324,7 @@ static bxattr_exit_code solaris_restore_xattr_acl(JobControlRecord *jcr,
    if (!acls) {
       if ((fd != -1 && facl(fd, SETACL, n, acls) != 0) ||
            acl(attrname, SETACL, n, acls) != 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"),
@@ -3384,7 +3384,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
     * Open the file on which to restore the xattrs read-only.
     */
    if ((filefd = open(xattr_data->last_fname, O_RDONLY | O_NONBLOCK)) < 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("Unable to open file \"%s\": ERR=%s\n"),
@@ -3398,7 +3398,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
     * Open the xattr naming space and make it the current working dir.
     */
    if ((attrdirfd = openat(filefd, ".", O_RDONLY | O_XATTR)) < 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("Unable to open xattr space on file \"%s\": ERR=%s\n"),
@@ -3409,7 +3409,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
    }
 
    if (fchdir(attrdirfd) < 0) {
-      berrno be;
+      BErrNo be;
 
       Mmsg2(jcr->errmsg,
             _("Unable to chdir to xattr space on file \"%s\": ERR=%s\n"),
@@ -3428,7 +3428,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
       *bp = '\0';
 
       if ((fd = open(target_attrname, O_RDONLY | O_NONBLOCK)) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to open xattr %s on file \"%s\": ERR=%s\n"),
@@ -3445,7 +3445,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
        * Open the xattr naming space.
        */
       if ((fd = openat(filefd, ".", O_RDONLY | O_XATTR)) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to open xattr space %s on file \"%s\": ERR=%s\n"),
@@ -3462,7 +3462,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
        * Make the xattr space our current workingdir.
        */
       if (fchdir(attrdirfd) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to chdir to xattr space %s on file \"%s\": ERR=%s\n"),
@@ -3502,7 +3502,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
        */
       unlinkat(attrdirfd, target_attrname, 0);
       if (mkfifo(target_attrname, st.st_mode) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to mkfifo xattr %s on file \"%s\": ERR=%s\n"),
@@ -3520,7 +3520,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
        */
       unlinkat(attrdirfd, target_attrname, 0);
       if (mknod(target_attrname, st.st_mode, st.st_rdev) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to mknod xattr %s on file \"%s\": ERR=%s\n"),
@@ -3539,7 +3539,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
       if (!bstrcmp(target_attrname, ".")) {
          unlinkat(attrdirfd, target_attrname, AT_REMOVEDIR);
          if (mkdir(target_attrname, st.st_mode) < 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg3(jcr, M_WARNING, 0, _("Unable to mkdir xattr %s on file \"%s\": ERR=%s\n"),
                target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -3558,7 +3558,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
 
          unlinkat(attrdirfd, target_attrname, 0);
          if (link(linked_target, target_attrname) < 0) {
-            berrno be;
+            BErrNo be;
 
             Mmsg4(jcr->errmsg,
                   _("Unable to link xattr %s to %s on file \"%s\": ERR=%s\n"),
@@ -3590,7 +3590,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
          }
 
          if ((attrfd = openat(attrdirfd, target_attrname, O_RDWR | O_CREAT | O_TRUNC, st.st_mode)) < 0) {
-            berrno be;
+            BErrNo be;
 
             Mmsg3(jcr->errmsg,
                   _("Unable to open xattr %s on file \"%s\": ERR=%s\n"),
@@ -3624,7 +3624,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
          while (cnt > 0) {
             cnt = write(attrfd, data, cnt);
             if (cnt < 0) {
-               berrno be;
+               BErrNo be;
 
                Mmsg3(jcr->errmsg,
                      _("Unable to restore data of xattr %s on file \"%s\": ERR=%s\n"),
@@ -3647,7 +3647,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
       linked_target = bp;
 
       if (symlink(linked_target, target_attrname) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg4(jcr->errmsg,
                _("Unable to symlink xattr %s to %s on file \"%s\": ERR=%s\n"),
@@ -3671,7 +3671,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
     */
    if (!is_extensible) {
       if (fchownat(attrdirfd, target_attrname, st.st_uid, st.st_gid, AT_SYMLINK_NOFOLLOW) < 0) {
-         berrno be;
+         BErrNo be;
 
          switch (errno) {
          case EINVAL:
@@ -3711,7 +3711,7 @@ static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
       times[1].tv_usec = 0;
 
       if (futimesat(attrdirfd, target_attrname, times) < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg3(jcr->errmsg,
                _("Unable to restore filetimes of xattr %s on file \"%s\": ERR=%s\n"),
@@ -3897,7 +3897,7 @@ bxattr_exit_code ParseXattrStreams(JobControlRecord *jcr,
    ret = lstat(xattr_data->last_fname, &st);
    switch (ret) {
    case -1: {
-      berrno be;
+      BErrNo be;
 
       switch (errno) {
       case ENOENT:

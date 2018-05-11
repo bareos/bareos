@@ -52,15 +52,15 @@
 
 /* Imported functions */
 extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
-extern void prtmsg(void *sock, const char *fmt, ...);
+extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
 #if !defined(HAVE_WIN32)
 static
 #endif
 void TerminateStored(int sig);
-static int check_resources();
-static void cleanup_old_files();
+static int CheckResources();
+static void CleanUpOldFiles();
 
 extern "C" void *device_initialization(void *arg);
 
@@ -252,7 +252,7 @@ int main (int argc, char *argv[])
    ParseSdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->DumpResources(prtmsg, NULL);
+      my_config->DumpResources(PrintMessage, NULL);
       goto bail_out;
    }
 
@@ -265,7 +265,7 @@ int main (int argc, char *argv[])
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   if (!check_resources()) {
+   if (!CheckResources()) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
    }
 
@@ -294,7 +294,7 @@ int main (int argc, char *argv[])
 
    LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-   cleanup_old_files();
+   CleanUpOldFiles();
 
    /* Ensure that Volume Session Time and Id are both
     * set and are both non-zero.
@@ -309,7 +309,7 @@ int main (int argc, char *argv[])
     */
    CreateVolumeLists();             /* do before device_init */
    if (pthread_create(&thid, NULL, device_initialization, NULL) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
    }
 
@@ -354,7 +354,7 @@ uint32_t newVolSessionId()
 }
 
 /* Check Configuration file for necessary info */
-static int check_resources()
+static int CheckResources()
 {
    bool OK = true;
    bool tls_needed;
@@ -513,7 +513,7 @@ static int check_resources()
 /**
  * Remove old .spool files written by me from the working directory.
  */
-static void cleanup_old_files()
+static void CleanUpOldFiles()
 {
    DIR* dp;
    struct dirent *result;
@@ -527,7 +527,7 @@ static void cleanup_old_files()
    POOLMEM *basename = GetPoolMemory(PM_MESSAGE);
    regex_t preg1;
    char prbuf[500];
-   berrno be;
+   BErrNo be;
 
    /* Look for .spool files but don't allow spaces */
    const char *pat1 = "^[^ ]+\\.spool$";
@@ -553,7 +553,7 @@ static void cleanup_old_files()
    }
 
    if (!(dp = opendir(me->working_directory))) {
-      berrno be;
+      BErrNo be;
       Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
             me->working_directory, be.bstrerror());
       goto get_out1;
@@ -623,7 +623,7 @@ void *device_initialization(void *arg)
     */
    errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_ABORT, 0, _("Unable to init job start cond variable: ERR=%s\n"), be.bstrerror(errstat));
    }
 
@@ -632,7 +632,7 @@ void *device_initialization(void *arg)
     */
    errstat = pthread_cond_init(&jcr->job_end_wait, NULL);
    if (errstat != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_ABORT, 0, _("Unable to init job endstart cond variable: ERR=%s\n"), be.bstrerror(errstat));
    }
 

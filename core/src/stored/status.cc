@@ -1050,7 +1050,7 @@ static void sendit(const char *msg, int len, StatusPacket *sp)
 
    if (bs) {
       memcpy(bs->msg, msg, len+1);
-      bs->msglen = len+1;
+      bs->message_length = len+1;
       bs->send();
    } else {
       sp->callback(msg, len, sp->context);
@@ -1068,7 +1068,7 @@ static void sendit(PoolMem &msg, int len, StatusPacket *sp)
 
    if (bs) {
       memcpy(bs->msg, msg.c_str(), len+1);
-      bs->msglen = len+1;
+      bs->message_length = len+1;
       bs->send();
    } else {
       sp->callback(msg.c_str(), len, sp->context);
@@ -1085,7 +1085,7 @@ bool StatusCmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
 
    sp.bs = dir;
-   devicenames.check_size(dir->msglen);
+   devicenames.check_size(dir->message_length);
    if (sscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 No arg in status command: %s\n"), jcr->errmsg);
@@ -1114,7 +1114,7 @@ bool DotstatusCmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
 
    sp.bs = dir;
-   cmd.check_size(dir->msglen);
+   cmd.check_size(dir->message_length);
    if (sscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 No arg in .status command: %s\n"), jcr->errmsg);

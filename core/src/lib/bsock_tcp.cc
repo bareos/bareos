@@ -120,7 +120,7 @@ bool BareosSocketTCP::connect(JobControlRecord * jcr, int retry_interval, utime_
 
    for (i = 0; !open(jcr, name, host, service, port, heart_beat, &fatal);
         i -= retry_interval) {
-      berrno be;
+      BErrNo be;
       if (fatal || (jcr && JobCanceled(jcr))) {
          goto bail_out;
       }
@@ -153,7 +153,7 @@ bail_out:
 /*
  * Finish initialization of the pocket structure.
  */
-void BareosSocketTCP::fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host,
+void BareosSocketTCP::FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host,
                          int port, struct sockaddr *lclient_addr)
 {
    Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
@@ -185,13 +185,13 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
     * Fill in the structure serv_addr with the address of
     * the server that we want to connect with.
     */
-   if ((addr_list = bnet_host2ipaddrs(host, 0, &errstr)) == NULL) {
+   if ((addr_list = BnetHost2IpAddrs(host, 0, &errstr)) == NULL) {
       /*
        * Note errstr is not malloc'ed
        */
-      Qmsg2(jcr, M_ERROR, 0, _("bnet_host2ipaddrs() for host \"%s\" failed: ERR=%s\n"),
+      Qmsg2(jcr, M_ERROR, 0, _("BnetHost2IpAddrs() for host \"%s\" failed: ERR=%s\n"),
             host, errstr);
-      Dmsg2(100, "bnet_host2ipaddrs() for host %s failed: ERR=%s\n",
+      Dmsg2(100, "BnetHost2IpAddrs() for host %s failed: ERR=%s\n",
             host, errstr);
       *fatal = 1;
       return false;
@@ -233,10 +233,10 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
       char curbuf[256];
       Dmsg2(100, "Current %s All %s\n",
                    ipaddr->build_address_str(curbuf, sizeof(curbuf)),
-                   build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
+                   BuildAddressesString(addr_list, allbuf, sizeof(allbuf)));
       /* Open a TCP socket */
       if ((sockfd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0) {
-         berrno be;
+         BErrNo be;
          save_errno = errno;
          switch (errno) {
 #ifdef EPFNOSUPPORT
@@ -269,7 +269,7 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
        */
       if (src_addr) {
          if (bind(sockfd, src_addr->get_sockaddr(), src_addr->GetSockaddrLen()) < 0) {
-            berrno be;
+            BErrNo be;
             save_errno = errno;
             *fatal = 1;
             Pmsg2(000, _("Source address bind error. proto=%d. ERR=%s\n"),
@@ -318,11 +318,11 @@ bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, 
     * Do this a second time out of paranoia
     */
    if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
    }
 
-   fin_init(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
+   FinInit(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
    FreeAddresses(addr_list);
    fd_ = sockfd;
    return true;
@@ -337,7 +337,7 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord *jcr, int sockfd, bool enabl
     * Keep socket from timing out from inactivity
     */
    if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(jcr, M_WARNING, 0, _("Failed to set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
       return false;
    }
@@ -360,13 +360,13 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord *jcr, int sockfd, bool enabl
 #else
 #if defined(TCP_KEEPIDLE)
       if (setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (sockopt_val_t)&keepalive_start, sizeof(keepalive_start)) < 0) {
-         berrno be;
+         BErrNo be;
          Qmsg2(jcr, M_WARNING, 0, _("Failed to set TCP_KEEPIDLE = %d on socket: %s\n"),
                keepalive_start, be.bstrerror());
          return false;
       }
       if (setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, (sockopt_val_t)&keepalive_interval, sizeof(keepalive_interval)) < 0) {
-         berrno be;
+         BErrNo be;
          Qmsg2(jcr, M_WARNING, 0, _("Failed to set TCP_KEEPINTVL = %d on socket: %s\n"),
                keepalive_interval, be.bstrerror());
          return false;
@@ -409,13 +409,13 @@ bool BareosSocketTCP::SendPacket(int32_t *hdr, int32_t pktsiz)
          if (!suppress_error_msgs_) {
             Qmsg5(jcr_, M_ERROR, 0,
                   _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
-                  msglen, who_,
+                  message_length, who_,
                   host_, port_, this->bstrerror());
          }
       } else {
          Qmsg5(jcr_, M_ERROR, 0,
                _("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
-               msglen, who_, host_, port_, rc);
+               message_length, who_, host_, port_, rc);
       }
       ok = false;
    }
@@ -436,12 +436,12 @@ bool BareosSocketTCP::SendPacket(int32_t *hdr, int32_t pktsiz)
 bool BareosSocketTCP::send()
 {
    /*
-    * Send msg (length: msglen).
-    * As send() and recv() uses the same buffer (msg and msglen)
-    * store the original msglen in an own variable,
+    * Send msg (length: message_length).
+    * As send() and recv() uses the same buffer (msg and message_length)
+    * store the original message_length in an own variable,
     * that will not be modifed by recv().
     */
-   const int32_t o_msglen = msglen;
+   const int32_t o_msglen = message_length;
    int32_t pktsiz;
    int32_t written = 0;
    int32_t packet_msglen = 0;
@@ -537,7 +537,7 @@ int32_t BareosSocketTCP::recv()
    int32_t pktsiz;
 
    msg[0] = 0;
-   msglen = 0;
+   message_length = 0;
    if (errors || IsTerminated()) {
       return BNET_HARDEOF;
    }
@@ -582,7 +582,7 @@ int32_t BareosSocketTCP::recv()
    if (pktsiz == 0) {              /* No data transferred */
       timer_start = 0;             /* clear timer */
       in_msg_no++;
-      msglen = 0;
+      message_length = 0;
       nbytes = 0;                  /* zero bytes read */
       goto get_out;
    }
@@ -602,7 +602,7 @@ int32_t BareosSocketTCP::recv()
       }
       timer_start = 0;                /* clear timer */
       b_errno = ENODATA;
-      msglen = pktsiz;                /* signal code */
+      message_length = pktsiz;                /* signal code */
       nbytes =  BNET_SIGNAL;          /* signal */
       goto get_out;
    }
@@ -635,7 +635,7 @@ int32_t BareosSocketTCP::recv()
    }
    timer_start = 0;         /* clear timer */
    in_msg_no++;
-   msglen = nbytes;
+   message_length = nbytes;
    if (nbytes != pktsiz) {
       b_errno = EIO;
       errors++;
@@ -684,7 +684,7 @@ int BareosSocketTCP::GetPeer(char *buf, socklen_t buflen)
 
 /*
  * Set the network buffer size, suggested size is in size.
- * Actual size obtained is returned in bs->msglen
+ * Actual size obtained is returned in bs->message_length
  *
  * Returns: false on failure
  *          true  on success
@@ -717,14 +717,14 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
     * want in the OS, and BAREOS will comply. See bug #1493
     */
    if (size == 0) {
-      msglen = dbuf_size;
+      message_length = dbuf_size;
       return true;
    }
 
    if (rw & BNET_SETBUF_READ) {
       while ((dbuf_size > TAPE_BSIZE) && (setsockopt(fd_, SOL_SOCKET,
               SO_RCVBUF, (sockopt_val_t) & dbuf_size, sizeof(dbuf_size)) < 0)) {
-         berrno be;
+         BErrNo be;
          Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
          dbuf_size -= TAPE_BSIZE;
       }
@@ -743,7 +743,7 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
    if (rw & BNET_SETBUF_WRITE) {
       while ((dbuf_size > TAPE_BSIZE) && (setsockopt(fd_, SOL_SOCKET,
               SO_SNDBUF, (sockopt_val_t) & dbuf_size, sizeof(dbuf_size)) < 0)) {
-         berrno be;
+         BErrNo be;
          Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
          dbuf_size -= TAPE_BSIZE;
       }
@@ -754,7 +754,7 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
       }
    }
 
-   msglen = dbuf_size;
+   message_length = dbuf_size;
    return true;
 }
 
@@ -772,7 +772,7 @@ int BareosSocketTCP::SetNonblocking()
     * Get current flags
     */
    if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_GETFL error. ERR=%s\n"), be.bstrerror());
    }
 
@@ -780,7 +780,7 @@ int BareosSocketTCP::SetNonblocking()
     * Set O_NONBLOCK flag
     */
    if ((fcntl(fd_, F_SETFL, oflags|O_NONBLOCK)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
@@ -812,7 +812,7 @@ int BareosSocketTCP::SetBlocking()
     * Get current flags
     */
    if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_GETFL error. ERR=%s\n"), be.bstrerror());
    }
 
@@ -820,7 +820,7 @@ int BareosSocketTCP::SetBlocking()
     * Set O_NONBLOCK flag
     */
    if ((fcntl(fd_, F_SETFL, oflags & ~O_NONBLOCK)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
@@ -845,7 +845,7 @@ void BareosSocketTCP::RestoreBlocking(int flags)
 {
 #ifndef HAVE_WIN32
    if ((fcntl(fd_, F_SETFL, flags)) < 0) {
-      berrno be;
+      BErrNo be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
@@ -1037,7 +1037,7 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
    if (IsSpooling()) {
       nwritten = write(spool_fd_, ptr, nbytes);
       if (nwritten != nbytes) {
-         berrno be;
+         BErrNo be;
          b_errno = errno;
          Qmsg1(jcr(), M_FATAL, 0, _("Attr spool write error. ERR=%s\n"), be.bstrerror());
          Dmsg2(400, "nwritten=%d nbytes=%d.\n", nwritten, nbytes);

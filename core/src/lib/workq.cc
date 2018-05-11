@@ -32,13 +32,13 @@
  *
  *  Initialize queue
  *  if ((stat = WorkqInit(&job_wq, max_workers, job_thread)) != 0) {
- *     berrno be;
+ *     BErrNo be;
  *     Emsg1(M_ABORT, 0, "Could not init job work queue: ERR=%s\n", be.bstrerror(errno));
  *   }
  *
  *  Add an item to the queue
  *  if ((stat = WorkqAdd(&job_wq, (void *)jcr)) != 0) {
- *      berrno be;
+ *      BErrNo be;
  *      Emsg1(M_ABORT, 0, "Could not add job to work queue: ERR=%s\n", be.bstrerror(errno));
  *   }
  *

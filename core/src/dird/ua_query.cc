@@ -66,7 +66,7 @@ bool QueryCmd(UaContext *ua, const char *cmd)
       goto bail_out;
    }
    if ((fd=fopen(query_file, "rb")) == NULL) {
-      berrno be;
+      BErrNo be;
       ua->ErrorMsg(_("Could not open %s: ERR=%s\n"), query_file,
          be.bstrerror());
       goto bail_out;

@@ -219,26 +219,26 @@ char *BareosRegex::replace(const char *fname)
 
    if (rc == REG_NOMATCH) {
       Dmsg0(500, "bregexp: regex mismatch\n");
-      return return_fname(fname, flen);
+      return ReturnFname(fname, flen);
    }
 
    int len = ComputeDestLen(fname, regs);
 
    if (len) {
       result = CheckPoolMemorySize(result, len);
-      edit_subst(fname, regs);
+      EditSubst(fname, regs);
       success = true;
       Dmsg2(500, "bregexp: len = %i, result_len = %i\n", len, strlen(result));
 
    } else {                     /* error in substitution */
       Dmsg0(100, "bregexp: error in substitution\n");
-      return return_fname(fname, flen);
+      return ReturnFname(fname, flen);
    }
 
    return result;
 }
 
-char *BareosRegex::return_fname(const char *fname, int len)
+char *BareosRegex::ReturnFname(const char *fname, int len)
 {
    result = CheckPoolMemorySize(result, len+1);
    strcpy(result,fname);
@@ -285,7 +285,7 @@ int BareosRegex::ComputeDestLen(const char *fname, regmatch_t pmatch[])
    return len;
 }
 
-char *BareosRegex::edit_subst(const char *fname, regmatch_t pmatch[])
+char *BareosRegex::EditSubst(const char *fname, regmatch_t pmatch[])
 {
    int i;
    char *p;

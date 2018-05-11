@@ -41,7 +41,7 @@ private:
    void CloseDatabase(JobControlRecord *jcr);
    bool ValidateConnection(void);
    void EscapeString(JobControlRecord *jcr, char *snew, char *old, int len);
-   char *escape_object(JobControlRecord *jcr, char *old, int len);
+   char *EscapeObject(JobControlRecord *jcr, char *old, int len);
    void UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len, POOLMEM *&dest, int32_t *len);
    void StartTransaction(JobControlRecord *jcr);
    void EndTransaction(JobControlRecord *jcr);

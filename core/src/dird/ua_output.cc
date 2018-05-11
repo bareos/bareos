@@ -1479,7 +1479,7 @@ bool CompleteJcrForJob(JobControlRecord *jcr, JobResource *job, PoolResource *po
    }
 
    Dmsg0(100, "complete_jcr open db\n");
-   jcr->db = db_sql_get_pooled_connection(jcr,
+   jcr->db = DbSqlGetPooledConnection(jcr,
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
@@ -1539,7 +1539,7 @@ void DoMessages(UaContext *ua, const char *cmd)
       mlen = strlen(msg);
       ua->UA_sock->msg = CheckPoolMemorySize(ua->UA_sock->msg, mlen+1);
       strcpy(ua->UA_sock->msg, msg);
-      ua->UA_sock->msglen = mlen;
+      ua->UA_sock->message_length = mlen;
       ua->UA_sock->send();
       DoTruncate = true;
    }
@@ -1737,7 +1737,7 @@ again:
 
    if (bs) {
       bs->msg = msg;
-      bs->msglen = len;
+      bs->message_length = len;
       bs->send();
    } else {                           /* No UA, send to Job */
       Jmsg(ua->jcr, M_INFO, 0, "%s", msg);
@@ -1774,7 +1774,7 @@ void bmsg(UaContext *ua, const char *fmt, va_list arg_ptr)
 
    if (bs) {
       bs->msg = msg;
-      bs->msglen = len;
+      bs->message_length = len;
       bs->send();
    } else {                           /* No UA, send to Job */
       Jmsg(ua->jcr, M_INFO, 0, "%s", msg);

@@ -60,7 +60,7 @@ extern bool ParseConsConfig(ConfigurationParser *config, const char *configfile,
 
 /* Forward referenced functions */
 static void TerminateConsole(int sig);
-static int check_resources();
+static int CheckResources();
 int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec);
 static int DoOutputcmd(FILE *input, BareosSocket *UA_sock);
 void senditf(const char *fmt, ...);
@@ -90,17 +90,17 @@ static bool file_selection = false;
 
 /* Command prototypes */
 static int Versioncmd(FILE *input, BareosSocket *UA_sock);
-static int inputcmd(FILE *input, BareosSocket *UA_sock);
-static int Outputcmd(FILE *input, BareosSocket *UA_sock);
-static int teecmd(FILE *input, BareosSocket *UA_sock);
-static int quitcmd(FILE *input, BareosSocket *UA_sock);
-static int helpcmd(FILE *input, BareosSocket *UA_sock);
-static int echocmd(FILE *input, BareosSocket *UA_sock);
-static int timecmd(FILE *input, BareosSocket *UA_sock);
-static int sleepcmd(FILE *input, BareosSocket *UA_sock);
-static int execcmd(FILE *input, BareosSocket *UA_sock);
+static int InputCmd(FILE *input, BareosSocket *UA_sock);
+static int OutputCmd(FILE *input, BareosSocket *UA_sock);
+static int TeeCmd(FILE *input, BareosSocket *UA_sock);
+static int QuitCmd(FILE *input, BareosSocket *UA_sock);
+static int HelpCmd(FILE *input, BareosSocket *UA_sock);
+static int EchoCmd(FILE *input, BareosSocket *UA_sock);
+static int TimeCmd(FILE *input, BareosSocket *UA_sock);
+static int SleepCmd(FILE *input, BareosSocket *UA_sock);
+static int ExecCmd(FILE *input, BareosSocket *UA_sock);
 #ifdef HAVE_READLINE
-static int eolcmd(FILE *input, BareosSocket *UA_sock);
+static int EolCmd(FILE *input, BareosSocket *UA_sock);
 
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
@@ -170,20 +170,20 @@ struct cmdstruct {
    const char *help;
 };
 static struct cmdstruct commands[] = {
-   { N_("input"), inputcmd, _("input from file")},
-   { N_("output"), Outputcmd, _("output to file")},
-   { N_("quit"), quitcmd, _("quit")},
-   { N_("tee"), teecmd, _("output to file and terminal")},
-   { N_("sleep"), sleepcmd, _("sleep specified time")},
-   { N_("time"), timecmd, _("print current time")},
+   { N_("input"), InputCmd, _("input from file")},
+   { N_("output"), OutputCmd, _("output to file")},
+   { N_("quit"), QuitCmd, _("quit")},
+   { N_("tee"), TeeCmd, _("output to file and terminal")},
+   { N_("sleep"), SleepCmd, _("sleep specified time")},
+   { N_("time"), TimeCmd, _("print current time")},
    { N_("version"), Versioncmd, _("print Console's version")},
-   { N_("echo"), echocmd, _("echo command string")},
-   { N_("exec"), execcmd, _("execute an external command")},
-   { N_("exit"), quitcmd, _("exit = quit")},
+   { N_("echo"), EchoCmd, _("echo command string")},
+   { N_("exec"), ExecCmd, _("execute an external command")},
+   { N_("exit"), QuitCmd, _("exit = quit")},
    { N_("zed_keys"), ZedKeyscmd, _("zed_keys = use zed keys instead of bash keys")},
-   { N_("help"), helpcmd, _("help listing")},
+   { N_("help"), HelpCmd, _("help listing")},
 #ifdef HAVE_READLINE
-   { N_("separator"), eolcmd, _("set command separator")},
+   { N_("separator"), EolCmd, _("set command separator")},
 #endif
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
@@ -218,7 +218,7 @@ static int Do_a_command(FILE *input, BareosSocket *UA_sock)
    }
    if (!found) {
       PmStrcat(UA_sock->msg, _(": is an invalid command\n"));
-      UA_sock->msglen = strlen(UA_sock->msg);
+      UA_sock->message_length = strlen(UA_sock->msg);
       sendit(UA_sock->msg);
    }
    return status;
@@ -260,7 +260,7 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
          } else {
             sendit(UA_sock->msg);     /* echo to terminal */
             StripTrailingJunk(UA_sock->msg);
-            UA_sock->msglen = strlen(UA_sock->msg);
+            UA_sock->message_length = strlen(UA_sock->msg);
             status = 1;
          }
       }
@@ -301,13 +301,13 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
       tid = StartBsockTimer(UA_sock, timeout);
       while ((status = UA_sock->recv()) >= 0 ||
              ((status == BNET_SIGNAL) && (
-              (UA_sock->msglen != BNET_EOD) &&
-              (UA_sock->msglen != BNET_MAIN_PROMPT) &&
-              (UA_sock->msglen != BNET_SUB_PROMPT)))) {
+              (UA_sock->message_length != BNET_EOD) &&
+              (UA_sock->message_length != BNET_MAIN_PROMPT) &&
+              (UA_sock->message_length != BNET_SUB_PROMPT)))) {
          if (status == BNET_SIGNAL) {
-            if (UA_sock->msglen == BNET_START_RTREE) {
+            if (UA_sock->message_length == BNET_START_RTREE) {
                file_selection = true;
-            } else if (UA_sock->msglen == BNET_END_RTREE) {
+            } else if (UA_sock->message_length == BNET_END_RTREE) {
                file_selection = false;
             }
             continue;
@@ -343,10 +343,10 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
       if (IsBnetStop(UA_sock)) {
          break;                       /* error or term */
       } else if (status == BNET_SIGNAL) {
-         if (UA_sock->msglen == BNET_SUB_PROMPT) {
+         if (UA_sock->message_length == BNET_SUB_PROMPT) {
             at_prompt = true;
          }
-         Dmsg1(100, "Got poll %s\n", bnet_sig_to_ascii(UA_sock));
+         Dmsg1(100, "Got poll %s\n", BnetSigToAscii(UA_sock));
       }
    }
 }
@@ -539,7 +539,7 @@ void GetArguments(const char *what)
    UA_sock->fsend(".help item=%s", what);
    while (UA_sock->recv() > 0) {
       StripTrailingJunk(UA_sock->msg);
-      match_kw(&preg, UA_sock->msg, UA_sock->msglen, buf);
+      match_kw(&preg, UA_sock->msg, UA_sock->message_length, buf);
    }
    FreePoolMemory(buf);
    regfree(&preg);
@@ -716,7 +716,7 @@ static char **readline_completion(const char *text, int start, int end)
 }
 
 static char eol = '\0';
-static int eolcmd(FILE *input, BareosSocket *UA_sock)
+static int EolCmd(FILE *input, BareosSocket *UA_sock)
 {
    if ((argc > 1) && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", argk[1][0]) != NULL)) {
       eol = argk[1][0];
@@ -756,7 +756,7 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
       command = next + 1;
    } else {
      sendit(_("Command logic problem\n"));
-     sock->msglen = 0;
+     sock->message_length = 0;
      sock->msg[0] = 0;
      return 0;                  /* No input */
    }
@@ -777,8 +777,8 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
       senditf("%s%s\n", prompt, command);
    }
 
-   sock->msglen = PmStrcpy(sock->msg, command);
-   if (sock->msglen) {
+   sock->message_length = PmStrcpy(sock->msg, command);
+   if (sock->message_length) {
       do_history++;
    }
 
@@ -850,7 +850,7 @@ again:
    }
 
    StripTrailingJunk(sock->msg);
-   sock->msglen = strlen(sock->msg);
+   sock->message_length = strlen(sock->msg);
 
    return 1;
 }
@@ -901,7 +901,7 @@ again:
    }
 
    StripTrailingJunk(sock->msg);
-   sock->msglen = strlen(sock->msg);
+   sock->message_length = strlen(sock->msg);
 
    return 1;
 }
@@ -1262,7 +1262,7 @@ int main(int argc, char *argv[])
    ParseConsConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->DumpResources(prtmsg, NULL);
+      my_config->DumpResources(PrintMessage, NULL);
       exit(0);
    }
 
@@ -1270,7 +1270,7 @@ int main(int argc, char *argv[])
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   if (!check_resources()) {
+   if (!CheckResources()) {
       Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
    }
 
@@ -1433,7 +1433,7 @@ static void TerminateConsole(int sig)
 /**
  * Make a quick check to see that we have all the resources needed.
  */
-static int check_resources()
+static int CheckResources()
 {
    bool OK = true;
    DirectorResource *director;
@@ -1469,7 +1469,7 @@ static int Versioncmd(FILE *input, BareosSocket *UA_sock)
 }
 
 /* @input <input-filename> */
-static int inputcmd(FILE *input, BareosSocket *UA_sock)
+static int InputCmd(FILE *input, BareosSocket *UA_sock)
 {
    FILE *fd;
 
@@ -1483,7 +1483,7 @@ static int inputcmd(FILE *input, BareosSocket *UA_sock)
    }
    fd = fopen(argk[1], "rb");
    if (!fd) {
-      berrno be;
+      BErrNo be;
       senditf(_("Cannot open file %s for input. ERR=%s\n"),
          argk[1], be.bstrerror());
       return 1;
@@ -1495,7 +1495,7 @@ static int inputcmd(FILE *input, BareosSocket *UA_sock)
 
 /* @tee <output-filename> */
 /* Send output to both terminal and specified file */
-static int teecmd(FILE *input, BareosSocket *UA_sock)
+static int TeeCmd(FILE *input, BareosSocket *UA_sock)
 {
    teeout = true;
    return DoOutputcmd(input, UA_sock);
@@ -1503,7 +1503,7 @@ static int teecmd(FILE *input, BareosSocket *UA_sock)
 
 /* @output <output-filename> */
 /* Send output to specified "file" */
-static int Outputcmd(FILE *input, BareosSocket *UA_sock)
+static int OutputCmd(FILE *input, BareosSocket *UA_sock)
 {
    teeout = false;
    return DoOutputcmd(input, UA_sock);
@@ -1531,7 +1531,7 @@ static int DoOutputcmd(FILE *input, BareosSocket *UA_sock)
    }
    fd = fopen(argk[1], mode);
    if (!fd) {
-      berrno be;
+      BErrNo be;
       senditf(_("Cannot open file %s for output. ERR=%s\n"),
          argk[1], be.bstrerror(errno));
       return 1;
@@ -1543,7 +1543,7 @@ static int DoOutputcmd(FILE *input, BareosSocket *UA_sock)
 /**
  * @exec "some-command" [wait-seconds]
 */
-static int execcmd(FILE *input, BareosSocket *UA_sock)
+static int ExecCmd(FILE *input, BareosSocket *UA_sock)
 {
    Bpipe *bpipe;
    char line[5000];
@@ -1557,9 +1557,9 @@ static int execcmd(FILE *input, BareosSocket *UA_sock)
    if (argc == 3) {
       wait = atoi(argk[2]);
    }
-   bpipe = open_bpipe(argk[1], wait, "r");
+   bpipe = OpenBpipe(argk[1], wait, "r");
    if (!bpipe) {
-      berrno be;
+      BErrNo be;
       senditf(_("Cannot popen(\"%s\", \"r\"): ERR=%s\n"),
          argk[1], be.bstrerror(errno));
       return 1;
@@ -1570,7 +1570,7 @@ static int execcmd(FILE *input, BareosSocket *UA_sock)
    }
    status = CloseBpipe(bpipe);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       be.SetErrno(status);
      senditf(_("Autochanger error: ERR=%s\n"), be.bstrerror());
    }
@@ -1578,7 +1578,7 @@ static int execcmd(FILE *input, BareosSocket *UA_sock)
 }
 
 /* @echo xxx yyy */
-static int echocmd(FILE *input, BareosSocket *UA_sock)
+static int EchoCmd(FILE *input, BareosSocket *UA_sock)
 {
    for (int i=1; i < argc; i++) {
       senditf("%s ", argk[i]);
@@ -1588,13 +1588,13 @@ static int echocmd(FILE *input, BareosSocket *UA_sock)
 }
 
 /* @quit */
-static int quitcmd(FILE *input, BareosSocket *UA_sock)
+static int QuitCmd(FILE *input, BareosSocket *UA_sock)
 {
    return 0;
 }
 
 /* @help */
-static int helpcmd(FILE *input, BareosSocket *UA_sock)
+static int HelpCmd(FILE *input, BareosSocket *UA_sock)
 {
    int i;
    for (i=0; i<comsize; i++) {
@@ -1604,7 +1604,7 @@ static int helpcmd(FILE *input, BareosSocket *UA_sock)
 }
 
 /* @sleep secs */
-static int sleepcmd(FILE *input, BareosSocket *UA_sock)
+static int SleepCmd(FILE *input, BareosSocket *UA_sock)
 {
    if (argc > 1) {
       sleep(atoi(argk[1]));
@@ -1613,7 +1613,7 @@ static int sleepcmd(FILE *input, BareosSocket *UA_sock)
 }
 
 /* @time */
-static int timecmd(FILE *input, BareosSocket *UA_sock)
+static int TimeCmd(FILE *input, BareosSocket *UA_sock)
 {
    char sdt[50];
 

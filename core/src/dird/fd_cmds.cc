@@ -242,7 +242,7 @@ int SendJobInfo(JobControlRecord *jcr)
          }
       }
    } else {
-      Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"), bnet_strerror(fd));
+      Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"), BnetStrerror(fd));
       jcr->setJobStatus(JS_ErrorTerminated);
       return 0;
    }
@@ -298,7 +298,7 @@ bool SendSecureEraseReqToFd(JobControlRecord *jcr)
    if (jcr->FDVersion > FD_VERSION_53) {
       fd->fsend(getSecureEraseCmd);
       while ((n = BgetDirmsg(fd)) >= 0) {
-         jcr->FDSecureEraseCmd = CheckPoolMemorySize(jcr->FDSecureEraseCmd, fd->msglen);
+         jcr->FDSecureEraseCmd = CheckPoolMemorySize(jcr->FDSecureEraseCmd, fd->message_length);
          if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->FDSecureEraseCmd) == 1) {
             Dmsg1(400, "Got FD Secure Erase Cmd: %s\n", jcr->FDSecureEraseCmd);
             break;
@@ -568,9 +568,9 @@ static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, Ba
    case '|':
       p++;                      /* skip over the | */
       fd->msg = edit_job_codes(jcr, fd->msg, p, "");
-      bpipe = open_bpipe(fd->msg, 0, "r");
+      bpipe = OpenBpipe(fd->msg, 0, "r");
       if (!bpipe) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"),
             p, be.bstrerror());
          return false;
@@ -579,15 +579,15 @@ static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, Ba
       Dmsg1(500, "code=%s\n", buf);
       optlen = strlen(buf);
       while (fgets(buf+optlen, sizeof(buf)-optlen, bpipe->rfd)) {
-         fd->msglen = Mmsg(fd->msg, "%s", buf);
-         Dmsg2(500, "Inc/exc len=%d: %s", fd->msglen, fd->msg);
+         fd->message_length = Mmsg(fd->msg, "%s", buf);
+         Dmsg2(500, "Inc/exc len=%d: %s", fd->message_length, fd->msg);
          if (!BnetSend(fd)) {
             Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
             return false;
          }
       }
       if ((status = CloseBpipe(bpipe)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. ERR=%s\n"),
             p, be.bstrerror(status));
          return false;
@@ -596,7 +596,7 @@ static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, Ba
    case '<':
       p++;                      /* skip over < */
       if ((ffd = fopen(p, "rb")) == NULL) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_FATAL, 0, _("Cannot open included file: %s. ERR=%s\n"),
             p, be.bstrerror());
          return false;
@@ -605,7 +605,7 @@ static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, Ba
       Dmsg1(500, "code=%s\n", buf);
       optlen = strlen(buf);
       while (fgets(buf+optlen, sizeof(buf)-optlen, ffd)) {
-         fd->msglen = Mmsg(fd->msg, "%s", buf);
+         fd->message_length = Mmsg(fd->msg, "%s", buf);
          if (!BnetSend(fd)) {
             Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
             fclose(ffd);
@@ -619,7 +619,7 @@ static bool SendListItem(JobControlRecord *jcr, const char *code, char *item, Ba
       /* Note, fall through wanted */
    default:
       PmStrcpy(fd->msg, code);
-      fd->msglen = PmStrcat(fd->msg, p);
+      fd->message_length = PmStrcat(fd->msg, p);
       Dmsg1(500, "Inc/Exc name=%s\n", fd->msg);
       if (!fd->send()) {
          Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
@@ -806,7 +806,7 @@ static int RestoreObjectHandler(void *ctx, int num_fields, char **row)
    }
    Dmsg1(010, "Send obj hdr=%s", fd->msg);
 
-   fd->msglen = PmStrcpy(fd->msg, row[7]);
+   fd->message_length = PmStrcpy(fd->msg, row[7]);
    fd->send();                            /* send Object name */
 
    Dmsg1(010, "Send obj: %s\n", fd->msg);
@@ -815,7 +815,7 @@ static int RestoreObjectHandler(void *ctx, int num_fields, char **row)
                             row[8],                /* Object  */
                             str_to_uint64(row[1]), /* Object length */
                             fd->msg,
-                            &fd->msglen);
+                            &fd->message_length);
    fd->send();                           /* send object */
    octx->count++;
 
@@ -824,7 +824,7 @@ static int RestoreObjectHandler(void *ctx, int num_fields, char **row)
     */
    is_compressed = str_to_uint64(row[5]) > 0;
    if (debug_level >= 100 && !is_compressed) {
-      for (int i = 0; i < fd->msglen; i++) {
+      for (int i = 0; i < fd->message_length; i++) {
          if (!fd->msg[i]) {
             fd->msg[i] = ' ';
          }
@@ -962,7 +962,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord *jcr)
 
       if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str())) != 3) {
          Jmsg(jcr, M_FATAL, 0, _("<filed: bad attributes, expected 3 fields got %d\n"
-                                 "msglen=%d msg=%s\n"), len, fd->msglen, fd->msg);
+                                 "message_length=%d msg=%s\n"), len, fd->message_length, fd->msg);
          jcr->setJobStatus(JS_ErrorTerminated);
          return 0;
       }
@@ -990,7 +990,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord *jcr)
          /*
           * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
           */
-         fn = jcr->fname = CheckPoolMemorySize(jcr->fname, fd->msglen);
+         fn = jcr->fname = CheckPoolMemorySize(jcr->fname, fd->message_length);
          while (*p != 0) {
             *fn++ = *p++;                /* copy filename */
          }

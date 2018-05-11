@@ -165,7 +165,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
          /* Get rid of old copy */
          Dmsg1(400, "unlink %s\n", attr->ofname);
          if (SecureErase(jcr, attr->ofname) == -1) {
-            berrno be;
+            BErrNo be;
 
             Qmsg(jcr, M_ERROR, 0, _("File %s already exists and could not be replaced. ERR=%s.\n"),
                  attr->ofname, be.bstrerror());
@@ -227,9 +227,9 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
          }
 
          if (bopen(bfd, attr->ofname, flags, 0, attr->statp.st_rdev) < 0) {
-            berrno be;
+            BErrNo be;
 
-            be.SetErrno(bfd->berrno);
+            be.SetErrno(bfd->BErrNo);
             Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"), attr->ofname, be.bstrerror());
             Dmsg2(100,"Could not create %s: ERR=%s\n", attr->ofname, be.bstrerror());
 
@@ -248,7 +248,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
          if (S_ISFIFO(attr->statp.st_mode)) {
             Dmsg1(400, "Restore fifo: %s\n", attr->ofname);
             if (mkfifo(attr->ofname, attr->statp.st_mode) != 0 && errno != EEXIST) {
-               berrno be;
+               BErrNo be;
                Qmsg2(jcr, M_ERROR, 0, _("Cannot make fifo %s: ERR=%s\n"),
                      attr->ofname, be.bstrerror());
                return CF_ERROR;
@@ -276,7 +276,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
          } else {
             Dmsg1(400, "Restore node: %s\n", attr->ofname);
             if (mknod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) != 0 && errno != EEXIST) {
-               berrno be;
+               BErrNo be;
                Qmsg2(jcr, M_ERROR, 0, _("Cannot make node %s: ERR=%s\n"),
                      attr->ofname, be.bstrerror());
                return CF_ERROR;
@@ -306,8 +306,8 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
             }
             Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
-               berrno be;
-               be.SetErrno(bfd->berrno);
+               BErrNo be;
+               be.SetErrno(bfd->BErrNo);
                Qmsg2(jcr, M_ERROR, 0, _("Could not open %s: ERR=%s\n"),
                      attr->ofname, be.bstrerror());
                Dmsg2(400, "Could not open %s: ERR=%s\n", attr->ofname, be.bstrerror());
@@ -323,7 +323,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
       case FT_LNKSAVED:                  /* Hard linked, file already saved */
          Dmsg2(130, "Hard link %s => %s\n", attr->ofname, attr->olname);
          if (link(attr->olname, attr->ofname) != 0) {
-            berrno be;
+            BErrNo be;
 #ifdef HAVE_CHFLAGS
             struct stat s;
 
@@ -390,7 +390,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
             return CF_SKIP;
          }
          if (win32_symlink(attr->olname, attr->ofname, attr->statp.st_rdev) != 0 && errno != EEXIST) {
-            berrno be;
+            BErrNo be;
             Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
                   attr->ofname, attr->olname, be.bstrerror());
             return CF_ERROR;
@@ -403,7 +403,7 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
           */
          Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname, attr->olname);
          if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
-            berrno be;
+            BErrNo be;
             Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
                   attr->ofname, attr->olname, be.bstrerror());
             return CF_ERROR;
@@ -433,8 +433,8 @@ int CreateFile(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd
             Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
          }
          if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0, attr->statp.st_rdev) < 0) {
-            berrno be;
-            be.SetErrno(bfd->berrno);
+            BErrNo be;
+            be.SetErrno(bfd->BErrNo);
 #ifdef HAVE_WIN32
             /*
              * Check for trying to create a drive, if so, skip

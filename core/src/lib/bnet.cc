@@ -296,7 +296,7 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
           * address of the sin_addr member which contains a
           * struct in_addr
           */
-         addr->set_addr4(&(((struct sockaddr_in *)rp->ai_addr)->sin_addr));
+         addr->SetAddr4(&(((struct sockaddr_in *)rp->ai_addr)->sin_addr));
          break;
 #ifdef HAVE_IPV6
       case AF_INET6:
@@ -310,7 +310,7 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
           * address of the sin6_addr member which contains a
           * struct in6_addr
           */
-         addr->set_addr6(&(((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr));
+         addr->SetAddr6(&(((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr));
          break;
 #endif
       default:
@@ -328,7 +328,7 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
 static const char *gethost_strerror()
 {
    const char *msg;
-   berrno be;
+   BErrNo be;
    switch (h_errno) {
    case NETDB_INTERNAL:
       msg = be.bstrerror();
@@ -377,13 +377,13 @@ static const char *resolv_host(int family, const char *host, dlist *addr_list)
          case AF_INET:
             addr = New(IPADDR(hp->h_addrtype));
             addr->SetType(IPADDR::R_MULTIPLE);
-            addr->set_addr4((struct in_addr *)*p);
+            addr->SetAddr4((struct in_addr *)*p);
             break;
 #ifdef HAVE_IPV6
           case AF_INET6:
             addr = New(IPADDR(hp->h_addrtype));
             addr->SetType(IPADDR::R_MULTIPLE);
-            addr->set_addr6((struct in6_addr *)*p);
+            addr->SetAddr6((struct in6_addr *)*p);
             break;
 #endif
          default:
@@ -408,7 +408,7 @@ static IPADDR *add_any(int family)
 /**
  * i host = 0 mean INADDR_ANY only ipv4
  */
-dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
+dlist *BnetHost2IpAddrs(const char *host, int family, const char **errstr)
 {
    struct in_addr inaddr;
    IPADDR *addr = 0;
@@ -430,7 +430,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
    } else if (inet_aton(host, &inaddr)) { /* MA Bug 4 */
       addr = New(IPADDR(AF_INET));
       addr->SetType(IPADDR::R_MULTIPLE);
-      addr->set_addr4(&inaddr);
+      addr->SetAddr4(&inaddr);
       addr_list->append(addr);
 #ifdef HAVE_IPV6
 #ifndef HAVE_WIN32
@@ -440,7 +440,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
 #endif
       addr = New(IPADDR(AF_INET6));
       addr->SetType(IPADDR::R_MULTIPLE);
-      addr->set_addr6(&inaddr6);
+      addr->SetAddr6(&inaddr6);
       addr_list->append(addr);
 #endif
    } else {
@@ -475,7 +475,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
  * Return the string for the error that occurred
  * on the socket. Only the first error is retained.
  */
-const char *bnet_strerror(BareosSocket * bsock)
+const char *BnetStrerror(BareosSocket * bsock)
 {
    return bsock->bstrerror();
 }
@@ -501,9 +501,9 @@ bool BnetFsend(BareosSocket * bs, const char *fmt, ...)
    for (;;) {
       maxlen = SizeofPoolMemory(bs->msg) - 1;
       va_start(arg_ptr, fmt);
-      bs->msglen = Bvsnprintf(bs->msg, maxlen, fmt, arg_ptr);
+      bs->message_length = Bvsnprintf(bs->msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
-      if (bs->msglen > 0 && bs->msglen < (maxlen - 5)) {
+      if (bs->message_length > 0 && bs->message_length < (maxlen - 5)) {
          break;
       }
       bs->msg = ReallocPoolMemory(bs->msg, maxlen + maxlen / 2);
@@ -518,7 +518,7 @@ int BnetGetPeer(BareosSocket *bs, char *buf, socklen_t buflen)
 
 /**
  * Set the network buffer size, suggested size is in size.
- *  Actual size obtained is returned in bs->msglen
+ *  Actual size obtained is returned in bs->message_length
  *
  *  Returns: 0 on failure
  *           1 on success
@@ -570,10 +570,10 @@ bool BnetSig(BareosSocket * bs, int signal)
  * Convert a network "signal" code into
  * human readable ASCII.
  */
-const char *bnet_sig_to_ascii(BareosSocket * bs)
+const char *BnetSigToAscii(BareosSocket * bs)
 {
    static char buf[30];
-   switch (bs->msglen) {
+   switch (bs->message_length) {
    case BNET_EOD:
       return "BNET_EOD";           /* end of data stream */
    case BNET_EOD_POLL:
@@ -593,7 +593,7 @@ const char *bnet_sig_to_ascii(BareosSocket * bs)
    case BNET_TEXT_INPUT:
       return "BNET_TEXT_INPUT";
    default:
-      sprintf(buf, _("Unknown sig %d"), (int)bs->msglen);
+      sprintf(buf, _("Unknown sig %d"), (int)bs->message_length);
       return buf;
    }
 }

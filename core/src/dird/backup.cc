@@ -887,7 +887,7 @@ void UpdateBootstrapFile(JobControlRecord *jcr)
       fname = edit_job_codes(jcr, fname, jcr->res.job->WriteBootstrap, "");
       if (*fname == '|') {
          got_pipe = 1;
-         bpipe = open_bpipe(fname+1, 0, "w"); /* skip first char "|" */
+         bpipe = OpenBpipe(fname+1, 0, "w"); /* skip first char "|" */
          fd = bpipe ? bpipe->wfd : NULL;
       } else {
          /* ***FIXME*** handle BASE */
@@ -931,7 +931,7 @@ void UpdateBootstrapFile(JobControlRecord *jcr)
             fclose(fd);
          }
       } else {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_ERROR, 0, _("Could not open WriteBootstrap file:\n"
               "%s: ERR=%s\n"), fname, be.bstrerror());
          jcr->setJobStatus(JS_ErrorTerminated);

@@ -48,7 +48,7 @@ char* MonitorItem::get_name() const
 void MonitorItem::writecmd(const char* command)
 {
    if (d->DSock) {
-      d->DSock->msglen = PmStrcpy(d->DSock->msg, command);
+      d->DSock->message_length = PmStrcpy(d->DSock->msg, command);
       BnetSend(d->DSock);
    }
 }
@@ -259,18 +259,18 @@ bool MonitorItem::docmd(const char* command)
                 jobRunning = true;
          }
       } else if (stat == BNET_SIGNAL) {
-         if (d->DSock->msglen == BNET_EOD) {
+         if (d->DSock->message_length == BNET_EOD) {
             // qDebug() << "<< EOD >>";
              if (d->type == R_CLIENT)
                 emit jobIsRunning (jobRunning);
             return true;
-         } else if (d->DSock->msglen == BNET_SUB_PROMPT) {
+         } else if (d->DSock->message_length == BNET_SUB_PROMPT) {
             // qDebug() << "<< PROMPT >>";
             return false;
-         } else if (d->DSock->msglen == BNET_HEARTBEAT) {
+         } else if (d->DSock->message_length == BNET_HEARTBEAT) {
             BnetSig(d->DSock, BNET_HB_RESPONSE);
          } else {
-            qDebug() << bnet_sig_to_ascii(d->DSock);
+            qDebug() << BnetSigToAscii(d->DSock);
          }
       } else { /* BNET_HARDEOF || BNET_ERROR */
          d->DSock = NULL;

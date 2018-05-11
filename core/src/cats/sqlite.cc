@@ -164,7 +164,7 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord *jcr)
    }
 
    if ((errstat=RwlInit(&lock_)) != 0) {
-      berrno be;
+      BErrNo be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }

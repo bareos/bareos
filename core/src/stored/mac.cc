@@ -105,7 +105,7 @@ static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const 
    }
    if (IsBnetError(sd)) {
       Jmsg2(jcr, M_FATAL, 0, _("Comm error with SD. bad response to %s. ERR=%s\n"),
-            cmd, bnet_strerror(sd));
+            cmd, BnetStrerror(sd));
    } else {
       Jmsg3(jcr, M_FATAL, 0, _("Bad response to %s command. Wanted %s, got %s\n"),
             cmd, resp, sd->msg);
@@ -413,11 +413,11 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord *dcr, DeviceRecord *rec)
     */
    msgsave = sd->msg;
    sd->msg = rec->data;
-   sd->msglen = rec->data_len;
+   sd->message_length = rec->data_len;
 
    if (!sd->send()) {
       sd->msg = msgsave;
-      sd->msglen = 0;
+      sd->message_length = 0;
       if (!jcr->IsJobCanceled()) {
          Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
                sd->bstrerror());
@@ -425,7 +425,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord *dcr, DeviceRecord *rec)
       return false;
    }
 
-   jcr->JobBytes += sd->msglen;
+   jcr->JobBytes += sd->message_length;
    sd->msg = msgsave;
 
    Dmsg5(200, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",

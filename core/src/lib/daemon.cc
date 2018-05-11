@@ -52,7 +52,7 @@ void daemon_start() {
 
    Dmsg0(900, "Enter daemon_start\n");
    if ( (cpid = fork() ) < 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Cannot fork to become daemon: ERR=%s\n"), be.bstrerror());
    } else if (cpid > 0) {
       exit(0);              /* parent exits */

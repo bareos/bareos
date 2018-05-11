@@ -102,7 +102,7 @@ void FillDirectoryTree(char *path, TREE_ROOT *root, TREE_NODE *parent)
       bstrncpy(file, dir->d_name, sizeof(file));
       snprintf(pathbuf, MAXPATHLEN-1, "%s/%s", path, file);
       if (lstat(pathbuf, &statbuf) < 0) {
-         berrno be;
+         BErrNo be;
          printf("lstat() failed. ERR=%s\n", be.bstrerror(errno));
          continue;
       }

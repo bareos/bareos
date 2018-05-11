@@ -64,7 +64,7 @@ bool BareosDb::MatchDatabase(const char *db_driver, const char *db_name,
  * connection otherwise. We use a method so we can reference
  * the protected members of the class.
  */
-BareosDb *BareosDb::clone_database_connection(JobControlRecord *jcr,
+BareosDb *BareosDb::CloneDatabaseConnection(JobControlRecord *jcr,
                                       bool mult_db_connections,
                                       bool get_pooled_connection,
                                       bool need_private)
@@ -83,11 +83,11 @@ BareosDb *BareosDb::clone_database_connection(JobControlRecord *jcr,
     * See if we need to get a pooled or non pooled connection.
     */
    if (get_pooled_connection) {
-      return db_sql_get_pooled_connection(jcr, db_driver_, db_name_, db_user_, db_password_,
+      return DbSqlGetPooledConnection(jcr, db_driver_, db_name_, db_user_, db_password_,
                                           db_address_, db_port_, db_socket_, mult_db_connections, disabled_batch_insert_,
                                           try_reconnect_, exit_on_fatal_, need_private);
    } else {
-      return db_sql_get_non_pooled_connection(jcr, db_driver_, db_name_, db_user_, db_password_,
+      return DbSqlGetNonPooledConnection(jcr, db_driver_, db_name_, db_user_, db_password_,
                                               db_address_, db_port_, db_socket_, mult_db_connections, disabled_batch_insert_,
                                               try_reconnect_, exit_on_fatal_, need_private);
    }
@@ -127,12 +127,12 @@ const char *BareosDb::GetType(void)
  * thread without blocking, but must be unlocked the number of
  * times it was locked using DbUnlock().
  */
-void BareosDb::_lock_db(const char *file, int line)
+void BareosDb::LockDb(const char *file, int line)
 {
    int errstat;
 
    if ((errstat = RwlWritelock_p(&lock_, file, line)) != 0) {
-      berrno be;
+      BErrNo be;
       e_msg(file, line, M_FATAL, 0, "RwlWritelock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
@@ -143,12 +143,12 @@ void BareosDb::_lock_db(const char *file, int line)
  * same thread up to the number of times that thread called
  * DbLock()/
  */
-void BareosDb::_unlockDb(const char *file, int line)
+void BareosDb::UnlockDb(const char *file, int line)
 {
    int errstat;
 
    if ((errstat = RwlWriteunlock(&lock_)) != 0) {
-      berrno be;
+      BErrNo be;
       e_msg(file, line, M_FATAL, 0, "RwlWriteunlock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
@@ -199,14 +199,14 @@ void BareosDb::EscapeString(JobControlRecord *jcr, char *snew, char *old, int le
  * We base64 encode the data so its normal ASCII
  * Memory is stored in BareosDb struct, no need to free it.
  */
-char *BareosDb::escape_object(JobControlRecord *jcr, char *old, int len)
+char *BareosDb::EscapeObject(JobControlRecord *jcr, char *old, int len)
 {
    int length;
    int MaxLength;
 
    MaxLength = (len * 4) / 3;
    esc_obj = CheckPoolMemorySize(esc_obj, MaxLength + 1);
-   length = bin_to_base64(esc_obj, MaxLength, old, len, true);
+   length = BinToBase64(esc_obj, MaxLength, old, len, true);
    esc_obj[length] = '\0';
 
    return esc_obj;
@@ -226,7 +226,7 @@ void BareosDb::UnescapeObject(JobControlRecord *jcr, char *from, int32_t expecte
    }
 
    dest = CheckPoolMemorySize(dest, expected_len + 1);
-   base64_to_bin(dest, expected_len + 1, from, strlen(from));
+   Base64ToBin(dest, expected_len + 1, from, strlen(from));
    *dest_len = expected_len;
    dest[expected_len] = '\0';
 }

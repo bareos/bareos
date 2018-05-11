@@ -207,7 +207,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord *jcr)
    }
 
    if ((errstat = RwlInit(&lock_)) != 0) {
-      berrno be;
+      BErrNo be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
@@ -397,7 +397,7 @@ void BareosDbPostgresql::EscapeString(JobControlRecord *jcr, char *snew, char *o
  * Escape binary so that PostgreSQL is happy
  *
  */
-char *BareosDbPostgresql::escape_object(JobControlRecord *jcr, char *old, int len)
+char *BareosDbPostgresql::EscapeObject(JobControlRecord *jcr, char *old, int len)
 {
    size_t new_len;
    unsigned char *obj;

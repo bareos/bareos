@@ -549,7 +549,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord *dcr)
 
    if (gfd_) {
       if (glfs_ftruncate(gfd_, 0) != 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror());
          Emsg0(M_FATAL, 0, errmsg);
@@ -565,7 +565,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord *dcr)
        * 4. change ownership to original
        */
       if (glfs_fstat(gfd_, &st) != 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
          Dmsg1(100, "%s", errmsg);
@@ -582,7 +582,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord *dcr)
          oflags = O_CREAT | O_RDWR | O_BINARY;
          gfd_ = glfs_creat(glfs_, virtual_filename_, oflags, st.st_mode);
          if (!gfd_) {
-            berrno be;
+            BErrNo be;
 
             dev_errno = errno;
             Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), virtual_filename_, be.bstrerror());

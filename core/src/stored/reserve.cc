@@ -94,7 +94,7 @@ void InitReservationsLock()
 {
    int errstat;
    if ((errstat=RwlInit(&reservation_lock)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Unable to initialize reservation lock. ERR=%s\n"),
             be.bstrerror(errstat));
    }
@@ -116,7 +116,7 @@ void _lockReservations(const char *file, int line)
    int errstat;
    reservations_lock_count++;
    if ((errstat=RwlWritelock_p(&reservation_lock, file, line)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n",
            errstat, be.bstrerror(errstat));
    }
@@ -127,7 +127,7 @@ void _unLockReservations()
    int errstat;
    reservations_lock_count--;
    if ((errstat=RwlWriteunlock(&reservation_lock)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ABORT, 0, "RwlWriteunlock failure. stat=%d: ERR=%s\n",
            errstat, be.bstrerror(errstat));
    }

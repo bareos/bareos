@@ -53,7 +53,7 @@ static inline bool check_include_pattern_shadowing(JobControlRecord *jcr,
     * files are hardlinked.
     */
    if (lstat(pattern1, &st1) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_WARNING, 0,
            _("Cannot stat file %s: ERR=%s\n"),
            pattern1, be.bstrerror());
@@ -61,7 +61,7 @@ static inline bool check_include_pattern_shadowing(JobControlRecord *jcr,
    }
 
    if (lstat(pattern2, &st2) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_WARNING, 0,
            _("Cannot stat file %s: ERR=%s\n"),
            pattern2, be.bstrerror());

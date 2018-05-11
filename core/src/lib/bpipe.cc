@@ -56,7 +56,7 @@ static void BuildArgcArgv(char *cmd, int *bargc, char *bargv[], int max_arg);
  * a bi-directional pipe so that the user can read from and
  * write to the program.
  */
-Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
+Bpipe *OpenBpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 {
    char *bargv[MAX_ARGV];
    int bargc, i;
@@ -207,7 +207,7 @@ int CloseWpipe(Bpipe *bpipe)
  * Close both pipes and free resources
  *
  * Returns: 0 on success
- *          berrno on failure
+ *          BErrNo on failure
  */
 int CloseBpipe(Bpipe *bpipe)
 {
@@ -247,7 +247,7 @@ int CloseBpipe(Bpipe *bpipe)
          wpid = waitpid(bpipe->worker_pid, &chldstatus, wait_option);
       } while (wpid == -1 && (errno == EINTR || errno == EAGAIN));
       if (wpid == bpipe->worker_pid || wpid == -1) {
-         berrno be;
+         BErrNo be;
          status = errno;
          Dmsg3(800, "Got break wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
             wpid==-1?be.bstrerror():"none");
@@ -349,7 +349,7 @@ static void BuildArgcArgv(char *cmd, int *bargc, char *bargv[], int max_argv)
  * Contrary to my normal calling conventions, this program
  *
  * Returns: 0 on success
- *          non-zero on error == berrno status
+ *          non-zero on error == BErrNo status
  */
 int RunProgram(char *prog, int wait, POOLMEM *&results)
 {
@@ -358,7 +358,7 @@ int RunProgram(char *prog, int wait, POOLMEM *&results)
    char *mode;
 
    mode = (char *)"r";
-   bpipe = open_bpipe(prog, wait, mode);
+   bpipe = OpenBpipe(prog, wait, mode);
    if (!bpipe) {
       return ENOENT;
    }
@@ -375,7 +375,7 @@ int RunProgram(char *prog, int wait, POOLMEM *&results)
    }
 
    if (stat1 < 0) {
-      berrno be;
+      BErrNo be;
       Dmsg2(150, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror(errno));
    } else if (stat1 != 0) {
       Dmsg1(150, "Run program fgets stat=%d\n", stat1);
@@ -412,7 +412,7 @@ int RunProgram(char *prog, int wait, POOLMEM *&results)
  * Contrary to my normal calling conventions, this program
  *
  * Returns: 0 on success
- *          non-zero on error == berrno status
+ *          non-zero on error == BErrNo status
  */
 int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results)
 {
@@ -431,7 +431,7 @@ int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results)
 
    results[0] = 0;
    mode = (char *)"r";
-   bpipe = open_bpipe(prog, wait, mode);
+   bpipe = OpenBpipe(prog, wait, mode);
    if (!bpipe) {
       stat1 = ENOENT;
       goto bail_out;
@@ -452,7 +452,7 @@ int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results)
          stat1 = ferror(bpipe->rfd);
       }
       if (stat1 < 0) {
-         berrno be;
+         BErrNo be;
          Dmsg2(200, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror());
          break;
       } else if (stat1 != 0) {

@@ -152,9 +152,9 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
     */
    save_msg = fd->msg;          /* save fd message pointer */
    fd->msg = rec->data;         /* pass data directly to the FD */
-   fd->msglen = rec->data_len;
+   fd->message_length = rec->data_len;
 
-   Dmsg1(400, ">filed: send %d bytes data.\n", fd->msglen);
+   Dmsg1(400, ">filed: send %d bytes data.\n", fd->message_length);
    if (!fd->send()) {
       Pmsg1(000, _("Error sending to FD. ERR=%s\n"), fd->bstrerror());
       Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),

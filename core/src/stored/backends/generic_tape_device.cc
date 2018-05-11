@@ -81,7 +81,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
        */
       fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
       if (fd_ < 0) {
-         berrno be;
+         BErrNo be;
          dev_errno = errno;
          Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
                prt_name, omode, oflags, errno, be.bstrerror());
@@ -97,7 +97,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
           * Rewind only if dev is a tape
           */
          if (d_ioctl(fd_, MTIOCTOP, (char *)&mt_com) < 0) {
-            berrno be;
+            BErrNo be;
             dev_errno = errno;           /* set error status from rewind */
             d_close(fd_);
             ClearOpened();
@@ -115,7 +115,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
             d_close(fd_);
             fd_ = d_open(dev_name, oflags, 0); /* open normally */
             if (fd_ < 0) {
-               berrno be;
+               BErrNo be;
                dev_errno = errno;
                Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
                      prt_name, omode, oflags, errno, be.bstrerror());
@@ -139,7 +139,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
 #endif
 
    if (!IsOpen()) {
-      berrno be;
+      BErrNo be;
       Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
             prt_name, be.bstrerror(dev_errno));
       Dmsg1(100, "%s", errmsg);
@@ -210,7 +210,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
       }
 
       if (d_ioctl(fd_, MTIOCTOP, (char *)&mt_com) < 0) {
-         berrno be;
+         BErrNo be;
          clrerror(mt_com.mt_op);
          Dmsg1(50, "ioctl error: %s\n", be.bstrerror());
          UpdatePos(dcr);
@@ -221,7 +221,7 @@ bool generic_tape_device::eod(DeviceControlRecord *dcr)
 
       os_file = GetOsTapeFile();
       if (os_file < 0) {
-         berrno be;
+         BErrNo be;
          clrerror(-1);
          Mmsg2(errmsg, _("ioctl MTIOCGET error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
          Dmsg0(100, errmsg);
@@ -349,7 +349,7 @@ bool generic_tape_device::offline()
    mt_com.mt_count = 1;
 
    if (d_ioctl(fd_, MTIOCTOP, (char *)&mt_com) < 0) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Mmsg2(errmsg, _("ioctl MTOFFL error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
       return false;
@@ -395,7 +395,7 @@ bool generic_tape_device::weof(int num)
       file += num;
       file_addr = 0;
    } else {
-      berrno be;
+      BErrNo be;
 
       clrerror(mt_com.mt_op);
       if (status == -1) {
@@ -456,7 +456,7 @@ bool generic_tape_device::fsf(int num)
          my_errno = errno;            /* save errno */
       }
       if (my_errno != 0) {
-         berrno be;
+         BErrNo be;
 
          SetEot();
          Dmsg0(200, "Set ST_EOT\n");
@@ -518,7 +518,7 @@ bool generic_tape_device::fsf(int num)
                   status = 0;
                }
             } else {
-               berrno be;
+               BErrNo be;
 
                SetEot();
                clrerror(-1);
@@ -549,7 +549,7 @@ bool generic_tape_device::fsf(int num)
          Dmsg0(100, "Doing MTFSF\n");
          status = d_ioctl(fd_, MTIOCTOP, (char *)&mt_com);
          if (status < 0) {                 /* error => EOT */
-            berrno be;
+            BErrNo be;
 
             SetEot();
             Dmsg0(100, "Set ST_EOT\n");
@@ -620,7 +620,7 @@ bool generic_tape_device::bsf(int num)
 
    status = d_ioctl(fd_, MTIOCTOP, (char *)&mt_com);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       clrerror(mt_com.mt_op);
       Mmsg2(errmsg, _("ioctl MTBSF error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
@@ -669,7 +669,7 @@ bool generic_tape_device::fsr(int num)
       ClearEof();
       block_num += num;
    } else {
-      berrno be;
+      BErrNo be;
       struct mtget mt_stat;
 
       clrerror(mt_com.mt_op);
@@ -724,7 +724,7 @@ bool generic_tape_device::bsr(int num)
 
    status = d_ioctl(fd_, MTIOCTOP, (char *)&mt_com);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       clrerror(mt_com.mt_op);
       Mmsg2(errmsg, _("ioctl MTBSR error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
@@ -754,7 +754,7 @@ bool generic_tape_device::LoadDev()
 
 #ifndef MTLOAD
    Dmsg0(200, "stored: MTLOAD command not available\n");
-   berrno be;
+   BErrNo be;
    dev_errno = ENOTTY;           /* function not available */
    Mmsg2(errmsg, _("ioctl MTLOAD error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
    return false;
@@ -765,7 +765,7 @@ bool generic_tape_device::LoadDev()
    mt_com.mt_op = MTLOAD;
    mt_com.mt_count = 1;
    if (d_ioctl(fd_, MTIOCTOP, (char *)&mt_com) < 0) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Mmsg2(errmsg, _("ioctl MTLOAD error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
       return false;
@@ -818,7 +818,7 @@ static inline void OsClrerror(Device *dev)
  */
 static inline void OsClrerror(Device *dev)
 {
-   berrno be;
+   BErrNo be;
    union mterrstat mt_errstat;
 
    /*
@@ -1065,7 +1065,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
       neof = 1;
    }
    if (dev->d_ioctl(dev->fd(), MTIOCSETEOTMODEL, (caddr_t)&neof) < 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errno;         /* save errno */
       Mmsg2(dev->errmsg, _("Unable to set eotmodel on device %s: ERR=%s\n"),
             dev->print_name(), be.bstrerror(dev->dev_errno));
@@ -1142,7 +1142,7 @@ bool generic_tape_device::rewind(DeviceControlRecord *dcr)
     */
    for (i = max_rewind_wait; ; i -= 5) {
       if (d_ioctl(fd_, MTIOCTOP, (char *)&mt_com) < 0) {
-         berrno be;
+         BErrNo be;
 
          clrerror(mt_com.mt_op);
          if (i == max_rewind_wait) {
@@ -1196,7 +1196,7 @@ static bool do_mount(DeviceControlRecord *dcr, int mount, int dotimeout)
    POOLMEM *results;
    char *icmd;
    int status, tries;
-   berrno be;
+   BErrNo be;
 
    Dsm_check(200);
    if (mount) {
@@ -1261,7 +1261,7 @@ char *generic_tape_device::StatusDev()
    Pmsg0(-20,_(" Bareos status:"));
    Pmsg2(-20,_(" file=%d block=%d\n"), file, block_num);
    if (d_ioctl(fd_, MTIOCGET, (char *)&mt_stat) < 0) {
-      berrno be;
+      BErrNo be;
 
       dev_errno = errno;
       Mmsg2(errmsg, _("ioctl MTIOCGET error on %s. ERR=%s.\n"),
@@ -1405,7 +1405,7 @@ bool generic_tape_device::Reposition(DeviceControlRecord *dcr, uint32_t rfile, u
    } else {
       while (rblock > block_num) {
          if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
-            berrno be;
+            BErrNo be;
             dev_errno = errno;
             Dmsg2(30, "Failed to find requested block on %s: ERR=%s", prt_name, be.bstrerror());
             return false;

@@ -32,19 +32,19 @@ DLL_IMP_EXP bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocke
                      bool VerifyPeer, alist *verify_list);
 DLL_IMP_EXP int BnetGetPeer(BareosSocket *bs, char *buf, socklen_t buflen);
 DLL_IMP_EXP BareosSocket *dup_bsock(BareosSocket *bsock);
-DLL_IMP_EXP const char *bnet_strerror(BareosSocket *bsock);
-DLL_IMP_EXP const char *bnet_sig_to_ascii(BareosSocket *bsock);
+DLL_IMP_EXP const char *BnetStrerror(BareosSocket *bsock);
+DLL_IMP_EXP const char *BnetSigToAscii(BareosSocket *bsock);
 DLL_IMP_EXP int BnetWaitData(BareosSocket *bsock, int sec);
 DLL_IMP_EXP int BnetWaitDataIntr(BareosSocket *bsock, int sec);
 DLL_IMP_EXP bool IsBnetStop(BareosSocket *bsock);
 DLL_IMP_EXP int IsBnetError(BareosSocket *bsock);
 DLL_IMP_EXP void BnetSuppressErrorMessages(BareosSocket *bsock, bool flag);
-DLL_IMP_EXP dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr);
+DLL_IMP_EXP dlist *BnetHost2IpAddrs(const char *host, int family, const char **errstr);
 DLL_IMP_EXP int BnetSetBlocking(BareosSocket *sock);
 DLL_IMP_EXP int BnetSetNonblocking(BareosSocket *sock);
 DLL_IMP_EXP void BnetRestoreBlocking(BareosSocket *sock, int flags);
 DLL_IMP_EXP int NetConnect(int port);
-DLL_IMP_EXP BareosSocket *bnet_bind(int port);
-DLL_IMP_EXP BareosSocket *bnet_accept(BareosSocket *bsock, char *who);
+DLL_IMP_EXP BareosSocket *BnetBind(int port);
+DLL_IMP_EXP BareosSocket *BnetAccept(BareosSocket *bsock, char *who);
 
 #endif // BAREOS_LIB_BNET_H_

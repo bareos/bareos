@@ -190,7 +190,7 @@ extern "C" void SignalHandler(int sig)
          strcpy((char *)working_directory, "/tmp/");
       }
       if (chdir(working_directory) != 0) {  /* dump in working directory */
-         berrno be;
+         BErrNo be;
          Pmsg2(000, "chdir to %s failed. ERR=%s\n", working_directory,  be.bstrerror());
          strcpy((char *)working_directory, "/tmp/");
       }
@@ -220,7 +220,7 @@ extern "C" void SignalHandler(int sig)
          fprintf(stderr, _("Calling: %s %s %s %s\n"), btpath, exepath, pid_buf,
             working_directory);
          if (execv(btpath, argv) != 0) {
-            berrno be;
+            BErrNo be;
             printf(_("execv: %s failed: ERR=%s\n"), btpath, be.bstrerror());
          }
          exit(-1);

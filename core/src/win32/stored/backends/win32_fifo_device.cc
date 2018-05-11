@@ -77,7 +77,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord *dcr, int omode)
        */
       fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
       if (fd_ < 0) {
-         berrno be;
+         BErrNo be;
          dev_errno = errno;
          Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
                prt_name, omode, oflags, errno, be.bstrerror());
@@ -85,7 +85,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord *dcr, int omode)
          d_close(fd_);
          fd_ = d_open(dev_name, oflags, 0); /* open normally */
          if (fd_ < 0) {
-            berrno be;
+            BErrNo be;
             dev_errno = errno;
             Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
                   prt_name, omode, oflags, errno, be.bstrerror());
@@ -106,7 +106,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord *dcr, int omode)
    }
 
    if (!IsOpen()) {
-      berrno be;
+      BErrNo be;
       Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
             prt_name, be.bstrerror(dev_errno));
       Dmsg1(100, "%s", errmsg);
@@ -159,7 +159,7 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
    struct dirent *entry;
 #endif
    int status, tries, name_max, count;
-   berrno be;
+   BErrNo be;
 
    Dsm_check(200);
    if (mount) {
@@ -214,7 +214,7 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
       }
 
       if (!(dp = opendir(device->mount_point))) {
-         berrno be;
+         BErrNo be;
          dcr->dev->dev_errno = errno;
          Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
                device->mount_point, dcr->dev->print_name(), be.bstrerror());

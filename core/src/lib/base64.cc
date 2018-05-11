@@ -42,7 +42,7 @@ static int base64_inited = 0;
 static uint8_t base64_map[256];
 
 /* Initialize the Base 64 conversion routines */
-void base64_init(void)
+void Base64Init(void)
 {
    int i;
    memset(base64_map, 0, sizeof(base64_map));
@@ -58,7 +58,7 @@ void base64_init(void)
  * Returns the number of characters
  * stored (not including the EOS).
  */
-int to_base64(int64_t value, char *where)
+int ToBase64(int64_t value, char *where)
 {
    uint64_t val;
    int i = 0;
@@ -95,13 +95,13 @@ int to_base64(int64_t value, char *where)
  *
  * Returns the value.
  */
-int from_base64(int64_t *value, char *where)
+int FromBase64(int64_t *value, char *where)
 {
    uint64_t val = 0;
    int i, neg;
 
    if (!base64_inited)
-      base64_init();
+      Base64Init();
    /* Check if it is negative */
    i = neg = 0;
    if (where[i] == '-') {
@@ -123,13 +123,13 @@ int from_base64(int64_t *value, char *where)
  * Encode binary data in bin of len bytes into
  * buf as base64 characters.
  *
- * If compatible is true, the bin_to_base64 routine will be compatible
+ * If compatible is true, the BinToBase64 routine will be compatible
  * with what the rest of the world uses.
  *
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible)
+int BinToBase64(char *buf, int buflen, char *bin, int binlen, bool compatible)
 {
    uint32_t reg, save, mask;
    int rem, i;
@@ -172,13 +172,13 @@ int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible)
  * Decode base64 data in bin of len bytes into
  * buf as binary characters.
  *
- * the base64_to_bin routine is compatible with what the rest of the world
+ * the Base64ToBin routine is compatible with what the rest of the world
  * uses.
  *
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int base64_to_bin(char *dest, int dest_size, char *src, int srclen)
+int Base64ToBin(char *dest, int dest_size, char *src, int srclen)
 {
    int nprbytes;
    uint8_t *bufout;
@@ -186,7 +186,7 @@ int base64_to_bin(char *dest, int dest_size, char *src, int srclen)
    const uint8_t *bufin;
 
    if (!base64_inited)
-      base64_init();
+      Base64Init();
 
    if (dest_size < (((srclen + 3) / 4) * 3)) {
       /* dest buffer too small */

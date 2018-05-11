@@ -272,7 +272,7 @@ bool LoadPlugins(void *binfo,
       }
 
       if (!(dp = opendir(plugin_dir))) {
-         berrno be;
+         BErrNo be;
          Jmsg(NULL, M_ERROR_TERM, 0, _("Failed to open Plugin directory %s: ERR=%s\n"),
                plugin_dir, be.bstrerror());
          Dmsg2(debuglevel, "Failed to open Plugin directory %s: ERR=%s\n",

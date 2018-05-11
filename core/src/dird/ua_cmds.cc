@@ -56,7 +56,7 @@
  * Imported functions
  */
 /* dird.c */
-extern bool do_reload_config();
+extern bool DoReloadConfig();
 
 /* ua_cmds.c */
 extern bool AutodisplayCmd(UaContext *ua, const char *cmd);
@@ -1003,7 +1003,7 @@ static bool SetipCmd(UaContext *ua, const char *cmd)
       free(client->address);
    }
 
-   sockaddr_to_ascii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
+   SockaddrToAscii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
    client->address = bstrdup(buf);
    ua->SendMsg(_("Client \"%s\" address set to %s\n"), client->name(), client->address);
 
@@ -1534,12 +1534,12 @@ static bool ResolveCmd(UaContext *ua, const char *cmd)
             continue;
          }
 
-         if ((addr_list = bnet_host2ipaddrs(ua->argk[i], 0, &errstr)) == NULL) {
+         if ((addr_list = BnetHost2IpAddrs(ua->argk[i], 0, &errstr)) == NULL) {
             ua->ErrorMsg(_("%s Failed to resolve %s\n"), my_name, ua->argk[i]);
             return false;
          }
          ua->SendMsg(_("%s resolves %s to %s\n"), my_name, ua->argk[i],
-                      build_addresses_str(addr_list, addresses, sizeof(addresses), false));
+                      BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
          FreeAddresses(addr_list);
       }
    }
@@ -2093,7 +2093,7 @@ static bool ReloadCmd(UaContext *ua, const char *cmd)
 {
    bool result;
 
-   result = do_reload_config();
+   result = DoReloadConfig();
 
    ua->send->ObjectStart("reload");
    if (result) {

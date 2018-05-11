@@ -497,7 +497,7 @@ static bool decompress_with_zlib(JobControlRecord *jcr,
       real_compress_len = *length;
    }
 
-   Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
+   Dmsg2(400, "Comp_len=%d message_length=%d\n", compress_len, *length);
 
    while ((status = uncompress((Byte *)wbuf, &compress_len, (const Byte *)cbuf, (uLong)real_compress_len)) == Z_BUF_ERROR) {
       /*
@@ -513,7 +513,7 @@ static bool decompress_with_zlib(JobControlRecord *jcr,
          wbuf = jcr->compress.inflate_buffer;
          compress_len = jcr->compress.inflate_buffer_size;
       }
-      Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
+      Dmsg2(400, "Comp_len=%d message_length=%d\n", compress_len, *length);
    }
 
    if (status != Z_OK) {
@@ -561,7 +561,7 @@ static bool decompress_with_lzo(JobControlRecord *jcr,
    }
 
    real_compress_len = *length - sizeof(comp_stream_header);
-   Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
+   Dmsg2(400, "Comp_len=%d message_length=%d\n", compress_len, *length);
    while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf, &compress_len, NULL)) == LZO_E_OUTPUT_OVERRUN) {
       /*
        * The buffer size is too small, try with a bigger one
@@ -576,7 +576,7 @@ static bool decompress_with_lzo(JobControlRecord *jcr,
          compress_len = jcr->compress.inflate_buffer_size;
          wbuf = (unsigned char *)jcr->compress.inflate_buffer;
       }
-      Dmsg2(400, "Comp_len=%d msglen=%d\n", compress_len, *length);
+      Dmsg2(400, "Comp_len=%d message_length=%d\n", compress_len, *length);
    }
 
    if (status != LZO_E_OK) {
@@ -637,7 +637,7 @@ static bool decompress_with_fastlz(JobControlRecord *jcr,
       stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
    }
 
-   Dmsg2(400, "Comp_len=%d msglen=%d\n", stream.avail_in, *length);
+   Dmsg2(400, "Comp_len=%d message_length=%d\n", stream.avail_in, *length);
 
    if ((zstat = fastlzlibDecompressInit(&stream)) != Z_OK) {
       goto cleanup;
@@ -737,7 +737,7 @@ bool DecompressData(JobControlRecord *jcr,
        * Size check
        */
       if (comp_len + sizeof(comp_stream_header) != *length) {
-         Qmsg(jcr, M_ERROR, 0, _("Compressed header size error. comp_len=%d, msglen=%d\n"),
+         Qmsg(jcr, M_ERROR, 0, _("Compressed header size error. comp_len=%d, message_length=%d\n"),
               comp_len, *length);
          return false;
       }

@@ -39,10 +39,10 @@
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
 extern bool ParseFdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
-extern void prtmsg(void *sock, const char *fmt, ...);
+extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
-static bool check_resources();
+static bool CheckResources();
 
 /* Exported variables */
 ClientResource *me = NULL;                 /* Our Global resource */
@@ -237,7 +237,7 @@ int main (int argc, char *argv[])
    ParseFdConfig(my_config, configfile, M_ERROR_TERM);
 
    if (export_config) {
-      my_config->DumpResources(prtmsg, NULL);
+      my_config->DumpResources(PrintMessage, NULL);
       goto bail_out;
    }
 
@@ -251,7 +251,7 @@ int main (int argc, char *argv[])
       TerminateFiled(1);
    }
 
-   if (!check_resources()) {
+   if (!CheckResources()) {
       Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
       TerminateFiled(1);
    }
@@ -348,7 +348,7 @@ void TerminateFiled(int sig)
 * Make a quick check to see that we have all the
 * resources needed.
 */
-static bool check_resources()
+static bool CheckResources()
 {
    bool OK = true;
    DirectorResource *director;

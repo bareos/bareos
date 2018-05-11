@@ -444,7 +444,7 @@ static void sendit(PoolMem &msg, int len, StatusPacket *sp)
 
    if (bs) {
       memcpy(bs->msg, msg.c_str(), len+1);
-      bs->msglen = len+1;
+      bs->message_length = len+1;
       bs->send();
    } else {
       sp->callback(msg.c_str(), len, sp->context);
@@ -480,7 +480,7 @@ bool QstatusCmd(JobControlRecord *jcr)
    StatusPacket sp;
 
    sp.bs = dir;
-   cmd = GetMemory(dir->msglen+1);
+   cmd = GetMemory(dir->message_length+1);
 
    if (sscanf(dir->msg, qstatus, cmd) != 1) {
       PmStrcpy(jcr->errmsg, dir->msg);

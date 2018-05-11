@@ -73,9 +73,9 @@ static void *handle_connection_request(void *arg)
    /*
     * Do a sanity check on the message received
     */
-   if (bs->msglen < MIN_MSG_LEN || bs->msglen > MAX_MSG_LEN) {
+   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
       Dmsg1(000, "<filed: %s", bs->msg);
-      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
+      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
       Bmicrosleep(5, 0);   /* make user wait 5 seconds */
       bs->close();
       return NULL;
@@ -118,7 +118,7 @@ void StartSocketServer(dlist *addrs)
    }
 
    sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp(addrs,
+   BnetThreadServerTcp(addrs,
                           me->MaxConnections,
                           sock_fds,
                           &socket_workq,

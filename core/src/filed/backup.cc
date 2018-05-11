@@ -107,7 +107,7 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
       return false;
    }
 
-   jcr->buf_size = sd->msglen;
+   jcr->buf_size = sd->message_length;
 
    if (!AdjustCompressionBuffers(jcr)) {
       return false;
@@ -208,7 +208,7 @@ static inline bool SaveRsrcAndFinder(b_save_ctx &bsctx)
    if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
       if (BopenRsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
          bsctx.ff_pkt->ff_errno = errno;
-         berrno be;
+         BErrNo be;
          Jmsg(bsctx.jcr, M_NOTSAVED, -1,
               _("     Cannot open resource fork for \"%s\": ERR=%s.\n"),
               bsctx.ff_pkt->fname, be.bstrerror());
@@ -241,12 +241,12 @@ static inline bool SaveRsrcAndFinder(b_save_ctx &bsctx)
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, STREAM_HFSPLUS_ATTRIBUTES);
    Dmsg1(300, "filed>stored:header %s", sd->msg);
    PmMemcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
-   sd->msglen = 32;
+   sd->message_length = 32;
    if (bsctx.digest) {
-      CryptoDigestUpdate(bsctx.digest, (uint8_t *)sd->msg, sd->msglen);
+      CryptoDigestUpdate(bsctx.digest, (uint8_t *)sd->msg, sd->message_length);
    }
    if (bsctx.signing_digest) {
-      CryptoDigestUpdate(bsctx.signing_digest, (uint8_t *)sd->msg, sd->msglen);
+      CryptoDigestUpdate(bsctx.signing_digest, (uint8_t *)sd->msg, sd->message_length);
    }
    sd->send();
    sd->signal(BNET_EOD);
@@ -382,7 +382,7 @@ static inline bool TerminateSigningDigest(b_save_ctx &bsctx)
       goto bail_out;
    }
 
-   sd->msglen = size;
+   sd->message_length = size;
    sd->send();
    sd->signal(BNET_EOD);              /* end of checksum */
    retval = true;
@@ -427,7 +427,7 @@ static inline bool TerminateDigest(b_save_ctx &bsctx)
       FfPktSetLinkDigest(bsctx.ff_pkt, bsctx.digest_stream, sd->msg, size);
    }
 
-   sd->msglen = size;
+   sd->message_length = size;
    sd->send();
    sd->signal(BNET_EOD);              /* end of checksum */
    retval = true;
@@ -597,21 +597,21 @@ int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
       break;
    case FT_NOACCESS: {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
            ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
    }
    case FT_NOFOLLOW: {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
            ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
    }
    case FT_NOSTAT: {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
            ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
@@ -625,7 +625,7 @@ int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
       Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"), ff_pkt->fname);
       return 1;
    case FT_NOOPEN: {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Could not open directory \"%s\": ERR=%s\n"),
            ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
@@ -784,7 +784,7 @@ int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 
       if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev) < 0) {
          ff_pkt->ff_errno = errno;
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_NOTSAVED, 0,
               _("     Cannot open \"%s\": ERR=%s.\n"),
               ff_pkt->fname, be.bstrerror());
@@ -876,7 +876,7 @@ int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 
       sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
       memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
-      sd->msglen = ff_pkt->digest_len;
+      sd->message_length = ff_pkt->digest_len;
       sd->send();
 
       sd->signal(BNET_EOD);              /* end of hardlink record */
@@ -922,8 +922,8 @@ static inline bool SendDataToSd(b_ctx *bctx)
       ser_declare;
 
       allZeros = false;
-      if ((sd->msglen == bctx->rsize &&
-          (bctx->fileAddr + sd->msglen < (uint64_t)bctx->ff_pkt->statp.st_size)) ||
+      if ((sd->message_length == bctx->rsize &&
+          (bctx->fileAddr + sd->message_length < (uint64_t)bctx->ff_pkt->statp.st_size)) ||
           ((bctx->ff_pkt->type == FT_RAW ||
             bctx->ff_pkt->type == FT_FIFO) &&
           ((uint64_t)bctx->ff_pkt->statp.st_size == 0))) {
@@ -938,7 +938,7 @@ static inline bool SendDataToSd(b_ctx *bctx)
          ser_uint64(bctx->fileAddr); /* store fileAddr in begin of buffer */
       }
 
-      bctx->fileAddr += sd->msglen; /* update file address */
+      bctx->fileAddr += sd->message_length; /* update file address */
 
       /*
        * Skip block of all zeros
@@ -952,25 +952,25 @@ static inline bool SendDataToSd(b_ctx *bctx)
       ser_uint64(bctx->ff_pkt->bfd.offset); /* store offset in begin of buffer */
    }
 
-   bctx->jcr->ReadBytes += sd->msglen; /* count bytes read */
+   bctx->jcr->ReadBytes += sd->message_length; /* count bytes read */
 
    /*
     * Uncompressed cipher input length
     */
-   bctx->cipher_input_len = sd->msglen;
+   bctx->cipher_input_len = sd->message_length;
 
    /*
     * Update checksum if requested
     */
    if (bctx->digest) {
-      CryptoDigestUpdate(bctx->digest, (uint8_t *)bctx->rbuf, sd->msglen);
+      CryptoDigestUpdate(bctx->digest, (uint8_t *)bctx->rbuf, sd->message_length);
    }
 
    /*
     * Update signing digest if requested
     */
    if (bctx->signing_digest) {
-      CryptoDigestUpdate(bctx->signing_digest, (uint8_t *)bctx->rbuf, sd->msglen);
+      CryptoDigestUpdate(bctx->signing_digest, (uint8_t *)bctx->rbuf, sd->message_length);
    }
 
    /*
@@ -978,7 +978,7 @@ static inline bool SendDataToSd(b_ctx *bctx)
     */
    if (BitIsSet(FO_COMPRESS, bctx->ff_pkt->flags)) {
       if (!CompressData(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
-                         bctx->jcr->store_bsock->msglen, bctx->cbuf,
+                         bctx->jcr->store_bsock->message_length, bctx->cbuf,
                          bctx->max_compress_len, &bctx->compress_len)) {
          return false;
       }
@@ -1002,7 +1002,7 @@ static inline bool SendDataToSd(b_ctx *bctx)
          bctx->compress_len += sizeof(comp_stream_header); /* add size of header */
       }
 
-      bctx->jcr->store_bsock->msglen = bctx->compress_len; /* set compressed length */
+      bctx->jcr->store_bsock->message_length = bctx->compress_len; /* set compressed length */
       bctx->cipher_input_len = bctx->compress_len;
    }
 
@@ -1021,7 +1021,7 @@ static inline bool SendDataToSd(b_ctx *bctx)
     * Send the buffer to the Storage daemon
     */
    if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags) || BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
-      sd->msglen += OFFSET_FADDR_SIZE; /* include fileAddr in size */
+      sd->message_length += OFFSET_FADDR_SIZE; /* include fileAddr in size */
    }
    sd->msg = bctx->wbuf; /* set correct write buffer */
 
@@ -1032,8 +1032,8 @@ static inline bool SendDataToSd(b_ctx *bctx)
       return false;
    }
 
-   Dmsg1(130, "Send data to SD len=%d\n", sd->msglen);
-   bctx->jcr->JobBytes += sd->msglen; /* count bytes saved possibly compressed/encrypted */
+   Dmsg1(130, "Send data to SD len=%d\n", sd->message_length);
+   bctx->jcr->JobBytes += sd->message_length; /* count bytes saved possibly compressed/encrypted */
    sd->msg = bctx->msgsave; /* restore read buffer */
 
    return true;
@@ -1056,7 +1056,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG u
     * See if we can fit the data into the current bctx->rbuf which can hold bctx->rsize bytes.
     */
    if (ulLength <= (ULONG)bctx->rsize) {
-      sd->msglen = ulLength;
+      sd->message_length = ulLength;
       memcpy(bctx->rbuf, pbData, ulLength);
       if (!SendDataToSd(bctx)) {
          return ERROR_NET_WRITE_FAULT;
@@ -1068,14 +1068,14 @@ static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG u
       ULONG offset = 0;
 
       while (ulLength > 0) {
-         sd->msglen = MIN((ULONG)bctx->rsize, ulLength);
-         memcpy(bctx->rbuf, pbData + offset, sd->msglen);
+         sd->message_length = MIN((ULONG)bctx->rsize, ulLength);
+         memcpy(bctx->rbuf, pbData + offset, sd->message_length);
          if (!SendDataToSd(bctx)) {
             return ERROR_NET_WRITE_FAULT;
          }
 
-         offset += sd->msglen;
-         ulLength -= sd->msglen;
+         offset += sd->message_length;
+         ulLength -= sd->message_length;
       }
    }
 
@@ -1121,7 +1121,7 @@ static inline bool SendPlainData(b_ctx &bctx)
    /*
     * Read the file data
     */
-   while ((sd->msglen = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
+   while ((sd->message_length = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
       if (!SendDataToSd(&bctx)) {
          goto bail_out;
       }
@@ -1225,9 +1225,9 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
    }
 #endif
 
-   if (sd->msglen < 0) { /* error */
-      berrno be;
-      Jmsg(jcr, M_ERROR, 0, _("Read error on file %s. ERR=%s\n"), ff_pkt->fname, be.bstrerror(ff_pkt->bfd.berrno));
+   if (sd->message_length < 0) { /* error */
+      BErrNo be;
+      Jmsg(jcr, M_ERROR, 0, _("Read error on file %s. ERR=%s\n"), ff_pkt->fname, be.bstrerror(ff_pkt->bfd.BErrNo));
       if (jcr->JobErrors++ > 1000) { /* insanity check */
          Jmsg(jcr, M_FATAL, 0, _("Too many errors. JobErrors=%d.\n"), jcr->JobErrors);
       }
@@ -1249,7 +1249,7 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
        * Note, on SSL pre-0.9.7, there is always some output
        */
       if (bctx.encrypted_len > 0) {
-         sd->msglen = bctx.encrypted_len; /* set encrypted length */
+         sd->message_length = bctx.encrypted_len; /* set encrypted length */
          sd->msg = jcr->crypto.crypto_buf; /* set correct write buffer */
          if (!sd->send()) {
             if (!jcr->IsJobCanceled()) {
@@ -1257,8 +1257,8 @@ static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
             }
             goto bail_out;
          }
-         Dmsg1(130, "Send data to SD len=%d\n", sd->msglen);
-         jcr->JobBytes += sd->msglen; /* count bytes saved possibly compressed/encrypted */
+         Dmsg1(130, "Send data to SD len=%d\n", sd->message_length);
+         jcr->JobBytes += sd->message_length; /* count bytes saved possibly compressed/encrypted */
          sd->msg = bctx.msgsave; /* restore bnet buffer */
       }
    }
@@ -1288,7 +1288,7 @@ bail_out:
    }
 
    sd->msg = bctx.msgsave; /* restore bnet buffer */
-   sd->msglen = 0;
+   sd->message_length = 0;
 
    return 0;
 }
@@ -1424,17 +1424,17 @@ bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int
          Dmsg2(100, "Object compressed from %d to %d bytes\n", ff_pkt->object_len, comp_len);
       }
 
-      sd->msglen = Mmsg(sd->msg, "%d %d %d %d %d %d %s%c%s%c",
+      sd->message_length = Mmsg(sd->msg, "%d %d %d %d %d %d %s%c%s%c",
                         jcr->JobFiles, ff_pkt->type, ff_pkt->object_index,
                         comp_len, ff_pkt->object_len, ff_pkt->object_compression,
                         ff_pkt->fname, 0, ff_pkt->object_name, 0);
-      sd->msg = CheckPoolMemorySize(sd->msg, sd->msglen + comp_len + 2);
-      memcpy(sd->msg + sd->msglen, ff_pkt->object, comp_len);
+      sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
+      memcpy(sd->msg + sd->message_length, ff_pkt->object, comp_len);
 
       /*
        * Note we send one extra byte so Dir can store zero after object
        */
-      sd->msglen += comp_len + 1;
+      sd->message_length += comp_len + 1;
       status = sd->send();
       if (ff_pkt->object_compression) {
          FreeAndNullPoolMemory(ff_pkt->object);
@@ -1456,7 +1456,7 @@ bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int
       UnstripPath(ff_pkt);
    }
 
-   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->msglen, sd->msg);
+   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->message_length, sd->msg);
    if (!status && !jcr->IsJobCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
    }

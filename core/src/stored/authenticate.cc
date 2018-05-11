@@ -61,15 +61,15 @@ bool AuthenticateDirector(JobControlRecord *jcr)
    /*
     * Sanity check.
     */
-   if (dir->msglen < 25 || dir->msglen > 500) {
+   if (dir->message_length < 25 || dir->message_length > 500) {
       Dmsg2(debuglevel, "Bad Hello command from Director at %s. Len=%d.\n",
-            dir->who(), dir->msglen);
+            dir->who(), dir->message_length);
       Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s. Len=%d.\n"),
-            dir->who(), dir->msglen);
+            dir->who(), dir->message_length);
       return false;
    }
    dirname = GetPoolMemory(PM_MESSAGE);
-   dirname = CheckPoolMemorySize(dirname, dir->msglen);
+   dirname = CheckPoolMemorySize(dirname, dir->message_length);
 
    if (sscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
       dir->msg[100] = 0;

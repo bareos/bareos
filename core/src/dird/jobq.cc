@@ -73,7 +73,7 @@ int JobqInit(jobq_t *jq, int threads, void *(*engine)(void *arg))
    jobq_item_t *item = NULL;
 
    if ((status = pthread_attr_init(&jq->attr)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ERROR, 0, _("pthread_attr_init: ERR=%s\n"), be.bstrerror(status));
       return status;
    }
@@ -82,13 +82,13 @@ int JobqInit(jobq_t *jq, int threads, void *(*engine)(void *arg))
       return status;
    }
    if ((status = pthread_mutex_init(&jq->mutex, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ERROR, 0, _("pthread_mutex_init: ERR=%s\n"), be.bstrerror(status));
       pthread_attr_destroy(&jq->attr);
       return status;
    }
    if ((status = pthread_cond_init(&jq->work, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_init: ERR=%s\n"), be.bstrerror(status));
       pthread_mutex_destroy(&jq->mutex);
       pthread_attr_destroy(&jq->attr);
@@ -134,7 +134,7 @@ int JobqDestroy(jobq_t *jq)
       jq->quit = true;
       if (jq->idle_workers) {
          if ((status = pthread_cond_broadcast(&jq->work)) != 0) {
-            berrno be;
+            BErrNo be;
             Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_broadcast: ERR=%s\n"), be.bstrerror(status));
             V(jq->mutex);
             return status;
@@ -142,7 +142,7 @@ int JobqDestroy(jobq_t *jq)
       }
       while (jq->num_workers > 0) {
          if ((status = pthread_cond_wait(&jq->work, &jq->mutex)) != 0) {
-            berrno be;
+            BErrNo be;
             Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_wait: ERR=%s\n"), be.bstrerror(status));
             V(jq->mutex);
             return status;
@@ -231,7 +231,7 @@ int JobqAdd(jobq_t *jq, JobControlRecord *jcr)
        * Initialize termination condition variable
        */
       if ((status = pthread_cond_init(&jcr->term_wait, NULL)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(status));
          return status;
       }
@@ -253,7 +253,7 @@ int JobqAdd(jobq_t *jq, JobControlRecord *jcr)
       sched_pkt->jq = jq;
       status = pthread_create(&id, &jq->attr, sched_wait, (void *)sched_pkt);
       if (status != 0) {                /* thread not created */
-         berrno be;
+         BErrNo be;
          Jmsg1(jcr, M_ERROR, 0, _("pthread_thread_create: ERR=%s\n"), be.bstrerror(status));
       }
       return status;
@@ -376,7 +376,7 @@ static int StartServer(jobq_t *jq)
    if (jq->idle_workers > 0) {
       Dmsg0(2300, "Signal worker to wake up\n");
       if ((status = pthread_cond_broadcast(&jq->work)) != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_signal: ERR=%s\n"), be.bstrerror(status));
          return status;
       }
@@ -388,7 +388,7 @@ static int StartServer(jobq_t *jq)
       SetThreadConcurrency(jq->max_workers + 1);
       jq->num_workers++;
       if ((status = pthread_create(&id, &jq->attr, jobq_server, (void *)jq)) != 0) {
-         berrno be;
+         BErrNo be;
          jq->num_workers--;
          Jmsg1(NULL, M_ERROR, 0, _("pthread_create: ERR=%s\n"), be.bstrerror(status));
          return status;

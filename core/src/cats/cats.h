@@ -521,8 +521,8 @@ typedef enum {
 typedef void (DB_LIST_HANDLER)(void *, const char *);
 typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 
-#define DbLock(mdb)   mdb->_lock_db(__FILE__, __LINE__)
-#define DbUnlock(mdb) mdb->_unlockDb(__FILE__, __LINE__)
+#define DbLock(mdb)   mdb->LockDb(__FILE__, __LINE__)
+#define DbUnlock(mdb) mdb->UnlockDb(__FILE__, __LINE__)
 
 class pathid_cache;
 
@@ -780,20 +780,20 @@ public:
    /* Low level methods */
    bool MatchDatabase(const char *db_driver, const char *db_name,
                        const char *db_address, int db_port);
-   BareosDb *clone_database_connection(JobControlRecord *jcr,
+   BareosDb *CloneDatabaseConnection(JobControlRecord *jcr,
                                    bool mult_db_connections,
                                    bool get_pooled_connection = true,
                                    bool need_private = false);
    int GetTypeIndex(void) { return db_type_; }
    const char *GetType(void);
-   void _lock_db(const char *file, int line);
-   void _unlockDb(const char *file, int line);
+   void LockDb(const char *file, int line);
+   void UnlockDb(const char *file, int line);
    void PrintLockInfo(FILE *fp);
 
    /* Virtual low level methods */
    virtual void ThreadCleanup(void) {}
    virtual void EscapeString(JobControlRecord *jcr, char *snew, char *old, int len);
-   virtual char *escape_object(JobControlRecord *jcr, char *old, int len);
+   virtual char *EscapeObject(JobControlRecord *jcr, char *old, int len);
    virtual void UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
                                 POOLMEM *&dest, int32_t *len);
 

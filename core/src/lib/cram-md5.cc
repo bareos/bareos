@@ -81,12 +81,12 @@ bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t tls_loc
 
    /* Attempt to duplicate hash with our password */
    hmac_md5((uint8_t *)chal.c_str(), strlen(chal.c_str()), (uint8_t *)password, strlen(password), hmac);
-   bin_to_base64(host.c_str(), MAXHOSTNAMELEN, (char *)hmac, 16, compatible);
+   BinToBase64(host.c_str(), MAXHOSTNAMELEN, (char *)hmac, 16, compatible);
    ok = bstrcmp(bs->msg, host.c_str());
    if (ok) {
       Dmsg1(debuglevel, "Authenticate OK %s\n", host.c_str());
    } else {
-      bin_to_base64(host.c_str(), MAXHOSTNAMELEN, (char *)hmac, 16, false);
+      BinToBase64(host.c_str(), MAXHOSTNAMELEN, (char *)hmac, 16, false);
       ok = bstrcmp(bs->msg, host.c_str());
       if (!ok) {
          Dmsg2(debuglevel, "Authenticate NOT OK: wanted %s, got %s\n", host.c_str(), bs->msg);
@@ -114,7 +114,7 @@ bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remo
    }
 
    Dmsg1(100, "cram-get received: %s", bs->msg);
-   chal.check_size(bs->msglen);
+   chal.check_size(bs->message_length);
    if (sscanf(bs->msg, "auth cram-md5c %s ssl=%d", chal.c_str(), tls_remote_need) == 2) {
       *compatible = true;
    } else if (sscanf(bs->msg, "auth cram-md5 %s ssl=%d", chal.c_str(), tls_remote_need) != 2) {
@@ -127,7 +127,7 @@ bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remo
    }
 
    hmac_md5((uint8_t *)chal.c_str(), strlen(chal.c_str()), (uint8_t *)password, strlen(password), hmac);
-   bs->msglen = bin_to_base64(bs->msg, 50, (char *)hmac, 16, *compatible) + 1;
+   bs->message_length = BinToBase64(bs->msg, 50, (char *)hmac, 16, *compatible) + 1;
 // Dmsg3(100, "get_auth: chal=%s pw=%s hmac=%s\n", chal.c_str(), password, bs->msg);
    if (!bs->send()) {
       Dmsg1(debuglevel, "Send challenge failed. ERR=%s\n", bs->bstrerror());

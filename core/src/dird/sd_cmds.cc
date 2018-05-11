@@ -209,7 +209,7 @@ char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t 
       ua->SendMsg("%s", sd->msg);
       Dmsg1(100, "Got: %s", sd->msg);
       if (strncmp(sd->msg, NT_("3001 Volume="), 12) == 0) {
-         VolName = (char *)malloc(sd->msglen);
+         VolName = (char *)malloc(sd->message_length);
          if (sscanf(sd->msg, readlabelresponse, VolName, &rtn_slot) == 2) {
             break;
          }
@@ -896,7 +896,7 @@ bool SendSecureEraseReqToSd(JobControlRecord *jcr) {
 
    sd->fsend(getSecureEraseCmd);
    while ((n = BgetDirmsg(sd)) >= 0) {
-      jcr->SDSecureEraseCmd = CheckPoolMemorySize(jcr->SDSecureEraseCmd, sd->msglen);
+      jcr->SDSecureEraseCmd = CheckPoolMemorySize(jcr->SDSecureEraseCmd, sd->message_length);
       if (sscanf(sd->msg, OKSecureEraseCmd, jcr->SDSecureEraseCmd) == 1) {
          Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->SDSecureEraseCmd);
          break;

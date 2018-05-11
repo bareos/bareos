@@ -78,7 +78,7 @@ void DoVerifyVolume(JobControlRecord *jcr)
       jcr->setJobStatus(JS_FatalError);
       return;
    }
-   jcr->buf_size = sd->msglen;
+   jcr->buf_size = sd->message_length;
 
    fname = GetPoolMemory(PM_FNAME);
    lname = GetPoolMemory(PM_FNAME);
@@ -101,14 +101,14 @@ void DoVerifyVolume(JobControlRecord *jcr)
        * Now we expect the Stream Data
        */
       if (BgetMsg(sd) < 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), bnet_strerror(sd));
+         Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), BnetStrerror(sd));
          goto bail_out;
       }
-      if (size != ((uint32_t)sd->msglen)) {
-         Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"), sd->msglen, size);
+      if (size != ((uint32_t)sd->message_length)) {
+         Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"), sd->message_length, size);
          goto bail_out;
       }
-      Dmsg1(30, "Got stream data, len=%d\n", sd->msglen);
+      Dmsg1(30, "Got stream data, len=%d\n", sd->message_length);
 
       /* File Attributes stream */
       switch (stream) {
@@ -118,12 +118,12 @@ void DoVerifyVolume(JobControlRecord *jcr)
 
          Dmsg0(400, "Stream=Unix Attributes.\n");
 
-         if ((int)SizeofPoolMemory(fname) < sd->msglen) {
-            fname = ReallocPoolMemory(fname, sd->msglen + 1);
+         if ((int)SizeofPoolMemory(fname) < sd->message_length) {
+            fname = ReallocPoolMemory(fname, sd->message_length + 1);
          }
 
-         if ((int)SizeofPoolMemory(lname) < sd->msglen) {
-            lname = ReallocPoolMemory(lname, sd->msglen + 1);
+         if ((int)SizeofPoolMemory(lname) < sd->message_length) {
+            lname = ReallocPoolMemory(lname, sd->message_length + 1);
          }
          *fname = 0;
          *lname = 0;
@@ -199,43 +199,43 @@ void DoVerifyVolume(JobControlRecord *jcr)
                                 STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,
                                 0, ap, 0, 0);
          }
-         Dmsg2(200, "filed>dir: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(200, "filed>dir: attribs len=%d: msg=%s\n", dir->message_length, dir->msg);
          if (!status) {
-            Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), bnet_strerror(dir));
+            Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), BnetStrerror(dir));
             goto bail_out;
          }
          break;
 
       case STREAM_MD5_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_MD5_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_MD5_SIZE, true);
          Dmsg2(400, "send inx=%d MD5=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *MD5-%d*", jcr->JobFiles, STREAM_MD5_DIGEST, digest,
                     jcr->JobFiles);
-         Dmsg2(20, "filed>dir: MD5 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: MD5 len=%d: msg=%s\n", dir->message_length, dir->msg);
          break;
 
       case STREAM_SHA1_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA1_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA1_SIZE, true);
          Dmsg2(400, "send inx=%d SHA1=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *SHA1-%d*", jcr->JobFiles, STREAM_SHA1_DIGEST,
                     digest, jcr->JobFiles);
-         Dmsg2(20, "filed>dir: SHA1 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: SHA1 len=%d: msg=%s\n", dir->message_length, dir->msg);
          break;
 
       case STREAM_SHA256_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA256_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA256_SIZE, true);
          Dmsg2(400, "send inx=%d SHA256=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *SHA256-%d*", jcr->JobFiles, STREAM_SHA256_DIGEST,
                     digest, jcr->JobFiles);
-         Dmsg2(20, "filed>dir: SHA256 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: SHA256 len=%d: msg=%s\n", dir->message_length, dir->msg);
          break;
 
       case STREAM_SHA512_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA512_SIZE, true);
+         BinToBase64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA512_SIZE, true);
          Dmsg2(400, "send inx=%d SHA512=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *SHA512-%d*", jcr->JobFiles, STREAM_SHA512_DIGEST,
                     digest, jcr->JobFiles);
-         Dmsg2(20, "filed>dir: SHA512 len=%d: msg=%s\n", dir->msglen, dir->msg);
+         Dmsg2(20, "filed>dir: SHA512 len=%d: msg=%s\n", dir->message_length, dir->msg);
          break;
 
       case STREAM_RESTORE_OBJECT:

@@ -22,6 +22,6 @@
 #ifndef BAREOS_DIRD_GETMSG_H_
 #define BAREOS_DIRD_GETMSG_H_
 
-bool response(JobControlRecord *jcr, BareosSocket *fd, char *resp, const char *cmd, e_prtmsg prtmsg);
+bool response(JobControlRecord *jcr, BareosSocket *fd, char *resp, const char *cmd, e_prtmsg PrintMessage);
 
 #endif // BAREOS_DIRD_GETMSG_H_

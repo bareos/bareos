@@ -95,8 +95,8 @@ static bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource
    BashSpaces(dirname);
 
    if (!sd->fsend(SDFDhello, dirname)) {
-      Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
-      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
+      Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), BnetStrerror(sd));
+      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), BnetStrerror(sd));
       return false;
    }
 
@@ -190,7 +190,7 @@ static bool AuthenticateWithFileDaemon(JobControlRecord *jcr, ClientResource* cl
    Dmsg1(116, ">filed: %s", fd->msg);
    if (fd->recv() <= 0) {
       Dmsg1(debuglevel, _("Bad response from File daemon to Hello command: ERR=%s\n"),
-            bnet_strerror(fd));
+            BnetStrerror(fd));
       Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon at \"%s:%d\" to Hello command: ERR=%s\n"),
            fd->host(), fd->port(), fd->bstrerror());
       return false;

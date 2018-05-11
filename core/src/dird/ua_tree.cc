@@ -53,13 +53,13 @@ static int Lsmarkcmd(UaContext *ua, TreeContext *tree);
 static int dircmd(UaContext *ua, TreeContext *tree);
 static int DotDircmd(UaContext *ua, TreeContext *tree);
 static int Estimatecmd(UaContext *ua, TreeContext *tree);
-static int helpcmd(UaContext *ua, TreeContext *tree);
+static int HelpCmd(UaContext *ua, TreeContext *tree);
 static int cdcmd(UaContext *ua, TreeContext *tree);
 static int pwdcmd(UaContext *ua, TreeContext *tree);
 static int DotPwdcmd(UaContext *ua, TreeContext *tree);
 static int Unmarkcmd(UaContext *ua, TreeContext *tree);
 static int UnMarkdircmd(UaContext *ua, TreeContext *tree);
-static int quitcmd(UaContext *ua, TreeContext *tree);
+static int QuitCmd(UaContext *ua, TreeContext *tree);
 static int donecmd(UaContext *ua, TreeContext *tree);
 static int DotLsdircmd(UaContext *ua, TreeContext *tree);
 static int DotLscmd(UaContext *ua, TreeContext *tree);
@@ -72,7 +72,7 @@ struct cmdstruct {
    const char *help;
 };
 static struct cmdstruct commands[] = {
-   { NT_("abort"), quitcmd, _("abort and do not do restore") },
+   { NT_("abort"), QuitCmd, _("abort and do not do restore") },
    { NT_("add"), markcmd, _("add dir/file to be restored recursively, wildcards allowed") },
    { NT_("cd"), cdcmd, _("change current directory") },
    { NT_("count"), countcmd, _("count marked files in and below the cd") },
@@ -83,7 +83,7 @@ static struct cmdstruct commands[] = {
    { NT_("estimate"), Estimatecmd, _("estimate restore size") },
    { NT_("exit"), donecmd, _("same as done command") },
    { NT_("find"), findcmd, _("find files, wildcards allowed") },
-   { NT_("help"), helpcmd, _("print help") },
+   { NT_("help"), HelpCmd, _("print help") },
    { NT_("ls"), lscmd, _("list current directory, wildcards allowed") },
    { NT_(".ls"), DotLscmd, _("list current directory, wildcards allowed") },
    { NT_(".lsdir"), DotLsdircmd, _("list subdir in current directory, wildcards allowed") },
@@ -95,9 +95,9 @@ static struct cmdstruct commands[] = {
    { NT_(".pwd"), DotPwdcmd, _("print current working directory") },
    { NT_("unmark"), Unmarkcmd, _("unmark dir/file to be restored recursively in dir") },
    { NT_("unmarkdir"), UnMarkdircmd, _("unmark directory name only no recursion") },
-   { NT_("quit"), quitcmd, _("quit and do not do restore") },
+   { NT_("quit"), QuitCmd, _("quit and do not do restore") },
    { NT_(".help"), DotHelpcmd, _("print help") },
-   { NT_("?"), helpcmd, _("print help") },
+   { NT_("?"), HelpCmd, _("print help") },
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
@@ -966,7 +966,7 @@ static int Estimatecmd(UaContext *ua, TreeContext *tree)
    return 1;
 }
 
-static int helpcmd(UaContext *ua, TreeContext *tree)
+static int HelpCmd(UaContext *ua, TreeContext *tree)
 {
    unsigned int i;
 
@@ -1184,7 +1184,7 @@ static int donecmd(UaContext *ua, TreeContext *tree)
    return 0;
 }
 
-static int quitcmd(UaContext *ua, TreeContext *tree)
+static int QuitCmd(UaContext *ua, TreeContext *tree)
 {
    ua->quit = true;
    return 0;

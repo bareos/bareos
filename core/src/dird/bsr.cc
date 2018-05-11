@@ -269,7 +269,7 @@ uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx)
    MakeUniqueRestoreFilename(ua, fname);
    fd = fopen(fname.c_str(), "w+b");
    if (!fd) {
-      berrno be;
+      BErrNo be;
       ua->ErrorMsg(_("Unable to create bootstrap file %s. ERR=%s\n"),
          fname.c_str(), be.bstrerror());
       goto bail_out;
@@ -730,7 +730,7 @@ bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info)
 
    bs = fopen(jcr->RestoreBootstrap, "rb");
    if (!bs) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
       jcr->setJobStatus(JS_ErrorTerminated);

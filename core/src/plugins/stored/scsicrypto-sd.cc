@@ -371,7 +371,7 @@ static bRC do_set_scsi_encryption_key(void *value)
    /*
     * The key passed from the director to the storage daemon is always base64 encoded.
     */
-   base64_to_bin(VolEncrKey, sizeof(VolEncrKey), StoredVolEncrKey, strlen(StoredVolEncrKey));
+   Base64ToBin(VolEncrKey, sizeof(VolEncrKey), StoredVolEncrKey, strlen(StoredVolEncrKey));
 
    /*
     * See if we have an key encryption key in the config then the passed key
@@ -526,7 +526,7 @@ static bRC handle_read_error(void *value)
           * failed decryption of the encrypted data on the volume.
           */
          if (decryption_needed) {
-            berrno be;
+            BErrNo be;
 
             be.SetErrno(dev->dev_errno);
             Mmsg5(dev->errmsg, _("Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"

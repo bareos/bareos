@@ -126,7 +126,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord *jcr, BareosSocket *sd
    }
    bs = fopen(jcr->RestoreBootstrap, "rb");
    if (!bs) {
-      berrno be;
+      BErrNo be;
       Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -381,7 +381,7 @@ bool StartStorageDaemonMessageThread(JobControlRecord *jcr)
    jcr->SD_msg_chan_started = false;
    Dmsg0(100, "Start SD msg_thread.\n");
    if ((status = pthread_create(&thid, NULL, msg_thread, (void *)jcr)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
    }
    /* Wait for thread to start */
@@ -557,14 +557,14 @@ extern "C" void *device_thread(void *arg)
 /** Start a thread to handle getting Device resource information
  *  from SD. This is called once at startup of the Director.
  */
-void init_device_resources()
+void InitDeviceResources()
 {
    int status;
    pthread_t thid;
 
    Dmsg0(100, "Start Device thread.\n");
    if ((status = pthread_create(&thid, NULL, device_thread, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
    }
 }

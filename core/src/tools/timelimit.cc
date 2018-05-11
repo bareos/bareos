@@ -178,7 +178,7 @@ static void     err(int, const char *, ...);
 static void     errx(int, const char *, ...);
 #endif /* !HAVE_ERR */
 
-static void     usage(void);
+static void     Usage(void);
 
 static void     init(int, char *[]);
 static pid_t    doit(char *[]);
@@ -226,7 +226,7 @@ warnx(const char *fmt, ...) {
 #endif /* !HAVE_ERR */
 
 static void
-usage(void) {
+Usage(void) {
         errx(EX_USAGE, "usage: timelimit [-pq] [-S ksig] [-s wsig] "
             "[-T ktime] [-t wtime] command");
 }
@@ -239,12 +239,12 @@ atou_fatal(const char *s, unsigned long *sec, unsigned long *msec, int issig) {
 
         if (s[0] < '0' || s[0] > '9') {
                 if (s[0] == '\0' || !issig)
-                        usage();
+                        Usage();
                 for (i = 0; i < SIGNALS; i++)
                         if (!strcmp(signals[i].name, s))
                                 break;
                 if (i == SIGNALS)
-                        usage();
+                        Usage();
                 *sec = (unsigned long)signals[i].num;
                 if (msec != NULL)
                         *msec = 0;
@@ -260,7 +260,7 @@ atou_fatal(const char *s, unsigned long *sec, unsigned long *msec, int issig) {
                         *msec = 0;
                 return;
         } else if (*p != '.' || msec == NULL) {
-                usage();
+                Usage();
         }
         p++;
 
@@ -271,7 +271,7 @@ atou_fatal(const char *s, unsigned long *sec, unsigned long *msec, int issig) {
                 mul = mul / 10;
         }
         if (*p != '\0')
-                usage();
+                Usage();
         else if (mul < 1)
                 errx(EX_USAGE, "no more than microsecond precision");
 #ifndef HAVE_SETITIMER
@@ -336,7 +336,7 @@ init(int argc, char *argv[]) {
                                                 break;
                                         }
                                 if (envopts[i].name == NULL)
-                                        usage();
+                                        Usage();
                 }
         }
 
@@ -358,11 +358,11 @@ init(int argc, char *argv[]) {
         argc -= optind;
         argv += optind;
         if (argc == 0)
-                usage();
+                Usage();
 
         /* sanity checks */
         if ((warntime == 0 && warnmsec == 0) || (killtime == 0 && killmsec == 0))
-                usage();
+                Usage();
 }
 
 static void

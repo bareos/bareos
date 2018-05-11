@@ -128,7 +128,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
     */
    Dmsg1(100, "catreq %s", bs->msg);
    if (!jcr->db) {
-      omsg = GetMemory(bs->msglen + 1);
+      omsg = GetMemory(bs->message_length + 1);
       PmStrcpy(omsg, bs->msg);
       bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request; DB not open: %s"), omsg);
@@ -140,7 +140,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
    /*
     * Find next appendable medium for SD
     */
-   unwanted_volumes.check_size(bs->msglen);
+   unwanted_volumes.check_size(bs->message_length);
    if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType, unwanted_volumes.c_str()) == 5) {
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
@@ -362,7 +362,7 @@ bail_out:
          bs->fsend(OK_create);
       }
    } else {
-      omsg = GetMemory(bs->msglen + 1);
+      omsg = GetMemory(bs->message_length + 1);
       PmStrcpy(omsg, bs->msg);
       bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request: %s"), omsg);
@@ -380,7 +380,7 @@ bail_out:
  * packet, VolSessionId, VolSessionTime, FileIndex, file type, and file name to
  * store in the catalog.
  */
-static void UpdateAttribute(JobControlRecord *jcr, char *msg, int32_t msglen)
+static void UpdateAttribute(JobControlRecord *jcr, char *msg, int32_t message_length)
 {
    unser_declare;
    uint32_t VolSessionId, VolSessionTime;
@@ -473,8 +473,8 @@ static void UpdateAttribute(JobControlRecord *jcr, char *msg, int32_t msglen)
       /*
        * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
        */
-      jcr->attr = CheckPoolMemorySize(jcr->attr, msglen);
-      memcpy(jcr->attr, msg, msglen);
+      jcr->attr = CheckPoolMemorySize(jcr->attr, message_length);
+      memcpy(jcr->attr, msg, message_length);
       p = jcr->attr - msg + p;         /* point p into jcr->attr */
       SkipNonspaces(&p);              /* skip FileIndex */
       SkipSpaces(&p);
@@ -492,7 +492,7 @@ static void UpdateAttribute(JobControlRecord *jcr, char *msg, int32_t msglen)
          /*
           * Older FDs don't have a delta sequence, so check if it is there
           */
-         if (p - jcr->attr < msglen) {
+         if (p - jcr->attr < message_length) {
             ar->DeltaSeq = str_to_int32(p); /* delta_seq */
          }
       }
@@ -620,7 +620,7 @@ static void UpdateAttribute(JobControlRecord *jcr, char *msg, int32_t msglen)
                Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. Unsupported digest stream type: %d"), Stream);
             }
 
-            bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
+            BinToBase64(digestbuf, sizeof(digestbuf), fname, len, true);
 
             Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
                   digestbuf, Stream);
@@ -663,7 +663,7 @@ void CatalogUpdate(JobControlRecord *jcr, BareosSocket *bs)
    }
 
    if (!jcr->db) {
-      POOLMEM *omsg = GetMemory(bs->msglen+1);
+      POOLMEM *omsg = GetMemory(bs->message_length+1);
       PmStrcpy(omsg, bs->msg);
       bs->fsend(_("1994 Invalid Catalog Update: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog Update; DB not open: %s"), omsg);
@@ -671,7 +671,7 @@ void CatalogUpdate(JobControlRecord *jcr, BareosSocket *bs)
       goto bail_out;
    }
 
-   UpdateAttribute(jcr, bs->msg, bs->msglen);
+   UpdateAttribute(jcr, bs->msg, bs->message_length);
 
 bail_out:
    if (jcr->IsJobCanceled()) {
@@ -690,7 +690,7 @@ bool DespoolAttributesFromFile(JobControlRecord *jcr, const char *file)
    int32_t pktsiz;
    size_t nbytes;
    ssize_t size = 0;
-   int32_t msglen;                    /* message length */
+   int32_t message_length;                    /* message length */
    int spool_fd = -1;
    POOLMEM *msg = GetPoolMemory(PM_MESSAGE);
 
@@ -713,19 +713,19 @@ bool DespoolAttributesFromFile(JobControlRecord *jcr, const char *file)
 
    while ((nbytes = read(spool_fd, (char *)&pktsiz, sizeof(int32_t))) == sizeof(int32_t)) {
       size += sizeof(int32_t);
-      msglen = ntohl(pktsiz);
+      message_length = ntohl(pktsiz);
 
-      if (msglen > 0) {
+      if (message_length > 0) {
         /*
-         * check for msglen + \0
+         * check for message_length + \0
          */
-         if ((msglen + 1) > (int32_t) SizeofPoolMemory(msg)) {
-            msg = ReallocPoolMemory(msg, msglen + 1);
+         if ((message_length + 1) > (int32_t) SizeofPoolMemory(msg)) {
+            msg = ReallocPoolMemory(msg, message_length + 1);
          }
-         nbytes = read(spool_fd, msg, msglen);
-         if (nbytes != (size_t) msglen) {
-            berrno be;
-            Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
+         nbytes = read(spool_fd, msg, message_length);
+         if (nbytes != (size_t) message_length) {
+            BErrNo be;
+            Dmsg2(400, "nbytes=%d message_length=%d\n", nbytes, message_length);
             Qmsg1(jcr, M_FATAL, 0, _("read attr spool error. ERR=%s\n"), be.bstrerror());
             goto bail_out;
          }
@@ -734,7 +734,7 @@ bool DespoolAttributesFromFile(JobControlRecord *jcr, const char *file)
       }
 
       if (!jcr->IsJobCanceled()) {
-         UpdateAttribute(jcr, msg, msglen);
+         UpdateAttribute(jcr, msg, message_length);
          if (jcr->IsJobCanceled()) {
             goto bail_out;
          }

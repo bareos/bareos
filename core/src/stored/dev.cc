@@ -155,7 +155,7 @@ static inline Device *init_dev_(JobControlRecord *jcr, DeviceResource *device, b
        * Check that device is available
        */
       if (stat(device->device_name, &statp) < 0) {
-         berrno be;
+         BErrNo be;
          Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
             device->device_name, be.bstrerror());
          return NULL;
@@ -305,7 +305,7 @@ static inline Device *init_dev_(JobControlRecord *jcr, DeviceResource *device, b
     */
    if (dev->IsFile() && dev->RequiresMount()) {
       if (!device->mount_point || stat(device->mount_point, &statp) < 0) {
-         berrno be;
+         BErrNo be;
          dev->dev_errno = errno;
          Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
             device->mount_point, be.bstrerror());
@@ -344,42 +344,42 @@ static inline Device *init_dev_(JobControlRecord *jcr, DeviceResource *device, b
    *dev->errmsg = 0;
 
    if ((errstat = dev->InitMutex()) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
 
    if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
 
    if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
 
    if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init spool mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
 
    if ((errstat = dev->InitAcquireMutex()) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
 
    if ((errstat = dev->InitReadAcquireMutex()) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init read acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
@@ -389,7 +389,7 @@ static inline Device *init_dev_(JobControlRecord *jcr, DeviceResource *device, b
 
 #ifdef xxx
    if ((errstat = RwlInit(&dev->lock)) != 0) {
-      berrno be;
+      BErrNo be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
@@ -662,7 +662,7 @@ void Device::OpenDevice(DeviceControlRecord *dcr, int omode)
          archive_name.c_str(), oflags);
 
    if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
             be.bstrerror());
@@ -708,7 +708,7 @@ bool Device::rewind(DeviceControlRecord *dcr)
    }
 
    if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
       return false;
@@ -783,7 +783,7 @@ bool Device::eod(DeviceControlRecord *dcr)
    }
 
    dev_errno = errno;
-   berrno be;
+   BErrNo be;
    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
    Dmsg0(100, errmsg);
 
@@ -816,7 +816,7 @@ bool Device::UpdatePos(DeviceControlRecord *dcr)
    file_addr = 0;
    pos = lseek(dcr, (boffset_t)0, SEEK_CUR);
    if (pos < 0) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
       Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
@@ -911,7 +911,7 @@ bool Device::Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rbloc
    boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
    Dmsg1(100, "===== lseek to %d\n", (int)pos);
    if (lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
       return false;
@@ -971,7 +971,7 @@ bool Device::close(DeviceControlRecord *dcr)
    default:
       status = d_close(fd_);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"),
                print_name(), be.bstrerror());

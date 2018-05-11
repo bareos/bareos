@@ -3004,7 +3004,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          res->res_store.rss = (runtime_storage_status_t *)malloc(sizeof(runtime_storage_status_t));
          memset(res->res_store.rss, 0, sizeof(runtime_storage_status_t));
          if ((status = pthread_mutex_init(&res->res_store.rss->changer_lock, NULL)) != 0) {
-            berrno be;
+            BErrNo be;
 
             Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"), be.bstrerror(status));
          }

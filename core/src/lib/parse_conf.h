@@ -470,7 +470,7 @@ protected:
 
 ConfigurationParser *new_config_parser();
 
-DLL_IMP_EXP void prtmsg(void *sock, const char *fmt, ...);
+DLL_IMP_EXP void PrintMessage(void *sock, const char *fmt, ...);
 
 /*
  * Data type routines

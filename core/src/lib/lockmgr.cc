@@ -90,7 +90,7 @@ void Lmgr_p(pthread_mutex_t *m)
 {
    int errstat;
    if ((errstat=pthread_mutex_lock(m))) {
-      berrno be;
+      BErrNo be;
       e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex lock failure. ERR=%s\n"),
             be.bstrerror(errstat));
    }
@@ -100,7 +100,7 @@ void Lmgr_v(pthread_mutex_t *m)
 {
    int errstat;
    if ((errstat=pthread_mutex_unlock(m))) {
-      berrno be;
+      BErrNo be;
       e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex unlock failure. ERR=%s\n"),
             be.bstrerror(errstat));
    }
@@ -263,7 +263,7 @@ public:
    lmgr_thread_t() {
       int status;
       if ((status = pthread_mutex_init(&mutex, NULL)) != 0) {
-         berrno be;
+         BErrNo be;
          FPmsg1(000, _("pthread key create failed: ERR=%s\n"), be.bstrerror(status));
          ASSERT(0);
       }
@@ -601,7 +601,7 @@ void create_lmgr_key()
 {
    int status = pthread_key_create(&lmgr_key, NULL);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       FPmsg1(000, _("pthread key create failed: ERR=%s\n"), be.bstrerror(status));
       ASSERT(0);
    }
@@ -612,7 +612,7 @@ void create_lmgr_key()
    if (use_undertaker) {
       status = pthread_create(&undertaker, NULL, check_deadlock, NULL);
       if (status != 0) {
-         berrno be;
+         BErrNo be;
          FPmsg1(000, _("pthread_create failed: ERR=%s\n"), be.bstrerror(status));
          ASSERT(0);
       }
@@ -627,7 +627,7 @@ void LmgrInitThread()
 {
    int status = pthread_once(&key_lmgr_once, create_lmgr_key);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       FPmsg1(000, _("pthread key create failed: ERR=%s\n"), be.bstrerror(status));
       ASSERT(0);
    }

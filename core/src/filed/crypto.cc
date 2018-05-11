@@ -129,10 +129,10 @@ bool CryptoSessionSend(JobControlRecord *jcr, BareosSocket *sd)
 
    msgsave = sd->msg;
    sd->msg = jcr->crypto.pki_session_encoded;
-   sd->msglen = jcr->crypto.pki_session_encoded_size;
-   jcr->JobBytes += sd->msglen;
+   sd->message_length = jcr->crypto.pki_session_encoded_size;
+   jcr->JobBytes += sd->message_length;
 
-   Dmsg1(100, "Send data len=%d\n", sd->msglen);
+   Dmsg1(100, "Send data len=%d\n", sd->message_length);
    sd->send();
    sd->msg = msgsave;
    sd->signal(BNET_EOD);
@@ -514,9 +514,9 @@ bool EncryptData(b_ctx *bctx, bool *need_more_data)
       }
 
       Dmsg2(400, "encrypted len=%d unencrypted len=%d\n",
-            bctx->encrypted_len, bctx->jcr->store_bsock->msglen);
+            bctx->encrypted_len, bctx->jcr->store_bsock->message_length);
 
-      bctx->jcr->store_bsock->msglen = initial_len + bctx->encrypted_len; /* set encrypted length */
+      bctx->jcr->store_bsock->message_length = initial_len + bctx->encrypted_len; /* set encrypted length */
    } else {
       /*
        * Encryption failed. Shouldn't happen.

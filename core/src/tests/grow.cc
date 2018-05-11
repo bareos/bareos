@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
    howBig = str_to_int64(argv[2]);
    fp = fopen(argv[1], "r+");
    if (!fp) {
-      berrno be;
+      BErrNo be;
       Pmsg2(0, "Could not open %s for write. ERR=%s\n", argv[1], be.bstrerror());
       exit(1);
    }

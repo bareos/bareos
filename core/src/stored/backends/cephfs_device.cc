@@ -60,7 +60,7 @@ static device_option device_options[] = {
 int cephfs_device::d_open(const char *pathname, int flags, int mode)
 {
    int status;
-   berrno be;
+   BErrNo be;
 
    if (!cephfs_configstring_) {
       char *bp, *next_option;
@@ -294,7 +294,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord *dcr)
    if (fd_ >= 0) {
       status = ceph_ftruncate(cmount_, fd_, 0);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
@@ -315,7 +315,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord *dcr)
       status = ceph_fstat(cmount_, fd_, &st);
 #endif
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
 #if HAVE_CEPHFS_CEPH_STATX_H
          Mmsg2(errmsg, _("Unable to ceph_statx device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
@@ -344,7 +344,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord *dcr)
          fd_ = ceph_open(cmount_, virtual_filename_, oflags, st.st_mode);
 #endif
          if (fd_ < 0) {
-            berrno be;
+            BErrNo be;
 
             dev_errno = -fd_;;
             Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), virtual_filename_, be.bstrerror(-fd_));

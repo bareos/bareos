@@ -215,7 +215,7 @@ bool BareosDbDBI::OpenDatabase(JobControlRecord *jcr)
    }
 
    if ((errstat=RwlInit(&lock_)) != 0) {
-      berrno be;
+      BErrNo be;
       Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
             be.bstrerror(errstat));
       goto bail_out;
@@ -448,7 +448,7 @@ void BareosDbDBI::EscapeString(JobControlRecord *jcr, char *snew, char *old, int
  * Escape binary object so that DBI is happy
  * Memory is stored in BareosDb struct, no need to free it
  */
-char *BareosDbDBI::escape_object(JobControlRecord *jcr, char *old, int len)
+char *BareosDbDBI::EscapeObject(JobControlRecord *jcr, char *old, int len)
 {
    size_t new_len;
    char *pnew;

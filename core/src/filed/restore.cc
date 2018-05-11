@@ -189,9 +189,9 @@ static inline void PushDelayedDataStream(r_ctx &rctx, BareosSocket *sd)
 
    dds = (DelayedDataStream *)malloc(sizeof(DelayedDataStream));
    dds->stream = rctx.stream;
-   dds->content = (char *)malloc(sd->msglen);
-   memcpy(dds->content, sd->msg, sd->msglen);
-   dds->content_length = sd->msglen;
+   dds->content = (char *)malloc(sd->message_length);
+   memcpy(dds->content, sd->msg, sd->message_length);
+   dds->content_length = sd->message_length;
 
    rctx.delayed_streams->append(dds);
 }
@@ -430,7 +430,7 @@ void DoRestore(JobControlRecord *jcr)
       jcr->setJobStatus(JS_ErrorTerminated);
       return;
    }
-   jcr->buf_size = sd->msglen;
+   jcr->buf_size = sd->message_length;
 
    if (have_libz || have_lzo || have_fastlz) {
       if (!AdjustDecompressionBuffers(jcr)) {
@@ -516,15 +516,15 @@ void DoRestore(JobControlRecord *jcr)
          Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
          goto bail_out;
       }
-      if (rctx.size != (uint32_t)sd->msglen) {
+      if (rctx.size != (uint32_t)sd->message_length) {
          Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"),
-               sd->msglen, rctx.size);
+               sd->message_length, rctx.size);
          Dmsg2(50, "Actual data size %d not same as header %d\n",
-               sd->msglen, rctx.size);
+               sd->message_length, rctx.size);
          goto bail_out;
       }
       Dmsg3(130, "Got stream: %s len=%d extract=%d\n", stream_to_ascii(rctx.stream),
-            sd->msglen, rctx.extract);
+            sd->message_length, rctx.extract);
 
       /*
        * If we change streams, close and reset alternate data streams
@@ -571,13 +571,13 @@ void DoRestore(JobControlRecord *jcr)
          /*
           * Unpack attributes and do sanity check them
           */
-         if (!UnpackAttributesRecord(jcr, rctx.stream, sd->msg, sd->msglen, attr)) {
+         if (!UnpackAttributesRecord(jcr, rctx.stream, sd->msg, sd->message_length, attr)) {
             goto bail_out;
          }
 
          Dmsg3(100, "File %s\nattrib=%s\nattribsEx=%s\n", attr->fname,
                attr->attr, attr->attrEx);
-         Dmsg3(100, "=== msglen=%d attrExlen=%d msg=%s\n", sd->msglen,
+         Dmsg3(100, "=== message_length=%d attrExlen=%d msg=%s\n", sd->message_length,
                strlen(attr->attrEx), sd->msg);
 
          attr->data_stream = DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
@@ -637,7 +637,7 @@ void DoRestore(JobControlRecord *jcr)
                /*
                 * Only restore the resource fork for regular files
                 */
-               from_base64(&rsrc_len, attr->attrEx);
+               FromBase64(&rsrc_len, attr->attrEx);
                if (attr->type == FT_REG && rsrc_len > 0) {
                   rctx.extract = true;
                }
@@ -707,7 +707,7 @@ void DoRestore(JobControlRecord *jcr)
             /*
              * Decode and save session keys.
              */
-            cryptoerr = CryptoSessionDecode((uint8_t *)sd->msg, (uint32_t)sd->msglen,
+            cryptoerr = CryptoSessionDecode((uint8_t *)sd->msg, (uint32_t)sd->message_length,
                            jcr->crypto.pki_recipients, &rctx.cs);
             switch(cryptoerr) {
             case CRYPTO_ERROR_NONE:
@@ -839,7 +839,7 @@ void DoRestore(JobControlRecord *jcr)
                   SetBit(FO_WIN32DECOMP, rctx.flags);
                }
 
-               if (ExtractData(jcr, &rctx.bfd, sd->msg, sd->msglen, &rctx.fileAddr,
+               if (ExtractData(jcr, &rctx.bfd, sd->msg, sd->message_length, &rctx.fileAddr,
                                 rctx.flags, rctx.stream, &rctx.cipher_ctx) < 0) {
                   rctx.extract = false;
                   bclose(&rctx.bfd);
@@ -882,7 +882,7 @@ void DoRestore(JobControlRecord *jcr)
                   Dmsg0(130, "Restoring resource fork\n");
                }
 
-               if (ExtractData(jcr, &rctx.forkbfd, sd->msg, sd->msglen, &rctx.fork_addr, rctx.fork_flags,
+               if (ExtractData(jcr, &rctx.forkbfd, sd->msg, sd->message_length, &rctx.fork_addr, rctx.fork_flags,
                                 rctx.stream, &rctx.fork_cipher_ctx) < 0) {
                   rctx.extract = false;
                   bclose(&rctx.forkbfd);
@@ -896,7 +896,7 @@ void DoRestore(JobControlRecord *jcr)
 
       case STREAM_HFSPLUS_ATTRIBUTES:
          if (have_darwin_os) {
-            if (!RestoreFinderinfo(jcr, sd->msg, sd->msglen)) {
+            if (!RestoreFinderinfo(jcr, sd->msg, sd->message_length)) {
                continue;
             }
          } else {
@@ -945,7 +945,7 @@ void DoRestore(JobControlRecord *jcr)
             if (jcr->last_type != FT_DIREND) {
                PushDelayedDataStream(rctx, sd);
             } else {
-               if (!do_reStoreAcl(jcr, rctx.stream, sd->msg, sd->msglen)) {
+               if (!do_reStoreAcl(jcr, rctx.stream, sd->msg, sd->message_length)) {
                   goto bail_out;
                }
             }
@@ -984,7 +984,7 @@ void DoRestore(JobControlRecord *jcr)
             if (jcr->last_type != FT_DIREND) {
                PushDelayedDataStream(rctx, sd);
             } else {
-               if (!do_restore_xattr(jcr, rctx.stream, sd->msg, sd->msglen)) {
+               if (!do_restore_xattr(jcr, rctx.stream, sd->msg, sd->message_length)) {
                   goto bail_out;
                }
             }
@@ -1006,7 +1006,7 @@ void DoRestore(JobControlRecord *jcr)
             break;
          }
          if (have_xattr) {
-            if (!do_restore_xattr(jcr, rctx.stream, sd->msg, sd->msglen)) {
+            if (!do_restore_xattr(jcr, rctx.stream, sd->msg, sd->message_length)) {
                goto bail_out;
             }
          } else {
@@ -1026,7 +1026,7 @@ void DoRestore(JobControlRecord *jcr)
          /*
           * Save signature.
           */
-         if (rctx.extract && (rctx.sig = crypto_sign_decode(jcr, (uint8_t *)sd->msg, (uint32_t)sd->msglen)) == NULL) {
+         if (rctx.extract && (rctx.sig = crypto_sign_decode(jcr, (uint8_t *)sd->msg, (uint32_t)sd->message_length)) == NULL) {
             Jmsg1(jcr, M_ERROR, 0, _("Failed to decode message signature for %s\n"), jcr->last_fname);
          }
          break;
@@ -1206,9 +1206,9 @@ bool SparseData(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr,
    if (*addr != faddr) {
       *addr = faddr;
       if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
-         berrno be;
+         BErrNo be;
          Jmsg3(jcr, M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
-               edit_uint64(*addr, ec1), jcr->last_fname, be.bstrerror(bfd->berrno));
+               edit_uint64(*addr, ec1), jcr->last_fname, be.bstrerror(bfd->BErrNo));
          return false;
       }
    }
@@ -1225,33 +1225,33 @@ bool StoreData(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, cons
 
    if (win32_decomp) {
       if (!processWin32BackupAPIBlock(bfd, data, length)) {
-         berrno be;
+         BErrNo be;
          Jmsg2(jcr, M_ERROR, 0, _("Write error in Win32 Block Decomposition on %s: %s\n"),
-               jcr->last_fname, be.bstrerror(bfd->berrno));
+               jcr->last_fname, be.bstrerror(bfd->BErrNo));
          return false;
       }
 #ifdef HAVE_WIN32
    } else {
       if (bfd->encrypted) {
          if (win32_send_to_copy_thread(jcr, bfd, data, length) != (ssize_t)length) {
-            berrno be;
+            BErrNo be;
             Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
-                  jcr->last_fname, be.bstrerror(bfd->berrno));
+                  jcr->last_fname, be.bstrerror(bfd->BErrNo));
             return false;
          }
       } else {
          if (bwrite(bfd, data, length) != (ssize_t)length) {
-            berrno be;
+            BErrNo be;
             Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
-                  jcr->last_fname, be.bstrerror(bfd->berrno));
+                  jcr->last_fname, be.bstrerror(bfd->BErrNo));
          }
       }
    }
 #else
    } else if (bwrite(bfd, data, length) != (ssize_t)length) {
-      berrno be;
+      BErrNo be;
       Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
-            jcr->last_fname, be.bstrerror(bfd->berrno));
+            jcr->last_fname, be.bstrerror(bfd->BErrNo));
       return false;
    }
 #endif

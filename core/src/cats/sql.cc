@@ -980,7 +980,7 @@ bool BareosDb::OpenBatchConnection(JobControlRecord *jcr)
 
    multi_db = BatchInsertAvailable();
    if (!jcr->db_batch) {
-      jcr->db_batch = clone_database_connection(jcr, multi_db, multi_db);
+      jcr->db_batch = CloneDatabaseConnection(jcr, multi_db, multi_db);
       if (!jcr->db_batch) {
          Mmsg0(errmsg, _("Could not init database batch connection\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", errmsg);

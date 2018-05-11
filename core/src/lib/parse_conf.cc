@@ -72,7 +72,7 @@ union UnionOfResources {
 /*
  * Simply print a message
  */
-void prtmsg(void *sock, const char *fmt, ...)
+void PrintMessage(void *sock, const char *fmt, ...)
 {
    va_list arg_ptr;
 
@@ -139,7 +139,7 @@ bool ConfigurationParser::ParseConfig()
    PoolMem config_path;
 
    if (first && (errstat = RwlInit(&res_lock_)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
             be.bstrerror(errstat));
    }
@@ -174,7 +174,7 @@ bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_
    for (pass = 1; pass <= 2; pass++) {
       Dmsg1(900, "ParseConfig pass %d\n", pass);
       if ((lc = lex_open_file(lc, cf, ScanError, scan_warning)) == NULL) {
-         berrno be;
+         BErrNo be;
 
          /*
           * We must create a lex packet to print the error
@@ -331,7 +331,7 @@ bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_
       if (debug_level >= 900 && pass == 2) {
          int i;
          for (i = r_first_; i <= r_last_; i++) {
-            DumpResource(i, res_head_[i-r_first_], prtmsg, NULL, false);
+            DumpResource(i, res_head_[i-r_first_], PrintMessage, NULL, false);
          }
       }
 

@@ -24,7 +24,7 @@
  */
 /**
  * @file
- * berrno header file
+ * BErrNo header file
  */
 
 /**
@@ -51,13 +51,13 @@
  * If bit 29 in berrno_ is not set, then it is a Unix errno.
  *
  */
-class DLL_IMP_EXP berrno : public SmartAlloc {
+class DLL_IMP_EXP BErrNo : public SmartAlloc {
    POOLMEM *buf_;
    int berrno_;
-   void format_win32_message();
+   void FormatWin32Message();
 public:
-   berrno(int pool=PM_EMSG);
-   ~berrno();
+   BErrNo(int pool=PM_EMSG);
+   ~BErrNo();
    const char *bstrerror();
    const char *bstrerror(int errnum);
    void SetErrno(int errnum);
@@ -66,7 +66,7 @@ public:
 };
 
 /* Constructor */
-inline berrno::berrno(int pool)
+inline BErrNo::BErrNo(int pool)
 {
    berrno_ = errno;
    buf_ = GetPoolMemory(pool);
@@ -74,19 +74,19 @@ inline berrno::berrno(int pool)
    errno = berrno_;
 }
 
-inline berrno::~berrno()
+inline BErrNo::~BErrNo()
 {
    FreePoolMemory(buf_);
 }
 
-inline const char *berrno::bstrerror(int errnum)
+inline const char *BErrNo::bstrerror(int errnum)
 {
    berrno_ = errnum;
-   return berrno::bstrerror();
+   return BErrNo::bstrerror();
 }
 
 
-inline void berrno::SetErrno(int errnum)
+inline void BErrNo::SetErrno(int errnum)
 {
    berrno_ = errnum;
 }

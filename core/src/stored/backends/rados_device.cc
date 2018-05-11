@@ -82,7 +82,7 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    int status;
    uint64_t object_size;
    time_t object_mtime;
-   berrno be;
+   BErrNo be;
 
    if (!rados_configstring_) {
       char *bp, *next_option;
@@ -521,7 +521,7 @@ bool rados_device::TruncateStriperVolume(DeviceControlRecord *dcr)
    int status;
    uint64_t object_size;
    time_t object_mtime;
-   berrno be;
+   BErrNo be;
 
    status = rados_striper_trunc(striper_, virtual_filename_, 0);
    if (status < 0) {
@@ -556,7 +556,7 @@ bool rados_device::TruncateVolume(DeviceControlRecord *dcr)
    int status;
    uint64_t object_size;
    time_t object_mtime;
-   berrno be;
+   BErrNo be;
 
    status = rados_trunc(ctx_, virtual_filename_, 0);
    if (status < 0) {

@@ -275,11 +275,11 @@ bool RunScript::run(JobControlRecord *jcr, const char *name)
 
    switch (cmd_type) {
    case SHELL_CMD:
-      bpipe = open_bpipe(ecmd, 0, "r");
+      bpipe = OpenBpipe(ecmd, 0, "r");
       FreePoolMemory(ecmd);
 
       if (bpipe == NULL) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_ERROR, 0, _("Runscript: %s could not execute. ERR=%s\n"), name,
             be.bstrerror());
          goto bail_out;
@@ -293,7 +293,7 @@ bool RunScript::run(JobControlRecord *jcr, const char *name)
       status = CloseBpipe(bpipe);
 
       if (status != 0) {
-         berrno be;
+         BErrNo be;
          Jmsg(jcr, M_ERROR, 0, _("Runscript: %s returned non-zero status=%d. ERR=%s\n"), name,
             be.code(status), be.bstrerror(status));
          goto bail_out;

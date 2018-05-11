@@ -67,7 +67,7 @@ bool Device::ScanDirForVolume(DeviceControlRecord *dcr)
    }
 
    if (!(dp = opendir(mount_point))) {
-      berrno be;
+      BErrNo be;
       dev_errno = errno;
       Dmsg3(29, "scan_dir_for_vol: failed to open dir %s (dev=%s), ERR=%s\n",
             mount_point, print_name(), be.bstrerror());

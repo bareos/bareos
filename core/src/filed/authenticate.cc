@@ -94,15 +94,15 @@ bool AuthenticateDirector(JobControlRecord *jcr)
    PoolMem dirname(PM_MESSAGE);
    DirectorResource *director = NULL;
 
-   if (dir->msglen < 25 || dir->msglen > 500) {
+   if (dir->message_length < 25 || dir->message_length > 500) {
       char addr[64];
       char *who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-      errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"), who, dir->msglen);
+      errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"), who, dir->message_length);
       AuthenticateFailed(jcr, errormsg);
       return false;
    }
 
-   if (sscanf(dir->msg, "Hello Director %s calling", dirname.check_size(dir->msglen)) != 1) {
+   if (sscanf(dir->msg, "Hello Director %s calling", dirname.check_size(dir->message_length)) != 1) {
       char addr[64];
       char *who     = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       dir->msg[100] = 0;

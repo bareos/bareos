@@ -28,10 +28,10 @@
  * Note, the old non-class code is in bnet.c, and the
  * new class code associated with this file is in bsock.c
  *
- * Zero msglen from other end indicates soft eof (usually
+ * Zero message_length from other end indicates soft eof (usually
  * end of some binary data stream, but not end of conversation).
  *
- * Negative msglen, is special "signal" (no data follows).
+ * Negative message_length, is special "signal" (no data follows).
  * See below for SIGNAL codes.
  */
 
@@ -64,7 +64,7 @@ public:
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* Input message number */
    uint32_t out_msg_no;               /* Output message number */
-   int32_t msglen;                    /* Message length */
+   int32_t message_length;                    /* Message length */
    volatile time_t timer_start;       /* Time started read/write */
    int b_errno;                       /* BareosSocket errno */
    int blocking_;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
@@ -106,7 +106,7 @@ protected:
    int64_t nb_bytes_;                /* Bytes sent/recv since the last tick */
    btime_t last_tick_;               /* Last tick used by bwlimit */
 
-   virtual void fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
+   virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                          struct sockaddr *lclient_addr) = 0;
    virtual bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
                      int port, utime_t heart_beat, int *fatal) = 0;

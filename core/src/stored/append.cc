@@ -128,7 +128,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
     * Tell daemon to send data
     */
    if (!bs->fsend(OK_data)) {
-      berrno be;
+      BErrNo be;
       Jmsg2(jcr, M_FATAL, 0, _("Network send error to %s. ERR=%s\n"),
             what, be.bstrerror(bs->b_errno));
       ok = false;
@@ -164,7 +164,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
        *               info is not currently used, so is read, but ignored!
        */
       if ((n = BgetMsg(bs)) <= 0) {
-         if (n == BNET_SIGNAL && bs->msglen == BNET_EOD) {
+         if (n == BNET_SIGNAL && bs->message_length == BNET_EOD) {
             break;                    /* end of data */
          }
          Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
@@ -220,7 +220,7 @@ fi_checked:
          dcr->rec->FileIndex = file_index;
          dcr->rec->Stream = stream;
          dcr->rec->maskedStream = stream & STREAMMASK_TYPE; /* strip high bits */
-         dcr->rec->data_len = bs->msglen;
+         dcr->rec->data_len = bs->message_length;
          dcr->rec->data = bs->msg; /* use message buffer */
 
          Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",

@@ -104,7 +104,7 @@ void InitVolListLock()
    int errstat;
 
    if ((errstat = RwlInit(&vol_list_lock, PRIO_SD_VOL_LIST)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg1(M_ABORT, 0, _("Unable to initialize volume list lock. ERR=%s\n"),
             be.bstrerror(errstat));
    }
@@ -124,7 +124,7 @@ void _lockVolumes(const char *file, int line)
 
    vol_list_lock_count++;
    if ((errstat = RwlWritelock_p(&vol_list_lock, file, line)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
@@ -136,7 +136,7 @@ void _unLockVolumes()
 
    vol_list_lock_count--;
    if ((errstat = RwlWriteunlock(&vol_list_lock)) != 0) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ABORT, 0, "RwlWriteunlock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }

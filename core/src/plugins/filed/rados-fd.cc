@@ -414,7 +414,7 @@ static bRC get_next_object_to_backup(bpContext *ctx)
       status = rados_objects_list_next(p_ctx->list_iterator, &p_ctx->object_name, NULL);
 #endif
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          switch (status) {
          case -ENOENT:
@@ -453,7 +453,7 @@ static bRC get_next_object_to_backup(bpContext *ctx)
       status = rados_stat(p_ctx->ioctx, p_ctx->object_name,
                           &p_ctx->object_size, &p_ctx->object_mtime);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "rados-fd: rados_stat(%s) failed: %s\n", p_ctx->object_name, be.bstrerror(-status));
          return bRC_Error;
@@ -755,7 +755,7 @@ static bRC connect_to_rados(bpContext *ctx)
       status = rados_create2(&p_ctx->cluster, p_ctx->rados_clustername, p_ctx->rados_username, rados_flags);
 #endif
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "rados-fd: rados_create() failed: %s\n", be.bstrerror(-status));
          return bRC_Error;
@@ -763,7 +763,7 @@ static bRC connect_to_rados(bpContext *ctx)
 
       status = rados_conf_read_file(p_ctx->cluster, p_ctx->rados_conffile);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "rados-fd: rados_conf_read_file(%s) failed: %s\n",
               p_ctx->rados_conffile, be.bstrerror(-status));
@@ -772,7 +772,7 @@ static bRC connect_to_rados(bpContext *ctx)
 
       status = rados_connect(p_ctx->cluster);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "rados-fd: rados_connect() failed: %s\n", be.bstrerror(-status));
          rados_shutdown(p_ctx->cluster);
@@ -788,7 +788,7 @@ static bRC connect_to_rados(bpContext *ctx)
    if (!p_ctx->ioctx) {
       status = rados_ioctx_create(p_ctx->cluster, p_ctx->rados_poolname, &p_ctx->ioctx);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "rados-fd: rados_ioctx_create(%s) failed: %s\n",
               p_ctx->rados_poolname, be.bstrerror(-status));
@@ -829,7 +829,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
 
    status = rados_ioctx_snap_create(p_ctx->ioctx, p_ctx->rados_snapshotname);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "rados-fd: rados_ioctx_snap_create(%s) failed: %s\n",
            p_ctx->rados_snapshotname, be.bstrerror(-status));
@@ -838,7 +838,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
 
    status = rados_ioctx_snap_lookup(p_ctx->ioctx, p_ctx->rados_snapshotname, &p_ctx->snap_id);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "rados-fd: rados_ioctx_snap_lookup(%s) failed: %s\n",
            p_ctx->rados_snapshotname, be.bstrerror(-status));
@@ -865,7 +865,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
       status = rados_objects_list_open(p_ctx->ioctx, &p_ctx->list_iterator);
 #endif
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
 #if defined(HAVE_RADOS_NAMESPACES) && defined(HAVE_RADOS_NOBJECTS_LIST)
          Jmsg(ctx, M_ERROR, "rados-fd: rados_nobjects_list_open() failed: %s\n", be.bstrerror(-status));
@@ -1087,7 +1087,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       if (exists) {
          status = rados_remove(p_ctx->ioctx, p_ctx->object_name);
          if (status < 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, "rados-fd: rados_remove(%s) failed: %s\n",
                  p_ctx->object_name, be.bstrerror(-status));
@@ -1149,7 +1149,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
    if (!p_ctx->xattr_iterator) {
       status = rados_getxattrs(p_ctx->ioctx, p_ctx->object_name, &p_ctx->xattr_iterator);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "rados-fd: rados_getxattrs(%s) failed: %s\n",
               p_ctx->object_name, be.bstrerror(-status));
@@ -1162,7 +1162,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
     */
    status = rados_getxattrs_next(p_ctx->xattr_iterator, &xattr_name, &xattr_value, &xattr_value_length);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "rados-fd: rados_getxattrs_next(%s) failed: %s\n",
            p_ctx->object_name, be.bstrerror(-status));
@@ -1212,7 +1212,7 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
    p_ctx->object_name = ++bp;
    status = rados_setxattr(p_ctx->ioctx, p_ctx->object_name, xp->name, xp->value, xp->value_length);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "rados-fd: rados_setxattr(%s) set xattr %s failed: %s\n",
            p_ctx->object_name, xp->name, be.bstrerror(-status));

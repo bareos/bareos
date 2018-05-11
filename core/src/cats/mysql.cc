@@ -165,7 +165,7 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord *jcr)
    }
 
    if ((errstat=RwlInit(&lock_)) != 0) {
-      berrno be;
+      BErrNo be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
@@ -366,7 +366,7 @@ void BareosDbMysql::EscapeString(JobControlRecord *jcr, char *snew, char *old, i
  * Escape binary object so that MySQL is happy
  * Memory is stored in BareosDb struct, no need to free it
  */
-char *BareosDbMysql::escape_object(JobControlRecord *jcr, char *old, int len)
+char *BareosDbMysql::EscapeObject(JobControlRecord *jcr, char *old, int len)
 {
    esc_obj = CheckPoolMemorySize(esc_obj, len*2+1);
    mysql_real_escape_string(db_handle_, esc_obj, old, len);

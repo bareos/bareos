@@ -713,7 +713,7 @@ int ModifyJobParameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
                   jcr->RestoreBootstrap = bstrdup(ua->cmd);
                   fd = fopen(jcr->RestoreBootstrap, "rb");
                   if (!fd) {
-                     berrno be;
+                     BErrNo be;
                      ua->SendMsg(_("Warning cannot open %s: ERR=%s\n"),
                         jcr->RestoreBootstrap, be.bstrerror());
                      free(jcr->RestoreBootstrap);

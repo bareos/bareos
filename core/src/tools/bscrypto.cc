@@ -372,7 +372,7 @@ int main(int argc, char *const *argv)
       }
 
       if (base64_transform || wrapped_keys) {
-         cnt = bin_to_base64(keydata, sizeof(keydata), passphrase, length, true);
+         cnt = BinToBase64(keydata, sizeof(keydata), passphrase, length, true);
          if (write(kfd, keydata, cnt) != cnt) {
             fprintf(stderr, _("Failed to write %d bytes to keyfile %s\n"), cnt, keyfile);
          }
@@ -428,14 +428,14 @@ int main(int argc, char *const *argv)
          /*
           * A wrapped key is base64 encoded after it was wrapped so first
           * convert it from base64 to bin. As we first go from base64 to bin
-          * and the base64_to_bin has a check if the decoded string will fit
+          * and the Base64ToBin has a check if the decoded string will fit
           * we need to alocate some more bytes for the decoded buffer to be
           * sure it will fit.
           */
          length = DEFAULT_PASSPHRASE_LENGTH + 12;
          wrapped_passphrase = (char *)malloc(length);
          memset(wrapped_passphrase, 0, length);
-         if (base64_to_bin(wrapped_passphrase, length,
+         if (Base64ToBin(wrapped_passphrase, length,
                            keydata, strlen(keydata)) == 0) {
             fprintf(stderr,
                     _("Failed to base64 decode the keydata read from %s, aborting...\n"),
@@ -463,7 +463,7 @@ int main(int argc, char *const *argv)
       } else {
          if (base64_transform) {
             /*
-             * As we first go from base64 to bin and the base64_to_bin has a check
+             * As we first go from base64 to bin and the Base64ToBin has a check
              * if the decoded string will fit we need to alocate some more bytes
              * for the decoded buffer to be sure it will fit.
              */
@@ -471,7 +471,7 @@ int main(int argc, char *const *argv)
             passphrase = (char *)malloc(length);
             memset(passphrase, 0, length);
 
-            base64_to_bin(passphrase, length, keydata, strlen(keydata));
+            Base64ToBin(passphrase, length, keydata, strlen(keydata));
          } else {
             length = DEFAULT_PASSPHRASE_LENGTH;
             passphrase = (char *)malloc(length);

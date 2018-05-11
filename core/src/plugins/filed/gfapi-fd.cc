@@ -572,7 +572,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
              */
             status = glfs_chdir(p_ctx->glfs, "..");
             if (status != 0) {
-               berrno be;
+               BErrNo be;
 
                Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_chdir(%s) failed: %s\n", "..", be.bstrerror());
                return bRC_Error;
@@ -698,7 +698,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
 
          status = glfs_stat(p_ctx->glfs, p_ctx->next_filename, &p_ctx->statp);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
             case ENOENT:
@@ -722,7 +722,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          if (!entry) {
             status = glfs_stat(p_ctx->glfs, p_ctx->cwd, &p_ctx->statp);
             if (status != 0) {
-               berrno be;
+               BErrNo be;
 
                Jmsg(ctx, M_ERROR, "glfs_stat(%s) failed: %s\n", p_ctx->cwd, be.bstrerror());
                return bRC_Error;
@@ -763,7 +763,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          status = glfs_readlink(p_ctx->glfs, p_ctx->next_filename,
                                 p_ctx->link_target, SizeofPoolMemory(p_ctx->link_target));
          if (status < 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_readlink(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror());
             p_ctx->type = FT_NOFOLLOW;
@@ -853,7 +853,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
           */
          status = glfs_chdir(p_ctx->glfs, p_ctx->next_filename);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_chdir(%s) failed: %s\n",
                  p_ctx->next_filename, be.bstrerror());
@@ -877,7 +877,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
              */
             p_ctx->gdir = glfs_opendir(p_ctx->glfs, ".");
             if (!p_ctx->gdir) {
-               berrno be;
+               BErrNo be;
 
                Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_opendir(%s) failed: %s\n",
                     p_ctx->next_filename, be.bstrerror());
@@ -1913,7 +1913,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          Dmsg(ctx, 400, "gfapi-fd: unlink %s\n", rp->ofname);
          status = glfs_unlink(p_ctx->glfs, rp->ofname);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, 0,
                  _("gfapi-fd: File %s already exists and could not be replaced. ERR=%s.\n"),
@@ -1949,7 +1949,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       case FT_LNKSAVED:
          status = glfs_link(p_ctx->glfs, rp->olname, rp->ofname);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_link(%s) failed: %s\n", rp->ofname, be.bstrerror());
             rp->create_status = CF_ERROR;
@@ -1960,7 +1960,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       case FT_LNK:
          status = glfs_symlink(p_ctx->glfs, rp->olname, rp->ofname);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_symlink(%s) failed: %s\n", rp->ofname, be.bstrerror());
             rp->create_status = CF_ERROR;
@@ -1971,7 +1971,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       case FT_SPEC:
          status = glfs_mknod(p_ctx->glfs, rp->olname, rp->statp.st_mode, rp->statp.st_rdev);
          if (status != 0) {
-            berrno be;
+            BErrNo be;
 
             Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_mknod(%s) failed: %s\n", rp->ofname, be.bstrerror());
             rp->create_status = CF_ERROR;
@@ -2021,7 +2021,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
     */
    status = glfs_lchown(p_ctx->glfs, rp->ofname, rp->statp.st_uid, rp->statp.st_gid);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_lchown(%s) failed: %s\n", rp->ofname, be.bstrerror());
       return bRC_Error;
@@ -2032,7 +2032,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
     */
    status = glfs_chmod(p_ctx->glfs, rp->ofname, rp->statp.st_mode);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_chmod(%s) failed: %s\n", rp->ofname, be.bstrerror());
       return bRC_Error;
@@ -2048,7 +2048,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 
    status = glfs_lutimens(p_ctx->glfs, rp->ofname, times);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_lutimens(%s) failed: %s\n", rp->ofname, be.bstrerror());
       return bRC_Error;
@@ -2138,7 +2138,7 @@ static bRC getAcl(bpContext *ctx, acl_pkt *ap)
          xattr_value_length = glfs_lgetxattr(p_ctx->glfs, ap->fname, xattr_acl_skiplist[cnt],
                                              xattr_value.c_str(), current_size);
          if (xattr_value_length < 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
 #if defined(ENOATTR) || defined(ENODATA)
@@ -2241,7 +2241,7 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap)
       status = glfs_lsetxattr(p_ctx->glfs, ap->fname, acl_name.c_str(),
                               xattr_value.c_str(), xattr_value_length, 0);
       if (status < 0) {
-         berrno be;
+         BErrNo be;
 
          Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_lsetxattr(%s) failed: %s\n", ap->fname, be.bstrerror());
          return bRC_Error;
@@ -2274,7 +2274,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
          current_size = SizeofPoolMemory(p_ctx->xattr_list);
          status = glfs_llistxattr(p_ctx->glfs, xp->fname, p_ctx->xattr_list, current_size);
          if (status < 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
@@ -2344,7 +2344,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
          xattr_value_length = glfs_lgetxattr(p_ctx->glfs, xp->fname, p_ctx->next_xattr_name,
                                              xattr_value.c_str(), current_size);
          if (xattr_value_length < 0) {
-            berrno be;
+            BErrNo be;
 
             switch (errno) {
 #if defined(ENOATTR) || defined(ENODATA)
@@ -2429,7 +2429,7 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
 
    status = glfs_lsetxattr(p_ctx->glfs, xp->fname, xp->name, xp->value, xp->value_length, 0);
    if (status < 0) {
-      berrno be;
+      BErrNo be;
 
       Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_lsetxattr(%s) failed: %s\n", xp->fname, be.bstrerror());
       return bRC_Error;

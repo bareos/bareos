@@ -59,7 +59,7 @@ static bool makedir(JobControlRecord *jcr, char *path, mode_t mode, int *created
    struct stat statp;
 
    if (mkdir(path, mode) != 0) {
-      berrno be;
+      BErrNo be;
       *created = false;
       if (stat(path, &statp) != 0) {
          Jmsg2(jcr, M_ERROR, 0, _("Cannot create directory %s: ERR=%s\n"),
@@ -94,7 +94,7 @@ static void SetOwnMod(Attributes *attr, char *path, uid_t owner, gid_t group, mo
         && errno != EPERM
 #endif
    ) {
-      berrno be;
+      BErrNo be;
       Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change owner and/or group of %s: ERR=%s\n"),
            path, be.bstrerror());
    }
@@ -103,7 +103,7 @@ static void SetOwnMod(Attributes *attr, char *path, uid_t owner, gid_t group, mo
 #else
    if (lchmod(path, mode) != 0 && attr->uid == 0) {
 #endif
-      berrno be;
+      BErrNo be;
       Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change permissions of %s: ERR=%s\n"),
            path, be.bstrerror());
    }

@@ -92,10 +92,10 @@ extern "C" void *sd_heartbeat_thread(void *arg)
          if (sd->IsStop()) {
             break;
          }
-         if (sd->msglen <= 0) {
-            Dmsg1(100, "Got BNET_SIG %d from SD\n", sd->msglen);
+         if (sd->message_length <= 0) {
+            Dmsg1(100, "Got BNET_SIG %d from SD\n", sd->message_length);
          } else {
-            Dmsg2(100, "Got %d bytes from SD. MSG=%s\n", sd->msglen, sd->msg);
+            Dmsg2(100, "Got %d bytes from SD. MSG=%s\n", sd->message_length, sd->msg);
          }
       }
       Dmsg2(200, "wait_intr=%d stop=%d\n", n, IsBnetStop(sd.get()));

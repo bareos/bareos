@@ -82,7 +82,7 @@ struct BareosWinFilePacket {
    POOLMEM *errmsg;                   /**< error message buffer */
    DWORD rw_bytes;                    /**< Bytes read or written */
    DWORD lerror;                      /**< Last error code */
-   int berrno;                        /**< errno */
+   int BErrNo;                        /**< errno */
    boffset_t offset;                  /**< Delta offset */
    JobControlRecord *jcr;                          /**< jcr for editing job codes */
    PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext; /**< context for decomposition of win32 backup streams */
@@ -106,7 +106,7 @@ HANDLE BgetHandle(BareosWinFilePacket *bfd);
 struct BareosWinFilePacket {
    int fid;                           /**< file id on Unix */
    int flags_;                       /**< open flags */
-   int berrno;                        /**< errno */
+   int BErrNo;                        /**< errno */
    int32_t lerror;                    /**< not used - simplies Win32 builds */
    boffset_t offset;                  /**< Delta offset */
    JobControlRecord *jcr;                          /**< jcr for editing job codes */

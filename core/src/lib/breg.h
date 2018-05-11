@@ -69,8 +69,8 @@ public:
    regmatch_t regs[BREG_NREGS]; /**< contains match */
    char *eor;                   /**< end of regexp in expr */
 
-   char *return_fname(const char *fname, int len); /**< return fname as result */
-   char *edit_subst(const char *fname, regmatch_t pmatch[]);
+   char *ReturnFname(const char *fname, int len); /**< return fname as result */
+   char *EditSubst(const char *fname, regmatch_t pmatch[]);
    int ComputeDestLen(const char *fname, regmatch_t pmatch[]);
    bool ExtractRegexp(const char *motif);
 };

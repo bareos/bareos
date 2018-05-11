@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
    ParseTmonConfig(my_config, cl.configfile, M_ERROR_TERM);
 
    if (cl.export_config) {
-      my_config->DumpResources(prtmsg, NULL);
+      my_config->DumpResources(PrintMessage, NULL);
       exit(0);
    }
 

@@ -1182,7 +1182,7 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord *jcr, RestoreObjectDbR
    esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
    EscapeString(jcr, esc_name, ro->object_name, fnl);
 
-   escape_object(jcr, ro->object, ro->object_len);
+   EscapeObject(jcr, ro->object, ro->object_len);
 
    plug_name_len = strlen(ro->plugin_name);
    esc_plug_name = CheckPoolMemorySize(esc_plug_name, plug_name_len*2+1);

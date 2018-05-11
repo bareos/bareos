@@ -543,7 +543,7 @@ bool ConfigFile::parse(const char *fname)
    }
 
    if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"),
             fname, be.bstrerror());
       return false;
@@ -655,7 +655,7 @@ bool ConfigFile::UnSerialize(const char *fname)
     * Parse the file and generate the items structure on the fly
     */
    if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
-      berrno be;
+      BErrNo be;
       Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"),
             fname, be.bstrerror());
       return false;

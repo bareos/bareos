@@ -153,7 +153,7 @@ bool ReadLastJobsList(int fd, uint64_t addr)
    LockLastJobsList();
    for ( ; num; num--) {
       if (read(fd, &job, sizeof(job)) != sizeof(job)) {
-         berrno be;
+         BErrNo be;
          Pmsg1(000, "Read job entry. ERR=%s\n", be.bstrerror());
          ok = false;
          break;
@@ -193,13 +193,13 @@ uint64_t WriteLastJobsList(int fd, uint64_t addr)
        */
       num = last_jobs->size();
       if (write(fd, &num, sizeof(num)) != sizeof(num)) {
-         berrno be;
+         BErrNo be;
          Pmsg1(000, "Error writing num_items: ERR=%s\n", be.bstrerror());
          goto bail_out;
       }
       foreach_dlist(je, last_jobs) {
          if (write(fd, je, sizeof(struct s_last_job)) != sizeof(struct s_last_job)) {
-            berrno be;
+            BErrNo be;
             Pmsg1(000, "Error writing job: ERR=%s\n", be.bstrerror());
             goto bail_out;
          }
@@ -349,7 +349,7 @@ static void create_jcr_key()
    status = pthread_key_create(&jcr_key, NULL);
 #endif
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
             be.bstrerror(status));
    }
@@ -375,7 +375,7 @@ void setup_tsd_key()
 
    status = pthread_once(&key_once, create_jcr_key);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"), be.bstrerror(status));
    }
 #endif
@@ -405,7 +405,7 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
 
    jcr->msg_queue = New (dlist(item, &item->link));
    if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, NULL)) != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg(NULL, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"), be.bstrerror(status));
    }
 
@@ -716,7 +716,7 @@ void SetJcrInTsd(JobControlRecord *jcr)
 
    status = pthread_setspecific(jcr_key, (void *)jcr);
    if (status != 0) {
-      berrno be;
+      BErrNo be;
       Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
             be.bstrerror(status));
    }

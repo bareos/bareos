@@ -122,21 +122,21 @@ static int VerifyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
       Dmsg1(30, "FT_FIFO saving: %s\n", ff_pkt->fname);
       break;
    case FT_NOACCESS: {
-      berrno be;
+      BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not access %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
    }
    case FT_NOFOLLOW: {
-      berrno be;
+      BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not follow link %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
    }
    case FT_NOSTAT: {
-      berrno be;
+      BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not stat %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
@@ -160,7 +160,7 @@ static int VerifyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
    case FT_RESTORE_FIRST:
       return 1;                       /* silently skip */
    case FT_NOOPEN: {
-      berrno be;
+      BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
       Jmsg(jcr, M_NOTSAVED, 1, _("     Could not open directory %s: ERR=%s\n"), ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
@@ -213,9 +213,9 @@ static int VerifyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
                           0, attribs.c_str(), 0, 0);
    }
-   Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->msglen, dir->msg);
+   Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->message_length, dir->msg);
    if (!status) {
-      Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), bnet_strerror(dir));
+      Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"), BnetStrerror(dir));
       return 0;
    }
 
@@ -239,7 +239,7 @@ static int VerifyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_l
          } else if (digest && digest_buf) {
             Dmsg3(400, "send inx=%d %s=%s\n", jcr->JobFiles, digest_name, digest_buf);
             dir->fsend("%d %d %s *%s-%d*", jcr->JobFiles, digest_stream, digest_buf, digest_name, jcr->JobFiles);
-            Dmsg3(20, "filed>dir: %s len=%d: msg=%s\n", digest_name, dir->msglen, dir->msg);
+            Dmsg3(20, "filed>dir: %s len=%d: msg=%s\n", digest_name, dir->message_length, dir->msg);
          }
       }
 
@@ -272,8 +272,8 @@ int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
 
    if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
       ff_pkt->ff_errno = errno;
-      berrno be;
-      be.SetErrno(bfd.berrno);
+      BErrNo be;
+      be.SetErrno(bfd.BErrNo);
       Dmsg2(100, "Cannot open %s: ERR=%s\n", ff_pkt->fname, be.bstrerror());
       Jmsg(jcr, M_ERROR, 1, _("     Cannot open %s: ERR=%s.\n"),
             ff_pkt->fname, be.bstrerror());
@@ -289,7 +289,7 @@ int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
       if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
          if (BopenRsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
             ff_pkt->ff_errno = errno;
-            berrno be;
+            BErrNo be;
             Jmsg(jcr, M_ERROR, -1, _("     Cannot open resource fork for %s: ERR=%s.\n"),
                   ff_pkt->fname, be.bstrerror());
             if (IsBopen(&ff_pkt->bfd)) {
@@ -350,8 +350,8 @@ static int ReadDigest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord
       jcr->ReadBytes += n;
    }
    if (n < 0) {
-      berrno be;
-      be.SetErrno(bfd->berrno);
+      BErrNo be;
+      be.SetErrno(bfd->BErrNo);
       Dmsg2(100, "Error reading file %s: ERR=%s\n", jcr->last_fname, be.bstrerror());
       Jmsg(jcr, M_ERROR, 1, _("Error reading file %s: ERR=%s\n"),
             jcr->last_fname, be.bstrerror());
@@ -409,7 +409,7 @@ static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt
          *digest_buf = (char *)malloc(BASE64_SIZE(size));
          *digest_name = crypto_digest_name(*digest);
 
-         bin_to_base64(*digest_buf, BASE64_SIZE(size), md, size, true);
+         BinToBase64(*digest_buf, BASE64_SIZE(size), md, size, true);
       }
    }
 
