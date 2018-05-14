@@ -191,9 +191,6 @@ void *statistics_thread(void *arg)
             continue;
          }
 
-         constexpr int retries = 2;
-         constexpr int timeout_secs= 1;
-
          jcr->res.rstore = store;
          if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
             UnlockRes();

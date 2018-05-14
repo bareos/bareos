@@ -497,7 +497,7 @@ static unsigned int psk_server_cb(SSL *ssl,
           */
          if (credentials->get_identity() == std::string(identity)) {
             int psklen = Bsnprintf((char *)psk, max_psk_len, "%s", credentials->get_psk().c_str());
-            result = (psklen < 0) ? result = 0 : result = psklen;
+            result = (psklen < 0) ? 0 : psklen;
             Dmsg1(100, "psk_server_cb. psk: %s.\n", psk);
         }
          return result;

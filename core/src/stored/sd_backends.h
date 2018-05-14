@@ -58,22 +58,6 @@ struct backend_shared_library_t {
 #define DYN_LIB_EXTENSION ".so"
 #endif
 
-/**
- * Known backend to interface mappings.
- */
-static struct backend_interface_mapping_t {
-   int interface_type_id;
-   const char *interface_name;
-} backend_interface_mappings[] = {
-   { B_FIFO_DEV, "fifo" },
-   { B_TAPE_DEV, "tape" },
-   { B_GFAPI_DEV, "gfapi" },
-   { B_DROPLET_DEV, "droplet" },
-   { B_RADOS_DEV, "rados" },
-   { B_CEPHFS_DEV, "cephfs" },
-   { B_ELASTO_DEV, "elasto" },
-   { 0, NULL }
-};
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
 void SdSetBackendDirs(alist *new_backend_dirs);

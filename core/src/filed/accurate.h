@@ -63,7 +63,7 @@ protected:
    int64_t filenr_;
    char *seen_bitmap_;
    JobControlRecord *jcr_;
-   int32_t number_of_previous_files_;
+   uint32_t number_of_previous_files_;
 
 public:
    /* methods */

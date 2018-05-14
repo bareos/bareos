@@ -352,7 +352,6 @@ static bool CheckResources()
 {
    bool OK = true;
    DirectorResource *director;
-   bool need_tls;
    const char *configfile = my_config->get_base_config_path();
 
    LockRes();

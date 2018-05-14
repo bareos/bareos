@@ -36,6 +36,21 @@
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 
+/**
+ * Known backend to interface mappings.
+ */
+static struct backend_interface_mapping_t {
+   const char *interface_name;
+   bool partly_compare;
+   int interface_type_id;
+} backend_interface_mappings[] = {
+   { "dbi", TRUE, SQL_INTERFACE_TYPE_DBI },
+   { "mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL },
+   { "postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL },
+   { "sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3 },
+   { NULL, FALSE, 0 }
+};
+
 #include "cats_backends.h"
 #include <dlfcn.h>
 

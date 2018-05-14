@@ -48,7 +48,8 @@ static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
 #ifdef USE_READDIR_R
    struct dirent *entry;
 #endif
-   int status, tries, name_max, count;
+   int status, tries, name_max;
+   int count = 0;
    BErrNo be;
 
    Dsm_check(200);

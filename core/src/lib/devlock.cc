@@ -32,7 +32,7 @@
 
 #define _LOCKMGR_COMPLIANT
 #include "include/bareos.h"
-#include "devlock.h"
+#include "lib/devlock.h"
 
 /*
  * Initialize a read/write lock

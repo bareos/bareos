@@ -1437,7 +1437,6 @@ static int CheckResources()
 {
    bool OK = true;
    DirectorResource *director;
-   bool tls_needed;
 
    LockRes();
 
@@ -1452,7 +1451,6 @@ static int CheckResources()
       OK = false;
    }
 
-   ConsoleResource *cons;
    me = (ConsoleResource *)GetNextRes(R_CONSOLE, NULL);
 
    UnlockRes();
