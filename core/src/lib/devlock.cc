@@ -41,18 +41,18 @@
  *           errno on failure
  */
 
-devlock *new_devlock()
+DevLock *new_devlock()
 {
-   devlock *lock;
-   lock = (devlock *)malloc(sizeof (devlock));
-   memset(lock, 0, sizeof(devlock));
+   DevLock *lock;
+   lock = (DevLock *)malloc(sizeof (DevLock));
+   memset(lock, 0, sizeof(DevLock));
    return lock;
 }
 
-int devlock::init(int initial_priority)
+int DevLock::init(int initial_priority)
 {
    int status;
-   devlock *rwl = this;
+   DevLock *rwl = this;
 
    rwl->r_active = rwl->w_active = 0;
    rwl->r_wait = rwl->w_wait = 0;
@@ -79,9 +79,9 @@ int devlock::init(int initial_priority)
  * Returns: 0 on success
  *          errno on failure
  */
-int devlock::destroy()
+int DevLock::destroy()
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status, status1, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -123,11 +123,11 @@ int devlock::destroy()
  */
 static void DevlockReadRelease(void *arg)
 {
-   devlock *rwl = (devlock *)arg;
+   DevLock *rwl = (DevLock *)arg;
    rwl->ReadRelease();
 }
 
-void devlock::ReadRelease()
+void DevLock::ReadRelease()
 {
    r_wait--;
    pthread_mutex_unlock(&mutex);
@@ -139,11 +139,11 @@ void devlock::ReadRelease()
  */
 static void DevlockWriteRelease(void *arg)
 {
-   devlock *rwl = (devlock *)arg;
+   DevLock *rwl = (DevLock *)arg;
    rwl->WriteRelease();
 }
 
-void devlock::WriteRelease()
+void DevLock::WriteRelease()
 {
    w_wait--;
    pthread_mutex_unlock(&mutex);
@@ -152,9 +152,9 @@ void devlock::WriteRelease()
 /*
  * Lock for read access, wait until locked (or error).
  */
-int devlock::readlock()
+int DevLock::readlock()
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -185,9 +185,9 @@ int devlock::readlock()
 /*
  * Attempt to lock for read access, don't wait
  */
-int devlock::readtrylock()
+int DevLock::readtrylock()
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -208,9 +208,9 @@ int devlock::readtrylock()
 /*
  * Unlock read lock
  */
-int devlock::readunlock()
+int DevLock::readunlock()
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -232,9 +232,9 @@ int devlock::readunlock()
  * Lock for write access, wait until locked (or error).
  *   Multiple nested write locking is permitted.
  */
-int devlock::Writelock(int areason, bool acan_take)
+int DevLock::Writelock(int areason, bool acan_take)
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -275,9 +275,9 @@ int devlock::Writelock(int areason, bool acan_take)
 /*
  * Attempt to lock for write access, don't wait
  */
-int devlock::writetrylock()
+int DevLock::writetrylock()
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -306,9 +306,9 @@ int devlock::writetrylock()
  * Unlock write lock
  *  Start any waiting writers in preference to waiting readers
  */
-int devlock::writeunlock()
+int DevLock::writeunlock()
 {
-   devlock *rwl = this;
+   DevLock *rwl = this;
    int status, status2;
 
    if (rwl->valid != DEVLOCK_VALID) {
@@ -341,7 +341,7 @@ int devlock::writeunlock()
    return (status == 0 ? status2 : status);
 }
 
-int devlock::TakeLock(take_lock_t *hold, int areason)
+int DevLock::TakeLock(take_lock_t *hold, int areason)
 {
    int status;
 
@@ -360,7 +360,7 @@ int devlock::TakeLock(take_lock_t *hold, int areason)
    return status;
 }
 
-int devlock::ReturnLock(take_lock_t *hold)
+int DevLock::ReturnLock(take_lock_t *hold)
 {
    int status, status2;
 

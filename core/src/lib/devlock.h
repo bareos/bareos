@@ -40,7 +40,7 @@ struct take_lock_t {
 };
 
 
-class devlock {
+class DevLock {
 private:
    pthread_mutex_t   mutex;
    pthread_cond_t    read;            /* wait for read */
@@ -58,8 +58,8 @@ private:
 
 
 public:
-   devlock(int reason, bool can_take=false);
-   ~devlock();
+   DevLock(int reason, bool can_take=false);
+   ~DevLock();
    int init(int initial_priority);
    int destroy();
    int TakeLock(take_lock_t *hold, int reason);
