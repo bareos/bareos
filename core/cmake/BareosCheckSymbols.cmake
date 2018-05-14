@@ -23,6 +23,8 @@ INCLUDE (CheckSymbolExists)
 CHECK_SYMBOL_EXISTS(__stub_lchmod features.h LCHMOD_IS_A_STUB1)
 CHECK_SYMBOL_EXISTS(__stub___lchmod  features_h LCHMOD_IS_A_STUB2)
 
+
+
 if ("${LCHMOD_IS_A_STUB1}" OR "${LCHMOD_IS_A_STUB2}")
    MESSAGE(STATUS " lchmod is a stub, setting HAVE_LCHMOD to 0")
    set (HAVE_LCHMOD 0)
@@ -37,3 +39,11 @@ CHECK_SYMBOL_EXISTS(dlerror dlfcn.h HAVE_DLERROR)
 cmake_pop_check_state()
 
 CHECK_SYMBOL_EXISTS(va_copy stdarg.h HAVE_VA_COPY)
+
+
+cmake_push_check_state()
+SET(CMAKE_REQUIRED_LIBRARIES ${RADOS_LIBRARIES})
+CHECK_SYMBOL_EXISTS(rados_ioctx_set_namespace rados/librados.h  HAVE_RADOS_NAMESPACES)
+CHECK_SYMBOL_EXISTS(rados_nobjects_list_open rados/librados.h HAVE_RADOS_NOBJECTS_LIST)
+cmake_pop_check_state()
+
