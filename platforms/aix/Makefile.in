@@ -1,8 +1,6 @@
 #
 # This file is used as the template to create the
-# Makefile for the AXI specific installation.
-#
-#  1 March 2003 -- Kern Sibbald
+# Makefile for the AIX specific installation.
 #
 #  for Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
@@ -12,49 +10,46 @@ nothing:
 
 install:
 
-install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
+install-autostart: install-autostart-fd
 
 install-autostart-fd:
-	@$(RMF) /etc/rc0.d/K20bareos-fd
-	@$(RMF) /etc/rc1.d/S99bareos-fd
-	@$(RMF) /etc/rc2.d/S99bareos-fd
-	@$(MKDIR) /etc/init.d
-	@$(INSTALL_PROGRAM) bareos-fd /etc/init.d/bareos-fd
+	@$(RMF) $(DESTDIR)/etc/rc.d/rc2.d/K20bareos-fd
+	@$(RMF) $(DESTDIR)/etc/rc.d/rc2.d/S99bareos-fd
+	@$(MKDIR) $(DESTDIR)/etc/rc.d/rc2.d
+	@$(MKDIR) $(DESTDIR)/etc/rc.d/init.d
+	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/etc/rc.d/init.d/bareos-fd
 	# set symlinks for script at startup and shutdown
-	@ln -f -s /etc/init.d/bareos-fd /etc/rc0.d/K20bareos-fd
-	@ln -f -s /etc/init.d/bareos-fd /etc/rc1.d/S99bareos-fd
-	@ln -f -s /etc/init.d/bareos-fd /etc/rc2.d/S99bareos-fd
+	@ln -f -s /etc/rc.d/init.d/bareos-fd $(DESTDIR)/etc/rc.d/rc2.d/K20bareos-fd
+	@ln -f -s /etc/rc.d/init.d/bareos-fd $(DESTDIR)/etc/rc.d/rc2.d/S99bareos-fd
 
 
 install-autostart-sd:
-	@$(RMF) /etc/rc0.d/K20bareos-sd
-	@$(RMF) /etc/rc1.d/S99bareos-sd
-	@$(RMF) /etc/rc2.d/S99bareos-sd
-	@$(MKDIR) /etc/init.d
-	@$(INSTALL_PROGRAM) bareos-sd /etc/rc.d/init.d/bareos-sd
+	@$(RMF) $(DESTDIR)/etc/rc.d/rc2.d/K20bareos-sd
+	@$(RMF) $(DESTDIR)/etc/rc.d/rc2.d/S99bareos-sd
+	@$(MKDIR) $(DESTDIR)/etc/rc.d/rc2.d
+	@$(MKDIR) $(DESTDIR)/etc/rc.d/init.d
+	@$(INSTALL_PROGRAM) bareos-sd $(DESTDIR)/etc/rc.d/init.d/bareos-sd
 	# set symlinks for script at startup and shutdown
-	@ln -f -s /etc/init.d/bareos-sd /etc/rc0.d/K20bareos-sd
-	@ln -f -s /etc/init.d/bareos-sd /etc/rc1.d/S99bareos-sd
-	@ln -f -s /etc/init.d/bareos-sd /etc/rc2.d/S99bareos-sd
+	@ln -f -s /etc/rc.d/init.d/bareos-sd $(DESTDIR)/etc/rc.d/rc2.d/K20bareos-sd
+	@ln -f -s /etc/rc.d/init.d/bareos-sd $(DESTDIR)/etc/rc.d/rc2.d/S99bareos-sd
 
 install-autostart-dir:
-	@$(RMF) /etc/rc0.d/K20bareos-dir
-	@$(RMF) /etc/rc1.d/S99bareos-dir
-	@$(RMF) /etc/rc2.d/S99bareos-dir
-	@$(MKDIR) /etc/init.d
-	@$(INSTALL_PROGRAM) bareos-dir /etc/rc.d/init.d/bareos-dir
+	@$(RMF) $(DESTDIR)/etc/rc.d/rc2.d/K20bareos-dir
+	@$(RMF) $(DESTDIR)/etc/rc.d/rc2.d/S99bareos-dir
+	@$(MKDIR) $(DESTDIR)/etc/rc.d/rc2.d
+	@$(MKDIR) $(DESTDIR)/etc/rc.d/init.d
+	@$(INSTALL_PROGRAM) bareos-dir $(DESTDIR)/etc/rc.d/init.d/bareos-dir
 	# set symlinks for script at startup and shutdown
-	@ln -f -s /etc/init.d/bareos-dir /etc/rc0.d/K20bareos-dir
-	@ln -f -s /etc/init.d/bareos-dir /etc/rc1.d/S99bareos-dir
-	@ln -f -s /etc/init.d/bareos-dir /etc/rc2.d/S99bareos-dir
+	@ln -f -s /etc/rc.d/init.d/bareos-dir $(DESTDIR)/etc/rc.d/rc2.d/K20bareos-dir
+	@ln -f -s /etc/rc.d/init.d/bareos-dir $(DESTDIR)/etc/rc.d/rc2.d/S99bareos-dir
 
 clean:
 	@$(RMF) 1 2 3
 
 distclean: clean
-	@$(RMF) bareos-sd bareos-fd bareos-dir
+	@$(RMF) bareos-fd
 	@$(RMF) Makefile bareos-*.spec
 
 devclean: clean
-	@$(RMF) bareos-sd bareos-fd bareos-dir
+	@$(RMF) bareos-fd
 	@$(RMF) Makefile bareos-*.spec

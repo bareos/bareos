@@ -23648,6 +23648,14 @@ fi
 done
 
 
+ac_fn_c_check_header_mongrel "$LINENO" "cephfs/ceph_statx.h" "ac_cv_header_cephfs_ceph_statx_h" "$ac_includes_default"
+if test "x$ac_cv_header_cephfs_ceph_statx_h" = xyes; then :
+
+$as_echo "#define HAVE_CEPHFS_CEPH_STATX_H 1" >>confdefs.h
+
+fi
+
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cmocka support" >&5
@@ -33375,9 +33383,11 @@ COMPRESS_MANPAGES=yes
 
 case "$DISTNAME" in
 aix)
+   ZLIB_LIBS_NONSHARED="${ZLIB_LIBS}"
    TAPEDRIVE="/dev/rmt0.1"
    PSCMD="ps -e -o pid,comm"
    PFILES="${PFILES} \
+      platforms/aix/bareos-fd \
       platforms/aix/Makefile"
    largefile_support="yes"
   ;;

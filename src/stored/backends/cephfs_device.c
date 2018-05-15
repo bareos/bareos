@@ -152,12 +152,20 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
     * See if we store in an explicit directory.
     */
    if (m_basedir) {
+#if HAVE_CEPHFS_CEPH_STATX_H
+      struct ceph_statx stx;
+#else
       struct stat st;
+#endif
 
       /*
        * Make sure the dir exists if one is defined.
        */
+#if HAVE_CEPHFS_CEPH_STATX_H
+      status = ceph_statx(m_cmount, m_basedir, &stx, CEPH_STATX_SIZE, AT_SYMLINK_NOFOLLOW);
+#else
       status = ceph_stat(m_cmount, m_basedir, &st);
+#endif
       if (status < 0) {
          switch (status) {
          case -ENOENT:
@@ -172,8 +180,12 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
             goto bail_out;
          }
       } else {
+#if HAVE_CEPHFS_CEPH_STATX_H
+         if (!S_ISDIR(stx.stx_mode)) {
+#else
          if (!S_ISDIR(st.st_mode)) {
-            Mmsg1(errmsg, _("Specified CEPHFS direcory %s is not a directory.\n"), m_basedir);
+#endif
+            Mmsg1(errmsg, _("Specified CEPHFS directory %s is not a directory.\n"), m_basedir);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
@@ -271,7 +283,11 @@ boffset_t cephfs_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 bool cephfs_device::d_truncate(DCR *dcr)
 {
    int status;
+#if HAVE_CEPHFS_CEPH_STATX_H
+   struct ceph_statx stx;
+#else
    struct stat st;
+#endif
 
    if (m_fd >= 0) {
       status = ceph_ftruncate(m_cmount, m_fd, 0);
@@ -291,16 +307,28 @@ bool cephfs_device::d_truncate(DCR *dcr)
        * 3. open new file with same mode
        * 4. change ownership to original
        */
+#if HAVE_CEPHFS_CEPH_STATX_H
+      status = ceph_fstatx(m_cmount, m_fd, &stx, CEPH_STATX_MODE, 0);
+#else
       status = ceph_fstat(m_cmount, m_fd, &st);
+#endif
       if (status < 0) {
          berrno be;
 
+#if HAVE_CEPHFS_CEPH_STATX_H
+         Mmsg2(errmsg, _("Unable to ceph_statx device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
+#else
          Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
+#endif
          Dmsg1(100, "%s", errmsg);
          return false;
       }
 
+#if HAVE_CEPHFS_CEPH_STATX_H
+      if (stx.stx_size != 0) {             /* ceph_ftruncate() didn't work */
+#else
       if (st.st_size != 0) {             /* ceph_ftruncate() didn't work */
+#endif
          ceph_close(m_cmount, m_fd);
          ceph_unlink(m_cmount, m_virtual_filename);
 
@@ -308,7 +336,11 @@ bool cephfs_device::d_truncate(DCR *dcr)
           * Recreate the file -- of course, empty
           */
          oflags = O_CREAT | O_RDWR | O_BINARY;
+#if HAVE_CEPHFS_CEPH_STATX_H
+         m_fd = ceph_open(m_cmount, m_virtual_filename, oflags, stx.stx_mode);
+#else
          m_fd = ceph_open(m_cmount, m_virtual_filename, oflags, st.st_mode);
+#endif
          if (m_fd < 0) {
             berrno be;
 
@@ -323,7 +355,11 @@ bool cephfs_device::d_truncate(DCR *dcr)
          /*
           * Reset proper owner
           */
+#if HAVE_CEPHFS_CEPH_STATX_H
+         ceph_chown(m_cmount, m_virtual_filename, stx.stx_uid, stx.stx_gid);
+#else
          ceph_chown(m_cmount, m_virtual_filename, st.st_uid, st.st_gid);
+#endif
       }
    }
 

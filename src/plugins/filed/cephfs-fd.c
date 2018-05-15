@@ -127,7 +127,11 @@ struct plugin_ctx {
    char *basedir;                     /* Basedir to start backup in */
    char flags[FOPTS_BYTES];           /* Bareos internal flags */
    int32_t type;                      /* FT_xx for this file */
+#if HAVE_CEPHFS_CEPH_STATX_H
+   struct ceph_statx statx;           /* Stat struct for next file to save */
+#else
    struct stat statp;                 /* Stat struct for next file to save */
+#endif
    bool processing_xattr;             /* Set when we are processing a xattr list */
    char *next_xattr_name;             /* Next xattr name to process */
    POOLMEM *cwd;                      /* Current Working Directory */
@@ -169,7 +173,11 @@ static plugin_argument plugin_arguments[] = {
  * a stack so we can pop it after we have processed the subdir.
  */
 struct dir_stack_entry {
+#if HAVE_CEPHFS_CEPH_STATX_H
+   struct ceph_statx statx;           /* Stat struct of directory */
+#else
    struct stat statp;                 /* Stat struct of directory */
+#endif
    struct ceph_dir_result *cdir;      /* CEPHFS directory handle */
 };
 
@@ -448,7 +456,11 @@ static bRC get_next_file_to_backup(bpContext *ctx)
           * Pop the previous directory handle and continue processing that.
           */
          entry = (struct dir_stack_entry *)p_ctx->dir_stack->pop();
+#if HAVE_CEPHFS_CEPH_STATX_H
+         memcpy(&p_ctx->statx, &entry->statx, sizeof(p_ctx->statx));
+#else
          memcpy(&p_ctx->statp, &entry->statp, sizeof(p_ctx->statp));
+#endif
          p_ctx->cdir = entry->cdir;
          free(entry);
       } else {
@@ -467,17 +479,28 @@ static bRC get_next_file_to_backup(bpContext *ctx)
     * Loop until we know what file is next or when we are done.
     */
    while (1) {
-      int stmask = 0;
 
+#if HAVE_CEPHFS_CEPH_STATX_H
+      unsigned int stmask = 0;
+      memset(&p_ctx->statx, 0, sizeof(p_ctx->statx));
+      status = ceph_readdirplus_r(p_ctx->cmount, p_ctx->cdir, &p_ctx->de, &p_ctx->statx, stmask, CEPH_STATX_ALL_STATS, NULL);
+#else
+      int stmask = 0;
       memset(&p_ctx->statp, 0, sizeof(p_ctx->statp));
-      memset(&p_ctx->de, 0, sizeof(p_ctx->de));
       status = ceph_readdirplus_r(p_ctx->cmount, p_ctx->cdir, &p_ctx->de, &p_ctx->statp, &stmask);
+#endif
+
+      memset(&p_ctx->de, 0, sizeof(p_ctx->de));
 
       /*
        * No more entries in this directory ?
        */
       if (status == 0) {
+#if HAVE_CEPHFS_CEPH_STATX_H
+         status = ceph_statx(p_ctx->cmount, p_ctx->cwd, &p_ctx->statx, CEPH_STATX_MODE, 0);
+#else
          status = ceph_stat(p_ctx->cmount, p_ctx->cwd, &p_ctx->statp);
+#endif
          if (status < 0) {
             berrno be;
 
@@ -519,7 +542,11 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       /*
        * Determine the FileType.
        */
+#if HAVE_CEPHFS_CEPH_STATX_H
+      switch (p_ctx->statx.stx_mode & S_IFMT) {
+#else
       switch (p_ctx->statp.st_mode & S_IFMT) {
+#endif
       case S_IFREG:
          p_ctx->type = FT_REG;
          break;
@@ -547,8 +574,13 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          p_ctx->type = FT_SPEC;
          break;
       default:
+#if HAVE_CEPHFS_CEPH_STATX_H
+         Jmsg(ctx, M_FATAL, "cephfs-fd: Unknown filetype encountered %ld for %s\n",
+              p_ctx->statx.stx_mode & S_IFMT, p_ctx->next_filename);
+#else
          Jmsg(ctx, M_FATAL, "cephfs-fd: Unknown filetype encountered %ld for %s\n",
               p_ctx->statp.st_mode & S_IFMT, p_ctx->next_filename);
+#endif
          return bRC_Error;
       }
 
@@ -560,8 +592,11 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       sp.pkt_end = sizeof(sp);
       sp.fname = p_ctx->next_filename;
       sp.type = p_ctx->type;
+#if HAVE_CEPHFS_CEPH_STATX_H
+      memcpy(&sp.statp, &p_ctx->statx, sizeof(sp.statp));
+#else
       memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));
-
+#endif
       if (bfuncs->AcceptFile(ctx, &sp) == bRC_Skip) {
          Dmsg(ctx, dbglvl, "cephfs-fd: file %s skipped due to current fileset settings\n", p_ctx->next_filename);
          continue;
@@ -621,7 +656,11 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
                struct dir_stack_entry *new_entry;
 
                new_entry = (struct dir_stack_entry *)malloc(sizeof(struct dir_stack_entry));
+#if HAVE_CEPHFS_CEPH_STATX_H
+               memcpy(&new_entry->statx, &p_ctx->statx, sizeof(new_entry->statx));
+#else
                memcpy(&new_entry->statp, &p_ctx->statp, sizeof(new_entry->statp));
+#endif
                new_entry->cdir = p_ctx->cdir;
                p_ctx->dir_stack->push(new_entry);
             }
@@ -644,7 +683,11 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
                   struct dir_stack_entry *entry;
 
                   entry = (struct dir_stack_entry *)p_ctx->dir_stack->pop();
+#if HAVE_CEPHFS_CEPH_STATX_H
+                  memcpy(&p_ctx->statx, &entry->statx, sizeof(p_ctx->statx));
+#else
                   memcpy(&p_ctx->statp, &entry->statp, sizeof(p_ctx->statp));
+#endif
                   p_ctx->cdir = entry->cdir;
                   free(entry);
 
@@ -710,7 +753,11 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 
    sp->fname = p_ctx->next_filename;
    sp->type = p_ctx->type;
+#if HAVE_CEPHFS_CEPH_STATX_H
+   memcpy(&sp->statp, &p_ctx->statx, sizeof(sp->statp));
+#else
    memcpy(&sp->statp, &p_ctx->statp, sizeof(sp->statp));
+#endif
    sp->save_time = p_ctx->since;
 
    /*
@@ -758,8 +805,13 @@ static bRC endBackupFile(bpContext *ctx)
    if (bit_is_set(FO_NOATIME, p_ctx->flags)) {
       struct utimbuf times;
 
+#if HAVE_CEPHFS_CEPH_STATX_H
+      times.actime = p_ctx->statx.stx_atime.tv_sec;
+      times.modtime = p_ctx->statx.stx_mtime.tv_sec;
+#else
       times.actime = p_ctx->statp.st_atime;
       times.modtime = p_ctx->statp.st_mtime;
+#endif
 
       ceph_utime(p_ctx->cmount, p_ctx->next_filename, &times);
    }
@@ -1199,7 +1251,11 @@ static bRC endRestoreFile(bpContext *ctx)
 static inline bool cephfs_makedirs(plugin_ctx *p_ctx, const char *directory)
 {
    char *bp;
+#if HAVE_CEPHFS_CEPH_STATX_H
+   struct ceph_statx stx;
+#else
    struct stat st;
+#endif
    bool retval = false;
    POOL_MEM new_directory(PM_FNAME);
 
@@ -1227,7 +1283,11 @@ static inline bool cephfs_makedirs(plugin_ctx *p_ctx, const char *directory)
       } else {
          *bp = '\0';
 
+#if HAVE_CEPHFS_CEPH_STATX_H
+         if (ceph_statx(p_ctx->cmount, new_directory.c_str(), &stx, CEPH_STATX_SIZE, AT_SYMLINK_NOFOLLOW) != 0) {
+#else
          if (ceph_lstat(p_ctx->cmount, new_directory.c_str(), &st) != 0) {
+#endif
             switch (errno) {
             case ENOENT:
                /*
@@ -1273,7 +1333,11 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
    int status;
    bool exists = false;
+#if HAVE_CEPHFS_CEPH_STATX_H
+   struct ceph_statx stx;
+#else
    struct stat st;
+#endif
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {
@@ -1284,20 +1348,32 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
     * See if the file already exists.
     */
    Dmsg(ctx, 400, "cephfs-fd: Replace=%c %d\n", (char)rp->replace, rp->replace);
+#if HAVE_CEPHFS_CEPH_STATX_H
+   status = ceph_statx(p_ctx->cmount, rp->ofname, &stx, CEPH_STATX_SIZE, AT_SYMLINK_NOFOLLOW);
+#else
    status = ceph_lstat(p_ctx->cmount, rp->ofname, &st);
+#endif
    if (status == 0) {
       exists = true;
 
       switch (rp->replace) {
       case REPLACE_IFNEWER:
+#if HAVE_CEPHFS_CEPH_STATX_H
+         if (rp->statp.st_mtime <= stx.stx_mtime.tv_sec) {
+#else
          if (rp->statp.st_mtime <= st.st_mtime) {
+#endif
             Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Not newer: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
          break;
       case REPLACE_IFOLDER:
+#if HAVE_CEPHFS_CEPH_STATX_H
+         if (rp->statp.st_mtime >= stx.stx_mtime.tv_sec) {
+#else
          if (rp->statp.st_mtime >= st.st_mtime) {
+#endif
             Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Not older: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
