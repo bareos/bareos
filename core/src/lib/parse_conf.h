@@ -391,7 +391,7 @@ public:
    /*
     * Members
     */
-   const char *cf_;                    /* Config file parameter */
+   std::string cf_;                    /* Config file parameter */
    LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */
    LEX_WARNING_HANDLER *scan_warning_; /* Warning handler if non-null */
    INIT_RES_HANDLER *init_res_;        /* Init resource handler for non default types if non-null */
@@ -412,27 +412,32 @@ public:
    /*
     * Methods
     */
-   void init(
-      const char *cf,
-      LEX_ERROR_HANDLER *ScanError,
-      LEX_WARNING_HANDLER *scan_warning,
-      INIT_RES_HANDLER *init_res,
-      STORE_RES_HANDLER *StoreRes,
-      PRINT_RES_HANDLER *print_res,
-      int32_t err_type,
-      void *vres_all,
-      int32_t res_all_size,
-      int32_t r_first,
-      int32_t r_last,
-      ResourceTable *resources,
-      CommonResourceHeader **res_head);
-   void SetDefaultConfigFilename(const char *filename);
-   void SetConfigIncludeDir(const char *rel_path);
+
+   ConfigurationParser();
+   ConfigurationParser (
+                  const char *cf,
+                  LEX_ERROR_HANDLER *ScanError,
+                  LEX_WARNING_HANDLER *scan_warning,
+                  INIT_RES_HANDLER *init_res,
+                  STORE_RES_HANDLER *StoreRes,
+                  PRINT_RES_HANDLER *print_res,
+                  int32_t err_type,
+                  void *vres_all,
+                  int32_t res_all_size,
+                  int32_t r_first,
+                  int32_t r_last,
+                  ResourceTable *resources,
+                  CommonResourceHeader **res_head,
+                  const char* config_default_filename,
+                  const char* config_include_dir);
+
+   ~ConfigurationParser();
+
    bool IsUsingConfigIncludeDir() { return use_config_include_dir_; }
    bool ParseConfig();
    bool ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError = NULL,
-                          LEX_WARNING_HANDLER *scan_warning = NULL, int32_t err_type = M_ERROR_TERM);
-   const char *get_base_config_path() { return used_config_path_; }
+                          LEX_WARNING_HANDLER *scan_warning = NULL);
+   std::string get_base_config_path() { return used_config_path_; }
    void FreeResources();
    CommonResourceHeader **save_resources();
    CommonResourceHeader **new_res_head();
@@ -451,15 +456,18 @@ public:
    bool GetPathOfNewResource(PoolMem &path, PoolMem &extramsg, const char *component,
                                  const char *resourcetype, const char *name,
                                  bool error_if_exits = false, bool create_directories = false);
+private:
+   ConfigurationParser(const ConfigurationParser&) = delete;
+   ConfigurationParser operator=(const ConfigurationParser&) = delete;
 
-protected:
-   const char *config_default_filename_;         /* default config filename, that is used, if no filename is given */
-   const char *config_dir_;                      /* base directory of configuration files */
-   const char *config_include_dir_;              /* rel. path to the config include directory
+private:
+   std::string config_default_filename_;         /* default config filename, that is used, if no filename is given */
+   std::string config_dir_;                      /* base directory of configuration files */
+   std::string config_include_dir_;              /* rel. path to the config include directory
                                                      (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
    bool use_config_include_dir_;                 /* Use the config include directory */
-   const char *config_include_naming_format_;    /* Format string for file paths of resources */
-   const char *used_config_path_;                /* Config file that is used. */
+   std::string config_include_naming_format_;    /* Format string for file paths of resources */
+   std::string used_config_path_;                /* Config file that is used. */
 
    const char *get_default_configdir();
    bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);
@@ -467,8 +475,6 @@ protected:
    bool FindConfigPath(PoolMem &full_path);
    int GetResourceTableIndex(int resource_type);
 };
-
-ConfigurationParser *new_config_parser();
 
 DLL_IMP_EXP void PrintMessage(void *sock, const char *fmt, ...);
 

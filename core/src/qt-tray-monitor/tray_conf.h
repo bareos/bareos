@@ -137,7 +137,7 @@ union UnionOfResources {
    ~UnionOfResources() {}
 };
 
-void InitTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
 
 #endif /* TRAY_CONF_H_INCLUDED */

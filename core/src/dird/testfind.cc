@@ -39,7 +39,7 @@
 
 /* Dummy functions */
 void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
-extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseDirConfig(const char *configfile, int exit_code);
 
 /* Global variables */
 static int num_files = 0;
@@ -50,7 +50,7 @@ static int trunc_path = 0;
 static int attrs = 0;
 
 DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 static JobControlRecord *jcr;
 
@@ -133,8 +133,8 @@ main (int argc, char *const *argv)
    argc -= optind;
    argv += optind;
 
-   my_config = new_config_parser();
-   ParseDirConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitDirConfig(configfile, M_ERROR_TERM);
+   my_config->ParseConfig();
 
    MessagesResource *msg;
 
@@ -168,8 +168,7 @@ main (int argc, char *const *argv)
 
    FreeJcr(jcr);
    if (my_config) {
-      my_config->FreeResources();
-      free(my_config);
+      delete my_config;
       my_config = NULL;
    }
 

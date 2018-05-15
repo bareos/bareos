@@ -184,7 +184,7 @@ bool RestoreCmd(UaContext *ua, const char *cmd)
       ua->ErrorMsg(_(
          "No Restore Job Resource found in %s.\n"
          "You must create at least one before running this command.\n"),
-         my_config->get_base_config_path());
+         my_config->get_base_config_path().c_str());
       goto bail_out;
    }
 

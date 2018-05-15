@@ -51,7 +51,7 @@
 #include "include/jcr.h"
 
 /* Imported functions */
-extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
@@ -241,15 +241,14 @@ int main (int argc, char *argv[])
   if (export_config_schema) {
       PoolMem buffer;
 
-      my_config = new_config_parser();
-      InitSdConfig(my_config, configfile, M_ERROR_TERM);
+      my_config = InitSdConfig(configfile, M_ERROR_TERM);
       PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       goto bail_out;
    }
 
-   my_config = new_config_parser();
-   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitSdConfig(configfile, M_ERROR_TERM);
+   ParseSdConfig(configfile, M_ERROR_TERM);
 
    if (export_config) {
       my_config->DumpResources(PrintMessage, NULL);
@@ -266,7 +265,7 @@ int main (int argc, char *argv[])
    }
 
    if (!CheckResources()) {
-      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
    }
 
    InitReservationsLock();
@@ -358,7 +357,7 @@ static int CheckResources()
 {
    bool OK = true;
    bool tls_needed;
-   const char *configfile = my_config->get_base_config_path();
+   const char *configfile = my_config->get_base_config_path().c_str();
 
    if (GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
@@ -789,8 +788,7 @@ void TerminateStored(int sig)
       configfile = NULL;
    }
    if (my_config) {
-      my_config->FreeResources();
-      free(my_config);
+      delete my_config;
       my_config = NULL;
    }
 

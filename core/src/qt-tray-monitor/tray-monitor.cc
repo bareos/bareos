@@ -34,10 +34,7 @@
 #include "monitoritemthread.h"
 #include "lib/bsignal.h"
 
-ConfigurationParser *my_config = NULL;             /* Our Global config */
-
-/* Imported function from tray_conf.cpp */
-extern bool ParseTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 /* Static variables */
 static QApplication* app = NULL;
@@ -154,8 +151,7 @@ static void cleanup()
    }
 
    if (my_config) {
-      my_config->FreeResources();
-      free(my_config);
+      delete my_config;
       my_config = NULL;
    }
 
@@ -197,8 +193,7 @@ int main(int argc, char *argv[])
    if (cl.export_config_schema) {
       PoolMem buffer;
 
-      my_config = new_config_parser();
-      InitTmonConfig(my_config, cl.configfile, M_ERROR_TERM);
+      my_config = InitTmonConfig(cl.configfile, M_ERROR_TERM);
       PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       fflush(stdout);
@@ -206,8 +201,8 @@ int main(int argc, char *argv[])
    }
 
    // read the config file
-   my_config = new_config_parser();
-   ParseTmonConfig(my_config, cl.configfile, M_ERROR_TERM);
+   my_config = InitTmonConfig(cl.configfile, M_ERROR_TERM);
+   my_config->ParseConfig();
 
    if (cl.export_config) {
       my_config->DumpResources(PrintMessage, NULL);

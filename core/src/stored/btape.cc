@@ -50,7 +50,7 @@
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(const char *configfile, int exit_code);
 
 /* Exported variables */
 int quit = 0;
@@ -267,8 +267,8 @@ int main(int margc, char *margv[])
 
    daemon_start_time = time(NULL);
 
-   my_config = new_config_parser();
-   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitSdConfig(configfile, M_ERROR_TERM);
+   ParseSdConfig(configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
@@ -360,8 +360,7 @@ static void TerminateBtape(int status)
    }
 
    if (my_config) {
-      my_config->FreeResources();
-      free(my_config);
+      delete my_config;
       my_config = NULL;
    }
 

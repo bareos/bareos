@@ -646,7 +646,7 @@ union UnionOfResources {
    ~UnionOfResources() {}
 };
 
-void InitDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+ConfigurationParser *InitDirConfig(const char *configfile, int exit_code);
 bool PropagateJobdefs(int res_type, JobResource *res);
 bool ValidateResource(int type, ResourceItem *items, BareosResource *res);
 
