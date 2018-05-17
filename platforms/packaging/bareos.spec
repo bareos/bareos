@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2017 Bareos GmbH & Co KG
+#               2013-2018 Bareos GmbH & Co KG
 #
 
 Name: 		bareos
@@ -49,6 +49,13 @@ Vendor: 	The Bareos Team
 %define install_suse_fw 0
 %define systemd 0
 %define python_plugins 1
+
+# fedora 28 deprecated libwrap
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+%define use_libwrap 0
+%else
+%define use_libwrap 1
+%endif
 
 #
 # SUSE (openSUSE, SLES) specific settigs
@@ -219,7 +226,10 @@ BuildRequires: lsb-release
 
 BuildRequires: libtermcap-devel
 BuildRequires: passwd
+
+%if %{use_libwrap}
 BuildRequires: tcp_wrappers
+%endif
 
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
@@ -241,9 +251,10 @@ BuildRequires: fedora-release
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: jansson-devel
+%if %{use_libwrap}
 BuildRequires: tcp_wrappers-devel
 %endif
-
+%endif
 %else
 # non suse, non redhat: eg. mandriva.
 
@@ -465,10 +476,14 @@ Requires:   openssl-devel
 Requires:   libopenssl-devel
 %endif
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
+%if %{use_libwrap}
 Requires:   tcp_wrappers-devel
+%endif
 %else
 %if 0%{?rhel_version} || 0%{?centos_version}
+%if %{use_libwrap}
 Requires:   tcp_wrappers
+%endif
 %else
 Requires:   tcpd-devel
 %endif
@@ -739,7 +754,9 @@ export MTX=/usr/sbin/mtx
 %if 0%{?build_sqlite3}
   --with-sqlite3 \
 %endif
+%if %{use_libwrap}
   --with-tcp-wrappers \
+%endif
   --with-dir-user=%{director_daemon_user} \
   --with-dir-group=%{daemon_group} \
   --with-sd-user=%{storage_daemon_user} \
@@ -759,6 +776,8 @@ export MTX=/usr/sbin/mtx
   --with-systemd \
 %endif
   --enable-includes
+
+
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
