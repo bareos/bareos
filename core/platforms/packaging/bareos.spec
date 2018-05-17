@@ -53,6 +53,14 @@ Vendor: 	The Bareos Team
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
 
+
+# fedora 28 deprecated libwrap
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+%define use_libwrap 0
+%else
+%define use_libwrap 1
+%endif
+
 #
 # SUSE (openSUSE, SLES) specific settigs
 #
@@ -228,7 +236,10 @@ BuildRequires: lsb-release
 
 BuildRequires: libtermcap-devel
 BuildRequires: passwd
+
+%if %{use_libwrap}
 BuildRequires: tcp_wrappers
+%endif
 
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
@@ -250,9 +261,10 @@ BuildRequires: fedora-release
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: jansson-devel
+%if %{use_libwrap}
 BuildRequires: tcp_wrappers-devel
 %endif
-
+%endif
 %else
 # non suse, non redhat: eg. mandriva.
 
@@ -474,10 +486,14 @@ Requires:   openssl-devel
 Requires:   libopenssl-devel
 %endif
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
+%if %{use_libwrap}
 Requires:   tcp_wrappers-devel
+%endif
 %else
 %if 0%{?rhel_version} || 0%{?centos_version}
+%if %{use_libwrap}
 Requires:   tcp_wrappers
+%endif
 %else
 Requires:   tcpd-devel
 %endif
@@ -772,7 +788,9 @@ cmake  .. \
 %if 0%{?build_sqlite3}
   -Dsqlite3=yes \
 %endif
+%if %{use_libwrap}
   -Dtcp-wrappers=yes \
+%endif
   -Ddir-user=%{director_daemon_user} \
   -Ddir-group=%{daemon_group} \
   -Dsd-user=%{storage_daemon_user} \
