@@ -41,7 +41,6 @@ Vendor: 	The Bareos Team
 %define client_only 0
 %define build_qt_monitor 1
 %define build_sqlite3 1
-%define check_cmocka 1
 %define glusterfs 0
 %define objectstorage 0
 %define have_git 1
@@ -63,7 +62,6 @@ Vendor: 	The Bareos Team
 %if 0%{?sles_version} == 10
 %define build_qt_monitor 0
 %define build_sqlite3 0
-%define check_cmocka 0
 %define have_git 0
 %define python_plugins 0
 %endif
@@ -73,12 +71,6 @@ Vendor: 	The Bareos Team
 %define _fwdefdir   %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
 %endif
 
-# SLES 11
-%if 0%{?suse_version} == 1110
-# cmocka package is broken on SLES11SP3, 32bit.
-# We disable it in all SLES11 build.
-%define check_cmocka 0
-%endif
 
 %if 0%{?suse_version} > 1140
 %define systemd_support 1
@@ -105,7 +97,6 @@ Vendor: 	The Bareos Team
 %define client_only 1
 %define build_qt_monitor 0
 %define build_sqlite3 0
-%define check_cmocka 0
 %define have_git 0
 %define python_plugins 0
 %endif
@@ -193,9 +184,6 @@ BuildRequires: mtx
 BuildRequires: libqt4-devel
 %endif
 
-%if 0%{?check_cmocka}
-BuildRequires: libcmocka-devel >= 1.0.1
-%endif
 
 %if 0%{?python_plugins}
 BuildRequires: python-devel >= 2.6
