@@ -56,6 +56,12 @@ Vendor: 	The Bareos Team
 %define use_libwrap 1
 %endif
 
+# fedora 28: rpc was removed from libc
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+BuildRequires: rpcgen
+BuildRequires: libtirpc-devel
+%endif
+
 #
 # SUSE (openSUSE, SLES) specific settigs
 #
