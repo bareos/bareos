@@ -84,6 +84,11 @@ check_exit_code
 make -C cmake-build ${MAKEOPT}
 check_exit_code
 make -C cmake-build install
+
+#  TargetDirectories for gcov
+mkdir CMakeFiles
+cp cmake-build/CMakeFiles/TargetDirectories.txt CMakeFiles
+
 # if [ a${KEEP_SOURCE} = a ]; then
 #    rm -rf examples patches
 #    check_exit_code

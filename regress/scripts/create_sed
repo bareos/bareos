@@ -58,6 +58,8 @@ cd ${BAREOS_SOURCE}
 bareos_gitrev=`git show -s --format=%h HEAD`
 cd -
 
+GCOV=`which gcov`
+
 
 # Create sed command script
 >${out}
@@ -125,4 +127,5 @@ echo "s%@gitbranch@%${gitbranch}%g" >>${out}
 echo "s%@gitrev@%${gitrev}%g" >>${out}
 echo "s%@regress_gitbranch@%${regress_gitbranch}%g" >>${out}
 echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
+echo "s%@GCOV@%${GCOV}%g" >>${out}
 

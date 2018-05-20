@@ -12,3 +12,4 @@ MakeCommand: @regressdir@/scripts/update-ctest
 ConfigureCommand: true
 UpdateCommand: true
 TimeOut: 600
+CoverageCommand:  @GCOV@
