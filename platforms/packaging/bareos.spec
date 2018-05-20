@@ -83,7 +83,6 @@ BuildRequires: libtirpc-devel
 %endif
 
 # SLES 12
-#%%if 0%{?suse_version} == 1315 && 0%%{?is_opensuse} == 0
 %if 0%{?sle_version} >= 120000
 %define objectstorage 1
 %endif
