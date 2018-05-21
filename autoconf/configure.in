@@ -847,9 +847,6 @@ if test x$generate_debian_control = xyes; then
 fi
 AC_SUBST(DEBIAN_CONTROL)
 
-
-
-
 dnl -----------------------------------------------------------------------
 
 dnl Minimal stuff for readline Makefile configuration
@@ -866,7 +863,16 @@ AC_CHECK_FUNCS(lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown
 AC_CHECK_FUNCS(mmap nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
 
+
+dnl -----------------------------------------------------------------------
 AC_CHECK_HEADER(cephfs/ceph_statx.h, [AC_DEFINE(HAVE_CEPHFS_CEPH_STATX_H, 1, [Define to 1 if you have the <cephfs/ceph_statx.h> header file.])] , )
+AC_CHECK_LIB(tirpc, callrpc, [LIBS="$LIBS -ltirpc"
+                              CFLAGS="${CFLAGS} -I/usr/include/tirpc"
+                              CXXFLAGS="${CXXFLAGS} -I/usr/include/tirpc"
+                              CPPFLAGS="${CPPFLAGS} -I/usr/include/tirpc"
+                              ])
+
+
 
 
 dnl ---------------------------------------------------------------------------

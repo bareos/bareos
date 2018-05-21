@@ -23315,9 +23315,6 @@ fi
 
 
 
-
-
-
 MAKE_SHELL=/bin/sh
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether stat file-mode macros are broken" >&5
@@ -23601,12 +23598,59 @@ fi
 done
 
 
+
 ac_fn_c_check_header_mongrel "$LINENO" "cephfs/ceph_statx.h" "ac_cv_header_cephfs_ceph_statx_h" "$ac_includes_default"
 if test "x$ac_cv_header_cephfs_ceph_statx_h" = xyes; then :
 
 $as_echo "#define HAVE_CEPHFS_CEPH_STATX_H 1" >>confdefs.h
 
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for callrpc in -ltirpc" >&5
+$as_echo_n "checking for callrpc in -ltirpc... " >&6; }
+if ${ac_cv_lib_tirpc_callrpc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltirpc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char callrpc ();
+int
+main ()
+{
+return callrpc ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tirpc_callrpc=yes
+else
+  ac_cv_lib_tirpc_callrpc=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tirpc_callrpc" >&5
+$as_echo "$ac_cv_lib_tirpc_callrpc" >&6; }
+if test "x$ac_cv_lib_tirpc_callrpc" = xyes; then :
+  LIBS="$LIBS -ltirpc"
+                              CFLAGS="${CFLAGS} -I/usr/include/tirpc"
+                              CXXFLAGS="${CXXFLAGS} -I/usr/include/tirpc"
+                              CPPFLAGS="${CPPFLAGS} -I/usr/include/tirpc"
+
+fi
+
 
 
 

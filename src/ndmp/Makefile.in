@@ -79,7 +79,7 @@ NDMJOB_OBJS = $(NDMJOB_SRCS:.c=.lo)
 WRAP_TAR_OBJS = $(WRAP_TAR_SRCS:.c=.lo)
 WRAP_TEST_OBJS = $(WRAP_TEST_SRCS:.c=.lo)
 
-INCLUDES += -I. -I$(srcdir) -I$(basedir) -I$(basedir)/include
+INCLUDES += -I. -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(includedir)/tirpc
 CFLAGS += -DNDMOS_OPTION_PRETTYPRINT_HUMAN_READABLE_IP
 # CFLAGS += -DNDMOS_OPTION_NO_TEST_AGENTS
 
