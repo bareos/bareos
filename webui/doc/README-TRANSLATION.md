@@ -12,13 +12,13 @@ or simply install it from your distributions package repository if available.
 
 ### How to refresh webui.pot file, when some strings have been added, modified or removed from source files?
 
-Execute './configure' and run 'make update-pot' in modules/Application/language, which updates the webui.pot file.
+Execute './configure' and run 'make update-pot' in module/Application/language, which updates the webui.pot file.
 Also you need to update public/js/local/webui-datatables.pot, run 'make update-pot' in
 public/js/locale to achieve that.
 
 ### How to update an existing *.po file, when some strings have been added, modified or removed from source files?
 
-After updating the webui.pot, please see above, run e.g. 'make update-po PO=en_EN.po' in modules/Application/language, which updates your given lang_LANG.po file and merges changes from webui.pot. Use the same procedure for the po files located in public/js/local, take care of the subdirectories, run e.g. 'make update-po PO=en_EN/LC_MESSAGES/en_EN.po'.
+After updating the webui.pot, please see above, run e.g. 'make update-po PO=en_EN.po' in module/Application/language, which updates your given lang_LANG.po file and merges changes from webui.pot. Use the same procedure for the po files located in public/js/local, take care of the subdirectories, run e.g. 'make update-po PO=en_EN/LC_MESSAGES/en_EN.po'.
 
 ### How do I add a new translation into language xyz?
 

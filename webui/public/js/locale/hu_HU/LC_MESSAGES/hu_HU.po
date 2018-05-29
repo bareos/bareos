@@ -1,0 +1,336 @@
+# Bareos WebUI Hungarian language file
+# This file is distributed under the same license as the Bareos WebUI package.
+# Gábor Mizda <gabrov@freemail.hu>, 2018.
+
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-05-19 10:15+0200\n"
+"PO-Revision-Date: 2018-05-19 10:22+0200\n"
+"Last-Translator: Gábor Mizda <gabrov@freemail.hu>\n"
+"Language-Team: \n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.7\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../../js/custom-functions.js:93
+msgid "Backup"
+msgstr "Mentés"
+
+#: ../../js/custom-functions.js:96
+msgid "Migrated"
+msgstr "Migrált"
+
+#: ../../js/custom-functions.js:99
+msgid "Verify"
+msgstr "Ellenőrzött"
+
+#: ../../js/custom-functions.js:102
+msgid "Restore"
+msgstr "Visszaállítás"
+
+#: ../../js/custom-functions.js:105
+msgid "Console program"
+msgstr "Konzol program"
+
+#: ../../js/custom-functions.js:108
+msgid "Internal system job"
+msgstr "Belső rendszer feladat"
+
+#: ../../js/custom-functions.js:111
+msgid "Admin"
+msgstr "Adminisztrátor"
+
+#: ../../js/custom-functions.js:114
+msgid "Archive"
+msgstr "Archív"
+
+#: ../../js/custom-functions.js:117
+msgid "Copy of a job"
+msgstr "Feladat másolata"
+
+#: ../../js/custom-functions.js:120
+msgid "Copy job"
+msgstr "Feladat másolása"
+
+#: ../../js/custom-functions.js:123
+msgid "Migration job"
+msgstr "Migrációs feladat"
+
+#: ../../js/custom-functions.js:126
+msgid "Scan"
+msgstr "Beolvasás"
+
+#: ../../js/custom-functions.js:129
+msgid "Consolidate"
+msgstr "Konszolidálás"
+
+#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
+#: ../../js/custom-functions.js:219
+msgid "Full"
+msgstr "Teljes"
+
+#: ../../js/custom-functions.js:143
+msgid "Differential"
+msgstr "Különbözeti"
+
+#: ../../js/custom-functions.js:145
+msgid "Incremental"
+msgstr "Növekményes"
+
+#: ../../js/custom-functions.js:147
+msgid "VirtualFull"
+msgstr "VirtualFull"
+
+#: ../../js/custom-functions.js:149
+msgid "Base"
+msgstr "Alap"
+
+#: ../../js/custom-functions.js:151
+msgid "Catalog"
+msgstr "Katalógus"
+
+#: ../../js/custom-functions.js:153
+msgid "InitCatalog"
+msgstr "InitCatalog"
+
+#: ../../js/custom-functions.js:155
+msgid "VolumeToCatalog"
+msgstr "VolumeToCatalog"
+
+#: ../../js/custom-functions.js:157
+msgid "DiskToCatalog"
+msgstr "DiskToCatalog"
+
+#: ../../js/custom-functions.js:159
+msgid "Data"
+msgstr "Adat"
+
+#: ../../js/custom-functions.js:161
+msgid "None"
+msgstr "Nincs"
+
+#: ../../js/custom-functions.js:169
+msgid "year(s)"
+msgstr "év"
+
+#: ../../js/custom-functions.js:172
+msgid "month(s)"
+msgstr "hónap"
+
+#: ../../js/custom-functions.js:175
+msgid "day(s)"
+msgstr "nap"
+
+#: ../../js/custom-functions.js:178
+msgid "hour(s)"
+msgstr "óra"
+
+#: ../../js/custom-functions.js:181
+msgid "second(s)"
+msgstr "másodperc"
+
+#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+msgid "Used"
+msgstr "Használt"
+
+#: ../../js/custom-functions.js:201
+msgid "expired"
+msgstr "lejárt"
+
+#: ../../js/custom-functions.js:205
+msgid "expires in 1 day"
+msgstr "lejár 1 nap múlva"
+
+#: ../../js/custom-functions.js:209
+msgid "expires in"
+msgstr "lejár"
+
+#: ../../js/custom-functions.js:209
+msgid "days"
+msgstr "nap múlva"
+
+#: ../../js/custom-functions.js:245
+msgid "never"
+msgstr "soha"
+
+#: ../../js/custom-functions.js:254
+msgid "today"
+msgstr "ma"
+
+#: ../../js/custom-functions.js:257
+msgid "day(s) ago"
+msgstr "nappal ezelőtt"
+
+#: ../../js/custom-functions.js:260
+msgid "month(s) ago"
+msgstr "hónappal ezelőtt"
+
+#: ../../js/custom-functions.js:263
+msgid "year(s) ago"
+msgstr "évvel ezelőtt"
+
+#: ../../js/custom-functions.js:296
+msgid "enabled"
+msgstr "engedélyezett"
+
+#: ../../js/custom-functions.js:299
+msgid "disabled"
+msgstr "letiltott"
+
+#: ../../js/custom-functions.js:307
+msgid "Yes"
+msgstr "Igen"
+
+#: ../../js/custom-functions.js:310
+msgid "No"
+msgstr "Nem"
+
+#: ../../js/custom-functions.js:320
+msgid "Non-fatal error"
+msgstr "Nem végzetes hiba"
+
+#: ../../js/custom-functions.js:321 ../../js/custom-functions.js:326
+#: ../../js/custom-functions.js:331
+msgid "Failure"
+msgstr "Hibás"
+
+#: ../../js/custom-functions.js:325
+msgid "Job terminated in error"
+msgstr "Feladat befejezve hibával"
+
+#: ../../js/custom-functions.js:330
+msgid "Fatal error"
+msgstr "Végzetes hiba"
+
+#: ../../js/custom-functions.js:335
+msgid "Terminated normally"
+msgstr "Sikeresen befejezve"
+
+#: ../../js/custom-functions.js:336
+msgid "Success"
+msgstr "Sikeres"
+
+#: ../../js/custom-functions.js:340 ../../js/custom-functions.js:341
+msgid "Running"
+msgstr "Folyamatban"
+
+#: ../../js/custom-functions.js:345
+msgid "Created but not yet running"
+msgstr "Létrehozva, de még nem fut"
+
+#: ../../js/custom-functions.js:346
+msgid "Queued"
+msgstr "Várakozó"
+
+#: ../../js/custom-functions.js:350 ../../js/custom-functions.js:351
+msgid "Blocked"
+msgstr "Blokkolt"
+
+#: ../../js/custom-functions.js:355
+msgid "Verify differences"
+msgstr "Különbségek ellenőrzése"
+
+#: ../../js/custom-functions.js:356
+msgid "Verify found differences"
+msgstr "Megtalált különbségek ellenőrzése"
+
+#: ../../js/custom-functions.js:360
+msgid "Canceled by user"
+msgstr "Felhasználó leállította"
+
+#: ../../js/custom-functions.js:361
+msgid "Canceled"
+msgstr "Megszakított"
+
+#: ../../js/custom-functions.js:365
+msgid "Waiting on File daemon"
+msgstr "Várakozás a Fájl démonra"
+
+#: ../../js/custom-functions.js:366 ../../js/custom-functions.js:371
+#: ../../js/custom-functions.js:376 ../../js/custom-functions.js:381
+#: ../../js/custom-functions.js:386 ../../js/custom-functions.js:391
+#: ../../js/custom-functions.js:396 ../../js/custom-functions.js:401
+#: ../../js/custom-functions.js:406 ../../js/custom-functions.js:411
+msgid "Waiting"
+msgstr "Várakozás"
+
+#: ../../js/custom-functions.js:370
+msgid "Waiting on the Storage daemon"
+msgstr "Várakozás a Tároló démonra"
+
+#: ../../js/custom-functions.js:375
+msgid "Waiting for new media"
+msgstr "Várakozás az új médiára"
+
+#: ../../js/custom-functions.js:380
+msgid "Waiting for Mount"
+msgstr "Várakozás a csatolásra"
+
+#: ../../js/custom-functions.js:385
+msgid "Waiting for storage resource"
+msgstr "Várakozás a tároló erőforrásra"
+
+#: ../../js/custom-functions.js:390
+msgid "Waiting for job resource"
+msgstr "Várakozás a feladat erőforrásra"
+
+#: ../../js/custom-functions.js:395
+msgid "Waiting for Client resource"
+msgstr "Várakozás a kliens erőforrásra"
+
+#: ../../js/custom-functions.js:400
+msgid "Waiting for maximum jobs"
+msgstr "Várakozás a maximális feladatszámra"
+
+#: ../../js/custom-functions.js:405
+msgid "Waiting for start time"
+msgstr "Várakozás az indulási időre"
+
+#: ../../js/custom-functions.js:410
+msgid "Waiting for higher priority jobs to finish"
+msgstr "Várakozás a nagyobb priorítású feladatok lefutására"
+
+#: ../../js/custom-functions.js:415 ../../js/custom-functions.js:416
+msgid "SD despooling attributes"
+msgstr "SD várólista megszüntetés attribútumai"
+
+#: ../../js/custom-functions.js:420 ../../js/custom-functions.js:421
+msgid "Doing batch insert file records"
+msgstr "Fájl rekordok kötegelt beillesztése"
+
+#: ../../js/custom-functions.js:425
+msgid "Incomplete Job"
+msgstr "Nem lefutott feladat"
+
+#: ../../js/custom-functions.js:426
+msgid "Incomplete"
+msgstr "Nem teljes"
+
+#: ../../js/custom-functions.js:430
+msgid "Committing data (last despool)"
+msgstr "Adat rögzítése (utolsó despool)"
+
+#: ../../js/custom-functions.js:431
+msgid "Committing data"
+msgstr "Adat rögzítése"
+
+#: ../../js/custom-functions.js:435
+msgid "Terminated normally with warnings"
+msgstr "Sikeresen befejezve figyelmeztetésekkel"
+
+#: ../../js/custom-functions.js:436
+msgid "Warning"
+msgstr "Figyelmeztetés"
+
+#: ../../js/custom-functions.js:440 ../../js/custom-functions.js:441
+msgid "Doing data despooling"
+msgstr "Adat várólista megszüntetése"
+
+#: ../../js/custom-functions.js:445 ../../js/custom-functions.js:446
+msgid "Queued waiting for device"
+msgstr "Sorbaállított várakozás az eszközre"
