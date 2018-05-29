@@ -35,7 +35,6 @@
 
 #ifdef HAVE_CONIO
 #include "conio.h"
-//#define CONIO_FIX 1
 #else
 #define ConInit(x)
 #define ConTerm()
@@ -1632,38 +1631,10 @@ void senditf(const char *fmt,...)
 
 void sendit(const char *buf)
 {
-#ifdef CONIO_FIX
-   char obuf[3000];
-   if (output == stdout || teeout) {
-      const char *p, *q;
-      /*
-       * Here, we convert every \n into \r\n because the
-       *  terminal is in raw mode when we are using
-       *  conio.
-       */
-      for (p=q=buf; (p=strchr(q, '\n')); ) {
-         int len = p - q;
-         if (len > 0) {
-            memcpy(obuf, q, len);
-         }
-         memcpy(obuf+len, "\r\n", 3);
-         q = ++p;                    /* point after \n */
-         fputs(obuf, output);
-      }
-      if (*q) {
-         fputs(q, output);
-      }
-      fflush(output);
-   }
-   if (output != stdout) {
-      fputs(buf, output);
-   }
-#else
    fputs(buf, output);
    fflush(output);
    if (teeout) {
       fputs(buf, stdout);
       fflush(stdout);
    }
-#endif
 }
