@@ -1030,7 +1030,7 @@ static void DoEnDisableCmd(UaContext *ua, bool setting)
       }
 
       if (!sched) {
-         ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->argv[i]);
+         ua->ErrorMsg(_("Schedule \"%s\" not found.\n"), ua->argv[i]);
          return;
       }
    } else {
