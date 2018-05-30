@@ -39,6 +39,7 @@
 #include "dird/ua_output.h"
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
+#include "lib/pam_handler.h"
 
 namespace directordaemon {
 
@@ -91,6 +92,11 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
    if (!AuthenticateUserAgent(ua)) {
       goto getout;
    }
+
+   if (!pam_authenticate_useragent("user", "passwocht")) {
+      goto getout;
+   }
+
 
    while (!ua->quit) {
       if (ua->api) {

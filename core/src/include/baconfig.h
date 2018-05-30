@@ -576,6 +576,8 @@ int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 #define bstrdup(str) strcpy((char *)bmalloc(strlen((str))+1),(str))
 #endif
 
+#define actuallystrdup(str) strcpy((char *)actuallymalloc(strlen((str))+1), (str))
+
 #ifdef DEBUG
 #define bmalloc(size) b_malloc(__FILE__, __LINE__, (size))
 #endif

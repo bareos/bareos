@@ -71,7 +71,7 @@ set(BAREOS_DIR_LIBRARIES
    bareosfind
    ${LMDB_LIBS}
    ${NDMP_LIBS}
-   )
+)
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_DIR_LIBRARIES
@@ -100,7 +100,6 @@ target_link_libraries(bareos-dbcheck
 #target_link_libraries(testfind bareos bareosfind 
 #                      jansson ${OPENSSL_LIBS} acl cap lzo2
 #)
-
 
 INSTALL(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
 INSTALL(FILES query.sql DESTINATION "${scriptdir}")
