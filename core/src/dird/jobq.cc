@@ -67,7 +67,7 @@ static void DecWriteStore(JobControlRecord *jcr);
  * Returns: 0 on success
  *          errno on failure
  */
-int JobqInit(jobq_t *jq, int threads, void *(*engine)(void *arg))
+int JobqInit(jobq_t *jq, int max_workers, void *(*engine)(void *arg))
 {
    int status;
    jobq_item_t *item = NULL;
@@ -95,9 +95,8 @@ int JobqInit(jobq_t *jq, int threads, void *(*engine)(void *arg))
       return status;
    }
    jq->quit = false;
-   jq->max_workers = threads;         /* max threads to create */
+   jq->max_workers = max_workers;     /* max threads to create */
    jq->num_workers = 0;               /* no threads yet */
-   jq->idle_workers = 0;              /* no idle threads */
    jq->engine = engine;               /* routine to run */
    jq->valid = JOBQ_VALID;
 
@@ -132,14 +131,6 @@ int JobqDestroy(jobq_t *jq)
     */
    if (jq->num_workers > 0) {
       jq->quit = true;
-      if (jq->idle_workers) {
-         if ((status = pthread_cond_broadcast(&jq->work)) != 0) {
-            BErrNo be;
-            Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_broadcast: ERR=%s\n"), be.bstrerror(status));
-            V(jq->mutex);
-            return status;
-         }
-      }
       while (jq->num_workers > 0) {
          if ((status = pthread_cond_wait(&jq->work, &jq->mutex)) != 0) {
             BErrNo be;
@@ -367,32 +358,15 @@ static int StartServer(jobq_t *jq)
    int status = 0;
    pthread_t id;
 
-   /*
-    * If any threads are idle, wake one.
-    *
-    * Actually we do a broadcast because on /lib/tls
-    * these signals seem to get lost from time to time.
-    */
-   if (jq->idle_workers > 0) {
-      Dmsg0(2300, "Signal worker to wake up\n");
-      if ((status = pthread_cond_broadcast(&jq->work)) != 0) {
-         BErrNo be;
-         Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_signal: ERR=%s\n"), be.bstrerror(status));
-         return status;
-      }
-   } else if (jq->num_workers < jq->max_workers) {
+   if (jq->num_workers < jq->max_workers) {
       Dmsg0(2300, "Create worker thread\n");
-      /*
-       * No idle threads so create a new one
-       */
       SetThreadConcurrency(jq->max_workers + 1);
-      jq->num_workers++;
       if ((status = pthread_create(&id, &jq->attr, jobq_server, (void *)jq)) != 0) {
          BErrNo be;
-         jq->num_workers--;
          Jmsg1(NULL, M_ERROR, 0, _("pthread_create: ERR=%s\n"), be.bstrerror(status));
          return status;
       }
+      jq->num_workers++;
    }
    return status;
 }

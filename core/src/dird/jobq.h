@@ -55,7 +55,6 @@ struct jobq_t {
    bool              quit;            /* jobq should quit */
    int               max_workers;     /* max threads */
    int               num_workers;     /* current threads */
-   int               idle_workers;    /* idle threads */
    void             *(*engine)(void *arg); /* user engine */
 };
 
@@ -63,7 +62,7 @@ struct jobq_t {
 
 extern int JobqInit(
               jobq_t *wq,
-              int     threads,            /* maximum threads */
+              int     max_workers,        /* maximum threads */
               void   *(*engine)(void *)   /* engine routine */
                     );
 extern int JobqDestroy(jobq_t *wq);

@@ -58,7 +58,7 @@ extern "C" void *workq_server(void *arg);
  *  Returns: 0 on success
  *           errno on failure
  */
-int WorkqInit(workq_t *wq, int threads, void *(*engine)(void *arg))
+int WorkqInit(workq_t *wq, int max_workers, void *(*engine)(void *arg))
 {
    int status;
 
@@ -80,9 +80,8 @@ int WorkqInit(workq_t *wq, int threads, void *(*engine)(void *arg))
    }
    wq->quit = 0;
    wq->first = wq->last = NULL;
-   wq->max_workers = threads;         /* max threads to create */
+   wq->max_workers = max_workers;     /* max threads to create */
    wq->num_workers = 0;               /* no threads yet */
-   wq->idle_workers = 0;              /* no idle threads */
    wq->engine = engine;               /* routine to run */
    wq->valid = WORKQ_VALID;
    return 0;
@@ -104,17 +103,8 @@ int WorkqDestroy(workq_t *wq)
   P(wq->mutex);
   wq->valid = 0;                      /* prevent any more operations */
 
-  /*
-   * If any threads are active, wake them
-   */
   if (wq->num_workers > 0) {
      wq->quit = 1;
-     if (wq->idle_workers) {
-        if ((status = pthread_cond_broadcast(&wq->work)) != 0) {
-           V(wq->mutex);
-           return status;
-        }
-     }
      while (wq->num_workers > 0) {
         Dmsg1(1400, "active workers: %d. Waiting for them to finish.\n", wq->num_workers);
         if ((status = pthread_cond_wait(&wq->work, &wq->mutex)) != 0) {
@@ -178,16 +168,8 @@ int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
       wq->last = item;
    }
 
-   /* if any threads are idle, wake one */
-   if (wq->idle_workers > 0) {
-      Dmsg0(1400, "Signal worker\n");
-      if ((status = pthread_cond_broadcast(&wq->work)) != 0) {
-         V(wq->mutex);
-         return status;
-      }
-   } else if (wq->num_workers < wq->max_workers) {
+   if (wq->num_workers < wq->max_workers) {
       Dmsg0(1400, "Create worker thread\n");
-      /* No idle threads so create a new one */
       SetThreadConcurrency(wq->max_workers + 1);
       if ((status = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
          V(wq->mutex);
@@ -203,72 +185,6 @@ int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
    }
    return status;
 }
-
-/*
- *  Remove work from a queue
- *    wq is a queue that was created with workq_init
- *    work_item is an element of work
- *
- *   Note, it is "removed" by immediately calling a processing routine.
- *    if you want to cancel it, you need to provide some external means
- *    of doing so.
- */
-int WorkqRemove(workq_t *wq, workq_ele_t *work_item)
-{
-   int status, found = 0;
-   pthread_t id;
-   workq_ele_t *item, *prev;
-
-   Dmsg0(1400, "WorkqRemove\n");
-   if (wq->valid != WORKQ_VALID) {
-      return EINVAL;
-   }
-
-   P(wq->mutex);
-
-   for (prev=item=wq->first; item; item=item->next) {
-      if (item == work_item) {
-         found = 1;
-         break;
-      }
-      prev = item;
-   }
-   if (!found) {
-      return EINVAL;
-   }
-
-   /* Move item to be first on list */
-   if (wq->first != work_item) {
-      prev->next = work_item->next;
-      if (wq->last == work_item) {
-         wq->last = prev;
-      }
-      work_item->next = wq->first;
-      wq->first = work_item;
-   }
-
-   /* if any threads are idle, wake one */
-   if (wq->idle_workers > 0) {
-      Dmsg0(1400, "Signal worker\n");
-      if ((status = pthread_cond_broadcast(&wq->work)) != 0) {
-         V(wq->mutex);
-         return status;
-      }
-   } else {
-      Dmsg0(1400, "Create worker thread\n");
-      /* No idle threads so create a new one */
-      SetThreadConcurrency(wq->max_workers + 1);
-      if ((status = pthread_create(&id, &wq->attr, workq_server, (void *)wq)) != 0) {
-         V(wq->mutex);
-         return status;
-      }
-      wq->num_workers++;
-   }
-   V(wq->mutex);
-   Dmsg0(1400, "Return WorkqRemove\n");
-   return status;
-}
-
 
 /*
  * This is the worker thread that serves the work queue.

@@ -54,7 +54,6 @@ typedef struct workq_tag {
    int               quit;            /* workq should quit */
    int               max_workers;     /* max threads */
    int               num_workers;     /* current threads */
-   int               idle_workers;    /* idle threads */
    void             *(*engine)(void *arg); /* user engine */
 } workq_t;
 
@@ -67,6 +66,5 @@ extern int WorkqInit(
                     );
 extern int WorkqDestroy(workq_t *wq);
 extern int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority);
-extern int WorkqRemove(workq_t *wq, workq_ele_t *work_item);
 
 #endif /* BAREOS_LIB_WORKQ_H_ */
