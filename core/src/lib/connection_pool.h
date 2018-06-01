@@ -62,26 +62,20 @@ public:
    ConnectionPool();
    ~ConnectionPool();
 
-   void cleanup();
-   alist *get_as_alist();
-   bool add(Connection *connection);
    Connection *add_connection(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
-   bool exists(const char *name);
-   Connection *get_connection(const char *name);
-   Connection *get_connection(const char *name, int timeout_seconds);
-   Connection *get_connection(const char *name, timespec &timeout);
-   int WaitForNewConnection(timespec &timeout);
-   /*
-    * remove specific connection.
-    */
-   bool remove(Connection *connection);
-   /*
-    * remove connection from pool to be used by some other component.
-    */
    Connection *remove(const char* name, int timeout_in_seconds = 0);
+   alist *get_as_alist();
 
 private:
    alist *connections_;
+   int WaitForNewConnection(timespec &timeout);
+   bool add(Connection *connection);
+   bool remove(Connection *connection);
+   bool exists(const char *name);
+   void cleanup();
+   Connection *get_connection(const char *name);
+   Connection *get_connection(const char *name, int timeout_seconds);
+   Connection *get_connection(const char *name, timespec &timeout);
    pthread_mutex_t add_mutex_;
    pthread_cond_t add_cond_var_;
 };
