@@ -1542,7 +1542,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       /*
        * TLS Requirement
        */
-      tls_need = GetNeedFromConfiguration(wstore);
+      tls_need = GetLocalTlsPolicyFromConfiguration(wstore);
 
       char *connection_target_address = StorageAddressToContact(rstore, wstore);
 

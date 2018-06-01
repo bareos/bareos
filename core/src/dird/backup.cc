@@ -554,7 +554,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
        * TLS Requirement
        */
 
-      tls_need = GetNeedFromConfiguration(client);
+      tls_need = GetLocalTlsPolicyFromConfiguration(client);
 
       connection_target_address = StorageAddressToContact(client, store);
 
@@ -568,7 +568,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
        * TLS Requirement
        */
 
-      tls_need = GetNeedFromConfiguration(me);
+      tls_need = GetLocalTlsPolicyFromConfiguration(me);
 
       connection_target_address = ClientAddressToContact(client, store);
 

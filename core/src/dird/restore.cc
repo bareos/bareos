@@ -260,7 +260,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = GetNeedFromConfiguration(store);
+            tls_need = GetLocalTlsPolicyFromConfiguration(store);
 
          connection_target_address = StorageAddressToContact(client, store);
 
@@ -289,7 +289,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = GetNeedFromConfiguration(client);
+            tls_need = GetLocalTlsPolicyFromConfiguration(client);
 
          connection_target_address = ClientAddressToContact(client, store);
          /*

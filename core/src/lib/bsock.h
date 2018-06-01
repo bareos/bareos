@@ -45,7 +45,7 @@ class BareosSocket;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
-uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration);
+uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration);
 
 
 TlsBase *SelectTlsFromPolicy(TlsResource *tls_configuration, uint32_t remote_policy);

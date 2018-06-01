@@ -347,7 +347,7 @@ bool DoVerify(JobControlRecord *jcr)
           * TLS Requirement
           */
 
-         tls_need = GetNeedFromConfiguration(store);
+         tls_need = GetLocalTlsPolicyFromConfiguration(store);
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
@@ -360,7 +360,7 @@ bool DoVerify(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = GetNeedFromConfiguration(client);
+            tls_need = GetLocalTlsPolicyFromConfiguration(client);
 
          /*
           * Tell the SD to connect to the FD.

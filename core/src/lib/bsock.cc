@@ -33,12 +33,12 @@
 #include "lib/util.h"
 #include "lib/tls_openssl.h"
 
-DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration) {
+DLL_IMP_EXP uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration) {
    uint32_t merged_policy = 0;
 
 #if defined(HAVE_TLS)
    merged_policy = tls_configuration->tls_cert.GetPolicy() | tls_configuration->tls_psk.GetPolicy();
-   Dmsg1(100, "GetNeedFromConfiguration: %u\n", merged_policy);
+   Dmsg1(100, "GetLocalTlsPolicyFromConfiguration: %u\n", merged_policy);
 #else
    Dmsg1(100, "Ignore configuration no tls compiled in: %u\n", merged_policy);
 #endif
@@ -357,20 +357,18 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
                                  const char *identity,
                                  s_password &password,
                                  TlsResource *tls_configuration,
-                                 bool initiated_by_remote) {
-
-                                  btimer_t *tid       = NULL;
+                                 bool initiated_by_remote)
+{
    const int debuglevel    = 50;
-   bool compatible     = true;
-   bool auth_success   = false;
-   uint32_t local_tls_policy = GetNeedFromConfiguration(tls_configuration);
-   uint32_t remote_tls_policy = 0;
-   alist *verify_list = NULL;
-   TlsBase * selected_local_tls = nullptr;
+   bool auth_success  = false;
+
+   btimer_t *tid = nullptr;
+   TlsBase *selected_local_tls = nullptr;
+   uint32_t local_tls_policy = GetLocalTlsPolicyFromConfiguration(tls_configuration);
+   CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy);
 
    if (jcr && JobCanceled(jcr)) {
       Dmsg0(debuglevel, "Failed, because job is canceled.\n");
-      auth_success = false; /* force quick exit */
       goto auth_fatal;
    }
 
@@ -380,51 +378,9 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
       goto auth_fatal;
    }
 
-  /*
-   * get local tls need
-   */
-
-   /*
-    * Timeout Hello after 10 min
-    */
    tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
-   /*
-    * See if we initiate the challenge or respond to a challenge.
-    */
-   if (initiated_by_remote) {
-      /*
-       * Challenge Remote.
-       */
-      auth_success = cram_md5_challenge(this, password.value, local_tls_policy, compatible);
-      if (auth_success) {
-         /*
-          * Respond to remote challenge
-          */
-         auth_success = cram_md5_respond(this, password.value, &remote_tls_policy, &compatible);
-         if (!auth_success) {
-            Dmsg1(debuglevel, "Respond cram-get-auth failed with %s\n", who());
-         }
-      } else {
-         Dmsg1(debuglevel, "Challenge cram-auth failed with %s\n", who());
-      }
-   } else {
-      /*
-       * Respond to remote challenge
-       */
-      auth_success = cram_md5_respond(this, password.value, &remote_tls_policy, &compatible);
-      if (!auth_success) {
-         Dmsg1(debuglevel, "cram_respond failed for %s\n", who());
-      } else {
-         /*
-          * Challenge Remote.
-          */
-         auth_success = cram_md5_challenge(this, password.value, local_tls_policy, compatible);
-         if (!auth_success) {
-            Dmsg1(debuglevel, "cram_challenge failed for %s\n", who());
-         }
-      }
-   }
+   auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
 
    if (!auth_success) {
       Jmsg(jcr,
@@ -444,18 +400,13 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
       goto auth_fatal;
    }
 
-   /*
-    * Verify that the remote host is willing to meet our TLS requirements
-    */
-   selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
+   selected_local_tls = SelectTlsFromPolicy(tls_configuration, cram_md5_handshake.RemoteTlsPolicy());
    if (selected_local_tls != nullptr) {
+      alist *verify_list = NULL;
       if (selected_local_tls->GetVerifyPeer()) {
          verify_list = selected_local_tls->GetVerifyList();
       }
 
-      /*
-       * See if we are handshaking a passive client connection.
-       */
       if (initiated_by_remote) {
          std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext(
              std::make_shared<PskCredentials>(identity, password.value));
