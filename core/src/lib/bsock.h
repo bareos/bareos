@@ -45,11 +45,6 @@ class BareosSocket;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
-uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration);
-
-
-TlsBase *SelectTlsFromPolicy(TlsResource *tls_configuration, uint32_t remote_policy);
-
 class DLL_IMP_EXP BareosSocket : public SmartAlloc {
 /*
  * Note, keep this public part before the private otherwise

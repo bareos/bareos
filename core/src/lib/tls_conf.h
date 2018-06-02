@@ -206,4 +206,9 @@ class DLL_IMP_EXP TlsPsk : public TlsBase {
    static bool required(u_int32_t policy);
 };
 
+class TlsResource;
+
+uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration);
+TlsBase *SelectTlsFromPolicy(TlsResource *tls_configuration, uint32_t remote_policy);
+
 #endif //BAREOS_LIB_TLS_CONF_H_

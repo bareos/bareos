@@ -33,53 +33,6 @@
 #include "lib/util.h"
 #include "lib/tls_openssl.h"
 
-DLL_IMP_EXP uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration) {
-   uint32_t merged_policy = 0;
-
-#if defined(HAVE_TLS)
-   merged_policy = tls_configuration->tls_cert.GetPolicy() | tls_configuration->tls_psk.GetPolicy();
-   Dmsg1(100, "GetLocalTlsPolicyFromConfiguration: %u\n", merged_policy);
-#else
-   Dmsg1(100, "Ignore configuration no tls compiled in: %u\n", merged_policy);
-#endif
-   return merged_policy;
-}
-
-TlsBase *SelectTlsFromPolicy(
-   TlsResource *tls_configuration, uint32_t remote_policy) {
-
-   if ((tls_configuration->tls_cert.require && TlsCert::enabled(remote_policy))
-      || (tls_configuration->tls_cert.enable && TlsCert::required(remote_policy))) {
-      Dmsg0(100, "SelectTlsFromPolicy: take required cert\n");
-
-      // one requires the other accepts cert
-      return &(tls_configuration->tls_cert);
-   }
-   if ((tls_configuration->tls_psk.require && TlsPsk::enabled(remote_policy))
-      || (tls_configuration->tls_psk.enable && TlsPsk::required(remote_policy))) {
-
-      Dmsg0(100, "SelectTlsFromPolicy: take required  psk\n");
-      // one requires the other accepts psk
-      return &(tls_configuration->tls_psk);
-   }
-   if (tls_configuration->tls_cert.enable && TlsCert::enabled(remote_policy)) {
-
-      Dmsg0(100, "SelectTlsFromPolicy: take cert\n");
-      // both accept cert
-      return &(tls_configuration->tls_cert);
-   }
-   if (tls_configuration->tls_psk.enable && TlsPsk::enabled(remote_policy)) {
-
-      Dmsg0(100, "SelectTlsFromPolicy: take psk\n");
-      // both accept psk
-      return &(tls_configuration->tls_psk);
-   }
-
-   Dmsg0(100, "SelectTlsFromPolicy: take cleartext\n");
-   // fallback to cleartext
-   return nullptr;
-}
-
 BareosSocket::BareosSocket() : tls_conn(nullptr) {
    Dmsg0(100, "Contruct BareosSocket\n");
    fd_            = -1;
