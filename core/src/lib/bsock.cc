@@ -336,14 +336,10 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
    auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
 
    if (!auth_success) {
-      Jmsg(jcr,
-           M_FATAL,
-           0,
+      Jmsg(jcr, M_FATAL, 0,
            _("Authorization key rejected by %s %s.\n"
              "Please see %s for help.\n"),
-           what,
-           identity,
-           MANUAL_AUTH_URL);
+           what, identity, MANUAL_AUTH_URL);
       goto auth_fatal;
    }
 
@@ -394,11 +390,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
       }
    }
    if (!initiated_by_remote) {
-#ifdef HAVE_OPENSSL
       TlsLogConninfo(jcr, GetTlsConnection(), host(), port(), who());
-#else
-      TlsLogConninfo(jcr, GetTlsConnection(), host(), port(), who());
-#endif
    }
 auth_fatal:
    if (tid) {
