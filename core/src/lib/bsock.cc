@@ -389,9 +389,6 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsBase *selected_local_tls,
 {
    std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext(
        std::make_shared<PskCredentials>(identity, password));
-   if (jcr) {
-      jcr->tls_ctx = tls_ctx;
-   }
    alist *verify_list = NULL;
    if (selected_local_tls->GetVerifyPeer()) {
       verify_list = selected_local_tls->GetVerifyList();
@@ -411,9 +408,6 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsBase *selected_local_tls,
 {
    std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateClientContext(
        std::make_shared<PskCredentials>(identity, password));
-   if (jcr) {
-      jcr->tls_ctx = tls_ctx;
-   }
    if (BnetTlsClient(tls_ctx,
                      this,
                      selected_local_tls->GetVerifyPeer(),

@@ -406,10 +406,6 @@ public:
                                            * controlled by another JobControlRecord used for sending
                                            * normal and fatal errors.
                                            */
-   std::shared_ptr<TLS_CONTEXT> tls_ctx;  /* JOB specific TLS-PSK-Context --
-                                           *  Certificate are handled via me-Resource
-                                           */
-
    int32_t buf_size;                      /**< Length of buffer */
    CompressionContext compress;                    /**< Compression ctx */
 #ifdef HAVE_WIN32
