@@ -118,6 +118,14 @@ private:
                       const char *identity,
                       const char *password,
                       JobControlRecord *jcr);
+   bool DoTlsHandshakeWithClient(TlsBase *selected_local_tls,
+                                 const char *identity,
+                                 const char *password,
+                                 JobControlRecord *jcr);
+   bool DoTlsHandshakeWithServer(TlsBase *selected_local_tls,
+                                 const char* identity,
+                                 const char* password,
+                                 JobControlRecord *jcr);
 
 public:
    BareosSocket();
