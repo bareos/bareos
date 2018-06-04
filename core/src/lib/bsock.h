@@ -112,6 +112,12 @@ private:
                             s_password &password,
                             TlsResource *tls_configuration,
                             bool initiated_by_remote);
+  bool DoTlsHandshake(uint32_t remote_tls_policy,
+                      TlsResource *tls_configuration,
+                      bool initiated_by_remote,
+                      const char *identity,
+                      const char *password,
+                      JobControlRecord *jcr);
 
 public:
    BareosSocket();
