@@ -328,20 +328,21 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
 
       btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
-      if (!cram_md5_handshake.DoHandshake(initiated_by_remote)) {
+      auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
+      if (!auth_success) {
          Jmsg(jcr, M_FATAL, 0,
               _("Authorization key rejected by %s %s.\n"
                 "Please see %s for help.\n"),
               what, identity, MANUAL_AUTH_URL);
       } else if (jcr && JobCanceled(jcr)) {
          Dmsg0(debuglevel, "Failed, because job is canceled.\n");
-      } else if (DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
+      } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
                                 tls_configuration,
                                 initiated_by_remote,
                                 identity,
                                 password.value,
                                 jcr)) {
-         auth_success = true;
+         auth_success = false;
       }
       if (tid) {
          StopBsockTimer(tid);
@@ -365,11 +366,15 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
 {
    TlsBase *selected_local_tls;
    selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
-   if (selected_local_tls != nullptr) {
+   if (selected_local_tls != nullptr) { /* no tls configuration is ok */
       if (initiated_by_remote) {
-         DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr);
+         if (!DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr)) {
+            return false;
+         }
       } else {
-         DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr);
+         if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) {
+            return false;
+         }
       }
 
       if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
