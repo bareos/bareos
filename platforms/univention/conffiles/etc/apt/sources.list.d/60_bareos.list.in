@@ -14,7 +14,7 @@ if username and password:
     #bareos_sign_key_id = 'F93C028C093BFBA2'
 
     ucs_version = configRegistry.get('version/version')
-    bareos_univention_dist = 'Univention_4.2'
+    bareos_univention_dist = '@OBS_DISTRIBUTION@'
 
     #
     # example:
