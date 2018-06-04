@@ -351,16 +351,15 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
 
    selected_local_tls = SelectTlsFromPolicy(tls_configuration, cram_md5_handshake.RemoteTlsPolicy());
    if (selected_local_tls != nullptr) {
-      alist *verify_list = NULL;
-      if (selected_local_tls->GetVerifyPeer()) {
-         verify_list = selected_local_tls->GetVerifyList();
-      }
-
       if (initiated_by_remote) {
          std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext(
              std::make_shared<PskCredentials>(identity, password.value));
          if (jcr) {
             jcr->tls_ctx = tls_ctx;
+         }
+         alist *verify_list = NULL;
+         if (selected_local_tls->GetVerifyPeer()) {
+            verify_list = selected_local_tls->GetVerifyList();
          }
          if (!BnetTlsServer(tls_ctx, this, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
