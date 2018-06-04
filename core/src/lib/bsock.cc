@@ -65,7 +65,7 @@ void BareosSocket::FreeTls()
 void BareosSocket::SetSourceAddress(dlist *src_addr_list)
 {
    char allbuf[256 * 10];
-   IPADDR *addr = NULL;
+   IPADDR *addr = nullptr;
 
    Dmsg1(100, "All source addresses %s\n",
          BuildAddressesString(src_addr_list, allbuf, sizeof(allbuf)));
@@ -75,7 +75,7 @@ void BareosSocket::SetSourceAddress(dlist *src_addr_list)
     */
    if (src_addr) {
      free( src_addr);
-     src_addr = NULL;
+     src_addr = nullptr;
    }
 
    if (src_addr_list) {
@@ -93,7 +93,7 @@ bool BareosSocket::SetLocking()
    if (use_locking_) {
       return true;                      /* already set */
    }
-   if ((status = pthread_mutex_init(&mutex_, NULL)) != 0) {
+   if ((status = pthread_mutex_init(&mutex_, nullptr)) != 0) {
       BErrNo be;
       Qmsg(jcr_, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
          be.bstrerror(status));
@@ -186,7 +186,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize
 const char *BareosSocket::bstrerror()
 {
    BErrNo be;
-   if (errmsg == NULL) {
+   if (errmsg == nullptr) {
       errmsg = GetPoolMemory(PM_MESSAGE);
    }
    PmStrcpy(errmsg, be.bstrerror(b_errno));
@@ -345,7 +345,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
       }
       if (tid) {
          StopBsockTimer(tid);
-         tid = NULL;
+         tid = nullptr;
       }
    }
 
@@ -389,7 +389,7 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsBase *selected_local_tls,
 {
    std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext(
        std::make_shared<PskCredentials>(identity, password));
-   alist *verify_list = NULL;
+   alist *verify_list = nullptr;
    if (selected_local_tls->GetVerifyPeer()) {
       verify_list = selected_local_tls->GetVerifyList();
    }
