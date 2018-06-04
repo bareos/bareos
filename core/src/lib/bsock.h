@@ -106,7 +106,7 @@ protected:
 private:
   TLS_CONNECTION *tls_conn;          /* Associated tls connection */
   // std::shared_ptr<TLS_CONNECTION> tls_conn;          /* Associated tls connection */
-  bool two_way_authenticate(JobControlRecord *jcr,
+  bool TwoWayAuthenticate(JobControlRecord *jcr,
                             const char *what,
                             const char *identity,
                             s_password &password,

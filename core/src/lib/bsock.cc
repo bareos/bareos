@@ -308,7 +308,7 @@ bail_out:
  * - First make him prove his identity and then prove our identity to the Remote.
  * - First prove our identity to the Remote and then make him prove his identity.
  */
-bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
+bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
                                  const char *what,
                                  const char *identity,
                                  s_password &password,
@@ -425,7 +425,7 @@ bool BareosSocket::AuthenticateOutboundConnection(
    const char *identity,
    s_password &password,
    TlsResource *tls_configuration) {
-   return two_way_authenticate(jcr, what, identity, password, tls_configuration, false);
+   return TwoWayAuthenticate(jcr, what, identity, password, tls_configuration, false);
 }
 
 bool BareosSocket::AuthenticateInboundConnection(
@@ -434,7 +434,7 @@ bool BareosSocket::AuthenticateInboundConnection(
    const char *identity,
    s_password &password,
    TlsResource *tls_configuration) {
-   return two_way_authenticate(jcr, what, identity, password, tls_configuration, true);
+   return TwoWayAuthenticate(jcr, what, identity, password, tls_configuration, true);
 }
 
 
