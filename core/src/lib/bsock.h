@@ -45,6 +45,8 @@ class BareosSocket;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
+enum class BareosDaemonType { kUndefined, kDirector, kFiledaemon, kStoragedaemon, kTrayMonitor, kConsole };
+
 class DLL_IMP_EXP BareosSocket : public SmartAlloc {
 /*
  * Note, keep this public part before the private otherwise
@@ -77,6 +79,8 @@ public:
    TLS_CONNECTION *GetTlsConnection() {
       return tls_conn;
    } /* Associated tls connection */
+   BareosDaemonType local_daemon_type_;
+   BareosDaemonType remote_daemon_type_;
 
 protected:
    JobControlRecord *jcr_;                        /* JobControlRecord or NULL for error msgs */
@@ -105,7 +109,7 @@ protected:
 
 private:
   TLS_CONNECTION *tls_conn;          /* Associated tls connection */
-  // std::shared_ptr<TLS_CONNECTION> tls_conn;          /* Associated tls connection */
+
   bool TwoWayAuthenticate(JobControlRecord *jcr,
                             const char *what,
                             const char *identity,

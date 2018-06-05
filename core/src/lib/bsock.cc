@@ -44,6 +44,8 @@ BareosSocket::BareosSocket() : tls_conn(nullptr) {
    errmsg          = GetPoolMemory(PM_MESSAGE);
    blocking_      = true;
    use_keepalive_ = true;
+   local_daemon_type_ = BareosDaemonType::kUndefined;
+   remote_daemon_type_ = BareosDaemonType::kUndefined;
 }
 
 BareosSocket::~BareosSocket() {
@@ -302,6 +304,14 @@ bail_out:
    return false;
 }
 
+static inline bool IsConsoleDirectorConnection(BareosSocket *bs)
+{
+   return ((bs->local_daemon_type_ == BareosDaemonType::kDirector
+         && bs->remote_daemon_type_ == BareosDaemonType::kConsole)
+       ||  (bs->local_daemon_type_ == BareosDaemonType::kConsole
+         && bs->remote_daemon_type_ == BareosDaemonType::kDirector));
+}
+
 /**
  * Depending on the initiate parameter perform one of the following:
  *
@@ -328,25 +338,56 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
 
       btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
-      auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
-      if (!auth_success) {
-         Jmsg(jcr, M_FATAL, 0,
-              _("Authorization key rejected by %s %s.\n"
-                "Please see %s for help.\n"),
-              what, identity, MANUAL_AUTH_URL);
-      } else if (jcr && JobCanceled(jcr)) {
-         Dmsg0(debuglevel, "Failed, because job is canceled.\n");
-      } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
-                                tls_configuration,
-                                initiated_by_remote,
-                                identity,
-                                password.value,
-                                jcr)) {
-         auth_success = false;
-      }
-      if (tid) {
-         StopBsockTimer(tid);
-         tid = nullptr;
+      if (!IsConsoleDirectorConnection(this)) { /* not console: start with md5 handshake */
+         auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
+         if (!auth_success) {
+            Jmsg(jcr, M_FATAL, 0,
+                 _("Authorization key rejected by %s %s.\n"
+                   "Please see %s for help.\n"),
+                 what, identity, MANUAL_AUTH_URL);
+         } else if (jcr && JobCanceled(jcr)) {
+            Dmsg0(debuglevel, "Failed, because job is canceled.\n");
+         } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
+                                   tls_configuration,
+                                   initiated_by_remote,
+                                   identity,
+                                   password.value,
+                                   jcr)) {
+            auth_success = false;
+         }
+         if (tid) {
+            StopBsockTimer(tid);
+            tid = nullptr;
+         }
+      } else {  /* console-director connection: start with tls handshake */
+         uint32_t remote_tls_policy;
+         auth_success = TlsPolicyHandshake(this, initiated_by_remote,
+                              local_tls_policy, &remote_tls_policy);
+         if (!auth_success) {
+            Dmsg1(debuglevel, "TlsPolicyHandshake failed with %s\n", what);
+         } else if (jcr && JobCanceled(jcr)) {
+            Dmsg0(debuglevel, "Failed, because job is canceled.\n");
+         } else if (!DoTlsHandshake(remote_tls_policy,
+                                   tls_configuration,
+                                   initiated_by_remote,
+                                   identity,
+                                   password.value,
+                                   jcr)) {
+            Dmsg1(debuglevel, "DoTlsHandshake failed with %s\n", what);
+            auth_success = false;
+         } else if (!cram_md5_handshake.DoHandshake(initiated_by_remote)) {
+            Dmsg3(debuglevel,
+                  "Authorization key rejected by %s %s.\n"
+                  "Please see %s for help.\n",
+                  what, identity, MANUAL_AUTH_URL);
+         } else {
+            auth_success = true;
+         }
+
+         if (tid) {
+            StopBsockTimer(tid);
+            tid = nullptr;
+         }
       }
    }
 

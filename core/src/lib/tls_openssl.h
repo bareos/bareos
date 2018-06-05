@@ -45,6 +45,8 @@ DLL_IMP_EXP void SetTlsRequire(TLS_CONTEXT *ctx, bool value);
 DLL_IMP_EXP bool GetTlsEnable(TLS_CONTEXT *ctx);
 DLL_IMP_EXP void SetTlsEnable(TLS_CONTEXT *ctx, bool value);
 DLL_IMP_EXP bool GetTlsVerifyPeer(TLS_CONTEXT *ctx);
+DLL_IMP_EXP bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
+                                    uint32_t local,   uint32_t *remote);
 
 
 #endif // BAREOS_LIB_TLS_OPENSSL_H_

@@ -1298,6 +1298,8 @@ int main(int argc, char *argv[])
    }
 
    UA_sock = New(BareosSocketTCP);
+   UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
+   UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
    if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
       delete UA_sock;
       TerminateConsole(0);

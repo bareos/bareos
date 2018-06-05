@@ -847,6 +847,46 @@ bool TlsPsk::required(u_int32_t policy) {
    return ((policy >> TlsPsk::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
+static bool TlsReceivePolicy(BareosSocket *bs, uint32_t *tls_remote_policy)
+{
+   if (bs->recv() <= 0) {
+      Bmicrosleep(5, 0);
+      return false;
+   }
+   int n = sscanf(bs->msg, "ssl=%d", tls_remote_policy);
+   Dmsg1(100, "ssl received: %s", bs->msg);
+   return n==1;
+}
+
+static bool TlsSendPolicy(BareosSocket *bs, uint32_t tls_local_policy)
+{
+   Dmsg1(100, "send: ssl=%d\n", tls_local_policy);
+   if (!bs->fsend("ssl=%d\n", tls_local_policy)) {
+      Dmsg1(100, "Bnet send tls need. ERR=%s\n", bs->bstrerror());
+      return false;
+   }
+   return true;
+}
+
+bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
+                          uint32_t local, uint32_t *remote)
+{
+   if (initiated_by_remote) {
+      if (TlsSendPolicy(bs, local)) {
+         if (TlsReceivePolicy(bs, remote)) {
+            return true;
+         }
+      }
+   } else {
+      if (TlsReceivePolicy(bs, remote)) {
+         if (TlsSendPolicy(bs, local)) {
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
 std::shared_ptr<TLS_CONTEXT> TlsPsk::CreateClientContext(
     std::shared_ptr<PskCredentials> credentials) const {
    return new_tls_psk_client_context(cipherlist, credentials);
