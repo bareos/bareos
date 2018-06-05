@@ -355,6 +355,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
                                    password.value,
                                    jcr)) {
             auth_success = false;
+         } else {
+            auth_success = true;
          }
       } else {  /* console-director connection: start with tls handshake */
          uint32_t remote_tls_policy;
