@@ -347,6 +347,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
                  what, identity, MANUAL_AUTH_URL);
          } else if (jcr && JobCanceled(jcr)) {
             Dmsg0(debuglevel, "Failed, because job is canceled.\n");
+            auth_success = false;
          } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
                                    tls_configuration,
                                    initiated_by_remote,
@@ -354,10 +355,6 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
                                    password.value,
                                    jcr)) {
             auth_success = false;
-         }
-         if (tid) {
-            StopBsockTimer(tid);
-            tid = nullptr;
          }
       } else {  /* console-director connection: start with tls handshake */
          uint32_t remote_tls_policy;
@@ -367,6 +364,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
             Dmsg1(debuglevel, "TlsPolicyHandshake failed with %s\n", what);
          } else if (jcr && JobCanceled(jcr)) {
             Dmsg0(debuglevel, "Failed, because job is canceled.\n");
+            auth_success = false;
          } else if (!DoTlsHandshake(remote_tls_policy,
                                    tls_configuration,
                                    initiated_by_remote,
@@ -380,14 +378,13 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
                   "Authorization key rejected by %s %s.\n"
                   "Please see %s for help.\n",
                   what, identity, MANUAL_AUTH_URL);
+            auth_success = false;
          } else {
             auth_success = true;
          }
-
-         if (tid) {
-            StopBsockTimer(tid);
-            tid = nullptr;
-         }
+      }
+      if (tid) {
+         StopBsockTimer(tid);
       }
    }
 
