@@ -280,7 +280,12 @@ void htable::grow_table()
     * Setup a bigger table.
     */
    big = (htable *)malloc(sizeof(htable));
-   memcpy(big, this, sizeof(htable));  /* Start with original class data */
+   big->hash = hash;
+   big->total_size = total_size;
+   big->extend_length = extend_length;
+   big->index = index;
+   big->blocks = blocks;
+   big->mem_block = mem_block;
    big->loffset = loffset;
    big->mask = mask<<1 | 1;
    big->rshift = rshift - 1;
