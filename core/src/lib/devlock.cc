@@ -41,11 +41,23 @@
  *           errno on failure
  */
 
-DevLock *new_devlock()
+DevLock *DevLock::new_devlock()
 {
    DevLock *lock;
    lock = (DevLock *)malloc(sizeof (DevLock));
-   memset(lock, 0, sizeof(DevLock));
+   lock->mutex = PTHREAD_MUTEX_INITIALIZER;
+   lock->read = PTHREAD_COND_INITIALIZER;
+   lock->write = PTHREAD_COND_INITIALIZER;
+   lock->writer_id = 0;
+   lock->priority = 0;
+   lock->valid = 0;
+   lock->r_active = 0;
+   lock->w_active = 0;
+   lock->r_wait = 0;
+   lock->w_wait = 0;
+   lock->reason = 0;
+   lock->prev_reason = 0;
+   lock->can_take = false;
    return lock;
 }
 
