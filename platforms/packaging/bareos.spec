@@ -82,8 +82,9 @@ BuildRequires: libtirpc-devel
 %define systemd_support 1
 %endif
 
-# SLES 12
-%if 0%{?sle_version} >= 120000
+# SLE 12
+# SLE_15: droplet is not available due to SSL build problems
+%if 0%{?sle_version} >= 120000 && 0%{?sle_version} < 150000
 %define droplet 1
 %endif
 
