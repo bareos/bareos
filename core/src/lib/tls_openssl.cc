@@ -501,7 +501,7 @@ static unsigned int psk_server_cb(SSL *ssl,
             Dmsg1(100, "psk_server_cb. psk: %s.\n", psk);
         }
          return result;
-      } catch (const std::out_of_range /* &exception */) {
+      } catch (const std::out_of_range & /* exception */) {
          // ssl context unknown
          Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
          return 0;
