@@ -3,6 +3,7 @@
 
 #include <string>
 
-bool pam_authenticate_useragent(std::string username, std::string password);
+class BareosSocket;
+bool pam_authenticate_useragent(BareosSocket *bs, std::string username);
 
 #endif //BAREOS_PAM_H

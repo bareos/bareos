@@ -11,14 +11,13 @@ static const int debuglevel = 200;
 
 static const std::string service_name("bareos");
 
-class PamData {
-public:
-   std::string password_;
+struct PamData {
    std::string username_;
+   BareosSocket *bs_;
 
-   PamData(std::string username, std::string password) {
+   PamData(BareosSocket *bs, std::string username) {
+      bs_ = bs;
       username_ = username;
-      password_ = password;
    }
 };
 
@@ -34,20 +33,30 @@ static int conv(int num_msg, const struct pam_message **msgm,
    }
 
    struct pam_response *resp;
-   auto pam_data = reinterpret_cast<PamData *>(appdata_ptr);
-
-   if ((resp = static_cast<pam_response *>(actuallycalloc(num_msg, sizeof(struct pam_response)))) == nullptr) {
+   resp = static_cast<pam_response *>(actuallycalloc(num_msg, sizeof(struct pam_response)));
+   if (resp == nullptr) {
       return PAM_BUF_ERR;
    }
+
+   auto pam_data = reinterpret_cast<PamData *>(appdata_ptr);
+   ASSERT(pam_data);
 
    switch ((*msgm)->msg_style) {
       case PAM_PROMPT_ECHO_OFF:
       case PAM_PROMPT_ECHO_ON: {
-         resp->resp = actuallystrdup(pam_data->password_.c_str());
+         BareosSocket *bs = pam_data->bs_;
+         bs->fsend((*msgm)->msg);
+         if (bs->recv()) {
+            resp->resp = actuallystrdup(bs->msg);
+         }
          break;
       }
       case PAM_ERROR_MSG:
-      case PAM_TEXT_INFO:break;
+      case PAM_TEXT_INFO: {
+         BareosSocket *bs = pam_data->bs_;
+         bs->fsend((*msgm)->msg);
+         break;
+      }
       default: {
          const pam_message *m = *msgm;
          Dmsg3(debuglevel, "message[%d]: pam error type: %d error: \"%s\"\n",
@@ -61,24 +70,23 @@ static int conv(int num_msg, const struct pam_message **msgm,
 
    err:
    for (int i = 0; i < num_msg; ++i) {
-      if (resp[i].resp != NULL) {
+      if (resp[i].resp) {
          memset(resp[i].resp, 0, strlen(resp[i].resp));
          free(resp[i].resp);
       }
    }
    memset(resp, 0, num_msg * sizeof *resp);
    free(resp);
-   *response = NULL;
+   *response = nullptr;
    return PAM_CONV_ERR;
 }
 
-bool pam_authenticate_useragent(std::string username, std::string password) {
-   PamData pam_data(username, password);
+bool pam_authenticate_useragent(BareosSocket *bs, std::string username) {
+   PamData pam_data(bs, username);
    const struct pam_conv pam_conversation = {conv, (void *) &pam_data};
    pam_handle_t *pamh = nullptr;
 
-   /* START */
-   int err = pam_start(service_name.c_str(), username.c_str(), &pam_conversation, &pamh);
+   int err = pam_start(service_name.c_str(), nullptr, &pam_conversation, &pamh);
    if (err != PAM_SUCCESS) {
       Dmsg1(debuglevel, "PAM start failed: %s\n", pam_strerror(pamh, err));
    }
@@ -88,13 +96,11 @@ bool pam_authenticate_useragent(std::string username, std::string password) {
       Dmsg1(debuglevel, "PAM set_item failed: %s\n", pam_strerror(pamh, err));
    }
 
-   /* AUTHENTICATE */
    err = pam_authenticate(pamh, 0);
    if (err != PAM_SUCCESS) {
       Dmsg1(debuglevel, "PAM authentication failed: %s\n", pam_strerror(pamh, err));
    }
 
-   /* END */
    if (pam_end(pamh, err) != PAM_SUCCESS) {
       Dmsg1(debuglevel, "PAM end failed: %s\n", pam_strerror(pamh, err));
       return false;
