@@ -195,6 +195,53 @@ Storage {
 \end{bconfig}
 
 
+\section{Media VolWrites: integer out of range}
+\index[general]{Errors!integer out of range}
+\index[general]{Catalog!Media!VolWrites}
+
+In some situation, you receive an error message similar to this:
+
+\begin{bconsole}{}
+12-Apr 15:10 bareos-dir JobId 15860: Fatal error: Catalog error updating Media record. sql_update.c:385 update UPDATE Media SET VolJobs=12,VolFiles=10,VolBlocks=155013,VolBytes=10000263168,VolMounts=233,VolErrors=0,VolWrites=2147626019,MaxVolBytes=0,VolStatus='Append',Slot=1,InChanger=1,VolReadTime=0,VolWriteTime=842658562655,LabelType=0,StorageId=3,PoolId=2,VolRetention=144000,VolUseDuration=82800,MaxVolJobs=0,MaxVolFiles=0,Enabled=1,LocationId=0,ScratchPoolId=0,RecyclePoolId=0,RecycleCount=201,Recycle=1,ActionOnPurge=0,MinBlocksize=0,MaxBlocksize=0 WHERE VolumeName='000194L5' failed:
+ERROR: integer out of range
+\end{bconsole}
+
+The database column \dbcolumn{VolWrites} in the \dbtable{Media} table stores the number of write accesses to a volume.
+It is only used for statistics.
+
+However, it has happened that the number of write accesses exceeds the maximum value supported by the database column (on \postgresql it is currently 2147483647, 32 bit, signed integer).
+The result is a database error, similar to the one mentioned above.
+
+As a temporary fix, just reset this counter:
+
+\begin{bconsole}{Reset the VolWrites counter}
+1000 OK: bareos-dir Version: 17.2.5 (14 Feb 2018)
+Enter a period to cancel a command.
+*<input>sqlquery</input>
+Automatically selected Catalog: MyCatalog
+Using Catalog "MyCatalog"
+Entering SQL query mode.
+Terminate each query with a semicolon.
+Terminate query mode with a blank line.
+Enter SQL query: <input>UPDATE Media SET VolWrites = 0 WHERE VolWrites > '2000000000';</input>
+No results to list.
+SELECT volwrites FROM media; volwrites > '0';
++-----------+
+| volwrites |
++-----------+
+|         0 |
+|         0 |
+|         0 |
+|         0 |
++-----------+
+Enter SQL query:
+\end{bconsole}
+
+In the long run, it is planed to modify the database schema to enable storing much larger numbers.
+
+
+
+
 \input{ansi-labels}
 
 \section{Tape Drive}
