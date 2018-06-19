@@ -14,8 +14,6 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-#%%define _libversion    16.4.3
-
 %define library_dir    %{_libdir}/bareos
 %define backend_dir    %{_libdir}/bareos/backends
 %define plugin_dir     %{_libdir}/bareos/plugins
