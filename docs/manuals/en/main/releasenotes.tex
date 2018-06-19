@@ -16,6 +16,31 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \releasenoteSection{Bareos-17.2}
 
+\releasenote{17.2.6}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2018-06-21\\
+Database Version  & 2171 (unchanged)\\
+Release Ticket    & \ticket{916}\\
+Url               & \releaseUrlDownloadBareosCom{17.2} \\
+\end{tabular}
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+    \item added platforms: \os{Fedora}{27}, \os{Fedora}{28}, \os{Univention}{4.3} and \os{openSUSE}{15.0}.
+    \item added \package{bareos-storage-ceph} also for \os{SLES}{12sp2} and \os{SLES}{12sp3}.
+    \item \os{Univention}{4.3}: fixes integration.
+    \item \ticket{872} adapted to new Ceph API.
+    \item \ticket{943} use \package{tirpc} if Sun-RPC is not provided.
+    \item \ticket{964} fixes the predefined queries.
+    \item \bareosDir: fixes for a crash after reload in the statistics thread (\ticket{695}, \ticket{903}).
+    \item \command{bareos-dbcheck}: cleanup and speedup for some some of the checks.
+    \item preparation for \postgresql 10.
+    \item fixes a problem of restoring more files then selected.
+\end{itemize}
+
+}
+
 \releasenote{17.2.5}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
@@ -33,7 +58,7 @@ This release contains several bugfixes and enhancements. Excerpt:
     \item Virtual Backup fixes
     \item \package{bareos-storage-droplet}: improvements
     \item \command{bareos-dbcheck} improvements and fixes: with older versions it could happen, that it destroys structures required by \bcommand{.bvfs_*}{}.
-    \item \ticket{850} fixes a bug on \os{Univention Corporate Linux}{}: fixes a problem of regenerating passwords when resyncing settings.
+    \item \ticket{850} fixes a bug on \os{Univention}{}: fixes a problem of regenerating passwords when resyncing settings.
     \item \ticket{890} \bcommand{.bvfs_update}{} fix. Before there have been cases where it did not update the cache.
     \item \bcommand{.bvfs_lsdirs}{} make limit- and offset-option work correctly.
     \item \bcommand{.bvfs_lsdirs}{} show special directory (like \path|@bpipe@/|) on the same level as \path|/|.
