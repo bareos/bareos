@@ -229,8 +229,8 @@ FileSet {
       signature=MD5
     }
     File = <@tmpdir@/file-list
-    Plugin = "bpipe:/@bpipe@/encrypt-bug.jpg:cat @builddir@/../encrypt-bug.jpg:sh -c 'cat >@tmpdir@/encrypt-bug.jpg'"
-    Plugin = "bpipe:/@bpipe@/Makefile:cat @builddir@/../Makefile:sh -c 'cat >@tmpdir@/Makefile'"
+    Plugin = "bpipe:/@bpipe@/encrypt-bug.jpg:cat @regressdir@/encrypt-bug.jpg:sh -c 'cat >@tmpdir@/encrypt-bug.jpg'"
+    Plugin = "bpipe:/@bpipe@/Makefile:cat @regressdir@/Makefile:sh -c 'cat >@tmpdir@/Makefile'"
   }
 }
 
