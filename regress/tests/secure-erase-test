@@ -180,14 +180,14 @@ fi
 #
 # check for secure erase of spool files
 #
-grep "secure_erase. executing.*data.*spool" ${tmp}/log1.out 2>&1 >/dev/null
+grep "SecureErase. executing.*data.*spool" ${tmp}/log1.out 2>&1 >/dev/null
 if test $? -eq 0; then
    print_debug "OK, secure erase command used to remove data spool file"
 else
    estat=4
 fi
 
-grep "secure_erase: executing.*attr.*spool" ${tmp}/log1.out 2>&1 >/dev/null
+grep "SecureErase: executing.*attr.*spool" ${tmp}/log1.out 2>&1 >/dev/null
 if test $? -eq 0; then
    print_debug "OK, secure erase command used to remove attr spool file"
 else
@@ -197,7 +197,7 @@ fi
 #
 # check for secure erase of bsr files (director)
 #
-grep "secure_erase: executing.*bsr" ${tmp}/log2.out 2>&1 >/dev/null
+grep "SecureErase: executing.*bsr" ${tmp}/log2.out 2>&1 >/dev/null
 if test $? -eq 0; then
    print_debug "OK, secure erase command used to remove data spool file"
 else
@@ -207,7 +207,7 @@ fi
 #
 # check for secure erase of existing files during restore (fd)
 #
-grep ".*-fd.*secure_erase: executing.*bareos-restores" ${tmp}/log2.out 2>&1 >/dev/null
+grep ".*-fd.*SecureErase: executing.*bareos-restores" ${tmp}/log2.out 2>&1 >/dev/null
 if test $? -eq 0; then
    print_debug "OK, secure erase command used to remove data spool file"
 else
@@ -219,9 +219,9 @@ fi
 #
 # check if failing wipe creates fatal error on backup in sd
 #
-grep "\-sd.*Fatal error: secure_erase:" ${tmp}/log3.out 2>&1 >/dev/null
+grep "\-sd.*Fatal error: SecureErase:" ${tmp}/log3.out 2>&1 >/dev/null
 if test $? -eq 0; then
-   print_debug "OK, failing secure_erase command creates fatal error"
+   print_debug "OK, failing SecureErase command creates fatal error"
 else
    estat=8
 fi
@@ -231,9 +231,9 @@ fi
 #
 # check if failing wipe creates fatal error on dir
 #
-grep "\-dir.*Fatal error: secure_erase:" ${tmp}/log4.out 2>&1 >/dev/null
+grep "\-dir.*Fatal error: SecureErase:" ${tmp}/log4.out 2>&1 >/dev/null
 if test $? -eq 0; then
-   print_debug "OK, failing secure_erase command creates fatal error"
+   print_debug "OK, failing SecureErase command creates fatal error"
 else
    estat=9
 fi
@@ -243,7 +243,7 @@ fi
 #
 grep "Termination:.**** Backup Error ***" ${tmp}/log3.out 2>&1 >/dev/null
 if test $? -eq 0; then
-   print_debug "OK, failing secure_erase command makes full backup fail"
+   print_debug "OK, failing SecureErase command makes full backup fail"
 else
    estat=10
 fi
