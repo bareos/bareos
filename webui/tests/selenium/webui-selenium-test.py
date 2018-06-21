@@ -129,7 +129,6 @@ class SeleniumTest(unittest.TestCase):
         # take base url, but remove last /
         self.base_url = self.base_url.rstrip('/')
         self.verificationErrors = []
-
 # Tests
 
     def test_client_disabling(self):
