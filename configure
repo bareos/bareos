@@ -23610,6 +23610,14 @@ fi
 done
 
 
+ac_fn_c_check_header_mongrel "$LINENO" "cephfs/ceph_statx.h" "ac_cv_header_cephfs_ceph_statx_h" "$ac_includes_default"
+if test "x$ac_cv_header_cephfs_ceph_statx_h" = xyes; then :
+
+$as_echo "#define HAVE_CEPHFS_CEPH_STATX_H 1" >>confdefs.h
+
+fi
+
+
 
 ac_fn_c_check_header_mongrel "$LINENO" "cephfs/ceph_statx.h" "ac_cv_header_cephfs_ceph_statx_h" "$ac_includes_default"
 if test "x$ac_cv_header_cephfs_ceph_statx_h" = xyes; then :

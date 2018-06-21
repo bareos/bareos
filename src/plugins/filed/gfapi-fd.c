@@ -29,6 +29,7 @@
 #include "fileopts.h"
 
 #include <api/glfs.h>
+#include <compat-errno.h>
 
 static const int dbglvl = 150;
 
@@ -632,6 +633,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
           * Strip the newline.
           */
          strip_trailing_junk(p_ctx->next_filename);
+         Dmsg(ctx, dbglvl, "gfapi-fd: Processing glusterfind entry %s\n", p_ctx->next_filename);
 
          /*
           * Lookup mapping to see what type of entry we are processing.
@@ -700,9 +702,19 @@ static bRC get_next_file_to_backup(bpContext *ctx)
 
             switch (errno) {
             case ENOENT:
+               /*
+                * Note: This was silently ignored before, now at least emit a warning
+                * in the job log that does not trigger the "OK -- with warnings" termination
+                */
+               Jmsg(ctx, M_WARNING, "gfapi-fd: glfs_stat(%s) failed: %s (skipped)\n", p_ctx->next_filename, be.bstrerror());
+               continue;
+            case GF_ERROR_CODE_STALE:
+               Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_stat(%s) failed: %s (skipped)\n", p_ctx->next_filename, be.bstrerror());
                continue;
             default:
-               Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_stat(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror());
+               Dmsg(ctx, dbglvl, "gfapi-fd: glfs_stat(%s) failed: %s errno: %d\n",
+                    p_ctx->next_filename, be.bstrerror(), errno);
+               Jmsg(ctx, M_FATAL, "gfapi-fd: glfs_stat(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror());
                return bRC_Error;
             }
          }
@@ -722,7 +734,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
             if (status != 0) {
                berrno be;
 
-               Jmsg(ctx, M_ERROR, "glfs_stat(%s) failed: %s\n", p_ctx->cwd, be.bstrerror());
+               Jmsg(ctx, M_FATAL, "glfs_stat(%s) failed: %s\n", p_ctx->cwd, be.bstrerror());
                return bRC_Error;
             }
 
@@ -960,6 +972,23 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       switch (p_ctx->backup_level) {
       case L_INCREMENTAL:
       case L_DIFFERENTIAL:
+         /*
+          * When sp->type is FT_DIRBEGIN, skip calling checkChanges() because it would be useless.
+          */
+         if (sp->type == FT_DIRBEGIN) {
+            Dmsg(ctx, dbglvl, "gfapi-fd: skip checkChanges() for %s because sp->type is FT_DIRBEGIN\n", p_ctx->next_filename);
+            sp->type = FT_DIRNOCHG;
+            break;
+         }
+         /*
+          * When glfs_chdir() or glfs_opendir() failed, then sp->type is FT_NOOPEN, then
+          * skip calling checkChanges() because it would be useless.
+          */
+         if (sp->type == FT_NOOPEN) {
+            Dmsg(ctx, dbglvl, "gfapi-fd: skip checkChanges() for %s because sp->type is FT_NOOPEN\n", p_ctx->next_filename);
+            break;
+         }
+
          switch (bfuncs->checkChanges(ctx, sp)) {
          case bRC_Seen:
             Dmsg(ctx, dbglvl, "gfapi-fd: skipping %s checkChanges returns bRC_Seen\n", p_ctx->next_filename);
