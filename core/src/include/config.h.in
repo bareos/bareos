@@ -128,9 +128,6 @@
 /* Define to 1 if you have cephfs/ceph_stat_x.h header */
 #cmakedefine HAVE_CEPHFS_CEPH_STATX_H @HAVE_CEPHFS_CEPH_STATX_H@
 
-/* Define to 1 if you have the <cephfs/ceph_statx.h> header file. */
-#undef HAVE_CEPHFS_CEPH_STATX_H
-
 /* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
 #cmakedefine HAVE_CFLOCALECOPYCURRENT @HAVE_CFLOCALECOPYCURRENT@

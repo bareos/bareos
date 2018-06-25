@@ -474,8 +474,8 @@ void TerminateDird(int sig)
 {
    static bool is_reloading = false;
 
-   if (is_reloading) {                /* avoid recursive temination problems */
-      bmicrosleep(2, 0);              /* yield */
+   if (is_reloading) {                /* avoid recursive termination problems */
+      Bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
 
@@ -538,7 +538,7 @@ void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
       return;
    }
    is_reloading = true;
-   do_reload_config();
+   DoReloadConfig();
    is_reloading = false;
 }
 #endif
@@ -571,10 +571,7 @@ static bool InitSighandlerSighup()
 bool DoReloadConfig()
 {
    static bool is_reloading = false;
-   bool ok = false;
    bool reloaded = false;
-   JCR *jcr;
-   int num_running_jobs = 0;                     /* Number of running jobs */
    resource_table_reference prev_config;
 
    if (is_reloading) {
@@ -594,7 +591,6 @@ bool DoReloadConfig()
 
    DbSqlPoolFlush();
 
-   resource_table_reference prev_config;
    prev_config.res_table = my_config->save_resources();
    prev_config.JobCount = 0;
 
