@@ -716,17 +716,6 @@ static void eliminate_orphaned_path_records()
 
    lctx.count = 0;
    idx_tmp_name = NULL;
-   /*
-    * Check the existence of the required "one column" index
-    */
-   if (!CheckIdx("PathId"))  {
-      if (yes_no(_("Create temporary index? (yes/no): "), true)) {
-         /*
-          * create temporary index PathId
-          */
-         create_tmp_idx("idxPIchk", "File", "PathId");
-      }
-   }
 
    db->FillQuery(query, BareosDb::SQL_QUERY_get_orphaned_paths_0);
 
@@ -767,10 +756,6 @@ static void eliminate_orphaned_path_records()
          exit(1);
       }
    }
-   /*
-    * Drop temporary index idx_tmp_name
-    */
-   DropTmpIdx("idxPIchk", "File");
 }
 
 static void eliminate_orphaned_fileset_records()

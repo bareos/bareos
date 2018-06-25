@@ -23,10 +23,6 @@ After=nss-lookup.target network.target remote-fs.target time-sync.target postgre
 ConditionPathIsDirectory=@working_dir@
 # Before=
 # Conflicts=
-#
-# allow unlimited restarts,
-# required for automatic restarting on Univention Corporate Servers (UCS)
-StartLimitIntervalSec=0
 
 [Service]
 Type=forking
@@ -42,6 +38,16 @@ SuccessExitStatus=0 1 15
 # This daemon should be able to reload the conf file
 #ExecReload=/sbin/killproc -p @piddir@/bareos-dir.pid -HUP @sbindir@/bareos-dir
 #Restart=on-failure
+# Allow unlimited restarts,
+# required for automatic restarting on Univention Corporate Servers (UCS).
+# Since systemd >= 230 this is a deprecated in favor for:
+# [Unit]
+# StartLimitIntervalSec=0
+# However, as this also have to work for systems with older version of systemd,
+# we stick to this old setting.
+StartLimitInterval=0
+
+
 
 [Install]
 Alias=bareos-director.service

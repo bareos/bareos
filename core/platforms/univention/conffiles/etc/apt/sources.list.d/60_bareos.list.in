@@ -14,14 +14,15 @@ if username and password:
     #bareos_sign_key_id = 'F93C028C093BFBA2'
 
     ucs_version = configRegistry.get('version/version')
-    bareos_univention_dist = 'Univention_4.0'
+    bareos_univention_dist = '@OBS_DISTRIBUTION@'
 
     #
     # example:
     #   http://download.bareos.com/bareos/release/15.2/Univention_4.0/
     # https does not work on UCS 4.0, even if apt-transport-https is installed.
+    # With UCS 4.2, https can and will be used.
     #
-    bareos_com_url = "http://{username}:{password}@download.bareos.com/bareos/release/{version}/{dist}".format(username=quote(username), password=password, version=bareos_major_version, dist=bareos_univention_dist)
+    bareos_com_url = "https://{username}:{password}@download.bareos.com/bareos/release/{version}/{dist}".format(username=quote(username), password=password, version=bareos_major_version, dist=bareos_univention_dist)
 
     # import the bareos signing key from a keyserver (does work, if internet connection is available)
     #cmd = subprocess.Popen(['apt-key', 'adv', '--keyserver', 'pool.sks-keyservers.net', '--recv-key', bareos_sign_key_id], stdout=sys.stderr, stderr=sys.stderr)

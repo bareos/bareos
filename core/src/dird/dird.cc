@@ -472,14 +472,14 @@ static
 #endif
 void TerminateDird(int sig)
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
 
-   if (already_here) {                /* avoid recursive temination problems */
-      Bmicrosleep(2, 0);              /* yield */
+   if (is_reloading) {                /* avoid recursive temination problems */
+      bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
 
-   already_here = true;
+   is_reloading = true;
    debug_level = 0;                   /* turn off debug */
 
    DestroyConfigureUsageString();
@@ -527,9 +527,9 @@ void TerminateDird(int sig)
 extern "C"
 void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
 
-   if (already_here) {
+   if (is_reloading) {
       /*
        * Note: don't use Jmsg here, as it could produce a race condition
        * on multiple parallel reloads
@@ -537,9 +537,9 @@ void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
       Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return;
    }
-   already_here = true;
-   DoReloadConfig();
-   already_here = false;
+   is_reloading = true;
+   do_reload_config();
+   is_reloading = false;
 }
 #endif
 
@@ -571,7 +571,11 @@ static bool InitSighandlerSighup()
 bool DoReloadConfig()
 {
    static bool is_reloading = false;
+   bool ok = false;
    bool reloaded = false;
+   JCR *jcr;
+   int num_running_jobs = 0;                     /* Number of running jobs */
+   resource_table_reference prev_config;
 
    if (is_reloading) {
       /*

@@ -20,7 +20,7 @@
 #  SPEC File for Bareos on AIX
 #
 Name: 		bareos
-Version:    17.2.4
+Version:    17.2.6
 Release: 	0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0

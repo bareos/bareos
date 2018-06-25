@@ -575,6 +575,11 @@ set_config_param_in_directory()
     # value to set
     VALUE="${5}"
 
+    if ! [ -e "${DIRECTORY}/${SECTION}" ]; then
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: directory ${DIRECTORY}/${SECTION} does not exist"
+        return 1
+    fi
+
     FILE="${DIRECTORY}/${SECTION}/${NAME}.conf"
     if ! [ -f "${FILE}" ]; then
         printf "%s {\n  Name = %s\n}\n" "${SECTION}" "${NAME}" > "${FILE}"
