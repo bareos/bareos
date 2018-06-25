@@ -635,7 +635,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
           * Strip the newline.
           */
          StripTrailingJunk(p_ctx->next_filename);
-         Dmsg(ctx, dbglvl, "gfapi-fd: Processing glusterfind entry %s\n", p_ctx->next_filename);
+         Dmsg(ctx, debuglevel, "gfapi-fd: Processing glusterfind entry %s\n", p_ctx->next_filename);
 
          /*
           * Lookup mapping to see what type of entry we are processing.
@@ -714,7 +714,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
                Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_stat(%s) failed: %s (skipped)\n", p_ctx->next_filename, be.bstrerror());
                continue;
             default:
-               Dmsg(ctx, dbglvl, "gfapi-fd: glfs_stat(%s) failed: %s errno: %d\n",
+               Dmsg(ctx, debuglevel, "gfapi-fd: glfs_stat(%s) failed: %s errno: %d\n",
                     p_ctx->next_filename, be.bstrerror(), errno);
                Jmsg(ctx, M_FATAL, "gfapi-fd: glfs_stat(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror());
                return bRC_Error;
@@ -978,7 +978,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
           * When sp->type is FT_DIRBEGIN, skip calling checkChanges() because it would be useless.
           */
          if (sp->type == FT_DIRBEGIN) {
-            Dmsg(ctx, dbglvl, "gfapi-fd: skip checkChanges() for %s because sp->type is FT_DIRBEGIN\n", p_ctx->next_filename);
+            Dmsg(ctx, debuglevel, "gfapi-fd: skip checkChanges() for %s because sp->type is FT_DIRBEGIN\n", p_ctx->next_filename);
             sp->type = FT_DIRNOCHG;
             break;
          }
@@ -987,7 +987,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
           * skip calling checkChanges() because it would be useless.
           */
          if (sp->type == FT_NOOPEN) {
-            Dmsg(ctx, dbglvl, "gfapi-fd: skip checkChanges() for %s because sp->type is FT_NOOPEN\n", p_ctx->next_filename);
+            Dmsg(ctx, debuglevel, "gfapi-fd: skip checkChanges() for %s because sp->type is FT_NOOPEN\n", p_ctx->next_filename);
             break;
          }
 
