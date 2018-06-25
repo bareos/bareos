@@ -472,14 +472,14 @@ static
 #endif
 void TerminateDird(int sig)
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
 
-   if (already_here) {                /* avoid recursive temination problems */
+   if (is_reloading) {                /* avoid recursive termination problems */
       Bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
 
-   already_here = true;
+   is_reloading = true;
    debug_level = 0;                   /* turn off debug */
 
    DestroyConfigureUsageString();
@@ -527,9 +527,9 @@ void TerminateDird(int sig)
 extern "C"
 void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
 {
-   static bool already_here = false;
+   static bool is_reloading = false;
 
-   if (already_here) {
+   if (is_reloading) {
       /*
        * Note: don't use Jmsg here, as it could produce a race condition
        * on multiple parallel reloads
@@ -537,9 +537,9 @@ void SighandlerReloadConfig(int sig, siginfo_t *siginfo, void *ptr)
       Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return;
    }
-   already_here = true;
+   is_reloading = true;
    DoReloadConfig();
-   already_here = false;
+   is_reloading = false;
 }
 #endif
 
@@ -572,6 +572,7 @@ bool DoReloadConfig()
 {
    static bool is_reloading = false;
    bool reloaded = false;
+   resource_table_reference prev_config;
 
    if (is_reloading) {
       /*
@@ -590,7 +591,6 @@ bool DoReloadConfig()
 
    DbSqlPoolFlush();
 
-   resource_table_reference prev_config;
    prev_config.res_table = my_config->save_resources();
    prev_config.JobCount = 0;
 

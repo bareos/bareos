@@ -14,8 +14,6 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-#%%define _libversion    16.4.3
-
 %define library_dir    %{_libdir}/%{name}
 %define backend_dir    %{_libdir}/%{name}/backends
 %define plugin_dir     %{_libdir}/%{name}/plugins
@@ -46,12 +44,11 @@ Vendor: 	The Bareos Team
 %define have_git 1
 %define ceph 0
 %define install_suse_fw 0
-%define systemd 0
+%define systemd_support 0
 %define python_plugins 1
 
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
-
 
 # fedora 28 deprecated libwrap
 %if 0%{?fedora} >= 28 || 0%{?rhel} > 7
@@ -96,7 +93,6 @@ BuildRequires: libtirpc-devel
 # therefore build it only for SLE_12 and SLE_12_SP1
 %if 0%{?sle_version} >= 120000 && 0%{?sle_version} <= 120100
 %define ceph 1
-%define objectstorage 1
 %endif
 
 #
@@ -148,7 +144,7 @@ BuildRequires: systemd-rpm-macros
 %{?systemd_requires}
 %endif
 
-%if 0%{droplet}
+%if 0%{?droplet}
 BuildRequires: libdroplet-devel
 %endif
 
@@ -337,7 +333,7 @@ Requires(pre): shadow-utils
 Requires: bareos-tools
 %endif
 
-%if 0%{droplet}
+%if 0%{?droplet}
 %package    storage-droplet
 Summary:    Object Storage support (through libdroplet) for the Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -609,7 +605,7 @@ This package contains the Storage Daemon
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
 
-%if 0%{droplet}
+%if 0%{?droplet}
 %description storage-droplet
 %{dscr}
 
@@ -805,7 +801,8 @@ cmake  .. \
 %endif
   -Dincludes=yes
 
-make  DESTDIR=%{buildroot}
+#Add flags
+%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
 
 %check
 # run unit tests
@@ -1076,7 +1073,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/NULL.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/NULL.conf.example
 
-%if 0%{droplet}
+%if 0%{?droplet}
 %files storage-droplet
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-chunked*.so

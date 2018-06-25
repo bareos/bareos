@@ -117,6 +117,8 @@ void *statistics_thread(void *arg)
 
    Dmsg0(200, "Starting statistics thread\n");
 
+   Dmsg0(200, "Starting statistics thread\n");
+
    memset(&cached_device, 0, sizeof(struct cached_device));
    PmStrcpy(current_store, "");
 
@@ -143,11 +145,11 @@ void *statistics_thread(void *arg)
    while (!quit) {
       now = (utime_t)time(NULL);
 
-      Dmsg1(200, "statistics_thread_runner: Doing work at %ld\n", now);
+      Dmsg1(200, "statistics_thread: Doing work at %ld\n", now);
 
       if (JobCount() == 0) {
          if (!need_flush) {
-            Dmsg0(200, "statistics_thread_runner: do nothing as no jobs are running\n");
+            Dmsg0(200, "statistics_thread: do nothing as no jobs are running\n");
             wait_for_next_run();
             continue;
          } else {
@@ -293,6 +295,8 @@ void *statistics_thread(void *arg)
 
 bail_out:
    FreeJcr(jcr);
+
+   Dmsg0(200, "Finished statistics thread\n");
 
    Dmsg0(200, "Finished statistics thread\n");
 

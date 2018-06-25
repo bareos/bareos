@@ -2878,7 +2878,34 @@ int win32_unlink(const char *filename)
             }
          }
       }
+
+      /* if deletion with _unlink failed, try to use DeleteFileW (which also can remove file links) */
+      if (nRetCode == -1) {
+         Dmsg0(100, "_unlink failed, trying DeleteFileW \n");
+         if (DeleteFileW( (LPCWSTR)pwszBuf ) == 0) { // 0 = fail
+            Dmsg0(100, "DeleteFileW failed\n");
+            nRetCode = -1;
+         } else {
+            Dmsg0(100, "DeleteFileW success\n");
+            nRetCode = 0;
+         }
+      }
+
+
+      /* if deletion with DeleteFileW failed, try to use RemoveDirectoryW (which also can remove directory links) */
+      if (nRetCode == -1) {
+         Dmsg0(100, "DeleteFileW failed, trying RemoveDirectoryW \n");
+         if (RemoveDirectoryW( (LPCWSTR)pwszBuf ) == 0) { // 0 = fail
+            Dmsg0(100, "RemoveDirectoryW failed\n");
+            nRetCode = -1;
+         } else {
+            Dmsg0(100, "RemoveDirectoryW success\n");
+            nRetCode = 0;
+         }
+      }
+
       FreePoolMemory(pwszBuf);
+
    } else {
       nRetCode = _unlink(filename);
 
