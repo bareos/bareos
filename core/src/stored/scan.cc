@@ -78,7 +78,7 @@ bool Device::ScanDirForVolume(DeviceControlRecord *dcr)
    if (len > 0) {
       need_slash = !IsPathSeparator(mount_point[len - 1]);
    }
-         
+
 #ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {

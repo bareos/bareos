@@ -34,7 +34,7 @@
 #include "dird/dird_conf.h"
 #include "lib/edit.h"
 
-extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseDirConfig(const char *configfile, int exit_code);
 
 typedef struct s_id_ctx {
    int64_t *Id;                       /* ids to be modified */
@@ -68,7 +68,7 @@ static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 #endif
 
 DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 #define MAX_ID_LIST_LEN 10000000
 
@@ -1236,8 +1236,8 @@ int main (int argc, char *argv[])
       if (argc > 0) {
          Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
       }
-      my_config = new_config_parser();
-      ParseDirConfig(my_config, configfile, M_ERROR_TERM);
+      my_config = InitDirConfig(configfile, M_ERROR_TERM);
+      my_config->ParseConfig();
       LockRes();
       foreach_res(catalog, R_CATALOG) {
          if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {

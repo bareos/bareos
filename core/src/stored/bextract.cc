@@ -45,7 +45,7 @@
 #include "lib/bsignal.h"
 #include "include/jcr.h"
 
-extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(const char *configfile, int exit_code);
 
 static void DoExtract(char *devname);
 static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
@@ -208,8 +208,8 @@ int main (int argc, char *argv[])
       usage();
    }
 
-   my_config = new_config_parser();
-   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = new ConfigurationParser;
+   ParseSdConfig(configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {

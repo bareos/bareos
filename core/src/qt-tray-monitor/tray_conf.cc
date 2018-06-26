@@ -372,29 +372,24 @@ bool SaveResource(int type, ResourceItem *items, int pass)
    return (error == 0);
 }
 
-void InitTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code)
+ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code)
 {
-   config->init(configfile,
-                NULL,
-                NULL,
-                NULL,
-                NULL,
-                NULL,
+   return new ConfigurationParser(
+                configfile,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr,
                 exit_code,
                 (void *)&res_all,
                 res_all_size,
                 R_FIRST,
                 R_LAST,
                 resources,
-                res_head);
-   config->SetDefaultConfigFilename(CONFIG_FILE);
-   config->SetConfigIncludeDir("tray-monitor.d");
-}
-
-bool ParseTmonConfig(ConfigurationParser *config, const char *configfile, int exit_code)
-{
-   InitTmonConfig(config, configfile, exit_code);
-   return config->ParseConfig();
+                res_head,
+                CONFIG_FILE,
+                "tray-monitor.d");
 }
 
 /*

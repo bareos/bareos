@@ -603,29 +603,24 @@ static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
    }
 }
 
-void InitFdConfig(ConfigurationParser *config, const char *configfile, int exit_code)
+ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
 {
-   config->init(configfile,
-                NULL,
-                NULL,
+   return new ConfigurationParser (
+                configfile,
+                nullptr,
+                nullptr,
                 InitResourceCb,
                 ParseConfigCb,
-                NULL,
+                nullptr,
                 exit_code,
                 (void *)&res_all,
                 res_all_size,
                 R_FIRST,
                 R_LAST,
                 resources,
-                res_head);
-   config->SetDefaultConfigFilename(CONFIG_FILE);
-   config->SetConfigIncludeDir("bareos-fd.d");
-}
-
-bool ParseFdConfig(ConfigurationParser *config, const char *configfile, int exit_code)
-{
-   InitFdConfig(config, configfile, exit_code);
-   return config->ParseConfig();
+                res_head,
+                CONFIG_FILE,
+                "bareos-fd.d");
 }
 
 /**

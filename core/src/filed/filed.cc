@@ -38,7 +38,6 @@
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
-extern bool ParseFdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
@@ -46,7 +45,7 @@ static bool CheckResources();
 
 /* Exported variables */
 ClientResource *me = NULL;                 /* Our Global resource */
-ConfigurationParser *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 bool no_signals = false;
 bool backup_only_mode = false;
@@ -226,15 +225,14 @@ int main (int argc, char *argv[])
    if (export_config_schema) {
       PoolMem buffer;
 
-      my_config = new_config_parser();
-      InitFdConfig(my_config, configfile, M_ERROR_TERM);
+      my_config = InitFdConfig(configfile, M_ERROR_TERM);
       PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       goto bail_out;
    }
 
-   my_config = new_config_parser();
-   ParseFdConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitFdConfig(configfile, M_ERROR_TERM);
+   my_config->ParseConfig();
 
    if (export_config) {
       my_config->DumpResources(PrintMessage, NULL);
@@ -252,7 +250,7 @@ int main (int argc, char *argv[])
    }
 
    if (!CheckResources()) {
-      Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
+      Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path().c_str());
       TerminateFiled(1);
    }
 
@@ -332,8 +330,7 @@ void TerminateFiled(int sig)
       PrintMemoryPoolStats();
    }
    if (my_config) {
-      my_config->FreeResources();
-      free(my_config);
+      delete my_config;
       my_config = NULL;
    }
    TermMsg();
@@ -352,7 +349,7 @@ static bool CheckResources()
 {
    bool OK = true;
    DirectorResource *director;
-   const char *configfile = my_config->get_base_config_path();
+   const char *configfile = my_config->get_base_config_path().c_str();
 
    LockRes();
 

@@ -16,6 +16,9 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \releasenoteSection{Bareos-17.2}
 
+    %\item added \package{bareos-storage-ceph} also for \os{SLES}{12sp2} and \os{SLES}{12sp3}.
+
+
 \releasenote{17.2.6}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
@@ -28,15 +31,15 @@ Url               & \releaseUrlDownloadBareosCom{17.2} \\
 This release contains several bugfixes and enhancements. Excerpt:
 \begin{itemize}
     \item added platforms: \os{Fedora}{27}, \os{Fedora}{28}, \os{openSUSE}{15.0}, \os{Ubuntu}{18.04} and \os{Univention}{4.3}.
-    \item added \package{bareos-storage-ceph} also for \os{SLES}{12sp2} and \os{SLES}{12sp3}.
     \item \os{Univention}{4.3}: fixes integration.
     \item \ticket{872} adapted to new Ceph API.
     \item \ticket{943} use \package{tirpc} if Sun-RPC is not provided.
     \item \ticket{964} fixes the predefined queries.
+    \item \ticket{969} fixes a problem of restoring more files then selected in \bareosWebui/BVFS.
     \item \bareosDir: fixes for a crash after reload in the statistics thread (\ticket{695}, \ticket{903}).
     \item \command{bareos-dbcheck}: cleanup and speedup for some some of the checks.
-    \item preparation for \postgresql 10.
-    \item fixes a problem of restoring more files then selected.
+    \item adapted for \postgresql 10.
+    \item gfapi: stale file handles are treated as warnings
 \end{itemize}
 
 }

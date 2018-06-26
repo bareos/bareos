@@ -40,7 +40,7 @@
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool ParseSdConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseSdConfig(const char *configfile, int exit_code);
 
 /* Forward referenced functions */
 static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
@@ -171,8 +171,8 @@ int main (int argc, char *argv[])
 
    working_directory = wd;
 
-   my_config = new_config_parser();
-   ParseSdConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitSdConfig(configfile, M_ERROR_TERM);
+   ParseSdConfig(configfile, M_ERROR_TERM);
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
