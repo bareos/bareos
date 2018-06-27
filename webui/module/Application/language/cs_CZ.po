@@ -10,7 +10,7 @@ msgstr ""
 #: ../../../module/Application/config/module.config.php:125
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
 msgid "Dashboard"
-msgstr "Přehled"
+msgstr "Nástěnka"
 
 #: ../../../module/Application/config/module.config.php:130
 #: ../../../module/Dashboard/view/partial/JobTotals.phtml:40
@@ -168,7 +168,7 @@ msgstr "Předchozí vyjímka"
 #: ../../../module/Application/view/error/404.phtml:105
 #: ../../../module/Application/view/error/index.phtml:61
 msgid "No Exception available"
-msgstr "Nejsou k dispozici žádné vyjímky"
+msgstr "Nejsou k dispozici žádné výjimky"
 
 #: ../../../module/Application/view/error/index.phtml:4
 msgid "An error occurred"
@@ -284,7 +284,7 @@ msgstr "Akce"
 
 #: ../../../module/Client/view/client/client/details.phtml:69
 msgid "Last successful backups"
-msgstr "Letzte Sicherungen"
+msgstr "Nedávné úspěšné zálohy"
 
 #: ../../../module/Client/view/client/client/details.phtml:76
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
@@ -518,7 +518,7 @@ msgstr "Sady souborů"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
-msgstr "Podrobnosti sady souborů"
+msgstr "Podrobnosti o sadě souborů"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
 msgid "Id"
@@ -542,23 +542,23 @@ msgstr "Časové období"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:73
 msgid "last 24 hours"
-msgstr "minulých 24 hodin"
+msgstr "uplynulých 24 hodin"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:74
 msgid "last 3 days"
-msgstr "minulé 3 dny"
+msgstr "uplynulé 3 dny"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:75
 msgid "last week"
-msgstr "minulý týden"
+msgstr "uplynulý týden"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:76
 msgid "last month"
-msgstr "minulý měsíc"
+msgstr "uplynulý měsíc"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:77
 msgid "last year"
-msgstr "minulý rok"
+msgstr "uplynulý rok"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:78
 msgid "unlimited"
@@ -1258,6 +1258,7 @@ msgstr "hodin"
 msgid "second(s)"
 msgstr "sekund"
 
+<<<<<<< HEAD
 #: ../../js/custom-functions.js:197 ../../js/custom-functions.js:227
 msgid "Used"
 msgstr "Využito"
@@ -1424,11 +1425,70 @@ msgstr "Čeká na úložný prostředek"
 #: ../../js/custom-functions.js:398
 msgid "Waiting for job resource"
 msgstr "Čeká na prostředek úlohy"
+=======
+#~ msgid "Terminated successfully"
+#~ msgstr "Úspěšně ukončeno"
+
+#~ msgid "Terminated unsuccessfully"
+#~ msgstr "Ukončeno s neúspěchem"
+
+#~ msgid "Help"
+#~ msgstr "Nápověda"
+
+#~ msgid "Storage ID"
+#~ msgstr "Identifikátor úložiště"
+
+#~ msgid "Scheduler Status"
+#~ msgstr "Stav plánovače"
+
+#~ msgid "day(s)"
+#~ msgstr "dny"
+
+#~ msgid "expired"
+#~ msgstr "platnost skončila"
+
+#~ msgid "expires in"
+#~ msgstr "platnost končí za"
+
+#~ msgid "days"
+#~ msgstr "dnů"
+
+#~ msgid "today"
+#~ msgstr "dnes"
+
+#~ msgid "enabled"
+#~ msgstr "zapnuto"
+
+#~ msgid "Success"
+#~ msgstr "Úspěch"
+
+#~ msgid "Last 500 Director messages"
+#~ msgstr "Posledních 500 hlášení z řídící části"
+
+#~ msgid "Unsuccessful"
+#~ msgstr "Neúspěšné"
+
+#~ msgid "Merge all client filesets?"
+#~ msgstr "Sloučit sady souborů všech klientů"
+
+#~ msgid "Merge all related jobs to last full backup of selected backup job?"
+#~ msgstr "Sloučit všechny související úlohy do poslední úplné zálohy označené zálohovací úlohy?"
+
+#~ msgid "Merge jobs?"
+#~ msgstr "Sloučit úlohy?"
+
+#~ msgid "Select files to restore"
+#~ msgstr "Vybrat soubory které obnovit"
+
+#~ msgid "successful"
+#~ msgstr "úspěšné"
+>>>>>>> 928d5eed... Update cs_CZ.po
 
 #: ../../js/custom-functions.js:403
 msgid "Waiting for Client resource"
 msgstr "Čeká na prostředek klienta"
 
+<<<<<<< HEAD
 #: ../../js/custom-functions.js:408
 msgid "Waiting for maximum jobs"
 msgstr "Čeká na maximum úloh"
@@ -1453,3 +1513,25 @@ msgstr "Odesílání dat (poslední despool)"
 msgid "Terminated normally with warnings"
 msgstr "Skončeno normálně s varováními"
 
+=======
+#~ msgid "Unsuccessful (past 24 hours)"
+#~ msgstr "Nezdařené (uplynulých 24 hodin)"
+
+#~ msgid "Successful (past 24 hours)"
+#~ msgstr "Úspěšné (uplynulých 24 hodin)"
+
+#~ msgid "Timeline"
+#~ msgstr "Časová osa"
+
+#~ msgid "if older"
+#~ msgstr "pokud starší"
+
+#~ msgid "if newer"
+#~ msgstr "pokud novější"
+
+#~ msgid "Free bytes"
+#~ msgstr "Bajtů volných"
+
+#~ msgid "restore"
+#~ msgstr "obnovit"
+>>>>>>> 928d5eed... Update cs_CZ.po
