@@ -113,29 +113,27 @@ msgstr "Data"
 
 #: ../../js/custom-functions.js:161
 msgid "None"
-msgstr "Nichts"
+msgstr "Žádné"
 
 #: ../../js/custom-functions.js:169
-#, fuzzy
 msgid "year(s)"
-msgstr "roky předtím"
+msgstr "let"
 
 #: ../../js/custom-functions.js:172
-#, fuzzy
 msgid "month(s)"
-msgstr "měsíci předtím"
+msgstr "měsíců"
 
 #: ../../js/custom-functions.js:175
 msgid "day(s)"
-msgstr "Tag(e)"
+msgstr "dnů"
 
 #: ../../js/custom-functions.js:178
 msgid "hour(s)"
-msgstr ""
+msgstr "hodin"
 
 #: ../../js/custom-functions.js:181
 msgid "second(s)"
-msgstr ""
+msgstr "sekund"
 
 #: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
 msgid "Used"
@@ -171,7 +169,7 @@ msgstr "dny předtím"
 
 #: ../../js/custom-functions.js:260
 msgid "month(s) ago"
-msgstr "měsíci předtím"
+msgstr "měsíce předtím"
 
 #: ../../js/custom-functions.js:263
 msgid "year(s) ago"
@@ -232,11 +230,11 @@ msgstr "Čekající"
 
 #: ../../js/custom-functions.js:396
 msgid "SD despooling attributes"
-msgstr "Atributy SD vybírání z fronty"
+msgstr "Atributy úložného procesu vybírání z fronty"
 
 #: ../../js/custom-functions.js:400
 msgid "Doing batch insert file records"
-msgstr "Dělání dávkového vkládání souborových záznamů"
+msgstr "Dávkové vkládání souborových záznamů"
 
 #: ../../js/custom-functions.js:404
 msgid "Incomplete"
@@ -244,7 +242,7 @@ msgstr "Neúplné"
 
 #: ../../js/custom-functions.js:408
 msgid "Committing data"
-msgstr "Aplikace dat"
+msgstr "Odesílání dat"
 
 #: ../../js/custom-functions.js:412
 msgid "Warning"
