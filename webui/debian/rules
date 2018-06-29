@@ -10,7 +10,7 @@
 # Modified to make a template file for a multi-binary package with separated
 # build-arch and build-indep targets  by Bill Allombert 2001
 
-BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )
+BAREOS_VERSION := $(shell sed -n 2p ../core/src/include/version.h | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE = 1
