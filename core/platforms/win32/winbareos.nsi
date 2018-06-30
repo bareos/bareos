@@ -595,7 +595,6 @@ SectionIn 1 2 3 4
 
   # install unittests
 #  File "test_*.exe"
-  File "/oname=cmocka.dll" "libcmocka.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
@@ -2169,7 +2168,6 @@ ConfDeleteSkip:
 
 # delete unittest bin
 #  Delete  "$INSTDIR\test_*.exe"
-  Delete  "$INSTDIR\cmocka.dll"
 
 # copied stuff from postgresql install
   Delete "$INSTDIR\libpq.dll"

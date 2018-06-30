@@ -90,5 +90,5 @@ union UnionOfResources {
 extern ConsoleResource *me;                    /* "Global" Client resource */
 extern ConfigurationParser *my_config;             /* Our Global config */
 
-void InitConsConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+ConfigurationParser *InitConsConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);

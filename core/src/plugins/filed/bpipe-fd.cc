@@ -829,7 +829,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                switch (plugin_arguments[i].type) {
                case argument_file:
                   if (!PathContainsDirectory(argument_value)){
-                     Jmsg(ctx, M_FATAL, 
+                     Jmsg(ctx, M_FATAL,
                            "bpipe-fd: file argument (%s) must contain a directory structure. Please fix your plugin definition\n",
                            argument_value);
                      Dmsg(ctx, debuglevel,

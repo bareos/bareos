@@ -70,7 +70,7 @@ static bool InitSighandlerSighup();
 /* Exported subroutines */
 extern bool DoReloadConfig();
 extern void InvalidateSchedules();
-extern bool ParseDirConfig(ConfigurationParser *config, const char *configfile, int exit_code);
+extern bool ParseDirConfig(const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
@@ -90,7 +90,7 @@ static alist *reload_table = NULL;
 
 /* Globals Exported */
 DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;             /* Our Global config */
 char *configfile = NULL;
 void *start_heap;
 
@@ -344,15 +344,14 @@ int main (int argc, char *argv[])
    if (export_config_schema) {
       PoolMem buffer;
 
-      my_config = new_config_parser();
-      InitDirConfig(my_config, configfile, M_ERROR_TERM);
+      my_config = InitDirConfig(configfile, M_ERROR_TERM);
       PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       goto bail_out;
    }
 
-   my_config = new_config_parser();
-   ParseDirConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitDirConfig(configfile, M_ERROR_TERM);
+   my_config->ParseConfig();
 
    if (export_config) {
       my_config->DumpResources(PrintMessage, NULL);
@@ -372,7 +371,7 @@ int main (int argc, char *argv[])
    }
 
    if (!CheckResources()) {
-      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
       goto bail_out;
    }
 
@@ -406,7 +405,7 @@ int main (int argc, char *argv[])
    mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
    if (!CheckCatalog(mode)) {
-      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
       goto bail_out;
    }
 
@@ -415,7 +414,7 @@ int main (int argc, char *argv[])
    }
 
    if (!InitializeSqlPooling()) {
-      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
       goto bail_out;
    }
 
@@ -505,8 +504,7 @@ void TerminateDird(int sig)
       PrintMemoryPoolStats();
    }
    if (my_config) {
-      my_config->FreeResources();
-      free(my_config);
+      delete my_config;
       my_config = NULL;
    }
 
@@ -595,11 +593,13 @@ bool DoReloadConfig()
    prev_config.JobCount = 0;
 
    Dmsg0(100, "Reloading config file\n");
-   bool ok = ParseDirConfig(my_config, configfile, M_ERROR);
+
+   my_config->err_type_ = M_ERROR;
+   bool ok = my_config->ParseConfig();
 
    if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG) || !InitializeSqlPooling()) {
 
-      Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
+      Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
       Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
       resource_table_reference temp_config;
@@ -773,7 +773,7 @@ static bool CheckResources()
    bool OK = true;
    JobResource *job;
    bool need_tls;
-   const char *configfile = my_config->get_base_config_path();
+   const char *configfile = my_config->get_base_config_path().c_str();
 
    LockRes();
 

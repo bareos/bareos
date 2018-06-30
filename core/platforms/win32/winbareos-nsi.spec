@@ -85,9 +85,6 @@ BuildRequires:  mingw64-sqlite
 BuildRequires:  mingw32-libsqlite
 BuildRequires:  mingw64-libsqlite
 
-BuildRequires:  mingw32-cmocka
-BuildRequires:  mingw64-cmocka
-
 BuildRequires:  mingw32-libjansson
 BuildRequires:  mingw64-libjansson
 
@@ -159,7 +156,6 @@ for flavor in %{flavors}; do
 
    for file in \
       libcrypto-*.dll \
-      libcmocka.dll \
       libfastlz.dll \
       libgcc_s_*-1.dll \
       libhistory6.dll \

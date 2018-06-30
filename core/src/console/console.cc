@@ -51,12 +51,9 @@
 
 /* Exported variables */
 ConsoleResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 //extern int rl_catch_signals;
-
-/* Imported functions */
-extern bool ParseConsConfig(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
 static void TerminateConsole(int sig);
@@ -1251,15 +1248,14 @@ int main(int argc, char *argv[])
    if (export_config_schema) {
       PoolMem buffer;
 
-      my_config = new_config_parser();
-      InitConsConfig(my_config, configfile, M_ERROR_TERM);
+      my_config = InitConsConfig(configfile, M_ERROR_TERM);
       PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       exit(0);
    }
 
-   my_config = new_config_parser();
-   ParseConsConfig(my_config, configfile, M_ERROR_TERM);
+   my_config = InitConsConfig(configfile, M_ERROR_TERM);
+   my_config->ParseConfig();
 
    if (export_config) {
       my_config->DumpResources(PrintMessage, NULL);
@@ -1271,7 +1267,7 @@ int main(int argc, char *argv[])
    }
 
    if (!CheckResources()) {
-      Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
+      Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path().c_str());
    }
 
    if (!no_conio) {
@@ -1413,8 +1409,7 @@ static void TerminateConsole(int sig)
    }
    already_here = true;
    StopWatchdog();
-   my_config->FreeResources();
-   free(my_config);
+   delete my_config;
    my_config = NULL;
    CleanupCrypto();
    FreePoolMemory(args);
@@ -1447,7 +1442,7 @@ static int CheckResources()
 
    if (numdir == 0) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"
-                          "Without that I don't how to speak to the Director :-(\n"), my_config->get_base_config_path());
+                          "Without that I don't how to speak to the Director :-(\n"), my_config->get_base_config_path().c_str());
       OK = false;
    }
 
