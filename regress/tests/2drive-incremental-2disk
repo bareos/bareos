@@ -8,7 +8,7 @@
 # TODO: add check to verify that 2 drives are used.
 #
 TestName="2drive-incremental-2disk"
-JobName="2drive2disk"
+#JobName="2drive2disk"
 
 # Directory to backup.
 # This directory will be created by setup_data().
@@ -19,9 +19,10 @@ BackupDirectory="${tmp}/data"
 scripts/cleanup
 scripts/copy-2disk-drive-confs
 scripts/prepare-disk-changer
-CLIENT=2drive2disk
 
-change_jobname localhost-fd $JobName
+#CLIENT=localhost-fd
+
+#change_jobname localhost-fd $JobName
 start_test
 
 # Directory to backup.
