@@ -270,7 +270,7 @@ bail_out:
 bool UaContext::AclNoRestrictions(int acl)
 {
    const char *list_value;
-   ProfileResource *profile;
+   ProfileResource *profile = nullptr;
 
    /*
     * If no console resource => default console and all is permitted
@@ -294,19 +294,21 @@ bool UaContext::AclNoRestrictions(int acl)
    }
 
    foreach_alist(profile, cons->profiles) {
-      if (profile->ACL_lists[acl]) {
-         for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
-            list_value = (char *)profile->ACL_lists[acl]->get(i);
+      if (profile) {
+         if (profile->ACL_lists[acl]) {
+            for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
+               list_value = (char *)profile->ACL_lists[acl]->get(i);
 
-            if (*list_value == '!') {
-               return false;
-            }
+               if (*list_value == '!') {
+                  return false;
+               }
 
-            if (Bstrcasecmp("*all*", list_value)) {
-               return true;
-            }
-         }
-      }
+               if (Bstrcasecmp("*all*", list_value)) {
+                  return true;
+               }
+            } /* for (int i = 0; */
+         } /* if (profile->ACL_lists[acl]) */
+      } /* if (profile) */
    }
 
    return false;
