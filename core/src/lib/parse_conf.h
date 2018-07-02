@@ -433,11 +433,11 @@ public:
 
    ~ConfigurationParser();
 
-   bool IsUsingConfigIncludeDir() { return use_config_include_dir_; }
+   bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
    bool ParseConfig();
    bool ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError = NULL,
                           LEX_WARNING_HANDLER *scan_warning = NULL);
-   std::string get_base_config_path() { return used_config_path_; }
+   const std::string &get_base_config_path() const { return used_config_path_; }
    void FreeResources();
    CommonResourceHeader **save_resources();
    CommonResourceHeader **new_res_head();

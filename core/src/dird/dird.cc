@@ -773,7 +773,7 @@ static bool CheckResources()
    bool OK = true;
    JobResource *job;
    bool need_tls;
-   const char *configfile = my_config->get_base_config_path().c_str();
+   const std::string &configfile = my_config->get_base_config_path();
 
    LockRes();
 
@@ -781,7 +781,7 @@ static bool CheckResources()
    me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
    if (!me) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
-                               "Without that I don't know who I am :-(\n"), configfile);
+                               "Without that I don't know who I am :-(\n"), configfile.c_str());
       OK = false;
       goto bail_out;
    } else {
@@ -801,7 +801,7 @@ static bool CheckResources()
       if (!me->messages) {
          me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
-            Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
+            Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile.c_str());
             OK = false;
             goto bail_out;
          }
@@ -813,14 +813,14 @@ static bool CheckResources()
       if (!me->optimize_for_size && !me->optimize_for_speed) {
          me->optimize_for_size = true;
       } else if (me->optimize_for_size && me->optimize_for_speed) {
-         Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
+         Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile.c_str());
          OK = false;
          goto bail_out;
       }
 
       if (GetNextRes(R_DIRECTOR, (CommonResourceHeader *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
-            configfile);
+            configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -841,13 +841,13 @@ static bool CheckResources()
       need_tls = me->tls_cert.enable || me->tls_cert.authenticate;
 
       if ((me->tls_cert.certfile == nullptr || me->tls_cert.certfile->empty()) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(),configfile);
+         Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(),configfile.c_str());
          OK = false;
          goto bail_out;
       }
 
       if ((me->tls_cert.keyfile == nullptr || me->tls_cert.keyfile->empty()) && need_tls) {
-         Jmsg(NULL,  M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),me->name(), configfile);
+         Jmsg(NULL,  M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),me->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -859,14 +859,14 @@ static bool CheckResources()
               " Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
               " when using \"TLS Verify Peer\".\n"),
-              me->name(), configfile);
+              me->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
     }
 
    if (!job) {
-      Jmsg(NULL, M_FATAL, 0, _("No Job records defined in %s\n"), configfile);
+      Jmsg(NULL, M_FATAL, 0, _("No Job records defined in %s\n"), configfile.c_str());
       OK = false;
       goto bail_out;
    }
@@ -881,7 +881,7 @@ static bool CheckResources()
     */
    foreach_res(job, R_JOB) {
       if (job->MaxFullConsolidations && job->JobType != JT_CONSOLIDATE) {
-         Jmsg(NULL, M_FATAL, 0, _("MaxFullConsolidations configured in job %s which is not of job type \"consolidate\" in file %s\n"), job->name(), configfile);
+         Jmsg(NULL, M_FATAL, 0, _("MaxFullConsolidations configured in job %s which is not of job type \"consolidate\" in file %s\n"), job->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -891,7 +891,7 @@ static bool CheckResources()
            job->AlwaysIncrementalJobRetention ||
            job->AlwaysIncrementalKeepNumber ||
            job->AlwaysIncrementalMaxFullAge)) {
-         Jmsg(NULL, M_FATAL, 0, _("AlwaysIncremental configured in job %s which is not of job type \"backup\" in file %s\n"), job->name(), configfile);
+         Jmsg(NULL, M_FATAL, 0, _("AlwaysIncremental configured in job %s which is not of job type \"backup\" in file %s\n"), job->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -919,14 +919,14 @@ static bool CheckResources()
 
       if ((cons->tls_cert.certfile == nullptr || cons->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
-            cons->name(), configfile);
+            cons->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
 
       if ((cons->tls_cert.keyfile == nullptr || cons->tls_cert.keyfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
-            cons->name(), configfile);
+            cons->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -938,7 +938,7 @@ static bool CheckResources()
             " Certificate Dir\" are defined for Console \"%s\" in %s."
             " At least one CA certificate store is required"
             " when using \"TLS Verify Peer\".\n"),
-            cons->name(), configfile);
+            cons->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -974,7 +974,7 @@ static bool CheckResources()
           (client->tls_cert.CaCertdir == nullptr || client->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
             " or \"TLS CA Certificate Dir\" are defined for File daemon \"%s\" in %s.\n"),
-            client->name(), configfile);
+            client->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }
@@ -1004,7 +1004,7 @@ static bool CheckResources()
           (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
-              store->name(), configfile);
+              store->name(), configfile.c_str());
          OK = false;
          goto bail_out;
       }

@@ -349,14 +349,14 @@ static bool CheckResources()
 {
    bool OK = true;
    DirectorResource *director;
-   const char *configfile = my_config->get_base_config_path().c_str();
+   const std::string &configfile = my_config->get_base_config_path();
 
    LockRes();
 
    me = (ClientResource *)GetNextRes(R_CLIENT, NULL);
    if (!me) {
       Emsg1(M_FATAL, 0, _("No File daemon resource defined in %s\n"
-            "Without that I don't know who I am :-(\n"), configfile);
+            "Without that I don't know who I am :-(\n"), configfile.c_str());
       OK = false;
    } else {
       /*
@@ -368,14 +368,14 @@ static bool CheckResources()
 
       if (GetNextRes(R_CLIENT, (CommonResourceHeader *) me) != NULL) {
          Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
-              configfile);
+              configfile.c_str());
          OK = false;
       }
       MyNameIs(0, NULL, me->name());
       if (!me->messages) {
          me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
-             Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
+             Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile.c_str());
              OK = false;
          }
       }
@@ -394,7 +394,7 @@ static bool CheckResources()
       if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
          Emsg2(M_FATAL, 0, _("\"PKI Key Pair\" must be defined for File"
             " daemon \"%s\" in %s if either \"PKI Sign\" or"
-            " \"PKI Encrypt\" are enabled.\n"), me->name(), configfile);
+            " \"PKI Encrypt\" are enabled.\n"), me->name(), configfile.c_str());
          OK = false;
       }
 
@@ -409,13 +409,13 @@ static bool CheckResources()
          } else {
             if (!CryptoKeypairLoadCert(me->pki_keypair, me->pki_keypair_file)) {
                Emsg2(M_FATAL, 0, _("Failed to load public certificate for File"
-                     " daemon \"%s\" in %s.\n"), me->name(), configfile);
+                     " daemon \"%s\" in %s.\n"), me->name(), configfile.c_str());
                OK = false;
             }
 
             if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file, NULL, NULL)) {
                Emsg2(M_FATAL, 0, _("Failed to load private key for File"
-                     " daemon \"%s\" in %s.\n"), me->name(), configfile);
+                     " daemon \"%s\" in %s.\n"), me->name(), configfile.c_str());
                OK = false;
             }
          }
@@ -445,14 +445,14 @@ static bool CheckResources()
                      if (CryptoKeypairHasKey(filepath)) {
                         if (!CryptoKeypairLoadKey(keypair, filepath, NULL, NULL)) {
                            Emsg3(M_FATAL, 0, _("Failed to load private key from file %s for File"
-                              " daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
+                              " daemon \"%s\" in %s.\n"), filepath, me->name(), configfile.c_str());
                            OK = false;
                         }
                      }
 
                   } else {
                      Emsg3(M_FATAL, 0, _("Failed to load trusted signer certificate"
-                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
+                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->name(), configfile.c_str());
                      OK = false;
                   }
                }
@@ -483,7 +483,7 @@ static bool CheckResources()
                      me->pki_recipients->append(keypair);
                   } else {
                      Emsg3(M_FATAL, 0, _("Failed to load master key certificate"
-                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
+                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->name(), configfile.c_str());
                      OK = false;
                   }
                }
@@ -499,7 +499,7 @@ static bool CheckResources()
    UnlockRes();
    if (!director) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
-            configfile);
+            configfile.c_str());
       OK = false;
    }
 

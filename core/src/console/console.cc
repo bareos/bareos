@@ -1441,8 +1441,9 @@ static int CheckResources()
    }
 
    if (numdir == 0) {
+      const std::string &configfile = my_config->get_base_config_path();
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"
-                          "Without that I don't how to speak to the Director :-(\n"), my_config->get_base_config_path().c_str());
+                          "Without that I don't how to speak to the Director :-(\n"), configfile.c_str());
       OK = false;
    }
 

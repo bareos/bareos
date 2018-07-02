@@ -111,10 +111,11 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
    }
 
    if (monitorItems != 1) {
+      const std::string &configfile = my_config->get_base_config_path();
       Emsg2(M_ERROR_TERM, 0,
          _("Error: %d Monitor resources defined in %s. "
            "You must define one and only one Monitor resource.\n"),
-            monitorItems, my_config->get_base_config_path().c_str());
+            monitorItems, configfile.c_str());
    }
 
    monitor = reinterpret_cast<MonitorResource*>(GetNextRes(R_MONITOR, (CommonResourceHeader *)NULL));

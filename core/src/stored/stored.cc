@@ -357,23 +357,23 @@ static int CheckResources()
 {
    bool OK = true;
    bool tls_needed;
-   const char *configfile = my_config->get_base_config_path().c_str();
+   const std::string &configfile = my_config->get_base_config_path();
 
    if (GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
-         configfile);
+         configfile.c_str());
       OK = false;
    }
 
    if (GetNextRes(R_DIRECTOR, NULL) == NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("No Director resource defined in %s. Cannot continue.\n"),
-         configfile);
+         configfile.c_str());
       OK = false;
    }
 
    if (GetNextRes(R_DEVICE, NULL) == NULL){
       Jmsg1(NULL, M_ERROR, 0, _("No Device resource defined in %s. Cannot continue.\n"),
-           configfile);
+           configfile.c_str());
       OK = false;
    }
 
@@ -388,14 +388,14 @@ static int CheckResources()
       me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
          Jmsg1(NULL, M_ERROR, 0, _("No Messages resource defined in %s. Cannot continue.\n"),
-            configfile);
+            configfile.c_str());
          OK = false;
       }
    }
 
    if (!me->working_directory) {
       Jmsg1(NULL, M_ERROR, 0, _("No Working Directory defined in %s. Cannot continue.\n"),
-         configfile);
+         configfile.c_str());
       OK = false;
    }
 
@@ -418,7 +418,7 @@ static int CheckResources()
            0,
            _("\"TLS Certificate\" file not defined for Storage \"%s\" in %s.\n"),
            store->name(),
-           configfile);
+           configfile.c_str());
       OK = false;
    }
 
@@ -428,7 +428,7 @@ static int CheckResources()
            0,
            _("\"TLS Key\" file not defined for Storage \"%s\" in %s.\n"),
            store->name(),
-           configfile);
+           configfile.c_str());
       OK = false;
    }
 
@@ -443,7 +443,7 @@ static int CheckResources()
              " At least one CA certificate store is required"
              " when using \"TLS Verify Peer\".\n"),
            store->name(),
-           configfile);
+           configfile.c_str());
       OK = false;
    }
 
@@ -459,13 +459,13 @@ static int CheckResources()
       if ((director->tls_cert.certfile == nullptr || director->tls_cert.certfile->empty()) &&
           tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
-              director->name(), configfile);
+              director->name(), configfile.c_str());
          OK = false;
       }
 
       if ((director->tls_cert.keyfile == nullptr || director->tls_cert.keyfile->empty()) && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
-              director->name(), configfile);
+              director->name(), configfile.c_str());
          OK = false;
       }
 
@@ -476,7 +476,7 @@ static int CheckResources()
               " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
               " when using \"TLS Verify Peer\".\n"),
-              director->name(), configfile);
+              director->name(), configfile.c_str());
          OK = false;
       }
     }
@@ -485,7 +485,7 @@ static int CheckResources()
    foreach_res(device, R_DEVICE) {
       if (device->drive_crypto_enabled && BitIsSet(CAP_LABEL, device->cap_bits)) {
          Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
-              device->name(), configfile);
+              device->name(), configfile.c_str());
          OK = false;
       }
    }
