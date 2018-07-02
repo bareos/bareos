@@ -405,11 +405,20 @@ char *BareosDbPostgresql::EscapeObject(JobControlRecord *jcr, char *old, int len
    obj = PQescapeByteaConn(db_handle_, (unsigned const char *)old, len, &new_len);
    if (!obj) {
       Jmsg(jcr, M_FATAL, 0, _("PQescapeByteaConn returned NULL.\n"));
+      return nullptr;
    }
 
-   esc_obj = CheckPoolMemorySize(esc_obj, new_len+1);
-   memcpy(esc_obj, obj, new_len);
-   esc_obj[new_len]=0;
+   if (esc_obj) {
+      esc_obj = CheckPoolMemorySize(esc_obj, new_len+1);
+      if (esc_obj) {
+         memcpy(esc_obj, obj, new_len);
+         esc_obj[new_len]=0;
+      }
+   }
+
+   if (!esc_obj) {
+      Jmsg(jcr, M_FATAL, 0, _("esc_obj is NULL.\n"));
+   }
 
    PQfreemem(obj);
 
@@ -426,6 +435,10 @@ void BareosDbPostgresql::UnescapeObject(JobControlRecord *jcr, char *from, int32
    size_t new_len;
    unsigned char *obj;
 
+   if (!dest || !dest_len) {
+      return;
+   }
+
    if (!from) {
       dest[0] = '\0';
       *dest_len = 0;
@@ -436,12 +449,15 @@ void BareosDbPostgresql::UnescapeObject(JobControlRecord *jcr, char *from, int32
 
    if (!obj) {
       Jmsg(jcr, M_FATAL, 0, _("PQunescapeByteaConn returned NULL.\n"));
+      return;
    }
 
    *dest_len = new_len;
    dest = CheckPoolMemorySize(dest, new_len + 1);
-   memcpy(dest, obj, new_len);
-   dest[new_len] = '\0';
+   if (dest) {
+      memcpy(dest, obj, new_len);
+      dest[new_len] = '\0';
+   }
 
    PQfreemem(obj);
 
