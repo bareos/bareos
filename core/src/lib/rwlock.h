@@ -43,19 +43,21 @@ typedef struct s_rwlock_tag {
    int               w_active;        /* writers active */
    int               r_wait;          /* readers waiting */
    int               w_wait;          /* writers waiting */
+   s_rwlock_tag() {
+      mutex = PTHREAD_MUTEX_INITIALIZER;
+      read = PTHREAD_COND_INITIALIZER;
+      write = PTHREAD_COND_INITIALIZER;
+      writer_id = 0;
+      priority = 0;
+      valid = 0;
+      r_active = 0;
+      w_active = 0;
+      r_wait = 0;
+      w_wait = 0;
+   };
 } brwlock_t;
 
-typedef struct s_rwsteal_tag {
-   pthread_t         writer_id;       /* writer's thread id */
-   int               state;
-} brwsteal_t;
-
-
 #define RWLOCK_VALID  0xfacade
-
-#define RWL_INIIALIZER \
-   { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, \
-     PTHREAD_COND_INITIALIZER, RWLOCK_VALID, 0, 0, 0, 0 }
 
 #define RwlWritelock(x)     RwlWritelock_p((x), __FILE__, __LINE__)
 

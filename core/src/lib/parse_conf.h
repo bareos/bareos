@@ -405,8 +405,8 @@ public:
 
    int32_t r_first_;                   /* First daemon resource type */
    int32_t r_last_;                    /* Last daemon resource type */
-   ResourceTable *resources_;              /* Pointer to table of permitted resources */
-   CommonResourceHeader **res_head_;                    /* Pointer to defined resources */
+   ResourceTable *resources_;          /* Pointer to table of permitted resources */
+   CommonResourceHeader **res_head_;   /* Pointer to defined resources */
    brwlock_t res_lock_;                /* Resource lock */
 
    /*
