@@ -208,7 +208,7 @@ int main (int argc, char *argv[])
       usage();
    }
 
-   my_config = new ConfigurationParser;
+   my_config = InitSdConfig(configfile, M_ERROR_TERM);
    ParseSdConfig(configfile, M_ERROR_TERM);
 
    if (DirectorName) {
