@@ -67,7 +67,6 @@
 #include "stored/block.h"
 #include "lib/bsys.h"
 
-#undef DeviceControlRecord                            /* used by Bareos */
 
 /**
  * Return values from WaitForSysop()
