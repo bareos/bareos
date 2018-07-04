@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2018 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,6 +49,10 @@ function setDtLocale(val) {
       case 'de':
       case 'de_DE':
          dt_locale = 'de_DE';
+         break;
+      case 'hu':
+      case 'hu_HU':
+         dt_locale = 'hu_HU';
          break;
       case 'it':
       case 'it_IT':
@@ -473,6 +477,10 @@ function getLocale(locale) {
       case 'de':
       case 'de_DE':
          lang = 'German.json';
+         break;
+      case 'hu':
+      case 'hu_HU':
+         lang = 'Hungarian.json';
          break;
       case 'it':
       case 'it_IT':
