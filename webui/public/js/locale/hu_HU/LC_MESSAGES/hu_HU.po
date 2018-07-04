@@ -1,12 +1,11 @@
 # Bareos WebUI Hungarian language file
 # This file is distributed under the same license as the Bareos WebUI package.
 # Gábor Mizda <gabrov@freemail.hu>, 2018.
-
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-05-19 10:15+0200\n"
+"POT-Creation-Date: 2018-07-04 16:00+0200\n"
 "PO-Revision-Date: 2018-05-19 10:22+0200\n"
 "Last-Translator: Gábor Mizda <gabrov@freemail.hu>\n"
 "Language-Team: \n"
@@ -17,320 +16,320 @@ msgstr ""
 "X-Generator: Poedit 2.0.7\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../../js/custom-functions.js:93
+#: ../../js/custom-functions.js:97
 msgid "Backup"
 msgstr "Mentés"
 
-#: ../../js/custom-functions.js:96
+#: ../../js/custom-functions.js:100
 msgid "Migrated"
 msgstr "Migrált"
 
-#: ../../js/custom-functions.js:99
+#: ../../js/custom-functions.js:103
 msgid "Verify"
 msgstr "Ellenőrzött"
 
-#: ../../js/custom-functions.js:102
+#: ../../js/custom-functions.js:106
 msgid "Restore"
 msgstr "Visszaállítás"
 
-#: ../../js/custom-functions.js:105
+#: ../../js/custom-functions.js:109
 msgid "Console program"
 msgstr "Konzol program"
 
-#: ../../js/custom-functions.js:108
+#: ../../js/custom-functions.js:112
 msgid "Internal system job"
 msgstr "Belső rendszer feladat"
 
-#: ../../js/custom-functions.js:111
+#: ../../js/custom-functions.js:115
 msgid "Admin"
 msgstr "Adminisztrátor"
 
-#: ../../js/custom-functions.js:114
+#: ../../js/custom-functions.js:118
 msgid "Archive"
 msgstr "Archív"
 
-#: ../../js/custom-functions.js:117
+#: ../../js/custom-functions.js:121
 msgid "Copy of a job"
 msgstr "Feladat másolata"
 
-#: ../../js/custom-functions.js:120
+#: ../../js/custom-functions.js:124
 msgid "Copy job"
 msgstr "Feladat másolása"
 
-#: ../../js/custom-functions.js:123
+#: ../../js/custom-functions.js:127
 msgid "Migration job"
 msgstr "Migrációs feladat"
 
-#: ../../js/custom-functions.js:126
+#: ../../js/custom-functions.js:130
 msgid "Scan"
 msgstr "Beolvasás"
 
-#: ../../js/custom-functions.js:129
+#: ../../js/custom-functions.js:133
 msgid "Consolidate"
 msgstr "Konszolidálás"
 
-#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
-#: ../../js/custom-functions.js:219
+#: ../../js/custom-functions.js:145 ../../js/custom-functions.js:193
+#: ../../js/custom-functions.js:223
 msgid "Full"
 msgstr "Teljes"
 
-#: ../../js/custom-functions.js:143
+#: ../../js/custom-functions.js:147
 msgid "Differential"
 msgstr "Különbözeti"
 
-#: ../../js/custom-functions.js:145
+#: ../../js/custom-functions.js:149
 msgid "Incremental"
 msgstr "Növekményes"
 
-#: ../../js/custom-functions.js:147
+#: ../../js/custom-functions.js:151
 msgid "VirtualFull"
 msgstr "VirtualFull"
 
-#: ../../js/custom-functions.js:149
+#: ../../js/custom-functions.js:153
 msgid "Base"
 msgstr "Alap"
 
-#: ../../js/custom-functions.js:151
+#: ../../js/custom-functions.js:155
 msgid "Catalog"
 msgstr "Katalógus"
 
-#: ../../js/custom-functions.js:153
+#: ../../js/custom-functions.js:157
 msgid "InitCatalog"
 msgstr "InitCatalog"
 
-#: ../../js/custom-functions.js:155
+#: ../../js/custom-functions.js:159
 msgid "VolumeToCatalog"
 msgstr "VolumeToCatalog"
 
-#: ../../js/custom-functions.js:157
+#: ../../js/custom-functions.js:161
 msgid "DiskToCatalog"
 msgstr "DiskToCatalog"
 
-#: ../../js/custom-functions.js:159
+#: ../../js/custom-functions.js:163
 msgid "Data"
 msgstr "Adat"
 
-#: ../../js/custom-functions.js:161
+#: ../../js/custom-functions.js:165
 msgid "None"
 msgstr "Nincs"
 
-#: ../../js/custom-functions.js:169
+#: ../../js/custom-functions.js:173
 msgid "year(s)"
 msgstr "év"
 
-#: ../../js/custom-functions.js:172
+#: ../../js/custom-functions.js:176
 msgid "month(s)"
 msgstr "hónap"
 
-#: ../../js/custom-functions.js:175
+#: ../../js/custom-functions.js:179
 msgid "day(s)"
 msgstr "nap"
 
-#: ../../js/custom-functions.js:178
+#: ../../js/custom-functions.js:182
 msgid "hour(s)"
 msgstr "óra"
 
-#: ../../js/custom-functions.js:181
+#: ../../js/custom-functions.js:185
 msgid "second(s)"
 msgstr "másodperc"
 
-#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+#: ../../js/custom-functions.js:193 ../../js/custom-functions.js:223
 msgid "Used"
 msgstr "Használt"
 
-#: ../../js/custom-functions.js:201
+#: ../../js/custom-functions.js:205
 msgid "expired"
 msgstr "lejárt"
 
-#: ../../js/custom-functions.js:205
+#: ../../js/custom-functions.js:209
 msgid "expires in 1 day"
 msgstr "lejár 1 nap múlva"
 
-#: ../../js/custom-functions.js:209
+#: ../../js/custom-functions.js:213
 msgid "expires in"
 msgstr "lejár"
 
-#: ../../js/custom-functions.js:209
+#: ../../js/custom-functions.js:213
 msgid "days"
 msgstr "nap múlva"
 
-#: ../../js/custom-functions.js:245
+#: ../../js/custom-functions.js:249
 msgid "never"
 msgstr "soha"
 
-#: ../../js/custom-functions.js:254
+#: ../../js/custom-functions.js:258
 msgid "today"
 msgstr "ma"
 
-#: ../../js/custom-functions.js:257
+#: ../../js/custom-functions.js:261
 msgid "day(s) ago"
 msgstr "nappal ezelőtt"
 
-#: ../../js/custom-functions.js:260
+#: ../../js/custom-functions.js:264
 msgid "month(s) ago"
 msgstr "hónappal ezelőtt"
 
-#: ../../js/custom-functions.js:263
+#: ../../js/custom-functions.js:267
 msgid "year(s) ago"
 msgstr "évvel ezelőtt"
 
-#: ../../js/custom-functions.js:296
+#: ../../js/custom-functions.js:300
 msgid "enabled"
 msgstr "engedélyezett"
 
-#: ../../js/custom-functions.js:299
+#: ../../js/custom-functions.js:303
 msgid "disabled"
 msgstr "letiltott"
 
-#: ../../js/custom-functions.js:307
+#: ../../js/custom-functions.js:311
 msgid "Yes"
 msgstr "Igen"
 
-#: ../../js/custom-functions.js:310
+#: ../../js/custom-functions.js:314
 msgid "No"
 msgstr "Nem"
 
-#: ../../js/custom-functions.js:320
+#: ../../js/custom-functions.js:324
 msgid "Non-fatal error"
 msgstr "Nem végzetes hiba"
 
-#: ../../js/custom-functions.js:321 ../../js/custom-functions.js:326
-#: ../../js/custom-functions.js:331
+#: ../../js/custom-functions.js:325 ../../js/custom-functions.js:330
+#: ../../js/custom-functions.js:335
 msgid "Failure"
 msgstr "Hibás"
 
-#: ../../js/custom-functions.js:325
+#: ../../js/custom-functions.js:329
 msgid "Job terminated in error"
 msgstr "Feladat befejezve hibával"
 
-#: ../../js/custom-functions.js:330
+#: ../../js/custom-functions.js:334
 msgid "Fatal error"
 msgstr "Végzetes hiba"
 
-#: ../../js/custom-functions.js:335
+#: ../../js/custom-functions.js:339
 msgid "Terminated normally"
 msgstr "Sikeresen befejezve"
 
-#: ../../js/custom-functions.js:336
+#: ../../js/custom-functions.js:340
 msgid "Success"
 msgstr "Sikeres"
 
-#: ../../js/custom-functions.js:340 ../../js/custom-functions.js:341
+#: ../../js/custom-functions.js:344 ../../js/custom-functions.js:345
 msgid "Running"
 msgstr "Folyamatban"
 
-#: ../../js/custom-functions.js:345
+#: ../../js/custom-functions.js:349
 msgid "Created but not yet running"
 msgstr "Létrehozva, de még nem fut"
 
-#: ../../js/custom-functions.js:346
+#: ../../js/custom-functions.js:350
 msgid "Queued"
 msgstr "Várakozó"
 
-#: ../../js/custom-functions.js:350 ../../js/custom-functions.js:351
+#: ../../js/custom-functions.js:354 ../../js/custom-functions.js:355
 msgid "Blocked"
 msgstr "Blokkolt"
 
-#: ../../js/custom-functions.js:355
+#: ../../js/custom-functions.js:359
 msgid "Verify differences"
 msgstr "Különbségek ellenőrzése"
 
-#: ../../js/custom-functions.js:356
+#: ../../js/custom-functions.js:360
 msgid "Verify found differences"
 msgstr "Megtalált különbségek ellenőrzése"
 
-#: ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364
 msgid "Canceled by user"
 msgstr "Felhasználó leállította"
 
-#: ../../js/custom-functions.js:361
+#: ../../js/custom-functions.js:365
 msgid "Canceled"
 msgstr "Megszakított"
 
-#: ../../js/custom-functions.js:365
+#: ../../js/custom-functions.js:369
 msgid "Waiting on File daemon"
 msgstr "Várakozás a Fájl démonra"
 
-#: ../../js/custom-functions.js:366 ../../js/custom-functions.js:371
-#: ../../js/custom-functions.js:376 ../../js/custom-functions.js:381
-#: ../../js/custom-functions.js:386 ../../js/custom-functions.js:391
-#: ../../js/custom-functions.js:396 ../../js/custom-functions.js:401
-#: ../../js/custom-functions.js:406 ../../js/custom-functions.js:411
+#: ../../js/custom-functions.js:370 ../../js/custom-functions.js:375
+#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:385
+#: ../../js/custom-functions.js:390 ../../js/custom-functions.js:395
+#: ../../js/custom-functions.js:400 ../../js/custom-functions.js:405
+#: ../../js/custom-functions.js:410 ../../js/custom-functions.js:415
 msgid "Waiting"
 msgstr "Várakozás"
 
-#: ../../js/custom-functions.js:370
+#: ../../js/custom-functions.js:374
 msgid "Waiting on the Storage daemon"
 msgstr "Várakozás a Tároló démonra"
 
-#: ../../js/custom-functions.js:375
+#: ../../js/custom-functions.js:379
 msgid "Waiting for new media"
 msgstr "Várakozás az új médiára"
 
-#: ../../js/custom-functions.js:380
+#: ../../js/custom-functions.js:384
 msgid "Waiting for Mount"
 msgstr "Várakozás a csatolásra"
 
-#: ../../js/custom-functions.js:385
+#: ../../js/custom-functions.js:389
 msgid "Waiting for storage resource"
 msgstr "Várakozás a tároló erőforrásra"
 
-#: ../../js/custom-functions.js:390
+#: ../../js/custom-functions.js:394
 msgid "Waiting for job resource"
 msgstr "Várakozás a feladat erőforrásra"
 
-#: ../../js/custom-functions.js:395
+#: ../../js/custom-functions.js:399
 msgid "Waiting for Client resource"
 msgstr "Várakozás a kliens erőforrásra"
 
-#: ../../js/custom-functions.js:400
+#: ../../js/custom-functions.js:404
 msgid "Waiting for maximum jobs"
 msgstr "Várakozás a maximális feladatszámra"
 
-#: ../../js/custom-functions.js:405
+#: ../../js/custom-functions.js:409
 msgid "Waiting for start time"
 msgstr "Várakozás az indulási időre"
 
-#: ../../js/custom-functions.js:410
+#: ../../js/custom-functions.js:414
 msgid "Waiting for higher priority jobs to finish"
 msgstr "Várakozás a nagyobb priorítású feladatok lefutására"
 
-#: ../../js/custom-functions.js:415 ../../js/custom-functions.js:416
+#: ../../js/custom-functions.js:419 ../../js/custom-functions.js:420
 msgid "SD despooling attributes"
 msgstr "SD várólista megszüntetés attribútumai"
 
-#: ../../js/custom-functions.js:420 ../../js/custom-functions.js:421
+#: ../../js/custom-functions.js:424 ../../js/custom-functions.js:425
 msgid "Doing batch insert file records"
 msgstr "Fájl rekordok kötegelt beillesztése"
 
-#: ../../js/custom-functions.js:425
+#: ../../js/custom-functions.js:429
 msgid "Incomplete Job"
 msgstr "Nem lefutott feladat"
 
-#: ../../js/custom-functions.js:426
+#: ../../js/custom-functions.js:430
 msgid "Incomplete"
 msgstr "Nem teljes"
 
-#: ../../js/custom-functions.js:430
+#: ../../js/custom-functions.js:434
 msgid "Committing data (last despool)"
 msgstr "Adat rögzítése (utolsó despool)"
 
-#: ../../js/custom-functions.js:431
+#: ../../js/custom-functions.js:435
 msgid "Committing data"
 msgstr "Adat rögzítése"
 
-#: ../../js/custom-functions.js:435
+#: ../../js/custom-functions.js:439
 msgid "Terminated normally with warnings"
 msgstr "Sikeresen befejezve figyelmeztetésekkel"
 
-#: ../../js/custom-functions.js:436
+#: ../../js/custom-functions.js:440
 msgid "Warning"
 msgstr "Figyelmeztetés"
 
-#: ../../js/custom-functions.js:440 ../../js/custom-functions.js:441
+#: ../../js/custom-functions.js:444 ../../js/custom-functions.js:445
 msgid "Doing data despooling"
 msgstr "Adat várólista megszüntetése"
 
-#: ../../js/custom-functions.js:445 ../../js/custom-functions.js:446
+#: ../../js/custom-functions.js:449 ../../js/custom-functions.js:450
 msgid "Queued waiting for device"
 msgstr "Sorbaállított várakozás az eszközre"
