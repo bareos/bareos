@@ -21,7 +21,7 @@
 #ifndef BAREOS_STORED_FD_CMDS_H_
 #define BAREOS_STORED_FD_CMDS_H_
 
-void *handle_filed_connection(BareosSocket *fd, char *job_name);
+void *HandleFiledConnection(BareosSocket *fd, char *job_name);
 void RunJob(JobControlRecord *jcr);
 void DoFdCommands(JobControlRecord *jcr);
 

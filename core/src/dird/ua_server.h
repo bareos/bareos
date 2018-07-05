@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_UA_SERVER_H_
 #define BAREOS_DIRD_UA_SERVER_H_
 
-void *handle_UA_client_request(BareosSocket *user);
+void *HandleUserAgentClientRequest(BareosSocket *user);
 UaContext *new_ua_context(JobControlRecord *jcr);
 JobControlRecord *new_control_jcr(const char *base_name, int job_type);
 void FreeUaContext(UaContext *ua);

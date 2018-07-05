@@ -62,7 +62,7 @@ ConnectionPool *get_client_connections()
    return client_connections;
 }
 
-static void *handle_connection_request(void *arg)
+static void *HandleConnectionRequest(void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
    char name[MAX_NAME_LENGTH];
@@ -95,10 +95,10 @@ static void *handle_connection_request(void *arg)
    if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version) == 2) ||
        (sscanf(bs->msg, hello_client, name) == 1)) {
       Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_filed_connection(client_connections, bs, name, fd_protocol_version);
+      return HandleFiledConnection(client_connections, bs, name, fd_protocol_version);
    }
 
-   return handle_UA_client_request(bs);
+   return HandleUserAgentClientRequest(bs);
 }
 
 extern "C" void *connect_thread(void *arg)
@@ -115,7 +115,7 @@ extern "C" void *connect_thread(void *arg)
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,
-                          handle_connection_request);
+                          HandleConnectionRequest);
 
    return NULL;
 }

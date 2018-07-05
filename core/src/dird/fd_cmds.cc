@@ -1196,7 +1196,7 @@ void DoClientResolve(UaContext *ua, ClientResource *client)
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
  */
-void *handle_filed_connection(ConnectionPool *connections, BareosSocket *fd,
+void *HandleFiledConnection(ConnectionPool *connections, BareosSocket *fd,
                               char *client_name, int fd_protocol_version)
 {
    ClientResource *client_resource;

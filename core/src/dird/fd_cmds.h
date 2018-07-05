@@ -40,7 +40,7 @@ bool SendRestoreObjects(JobControlRecord *jcr, JobId_t JobId, bool send_global);
 bool CancelFileDaemonJob(UaContext *ua, JobControlRecord *jcr);
 void DoNativeClientStatus(UaContext *ua, ClientResource *client, char *cmd);
 void DoClientResolve(UaContext *ua, ClientResource *client);
-void *handle_filed_connection(ConnectionPool *connections, BareosSocket *fd,
+void *HandleFiledConnection(ConnectionPool *connections, BareosSocket *fd,
                               char *client_name, int fd_protocol_version);
 
 ConnectionPool *get_client_connections();

@@ -111,7 +111,7 @@ static char Job_end[] =
  * After receiving a connection (in dircmd.c) if it is
  * from the File daemon, this routine is called.
  */
-void *handle_filed_connection(BareosSocket *fd, char *job_name)
+void *HandleFiledConnection(BareosSocket *fd, char *job_name)
 {
    JobControlRecord *jcr;
 

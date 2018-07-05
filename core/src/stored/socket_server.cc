@@ -53,11 +53,11 @@ static pthread_t tcp_server_tid;
  * Note, we are running as a separate thread of the Storage daemon.
  *
  * Basic tasks done here:
- *  - If it was a connection from the FD, call handle_filed_connection()
+ *  - If it was a connection from the FD, call HandleFiledConnection()
  *  - If it was a connection from another SD, call handle_stored_connection()
  *  - Otherwise it was a connection from the DIR, call handle_director_connection()
  */
-static void *handle_connection_request(void *arg)
+static void *HandleConnectionRequest(void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
    char name[MAX_NAME_LENGTH];
@@ -88,7 +88,7 @@ static void *handle_connection_request(void *arg)
     */
    if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
       Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_filed_connection(bs, name);
+      return HandleFiledConnection(bs, name);
    }
 
    /*
@@ -123,7 +123,7 @@ void StartSocketServer(dlist *addrs)
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,
-                          handle_connection_request);
+                          HandleConnectionRequest);
 }
 
 void StopSocketServer()
