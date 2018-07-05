@@ -736,26 +736,17 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
    static int do_history = 0;
    char *command;
 
-   if (line == NULL) {
-      do_history = 0;
-      rl_catch_signals = 0;              /* do it ourselves */
-      /* Here, readline does ***real*** malloc
-       * so, be we have to use the real free
-       */
-      line = readline((char *)prompt);   /* cast needed for old readlines */
-      if (!line) {
-         return -1;                      /* error return and exit */
-      }
-      StripTrailingJunk(line);
-      command = line;
-   } else if (next) {
-      command = next + 1;
-   } else {
-     sendit(_("Command logic problem\n"));
-     sock->message_length = 0;
-     sock->msg[0] = 0;
-     return 0;                  /* No input */
+   do_history = 0;
+   rl_catch_signals = 0;              /* do it ourselves */
+   /* Here, readline does ***real*** malloc
+    * so, be we have to use the real free
+    */
+   line = readline((char *)prompt);   /* cast needed for old readlines */
+   if (!line) {
+      return -1;                      /* error return and exit */
    }
+   StripTrailingJunk(line);
+   command = line;
 
    /*
     * Split "line" into multiple commands separated by the eol character.
