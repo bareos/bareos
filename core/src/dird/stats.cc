@@ -117,8 +117,6 @@ void *statistics_thread(void *arg)
 
    Dmsg0(200, "Starting statistics thread\n");
 
-   Dmsg0(200, "Starting statistics thread\n");
-
    memset(&cached_device, 0, sizeof(struct cached_device));
    PmStrcpy(current_store, "");
 
@@ -295,8 +293,6 @@ void *statistics_thread(void *arg)
 
 bail_out:
    FreeJcr(jcr);
-
-   Dmsg0(200, "Finished statistics thread\n");
 
    Dmsg0(200, "Finished statistics thread\n");
 
