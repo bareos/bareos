@@ -156,12 +156,11 @@ This release contains several bugfixes and enhancements. Excerpt:
       \item Fix parsing of missing basedir argument
       \item Handle non-fatal Gluster problems properly
    \end{itemize}
-   \item HP-UX: build on current HP-UX 11.31
-   \item AIX: make client buildable and added spec file
    \item Reset JobStatus to previous JobStatus in status SD and FD loops to fix status all output
    \item Backport ceph: ported cephfs-fd and \command{cephfs_device} to new api
-   \item \ticket{967} Windows: call DeleteFileW and RemoveDirectoryW to be able to remove symlinks before restore
+   \item \ticket{967} Windows: Symbolic links are now replaceable during restore
 \end{itemize}
+}
 
 \releasenote{16.2.7}{
 
@@ -197,6 +196,7 @@ This release contains several bugfixes and enhancements. Excerpt:
     \item Windows: restore attributes also on directories (not only on files)
     \item Fixes problem with SHA1 signature when compiled without OpenSSL (not relevant for bareos.org/bareos.com packages)
     \item Packages for openSUSE Leap 42.3 and Fedora 26 have been added.
+    \item Packages for AIX and current HP-UX 11.31
 \end{itemize}
 
 }
