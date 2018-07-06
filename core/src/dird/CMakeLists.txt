@@ -21,7 +21,7 @@
 set(DIRDSRCS dird.cc)
 
 #DIRD_OBJECTS_SRCS also used in a separate library for unittests
-set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
+set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc auth_pam.cc autoprune.cc backup.cc bsr.cc catreq.cc
    consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc expand.cc fd_cmds.cc
    getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc mountreq.cc msgchan.cc
    ndmp_dma_storage.cc
@@ -48,6 +48,7 @@ IF(HAVE_WIN32)
       )
 ENDIF()
 
+include_directories(${PAM_INCLUDE_DIRS}
 
 set(DBCHKSRCS dbcheck.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
 IF(HAVE_WIN32)
@@ -79,7 +80,7 @@ IF(HAVE_WIN32)
       )
 ENDIF()
 
-target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
+target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES} ${PAM_LIBRARIES})
 
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
