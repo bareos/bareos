@@ -39,69 +39,112 @@ struct PamData {
    }
 };
 
-/// PAM-Callback calls Bareos PAM-Handler
-static int conv(int num_msg, const struct pam_message **msgm,
-                struct pam_response **response, void *appdata_ptr) {
-   if (!num_msg || !*msgm || !response) {
+/*
+ * PAM-Callback called by Bareos PAM-Handler
+ *
+ */
+static bool pam_conv_callback_send_message(BareosSocket *bs, const char *msg, int msg_style)
+{
+   char buf = msg_style;
+   if (!bs->send((const char*)&buf, 1)) {
+      Dmsg0(debuglevel, "pam_conv_callback_send_message error\n");
+      return false;
+   }
+   if (!bs->send(msg, strlen(msg) +1)) {
+      Dmsg0(debuglevel, "pam_conv_callback_send_message error\n");
+      return false;
+   }
+   return true;
+}
+
+static int pam_conv_callback(int num_msg, const struct pam_message **msgm,
+                struct pam_response **response, void *appdata_ptr)
+{
+   if (!appdata_ptr) {
+      Dmsg0(debuglevel, "pam_conv_callback pointer error\n");
       return PAM_BUF_ERR;
    }
 
    if ((num_msg <= 0) || (num_msg > PAM_MAX_NUM_MSG)) {
+      Dmsg0(debuglevel, "pam_conv_callback wrong number of messages\n");
       return (PAM_CONV_ERR);
    }
 
-   struct pam_response *resp;
-   resp = static_cast<pam_response *>(actuallycalloc(num_msg, sizeof(struct pam_response)));
-   if (resp == nullptr) {
+   struct pam_response *resp =
+         reinterpret_cast<pam_response *> (actuallycalloc(
+               num_msg, sizeof(struct pam_response)));
+
+   if (!resp) {
+      Dmsg0(debuglevel, "pam_conv_callback memory error\n");
       return PAM_BUF_ERR;
    }
 
-   auto pam_data = reinterpret_cast<PamData *>(appdata_ptr);
-   ASSERT(pam_data);
+   PamData *pam_data = reinterpret_cast<PamData *>(appdata_ptr);
 
-   switch ((*msgm)->msg_style) {
-      case PAM_PROMPT_ECHO_OFF:
-      case PAM_PROMPT_ECHO_ON: {
-         BareosSocket *bs = pam_data->bs_;
-         bs->fsend((*msgm)->msg);
-         if (bs->recv()) {
-            resp->resp = actuallystrdup(bs->msg);
+   bool error = false;
+   int i = 0;
+   for ( ; i < num_msg && !error; i++) {
+      switch (msgm[i]->msg_style) {
+         case PAM_PROMPT_ECHO_OFF:
+         case PAM_PROMPT_ECHO_ON: {
+            BareosSocket *bs = pam_data->bs_;
+               if (!pam_conv_callback_send_message(bs,
+                     msgm[i]->msg, msgm[i]->msg_style)) {
+               error = true;
+               break;
+            }
+            if (bs->IsStop() || bs->IsError()) {
+               error = true;
+               break;
+            }
+            if (bs->recv()) {
+               resp[i].resp = actuallystrdup(bs->msg);
+            }
+            if (bs->IsStop() || bs->IsError()) {
+               error = true;
+               break;
+            }
+            break;
          }
-         break;
+         case PAM_ERROR_MSG:
+         case PAM_TEXT_INFO: {
+            BareosSocket *bs = pam_data->bs_;
+            if (!pam_conv_callback_send_message(bs,
+                  msgm[i]->msg, PAM_PROMPT_ECHO_ON)) {
+               error = true;
+               break;
+            }
+         }
+         default:
+            Dmsg3(debuglevel, "message[%d]: pam error type: %d error: \"%s\"\n",
+                  1, msgm[i]->msg_style, msgm[i]->msg);
+            error = true;
+            break;
+      } /* switch (msgm[i]->msg_style) { */
+   } /* for( ; i < num_msg ..) */
+
+
+   if (error) {
+      for (int i = 0; i < num_msg; ++i) {
+         if (resp[i].resp) {
+            memset(resp[i].resp, 0, strlen(resp[i].resp));
+            Actuallyfree(resp[i].resp);
+         }
       }
-      case PAM_ERROR_MSG:
-      case PAM_TEXT_INFO: {
-         BareosSocket *bs = pam_data->bs_;
-         bs->fsend((*msgm)->msg);
-         break;
-      }
-      default: {
-         const pam_message *m = *msgm;
-         Dmsg3(debuglevel, "message[%d]: pam error type: %d error: \"%s\"\n",
-               1, m->msg_style, m->msg);
-         goto err;
-      }
+      memset(resp, 0, num_msg * sizeof *resp);
+      Actuallyfree(resp);
+      *response = nullptr;
+      return PAM_CONV_ERR;
    }
 
    *response = resp;
    return PAM_SUCCESS;
-
-   err:
-   for (int i = 0; i < num_msg; ++i) {
-      if (resp[i].resp) {
-         memset(resp[i].resp, 0, strlen(resp[i].resp));
-         free(resp[i].resp);
-      }
-   }
-   memset(resp, 0, num_msg * sizeof *resp);
-   free(resp);
-   *response = nullptr;
-   return PAM_CONV_ERR;
 }
 
-bool pam_authenticate_useragent(BareosSocket *bs, std::string username) {
+bool pam_authenticate_useragent(BareosSocket *bs, std::string username)
+{
    PamData pam_data(bs, username);
-   const struct pam_conv pam_conversation = {conv, (void *) &pam_data};
+   const struct pam_conv pam_conversation = {pam_conv_callback, (void *) &pam_data};
    pam_handle_t *pamh = nullptr;
 
    int err = pam_start(service_name.c_str(), nullptr, &pam_conversation, &pamh);
@@ -124,5 +167,12 @@ bool pam_authenticate_useragent(BareosSocket *bs, std::string username) {
       return false;
    }
 
-   return err == 0;
+   if (err == PAM_SUCCESS) {
+      if (!pam_conv_callback_send_message(bs,
+         "", PAM_SUCCESS)) {
+         Dmsg1(debuglevel, "PAM end failed: %s\n", pam_strerror(pamh, err));
+         return false;
+      }
+   }
+   return err == PAM_SUCCESS;
 }

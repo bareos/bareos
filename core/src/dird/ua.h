@@ -56,10 +56,10 @@ public:
    BareosSocket *sd;
    JobControlRecord *jcr;
    BareosDb *db;
-   BareosDb *shared_db;                   /**< Shared database connection used by multiple ua's */
-   BareosDb *private_db;                  /**< Private database connection only used by this ua */
+   BareosDb *shared_db;               /**< Shared database connection used by multiple ua's */
+   BareosDb *private_db;              /**< Private database connection only used by this ua */
    CatalogResource *catalog;
-   ConsoleResource *cons;                      /**< Console resource */
+   ConsoleResource *cons;             /**< Console resource */
    POOLMEM *cmd;                      /**< Return command/name buffer */
    POOLMEM *args;                     /**< Command line arguments */
    POOLMEM *errmsg;                   /**< Store error message */
@@ -82,7 +82,7 @@ public:
    uint32_t pint32_val;               /**< Positive integer */
    int32_t int32_val;                 /**< Positive/negative */
    int64_t int64_val;                 /**< Big int */
-   OutputFormatter *send;            /**< object instance to handle output */
+   OutputFormatter *send;             /**< object instance to handle output */
 
 private:
    /*

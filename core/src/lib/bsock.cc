@@ -268,6 +268,25 @@ bool BareosSocket::fsend(const char *fmt, ...)
   return send();
 }
 
+/**
+ * Send a message buffer
+ * Returns: false on error
+ *          true  on success
+ */
+bool BareosSocket::send(const char *msg_in, uint32_t nbytes)
+{
+   if (errors || IsTerminated()) {
+      return false;
+   }
+
+   msg = CheckPoolMemorySize(msg, nbytes);
+   memcpy(msg, msg_in, nbytes);
+
+   message_length = nbytes;
+
+   return send();
+}
+
 void BareosSocket::SetKillable(bool killable)
 {
   if (jcr_) { jcr_->SetKillable(killable); }
