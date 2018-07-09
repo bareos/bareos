@@ -706,7 +706,7 @@ bool DEVICE::rewind(DCR *dcr)
    if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
       berrno be;
       dev_errno = errno;
-      Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
+      Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
       return false;
    }
 

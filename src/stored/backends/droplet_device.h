@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,6 +53,8 @@ private:
    /*
     * Interface from chunked_device
     */
+   bool check_remote();
+   bool remote_chunked_volume_exists();
    bool flush_remote_chunk(chunk_io_request *request);
    bool read_remote_chunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
@@ -75,5 +77,6 @@ public:
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DCR *dcr);
+   bool d_flush(DCR *dcr);
 };
 #endif /* OBJECTSTORE_DEVICE_H */

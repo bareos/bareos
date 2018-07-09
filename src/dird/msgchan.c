@@ -468,10 +468,12 @@ extern "C" void *msg_thread(void *arg)
    }
    if (n == BNET_HARDEOF) {
       /*
-       * This probably should be M_FATAL, but I am not 100% sure
-       *  that this return *always* corresponds to a dropped line.
+       * A lost connection to the storage daemon is FATAL.
+       * This is required, as otherwise
+       * the job could failed to write data
+       * but still end as JS_Warnings (OK -- with warnings).
        */
-      Qmsg(jcr, M_ERROR, 0, _("Director's comm line to SD dropped.\n"));
+      Qmsg(jcr, M_FATAL, 0, _("Director's comm line to SD dropped.\n"));
    }
    if (is_bnet_error(sd)) {
       jcr->SDJobStatus = JS_ErrorTerminated;

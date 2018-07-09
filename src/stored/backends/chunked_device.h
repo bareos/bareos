@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
+   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +32,12 @@
  * Let io-threads check for work every 300 seconds.
  */
 #define DEFAULT_RECHECK_INTERVAL 300
+
+/*
+ * Recheck interval when waiting that buffer gets written
+ * (write buffer is empty).
+ */
+#define DEFAULT_RECHECK_INTERVAL_WRITE_BUFFER 10
 
 /*
  * Chunk the volume into chunks of this size.
@@ -112,6 +119,7 @@ private:
    bool enqueue_chunk(chunk_io_request *request);
    bool flush_chunk(bool release_chunk, bool move_to_next_chunk);
    bool read_chunk();
+   bool is_written();
 
 protected:
    /*
@@ -138,10 +146,13 @@ protected:
    bool truncate_chunked_volume(DCR *dcr);
    ssize_t chunked_volume_size();
    bool load_chunk();
+   bool wait_until_chunks_written();
 
    /*
     * Methods implemented by inheriting class.
     */
+   virtual bool check_remote() = 0;
+   virtual bool remote_chunked_volume_exists() = 0;
    virtual bool flush_remote_chunk(chunk_io_request *request) = 0;
    virtual bool read_remote_chunk(chunk_io_request *request) = 0;
    virtual ssize_t chunked_remote_volume_size() = 0;

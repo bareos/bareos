@@ -80,27 +80,27 @@ STORED_RESTYPES = autochanger device director ndmp messages storage
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
-$(CHEPHFS_LOBJS):
+$(CHEPHFS_LOBJS): $(CHEPHFS_SRCS)
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(CEPHFS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
-$(DROPLET_LOBJS):
+$(DROPLET_LOBJS): $(DROPLET_SRCS)
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DROPLET_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
-$(ELASTO_LOBJS):
+$(ELASTO_LOBJS): $(ELASTO_SRCS)
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(ELASTO_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
-$(GFAPI_LOBJS):
+$(GFAPI_LOBJS): $(GFAPI_SRCS)
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(GLUSTER_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
-$(RADOS_LOBJS):
+$(RADOS_LOBJS): $(RADOS_SRCS)
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(RADOS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi

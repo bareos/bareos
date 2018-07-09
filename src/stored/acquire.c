@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -492,11 +492,28 @@ bool release_device(DCR *dcr)
    char tbuf[100];
    int was_blocked = BST_NOT_BLOCKED;
 
+   Jmsg(jcr, M_INFO, 0, "Releasing device %s.\n", dev->print_name());
+
    /*
     * Capture job statistics now that we are done using this device.
     */
    now = (utime_t)time(NULL);
    update_job_statistics(jcr, now);
+
+   /*
+    * Some devices do cache write operations (e.g. droplet_device).
+    * Therefore flushing the cache is required to determine
+    * if a job have been written successfully.
+    * As a flush operation can take quite a long time,
+    * this must be done before acquiring locks.
+    * A previous implementation did the flush inside dev->close(),
+    * which resulted in various locking problems.
+    */
+   if (!job_canceled(jcr)) {
+      if (!dev->flush(dcr)) {
+         Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
+      }
+   }
 
    dev->Lock();
    if (!dev->is_blocked()) {
@@ -506,7 +523,7 @@ bool release_device(DCR *dcr)
       dev->set_blocked(BST_RELEASING);
    }
    lock_volumes();
-   Dmsg2(100, "release_device device %s is %s\n", dev->print_name(), dev->is_tape() ? "tape" : "disk");
+   Dmsg1(100, "releasing device %s\n", dev->print_name());
 
    /*
     * If device is reserved, job never started, so release the reserve here
