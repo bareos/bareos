@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -580,8 +580,9 @@ bool DCR::write_block_to_dev()
 #endif
 
    /*
-    * Do write here, make a somewhat feeble attempt to recover from
-    *  I/O errors, or from the OS telling us it is busy.
+    * Do write here,
+    * make a somewhat feeble attempt to recover
+    * from the OS telling us it is busy.
     */
    int retry = 0;
    errno = 0;
@@ -595,8 +596,7 @@ bool DCR::write_block_to_dev()
          dev->clrerror(-1);
       }
       status = dev->write(block->buf, (size_t)wlen);
-
-   } while (status == -1 && (errno == EBUSY || errno == EIO) && retry++ < 3);
+   } while (status == -1 && (errno == EBUSY) && retry++ < 3);
 
    if (debug_block_checksum) {
       uint32_t achecksum = ser_block_header(block, dev->do_checksum());
