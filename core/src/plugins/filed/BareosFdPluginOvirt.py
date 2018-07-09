@@ -7,6 +7,7 @@ from bareos_fd_consts import bJobMessageType, bFileType, bRCs, bIOPS
 from bareos_fd_consts import bEventType, bVariable, bCFs
 
 import os
+import io
 import sys
 import time
 import uuid
@@ -65,48 +66,47 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             context, 100,
             "BareosFdPluginOvirt:start_backup_file() called\n")
 
+        self.backup_obj = None
+
         if not self.ovirt.backup_objects:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_ERROR'],
                 "Nothing to backup.\n")
             return bRCs['bRC_Skip']
 
-        backup_obj = self.ovirt.backup_objects.pop(0)
+        self.backup_obj = self.ovirt.backup_objects.pop(0)
 
         # create a stat packet for a restore object
         statp = bareosfd.StatPacket()
         savepkt.statp = statp
 
-        if 'file' in backup_obj:
+        if 'file' in self.backup_obj:
 
             # regular file
-            vmfile = backup_obj['file']
+            vmfile = self.backup_obj['file']
 
             bareosfd.DebugMessage(
                 context, 100,
-                "BareosFdPluginOvirt:start_backup_file() backup regular file '%s' of VM '%s'\n" % (vmfile['filename'],backup_obj['vmname']))
-
-            savepkt.type = bFileType['FT_RESTORE_FIRST']
-            savepkt.fname = "/VMS/%s-%s/%s" % (backup_obj['vmname'],backup_obj['vmid'],vmfile['filename'])
-            savepkt.object_name = savepkt.fname
-            savepkt.object = bytearray(vmfile['data'])
-            savepkt.object_len = len(savepkt.object)
-            savepkt.object_index = int(time.time())
-
-        elif 'disk' in backup_obj:
-
-            # disk file
-            disk = backup_obj['disk']
-
-            bareosfd.DebugMessage(
-                context, 100,
-                "BareosFdPluginOvirt:start_backup_file() backup disk file '%s' of VM '%s'\n" % (disk.alias,backup_obj['vmname']))
+                "BareosFdPluginOvirt:start_backup_file() backup regular file '%s' of VM '%s'\n" % (vmfile['filename'],self.backup_obj['vmname']))
 
             savepkt.type = bFileType['FT_REG']
-            savepkt.fname = "/VMS/%s-%s/%s-%s" % (backup_obj['vmname'],backup_obj['vmid'],disk.alias,disk.id)
+            savepkt.fname = "/VMS/%s-%s/%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],vmfile['filename'])
+            self.backup_obj['file']['fh'] = io.BytesIO(vmfile['data'])
+
+        elif 'disk' in self.backup_obj:
+
+            # disk file
+            disk = self.backup_obj['disk']
+
+            bareosfd.DebugMessage(
+                context, 100,
+                "BareosFdPluginOvirt:start_backup_file() backup disk file '%s' of VM '%s'\n" % (disk.alias,self.backup_obj['vmname']))
+
+            savepkt.type = bFileType['FT_REG']
+            savepkt.fname = "/VMS/%s-%s/%s-%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],disk.alias,disk.id)
 
             try:
-                self.ovirt.start_transfer(context, backup_obj['snapshot'], disk)
+                self.ovirt.start_transfer(context, self.backup_obj['snapshot'], disk)
             except Exception as e:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_ERROR'],
@@ -152,42 +152,100 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         Called for io operations.
         '''
         bareosfd.DebugMessage(
-            context, 200,
-            "BareosFdPluginVMware:plugin_io() called with function %s \n" % (IOP.func))
+            context, 100,
+            "plugin_io called with function %s\n" %
+            (IOP.func))
+        bareosfd.DebugMessage(
+            context, 100,
+            "FNAME is set to %s\n" %
+            (self.FNAME))
 
         if IOP.func == bIOPS['IO_OPEN']:
+            self.FNAME = IOP.fname
+            try:
+                if IOP.flags & (os.O_CREAT | os.O_WRONLY):
+                    bareosfd.DebugMessage(
+                        context, 100,
+                        "Open file %s for writing with %s\n" %
+                        (self.FNAME, IOP))
+
+                    dirname = os.path.dirname(self.FNAME)
+                    if not os.path.exists(dirname):
+                        bareosfd.DebugMessage(
+                            context, 100,
+                            "Directory %s does not exist, creating it now\n" %
+                            (dirname))
+                        os.makedirs(dirname)
+                    self.file = open(self.FNAME, 'wb')
+                # else:
+                #     bareosfd.DebugMessage(
+                #         context, 100,
+                #         "Open file %s for reading with %s\n" %
+                #         (self.FNAME, IOP))
+                #     self.file = open(self.FNAME, 'rb')
+            except:
+                IOP.status = -1
+                return bRCs['bRC_Error']
+
             return bRCs['bRC_OK']
+
         elif IOP.func == bIOPS['IO_CLOSE']:
-            if self.jobType == 'B':
+            if self.file is not None:
                 bareosfd.DebugMessage(
                     context, 100,
-                    "plugin_io: calling end_transfer()" )
-                # Backup Job
-                self.ovirt.end_transfer(context)
+                    "Closing file " + "\n")
+                self.file.close()
+            elif self.jobType == 'B':
+                if 'file' in self.backup_obj:
+                    self.backup_obj['file']['fh'].close()
+                elif 'disk' in self.backup_obj:
+                    bareosfd.DebugMessage(
+                        context, 100,
+                        "plugin_io: calling end_transfer()\n" )
+                    # Backup Job
+                    self.ovirt.end_transfer(context)
 
             return bRCs['bRC_OK']
         elif IOP.func == bIOPS['IO_SEEK']:
             return bRCs['bRC_OK']
         elif IOP.func == bIOPS['IO_READ']:
-            try:
-                IOP.buf = self.ovirt.process_transfer(context, IOP.count)
-                IOP.status = len(IOP.buf)
+            if 'file' in self.backup_obj:
+                IOP.buf = bytearray(IOP.count)
+                IOP.status = self.backup_obj['file']['fh'].readinto(IOP.buf)
                 IOP.io_errno = 0
-            except Exception as e:
+                bareosfd.DebugMessage(
+                    context, 100,
+                    "plugin_io: read from file %s\n" % (self.backup_obj['file']['filename']) )
+            elif 'disk' in self.backup_obj:
+                try:
+                    IOP.buf = self.ovirt.process_transfer(context, IOP.count)
+                    IOP.status = len(IOP.buf)
+                    IOP.io_errno = 0
+                except Exception as e:
+                    bareosfd.JobMessage(
+                        context, bJobMessageType['M_ERROR'],
+                        "BareosFdPluginOvirt:plugin_io() Error: %s" % str(e))
+                    self.ovirt.end_transfer(context)
+                    return bRCs['bRC_Error']
+            else:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_ERROR'],
-                    "BareosFdPluginOvirt:plugin_io() Error: %s" % str(e))
-                self.ovirt.end_transfer(context)
+                    "BareosFdPluginOvirt:plugin_io() Unable to read data to backup.")
                 return bRCs['bRC_Error']
             return bRCs['bRC_OK']
         elif IOP.func == bIOPS['IO_WRITE']:
-            try:
-                #write(IOP.buf);
-                IOP.status = IOP.count
-                IOP.io_errno = 0
-            except IOError as msg:
-                IOP.io_errno = -1
-                bareosfd.DebugMessage(context, 100, "Error writing data: " + msg + "\n");
+            if self.file is not None:
+                try:
+                    bareosfd.DebugMessage(
+                        context, 200,
+                        "Writing buffer to file %s\n" %
+                        (self.FNAME))
+                    self.file.write(IOP.buf)
+                    IOP.status = IOP.count
+                    IOP.io_errno = 0
+                except IOError as msg:
+                    IOP.io_errno = -1
+                    bareosfd.DebugMessage(context, 100, "Error writing data: " + msg + "\n");
             return bRCs['bRC_OK']
 
     def handle_plugin_event(self, context, event):
@@ -343,6 +401,7 @@ class BareosOvirtWrapper(object):
             ovf_file = '%s-%s.ovf' % (self.vm.name, self.vm.id)
             if self.backup_objects is None:
                 self.backup_objects = []
+
             self.backup_objects.append(
                 {
                     'vmname': self.vm.name,
