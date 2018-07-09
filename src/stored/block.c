@@ -577,8 +577,9 @@ bool DCR::write_block_to_dev()
 #endif
 
    /*
-    * Do write here, make a somewhat feeble attempt to recover from
-    *  I/O errors, or from the OS telling us it is busy.
+    * Do write here,
+    * make a somewhat feeble attempt to recover
+    * from the OS telling us it is busy.
     */
    int retry = 0;
    errno = 0;
@@ -592,8 +593,6 @@ bool DCR::write_block_to_dev()
          dev->clrerror(-1);
       }
       status = dev->write(block->buf, (size_t)wlen);
-
-   //} while (status == -1 && (errno == EBUSY || errno == EIO) && retry++ < 3);
    } while (status == -1 && (errno == EBUSY) && retry++ < 3);
 
    if (debug_block_checksum) {
