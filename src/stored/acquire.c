@@ -490,6 +490,8 @@ bool release_device(DCR *dcr)
    char tbuf[100];
    int was_blocked = BST_NOT_BLOCKED;
 
+   Jmsg(jcr, M_INFO, 0, "Releasing device %s.\n", dev->print_name());
+
    /*
     * Capture job statistics now that we are done using this device.
     */
@@ -506,11 +508,8 @@ bool release_device(DCR *dcr)
     * which resulted in various locking problems.
     */
    if (!job_canceled(jcr)) {
-      Jmsg(jcr, M_INFO, 0, "Flushing device %s.\n", dev->print_name());
       if (!dev->flush(dcr)) {
          Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
-      } else {
-         Jmsg(jcr, M_INFO, 0, "Device %s flushed.\n", dev->print_name());
       }
    }
 
@@ -522,7 +521,7 @@ bool release_device(DCR *dcr)
       dev->set_blocked(BST_RELEASING);
    }
    lock_volumes();
-   Dmsg2(100, "release_device device %s is %s\n", dev->print_name(), dev->is_tape() ? "tape" : "disk");
+   Dmsg1(100, "releasing device %s\n", dev->print_name());
 
    /*
     * If device is reserved, job never started, so release the reserve here
