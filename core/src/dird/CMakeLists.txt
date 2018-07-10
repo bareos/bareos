@@ -31,7 +31,7 @@ set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc auth_pam.cc autoprune.
    ndmp_fhdb_common.cc ndmp_fhdb_helpers.cc
    ndmp_fhdb_mem.cc ndmp_fhdb_lmdb.cc ndmp_ndmmedia_db_helpers.cc
    newvol.cc next_vol.cc quota.cc socket_server.cc recycle.cc restore.cc
-   run_conf.cc sd_cmds.cc scheduler.cc stats.cc storage.cc ua_acl.cc ua_audit.cc
+   run_conf.cc sd_cmds.cc scheduler.cc stats.cc storage.cc ua.cc ua_acl.cc ua_audit.cc
    ua_cmds.cc ua_configure.cc ua_db.cc ua_dotcmds.cc ua_input.cc ua_impexp.cc
    ua_label.cc ua_output.cc ua_prune.cc ua_purge.cc ua_query.cc ua_restore.cc
    ua_run.cc ua_select.cc ua_server.cc ua_status.cc ua_tree.cc ua_update.cc
