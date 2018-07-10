@@ -34,6 +34,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/job.h"
+#include "dird/ua_cmdstruct.h"
 #include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"

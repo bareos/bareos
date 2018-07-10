@@ -32,6 +32,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/backup.h"
+#include "dird/ua_cmdstruct.h"
 #include "dird/expand.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
