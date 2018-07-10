@@ -57,7 +57,7 @@ static bool pam_conv_callback_send_message(BareosSocket *bs, const char *msg, in
    return true;
 }
 
-static int pam_conv_callback(int num_msg, const struct pam_message **msgm,
+static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
                 struct pam_response **response, void *appdata_ptr)
 {
    if (!appdata_ptr) {
@@ -141,10 +141,10 @@ static int pam_conv_callback(int num_msg, const struct pam_message **msgm,
    return PAM_SUCCESS;
 }
 
-bool pam_authenticate_useragent(BareosSocket *bs, std::string username)
+bool PamAuthenticateUseragent(BareosSocket *bs, std::string username)
 {
    PamData pam_data(bs, username);
-   const struct pam_conv pam_conversation = {pam_conv_callback, (void *) &pam_data};
+   const struct pam_conv pam_conversation = {PamConversionCallback, (void *) &pam_data};
    pam_handle_t *pamh = nullptr;
 
    int err = pam_start(service_name.c_str(), nullptr, &pam_conversation, &pamh);
