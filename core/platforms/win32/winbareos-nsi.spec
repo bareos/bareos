@@ -212,7 +212,7 @@ for flavor in %{flavors}; do
       cp /etc/bareos-webui/*.ini install
       cp -av /etc/bareos install
       mkdir -p tests/selenium
-      cp /usr/share/doc/packages/bareos-webui/selenium/webui-selenium-test.py tests/selenium
+      cp /usr/share/doc/packages/bareos-webui/selenium/WebuiSeleniumTest.py tests/selenium
 
       echo "" >> %_sourcedir/LICENSE
       echo "##### LICENSE FILE OF BAREOS_WEBUI START #####" >> %_sourcedir/LICENSE
