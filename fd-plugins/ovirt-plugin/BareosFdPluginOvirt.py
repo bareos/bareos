@@ -499,7 +499,7 @@ class BareosOvirtWrapper(object):
         while snap.snapshot_status != types.SnapshotStatus.OK:
             bareosfd.DebugMessage(
                 context, 100,
-                    "Waiting till the snapshot is created, the satus is now '%s'.\n" %
+                    "Waiting till the snapshot is created, the status is now '%s'.\n" %
                     snap.snapshot_status)
             time.sleep(1)
             snap = self.snap_service.get()
