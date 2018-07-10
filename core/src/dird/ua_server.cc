@@ -93,7 +93,7 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
       goto getout;
    }
 
-   if (!PamAuthenticateUseragent(user_agent_socket, ua->cons ? ua->cons->name() : std::string("user"))) {
+   if (!PamAuthenticateUseragent(ua->UA_sock, ua->cons ? ua->cons->name() : std::string("user"))) {
       goto getout;
    }
 
