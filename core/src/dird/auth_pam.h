@@ -19,12 +19,12 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_AUTH_PAM_H
-#define BAREOS_DIRD_AUTH_PAM_H
+#ifndef BAREOS_DIRD_AUTH_PAM_H_
+#define BAREOS_DIRD_AUTH_PAM_H_
 
 #include <string>
 
 class BareosSocket;
 bool PamAuthenticateUseragent(BareosSocket *bs, std::string username);
 
-#endif /* BAREOS_DIRD_AUTH_PAM_H */
+#endif /* BAREOS_DIRD_AUTH_PAM_H_ */
