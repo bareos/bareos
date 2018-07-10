@@ -36,11 +36,11 @@ BAREOS_CLIENT_NAME=bareos-fd
 BAREOS_RESTOREFILE=/etc/passwd
 BAREOS_LOG_PATH=/tmp/selenium-logs/
 BAREOS_DELAY=1
-python webui-selenium-test.py -v
+python WebuiSeleniumTest.py -v
 ```
 
 After setting the environment variables you can run the test. Use `-v`option of our test to show the progress and results of each test.
 
 ## Debugging
 
-After the test fails you will see an exception that was thrown. If this does not help you, take a look inside the generated log file, located in the same path as your `webui-selenium-test.py` file.
+After the test fails you will see an exception that was thrown. If this does not help you, take a look inside the generated log file, located in the same path as your `WebuiSeleniumTest.py` file.

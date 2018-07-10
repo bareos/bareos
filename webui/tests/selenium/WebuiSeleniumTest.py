@@ -5,6 +5,7 @@
 # selenium.common.exceptions.ElementNotInteractableException: requires >= selenium-3.4.0
 
 import logging, os, re, sys, unittest
+from   WebuiSeleniumTest import *
 from   datetime import datetime, timedelta
 from   selenium import webdriver
 from   selenium.common.exceptions import *
@@ -17,7 +18,7 @@ from   selenium.webdriver.support.ui import Select, WebDriverWait
 #from selenium.webdriver.remote.remote_connection import LOGGER
 from   time import sleep
 
-class WebuiSeleniumTest(unittest.TestCase):
+class SeleniumTest(unittest.TestCase):
 
     browser = 'firefox'
     base_url = 'http://127.0.0.1/bareos-webui'
@@ -42,10 +43,8 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.get_env()
         # Configure the logger, for information about the timings set it to INFO
         # Selenium driver itself will write additional debug messages when set to DEBUG
-        #logging.basicConfig(filename='webui-selenium-test.log', level=logging.DEBUG)
-        #logging.basicConfig(filename='webui-selenium-test.log', level=logging.INFO)
         logging.basicConfig(
-                filename='%s/webui-selenium-test.log' % (self.logpath),
+                filename='%s/WebuiSeleniumTest.log' % (self.logpath),
                 format='%(levelname)s %(module)s.%(funcName)s: %(message)s',
                 level=logging.INFO
         )
@@ -72,8 +71,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.wait = WebDriverWait(self.driver, self.maxwait)
 
         # take base url, but remove last /
-        self.base_url = base_url.rstrip('/')
-
+        self.base_url = self.base_url.rstrip('/')
         self.verificationErrors = []
 
     def get_env(self):
@@ -82,39 +80,39 @@ class WebuiSeleniumTest(unittest.TestCase):
         global chromedriverpath
         chromedriverpath = os.environ.get('BAREOS_CHROMEDRIVER_PATH')
         if chromedriverpath:
-            WebuiSeleniumTest.chromedriverpath = chromedriverpath
+            SeleniumTest.chromedriverpath = chromedriverpath
         global browser
         browser = os.environ.get('BAREOS_BROWSER')
         if browser:
-            WebuiSeleniumTest.browser = browser
+            SeleniumTest.browser = browser
         global base_url
         base_url = os.environ.get('BAREOS_BASE_URL')
         if base_url:
-            WebuiSeleniumTest.base_url = base_url.rstrip('/')
+            SeleniumTest.base_url = base_url.rstrip('/')
         global username
         username = os.environ.get('BAREOS_USERNAME')
         if username:
-            WebuiSeleniumTest.username = username
+            SeleniumTest.username = username
         global password
         password = os.environ.get('BAREOS_PASSWORD')
         if password:
-            WebuiSeleniumTest.password = password
+            SeleniumTest.password = password
         global client
         client = os.environ.get('BAREOS_CLIENT_NAME')
         if client:
-            WebuiSeleniumTest.client = client
+            SeleniumTest.client = client
         global restorefile
         restorefile = os.environ.get('BAREOS_RESTOREFILE')
         if restorefile:
-            WebuiSeleniumTest.restorefile = restorefile
+            SeleniumTest.restorefile = restorefile
         global logpath
         logpath = os.environ.get('BAREOS_LOG_PATH')
         if logpath:
-            WebuiSeleniumTest.logpath = logpath
+            SeleniumTest.logpath = logpath
         global sleeptime
         sleeptime = os.environ.get('BAREOS_DELAY')
         if sleeptime:
-            WebuiSeleniumTest.sleeptime = float(sleeptime)
+            SeleniumTest.sleeptime = float(sleeptime)
 
 # Tests
 
@@ -172,17 +170,18 @@ class WebuiSeleniumTest(unittest.TestCase):
     def test_languages(self):
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
-        self.driver.find_element_by_xpath('//button[@data-id="locale"]').click()
+        self.wait_and_click(By.XPATH, '//button[@data-id="locale"]')
         # Set expected languages as a list
-        expected_languages = {'Chinese','Czech','Dutch/Belgium','English','French','German','Italian','Russian','Slovak','Spanish','Turkish'}
+        #expected_languages = {'Chinese','Czech','Dutch/Belgium','English','French','German','Italian','Russian','Slovak','Spanish','Turkish'}
+        dirCounter = len(next(os.walk('../../public/js/locale'))[1])
         # Append text of each element found by xpath into 'elements' list
-        elements = []
+        langCounter = 0
         for element in self.driver.find_elements_by_xpath('//ul[@aria-expanded="true"]/li[@data-original-index>"0"]/a/span[@class="text"]'):
-               elements.append(element.text)
-        # If both lists match return true
-        b = bool(set(expected_languages)==set(elements))
+               langCounter = langCounter + 1
+        # Compare the counted languages against the counted directories
+        b = bool(langCounter==dirCounter)
         if not b:
-            raise LocaleException(expected_languages,elements)
+            raise LocaleException(dirCounter, langCounter)
 
     def test_menue(self):
         self.login()
@@ -461,11 +460,11 @@ class FailedClickException(Exception):
 
 class LocaleException(Exception):
     '''Raise when wait_and_click fails'''
-    def __init__(self, expected_languages, elements):
-        if len(expected_languages)!=len(elements):
-            msg = 'The available languages in login did not meet expectations.\n Expected '+str(len(expected_languages))+' languages but got '+str(len(elements))+'. Dropdown menue misses '+''.join(list(set(expected_languages) - set(elements)))+'.'
+    def __init__(self, dirCounter, langCounter):
+        if dirCounter!=langCounter:
+            msg = 'The available languages in login did not meet expectations.\n Expected '+str(dirCounter)+' languages but got '+str(langCounter)+'.'
         else:
-             msg = 'The available languages in login did not meet expectations.\n'+'Dropdown menue misses language '+''.join(list(set(expected_languages) - set(elements)))+' or the name changed.'
+             msg = 'The available languages in login did not meet expectations.\n'
         super(LocaleException, self).__init__(msg)
 
 class WrongCredentialsException(Exception):
