@@ -35,7 +35,8 @@ APPLICATION_NAME = 'BareOS Ovirt plugin'
 
 # Find the disks section:
 OVF_NAMESPACES = {
-    'ovf': 'http://schemas.dmtf.org/ovf/envelope/1'
+    'ovf': 'http://schemas.dmtf.org/ovf/envelope/1/',
+    'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
 }
 
 class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
@@ -49,7 +50,25 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             (__name__, plugindef))
         super(BareosFdPluginOvirt, self).__init__(context, plugindef)
 
+        if self.mandatory_options is None:
+            self.mandatory_options = []
+
+        #self.mandatory_options.extend(['vmname','storage_domain'])
+
         self.ovirt = BareosOvirtWrapper()
+
+    def parse_plugin_definition(self, context, plugindef):
+        '''
+        We have default options that should work out of the box in the most  use cases
+        that the mysql/mariadb is on the same host and can be accessed without user/password information,
+        e.g. with a valid my.cnf for user root.
+        '''
+        super(BareosFdPluginOvirt, self).parse_plugin_definition(context, plugindef)
+
+        bareosfd.DebugMessage(
+            context, 100,
+            "BareosFdPluginOvirt:parse_plugin_definition() called\n")
+        return bRCs['bRC_OK']
 
     def start_backup_job(self, context):
         '''
@@ -110,7 +129,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 "BareosFdPluginOvirt:start_backup_file() backup disk file '%s' of VM '%s'\n" % (disk.alias,self.backup_obj['vmname']))
 
             savepkt.type = bFileType['FT_REG']
-            savepkt.fname = "/VMS/%s-%s/%s-%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],disk.alias,disk.id)
+            savepkt.fname = "/VMS/%s-%s/%s-%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],disk.alias,disk.image_id)
 
             try:
                 self.ovirt.start_download(context, self.backup_obj['snapshot'], disk)
@@ -163,7 +182,12 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             basename = os.path.basename(FNAME)
 
             disk = self.ovirt.get_vm_disk_by_basename(context, basename)
-            if disk is not None:
+            if disk is None:
+                bareosfd.JobMessage(
+                    context, bJobMessageType['M_ERROR'],
+                    "BareosFdPluginOvirt:create_file() Unable to restore disk %s.\n" % (FNAME))
+                return bRCs['bRC_Error']
+            else:
                 self.ovirt.start_upload(context, disk)
 
         if restorepkt.type == bFileType['FT_REG']:
@@ -208,33 +232,39 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             context, 100,
             "FNAME is set to %s\n" %
             (self.FNAME))
+        self.jobType = chr(bareosfd.GetValue(context, bVariable['bVarType']))
+        bareosfd.DebugMessage(
+            context, 100,
+            "BareosFdPluginOvirt::plugin_io() jobType: %s\n" %
+            (self.jobType))
 
         if IOP.func == bIOPS['IO_OPEN']:
             self.FNAME = IOP.fname
-            try:
-                if IOP.flags & (os.O_CREAT | os.O_WRONLY):
-                    bareosfd.DebugMessage(
-                        context, 100,
-                        "Open file %s for writing with %s\n" %
-                        (self.FNAME, IOP))
-
-                    dirname = os.path.dirname(self.FNAME)
-                    if not os.path.exists(dirname):
+            if self.options.get('local') == 'yes':
+                try:
+                    if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                         bareosfd.DebugMessage(
                             context, 100,
-                            "Directory %s does not exist, creating it now\n" %
-                            (dirname))
-                        os.makedirs(dirname)
-                    self.file = open(self.FNAME, 'wb')
-                # else:
-                #     bareosfd.DebugMessage(
-                #         context, 100,
-                #         "Open file %s for reading with %s\n" %
-                #         (self.FNAME, IOP))
-                #     self.file = open(self.FNAME, 'rb')
-            except:
-                IOP.status = -1
-                return bRCs['bRC_Error']
+                            "Open file %s for writing with %s\n" %
+                            (self.FNAME, IOP))
+
+                        dirname = os.path.dirname(self.FNAME)
+                        if not os.path.exists(dirname):
+                            bareosfd.DebugMessage(
+                                context, 100,
+                                "Directory %s does not exist, creating it now\n" %
+                                (dirname))
+                            os.makedirs(dirname)
+                        self.file = open(self.FNAME, 'wb')
+                    # else:
+                    #     bareosfd.DebugMessage(
+                    #         context, 100,
+                    #         "Open file %s for reading with %s\n" %
+                    #         (self.FNAME, IOP))
+                    #     self.file = open(self.FNAME, 'rb')
+                except:
+                    IOP.status = -1
+                    return bRCs['bRC_Error']
 
             return bRCs['bRC_OK']
 
@@ -253,7 +283,11 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         "plugin_io: calling end_transfer()\n" )
                     # Backup Job
                     self.ovirt.end_transfer(context)
-
+            elif self.jobType == 'R':
+                if self.FNAME.endswith('.ovf'):
+                    return self.ovirt.prepare_vm_restore(context,self.options)
+                else:
+                    self.ovirt.end_transfer(context)
             return bRCs['bRC_OK']
         elif IOP.func == bIOPS['IO_SEEK']:
             return bRCs['bRC_OK']
@@ -295,15 +329,17 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 except IOError as msg:
                     IOP.io_errno = -1
                     bareosfd.DebugMessage(context, 100, "Error writing data: " + msg + "\n");
+            elif self.FNAME.endswith('.ovf'):
+                self.ovirt.process_ovf(context,IOP.buf)
+                IOP.status = IOP.count
+                IOP.io_errno = 0
+            else:
+                self.ovirt.process_upload(context,IOP.buf)
+                IOP.status = IOP.count
+                IOP.io_errno = 0
             return bRCs['bRC_OK']
 
     def handle_plugin_event(self, context, event):
-
-        self.jobType = chr(bareosfd.GetValue(context, bVariable['bVarType']))
-        bareosfd.DebugMessage(
-            context, 100,
-            "BareosFdPluginOvirt::handle_plugin_event() jobType: %s\n" %
-            (self.jobType))
 
         if event == bEventType['bEventEndBackupJob']:
             bareosfd.DebugMessage(
@@ -728,23 +764,36 @@ class BareosOvirtWrapper(object):
         return chunk 
 
     def prepare_vm_restore(self, context, options):
+        if self.connection is None:
+            # if not connected yet
+            if not self.connect_api(context, options):
+                return bRCs['bRC_Error']
+
         if self.ovf_data is None:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Unable to restore VM. No OVF data. \n" )
+            return bRCs['bRC_Error']
         else:
+            if 'storage_domain' not in options:
+                bareosfd.JobMessage(
+                    context, bJobMessageType['M_FATAL'],
+                    "No storage domain specified.\n" )
+                return bRCs['bRC_Error']
+
             # Parse the OVF as XML document:
             self.ovf = lxml.etree.fromstring(self.ovf_data)
 
             # Find the disks section:
             disk_elements = self.ovf.xpath(
-                '/ovf:Envelope/ovf:DiskSection/ovf:Disk',
+                '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
                 namespaces=OVF_NAMESPACES
             )
 
             if self.restore_objects is None:
                 self.restore_objects = []
 
+            bareosfd.DebugMessage(context, 200, "prepare_vm_restore(): %s %s\n" % (disk_elements,self.ovf))
             for disk_element in disk_elements:
                 # Get disk properties:
                 props = {}
@@ -757,16 +806,23 @@ class BareosOvirtWrapper(object):
                     {
                         'disk': props
                     })
+        return bRCs['bRC_OK']
 
     def get_vm_disk_by_basename(self, context, basename):
         disk = None
+        bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): %s %s\n" % (basename,self.restore_objects))
         if self.restore_objects is not None:
-            for obj in self.restore_objects:
+            i = 0
+            while i<len(self.restore_objects) and disk is None:
+                obj = self.restore_objects[i]
                 key = "%s-%s" % (obj['disk']['disk-alias'],obj['disk']['diskId'])
+                bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): lookup %s == %s\n" % (basename,key))
                 if basename == key:
                     disk = self.create_vm_disk(context,obj)
-                    return disk
+                i += 1
+        bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): found disk %s\n" % (disk))
         return disk
+
     def create_vm_disk(self,context,props):
         # Create the disks:
         disks_service = self.system_service.disks_service()
@@ -777,21 +833,27 @@ class BareosOvirtWrapper(object):
         else:
             disk_format = types.DiskFormat.RAW
 
-        disk = disks_service.add(
-            disk=types.Disk(
-                id=props['diskId'],
-                name=props['disk-alias'],
-                description=props['description'],
-                format=disk_format,
-                provisioned_size=int(props['capacity']) * 2**30,
-                initial_size=int(props['populatedSize']),
-                storage_domains=[
-                    types.StorageDomain(
-                        name=props['storage_domain']
-                    )
-                ]
+        disk = None
+        if 'storage_domain' not in options:
+            bareosfd.JobMessage(
+                context, bJobMessageType['M_FATAL'],
+                "No storage domain specified.\n" )
+        else:
+            disk = disks_service.add(
+                disk=types.Disk(
+                    id=props['diskId'],
+                    name=props['disk-alias'],
+                    description=props['description'],
+                    format=disk_format,
+                    provisioned_size=int(props['capacity']) * 2**30,
+                    initial_size=int(props['populatedSize']),
+                    storage_domains=[
+                        types.StorageDomain(
+                            name=props['storage_domain']
+                        )
+                    ]
+                )
             )
-        )
         return disk
 
 
@@ -821,6 +883,11 @@ class BareosOvirtWrapper(object):
             context, bJobMessageType['M_INFO'],
                 "   Upload disk of %s bytes\n" % (str(self.bytes_to_transf)))
 
+    def process_ovf(self,context, chunk):
+        if self.ovf_data is None:
+            self.ovf_data = str(chunk)
+        else:
+            self.ovf_data = self.ovf_data . str(chunk)
     def process_upload(self,context, chunk):
 
         bareosfd.DebugMessage(
@@ -890,13 +957,13 @@ class BareosOvirtWrapper(object):
 
             # Find the name of the virtual machine within the OVF:
             vm_name = self.ovf.xpath(
-                '/ovf:Envelope/ovf:VirtualSystem/ovf:Name',
+                '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
                 namespaces=OVF_NAMESPACES
             )[0].text
 
             # Find the cluster name of the virtual machine within the OVF:
             cluster_name = self.ovf.xpath(
-                '/ovf:Envelope/ovf:VirtualSystem/ovf:ClusterName',
+                '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
                 namespaces=OVF_NAMESPACES
             )[0].text
 
