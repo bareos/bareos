@@ -330,7 +330,7 @@ bls_files_verbose()
    #local JOBID=${3}
    #local FILENAME=${4}
 
-   ${bin}/bls "${STORAGE}" -V "${VOLUME}" -c ${conf} -v
+   ${bin}/bls -V "${VOLUME}" -c ${conf} -v "${STORAGE}"
    return $?
 }
 

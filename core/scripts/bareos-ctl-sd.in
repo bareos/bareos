@@ -65,9 +65,9 @@ case "$1" in
             fi
 
             if [ "x${VALGRIND_SD}" = "x1" ]; then
-                valgrind --leak-check=full ${BIN} $2 $3 ${OPTIONS} -v
+                valgrind --leak-check=full ${BIN} -v $2 $3 ${OPTIONS}
             else
-                ${BIN} $2 $3 ${OPTIONS} -v
+                ${BIN} -v $2 $3 ${OPTIONS}
             fi
         fi
         ;;
