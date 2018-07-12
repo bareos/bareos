@@ -16,27 +16,9 @@ do
   sed -f ${out} ${file} > `echo "${file}" | sed -e 's/.in$//'`
 done
 
-# These files have no fancy sed stuff, so we just copy them over
-#cp ${rscripts}/win32-bareos-sd-tape.conf.in ${rscripts}/win32-bareos-sd-tape.conf
-#cp ${rscripts}/win32-bareos-fd.conf.in      ${rscripts}/win32-bareos-fd.conf
-
-#if test -f ${conf}/bareos-sd.conf ; then
-#  cp ${conf}/bareos-sd.conf ${tmp}/bac$$
-#  sed "s% /tmp%${tmp}%g" ${tmp}/bac$$ >${conf}/bareos-sd.conf
-#fi
 chmod 755 ${rscripts}/regress-config
 chmod 755 ${rscripts}/cleanup-*tape ${rscripts}/cleanup-*drive ${rscripts}/prepare-two-tapes
-
-#if [ -w ${scripts}/mtx-changer ]; then
-#  rm -f ${tmp}/bac$$
-#  cp ${scripts}/mtx-changer ${tmp}/bac$$
-#  sed "s%^MTX.*$%MTX=${AUTOCHANGER_PATH}%g" ${tmp}/bac$$ >${scripts}/mtx-changer
-#  chmod 755 ${scripts}/mtx-changer
-#fi
-
+chmod 755 ${rscripts}/diff.pl
 ${rscripts}/set_tape_options
 ${rscripts}/config_dart
-
-#rm -f ${out}
-#rm -f ${tmp}/bac$$
 

@@ -41,7 +41,7 @@ start_test
 #
 outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-echo "s%Name = \"$JobName\"%Name = \"$JobName\";  client run after job = \"netstat -tan\"%g" >>${outf}
+echo "s%Name = \"$JobName\"%Name = \"$JobName\";  client run after job = \"netstat -an\"%g" >>${outf}
 cp ${conf}/bareos-dir.conf $tmp/1
 sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
@@ -52,7 +52,7 @@ PATH=$PATH:/sbin:/usr/sbin
 #
 os=`uname`
 if [ $os = 'FreeBSD' ]; then
-   INTERFACE=bge0
+   INTERFACE=xn0
    IP=`ifconfig ${INTERFACE} | perl -ne '/inet (.+?) / && print $1'`
 elif [ $os = 'Linux' ]; then
    INTERFACE=eth0
@@ -135,7 +135,7 @@ if [ $? -ne 0 ]; then
 fi
 
 if [ "$stat" = 2 ] ; then
-   netstat -tan
+   netstat -an
 fi
 
 if [ "$debug" = 1 ] ; then

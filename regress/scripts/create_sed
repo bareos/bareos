@@ -59,7 +59,7 @@ bareos_gitrev=`git show -s --format=%h HEAD`
 cd -
 
 GCOV=`which gcov`
-
+PERL=`which perl`
 
 # Create sed command script
 >${out}
@@ -128,4 +128,5 @@ echo "s%@gitrev@%${gitrev}%g" >>${out}
 echo "s%@regress_gitbranch@%${regress_gitbranch}%g" >>${out}
 echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
 echo "s%@GCOV@%${GCOV}%g" >>${out}
+echo "s%@PERL@%${PERL}%g" >>${out}
 
