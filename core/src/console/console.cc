@@ -473,13 +473,11 @@ void init_items()
 {
    if (!items) {
       items = (ItemList*) malloc(sizeof(ItemList));
-      memset(items, 0, sizeof(ItemList));
-
+      items = new(items) ItemList(); /* placement new instead of memset */
    } else {
       items->list.destroy();
+      items->list.init();
    }
-
-   items->list.init();
 }
 
 /**
