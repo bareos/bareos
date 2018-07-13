@@ -8,16 +8,78 @@ import logging, os, re, sys, unittest
 from   datetime import datetime, timedelta
 from   selenium import webdriver
 from   selenium.common.exceptions import *
-       #WebDriverException, ElementNotInteractableException, ElementNotVisibleException, TimeoutException, NoAlertPresentException, NoSuchElementException
 from   selenium.webdriver.common.by import By
 from   selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from   selenium.webdriver.common.keys import Keys
 from   selenium.webdriver.support import expected_conditions as EC
 from   selenium.webdriver.support.ui import Select, WebDriverWait
-#from selenium.webdriver.remote.remote_connection import LOGGER
 from   time import sleep
 
-class WebuiSeleniumTest(unittest.TestCase):
+class BadJobException(Exception):
+    '''Raise when a started job doesn't result in ID'''
+    def __init__(self, msg=None):
+        msg = 'Job ID could not be saved after starting the job.'
+        super(BadJobException, self).__init__(msg)
+
+class ClientStatusException(Exception):
+    '''Raise when a client does not have the expected status'''
+    def __init__(self,client, status, msg=None):
+        if status=='enabled':
+            msg = '%s is enabled and cannot be enabled again.' % client
+        if status=='disabled':
+            msg = '%s is disabled and cannot be disabled again.' % client
+        super(ClientStatusException, self).__init__(msg)
+
+class ClientNotFoundException(Exception):
+    '''Raise when the expected client is not found'''
+    def __init__(self, client, msg=None):
+        msg = 'The client %s was not found.' % client
+        super(ClientNotFoundException, self).__init__(msg)
+
+class ElementCoveredException(Exception):
+    '''Raise when an element is covered by something'''
+    def __init__(self, value):
+        msg = 'Click on element %s failed as it was covered by another element.' % value
+        super(ElementCoveredException, self).__init__(msg)
+
+class ElementTimeoutException(Exception):
+    '''Raise when waiting on an element times out'''
+    def __init__(self, value):
+        if value != 'spinner':
+            msg = 'Waiting for element %s returned a TimeoutException.' % value
+        else:
+            msg = 'Waiting for the spinner to disappear returned a TimeoutException.' % value
+        super(ElementTimeoutException, self).__init__(msg)
+
+class ElementNotFoundException(Exception):
+    '''Raise when an element is not found'''
+    def __init__(self, value):
+        msg = 'Element %s was not found.' % value
+        super(ElementNotFoundException, self).__init__(msg)
+
+class FailedClickException(Exception):
+    '''Raise when wait_and_click fails'''
+    def __init__(self, value):
+        msg = 'Waiting and trying to click %s failed.' % value
+        super(FailedClickException, self).__init__(msg)
+
+class LocaleException(Exception):
+    '''Raise when wait_and_click fails'''
+    def __init__(self, dirCounter, langCounter):
+        if dirCounter!=langCounter:
+            msg = 'The available languages in login did not meet expectations.\n Expected '+str(dirCounter)+' languages but got '+str(langCounter)+'.'
+        else:
+             msg = 'The available languages in login did not meet expectations.\n'
+        super(LocaleException, self).__init__(msg)
+
+class WrongCredentialsException(Exception):
+    '''Raise when wait_and_click fails'''
+    def __init__(self, username, password):
+        msg = 'Username "%s" or password "%s" is wrong.' % (username,password)
+        super(WrongCredentialsException, self).__init__(msg)
+
+class SeleniumTest(unittest.TestCase):
+
 
     browser = 'firefox'
     base_url = 'http://127.0.0.1/bareos-webui'
@@ -38,12 +100,9 @@ class WebuiSeleniumTest(unittest.TestCase):
 # Setup functions
 
     def setUp(self):
-        # Get environment variables
-        self.get_env()
+        # print base_url, username, password, client, restorefile
         # Configure the logger, for information about the timings set it to INFO
         # Selenium driver itself will write additional debug messages when set to DEBUG
-        #logging.basicConfig(filename='webui-selenium-test.log', level=logging.DEBUG)
-        #logging.basicConfig(filename='webui-selenium-test.log', level=logging.INFO)
         logging.basicConfig(
                 filename='%s/webui-selenium-test.log' % (self.logpath),
                 format='%(levelname)s %(module)s.%(funcName)s: %(message)s',
@@ -52,8 +111,6 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.logger = logging.getLogger()
         self.logger.info("===================== TESTING =====================")
         if self.browser == 'chrome':
-            #d = DesiredCapabilities.CHROME
-            #d['loggingPrefs'] = { 'browser':'ALL' }
             # On OS X: Chromedriver path is 'usr/local/lib/chromium-browser/chromedriver'
             try:
                 os.path.isfile(self.chromedriverpath)
@@ -67,54 +124,11 @@ class WebuiSeleniumTest(unittest.TestCase):
             fp = webdriver.FirefoxProfile()
             fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
             self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
-
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
-
         # take base url, but remove last /
-        self.base_url = base_url.rstrip('/')
-
+        self.base_url = self.base_url.rstrip('/')
         self.verificationErrors = []
-
-    def get_env(self):
-        # Get attributes as environment variables,
-        # if not available or set use defaults.
-        global chromedriverpath
-        chromedriverpath = os.environ.get('BAREOS_CHROMEDRIVER_PATH')
-        if chromedriverpath:
-            WebuiSeleniumTest.chromedriverpath = chromedriverpath
-        global browser
-        browser = os.environ.get('BAREOS_BROWSER')
-        if browser:
-            WebuiSeleniumTest.browser = browser
-        global base_url
-        base_url = os.environ.get('BAREOS_BASE_URL')
-        if base_url:
-            WebuiSeleniumTest.base_url = base_url.rstrip('/')
-        global username
-        username = os.environ.get('BAREOS_USERNAME')
-        if username:
-            WebuiSeleniumTest.username = username
-        global password
-        password = os.environ.get('BAREOS_PASSWORD')
-        if password:
-            WebuiSeleniumTest.password = password
-        global client
-        client = os.environ.get('BAREOS_CLIENT_NAME')
-        if client:
-            WebuiSeleniumTest.client = client
-        global restorefile
-        restorefile = os.environ.get('BAREOS_RESTOREFILE')
-        if restorefile:
-            WebuiSeleniumTest.restorefile = restorefile
-        global logpath
-        logpath = os.environ.get('BAREOS_LOG_PATH')
-        if logpath:
-            WebuiSeleniumTest.logpath = logpath
-        global sleeptime
-        sleeptime = os.environ.get('BAREOS_DELAY')
-        if sleeptime:
-            WebuiSeleniumTest.sleeptime = float(sleeptime)
 
 # Tests
 
@@ -155,15 +169,14 @@ class WebuiSeleniumTest(unittest.TestCase):
         # Throw exception if client is already enabled
         else:
             raise ClientStatusException(self.client, 'enabled')
-
         self.logout()
 
-    #def test_job_canceling(self):
-    #    driver = self.driver
-    #    self.login()
-    #    job_id = self.job_start_configured()
-    #    self.job_cancel(job_id)
-    #    self.logout()
+    def disabled_test_job_canceling(self):
+        driver = self.driver
+        self.login()
+        job_id = self.job_start_configured()
+        self.job_cancel(job_id)
+        self.logout()
 
     def test_login(self):
         self.login()
@@ -172,17 +185,15 @@ class WebuiSeleniumTest(unittest.TestCase):
     def test_languages(self):
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
-        self.driver.find_element_by_xpath('//button[@data-id="locale"]').click()
-        # Set expected languages as a list
-        expected_languages = {'Chinese','Czech','Dutch/Belgium','English','French','German','Italian','Russian','Slovak','Spanish','Turkish'}
-        # Append text of each element found by xpath into 'elements' list
-        elements = []
+        self.wait_and_click(By.XPATH, '//button[@data-id="locale"]')
+        expected_elements = {'Chinese','Czech','Dutch/Belgium','English','French','German','Italian','Russian','Slovak','Spanish','Turkish'}
+        found_elements = []
         for element in self.driver.find_elements_by_xpath('//ul[@aria-expanded="true"]/li[@data-original-index>"0"]/a/span[@class="text"]'):
-               elements.append(element.text)
-        # If both lists match return true
-        b = bool(set(expected_languages)==set(elements))
-        if not b:
-            raise LocaleException(expected_languages,elements)
+               found_elements.append(element.text)
+        # Compare the counted languages against the counted directories
+        for element in expected_elements:
+            if element not in found_elements:
+                self.logger.info('The webui misses %s' % element)
 
     def test_menue(self):
         self.login()
@@ -261,9 +272,6 @@ class WebuiSeleniumTest(unittest.TestCase):
         except NoSuchElementException:
             raise ClientNotFoundException(self.client)
         return status
-
-    def compare_locales(self):
-        return b
 
     def job_cancel(self, id):
         # Wait for the cancel button
@@ -406,70 +414,37 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.driver.quit()
         self.assertEqual([], self.verificationErrors)
 
+def get_env():
+    # Get attributes as environment variables,
+    # if not available or set use defaults.
+    chromedriverpath = os.environ.get('BAREOS_CHROMEDRIVER_PATH')
+    if chromedriverpath:
+        SeleniumTest.chromedriverpath = chromedriverpath
+    browser = os.environ.get('BAREOS_BROWSER')
+    if browser:
+        SeleniumTest.browser = browser
+    base_url = os.environ.get('BAREOS_BASE_URL')
+    if base_url:
+        SeleniumTest.base_url = base_url.rstrip('/')
+    username = os.environ.get('BAREOS_USERNAME')
+    if username:
+        SeleniumTest.username = username
+    password = os.environ.get('BAREOS_PASSWORD')
+    if password:
+        SeleniumTest.password = password
+    client = os.environ.get('BAREOS_CLIENT_NAME')
+    if client:
+        SeleniumTest.client = client
+    restorefile = os.environ.get('BAREOS_RESTOREFILE')
+    if restorefile:
+        SeleniumTest.restorefile = restorefile
+    logpath = os.environ.get('BAREOS_LOG_PATH')
+    if logpath:
+        SeleniumTest.logpath = logpath
+    sleeptime = os.environ.get('BAREOS_DELAY')
+    if sleeptime:
+        SeleniumTest.sleeptime = float(sleeptime)
 
 if __name__ == '__main__':
-
+    get_env()
     unittest.main()
-
-class BadJobException(Exception):
-    '''Raise when a started job doesn't result in ID'''
-    def __init__(self, msg=None):
-        msg = 'Job ID could not be saved after starting the job.'
-        super(BadJobException, self).__init__(msg)
-
-class ClientStatusException(Exception):
-    '''Raise when a client does not have the expected status'''
-    def __init__(self,client, status, msg=None):
-        if status=='enabled':
-            msg = '%s is enabled and cannot be enabled again.' % client
-        if status=='disabled':
-            msg = '%s is disabled and cannot be disabled again.' % client
-        super(ClientStatusException, self).__init__(msg)
-
-class ClientNotFoundException(Exception):
-    '''Raise when the expected client is not found'''
-    def __init__(self, client, msg=None):
-        msg = 'The client %s was not found.' % client
-        super(ClientNotFoundException, self).__init__(msg)
-
-class ElementCoveredException(Exception):
-    '''Raise when an element is covered by something'''
-    def __init__(self, value):
-        msg = 'Click on element %s failed as it was covered by another element.' % value
-        super(ElementCoveredException, self).__init__(msg)
-
-class ElementTimeoutException(Exception):
-    '''Raise when waiting on an element times out'''
-    def __init__(self, value):
-        if value != 'spinner':
-            msg = 'Waiting for element %s returned a TimeoutException.' % value
-        else:
-            msg = 'Waiting for the spinner to disappear returned a TimeoutException.' % value
-        super(ElementTimeoutException, self).__init__(msg)
-
-class ElementNotFoundException(Exception):
-    '''Raise when an element is not found'''
-    def __init__(self, value):
-        msg = 'Element %s was not found.' % value
-        super(ElementNotFoundException, self).__init__(msg)
-
-class FailedClickException(Exception):
-    '''Raise when wait_and_click fails'''
-    def __init__(self, value):
-        msg = 'Waiting and trying to click %s failed.' % value
-        super(FailedClickException, self).__init__(msg)
-
-class LocaleException(Exception):
-    '''Raise when wait_and_click fails'''
-    def __init__(self, expected_languages, elements):
-        if len(expected_languages)!=len(elements):
-            msg = 'The available languages in login did not meet expectations.\n Expected '+str(len(expected_languages))+' languages but got '+str(len(elements))+'. Dropdown menue misses '+''.join(list(set(expected_languages) - set(elements)))+'.'
-        else:
-             msg = 'The available languages in login did not meet expectations.\n'+'Dropdown menue misses language '+''.join(list(set(expected_languages) - set(elements)))+' or the name changed.'
-        super(LocaleException, self).__init__(msg)
-
-class WrongCredentialsException(Exception):
-    '''Raise when wait_and_click fails'''
-    def __init__(self, username, password):
-        msg = 'Username "%s" or password "%s" is wrong.' % (username,password)
-        super(WrongCredentialsException, self).__init__(msg)
