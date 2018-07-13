@@ -1318,9 +1318,11 @@ int main(int argc, char *argv[])
 
    sendit(errmsg);
 
-   if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-      TerminateConsole(0);
-      return 1;
+   if (dir && dir->use_pam_authentication) {
+      if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+         TerminateConsole(0);
+         return 1;
+      }
    }
 
    Dmsg0(40, "Opened connection with Director daemon\n");
