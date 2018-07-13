@@ -1,4 +1,5 @@
 \label{releasenotes}
+\index[general]{Releases}
 
 The technical changelog is automatically generated from the Bareos bug tracking system, see \url{http://bugs.bareos.org/changelog_page.php}.
 
@@ -17,6 +18,27 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 \releasenoteSection{Bareos-17.2}
 
     %\item added \package{bareos-storage-ceph} also for \os{SLES}{12sp2} and \os{SLES}{12sp3}.
+
+\releasenote{17.2.7}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2018-07-13\\
+Database Version  & 2171 (unchanged)\\
+Release Ticket    & \ticket{966}\\
+Url               & \releaseUrlDownloadBareosCom{17.2} \\
+\end{tabular}
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+    \item \ticket{892} \package{bareos-storage-droplet}: improve error handling on unavailable backend.
+    \item \ticket{902} \package{bareos-storage-droplet}: improve job status handling (terminate job after all data is written).
+    \item \ticket{967} \os{Windows}{}: overwrite symbolic links on restore.
+    \item \ticket{983} \bareosSd: prevent sporadic crash when \linkResourceDirectiveValue{Sd}{Storage}{Collect Job Statistics}{yes}.
+    \item \os{SLES}{12sp2} and \os{SLES}{12sp3}: provide \package{bareos-storage-ceph} and \package{bareos-filedaemon-ceph-plugin} packages.
+ 
+\end{itemize}
+
+}
 
 
 \releasenote{17.2.6}{
