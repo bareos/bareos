@@ -77,33 +77,44 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
  */
 void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
 {
-   int status;
-   UaContext *ua;
-   JobControlRecord *jcr;
-
    pthread_detach(pthread_self());
 
-   jcr = new_control_jcr("-Console-", JT_CONSOLE);
+   JobControlRecord *jcr = new_control_jcr("-Console-", JT_CONSOLE);
 
-   ua = new_ua_context(jcr);
+   UaContext *ua = new_ua_context(jcr);
    ua->UA_sock = user_agent_socket;
    SetJcrInTsd(INVALID_JCR);
 
-   if (!AuthenticateUserAgent(ua)) {
-      goto getout;
+   bool success = AuthenticateUserAgent(ua);
+
+   if (success) {
+      bool use_pam = false;
+      if(ua->cons && ua->cons->use_pam_authentication) { /* named console */
+         use_pam = true;
+      }
+      else if(me->use_pam_authentication) { /* general console */
+         use_pam = true;
+      }
+
+      if (use_pam) {
+         std::string username;
+         if (ua->cons) {
+            username = ua->cons->name();
+         }
+         success = PamAuthenticateUseragent(ua->UA_sock, username);
+      }
    }
 
-   if (!PamAuthenticateUseragent(ua->UA_sock, ua->cons ? ua->cons->name() : std::string("user"))) {
-      goto getout;
+   if (!success) {
+      ua->quit = true;
    }
-
 
    while (!ua->quit) {
       if (ua->api) {
          user_agent_socket->signal(BNET_MAIN_PROMPT);
       }
 
-      status = user_agent_socket->recv();
+      int status = user_agent_socket->recv();
       if (status >= 0) {
          PmStrcpy(ua->cmd, ua->UA_sock->msg);
          ParseUaArgs(ua);
@@ -135,9 +146,8 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
       } else { /* signal */
          user_agent_socket->signal(BNET_POLL);
       }
-   }
+   } /* while (!ua->quit) */
 
-getout:
    CloseDb(ua);
    FreeUaContext(ua);
    FreeJcr(jcr);

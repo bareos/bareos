@@ -141,6 +141,7 @@ public:
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    s_password keyencrkey;             /* Key Encryption Key */
+   bool use_pam_authentication;       /**< Use Pam authentication instead of password */
 
    DirectorResource() : TlsResource() {}
 };
@@ -209,6 +210,7 @@ class ConsoleResource : public TlsResource {
 public:
    alist *ACL_lists[Num_ACL];         /**< Pointers to ACLs */
    alist *profiles;                   /**< Pointers to profile resources */
+   bool use_pam_authentication;       /**< Use Pam authentication instead of password */
 };
 
 /**
