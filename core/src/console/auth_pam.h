@@ -1,7 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2004-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,25 +20,14 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_CONSOLE_CONIO_H_
-#define BAREOS_CONSOLE_CONIO_H_
+#ifndef BAREOS_CONSOLE_AUTH_PAM_H_
+#define BAREOS_CONSOLE_AUTH_PAM_H_
 
-namespace console {
+#include <cstdio>
 
-extern int  InputLine(char *line, int len);
-extern void ConInit(FILE *input);
+class BareosSocket;
 
-extern "C" {
-extern void ConTerm();
-}
+bool ConsolePamAuthenticate(FILE *stdin, BareosSocket *UA_sock);
 
-extern void ConSetZedKeys();
-extern void t_sendl(char *buf, int len);
-extern void t_send(char *buf);
-extern void t_char(char c);
-extern int  usrbrk(void);
-extern void clrbrk(void);
-extern void trapctlc(void);
 
-} /* namespace console */
-#endif
+#endif /* BAREOS_CONSOLE_AUTH_PAM_H_ */

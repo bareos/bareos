@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-SET (BCONSSRCS console_conf.cc console_globals.cc)
+SET (BCONSSRCS auth_pam.cc console_conf.cc console_globals.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()
