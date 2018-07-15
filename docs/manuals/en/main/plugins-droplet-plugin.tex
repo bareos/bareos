@@ -1,0 +1,155 @@
+\subsection{Droplet plugin}
+\label{DropletPlugin}
+\index[general]{Plugin!Droplet}
+\index[general]{Droplet Plugin}
+
+The \package{bareos-storage-droplet} plugin can be used to access Object Storage through \package{librdroplet}.
+
+\subsubsection{Installation}
+
+Install the package \package{bareos-storage-droplet} including its requirments
+by using an appropriate package management tool
+(eg. \command{yum}, \command{zypper}).
+
+\subsubsection{Configuration}
+The droplet backend requires a storage ressource, a special device ressource as well as a droplet.profile file where your access- and secret-keys and other parameters for the connection to your object storage are stored. First, we will create the new storage ressource.
+Configure the ressource in your \bareosDir storage configuration and save it to \path|/etc/bareos/bareos-dir.d/storage/S3_Object.conf|
+
+\begin{bconfig}{bareos-dir}{storage}{S3_Object.conf}
+Storage {
+	Name = "S3_Object"										# Replace this by the Bareos Storage Daemon Name
+  Address  = "bareos-sd.example.com"  	# Replace this by the Bareos Storage Daemon FQDN or IP address
+  Password = "secret"										# Replace this by the Bareos Storage Daemon director password
+	Device = "S3_ObjectStorage"						# Mention the new devices name here
+	Media Type = "S3_Object1"
+
+}
+\end{bconfig}
+
+As of your \bareosSd daemon's configuration, we need to setup a new device that acts as a link to your bucket.
+Name and media type must match those in the director's storage ressource.
+
+\begin{description}
+\item[profile=] - Droplet profile to use either absolute PATH or logical name (e.g. /etc/bareos/bareos-sd.d/droplet/droplet.profile). Make sure this is accessible for bareos.
+\item[location=] - Optional, but required for AWS Storage (e.g. eu-west-2 etc.)
+\item[acl=] - Canned ACL
+\item[storageclass=] - Storage Class to use.
+\item[bucket=] - Bucket to store objects in.
+\item[chunksize=] - Size of Volume Chunks (default = 10 Mb)
+\item[iothreads=] - Number of IO-threads to use for uploads (use blocking uploads if not set.)
+\item[ioslots=] - Number of IO-slots per IO-thread (default 10). Set this to >= 1 for cached and to 0 for direct writing.
+\item[retries=] - Number of writing tries before discarding a job. Set this to 0 for unlimited retries. Setting anything != 0 here will cause dataloss if the backend is not available, so be very careful here.
+\item[mmap=] - Use mmap to allocate Chunk memory instead of malloc().
+\end{description}
+
+A device for the usage of AWS S3 object storage with a bucket named "backup-bareos" located in EU West 2, London, would look like this:
+\begin{bconfig}{bareos-sd.d}{device}{AWS_S3_1-00.conf}
+Device {
+  Name = "AWS_S3_1-00"
+  Media Type = "AWS_S3_File_1"
+  Archive Device = "AWS S3 Storage"
+  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/aws_droplet.profile,bucket=backup-bareos,location=eu-west-2,chunksize=100M"
+  Device Type = droplet
+  LabelMedia = yes                    # Lets Bareos label unlabeled media
+  Random Access = yes
+  AutomaticMount = yes                # When device opened, read it
+  RemovableMedia = no
+  AlwaysOpen = no
+  Description = "S3 device"
+  Maximum File Size = 500M            # 500 MB (allows for seeking to small portions of the Volume)
+  Maximum Concurrent Jobs = 1
+  Maximum Spool Size = 15000M
+}
+\end{bconfig}
+
+A device for CEPH object storage could look like this:
+\begin{bconfig}{bareos-sd.d}{device}{CEPH_1-00.conf}
+Device {
+  Name = "CEPH_1-00"
+  Media Type = "CEPH_File_1"
+  Archive Device = "Object S3 Storage"
+  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/ceph_droplet.profile,bucket=backup-bareos,chunksize=100M"
+  Device Type = droplet
+  LabelMedia = yes                    # Lets Bareos label unlabeled media
+  Random Access = yes
+  AutomaticMount = yes                # When device opened, read it
+  RemovableMedia = no
+  AlwaysOpen = no
+  Description = "S3 device"
+  Maximum File Size = 500M            # 500 MB (allows for seeking to small portions of the Volume)
+  Maximum Concurrent Jobs = 1
+  Maximum Spool Size = 15000M
+}
+\end{bconfig}
+
+Create the profile to be used by the backend, the default path is \path|/etc/bareos-sd.d/droplet/droplet.profile|.
+This profile is used later by the droplet library when accessing your cloud storage. An example for AWS S3 could look like this:
+
+\begin{bconfig}{bareos-sd.d}{droplet}{aws_droplet.conf}
+use_https = false 										#	Default is false, if set to true you may use the SSL parameters given in the droplet configuration wiki, see below.
+host = s3.amazonaws.com								# This parameter is only used as baseurl and will be prepended with bucket and location set in device ressource to form correct url
+access_key = myaccesskey
+secret_key = mysecretkey
+pricing_dir = "" 											# If not empty, an droplet.csv file will be created which will record all S3 operations.
+backend = s3
+aws_auth_sign_version = 4 						# While AWS S3 requires this set to 4, use 2 for CEPH S3 Connections.
+\end{bconfig}
+
+And for CEPH it would be:
+\begin{bconfig}{bareos-sd.d}{droplet}{ceph_droplet.conf}
+use_https = false
+host = CEPH-host.example.com
+access_key = myaccesskey
+secret_key = mysecretkey
+pricing_dir = "/tmp"
+backend = s3
+aws_auth_sign_version = 2
+\end{bconfig}
+
+More arguments and the SSL parameters (untested) can be found in the documentation of the droplet library:
+\url{https://github.com/scality/Droplet/wiki/Configuration-File}
+
+\subsubsection{Troubleshooting}
+
+If the S3 backend becomes or is unreachable, the storage daemon will behave depending on \argument{iothreads} and \argument{retries}.
+When the storage daemon is using cached writing (\argument{iothreads}>=1) and \argument{retries} is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the storage daemon will continuously try to write the cached files.
+Great caution should be used when using \argument{retries} > 0 combined with cached writing. If the backend becomes unavailable and the storage daemon reaches the predefined tries, the job will be discarded silently yet marked as "OK" in the \bareosDir.
+You can always check the status of the writing process by using \bcommand{status storage=...}. The current writing status will be displayed then:
+\begin{bconsole}{status storage}
+...
+Device "S3_ObjectStorage" (S3) is mounted with:
+    Volume:      Full-0085
+    Pool:        Full
+    Media type:  S3_Object1
+Backend connection is working.
+Inflight chunks: 2
+Pending IO flush requests:
+   /Full-0085/0002 - 10485760 (try=0)
+   /Full-0085/0003 - 10485760 (try=0)
+   /Full-0085/0004 - 10485760 (try=0)
+...
+Attached Jobs: 175
+...
+
+\end{bconsole}
+\argument{Pending IO flush requests} means that there is data to be written. \argument{try}=0 means that this is the first try and no problem has occurred. If \argument{try}>0, problems occurred and the storage daemon will continue trying.
+
+Status without pending IO chunks:
+\begin{bconsole}{status storage}
+...
+Device "S3_ObjectStorage" (S3) is mounted with:
+    Volume:      Full-0084
+    Pool:        Full
+    Media type:  S3_Object1
+Backend connection is working.
+No Pending IO flush requests.
+Configured device capabilities:
+  EOF BSR BSF FSR FSF EOM !REM RACCESS AUTOMOUNT LABEL !ANONVOLS !ALWAYSOPEN
+Device state:
+  OPENED !TAPE LABEL !MALLOC APPEND !READ EOT !WEOT !EOF !NEXTVOL !SHORT MOUNTED
+  num_writers=0 reserves=0 block=8
+Attached Jobs:
+...
+\end{bconsole}
+
+If you use AWS S3 object storage and want to debug your non-functional bareos setup, it is recommended to turn on the server access logging in your bucket properties. You will see if bareos gets to try writing into your bucket or not.
