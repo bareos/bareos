@@ -17,12 +17,12 @@ if [ -z "${CFLAGS}" ]; then
    export CFLAGS
 fi
 
-if [ -d cmake-build ] ; then
-  echo  cmake-build exist...
+if [ -d build ] ; then
+  echo  build exist...
 else
-   mkdir cmake-build
+   mkdir build
 fi
-cd cmake-build
+cd build
 
 if [ -f CMakeCache.txt  ] ; then
   echo  "CMakeCache.txt exist, not calling cmake"

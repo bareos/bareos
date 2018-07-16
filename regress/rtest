@@ -10,6 +10,7 @@
 #   . ./config
 
 . ./config
+BAREOS_SOURCE=..
 
 if test $# != 3 ; then
   echo "Called: rtest <machine> <branch> <test-script>"

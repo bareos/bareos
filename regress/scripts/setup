@@ -4,6 +4,8 @@
 # Script to setup running Bareos regression tests
 #
 
+BAREOS_SOURCE=$(cd .. && pwd)
+
 check_exit_code()
 {
    if [ $? != 0 ] ; then
@@ -28,23 +30,6 @@ MAKEOPTS=${MAKEOPT:-"-j8"}
 #
 rm -rf bin
 
-#
-# See if this is a git clone
-#
-if [ -f .git/config ] && type git >/dev/null 2>&1; then
-   #
-   # See if we have git available.
-   #
-   git pull
-fi
-
-if  [ -L build ] ; then
-   echo "source already linked from ${BAREOS_SOURCE}"
-else
-   echo "linking source from ${BAREOS_SOURCE}"
-   ln -s ${BAREOS_SOURCE}/core build
-fi
-
 if [ -f ${BAREOS_SOURCE}/.git/config ] && type git >/dev/null 2>&1; then
     #
     # update bareos sources
@@ -65,9 +50,6 @@ scripts/create_sed
 sed -f tmp/sed_tmp scripts/regress-config.in >scripts/regress-config
 chmod 755 scripts/regress-config
 
-cd build
-
-
 
 #
 # Run Bareos configuration, make, install
@@ -75,20 +57,17 @@ cd build
 sh -x ../regress/scripts/regress-config ${cwd}
 check_exit_code
 
-#
-# Cleanup any build in source
-#
-
-make -C cmake-build ${MAKEOPT}
+make -C build ${MAKEOPT}
 check_exit_code
-make -C cmake-build install
+make -C build install
 check_exit_code
-make -C cmake-build ${MAKEOPT} check
+make -C build ${MAKEOPT} check
 check_exit_code
 
 #  TargetDirectories for gcov
 mkdir CMakeFiles
-cp cmake-build/CMakeFiles/TargetDirectories.txt CMakeFiles
+#cp build/CMakeFiles/TargetDirectories.txt CMakeFiles
+echo ${cwd} >> CMakeFiles/TargetDirectories.txt
 
 cd ${cwd}
 bin/bareos stop

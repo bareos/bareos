@@ -71,15 +71,15 @@ install:
 	mkdir -p $(DEST)/working
 
 clean:
-	scripts/cleanup
+	rm -Rf build
+	rm -Rf CMakeFiles
 	rm -f tmp/file-list
 	rm -fr tmp/* working/* dumps/* Testing
 	rm -f test.out
 	rm -f diff
 	rm -f 1 2 3 scripts/1 scripts/2 scripts/3 tests/1 tests/2 tests/3
 	find . -name .#* -exec rm -rf {} \;
-	rm -Rvf build/cmake-build
-	rm -f build
+	scripts/cleanup
 
 # Reset our userid after running as root
 reset:

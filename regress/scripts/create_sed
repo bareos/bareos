@@ -2,6 +2,9 @@
 #
 # Create the sed file for configuring everything
 #
+
+BAREOS_SOURCE=`cd .. && pwd`
+
 cwd=`pwd`
 . ${cwd}/scripts/functions
 mkdir -p ${bin}
@@ -29,9 +32,9 @@ if test ${os} = "Linux" -o ${os} = "FreeBSD"; then
 else
   os=${os}-`./scripts/get-os`
 fi
-if [ -r ${srcdir}/src/include/version.h ]; then
-  bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
-  bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+if [ -r ${srcdir}/core/src/include/version.h ]; then
+  bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/core/src/include/version.h`
+  bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/core/src/include/version.h`
 fi
 
 if git --version >/dev/null; then
