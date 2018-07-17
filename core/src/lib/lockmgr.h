@@ -22,6 +22,10 @@
 #ifndef BAREOS_LIB_LOCKMGR_H_
 #define BAREOS_LIB_LOCKMGR_H_ 1
 
+#ifndef _USE_LOCKMGR
+#undef BAREOS_INCLUDE_VERSION_H_
+#endif
+
 #include "mutex_list.h"     /* Manage mutex with priority in a central place */
 
 /*
