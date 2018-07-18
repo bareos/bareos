@@ -187,7 +187,7 @@ std::string server_cons_password;
 
 int port = PORT;
 
-TEST(bsock, bsock_auth_works)
+TEST(bsock, auth_works)
 {
   port++;
   std::promise<bool> promise;
@@ -212,7 +212,7 @@ TEST(bsock, bsock_auth_works)
 }
 
 
-TEST(bsock, bsock_auth_works_with_different_names)
+TEST(bsock, auth_works_with_different_names)
 {
   port++;
   std::promise<bool> promise;
@@ -237,7 +237,7 @@ TEST(bsock, bsock_auth_works_with_different_names)
 }
 
 
-TEST(bsock, bsock_auth_fails_with_different_passwords)
+TEST(bsock, auth_fails_with_different_passwords)
 {
   port++;
   std::promise<bool> promise;
@@ -261,7 +261,7 @@ TEST(bsock, bsock_auth_fails_with_different_passwords)
   ASSERT_FALSE(future.get());
 }
 
-TEST(bsock, bsock_auth_works_with_tls_psk)
+TEST(bsock, auth_works_with_tls_psk)
 {
   port++;
   std::promise<bool> promise;
@@ -283,4 +283,28 @@ TEST(bsock, bsock_auth_works_with_tls_psk)
 
   server_thread.join();
   ASSERT_TRUE(future.get());
+}
+
+TEST(bsock, auth_fails_with_different_names_with_tls_psk)
+{
+  port++;
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = "differentclientname";
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
+                            HOST, port, true);
+
+  Dmsg0(10, "connecting to server\n");
+  ASSERT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, true));
+
+  server_thread.join();
+  ASSERT_FALSE(future.get());
 }
