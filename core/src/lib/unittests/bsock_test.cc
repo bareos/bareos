@@ -98,6 +98,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
 
   BareosSocket *bs;
   bs = New(BareosSocketTCP);
+  bs->sleep_time_after_authentication_error = 0;
   bs->fd_ = newsockfd;
   bs->SetWho(bstrdup("client"));
   memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
@@ -154,6 +155,7 @@ int connect_to_server(std::string console_name, std::string console_password,
   password->value = (char *)console_password.c_str();
 
   BareosSocketTCP *UA_sock = New(BareosSocketTCP);
+  UA_sock->sleep_time_after_authentication_error = 0;
   jcr.dir_bsock = UA_sock;
 
   if (!UA_sock->connect(NULL, 1, 15, heart_beat, "Director daemon", (char *)server_address.c_str(),

@@ -56,20 +56,23 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
  *  bat breaks on some systems such as RedHat.
  */
 public:
-   int fd_;                          /* Socket file descriptor */
+   int fd_;                           /* Socket file descriptor */
    uint64_t read_seqno;               /* Read sequence number */
    POOLMEM *msg;                      /* Message pool buffer */
    POOLMEM *errmsg;                   /* Edited error message */
-   int spool_fd_;                    /* Spooling file */
+   int spool_fd_;                     /* Spooling file */
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* Input message number */
    uint32_t out_msg_no;               /* Output message number */
-   int32_t message_length;                    /* Message length */
+   int32_t message_length;            /* Message length */
    volatile time_t timer_start;       /* Time started read/write */
    int b_errno;                       /* BareosSocket errno */
-   int blocking_;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
+   int blocking_;                     /* Blocking state (0 = nonblocking, 1 = blocking) */
    volatile int errors;               /* Incremented for each error on socket */
-   volatile bool suppress_error_msgs_; /* Set to suppress error messages */
+   volatile bool suppress_error_msgs_;/* Set to suppress error messages */
+   int sleep_time_after_authentication_error = 5;
+
+
 
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
@@ -79,12 +82,6 @@ public:
    TLS_CONNECTION *GetTlsConnection() {
       return tls_conn;
    } /* Associated tls connection */
-  //  void SetTlsConnection(std::shared_ptr<TLS_CONNECTION> tls_connection) {
-  //     tls_conn = tls_connection;
-  //  } /* Associated tls connection */
-  //  std::shared_ptr<TLS_CONNECTION> GetTlsConnection() {
-  //     return tls_conn;
-  //  } /* Associated tls connection */
 
 protected:
    JobControlRecord *jcr_;                        /* JobControlRecord or NULL for error msgs */
