@@ -26,6 +26,7 @@ set (TEST_SRC
     alist_test.cc
     dlist_test.cc
     htable_test.cc
+    bsock_test.cc
    )
 
 
