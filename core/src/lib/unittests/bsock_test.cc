@@ -90,7 +90,7 @@ int create_accepted_server_socket(int port)
   return new_socket;
 }
 void start_bareos_server(std::promise<bool> *promise, std::string console_name,
-                         std::string console_password, std::string server_address, int server_port)
+                         std::string console_password, std::string server_address, int server_port, bool enable_tls_psk)
 
 {
   int newsockfd = create_accepted_server_socket(server_port);
@@ -107,6 +107,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   password->encoding = p_encoding_md5;
   password->value = (char *)console_password.c_str();
   ConsoleResource *cons = new (ConsoleResource);
+  cons->tls_psk.enable = enable_tls_psk;
 
   if (bs->recv() <= 0) {
     Dmsg1(10, _("Connection request from %s failed.\n"), bs->who());
@@ -132,7 +133,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
 }
 
 int connect_to_server(std::string console_name, std::string console_password,
-                      std::string server_address, int server_port)
+                      std::string server_address, int server_port, bool enable_tls_psk)
 {
   utime_t heart_beat = 0;
   char errmsg[1024];
@@ -146,6 +147,7 @@ int connect_to_server(std::string console_name, std::string console_password,
   DirectorResource *dir = new (DirectorResource);
   dir->address = (char *)server_address.c_str();
   dir->DIRport = htons(server_port);
+  dir->tls_psk.enable = enable_tls_psk;
 
   s_password *password = new (s_password);
   password->encoding = p_encoding_md5;
@@ -198,10 +200,10 @@ TEST(bsock, bsock_auth_works)
   InitForTest();
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, port, false);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, false));
 
   server_thread.join();
   ASSERT_TRUE(future.get());
@@ -223,10 +225,10 @@ TEST(bsock, bsock_auth_works_with_different_names)
   InitForTest();
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, port, false);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, false));
 
   server_thread.join();
   ASSERT_TRUE(future.get());
@@ -248,11 +250,35 @@ TEST(bsock, bsock_auth_fails_with_different_passwords)
   InitForTest();
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, PORT);
+                            HOST, port, false);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, PORT));
+  ASSERT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, false));
 
   server_thread.join();
   ASSERT_FALSE(future.get());
+}
+
+TEST(bsock, bsock_auth_works_with_tls_psk)
+{
+  port++;
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
+                            HOST, port, true);
+
+  Dmsg0(10, "connecting to server\n");
+  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, true));
+
+  server_thread.join();
+  ASSERT_TRUE(future.get());
 }
