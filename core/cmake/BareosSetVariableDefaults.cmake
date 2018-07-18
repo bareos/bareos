@@ -252,8 +252,8 @@ ENDIF()
 
 # lockmgr
 IF(NOT DEFINED lockmgr)
-   SET(lockmgr ON)
-   set(LOCKMGR 1)
+   SET(lockmgr OFF)
+   set(LOCKMGR 0)
 ENDIF()
 
 # smartalloc
