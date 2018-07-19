@@ -10,8 +10,8 @@ update-po: $(PO)
 
 update-all: webui.pot
 	@(echo 'Updating all *.po files ...';)
-	@(for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE ru_RU sk_SK tr_TR; do msgmerge --backup=none -U $$i.po $< && touch $$i.po; done;)
+	@(for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pt_BR ru_RU sk_SK tr_TR; do msgmerge --backup=none -U $$i.po $< && touch $$i.po; done;)
 
 msgfmt-all: webui.pot
 	@(echo 'Generating all *.mo files ...';)
-	@(for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE ru_RU sk_SK tr_TR; do msgfmt $$i.po --output-file=$$i.mo; done;)
+	@(for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pt_BR ru_RU sk_SK tr_TR; do msgfmt $$i.po --output-file=$$i.mo; done;)
