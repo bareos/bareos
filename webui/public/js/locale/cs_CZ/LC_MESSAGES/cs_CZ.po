@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-07-04 16:00+0200\n"
+"POT-Creation-Date: 2018-07-19 14:29+0200\n"
 "PO-Revision-Date: 2017-07-08 19:51+0200\n"
 "Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>\n"
 "Language-Team: \n"
@@ -18,324 +18,324 @@ msgstr ""
 "X-Generator: Poedit 1.8.7.1\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: ../../js/custom-functions.js:97
+#: ../../js/custom-functions.js:101
 msgid "Backup"
 msgstr "Záloha"
 
-#: ../../js/custom-functions.js:100
+#: ../../js/custom-functions.js:104
 msgid "Migrated"
 msgstr "Přestěhováno"
 
-#: ../../js/custom-functions.js:103
+#: ../../js/custom-functions.js:107
 msgid "Verify"
 msgstr "Ověřit"
 
-#: ../../js/custom-functions.js:106
+#: ../../js/custom-functions.js:110
 msgid "Restore"
 msgstr "Obnovit"
 
-#: ../../js/custom-functions.js:109
+#: ../../js/custom-functions.js:113
 msgid "Console program"
 msgstr "Konzolový program"
 
-#: ../../js/custom-functions.js:112
+#: ../../js/custom-functions.js:116
 msgid "Internal system job"
 msgstr "Vnitřní systémová úloha"
 
-#: ../../js/custom-functions.js:115
+#: ../../js/custom-functions.js:119
 msgid "Admin"
 msgstr "Správce"
 
-#: ../../js/custom-functions.js:118
+#: ../../js/custom-functions.js:122
 msgid "Archive"
 msgstr "Archiv"
 
-#: ../../js/custom-functions.js:121
+#: ../../js/custom-functions.js:125
 msgid "Copy of a job"
 msgstr "Kopie úlohy"
 
-#: ../../js/custom-functions.js:124
+#: ../../js/custom-functions.js:128
 msgid "Copy job"
 msgstr "Zkopírovat úlohu"
 
-#: ../../js/custom-functions.js:127
+#: ../../js/custom-functions.js:131
 msgid "Migration job"
 msgstr "Stěhovací úloha"
 
-#: ../../js/custom-functions.js:130
+#: ../../js/custom-functions.js:134
 msgid "Scan"
 msgstr "Prohledat"
 
-#: ../../js/custom-functions.js:133
+#: ../../js/custom-functions.js:137
 msgid "Consolidate"
 msgstr "Sjednotit"
 
-#: ../../js/custom-functions.js:145 ../../js/custom-functions.js:193
-#: ../../js/custom-functions.js:223
+#: ../../js/custom-functions.js:149 ../../js/custom-functions.js:197
+#: ../../js/custom-functions.js:227
 msgid "Full"
 msgstr "Úplná"
 
-#: ../../js/custom-functions.js:147
+#: ../../js/custom-functions.js:151
 msgid "Differential"
 msgstr "Rozdílová"
 
-#: ../../js/custom-functions.js:149
+#: ../../js/custom-functions.js:153
 msgid "Incremental"
 msgstr "Přírůstková"
 
-#: ../../js/custom-functions.js:151
+#: ../../js/custom-functions.js:155
 msgid "VirtualFull"
 msgstr "Virtuální úplná"
 
-#: ../../js/custom-functions.js:153
+#: ../../js/custom-functions.js:157
 msgid "Base"
 msgstr "Základ"
 
-#: ../../js/custom-functions.js:155
+#: ../../js/custom-functions.js:159
 msgid "Catalog"
 msgstr "Katalog"
 
-#: ../../js/custom-functions.js:157
+#: ../../js/custom-functions.js:161
 msgid "InitCatalog"
 msgstr "Inicializovat katalog"
 
-#: ../../js/custom-functions.js:159
+#: ../../js/custom-functions.js:163
 msgid "VolumeToCatalog"
 msgstr "Svazek na katalog"
 
-#: ../../js/custom-functions.js:161
+#: ../../js/custom-functions.js:165
 msgid "DiskToCatalog"
 msgstr "Jednotka datového úložiště na katalog"
 
-#: ../../js/custom-functions.js:163
+#: ../../js/custom-functions.js:167
 msgid "Data"
 msgstr "Data"
 
-#: ../../js/custom-functions.js:165
+#: ../../js/custom-functions.js:169
 msgid "None"
 msgstr "Žádné"
 
-#: ../../js/custom-functions.js:173
+#: ../../js/custom-functions.js:177
 msgid "year(s)"
 msgstr "let"
 
-#: ../../js/custom-functions.js:176
+#: ../../js/custom-functions.js:180
 msgid "month(s)"
 msgstr "měsíců"
 
-#: ../../js/custom-functions.js:179
+#: ../../js/custom-functions.js:183
 msgid "day(s)"
 msgstr "dnů"
 
-#: ../../js/custom-functions.js:182
+#: ../../js/custom-functions.js:186
 msgid "hour(s)"
 msgstr "hodin"
 
-#: ../../js/custom-functions.js:185
+#: ../../js/custom-functions.js:189
 msgid "second(s)"
 msgstr "sekund"
 
-#: ../../js/custom-functions.js:193 ../../js/custom-functions.js:223
+#: ../../js/custom-functions.js:197 ../../js/custom-functions.js:227
 msgid "Used"
 msgstr "Využito"
 
-#: ../../js/custom-functions.js:205
+#: ../../js/custom-functions.js:209
 msgid "expired"
 msgstr "platnost skončila"
 
-#: ../../js/custom-functions.js:209
+#: ../../js/custom-functions.js:213
 msgid "expires in 1 day"
 msgstr "platnost skončí za 1 den"
 
-#: ../../js/custom-functions.js:213
+#: ../../js/custom-functions.js:217
 msgid "expires in"
 msgstr "platnost skončí za"
 
-#: ../../js/custom-functions.js:213
+#: ../../js/custom-functions.js:217
 msgid "days"
 msgstr "dny"
 
-#: ../../js/custom-functions.js:249
+#: ../../js/custom-functions.js:253
 msgid "never"
 msgstr "nikdy"
 
-#: ../../js/custom-functions.js:258
+#: ../../js/custom-functions.js:262
 msgid "today"
 msgstr "dnes"
 
-#: ../../js/custom-functions.js:261
+#: ../../js/custom-functions.js:265
 msgid "day(s) ago"
 msgstr "dny předtím"
 
-#: ../../js/custom-functions.js:264
+#: ../../js/custom-functions.js:268
 msgid "month(s) ago"
 msgstr "měsíce předtím"
 
-#: ../../js/custom-functions.js:267
+#: ../../js/custom-functions.js:271
 msgid "year(s) ago"
 msgstr "roky předtím"
 
-#: ../../js/custom-functions.js:300
+#: ../../js/custom-functions.js:304
 msgid "enabled"
 msgstr "zapnuto"
 
-#: ../../js/custom-functions.js:303
+#: ../../js/custom-functions.js:307
 msgid "disabled"
 msgstr "vypnuto"
 
-#: ../../js/custom-functions.js:311
+#: ../../js/custom-functions.js:315
 msgid "Yes"
 msgstr "Ano"
 
-#: ../../js/custom-functions.js:314
+#: ../../js/custom-functions.js:318
 msgid "No"
 msgstr "Ne"
 
-#: ../../js/custom-functions.js:324
+#: ../../js/custom-functions.js:328
 msgid "Non-fatal error"
 msgstr ""
 
-#: ../../js/custom-functions.js:325 ../../js/custom-functions.js:330
-#: ../../js/custom-functions.js:335
+#: ../../js/custom-functions.js:329 ../../js/custom-functions.js:334
+#: ../../js/custom-functions.js:339
 msgid "Failure"
 msgstr "Nezdar"
 
-#: ../../js/custom-functions.js:329
+#: ../../js/custom-functions.js:333
 msgid "Job terminated in error"
 msgstr ""
 
-#: ../../js/custom-functions.js:334
+#: ../../js/custom-functions.js:338
 msgid "Fatal error"
 msgstr ""
 
-#: ../../js/custom-functions.js:339
+#: ../../js/custom-functions.js:343
 msgid "Terminated normally"
 msgstr ""
 
-#: ../../js/custom-functions.js:340
+#: ../../js/custom-functions.js:344
 msgid "Success"
 msgstr "Úspěch"
 
-#: ../../js/custom-functions.js:344 ../../js/custom-functions.js:345
+#: ../../js/custom-functions.js:348 ../../js/custom-functions.js:349
 msgid "Running"
 msgstr "Spuštěné"
 
-#: ../../js/custom-functions.js:349
+#: ../../js/custom-functions.js:353
 msgid "Created but not yet running"
 msgstr ""
 
-#: ../../js/custom-functions.js:350
+#: ../../js/custom-functions.js:354
 msgid "Queued"
 msgstr "Zařazeno do fronty"
 
-#: ../../js/custom-functions.js:354 ../../js/custom-functions.js:355
+#: ../../js/custom-functions.js:358 ../../js/custom-functions.js:359
 msgid "Blocked"
 msgstr "Blokováno"
 
-#: ../../js/custom-functions.js:359
+#: ../../js/custom-functions.js:363
 #, fuzzy
 msgid "Verify differences"
 msgstr "Ověřit nalezené rozdíly"
 
-#: ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364
 msgid "Verify found differences"
 msgstr "Ověřit nalezené rozdíly"
 
-#: ../../js/custom-functions.js:364
+#: ../../js/custom-functions.js:368
 #, fuzzy
 msgid "Canceled by user"
 msgstr "Zrušeno"
 
-#: ../../js/custom-functions.js:365
+#: ../../js/custom-functions.js:369
 msgid "Canceled"
 msgstr "Zrušeno"
 
-#: ../../js/custom-functions.js:369
+#: ../../js/custom-functions.js:373
 msgid "Waiting on File daemon"
 msgstr ""
 
-#: ../../js/custom-functions.js:370 ../../js/custom-functions.js:375
-#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:385
-#: ../../js/custom-functions.js:390 ../../js/custom-functions.js:395
-#: ../../js/custom-functions.js:400 ../../js/custom-functions.js:405
-#: ../../js/custom-functions.js:410 ../../js/custom-functions.js:415
+#: ../../js/custom-functions.js:374 ../../js/custom-functions.js:379
+#: ../../js/custom-functions.js:384 ../../js/custom-functions.js:389
+#: ../../js/custom-functions.js:394 ../../js/custom-functions.js:399
+#: ../../js/custom-functions.js:404 ../../js/custom-functions.js:409
+#: ../../js/custom-functions.js:414 ../../js/custom-functions.js:419
 msgid "Waiting"
 msgstr "Čekající"
 
-#: ../../js/custom-functions.js:374
+#: ../../js/custom-functions.js:378
 msgid "Waiting on the Storage daemon"
 msgstr ""
 
-#: ../../js/custom-functions.js:379
+#: ../../js/custom-functions.js:383
 msgid "Waiting for new media"
 msgstr ""
 
-#: ../../js/custom-functions.js:384
+#: ../../js/custom-functions.js:388
 msgid "Waiting for Mount"
 msgstr ""
 
-#: ../../js/custom-functions.js:389
+#: ../../js/custom-functions.js:393
 msgid "Waiting for storage resource"
 msgstr ""
 
-#: ../../js/custom-functions.js:394
+#: ../../js/custom-functions.js:398
 msgid "Waiting for job resource"
 msgstr ""
 
-#: ../../js/custom-functions.js:399
+#: ../../js/custom-functions.js:403
 msgid "Waiting for Client resource"
 msgstr ""
 
-#: ../../js/custom-functions.js:404
+#: ../../js/custom-functions.js:408
 msgid "Waiting for maximum jobs"
 msgstr ""
 
-#: ../../js/custom-functions.js:409
+#: ../../js/custom-functions.js:413
 msgid "Waiting for start time"
 msgstr ""
 
-#: ../../js/custom-functions.js:414
+#: ../../js/custom-functions.js:418
 msgid "Waiting for higher priority jobs to finish"
 msgstr ""
 
-#: ../../js/custom-functions.js:419 ../../js/custom-functions.js:420
+#: ../../js/custom-functions.js:423 ../../js/custom-functions.js:424
 msgid "SD despooling attributes"
 msgstr "Atributy úložného procesu vybírání z fronty"
 
-#: ../../js/custom-functions.js:424 ../../js/custom-functions.js:425
+#: ../../js/custom-functions.js:428 ../../js/custom-functions.js:429
 msgid "Doing batch insert file records"
 msgstr "Dávkové vkládání souborových záznamů"
 
-#: ../../js/custom-functions.js:429
+#: ../../js/custom-functions.js:433
 #, fuzzy
 msgid "Incomplete Job"
 msgstr "Neúplné"
 
-#: ../../js/custom-functions.js:430
+#: ../../js/custom-functions.js:434
 msgid "Incomplete"
 msgstr "Neúplné"
 
-#: ../../js/custom-functions.js:434
+#: ../../js/custom-functions.js:438
 #, fuzzy
 msgid "Committing data (last despool)"
 msgstr "Odesílání dat"
 
-#: ../../js/custom-functions.js:435
+#: ../../js/custom-functions.js:439
 msgid "Committing data"
 msgstr "Odesílání dat"
 
-#: ../../js/custom-functions.js:439
+#: ../../js/custom-functions.js:443
 msgid "Terminated normally with warnings"
 msgstr ""
 
-#: ../../js/custom-functions.js:440
+#: ../../js/custom-functions.js:444
 msgid "Warning"
 msgstr "Varování"
 
-#: ../../js/custom-functions.js:444 ../../js/custom-functions.js:445
+#: ../../js/custom-functions.js:448 ../../js/custom-functions.js:449
 msgid "Doing data despooling"
 msgstr "Vybírání dat z fronty"
 
-#: ../../js/custom-functions.js:449 ../../js/custom-functions.js:450
+#: ../../js/custom-functions.js:453 ../../js/custom-functions.js:454
 msgid "Queued waiting for device"
 msgstr "Čekání na zařízení zařazeno do fronty"
