@@ -49,5 +49,5 @@ then
 	export BAREOS_CLIENT_NAME=$HOSTNAME-fd
 	echo "--------- testing webui over selenium -----------"
 	echo "configure add console name=citest password=citestpass profile=webui-admin" | bconsole
-	python /home/travis/build/thraizz/bareos/webui/tests/selenium/webui-selenium-test.py -v
+	python ${TRAVIS_BUILD_DIR}/webui/tests/selenium/webui-selenium-test.py -v
 fi

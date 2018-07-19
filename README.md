@@ -1,6 +1,7 @@
 # <img src="https://raw.githubusercontent.com/bareos/bareos/master/webui/public/img/bareos.png" alt="Bareos" />
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)<br><a href="https://www.saucelabs.com/"> <img src="http://info.saucelabs.com/rs/468-XBT-687/images/Powered+by+Sauce+Labs+badges+white.svg" alt="Saucelabs"  width="90px"/></a>
 
 ### Bareos
 
@@ -49,3 +50,5 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 
   * [http://download.bareos.org](http://download.bareos.org)
 
+### Sponsors
+<a href="https://www.saucelabs.com/"> <img src="http://info.saucelabs.com/rs/468-XBT-687/images/Powered+by+Sauce+Labs+badges+white.svg" alt="Saucelabs"  width="400px"/></a>

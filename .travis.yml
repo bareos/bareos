@@ -40,9 +40,6 @@ matrix:
     - env: DB=postgresql BUILD_WEBUI=true
       addons:
         sauce_connect: true
-        apt:
-          packages:
-            - libjansson-dev
     - env: DB=postgresql
       compiler: clang
   allow_failures:

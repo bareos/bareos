@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt-get -qq update
-sudo pip install selenium sauceclient
+sudo pip install sauceclient selenium
 cd core
 dpkg-checkbuilddeps 2> /tmp/dpkg-builddeps || true
 if [ $BUILD_WEBUI ]
