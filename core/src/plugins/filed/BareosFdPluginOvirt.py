@@ -123,16 +123,18 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
             # disk file
             disk = self.backup_obj['disk']
+            # snapshot
+            snapshot = self.backup_obj['snapshot']
 
             bareosfd.DebugMessage(
                 context, 100,
                 "BareosFdPluginOvirt:start_backup_file() backup disk file '%s' of VM '%s'\n" % (disk.alias,self.backup_obj['vmname']))
 
             savepkt.type = bFileType['FT_REG']
-            savepkt.fname = "/VMS/%s-%s/%s-%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],disk.alias,disk.image_id)
+            savepkt.fname = "/VMS/%s-%s/%s-%s/%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],disk.alias,disk.id,snapshot.id)
 
             try:
-                self.ovirt.start_download(context, self.backup_obj['snapshot'], disk)
+                self.ovirt.start_download(context, snapshot, disk)
             except Exception as e:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_ERROR'],
@@ -638,17 +640,18 @@ class BareosOvirtWrapper(object):
             all_disk_snapshots = disk_snapshot_service.list()
 
             # Filter disk snapshots list by disk id
-            disk_snapshots = [s for s in all_disk_snapshots if s.disk.id == disk_id and s.snapshot.id == snap.id]
+            disk_snapshots = [s for s in all_disk_snapshots if s.disk.id == disk_id]
 
             # Download disk snapshot
             if len(disk_snapshots) > 0:
-                self.backup_objects.append(
-                    {
-                        'vmname': self.vm.name,
-                        'vmid': self.vm.id,
-                        'snapshot': disk_snapshots[0],
-                        'disk': snap_disk
-                    })
+                for disk_snapshot in disk_snapshots:
+                    self.backup_objects.append(
+                        {
+                            'vmname': self.vm.name,
+                            'vmid': self.vm.id,
+                            'snapshot': disk_snapshot,
+                            'disk': snap_disk
+                        })
                 has_disks = True
         return has_disks
 
@@ -834,7 +837,7 @@ class BareosOvirtWrapper(object):
             disk_format = types.DiskFormat.RAW
 
         disk = None
-        if 'storage_domain' not in options:
+        if 'storage_domain' not in self.options:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "No storage domain specified.\n" )
@@ -888,6 +891,7 @@ class BareosOvirtWrapper(object):
             self.ovf_data = str(chunk)
         else:
             self.ovf_data = self.ovf_data . str(chunk)
+
     def process_upload(self,context, chunk):
 
         bareosfd.DebugMessage(
