@@ -743,12 +743,12 @@ cmake  .. \
   -Darchivedir=/var/lib/%{name}/storage \
   -Dbackenddir=%{backend_dir} \
   -Dscriptdir=%{script_dir} \
-  -Dworking-dir=%{working_dir} \
+  -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
-  -Dpid-dir=%{pid_dir} \
+  -Dpiddir=%{pid_dir} \
   -Dbsrdir=%{bsr_dir} \
   -Dlogdir=/var/log/bareos \
-  -Dsubsys-dir=%{_subsysdir} \
+  -Dsubsysdir=%{_subsysdir} \
 %if 0%{?python_plugins}
   -Dpython=yes \
 %endif

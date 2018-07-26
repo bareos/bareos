@@ -37,11 +37,11 @@ define CONFIGURE_COMMON
   -Dconfigtemplatedir=/usr/lib/bareos/defaultconfigs \
   -Dscriptdir=/usr/lib/bareos/scripts \
   -Dplugindir=/usr/lib/bareos/plugins \
-  -Dworking-dir=/var/lib/bareos \
-  -Dpid-dir=/var/lib/bareos \
+  -Dworkingdir=/var/lib/bareos \
+  -Dpiddir=/var/lib/bareos \
   -Dbsrdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
-  -Dsubsys-dir=/var/lock \
+  -Dsubsysdir=/var/lock \
   -Dsmartalloc=yes \
   -Ddisable-conio=yes \
   -Dreadline=yes \
