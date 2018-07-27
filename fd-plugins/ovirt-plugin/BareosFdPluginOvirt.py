@@ -128,7 +128,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
             bareosfd.DebugMessage(
                 context, 100,
-                "BareosFdPluginOvirt:start_backup_file() backup disk file '%s' of VM '%s'\n" % (disk.alias,self.backup_obj['vmname']))
+                "BareosFdPluginOvirt:start_backup_file() backup disk file '%s'('%s'/'%s') of VM '%s'\n" % (disk.alias,disk.id,snapshot.id,self.backup_obj['vmname']))
 
             savepkt.type = bFileType['FT_REG']
             savepkt.fname = "/VMS/%s-%s/%s-%s/%s" % (self.backup_obj['vmname'],self.backup_obj['vmid'],disk.alias,disk.id,snapshot.id)
@@ -181,9 +181,8 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if not restorepkt.ofname.endswith('.ovf'):
             FNAME = restorepkt.ofname
-            basename = os.path.basename(FNAME)
 
-            disk = self.ovirt.get_vm_disk_by_basename(context, basename)
+            disk = self.ovirt.get_vm_disk_by_basename(context, FNAME)
             if disk is None:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_ERROR'],
@@ -787,6 +786,28 @@ class BareosOvirtWrapper(object):
             # Parse the OVF as XML document:
             self.ovf = lxml.etree.fromstring(self.ovf_data)
 
+            bareosfd.DebugMessage(context, 200, "prepare_vm_restore(): %s\n" % (self.ovf))
+
+            # Find the file references:
+            file_references = self.ovf.xpath(
+                '/ovf:Envelope/References/File',
+                namespaces=OVF_NAMESPACES
+            )
+
+            def get_file_reference(fileref):
+                found = None
+                i = 0
+                while i<len(file_references) and found is None:
+                    obj = file_references[i]
+                    khref = '{%s}href' % OVF_NAMESPACES['ovf']
+                    if obj.get(khref) == fileref:
+                        found = {}
+                        for key, value in obj.items():
+                            key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
+                            found[key] = value
+                    i += 1
+                return found
+
             # Find the disks section:
             disk_elements = self.ovf.xpath(
                 '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
@@ -796,7 +817,6 @@ class BareosOvirtWrapper(object):
             if self.restore_objects is None:
                 self.restore_objects = []
 
-            bareosfd.DebugMessage(context, 200, "prepare_vm_restore(): %s %s\n" % (disk_elements,self.ovf))
             for disk_element in disk_elements:
                 # Get disk properties:
                 props = {}
@@ -804,69 +824,123 @@ class BareosOvirtWrapper(object):
                     key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
                     props[key] = value
 
-                props['storage_domain'] = options['storage_domain']
                 self.restore_objects.append(
                     {
-                        'disk': props
+                        'disk': props,
+                        'disk-id': os.path.dirname(props['fileRef']),
+                        'storage_domain': options['storage_domain'],
+                        'file': get_file_reference(props['fileRef'])
                     })
         return bRCs['bRC_OK']
 
-    def get_vm_disk_by_basename(self, context, basename):
-        disk = None
+    def get_vm_disk_by_basename(self, context, fname):
+
+        dirpath = os.path.dirname(fname)
+        dirname = os.path.basename(dirpath)
+        basename = os.path.basename(fname)
+        relname = "%s/%s" % (dirname,basename)
+
+        found = None
         bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): %s %s\n" % (basename,self.restore_objects))
         if self.restore_objects is not None:
             i = 0
-            while i<len(self.restore_objects) and disk is None:
+            while i<len(self.restore_objects) and found is None:
                 obj = self.restore_objects[i]
-                key = "%s-%s" % (obj['disk']['disk-alias'],obj['disk']['diskId'])
+                key = "%s-%s" % (obj['disk']['disk-alias'],obj['disk']['fileRef'])
                 bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): lookup %s == %s\n" % (basename,key))
-                if basename == key:
-                    disk = self.create_vm_disk(context,obj)
+                if relname == key and basename == obj['disk']['diskId']:
+                    disk = self.get_or_add_vm_disk(context, obj)
+                    if disk is not None:
+                        snapshot = self.create_disk_snapshot(obj)
+                        if snapshot is not None:
+                            found = obj
                 i += 1
-        bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): found disk %s\n" % (disk))
-        return disk
+        bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): found disk %s\n" % (found))
+        return found 
 
-    def create_vm_disk(self,context,props):
+    def create_disk_snapshot(self, context, obj):
+
+        # Get a reference to the storage domains service:
+        storage_domains_service = self.system_service.storage_domains_service()
+
+        # Get a reference to the storage domain service in which the disk snapshots reside:
+        storage_domain_service = storage_domains_service.storage_domain_service(obj['storage_domain'])
+
+        # Get a reference to the disk snapshots service:
+        snapshots_service = storage_domain_service.disk_snapshots_service()
+
+        # Add the new snapshot:
+        snapshot = snapshots_service.add(
+            types.Snapshot(
+                description=obj['file']['description'],
+                disk_attachments=[
+                    types.DiskAttachment(
+                        disk=types.Disk(
+                            id=obj['disk-id'],
+                            image_id=obj['disk']['diskId']
+                        )
+                    )
+                ]
+            ),
+        )
+
+        # 'Waiting for Snapshot creation to finish'
+        snapshot_service = snapshots_service.snapshot_service(snapshot.id)
+        while True:
+            time.sleep(5)
+            snapshot = snapshot_service.get()
+            if snapshot.snapshot_status == types.SnapshotStatus.OK:
+                break
+
+        return snapshot
+
+    def get_or_add_vm_disk(self,context, obj):
         # Create the disks:
         disks_service = self.system_service.disks_service()
 
                 # Determine the volume format
-        if props['volume-format'] == 'COW':
+        if obj['disk']['volume-format'] == 'COW':
             disk_format = types.DiskFormat.COW
         else:
             disk_format = types.DiskFormat.RAW
 
         disk = None
-        if 'storage_domain' not in self.options:
+        if 'storage_domain' not in obj:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "No storage domain specified.\n" )
         else:
-            disk = disks_service.add(
-                disk=types.Disk(
-                    id=props['diskId'],
-                    name=props['disk-alias'],
-                    description=props['description'],
-                    format=disk_format,
-                    provisioned_size=int(props['capacity']) * 2**30,
-                    initial_size=int(props['populatedSize']),
-                    storage_domains=[
-                        types.StorageDomain(
-                            name=props['storage_domain']
-                        )
-                    ]
+
+            # Find the disk we want to download by the id:
+            disk_service = disks_service.disk_service(obj['disk-id'])
+            if disk_service:
+                disk = disk_service.get()
+            else:
+                disk = disks_service.add(
+                    disk=types.Disk(
+                        id=obj['disk-id'],
+                        name=obj['disk']['disk-alias'],
+                        description=obj['file']['description'],
+                        format=disk_format,
+                        provisioned_size=int(obj['disk']['size']) * 2**30,
+                        initial_size=int(obj['disk']['actual_size']),
+                        storage_domains=[
+                            types.StorageDomain(
+                                name=obj['storage_domain']
+                            )
+                        ]
+                    )
                 )
-            )
         return disk
 
 
-    def start_upload(self, context, disk):
+    def start_upload(self, context, obj):
 
         bareosfd.JobMessage(
             context, bJobMessageType['M_INFO'],
-                "Uploading disk '%s'('%s')" % (disk.alias,disk.id))
+                "Uploading disk '%s'('%s')" % (obj['disk']['disk-alias'],obj['file']['id']))
 
-        self.transfer_service = self.get_transfer_service(disk.id, types.ImageTransferDirection.UPLOAD)
+        self.transfer_service = self.get_transfer_service(obj['file']['id'], types.ImageTransferDirection.UPLOAD)
         transfer = self.transfer_service.get()
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
@@ -875,7 +949,7 @@ class BareosOvirtWrapper(object):
         self.proxy_connection.putrequest("PUT", proxy_url.path)
         self.proxy_connection.putheader('Authorization', transfer.signed_ticket)
 
-        self.bytes_to_transf = disk.size
+        self.bytes_to_transf = obj['file']['size']
 
         content_range = "bytes %d-%d/%d" % (0, self.bytes_to_transf - 1, self.bytes_to_transf)
         self.proxy_connection.putheader('Content-Range', content_range)
