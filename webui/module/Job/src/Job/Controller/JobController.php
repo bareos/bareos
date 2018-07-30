@@ -359,7 +359,8 @@ class JobController extends AbstractActionController
                $this->bsock->disconnect();
                $s = strrpos($result, "=") + 1;
                $jobid = rtrim( substr( $result, $s ) );
-               return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $jobid));
+	       preg_match("'\d{1,99}(?=%)?'", $jobid, $filtered);
+               return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $filtered[0]));
             }
             catch(Exception $e) {
                echo $e->getMessage();
