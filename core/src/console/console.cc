@@ -1072,49 +1072,6 @@ try_again:
    return 1;
 }
 
-/**
- * Callback calling director console connection
-*/
-static int dir_psk_client_callback(char *identity,
-                                   unsigned int max_identity_len,
-                                   unsigned char *psk,
-                                   unsigned int max_psk_len) {
-
-   Dmsg0(100, "dir_psk_client_callback");
-
-   int result = 0;
-
-   if (NULL != dir && NULL != dir->password.value) {
-      if (p_encoding_clear == dir->password.encoding) {
-         /* plain password */
-      } else if (p_encoding_md5 == dir->password.encoding) {
-         /* md5 string */
-         /* convert the PSK key to binary */
-         result = hex2bin(dir->password.value, psk, max_psk_len);
-      } else {
-         /* hex password encoding? */
-      }
-   } else {
-      Dmsg0(100, "Passowrd not set in Director Config\n");
-      result = 0;
-   }
-
-   if (result == 0 || result > (int)max_psk_len) {
-      Dmsg1(100, "Error, Could not convert PSK key '%s' to binary key\n", dir->password.value);
-      result = 0;
-   } else {
-      static char *psk_identity = (char *)"Nasenbaer";
-
-      int ret = Bsnprintf(identity, max_identity_len, "%s", psk_identity);
-      if (ret < 0 || (unsigned int)ret > max_identity_len) {
-         Dmsg0(100, "Error, psk_identify too long\n");
-         result = 0;
-      }
-   }
-
-   return result;
-}
-
 /*
  * Main Bareos Console -- User Interface Program
  */
