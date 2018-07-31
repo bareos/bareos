@@ -47,7 +47,6 @@
  */
 #define TLS_DEFAULT_CIPHERS "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
 
-
 static std::map<SSL_CTX *, sharedPskCredentials> psk_server_credentials;
 static std::map<SSL_CTX *, sharedPskCredentials> psk_client_credentials;
 
@@ -303,7 +302,7 @@ std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
 {
    Dmsg1(50, "Preparing TLS_PSK client context for identity %s\n", credentials->get_identity().c_str());
    std::shared_ptr<TLS_CONTEXT> tls_context = new_tls_psk_context(cipherlist);
-   if (NULL != credentials) {
+   if (credentials) {
       psk_client_credentials[tls_context->openssl] = credentials;
       SSL_CTX_set_psk_client_callback(tls_context->openssl, psk_client_cb);
    }
@@ -681,7 +680,7 @@ void FreeTlsConnection(TLS_CONNECTION *tls_conn)
    }
 }
 
-static inline bool OpensslBsockSessionStart(BareosSocket *bsock, bool server)
+static bool OpensslBsockSessionStart(BareosSocket *bsock, bool server)
 {
    TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
    int err;
@@ -796,7 +795,7 @@ void TlsBsockShutdown(BareosSocket *bsock)
    }
 }
 
-static inline int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
+static int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
     TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
    int flags;
