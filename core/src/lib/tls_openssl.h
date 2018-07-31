@@ -48,7 +48,7 @@ DLL_IMP_EXP bool GetTlsVerifyPeer(TLS_CONTEXT *ctx);
 DLL_IMP_EXP bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
                                     uint32_t local,   uint32_t *remote);
 DLL_IMP_EXP std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
-                             const char *crlfile, const char *certfile,
+                             const char *certfile,
                              const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata, const char *dhfile,

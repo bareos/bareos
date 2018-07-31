@@ -34,12 +34,10 @@ uint32_t TlsConfigCert::GetPolicy() const
    return result << TlsConfigCert::policy_offset;
 }
 
-
 std::shared_ptr<TLS_CONTEXT> TlsConfigCert::CreateClientContext() const
 {
    return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
                           (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
-                          (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
                           (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
                           (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
                           TlsPemCallback,
@@ -53,7 +51,6 @@ std::shared_ptr<TLS_CONTEXT> TlsConfigCert::CreateServerContext() const
 {
    return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
                           (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
-                          (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
                           (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
                           (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
                           TlsPemCallback,

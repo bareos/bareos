@@ -103,7 +103,6 @@ TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
  */
 TLS_CONTEXT *new_tls_context(const char *CaCertfile,
                              const char *CaCertdir,
-                             const char *crlfile,
                              const char *certfile,
                              const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
@@ -166,26 +165,6 @@ TLS_CONTEXT *new_tls_context(const char *CaCertfile,
       Jmsg0(NULL, M_ERROR, 0,
             _("Certificate file must be specified as a verification store\n"));
       goto bail_out;
-   }
-
-   /*
-    * Try to load the revocation list file, first in PEM format and if that fails in DER format.
-    */
-   if (crlfile) {
-      error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred,
-                                                   crlfile,
-                                                   GNUTLS_X509_FMT_PEM);
-      if (error < GNUTLS_E_SUCCESS) {
-         error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred,
-                                                      crlfile,
-                                                      GNUTLS_X509_FMT_DER);
-         if (error < GNUTLS_E_SUCCESS) {
-            Jmsg1(NULL, M_ERROR, 0,
-                  _("Error loading certificate revocation list from %s\n"),
-                  crlfile);
-            goto bail_out;
-         }
-      }
    }
 
    /*

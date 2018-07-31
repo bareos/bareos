@@ -28,7 +28,6 @@ public:
    bool VerifyPeer;           /* TLS Verify Peer Certificate */
    std::string *CaCertfile;   /* TLS CA Certificate File */
    std::string *CaCertdir;    /* TLS CA Certificate Directory */
-   std::string *crlfile;      /* TLS CA Certificate Revocation List File */
    std::string *certfile;     /* TLS Client Certificate File */
    std::string *keyfile;      /* TLS Client Key File */
    std::string *cipherlist;   /* TLS Cipher List */
@@ -39,7 +38,7 @@ public:
 
    TlsConfigCert()
       : TlsConfigBase(), authenticate(false), VerifyPeer(0),
-        CaCertfile(nullptr), CaCertdir(nullptr), crlfile(nullptr), certfile(nullptr),
+        CaCertfile(nullptr), CaCertdir(nullptr), certfile(nullptr),
         keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), AllowedCns(nullptr),
         pem_message(nullptr) {}
    ~TlsConfigCert();
