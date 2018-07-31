@@ -340,8 +340,8 @@ public:
 class TlsResource : public BareosResource {
  public:
    s_password password; /* UA server password */
-   TlsCert tls_cert; /* TLS structure */
-   TlsPsk tls_psk;   /* TLS-PSK structure */
+   TlsConfigCert tls_cert; /* TLS structure */
+   TlsConfigPsk tls_psk;   /* TLS-PSK structure */
 };
 
 /*

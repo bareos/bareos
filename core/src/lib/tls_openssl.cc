@@ -30,7 +30,8 @@
 #include "lib/bpoll.h"
 #include <assert.h>
 
-static inline int cval(char c) {
+static inline int cval(char c)
+{
    if (c >= 'a')
       return c - 'a' + 0x0a;
    if (c >= 'A')
@@ -39,7 +40,8 @@ static inline int cval(char c) {
 }
 
 /* return value: number of bytes in out, <=0 if error */
-int hex2bin(char *str, unsigned char *out, unsigned int max_out_len) {
+int hex2bin(char *str, unsigned char *out, unsigned int max_out_len)
+{
    unsigned int i;
    for (i = 0; str[i] && str[i + 1] && i < max_out_len * 2; i += 2) {
       if (!isxdigit(str[i]) && !isxdigit(str[i + 1])) {
@@ -86,16 +88,20 @@ static std::map<SSL_CTX *, sharedPskCredentials> psk_client_credentials;
 /*
  * TLS Context Structures
  */
-class TlsContext {
- public:
-   SSL_CTX *openssl;
+class TlsContext
+{
+public:
+   SSL_CTX              *openssl;
    CRYPTO_PEM_PASSWD_CB *pem_callback;
-   const void *pem_userdata;
-   TlsContext() : openssl(nullptr), pem_callback(nullptr), pem_userdata(nullptr) {
-    Dmsg0(100, "Construct TlsContext\n");
+   const void           *pem_userdata;
+
+   TlsContext() : openssl(nullptr), pem_callback(nullptr), pem_userdata(nullptr)
+   {
+      Dmsg0(100, "Construct TlsContext\n");
    }
 
-   ~TlsContext() {
+   ~TlsContext()
+   {
       Dmsg0(100, "Destruct TlsContext\n");
       if (openssl != nullptr) {
          try {
@@ -113,25 +119,34 @@ class TlsContext {
    }
 };
 
-class TlsConnection {
+typedef unsigned int (*psk_client_callback_t)(SSL *ssl,
+                                              const char *hint,
+                                              char *identity,
+                                              unsigned int max_identity_len,
+                                              unsigned char *psk,
+                                              unsigned int max_psk_len);
+
+typedef unsigned int (*psk_server_callback_t)(SSL *ssl,
+                                              const char *identity,
+                                              unsigned char *psk,
+                                              unsigned int max_psk_len);
+
+class TlsConnection
+{
    std::shared_ptr<TlsContext> tls_ctx_;
    SSL *openssl_;
 
- public:
+public:
    std::shared_ptr<TlsContext> GetTls() { return tls_ctx_; }
    SSL *GetSsl() { return openssl_; }
 
    TlsConnection(std::shared_ptr<TlsContext> tls_ctx,
-                  int fd,
-                  unsigned int (*psk_client_callback)(SSL *ssl,
-                                                      const char *hint,
-                                                      char *identity,
-                                                      unsigned int max_identity_len,
-                                                      unsigned char *psk,
-                                                      unsigned int max_psk_len),
-                  unsigned int (*psk_server_callback)(
-                      SSL *ssl, const char *identity, unsigned char *psk, unsigned int max_psk_len))
-       : tls_ctx_(tls_ctx), openssl_(nullptr) {
+                 int fd,
+                 psk_client_callback_t psk_client_callback,
+                 psk_server_callback_t psk_server_callback )
+   : tls_ctx_(tls_ctx)
+   , openssl_(nullptr)
+   {
       /*
        * Create a new BIO and assign the fd.
        * The caller will remain responsible for closing the associated fd
@@ -173,7 +188,8 @@ class TlsConnection {
 };
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-struct TlsCrlReloadContext {
+struct TlsCrlReloadContext
+{
    time_t mtime;
    char *crl_file_name;
    X509_CRL *crls[MAX_CRLS];
@@ -474,7 +490,8 @@ static int OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
  * Dispatch user PEM encryption callbacks
  */
 static int tls_pem_callback_dispatch(char *buf, int size, int rwflag,
-                                     void *userdata) {
+                                     void *userdata)
+{
    TLS_CONTEXT *ctx = (TLS_CONTEXT *)userdata;
    return (ctx->pem_callback(buf, size, ctx->pem_userdata));
 }
@@ -482,7 +499,8 @@ static int tls_pem_callback_dispatch(char *buf, int size, int rwflag,
 static unsigned int psk_server_cb(SSL *ssl,
                                   const char *identity,
                                   unsigned char *psk,
-                                  unsigned int max_psk_len) {
+                                  unsigned int max_psk_len)
+{
    unsigned int result = 0;
 
    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
@@ -516,7 +534,8 @@ static unsigned int psk_client_cb(SSL *ssl,
                                   char *identity,
                                   unsigned int max_identity_len,
                                   unsigned char *psk,
-                                  unsigned int max_psk_len) {
+                                  unsigned int max_psk_len)
+{
 
    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
 
@@ -561,7 +580,8 @@ static unsigned int psk_client_cb(SSL *ssl,
  * Returns: Pointer to TLS_CONTEXT instance on success
  *          NULL on failure;
  */
-static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist) {
+static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist)
+{
    std::shared_ptr<TLS_CONTEXT> ctx;
 
    ctx = std::make_shared<TLS_CONTEXT>();
@@ -600,8 +620,9 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist) 
    return ctx;
 }
 
-static std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
-    const char *cipherlist, std::shared_ptr<PskCredentials> credentials) {
+std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
+    const char *cipherlist, std::shared_ptr<PskCredentials> credentials)
+{
    Dmsg1(50, "Preparing TLS_PSK client context for identity %s\n", credentials->get_identity().c_str());
    std::shared_ptr<TLS_CONTEXT> tls_context = new_tls_psk_context(cipherlist);
    if (NULL != credentials) {
@@ -612,8 +633,9 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
    return tls_context;
 }
 
-static std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
-    const char *cipherlist, std::shared_ptr<PskCredentials> credentials) {
+std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
+    const char *cipherlist, std::shared_ptr<PskCredentials> credentials)
+{
    Dmsg1(50, "Preparing TLS_PSK server context for identity %s\n", credentials->get_identity().c_str());
    std::shared_ptr<TLS_CONTEXT> tls_context = new_tls_psk_context(cipherlist);
 
@@ -631,12 +653,13 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
  * Returns: Pointer to TLS_CONTEXT instance on success
  *          NULL on failure;
  */
-static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
+std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
                              const char *crlfile, const char *certfile,
                              const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata, const char *dhfile,
-                             const char *cipherlist, bool VerifyPeer) {
+                             const char *cipherlist, bool VerifyPeer)
+{
    BIO *bio;
    DH *dh;
 
@@ -803,50 +826,6 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, con
    return ctx;
 }
 
-std::shared_ptr<TLS_CONTEXT> TlsCert::CreateClientContext(
-    std::shared_ptr<PskCredentials> /* credentials */) const {
-   return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
-                          (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
-                          (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
-                          (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
-                          (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
-                          TlsPemCallback,
-                          (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
-                          nullptr,
-                          (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
-                          VerifyPeer);
-}
-
-std::shared_ptr<TLS_CONTEXT> TlsCert::CreateServerContext(
-    std::shared_ptr<PskCredentials> /* credentials */) const {
-   return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
-                          (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
-                          (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
-                          (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
-                          (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
-                          TlsPemCallback,
-                          (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
-                          nullptr,
-                          (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
-                          VerifyPeer);
-}
-
-bool TlsCert::enabled(u_int32_t policy) {
-   return ((policy >> TlsCert::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
-}
-
-bool TlsCert::required(u_int32_t policy) {
-   return ((policy >> TlsCert::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
-}
-
-bool TlsPsk::enabled(u_int32_t policy) {
-   return ((policy >> TlsPsk::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
-}
-
-bool TlsPsk::required(u_int32_t policy) {
-   return ((policy >> TlsPsk::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
-}
-
 static bool TlsReceivePolicy(BareosSocket *bs, uint32_t *tls_remote_policy)
 {
    if (bs->recv() <= 0) {
@@ -887,20 +866,11 @@ bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
    return false;
 }
 
-std::shared_ptr<TLS_CONTEXT> TlsPsk::CreateClientContext(
-    std::shared_ptr<PskCredentials> credentials) const {
-   return new_tls_psk_client_context(cipherlist, credentials);
-}
-
-std::shared_ptr<TLS_CONTEXT> TlsPsk::CreateServerContext(
-    std::shared_ptr<PskCredentials> credentials) const {
-   return new_tls_psk_server_context(cipherlist, credentials);
-}
-
 /*
  * Free TLS_CONTEXT instance
  */
-void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx) {
+void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx)
+{
    psk_server_credentials.erase(ctx->openssl);
    psk_client_credentials.erase(ctx->openssl);
    SSL_CTX_free(ctx->openssl);
@@ -912,7 +882,8 @@ void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx) {
  * if this is a connection belonging to a job (jcr != NULL)
  *
  */
-void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
+void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who)
+{
    if (tls_conn == nullptr) {
       Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
    } else {
@@ -1112,7 +1083,8 @@ success:
  */
 TLS_CONNECTION *new_tls_connection(std::shared_ptr<TlsContext> tls_ctx,
                                                    int fd,
-                                                   bool server) {
+                                                   bool server)
+{
    return new TlsConnection(tls_ctx, fd, psk_client_cb, psk_server_cb);
 //    return make_shared<TlsConnection>(tls_ctx, fd, psk_client_cb, psk_server_cb);
 }
@@ -1347,4 +1319,5 @@ int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
+
 #endif /* HAVE_TLS  && HAVE_OPENSSL */

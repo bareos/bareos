@@ -47,6 +47,15 @@ DLL_IMP_EXP void SetTlsEnable(TLS_CONTEXT *ctx, bool value);
 DLL_IMP_EXP bool GetTlsVerifyPeer(TLS_CONTEXT *ctx);
 DLL_IMP_EXP bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
                                     uint32_t local,   uint32_t *remote);
-
+DLL_IMP_EXP std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
+                             const char *crlfile, const char *certfile,
+                             const char *keyfile,
+                             CRYPTO_PEM_PASSWD_CB *pem_callback,
+                             const void *pem_userdata, const char *dhfile,
+                             const char *cipherlist, bool VerifyPeer);
+DLL_IMP_EXP std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
+    const char *cipherlist, std::shared_ptr<PskCredentials> credentials);
+DLL_IMP_EXP std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
+    const char *cipherlist, std::shared_ptr<PskCredentials> credentials);
 
 #endif // BAREOS_LIB_TLS_OPENSSL_H_

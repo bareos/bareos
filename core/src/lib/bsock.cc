@@ -404,9 +404,9 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
                                   const char* password,
                                   JobControlRecord *jcr)
 {
-   TlsBase *selected_local_tls;
+   TlsConfigBase *selected_local_tls;
    selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
-   if (selected_local_tls != nullptr) { /* no tls configuration is ok */
+   if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
       if (initiated_by_remote) {
          if (!DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr)) {
             return false;
@@ -427,13 +427,13 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
    return true;
 }
 
-bool BareosSocket::DoTlsHandshakeWithClient(TlsBase *selected_local_tls,
+bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                         const char* identity,
                                         const char* password,
                                         JobControlRecord *jcr)
 {
-   std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext(
-       std::make_shared<PskCredentials>(identity, password));
+   selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
+   std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext();
    alist *verify_list = nullptr;
    if (selected_local_tls->GetVerifyPeer()) {
       verify_list = selected_local_tls->GetVerifyList();
@@ -446,13 +446,13 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsBase *selected_local_tls,
    return false;
 }
 
-bool BareosSocket::DoTlsHandshakeWithServer(TlsBase *selected_local_tls,
+bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                             const char* identity,
                                             const char* password,
                                             JobControlRecord *jcr)
 {
-   std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateClientContext(
-       std::make_shared<PskCredentials>(identity, password));
+   selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
+   std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateClientContext();
    if (BnetTlsClient(tls_ctx,
                      this,
                      selected_local_tls->GetVerifyPeer(),

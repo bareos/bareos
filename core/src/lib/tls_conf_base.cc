@@ -21,44 +21,9 @@
 #include "include/bareos.h"
 #include "tls_conf.h"
 
-TlsCert::~TlsCert() {
-   if (AllowedCns) {
-      delete AllowedCns;
-      AllowedCns = nullptr;
-   }
-}
-
-uint32_t TlsCert::GetPolicy() const {
-   uint32_t result = TlsBase::BNET_TLS_NONE;
-   if (enable) {
-      result = TlsBase::BNET_TLS_ENABLED;
-   }
-   if (require) {
-      result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
-   }
-   return result << TlsCert::policy_offset;
-}
-
-TlsPsk::~TlsPsk() {
-   if (cipherlist != nullptr) {
-      free(cipherlist);
-   }
-}
-
-uint32_t TlsPsk::GetPolicy() const {
-   uint32_t result = TlsBase::BNET_TLS_NONE;
-   if (enable) {
-      result = TlsBase::BNET_TLS_ENABLED;
-   }
-   if (require) {
-      result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
-   }
-
-   return result << TlsPsk::policy_offset;
-}
-
-DLL_IMP_EXP uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration) {
-   uint32_t merged_policy = 0;
+DLL_IMP_EXP uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration)
+{
+   uint32_t merged_policy = TlsConfigBase::BNET_TLS_NONE;
 
 #if defined(HAVE_TLS)
    merged_policy = tls_configuration->tls_cert.GetPolicy() | tls_configuration->tls_psk.GetPolicy();
@@ -69,30 +34,30 @@ DLL_IMP_EXP uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configu
    return merged_policy;
 }
 
-TlsBase *SelectTlsFromPolicy(
-   TlsResource *tls_configuration, uint32_t remote_policy) {
-
-   if ((tls_configuration->tls_cert.require && TlsCert::enabled(remote_policy))
-      || (tls_configuration->tls_cert.enable && TlsCert::required(remote_policy))) {
+TlsConfigBase *SelectTlsFromPolicy(
+   TlsResource *tls_configuration, uint32_t remote_policy)
+{
+   if ((tls_configuration->tls_cert.require && TlsConfigCert::enabled(remote_policy))
+   ||  (tls_configuration->tls_cert.enable  && TlsConfigCert::required(remote_policy))) {
       Dmsg0(100, "SelectTlsFromPolicy: take required cert\n");
 
       // one requires the other accepts cert
       return &(tls_configuration->tls_cert);
    }
-   if ((tls_configuration->tls_psk.require && TlsPsk::enabled(remote_policy))
-      || (tls_configuration->tls_psk.enable && TlsPsk::required(remote_policy))) {
+   if ((tls_configuration->tls_psk.require && TlsConfigPsk::enabled(remote_policy))
+   ||  (tls_configuration->tls_psk.enable  && TlsConfigPsk::required(remote_policy))) {
 
       Dmsg0(100, "SelectTlsFromPolicy: take required  psk\n");
       // one requires the other accepts psk
       return &(tls_configuration->tls_psk);
    }
-   if (tls_configuration->tls_cert.enable && TlsCert::enabled(remote_policy)) {
+   if (tls_configuration->tls_cert.enable && TlsConfigCert::enabled(remote_policy)) {
 
       Dmsg0(100, "SelectTlsFromPolicy: take cert\n");
       // both accept cert
       return &(tls_configuration->tls_cert);
    }
-   if (tls_configuration->tls_psk.enable && TlsPsk::enabled(remote_policy)) {
+   if (tls_configuration->tls_psk.enable && TlsConfigPsk::enabled(remote_policy)) {
 
       Dmsg0(100, "SelectTlsFromPolicy: take psk\n");
       // both accept psk
@@ -100,6 +65,8 @@ TlsBase *SelectTlsFromPolicy(
    }
 
    Dmsg0(100, "SelectTlsFromPolicy: take cleartext\n");
+
    // fallback to cleartext
-   return nullptr;
+   static TlsConfigNone tls_none_dummy;
+   return &tls_none_dummy;
 }
