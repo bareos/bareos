@@ -46,7 +46,6 @@ struct TlsContext {
    const void *pem_userdata;
    unsigned char *dhdata;
    bool VerifyPeer;
-   bool tls_enable;
    bool tls_require;
 };
 
@@ -231,35 +230,6 @@ void FreeTlsContext(TLS_CONTEXT *ctx)
    }
 
    free(ctx);
-}
-
-bool GetTlsRequire(TLS_CONTEXT *ctx)
-{
-   return (ctx) ? ctx->tls_require : false;
-}
-
-void SetTlsRequire(TLS_CONTEXT *ctx, bool value)
-{
-   if (ctx) {
-      ctx->tls_require = value;
-   }
-}
-
-bool GetTlsEnable(TLS_CONTEXT *ctx)
-{
-   return (ctx) ? ctx->tls_enable : false;
-}
-
-void SetTlsEnable(TLS_CONTEXT *ctx, bool value)
-{
-   if (ctx) {
-      ctx->tls_enable = value;
-   }
-}
-
-bool GetTlsVerifyPeer(TLS_CONTEXT *ctx)
-{
-   return (ctx) ? ctx->VerifyPeer : false;
 }
 
 /*

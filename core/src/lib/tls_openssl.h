@@ -23,7 +23,6 @@
 
 typedef std::shared_ptr<PskCredentials> sharedPskCredentials;
 
-DLL_IMP_EXP int hex2bin(char *str, unsigned char *out, unsigned int max_out_len);
 DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx);
 
 #ifdef HAVE_TLS
@@ -40,11 +39,6 @@ DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn,
 DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock);
 DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock);
 DLL_IMP_EXP void FreeTlsConnection(TLS_CONNECTION *tls_conn);
-DLL_IMP_EXP bool GetTlsRequire(TLS_CONTEXT *ctx);
-DLL_IMP_EXP void SetTlsRequire(TLS_CONTEXT *ctx, bool value);
-DLL_IMP_EXP bool GetTlsEnable(TLS_CONTEXT *ctx);
-DLL_IMP_EXP void SetTlsEnable(TLS_CONTEXT *ctx, bool value);
-DLL_IMP_EXP bool GetTlsVerifyPeer(TLS_CONTEXT *ctx);
 DLL_IMP_EXP bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
                                     uint32_t local,   uint32_t *remote);
 DLL_IMP_EXP std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
