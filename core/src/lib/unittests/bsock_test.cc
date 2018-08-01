@@ -99,7 +99,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
 
 {
   int newsockfd = create_accepted_server_socket(server_port);
-  bool retval = false;
+  bool success = false;
 
   BareosSocket *bs;
   bs = New(BareosSocketTCP);
@@ -115,27 +115,33 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
 
   if (bs->recv() <= 0) {
     Dmsg1(10, _("Connection request from %s failed.\n"), bs->who());
-    // Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->close();
-  }
-  // Do a sanity check on the message received
-  if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
+  } else if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg2(10, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
-    // Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->close();
-  }
-  bs->local_daemon_type_ = BareosDaemonType::kDirector;
-  bs->remote_daemon_type_ = BareosDaemonType::kConsole;
-  Dmsg1(10, "Cons->Dir: %s", bs->msg);
-  if (bs->AuthenticateInboundConnection(NULL, "Console", name, *password, cons)) {
-    bs->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
-    Dmsg0(10, "Server: inbound auth successful\n");
-    retval = true;
   } else {
-    Dmsg0(10, "Server: inbound auth failed\n");
+    bs->local_daemon_type_ = BareosDaemonType::kDirector;
+    bs->remote_daemon_type_ = BareosDaemonType::kConsole;
+    Dmsg1(10, "Cons->Dir: %s", bs->msg);
+    if (!bs->AuthenticateInboundConnection(NULL, "Console", name, *password, cons)) {
+      Dmsg0(10, "Server: inbound auth failed\n");
+    } else {
+      bs->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
+      Dmsg0(10, "Server: inbound auth successful\n");
+      Dmsg1(10, "Used Cipher: <%s>\n", TlsCipherGetName(bs->GetTlsConnection()).c_str());
+      if (cons->tls_psk.enable || cons->tls_cert.enable) {
+         Dmsg0(10, bs->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
+         success = bs->TlsEstablished();
+      } else {
+         Dmsg0(10, "Tls disabled by command\n");
+         if (bs->TlsEstablished()) {
+            Dmsg0(10, "bs->tls_established_ should be false but is true\n");
+         }
+         success = !bs->TlsEstablished();
+      }
+    }
   }
-  promise->set_value(retval);
   bs->close();
+  delete bs;
+  promise->set_value(success);
 }
 
 int connect_to_server(std::string console_name, std::string console_password,
@@ -160,35 +166,38 @@ int connect_to_server(std::string console_name, std::string console_password,
   UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
   UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
 
+  bool success = false;
+
   if (!UA_sock->connect(NULL, 1, 15, heart_beat, "Director daemon", (char *)server_address.c_str(),
                         NULL, server_port, false)) {
     Dmsg0(10, "socket connect failed\n");
     delete UA_sock;
-    return false;
-
+    UA_sock = nullptr;
   } else {
     Dmsg0(10, "socket connect OK\n");
 
     if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, dir)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
-      UA_sock->close();
-      return false;
     } else {
-      UA_sock->close();
       Dmsg0(10, "Authenticate Connect to Server successful!\n");
-      Dmsg1(10, "Used Cipher: %s", TlsCipherGetName(UA_sock->GetTlsConnection()).c_str());
-      if (dir->tls_psk.enable) {
+      Dmsg1(10, "Used Cipher: <%s>\n", TlsCipherGetName(UA_sock->GetTlsConnection()).c_str());
+      if (dir->tls_psk.enable || dir->tls_cert.enable) {
          Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
-         return UA_sock->TlsEstablished();
+         success = UA_sock->TlsEstablished();
       } else {
          Dmsg0(10, "Tls disabled by command\n");
          if (UA_sock->TlsEstablished()) {
             Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
          }
-         return !UA_sock->TlsEstablished();
+         success = !UA_sock->TlsEstablished();
       }
     }
   }
+  if (UA_sock) {
+   UA_sock->close();
+   delete UA_sock;
+  }
+  return success;
 }
 
 ConsoleResource *CreateAndInitializeNewConsoleResource()
