@@ -45,6 +45,8 @@ class StorageResource;
 #define CONSOLENAME "testconsole"
 #define CONSOLEPASSWORD "secret"
 
+static std::string cipher_server, cipher_client;
+
 static void InitForTest()
 {
   setlocale(LC_ALL, "");
@@ -93,6 +95,17 @@ int create_accepted_server_socket(int port)
   return new_socket;
 }
 
+static bool check_cipher(const TlsResource &tls, const std::string &cipher)
+{
+   bool success = false;
+   if (tls.tls_cert.enable && !tls.tls_psk.enable) { /* cert && !psk */
+      success = cipher.find("-RSA-") != std::string::npos;
+   } else if (!tls.tls_cert.enable && tls.tls_psk.enable) { /* !cert && psk */
+      success = cipher.find("-PSK-") != std::string::npos;
+   }
+   return success;
+}
+
 void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port,
                          ConsoleResource *cons)
@@ -126,8 +139,11 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
     } else {
       bs->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
       Dmsg0(10, "Server: inbound auth successful\n");
-      Dmsg1(10, "Used Cipher: <%s>\n", TlsCipherGetName(bs->GetTlsConnection()).c_str());
+      std::string cipher = TlsCipherGetName(bs->GetTlsConnection());
+      Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
+      cipher_server = cipher;
       if (cons->tls_psk.enable || cons->tls_cert.enable) {
+         EXPECT_TRUE(check_cipher(*cons, cipher));
          Dmsg0(10, bs->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
          success = bs->TlsEstablished();
       } else {
@@ -180,8 +196,11 @@ int connect_to_server(std::string console_name, std::string console_password,
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {
       Dmsg0(10, "Authenticate Connect to Server successful!\n");
-      Dmsg1(10, "Used Cipher: <%s>\n", TlsCipherGetName(UA_sock->GetTlsConnection()).c_str());
+      std::string cipher = TlsCipherGetName(UA_sock->GetTlsConnection());
+      Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
+      cipher_client = cipher;
       if (dir->tls_psk.enable || dir->tls_cert.enable) {
+         EXPECT_TRUE(check_cipher(*dir, cipher));
          Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
          success = UA_sock->TlsEstablished();
       } else {
@@ -359,8 +378,9 @@ TEST(bsock, auth_works_with_tls_psk)
   ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
-  ASSERT_TRUE(future.get());
 
+  ASSERT_TRUE(cipher_server == cipher_client);
+  ASSERT_TRUE(future.get());
 }
 
 
@@ -392,6 +412,8 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   ASSERT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
+
+  ASSERT_TRUE(cipher_server == cipher_client);
   ASSERT_FALSE(future.get());
 }
 
@@ -412,9 +434,6 @@ TEST(bsock, auth_works_with_tls_cert)
 
   InitForTest();
 
-  dir->tls_psk.enable = false;
-  cons->tls_psk.enable = false;
-
   dir->tls_cert.enable = true;
   cons->tls_cert.enable = true;
 
@@ -427,5 +446,7 @@ TEST(bsock, auth_works_with_tls_cert)
   ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
+
+  ASSERT_TRUE(cipher_server == cipher_client);
   ASSERT_TRUE(future.get());
 }
