@@ -159,7 +159,7 @@ int connect_to_server(std::string console_name, std::string console_password,
   password->encoding = p_encoding_md5;
   password->value = (char *)console_password.c_str();
 
-  BareosSocketTCP *UA_sock = New(BareosSocketTCP);
+  BareosSocket *UA_sock = New(BareosSocketTCP);
   UA_sock->sleep_time_after_authentication_error = 0;
   jcr.dir_bsock = UA_sock;
   UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
@@ -179,9 +179,18 @@ int connect_to_server(std::string console_name, std::string console_password,
       UA_sock->close();
       return false;
     } else {
-      Dmsg0(10, "Authenticate Connect to Server successful!\n");
       UA_sock->close();
-      return true;
+      Dmsg0(10, "Authenticate Connect to Server successful!\n");
+      if (enable_tls_psk) {
+         Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
+         return UA_sock->TlsEstablished();
+      } else {
+         Dmsg0(10, "Tls disabled by command\n");
+         if (UA_sock->TlsEstablished()) {
+            Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
+         }
+         return !UA_sock->TlsEstablished();
+      }
     }
   }
 }

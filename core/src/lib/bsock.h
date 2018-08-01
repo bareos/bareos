@@ -69,8 +69,6 @@ public:
    volatile bool suppress_error_msgs_;/* Set to suppress error messages */
    int sleep_time_after_authentication_error = 5;
 
-
-
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
    void SetTlsConnection(TLS_CONNECTION *tls_connection) {
@@ -79,6 +77,12 @@ public:
    TLS_CONNECTION *GetTlsConnection() {
       return tls_conn;
    } /* Associated tls connection */
+   void SetTlsEstablished() {
+      tls_established_ = true;
+   }
+   bool TlsEstablished() const {
+      return tls_established_;
+   }
    BareosDaemonType local_daemon_type_;
    BareosDaemonType remote_daemon_type_;
 
@@ -101,6 +105,7 @@ protected:
    int64_t bwlimit_;                 /* Set to limit bandwidth */
    int64_t nb_bytes_;                /* Bytes sent/recv since the last tick */
    btime_t last_tick_;               /* Last tick used by bwlimit */
+   bool tls_established_;            /* is true when tls connection is established */
 
    virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                          struct sockaddr *lclient_addr) = 0;

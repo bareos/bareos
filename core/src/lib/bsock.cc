@@ -46,6 +46,7 @@ BareosSocket::BareosSocket() : tls_conn(nullptr) {
    use_keepalive_ = true;
    local_daemon_type_ = BareosDaemonType::kUndefined;
    remote_daemon_type_ = BareosDaemonType::kUndefined;
+   tls_established_ = false;
 }
 
 BareosSocket::~BareosSocket() {

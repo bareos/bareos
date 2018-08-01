@@ -705,6 +705,7 @@ static bool OpensslBsockSessionStart(BareosSocket *bsock, bool server)
       /* Handle errors */
       switch (SSL_get_error(tls_conn->GetSsl(), err)) {
       case SSL_ERROR_NONE:
+         bsock->SetTlsEstablished();
          status = true;
          goto cleanup;
       case SSL_ERROR_ZERO_RETURN:
