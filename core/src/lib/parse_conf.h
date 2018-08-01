@@ -111,6 +111,8 @@ struct s_password {
          "Path of a PEM encoded TLS CA certificate(s) file." }, \
    { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertdir), 0, 0, NULL, NULL, \
          "Path of a TLS CA certificate directory." }, \
+   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.crlfile), 0, 0, NULL, NULL, \
+         "Path of a Certificate Revocation List file." }, \
    { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.certfile), 0, 0, NULL, NULL, \
          "Path of a PEM encoded TLS certificate." }, \
    { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \

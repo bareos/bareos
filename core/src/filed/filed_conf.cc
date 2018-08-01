@@ -261,6 +261,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.tls_cert.CaCertdir) {
          delete res->res_dir.tls_cert.CaCertdir;
       }
+      if (res->res_dir.tls_cert.crlfile) {
+         delete res->res_dir.tls_cert.crlfile;
+      }
       if (res->res_dir.tls_cert.certfile) {
          delete res->res_dir.tls_cert.certfile;
       }
@@ -358,6 +361,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       }
       if (res->res_client.tls_cert.CaCertdir) {
          delete res->res_client.tls_cert.CaCertdir;
+      }
+      if (res->res_client.tls_cert.crlfile) {
+         delete res->res_client.tls_cert.crlfile;
       }
       if (res->res_client.tls_cert.certfile) {
          delete res->res_client.tls_cert.certfile;
