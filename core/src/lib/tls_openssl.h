@@ -35,6 +35,7 @@ DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock);
 DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);
 DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes);
 #endif /* HAVE_TLS */
+std::string TlsCipherGetName(TLS_CONNECTION *tls_conn);
 DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
 DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock);
 DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock);

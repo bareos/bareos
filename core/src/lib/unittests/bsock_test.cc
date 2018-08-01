@@ -21,12 +21,14 @@
 #include "gtest/gtest.h"
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include <thread>
 #include <future>
 
 #include "include/bareos.h"
 #include "console/console_conf.h"
+#include "lib/tls_openssl.h"
 
 #include "include/jcr.h"
 
@@ -174,6 +176,7 @@ int connect_to_server(std::string console_name, std::string console_password,
     } else {
       UA_sock->close();
       Dmsg0(10, "Authenticate Connect to Server successful!\n");
+      Dmsg1(10, "Used Cipher: %s", TlsCipherGetName(UA_sock->GetTlsConnection()).c_str());
       if (dir->tls_psk.enable) {
          Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
          return UA_sock->TlsEstablished();

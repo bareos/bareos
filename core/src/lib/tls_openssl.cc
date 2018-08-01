@@ -799,18 +799,32 @@ void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx)
    ctx.reset();
 }
 
+std::string TlsCipherGetName(TLS_CONNECTION *tls_conn)
+{
+   if (!tls_conn) {
+      return std::string();
+   }
+
+   SSL  *ssl                = tls_conn->GetSsl();
+   const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
+   const char *cipher_name  = NULL;
+
+   if (cipher) {
+      cipher_name = SSL_CIPHER_get_name(cipher);
+      return std::string(cipher_name);
+   }
+
+   return std::string();
+}
+
 void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who)
 {
    if (!tls_conn) {
       Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
    } else {
-      SSL *ssl                 = tls_conn->GetSsl();
-      const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
-      const char *cipher_name  = NULL;
-
-      if (cipher) {
-         cipher_name = SSL_CIPHER_get_name(cipher);
-         Qmsg(jcr, M_INFO, 0, _("Secure connection to %s at %s:%d with cipher %s established\n"), who, host, port, cipher_name);
+      std::string cipher_name = TlsCipherGetName(tls_conn);
+      if (!cipher_name.empty()) {
+         Qmsg(jcr, M_INFO, 0, _("Secure connection to %s at %s:%d with cipher %s established\n"), who, host, port, cipher_name.c_str());
       } else {
          Qmsg(jcr, M_WARNING, 0, _("Secure connection to %s at %s:%d with UNKNOWN cipher established\n"), who, host, port);
       }
