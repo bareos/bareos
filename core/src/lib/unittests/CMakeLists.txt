@@ -26,11 +26,13 @@ set (TEST_SRC
     alist_test.cc
     dlist_test.cc
     htable_test.cc
-    bsock_test.cc
    )
 
 
 add_definitions(-DTEST_SMALL_HTABLE)
+
+# where to find the certificates
+add_definitions(-DCERTDIR=\"${CMAKE_SOURCE_DIR}/../regress/configs/BASE/tls\")
 
 add_executable(test_lib
     ${TEST_SRC}
@@ -52,3 +54,24 @@ set_property(TEST test_lib
    )
 
 add_dependencies(check test_lib)
+
+add_executable(test_bsock
+    bsock_test.cc
+    )
+target_link_libraries(test_bsock
+   bareos
+   ${JANSSON_LIBRARIES}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+   )
+
+add_test(NAME test_bsock
+   COMMAND test_bsock
+   )
+
+set_property(TEST test_bsock
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+
+add_dependencies(check test_bsock)
