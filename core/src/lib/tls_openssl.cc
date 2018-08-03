@@ -50,6 +50,18 @@
 static std::map<SSL_CTX *, sharedPskCredentials> psk_server_credentials;
 static std::map<SSL_CTX *, sharedPskCredentials> psk_client_credentials;
 
+static unsigned int psk_client_cb(SSL *ssl,
+                                  const char * /*hint*/,
+                                  char *identity,
+                                  unsigned int max_identity_len,
+                                  unsigned char *psk,
+                                  unsigned int max_psk_len);
+
+static unsigned int psk_server_cb(SSL *ssl,
+                                  const char *identity,
+                                  unsigned char *psk,
+                                  unsigned int max_psk_len);
+
 class TlsImplementationOpenSsl
 {
 public:
@@ -81,18 +93,6 @@ public:
    }
 };
 
-typedef unsigned int (*psk_client_callback_t)(SSL *ssl,
-                                              const char *hint,
-                                              char *identity,
-                                              unsigned int max_identity_len,
-                                              unsigned char *psk,
-                                              unsigned int max_psk_len);
-
-typedef unsigned int (*psk_server_callback_t)(SSL *ssl,
-                                              const char *identity,
-                                              unsigned char *psk,
-                                              unsigned int max_psk_len);
-
 class TlsConnectionContextOpenSsl
 {
    std::shared_ptr<TlsImplementationOpenSsl> tls_ctx_;
@@ -102,10 +102,7 @@ public:
    std::shared_ptr<TlsImplementationOpenSsl> GetTls() { return tls_ctx_; }
    SSL *GetSsl() { return openssl_; }
 
-   TlsConnectionContextOpenSsl(std::shared_ptr<TlsImplementationOpenSsl> tls_implementation,
-                 int fd,
-                 psk_client_callback_t psk_client_callback,
-                 psk_server_callback_t psk_server_callback )
+   TlsConnectionContextOpenSsl(std::shared_ptr<TlsImplementationOpenSsl> tls_implementation, int fd)
    : tls_ctx_(tls_implementation)
    , openssl_(nullptr)
    {
@@ -130,8 +127,8 @@ public:
          throw;
       }
 
-      SSL_CTX_set_psk_client_callback(tls_ctx_->openssl, psk_client_callback);
-      SSL_CTX_set_psk_server_callback(tls_ctx_->openssl, psk_server_callback);
+      SSL_CTX_set_psk_client_callback(tls_ctx_->openssl, psk_client_cb);
+      SSL_CTX_set_psk_server_callback(tls_ctx_->openssl, psk_server_cb);
 
       SSL_set_bio(openssl_, bio, bio);
 
@@ -716,7 +713,7 @@ TlsConnectionContextOpenSsl *new_tls_connection(std::shared_ptr<TlsImplementatio
                                                    int fd,
                                                    bool server)
 {
-   return new TlsConnectionContextOpenSsl(tls_implementation, fd, psk_client_cb, psk_server_cb);
+   return new TlsConnectionContextOpenSsl(tls_implementation, fd);
 //    return make_shared<TlsConnectionContextOpenSsl>(tls_implementation, fd, psk_client_cb, psk_server_cb);
 }
 
