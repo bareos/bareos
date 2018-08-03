@@ -50,21 +50,21 @@
 static std::map<SSL_CTX *, sharedPskCredentials> psk_server_credentials;
 static std::map<SSL_CTX *, sharedPskCredentials> psk_client_credentials;
 
-class TlsContext
+class TlsImplementationOpenSsl
 {
 public:
    SSL_CTX              *openssl;
    CRYPTO_PEM_PASSWD_CB *pem_callback;
    const void           *pem_userdata;
 
-   TlsContext() : openssl(nullptr), pem_callback(nullptr), pem_userdata(nullptr)
+   TlsImplementationOpenSsl() : openssl(nullptr), pem_callback(nullptr), pem_userdata(nullptr)
    {
-      Dmsg0(100, "Construct TlsContext\n");
+      Dmsg0(100, "Construct TlsImplementationOpenSsl\n");
    }
 
-   ~TlsContext()
+   ~TlsImplementationOpenSsl()
    {
-      Dmsg0(100, "Destruct TlsContext\n");
+      Dmsg0(100, "Destruct TlsImplementationOpenSsl\n");
       if (openssl != nullptr) {
          try {
             psk_server_credentials.erase(openssl);
@@ -93,20 +93,20 @@ typedef unsigned int (*psk_server_callback_t)(SSL *ssl,
                                               unsigned char *psk,
                                               unsigned int max_psk_len);
 
-class TlsConnection
+class TlsConnectionContextOpenSsl
 {
-   std::shared_ptr<TlsContext> tls_ctx_;
+   std::shared_ptr<TlsImplementationOpenSsl> tls_ctx_;
    SSL *openssl_;
 
 public:
-   std::shared_ptr<TlsContext> GetTls() { return tls_ctx_; }
+   std::shared_ptr<TlsImplementationOpenSsl> GetTls() { return tls_ctx_; }
    SSL *GetSsl() { return openssl_; }
 
-   TlsConnection(std::shared_ptr<TlsContext> tls_ctx,
+   TlsConnectionContextOpenSsl(std::shared_ptr<TlsImplementationOpenSsl> tls_implementation,
                  int fd,
                  psk_client_callback_t psk_client_callback,
                  psk_server_callback_t psk_server_callback )
-   : tls_ctx_(tls_ctx)
+   : tls_ctx_(tls_implementation)
    , openssl_(nullptr)
    {
       /*
@@ -139,8 +139,8 @@ public:
       SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
    }
 
-   ~TlsConnection() {
-      Dmsg0(100, "Destruct TlsConnection\n");
+   ~TlsConnectionContextOpenSsl() {
+      Dmsg0(100, "Destruct TlsConnectionContextOpenSsl\n");
       SSL_free(openssl_);
    }
 };
@@ -177,7 +177,7 @@ static int OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
 static int tls_pem_callback_dispatch(char *buf, int size, int rwflag,
                                      void *userdata)
 {
-   TLS_CONTEXT *ctx = (TLS_CONTEXT *)userdata;
+   TlsImplementationOpenSsl *ctx = (TlsImplementationOpenSsl *)userdata;
    return (ctx->pem_callback(buf, size, ctx->pem_userdata));
 }
 
@@ -259,9 +259,9 @@ static unsigned int psk_client_cb(SSL *ssl,
    return 0;
 }
 
-static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist)
+static std::shared_ptr<TlsImplementationOpenSsl> new_tls_psk_context(const char *cipherlist)
 {
-   std::shared_ptr<TLS_CONTEXT> ctx = std::make_shared<TLS_CONTEXT>();
+   std::shared_ptr<TlsImplementationOpenSsl> ctx = std::make_shared<TlsImplementationOpenSsl>();
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
    ctx->openssl = SSL_CTX_new(TLS_method());
@@ -297,11 +297,11 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist)
    return ctx;
 }
 
-std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
+std::shared_ptr<TlsImplementationOpenSsl> new_tls_psk_client_context(
     const char *cipherlist, std::shared_ptr<PskCredentials> credentials)
 {
    Dmsg1(50, "Preparing TLS_PSK client context for identity %s\n", credentials->get_identity().c_str());
-   std::shared_ptr<TLS_CONTEXT> tls_context = new_tls_psk_context(cipherlist);
+   std::shared_ptr<TlsImplementationOpenSsl> tls_context = new_tls_psk_context(cipherlist);
    if (credentials) {
       psk_client_credentials[tls_context->openssl] = credentials;
       SSL_CTX_set_psk_client_callback(tls_context->openssl, psk_client_cb);
@@ -310,11 +310,11 @@ std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
    return tls_context;
 }
 
-std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
+std::shared_ptr<TlsImplementationOpenSsl> new_tls_psk_server_context(
     const char *cipherlist, std::shared_ptr<PskCredentials> credentials)
 {
    Dmsg1(50, "Preparing TLS_PSK server context for identity %s\n", credentials->get_identity().c_str());
-   std::shared_ptr<TLS_CONTEXT> tls_context = new_tls_psk_context(cipherlist);
+   std::shared_ptr<TlsImplementationOpenSsl> tls_context = new_tls_psk_context(cipherlist);
 
    if (NULL != credentials) {
       psk_server_credentials[tls_context->openssl] = credentials;
@@ -324,7 +324,7 @@ std::shared_ptr<TLS_CONTEXT> new_tls_psk_server_context(
    return tls_context;
 }
 
-std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char *CaCertdir,
+std::shared_ptr<TlsImplementationOpenSsl> new_tls_context(const char *CaCertfile, const char *CaCertdir,
                              const char *crlfile, const char *certfile,
                              const char *keyfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
@@ -334,7 +334,7 @@ std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *CaCertfile, const char 
    BIO *bio;
    DH *dh;
 
-   std::shared_ptr<TLS_CONTEXT> ctx = std::make_shared<TLS_CONTEXT>();
+   std::shared_ptr<TlsImplementationOpenSsl> ctx = std::make_shared<TlsImplementationOpenSsl>();
 
    /*
     * Allocate our OpenSSL Context
@@ -514,9 +514,9 @@ bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
 }
 
 /*
- * Free TLS_CONTEXT instance
+ * Free TlsImplementationOpenSsl instance
  */
-void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx)
+void FreeTlsContext(std::shared_ptr<TlsImplementationOpenSsl> &ctx)
 {
    psk_server_credentials.erase(ctx->openssl);
    psk_client_credentials.erase(ctx->openssl);
@@ -524,7 +524,7 @@ void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx)
    ctx.reset();
 }
 
-std::string TlsCipherGetName(TLS_CONNECTION *tls_conn)
+std::string TlsCipherGetName(TlsConnectionContextOpenSsl *tls_conn)
 {
    if (!tls_conn) {
       return std::string();
@@ -542,7 +542,7 @@ std::string TlsCipherGetName(TLS_CONNECTION *tls_conn)
    return std::string();
 }
 
-void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who)
+void TlsLogConninfo(JobControlRecord *jcr, TlsConnectionContextOpenSsl *tls_conn, const char *host, int port, const char *who)
 {
    if (!tls_conn) {
       Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
@@ -562,7 +562,7 @@ void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char 
  * Returns: true on success
  *          false on failure
  */
-bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TlsConnectionContextOpenSsl *tls_conn, alist *verify_list)
 {
    SSL *ssl = tls_conn->GetSsl();
    X509 *cert;
@@ -599,7 +599,7 @@ bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, ali
  * Returns: true on success
  *          false on failure
  */
-bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TlsConnectionContextOpenSsl *tls_conn, const char *host)
 {
    int i, j;
    int extensions;
@@ -712,15 +712,15 @@ success:
    return auth_success;
 }
 
-TLS_CONNECTION *new_tls_connection(std::shared_ptr<TlsContext> tls_ctx,
+TlsConnectionContextOpenSsl *new_tls_connection(std::shared_ptr<TlsImplementationOpenSsl> tls_implementation,
                                                    int fd,
                                                    bool server)
 {
-   return new TlsConnection(tls_ctx, fd, psk_client_cb, psk_server_cb);
-//    return make_shared<TlsConnection>(tls_ctx, fd, psk_client_cb, psk_server_cb);
+   return new TlsConnectionContextOpenSsl(tls_implementation, fd, psk_client_cb, psk_server_cb);
+//    return make_shared<TlsConnectionContextOpenSsl>(tls_implementation, fd, psk_client_cb, psk_server_cb);
 }
 
-void FreeTlsConnection(TLS_CONNECTION *tls_conn)
+void FreeTlsConnection(TlsConnectionContextOpenSsl *tls_conn)
 {
    if (tls_conn != nullptr) {
       delete tls_conn;
@@ -729,7 +729,7 @@ void FreeTlsConnection(TLS_CONNECTION *tls_conn)
 
 static bool OpensslBsockSessionStart(BareosSocket *bsock, bool server)
 {
-   TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
+   TlsConnectionContextOpenSsl *tls_conn = bsock->GetTlsConnection();
    int err;
    int flags;
    bool status = true;
@@ -845,7 +845,7 @@ void TlsBsockShutdown(BareosSocket *bsock)
 
 static int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
-    TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
+    TlsConnectionContextOpenSsl *tls_conn = bsock->GetTlsConnection();
    int flags;
    int nleft = 0;
    int nwritten = 0;

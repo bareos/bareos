@@ -27,13 +27,12 @@
 #ifndef BAREOS_LIB_TLS_H_
 #define BAREOS_LIB_TLS_H_
 
-/*
- * Opaque TLS Context Structure.
- * New TLS Connections are manufactured from this context.
- */
-typedef struct TlsContext TLS_CONTEXT;
-
-/* Opaque TLS Connection Structure */
-typedef struct TlsConnection TLS_CONNECTION;
+#if defined(HAVE_OPENSSL)
+typedef struct TlsImplementationOpenSsl TLS_IMPLEMENTATION;
+typedef struct TlsConnectionContextOpenSsl TLS_CONNECTION_CONTEXT;
+#elif defined (HAVE_GNUTLS)
+typedef struct TlsImplementationGnuTls TLS_IMPLEMENTATION;
+typedef struct TlsConnectionContextGnuTls TLS_CONNECTION_CONTEXT;
+#endif
 
 #endif /* BAREOS_LIB_TLS_H_ */

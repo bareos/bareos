@@ -434,12 +434,12 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                         JobControlRecord *jcr)
 {
    selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
-   std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext();
+   std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation = selected_local_tls->CreateServerContext();
    alist *verify_list = nullptr;
    if (selected_local_tls->GetVerifyPeer()) {
       verify_list = selected_local_tls->GetVerifyList();
    }
-   if (BnetTlsServer(tls_ctx, this, verify_list)) {
+   if (BnetTlsServer(tls_implementation, this, verify_list)) {
       return true;
    }
    Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
@@ -453,8 +453,8 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                             JobControlRecord *jcr)
 {
    selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
-   std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateClientContext();
-   if (BnetTlsClient(tls_ctx,
+   std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation = selected_local_tls->CreateClientContext();
+   if (BnetTlsClient(tls_implementation,
                      this,
                      selected_local_tls->GetVerifyPeer(),
                      selected_local_tls->GetVerifyList())) {

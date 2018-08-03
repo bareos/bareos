@@ -36,8 +36,8 @@ public:
       psk_credentials_ = credentials;
    };
 
-   std::shared_ptr<TLS_CONTEXT> CreateClientContext() const override;
-   std::shared_ptr<TLS_CONTEXT> CreateServerContext() const override;
+   std::shared_ptr<TLS_IMPLEMENTATION> CreateClientContext() const override;
+   std::shared_ptr<TLS_IMPLEMENTATION> CreateServerContext() const override;
 
    /**
     * Checks whether the given @param policy matches the configured value

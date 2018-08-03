@@ -71,10 +71,10 @@ public:
 
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
-   void SetTlsConnection(TLS_CONNECTION *tls_connection) {
+   void SetTlsConnection(TLS_CONNECTION_CONTEXT *tls_connection) {
       tls_conn = tls_connection;
    } /* Associated tls connection */
-   TLS_CONNECTION *GetTlsConnection() {
+   TLS_CONNECTION_CONTEXT *GetTlsConnection() {
       return tls_conn;
    } /* Associated tls connection */
    void SetTlsEstablished() {
@@ -113,7 +113,7 @@ protected:
                      int port, utime_t heart_beat, int *fatal) = 0;
 
 private:
-  TLS_CONNECTION *tls_conn;          /* Associated tls connection */
+  TLS_CONNECTION_CONTEXT *tls_conn;          /* Associated tls connection */
 
   bool TwoWayAuthenticate(JobControlRecord *jcr,
                             const char *what,

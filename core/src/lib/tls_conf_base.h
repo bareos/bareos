@@ -31,8 +31,8 @@ public:
 
    virtual void SetPskCredentials(std::shared_ptr<PskCredentials> credentials) {};
 
-   virtual std::shared_ptr<TLS_CONTEXT> CreateClientContext() const = 0;
-   virtual std::shared_ptr<TLS_CONTEXT> CreateServerContext() const = 0;
+   virtual std::shared_ptr<TLS_IMPLEMENTATION> CreateClientContext() const = 0;
+   virtual std::shared_ptr<TLS_IMPLEMENTATION> CreateServerContext() const = 0;
 
    virtual bool GetAuthenticate() const { return false; }
    virtual bool GetVerifyPeer() const { return false; }

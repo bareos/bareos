@@ -118,12 +118,12 @@ bool BnetSend(BareosSocket *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, alist *verify_list)
+bool BnetTlsServer(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, BareosSocket *bsock, alist *verify_list)
 {
-   TLS_CONNECTION *tls_conn = nullptr;
+   TLS_CONNECTION_CONTEXT *tls_conn = nullptr;
    JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn = new_tls_connection(tls_ctx, bsock->fd_, true);
+   tls_conn = new_tls_connection(tls_implementation, bsock->fd_, true);
    if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
@@ -161,12 +161,12 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
 {
-   TLS_CONNECTION *tls_conn;
+   TLS_CONNECTION_CONTEXT *tls_conn;
    JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn  = new_tls_connection(tls_ctx, bsock->fd_, false);
+   tls_conn  = new_tls_connection(tls_implementation, bsock->fd_, false);
    if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
@@ -211,13 +211,13 @@ err:
    return false;
 }
 #else
-bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket * bsock, alist *verify_list)
+bool BnetTlsServer(std::shared_ptr<TlsImplementation> tls_implementation, BareosSocket * bsock, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;

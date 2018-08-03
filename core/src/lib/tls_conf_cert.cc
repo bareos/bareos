@@ -35,7 +35,7 @@ uint32_t TlsConfigCert::GetPolicy() const
 }
 
 
-std::shared_ptr<TLS_CONTEXT> TlsConfigCert::CreateClientContext() const
+std::shared_ptr<TLS_IMPLEMENTATION> TlsConfigCert::CreateClientContext() const
 {
    return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
                           (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
@@ -49,7 +49,7 @@ std::shared_ptr<TLS_CONTEXT> TlsConfigCert::CreateClientContext() const
                           VerifyPeer);
 }
 
-std::shared_ptr<TLS_CONTEXT> TlsConfigCert::CreateServerContext() const
+std::shared_ptr<TLS_IMPLEMENTATION> TlsConfigCert::CreateServerContext() const
 {
    return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
                           (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),

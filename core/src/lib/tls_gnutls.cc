@@ -37,7 +37,7 @@
 #define DH_BITS 1024
 
 /* TLS Context Structure */
-struct TlsContext {
+struct TlsImplementationGnuTls {
    gnutls_dh_params dh_params;
    gnutls_certificate_client_credentials gnutls_cred;
 
@@ -50,11 +50,11 @@ struct TlsContext {
 };
 
 struct TlsConnection {
-   TlsContext *ctx;
+   TlsImplementationGnuTls *ctx;
    gnutls_session_t gnutls_state;
 };
 
-static inline bool LoadDhfileData(TLS_CONTEXT *ctx, const char *dhfile)
+static inline bool LoadDhfileData(TLS_IMPLEMENTATION *ctx, const char *dhfile)
 {
    FILE *fp;
    int error;
@@ -93,14 +93,14 @@ static inline bool LoadDhfileData(TLS_CONTEXT *ctx, const char *dhfile)
    return true;
 }
 
-TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
+TLS_IMPLEMENTATION *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
 
 /*
- * Create a new TLS_CONTEXT instance.
- *  Returns: Pointer to TLS_CONTEXT instance on success
+ * Create a new TLS_IMPLEMENTATION instance.
+ *  Returns: Pointer to TLS_IMPLEMENTATION instance on success
  *           NULL on failure;
  */
-TLS_CONTEXT *new_tls_context(const char *CaCertfile,
+TLS_IMPLEMENTATION *new_tls_context(const char *CaCertfile,
                              const char *CaCertdir,
                              const char *crlfile,
                              const char *certfile,
@@ -112,10 +112,10 @@ TLS_CONTEXT *new_tls_context(const char *CaCertfile,
                              bool VerifyPeer)
 {
    int error;
-   TLS_CONTEXT *ctx;
+   TLS_IMPLEMENTATION *ctx;
 
-   ctx = (TLS_CONTEXT *)malloc(sizeof(TLS_CONTEXT));
-   memset(ctx, 0, sizeof(TLS_CONTEXT));
+   ctx = (TLS_IMPLEMENTATION *)malloc(sizeof(TLS_IMPLEMENTATION));
+   memset(ctx, 0, sizeof(TLS_IMPLEMENTATION));
 
    ctx->pem_callback = pem_callback;
    ctx->pem_userdata = pem_userdata;
@@ -242,7 +242,7 @@ bail_out:
    return NULL;
 }
 
-void FreeTlsContext(TLS_CONTEXT *ctx)
+void FreeTlsContext(TLS_IMPLEMENTATION *ctx)
 {
    gnutls_certificate_free_credentials(ctx->gnutls_cred);
 
@@ -256,7 +256,7 @@ void FreeTlsContext(TLS_CONTEXT *ctx)
 /*
  * Certs are not automatically verified during the handshake.
  */
-static inline bool TlsCertVerify(TLS_CONNECTION *tls_conn)
+static inline bool TlsCertVerify(TlsConnectionContextGnuTls *tls_conn)
 {
    unsigned int status = 0;
    int error;
@@ -307,7 +307,7 @@ static inline bool TlsCertVerify(TLS_CONNECTION *tls_conn)
  * Returns: true on success
  *          false on failure
  */
-bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TlsConnectionContextGnuTls *tls_conn, alist *verify_list)
 {
    char *cn;
    int error, cnt;
@@ -386,7 +386,7 @@ bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, ali
  * Returns: true on success
  *          false on failure
  */
-bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TlsConnectionContextGnuTls *tls_conn, const char *host)
 {
    int error;
    unsigned int list_size;
@@ -426,21 +426,21 @@ bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, c
 }
 
 /*
- * Create a new TLS_CONNECTION instance.
+ * Create a new TlsConnectionContextGnuTls instance.
  *
- * Returns: Pointer to TLS_CONNECTION instance on success
+ * Returns: Pointer to TlsConnectionContextGnuTls instance on success
  *          NULL on failure;
  */
-TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
+TlsConnectionContextGnuTls *new_tls_connection(TLS_IMPLEMENTATION *ctx, int fd, bool server)
 {
-   TLS_CONNECTION *tls_conn;
+   TlsConnectionContextGnuTls *tls_conn;
    int error;
 
    /*
     * Allocate our new tls connection
     */
-   tls_conn = (TLS_CONNECTION *)malloc(sizeof(TLS_CONNECTION));
-   memset(tls_conn, 0, sizeof(TLS_CONNECTION));
+   tls_conn = (TlsConnectionContextGnuTls *)malloc(sizeof(TlsConnectionContextGnuTls));
+   memset(tls_conn, 0, sizeof(TlsConnectionContextGnuTls));
 
    /*
     * Link the TLS context and the TLS session.
@@ -509,7 +509,7 @@ bail_out:
    return NULL;
 }
 
-void FreeTlsConnection(TLS_CONNECTION *tls_conn)
+void FreeTlsConnection(TlsConnectionContextGnuTls *tls_conn)
 {
    gnutls_deinit(tls_conn->gnutls_state);
    free(tls_conn);
@@ -521,7 +521,7 @@ static inline bool GnutlsBsockSessionStart(BareosSocket *bsock, bool server)
    bool status = true;
    bool done = false;
    unsigned int list_size;
-   TLS_CONNECTION *tls_conn = bsock->tls_conn;
+   TlsConnectionContextGnuTls *tls_conn = bsock->tls_conn;
    const gnutls_datum_t *peer_cert_list;
 
    /* Ensure that socket is non-blocking */
@@ -607,7 +607,7 @@ bool TlsBsockAccept(BareosSocket *bsock)
 
 void TlsBsockShutdown(BareosSocket *bsock)
 {
-   TLS_CONNECTION *tls_conn = bsock->tls_conn;
+   TlsConnectionContextGnuTls *tls_conn = bsock->tls_conn;
 
    gnutls_bye(tls_conn->gnutls_state, GNUTLS_SHUT_WR);
 }
@@ -615,7 +615,7 @@ void TlsBsockShutdown(BareosSocket *bsock)
 /* Does all the manual labor for TlsBsockReadn() and TlsBsockWriten() */
 static inline int GnutlsBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
-   TLS_CONNECTION *tls_conn = bsock->tls_conn;
+   TlsConnectionContextGnuTls *tls_conn = bsock->tls_conn;
    int error;
    int flags;
    int nleft = 0;

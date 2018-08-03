@@ -45,13 +45,13 @@ bool TlsConfigPsk::required(u_int32_t policy)
    return ((policy >> TlsConfigPsk::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
-std::shared_ptr<TLS_CONTEXT> TlsConfigPsk::CreateClientContext() const
+std::shared_ptr<TLS_IMPLEMENTATION> TlsConfigPsk::CreateClientContext() const
 {
    ASSERT(psk_credentials_);
    return new_tls_psk_client_context(cipherlist, psk_credentials_);
 }
 
-std::shared_ptr<TLS_CONTEXT> TlsConfigPsk::CreateServerContext() const
+std::shared_ptr<TLS_IMPLEMENTATION> TlsConfigPsk::CreateServerContext() const
 {
    ASSERT(psk_credentials_);
    return new_tls_psk_server_context(cipherlist, psk_credentials_);
