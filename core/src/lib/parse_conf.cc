@@ -137,7 +137,7 @@ ConfigurationParser::ConfigurationParser(
 }
 
 ConfigurationParser::~ConfigurationParser() {
-   for (int i = r_first_; i<= r_last_; i++) {
+   for (int i = r_first_; i< r_last_; i++) {
       FreeResource(res_head_[i-r_first_], i);
       res_head_[i-r_first_] = NULL;
    }
