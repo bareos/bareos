@@ -2581,12 +2581,6 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.tls_cert.dhfile) {
          delete res->res_dir.tls_cert.dhfile;
       }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
       if (res->res_dir.tls_cert.pem_message) {
          delete res->res_dir.tls_cert.pem_message;
       }
@@ -2640,12 +2634,6 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_con.tls_cert.dhfile) {
          delete res->res_con.tls_cert.dhfile;
       }
-      if (res->res_con.tls_cert.dhfile) {
-         delete res->res_con.tls_cert.dhfile;
-      }
-      if (res->res_con.tls_cert.dhfile) {
-         delete res->res_con.tls_cert.dhfile;
-      }
       if (res->res_con.tls_cert.pem_message) {
          delete res->res_con.tls_cert.pem_message;
       }
@@ -2687,12 +2675,6 @@ void FreeResource(CommonResourceHeader *sres, int type)
       }
       if (res->res_client.tls_cert.cipherlist) {
          delete res->res_client.tls_cert.cipherlist;
-      }
-      if (res->res_client.tls_cert.dhfile) {
-         delete res->res_client.tls_cert.dhfile;
-      }
-      if (res->res_client.tls_cert.dhfile) {
-         delete res->res_client.tls_cert.dhfile;
       }
       if (res->res_client.tls_cert.dhfile) {
          delete res->res_client.tls_cert.dhfile;
@@ -2765,12 +2747,6 @@ void FreeResource(CommonResourceHeader *sres, int type)
       }
       if (res->res_store.tls_cert.cipherlist) {
          delete res->res_store.tls_cert.cipherlist;
-      }
-      if (res->res_store.tls_cert.dhfile) {
-         delete res->res_store.tls_cert.dhfile;
-      }
-      if (res->res_store.tls_cert.dhfile) {
-         delete res->res_store.tls_cert.dhfile;
       }
       if (res->res_store.tls_cert.dhfile) {
          delete res->res_store.tls_cert.dhfile;
