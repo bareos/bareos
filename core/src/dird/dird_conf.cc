@@ -2581,12 +2581,6 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.tls_cert.dhfile) {
          delete res->res_dir.tls_cert.dhfile;
       }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
       if (res->res_dir.tls_cert.pem_message) {
          delete res->res_dir.tls_cert.pem_message;
       }
