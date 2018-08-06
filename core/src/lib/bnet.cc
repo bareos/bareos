@@ -39,7 +39,7 @@
 #include "lib/bsys.h"
 
 #include <netdb.h>
-#include "lib/tls_openssl.h"
+#include "lib/tls.h"
 
 #ifndef INADDR_NONE
 #define INADDR_NONE    -1
@@ -118,29 +118,24 @@ bool BnetSend(BareosSocket *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool BnetTlsServer(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, BareosSocket *bsock, alist *verify_list)
+bool BnetTlsServer(BareosSocket *bsock, alist *verify_list)
 {
-   TLS_CONNECTION_CONTEXT *tls_conn = nullptr;
    JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn = new_tls_connection(tls_implementation, bsock->fd_, true);
-   if (!tls_conn) {
+// ueb: tls_conn = new_tls_connection(tls_implementation, bsock->fd_, true);
+   bsock->tls_conn = CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl);
+   if (!bsock->tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
    }
 
-   bsock->SetTlsConnection(tls_conn);
-
-   /*
-    * Initiate TLS Negotiation
-    */
-   if (!TlsBsockAccept(bsock)) {
+   if (!bsock->tls_conn->TlsBsockAccept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
    }
 
    if (verify_list) {
-      if (!TlsPostconnectVerifyCn(jcr, tls_conn, verify_list)) {
+      if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
@@ -161,24 +156,18 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
 {
-   TLS_CONNECTION_CONTEXT *tls_conn;
    JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn  = new_tls_connection(tls_implementation, bsock->fd_, false);
-   if (!tls_conn) {
+//   tls_conn  = new_tls_connection(tls_implementation, bsock->fd_, false);
+   bsock->tls_conn = CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl);
+   if (!bsock->tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
    }
 
-   bsock->SetTlsConnection(tls_conn);
-
-   /*
-    * Initiate TLS Negotiation
-    */
-
-    if (!TlsBsockConnect(bsock)) {
+   if (!bsock->tls_conn->TlsBsockConnect(bsock)) {
       goto err;
    }
 
@@ -188,14 +177,14 @@ bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, Bareo
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
       if (verify_list) {
-         if (!TlsPostconnectVerifyCn(jcr, tls_conn, verify_list)) {
+         if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
             goto err;
          }
       } else {
-         if (!TlsPostconnectVerifyHost(jcr, tls_conn, bsock->host())) {
+         if (!bsock->tls_conn->TlsPostconnectVerifyHost(jcr, bsock->host())) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
                   bsock->host());
             goto err;

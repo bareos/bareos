@@ -27,12 +27,48 @@
 #ifndef BAREOS_LIB_TLS_H_
 #define BAREOS_LIB_TLS_H_
 
-#if defined(HAVE_OPENSSL)
-typedef struct TlsImplementationOpenSsl TLS_IMPLEMENTATION;
-typedef struct TlsConnectionContextOpenSsl TLS_CONNECTION_CONTEXT;
-#elif defined (HAVE_GNUTLS)
-typedef struct TlsImplementationGnuTls TLS_IMPLEMENTATION;
-typedef struct TlsConnectionContextGnuTls TLS_CONNECTION_CONTEXT;
-#endif
+#include "lib/tls_psk_credentials.h"
+
+typedef std::shared_ptr<PskCredentials> sharedPskCredentials;
+class BareosSocket;
+
+class Tls
+{
+public:
+   Tls();
+   ~Tls();
+
+   enum class TlsImplementationType { kTlsUnknown, kTlsOpenSsl, kTlsGnuTls };
+
+/* beachten: Code teilweise in constructor oder fabric verschieben */
+   virtual DLL_IMP_EXP std::shared_ptr<Tls> new_tls_context(const char *CaCertfile, const char *CaCertdir,
+                             const char *crlfile, const char *certfile,
+                             const char *keyfile,
+                             CRYPTO_PEM_PASSWD_CB *pem_callback,
+                             const void *pem_userdata, const char *dhfile,
+                             const char *cipherlist, bool VerifyPeer) = 0;
+   virtual DLL_IMP_EXP Tls *new_tls_connection(std::shared_ptr<Tls> ctx, int fd, bool server) = 0;
+   virtual DLL_IMP_EXP void FreeTlsConnection(Tls *tls_conn) = 0;
+   virtual DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx) = 0;
+/* ********************* */
+
+   virtual DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) = 0;
+   virtual DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) = 0;
+
+
+/* beachten: tls_conn aus den Funktionsparamentern entfernen und die jeweiligen Klassenvariablen zusammenführen */
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) = 0;
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) = 0;
+/* ********************* */
+
+   virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock) = 0;
+   virtual DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) = 0;
+   virtual DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes) = 0;
+   virtual DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock) = 0;
+   virtual DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock) = 0;
+   virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const = 0;
+};
+
+DLL_IMP_EXP std::unique_ptr<Tls> CreateNewTlsContext(Tls::TlsImplementationType type);
 
 #endif /* BAREOS_LIB_TLS_H_ */

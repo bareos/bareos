@@ -27,6 +27,8 @@
 class PskCredentials
 {
 public:
+   PskCredentials() {}
+
    PskCredentials(std::string &identity, std::string &psk)
       : identity_(identity)
       , psk_(psk) {
@@ -37,6 +39,12 @@ public:
       : identity_(std::string(identity))
       , psk_(std::string(psk)) {
       Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
+   }
+
+   PskCredentials &operator = (const PskCredentials &rhs) {
+      identity_ = rhs.identity_;
+      psk_ = rhs.identity_;
+      return *this;
    }
 
    std::string &get_identity() { return identity_; }

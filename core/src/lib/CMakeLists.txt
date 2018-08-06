@@ -53,7 +53,7 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    output_formatter.cc ordered_cbuf.cc passphrase.cc path_list.cc plugins.cc
    bpoll.cc  priv.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
-   sellist.cc serial.cc sha1.cc signal.cc  smartall.cc
+   sellist.cc serial.cc sha1.cc signal.cc  smartall.cc tls.cc
    tls_gnutls.cc tls_conf_base.cc tls_conf_psk.cc tls_conf_cert.cc tls_openssl.cc tls_openssl_crl.cc
    tree.cc util.cc var.cc
    watchdog.cc workq.cc)

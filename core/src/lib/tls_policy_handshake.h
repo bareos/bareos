@@ -19,22 +19,10 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_TLS_CONF_NONE_H_
-#define BAREOS_LIB_TLS_CONF_NONE_H_
+#ifndef BAREOS_LIB_TLS_POLICY_HANDSHAKE_H_
+#define BAREOS_LIB_TLS_POLICY_HANDSHAKE_H_
 
-class DLL_IMP_EXP TlsConfigNone : public TlsConfigBase {
+DLL_IMP_EXP bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
+                                       uint32_t local,   uint32_t *remote);
 
- public:
-   char *cipherlist; /* TLS Cipher List */
-
-   TlsConfigNone() : TlsConfigBase(), cipherlist(nullptr) {}
-   ~TlsConfigNone() {};
-
-   virtual uint32_t GetPolicy() const override { return BNET_TLS_NONE; }
-   std::shared_ptr<Tls> CreateClientContext() const override { return nullptr; }
-   std::shared_ptr<Tls> CreateServerContext() const override { return nullptr; }
-   static bool enabled(u_int32_t policy) { return false; }
-   static bool required(u_int32_t policy) { return false; }
-};
-
-#endif /* BAREOS_LIB_TLS_CONF_NONE_H_ */
+#endif /* BAREOS_LIB_TLS_POLICY_HANDSHAKE_H_ */

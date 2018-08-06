@@ -29,10 +29,10 @@ public:
 
    virtual uint32_t GetPolicy() const = 0;
 
-   virtual void SetPskCredentials(std::shared_ptr<PskCredentials> credentials) {};
+   virtual void SetPskCredentials(const PskCredentials &credentials) {};
 
-   virtual std::shared_ptr<TLS_IMPLEMENTATION> CreateClientContext() const = 0;
-   virtual std::shared_ptr<TLS_IMPLEMENTATION> CreateServerContext() const = 0;
+   virtual std::shared_ptr<Tls> CreateClientContext() const = 0;
+   virtual std::shared_ptr<Tls> CreateServerContext() const = 0;
 
    virtual bool GetAuthenticate() const { return false; }
    virtual bool GetVerifyPeer() const { return false; }

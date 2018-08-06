@@ -19,22 +19,32 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_TLS_CONF_NONE_H_
-#define BAREOS_LIB_TLS_CONF_NONE_H_
+#include "lib/tls.h"
+#include "lib/tls_openssl.h"
+#include "lib/tls_gnutls.h"
 
-class DLL_IMP_EXP TlsConfigNone : public TlsConfigBase {
 
- public:
-   char *cipherlist; /* TLS Cipher List */
+Tls::Tls()
+{
+   return;
+}
 
-   TlsConfigNone() : TlsConfigBase(), cipherlist(nullptr) {}
-   ~TlsConfigNone() {};
+Tls::~Tls()
+{
+   return;
+}
 
-   virtual uint32_t GetPolicy() const override { return BNET_TLS_NONE; }
-   std::shared_ptr<Tls> CreateClientContext() const override { return nullptr; }
-   std::shared_ptr<Tls> CreateServerContext() const override { return nullptr; }
-   static bool enabled(u_int32_t policy) { return false; }
-   static bool required(u_int32_t policy) { return false; }
-};
+DLL_IMP_EXP std::unique_ptr<Tls> CreateNewTlsContext(Tls::TlsImplementationType type)
+{
+   switch (type) {
+      case Tls::TlsImplementationType::kTlsOpenSsl:
+         return std::make_unique<TlsOpenSsl>;
 
-#endif /* BAREOS_LIB_TLS_CONF_NONE_H_ */
+      case Tls::TlsImplementationType::kTlsGnuTls:
+         return std::make_unique<TlsGnuTls>;
+
+      case kTlsUnknown:
+      default:
+         return nullptr;
+   }
+}

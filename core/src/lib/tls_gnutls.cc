@@ -36,6 +36,12 @@
 
 #define DH_BITS 1024
 
+class TlsImplementationOpenSsl
+{
+private:
+   friend class GnuTls;
+}
+
 /* TLS Context Structure */
 struct TlsImplementationGnuTls {
    gnutls_dh_params dh_params;
@@ -307,7 +313,7 @@ static inline bool TlsCertVerify(TlsConnectionContextGnuTls *tls_conn)
  * Returns: true on success
  *          false on failure
  */
-bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TlsConnectionContextGnuTls *tls_conn, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list)
 {
    char *cn;
    int error, cnt;

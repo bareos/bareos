@@ -31,7 +31,8 @@
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"
 #include "lib/util.h"
-#include "lib/tls_openssl.h"
+#include "lib/tls.h"
+#include "lib/tls_policy_handshake.h"
 
 static constexpr int debuglevel = 50;
 
@@ -56,10 +57,10 @@ BareosSocket::~BareosSocket() {
 
 void BareosSocket::FreeTls()
 {
-   if (tls_conn != nullptr) {
-      FreeTlsConnection(tls_conn);
-      tls_conn = nullptr;
-   }
+//   if (tls_conn != nullptr) {
+//      FreeTlsConnection(tls_conn);
+//      tls_conn = nullptr;
+//   }
 }
 
 /**
@@ -423,7 +424,7 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
       }
    }
    if (!initiated_by_remote) {
-      TlsLogConninfo(jcr, GetTlsConnection(), host(), port(), who());
+      tls_conn->TlsLogConninfo(jcr, host(), port(), who());
    }
    return true;
 }
@@ -433,7 +434,8 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                         const char* password,
                                         JobControlRecord *jcr)
 {
-   selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
+   /* ueb: hier abhängig von der selected_local_tls die cipherliste umschalten */
+   selected_local_tls->SetPskCredentials(PskCredentials(identity, password));
    std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation = selected_local_tls->CreateServerContext();
    alist *verify_list = nullptr;
    if (selected_local_tls->GetVerifyPeer()) {
@@ -452,6 +454,7 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                             const char* password,
                                             JobControlRecord *jcr)
 {
+   /* ueb: hier abhängig von der selected_local_tls die cipherliste umschalten */
    selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
    std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation = selected_local_tls->CreateClientContext();
    if (BnetTlsClient(tls_implementation,

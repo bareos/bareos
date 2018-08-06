@@ -26,18 +26,18 @@ class DLL_IMP_EXP TlsConfigPsk : public TlsConfigBase {
 public:
    char *cipherlist; /* TLS Cipher List */
 
-   TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr), psk_credentials_(nullptr) {}
+   TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr) {}
    ~TlsConfigPsk();
 
    virtual uint32_t GetPolicy() const override;
 
-   void SetPskCredentials(std::shared_ptr<PskCredentials> credentials) override
+   void SetPskCredentials(const PskCredentials &credentials) override
    {
       psk_credentials_ = credentials;
    };
 
-   std::shared_ptr<TLS_IMPLEMENTATION> CreateClientContext() const override;
-   std::shared_ptr<TLS_IMPLEMENTATION> CreateServerContext() const override;
+   std::shared_ptr<Tls> CreateClientContext() const override;
+   std::shared_ptr<Tls> CreateServerContext() const override;
 
    /**
     * Checks whether the given @param policy matches the configured value
@@ -55,7 +55,7 @@ public:
 
 private:
    static u_int32_t const policy_offset = 2;
-   std::shared_ptr<PskCredentials> psk_credentials_;
+   PskCredentials psk_credentials_;
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_PSK_H */

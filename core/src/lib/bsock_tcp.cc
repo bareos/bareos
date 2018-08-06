@@ -79,8 +79,6 @@ BareosSocket *BareosSocketTCP::clone()
    clone->msg = o_msg;
    clone->errmsg = o_errmsg;
 
-   clone->SetTlsConnection(BareosSocket::GetTlsConnection());
-
    if (who_) {
       clone->SetWho(bstrdup(who_));
    }
@@ -1048,9 +1046,8 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
    }
 
 #ifdef HAVE_TLS
-   if (GetTlsConnection()) {
-      /* TLS enabled */
-      return (TlsBsockWriten(this, ptr, nbytes));
+   if (tls_conn) {
+      return (tls_conn->TlsBsockWriten(this, ptr, nbytes));
    }
 #endif /* HAVE_TLS */
 
