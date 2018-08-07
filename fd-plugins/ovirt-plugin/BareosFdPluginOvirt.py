@@ -695,7 +695,7 @@ class BareosOvirtWrapper(object):
 
         bareosfd.JobMessage(
             context, bJobMessageType['M_INFO'],
-                "Downloading snapshot '%s' of disk '%s'('%s')" % (snapshot.id,disk.alias,disk.id))
+                "Downloading snapshot '%s' of disk '%s'('%s')\n" % (snapshot.id,disk.alias,disk.id))
 
         self.transfer_service = self.get_transfer_service(snapshot.id)
         transfer = self.transfer_service.get()
@@ -938,7 +938,7 @@ class BareosOvirtWrapper(object):
 
         bareosfd.JobMessage(
             context, bJobMessageType['M_INFO'],
-                "Uploading disk '%s'('%s')" % (obj['disk']['disk-alias'],obj['file']['id']))
+                "Uploading disk '%s'('%s')\n" % (obj['disk']['disk-alias'],obj['file']['id']))
 
         self.transfer_service = self.get_transfer_service(obj['file']['id'], types.ImageTransferDirection.UPLOAD)
         transfer = self.transfer_service.get()
@@ -1002,7 +1002,7 @@ class BareosOvirtWrapper(object):
             self.snap_service.remove()
             bareosfd.JobMessage(
                 context, bJobMessageType['M_INFO'],
-                    'Removed the snapshot \'%s\'.' % snap.description)
+                    'Removed the snapshot \'%s\'.\n' % snap.description)
             
             # Send an external event to indicate to the administrator that the
             # backup of the virtual machine is completed:
@@ -1049,7 +1049,7 @@ class BareosOvirtWrapper(object):
             # attached to this virtual machine:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_INFO'],
-                    'Adding virtual machine %s' % vm_name)
+                    'Adding virtual machine %s\n' % vm_name)
             self.vm = self.vms_service.add(
                 types.Vm(
                     cluster=types.Cluster(
