@@ -286,10 +286,10 @@ TEST(bsock, auth_works)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
-  ASSERT_TRUE(future.get());
+  EXPECT_TRUE(future.get());
 }
 
 
@@ -318,10 +318,10 @@ TEST(bsock, auth_works_with_different_names)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
-  ASSERT_TRUE(future.get());
+  EXPECT_TRUE(future.get());
 }
 
 
@@ -350,10 +350,10 @@ TEST(bsock, auth_fails_with_different_passwords)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
-  ASSERT_FALSE(future.get());
+  EXPECT_FALSE(future.get());
 }
 
 TEST(bsock, auth_works_with_tls_psk)
@@ -381,12 +381,12 @@ TEST(bsock, auth_works_with_tls_psk)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
 
-  ASSERT_TRUE(cipher_server == cipher_client);
-  ASSERT_TRUE(future.get());
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_TRUE(future.get());
 }
 
 
@@ -415,12 +415,12 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
 
-  ASSERT_TRUE(cipher_server == cipher_client);
-  ASSERT_FALSE(future.get());
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_FALSE(future.get());
 }
 
 TEST(bsock, auth_works_with_tls_cert)
@@ -449,10 +449,10 @@ TEST(bsock, auth_works_with_tls_cert)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  ASSERT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
 
-  ASSERT_TRUE(cipher_server == cipher_client);
-  ASSERT_TRUE(future.get());
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_TRUE(future.get());
 }
