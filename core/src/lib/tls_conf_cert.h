@@ -52,8 +52,8 @@ public:
    alist *GetVerifyList() const override { return AllowedCns; }
    bool GetAuthenticate() const override { return authenticate; }
 
-   std::shared_ptr<Tls> CreateClientContext() const override;
-   std::shared_ptr<Tls> CreateServerContext() const override;
+//   std::shared_ptr<Tls> CreateClientContext() const override;
+//   std::shared_ptr<Tls> CreateServerContext() const override;
 
    /**
     * Checks whether the given @param policy matches the configured value

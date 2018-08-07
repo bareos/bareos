@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_TLS_PSK_CREDENTIALS_H_
 #define BAREOS_LIB_TLS_PSK_CREDENTIALS_H_
 
+#include "bareos.h"
+
 #include <string>
 
 class PskCredentials
@@ -47,8 +49,8 @@ public:
       return *this;
    }
 
-   std::string &get_identity() { return identity_; }
-   std::string &get_psk() { return psk_; }
+   const std::string &get_identity() const { return identity_; }
+   const std::string &get_psk() const { return psk_; }
 
    ~PskCredentials() {
       Dmsg2(100, "Destruct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());

@@ -122,13 +122,6 @@ bool BnetTlsServer(BareosSocket *bsock, alist *verify_list)
 {
    JobControlRecord *jcr = bsock->jcr();
 
-// ueb: tls_conn = new_tls_connection(tls_implementation, bsock->fd_, true);
-   bsock->tls_conn = CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl);
-   if (!bsock->tls_conn) {
-      Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
-      return false;
-   }
-
    if (!bsock->tls_conn->TlsBsockAccept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
@@ -159,13 +152,6 @@ err:
 bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
 {
    JobControlRecord *jcr = bsock->jcr();
-
-//   tls_conn  = new_tls_connection(tls_implementation, bsock->fd_, false);
-   bsock->tls_conn = CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl);
-   if (!bsock->tls_conn) {
-      Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
-      return false;
-   }
 
    if (!bsock->tls_conn->TlsBsockConnect(bsock)) {
       goto err;

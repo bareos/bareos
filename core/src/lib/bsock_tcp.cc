@@ -917,8 +917,8 @@ void BareosSocketTCP::close()
       /*
        * Shutdown tls cleanly.
        */
-      if (GetTlsConnection()) {
-         TlsBsockShutdown(this);
+      if (tls_conn) {
+         tls_conn->TlsBsockShutdown(this);
          FreeTls();
       }
       if (IsTimedOut()) {
@@ -967,11 +967,8 @@ int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
    int32_t nleft, nread;
 
 #ifdef HAVE_TLS
-   if (GetTlsConnection()) {
-      /*
-       * TLS enabled
-       */
-      return (TlsBsockReadn(this, ptr, nbytes));
+   if (tls_conn) {
+      return (tls_conn->TlsBsockReadn(this, ptr, nbytes));
    }
 #endif /* HAVE_TLS */
 

@@ -39,9 +39,11 @@
 #define BAREOS_LIB_BSOCK_H_
 
 #include <include/bareos.h>
+#include "lib/tls.h"
 
 struct btimer_t;                      /* forward reference */
 class BareosSocket;
+class Tls;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 

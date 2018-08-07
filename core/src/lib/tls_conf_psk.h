@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_TLS_CONF_PSK_H
 #define BAREOS_LIB_TLS_CONF_PSK_H
 
+#include "lib/tls_psk_credentials.h"
+
 class DLL_IMP_EXP TlsConfigPsk : public TlsConfigBase {
 public:
    char *cipherlist; /* TLS Cipher List */
@@ -36,8 +38,8 @@ public:
       psk_credentials_ = credentials;
    };
 
-   std::shared_ptr<Tls> CreateClientContext() const override;
-   std::shared_ptr<Tls> CreateServerContext() const override;
+//   std::shared_ptr<Tls> CreateClientContext() const override;
+//   std::shared_ptr<Tls> CreateServerContext() const override;
 
    /**
     * Checks whether the given @param policy matches the configured value

@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_TLS_CONF_BASE_H_
 #define BAREOS_LIB_TLS_CONF_BASE_H_
 
+struct PskCredentials;
+
 class DLL_IMP_EXP TlsConfigBase {
 public:
    bool enable;  /*!< Enable TLS */
@@ -31,8 +33,8 @@ public:
 
    virtual void SetPskCredentials(const PskCredentials &credentials) {};
 
-   virtual std::shared_ptr<Tls> CreateClientContext() const = 0;
-   virtual std::shared_ptr<Tls> CreateServerContext() const = 0;
+//   virtual std::shared_ptr<Tls> CreateClientContext() const = 0;
+//   virtual std::shared_ptr<Tls> CreateServerContext() const = 0;
 
    virtual bool GetAuthenticate() const { return false; }
    virtual bool GetVerifyPeer() const { return false; }

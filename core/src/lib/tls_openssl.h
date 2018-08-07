@@ -21,21 +21,19 @@
 #ifndef BAREOS_LIB_TLS_OPENSSL_H_
 #define BAREOS_LIB_TLS_OPENSSL_H_
 
-class TlsOpenSslData;
+#include <memory>
+
+class TlsOpenSslPrivate;
 
 class TlsOpenSsl : public Tls
 {
 public:
+
+   TlsOpenSsl(int fd);
+   TlsOpenSsl() = delete;
+   virtual ~TlsOpenSsl();
+
    /* derived publice interfaces */
-   DLL_IMP_EXP std::shared_ptr<Tls> new_tls_context(const char *CaCertfile, const char *CaCertdir,
-                             const char *crlfile, const char *certfile,
-                             const char *keyfile,
-                             CRYPTO_PEM_PASSWD_CB *pem_callback,
-                             const void *pem_userdata, const char *dhfile,
-                             const char *cipherlist, bool VerifyPeer) override;
-   DLL_IMP_EXP Tls *new_tls_connection(std::shared_ptr<Tls> ctx, int fd, bool server) override;
-   DLL_IMP_EXP void FreeTlsConnection(Tls *tls_conn) override;
-   DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx) override;
    DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
    DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) override;
 
@@ -48,10 +46,10 @@ public:
    /* specialized public interfaces */
    DLL_IMP_EXP std::string TlsCipherGetName() const;
    DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const override;
-   DLL_IMP_EXP SetTlsPskClientContext(const char *cipherlist, std::shared_ptr<PskCredentials> credentials) override;
-   DLL_IMP_EXP SetTlsPskServerContext(const char *cipherlist, std::shared_ptr<PskCredentials> credentials) override;
+   DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) override;
+   DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) override;
 
 private:
-   std::unique_ptr<TlsOpenSslData> d_; /* private data */
+   std::unique_ptr<TlsOpenSslPrivate> d_; /* private data */
 };
 #endif // BAREOS_LIB_TLS_OPENSSL_H_

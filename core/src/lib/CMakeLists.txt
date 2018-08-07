@@ -55,7 +55,7 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    sellist.cc serial.cc sha1.cc signal.cc  smartall.cc tls.cc
    tls_gnutls.cc tls_conf_base.cc tls_conf_psk.cc tls_conf_cert.cc tls_openssl.cc tls_openssl_crl.cc
-   tree.cc util.cc var.cc
+   tls_policy_handshake.cc tree.cc util.cc var.cc
    watchdog.cc workq.cc)
 
 IF(HAVE_WIN32)

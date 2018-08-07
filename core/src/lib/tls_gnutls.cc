@@ -24,8 +24,14 @@
  * Author: Marco van Wieringen <marco.van.wieringen@bareos.com>
  */
 
+#include "tls_gnutls.h"
 #include "include/bareos.h"
 #include <assert.h>
+
+TlsGnuTls::TlsGnuTls(int fd)
+{
+   return;
+}
 
 #if defined(HAVE_TLS) && defined(HAVE_GNUTLS)
 
@@ -40,7 +46,7 @@ class TlsImplementationOpenSsl
 {
 private:
    friend class GnuTls;
-}
+};
 
 /* TLS Context Structure */
 struct TlsImplementationGnuTls {
@@ -248,7 +254,7 @@ bail_out:
    return NULL;
 }
 
-void FreeTlsContext(TLS_IMPLEMENTATION *ctx)
+void TlsGnuTls::FreeTlsContext(TLS_IMPLEMENTATION *ctx)
 {
    gnutls_certificate_free_credentials(ctx->gnutls_cred);
 
@@ -515,7 +521,7 @@ bail_out:
    return NULL;
 }
 
-void FreeTlsConnection(TlsConnectionContextGnuTls *tls_conn)
+void TlsGnuTls::FreeTlsConnection(TlsConnectionContextGnuTls *tls_conn)
 {
    gnutls_deinit(tls_conn->gnutls_state);
    free(tls_conn);
@@ -705,4 +711,24 @@ int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return GnutlsBsockReadwrite(bsock, ptr, nbytes, false);
 }
+
+#else /* NOT HAVE_TLS && HAVE_GNUTLS */
+
+   void TlsGnuTls::FreeTlsConnection() {}
+   void TlsGnuTls::FreeTlsContext(std::shared_ptr<Tls> &ctx) {}
+
+   void TlsGnuTls::SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) {}
+   void TlsGnuTls::SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) {}
+
+   bool TlsGnuTls::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) { return false; }
+   bool TlsGnuTls::TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) { return false; }
+
+   bool TlsGnuTls::TlsBsockAccept(BareosSocket *bsock) { return false; }
+   int TlsGnuTls::TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) { return 0; }
+   int TlsGnuTls::TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes) { return 0; }
+   bool TlsGnuTls::TlsBsockConnect(BareosSocket *bsock) { return false; }
+   void TlsGnuTls::TlsBsockShutdown(BareosSocket *bsock) { }
+   void TlsGnuTls::TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const {}
+
+
 #endif /* HAVE_TLS && HAVE_GNUTLS */

@@ -23,7 +23,6 @@
 #include "lib/tls_openssl.h"
 #include "lib/tls_gnutls.h"
 
-
 Tls::Tls()
 {
    return;
@@ -34,16 +33,16 @@ Tls::~Tls()
    return;
 }
 
-DLL_IMP_EXP std::unique_ptr<Tls> CreateNewTlsContext(Tls::TlsImplementationType type)
+DLL_IMP_EXP Tls *CreateNewTlsContext(int fd, Tls::TlsImplementationType type)
 {
    switch (type) {
       case Tls::TlsImplementationType::kTlsOpenSsl:
-         return std::make_unique<TlsOpenSsl>;
+         return new TlsOpenSsl(fd);
 
       case Tls::TlsImplementationType::kTlsGnuTls:
-         return std::make_unique<TlsGnuTls>;
+         return new TlsGnuTls(fd);
 
-      case kTlsUnknown:
+      case Tls::TlsImplementationType::kTlsUnknown:
       default:
          return nullptr;
    }

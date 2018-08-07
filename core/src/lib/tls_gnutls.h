@@ -27,24 +27,29 @@
 class TlsGnuTls : public Tls
 {
 public:
-/* derived publice interfaces */
-   DLL_IMP_EXP std::shared_ptr<Tls> new_tls_context(const char *CaCertfile, const char *CaCertdir,
-                             const char *crlfile, const char *certfile,
-                             const char *keyfile,
-                             CRYPTO_PEM_PASSWD_CB *pem_callback,
-                             const void *pem_userdata, const char *dhfile,
-                             const char *cipherlist, bool VerifyPeer) override;
-   DLL_IMP_EXP TLS_CONNECTION_CONTEXT *new_tls_connection(std::shared_ptr<Tls> ctx, int fd, bool server) override;
-   DLL_IMP_EXP void FreeTlsConnection() override;
-   DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx) override;
-   DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
-   DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) override;
+   TlsGnuTls(int fd);
+   TlsGnuTls() = delete;
+   ~TlsGnuTls() = default;
 
-   DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock) override;
-   DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) override;
-   DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes) override;
-   DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock) override;
-   DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock) override;
+   DLL_IMP_EXP void FreeTlsConnection();
+   DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx);
+/* ********************* */
+
+   virtual DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials);
+   virtual DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials);
+
+
+/* beachten: tls_conn aus den Funktionsparamentern entfernen und die jeweiligen Klassenvariablen zusammenführen */
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host);
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list);
+/* ********************* */
+
+   virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock);
+   virtual DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);
+   virtual DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes);
+   virtual DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock);
+   virtual DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock);
+   virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const ;
 };
 
 #endif /* BAREOS_LIB_TLS_GNUTLS_H_ */

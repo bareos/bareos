@@ -19,6 +19,8 @@
    02110-1301, USA.
 */
 
+#include "tls_policy_handshake.h"
+
 static bool TlsReceivePolicy(BareosSocket *bs, uint32_t *tls_remote_policy)
 {
    if (bs->recv() <= 0) {
@@ -40,7 +42,7 @@ static bool TlsSendPolicy(BareosSocket *bs, uint32_t tls_local_policy)
    return true;
 }
 
-bool TlsOpenSsl::TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
+bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
                           uint32_t local, uint32_t *remote)
 {
    if (initiated_by_remote) {

@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_TLS_POLICY_HANDSHAKE_H_
 #define BAREOS_LIB_TLS_POLICY_HANDSHAKE_H_
 
+#include <bareos.h>
+
 DLL_IMP_EXP bool TlsPolicyHandshake(BareosSocket *bs, bool initiated_by_remote,
                                        uint32_t local,   uint32_t *remote);
 

@@ -31,8 +31,8 @@ class DLL_IMP_EXP TlsConfigNone : public TlsConfigBase {
    ~TlsConfigNone() {};
 
    virtual uint32_t GetPolicy() const override { return BNET_TLS_NONE; }
-   std::shared_ptr<Tls> CreateClientContext() const override { return nullptr; }
-   std::shared_ptr<Tls> CreateServerContext() const override { return nullptr; }
+//   std::shared_ptr<Tls> CreateClientContext() const override { return nullptr; }
+//   std::shared_ptr<Tls> CreateServerContext() const override { return nullptr; }
    static bool enabled(u_int32_t policy) { return false; }
    static bool required(u_int32_t policy) { return false; }
 };

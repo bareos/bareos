@@ -27,29 +27,20 @@
 #ifndef BAREOS_LIB_TLS_H_
 #define BAREOS_LIB_TLS_H_
 
-#include "lib/tls_psk_credentials.h"
+#include <bareos.h>
 
-typedef std::shared_ptr<PskCredentials> sharedPskCredentials;
 class BareosSocket;
+class JobControlRecord;
+class PskCredentials;
 
 class Tls
 {
 public:
    Tls();
-   ~Tls();
+   virtual ~Tls();
 
    enum class TlsImplementationType { kTlsUnknown, kTlsOpenSsl, kTlsGnuTls };
 
-/* beachten: Code teilweise in constructor oder fabric verschieben */
-   virtual DLL_IMP_EXP std::shared_ptr<Tls> new_tls_context(const char *CaCertfile, const char *CaCertdir,
-                             const char *crlfile, const char *certfile,
-                             const char *keyfile,
-                             CRYPTO_PEM_PASSWD_CB *pem_callback,
-                             const void *pem_userdata, const char *dhfile,
-                             const char *cipherlist, bool VerifyPeer) = 0;
-   virtual DLL_IMP_EXP Tls *new_tls_connection(std::shared_ptr<Tls> ctx, int fd, bool server) = 0;
-   virtual DLL_IMP_EXP void FreeTlsConnection(Tls *tls_conn) = 0;
-   virtual DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx) = 0;
 /* ********************* */
 
    virtual DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) = 0;
@@ -67,8 +58,34 @@ public:
    virtual DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock) = 0;
    virtual DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock) = 0;
    virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const = 0;
+   virtual DLL_IMP_EXP std::string TlsCipherGetName() const { return std::string(); }
+
+/* cert attributes */
+   DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) { ca_certfile_ = ca_certfile; }
+   DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) { ca_certdir_ = ca_certdir; }
+   DLL_IMP_EXP void SetCrlfile(const std::string &crlfile) { crlfile_ = crlfile; }
+   DLL_IMP_EXP void SetCertfile(const std::string &certfile) { certfile_ = certfile; }
+   DLL_IMP_EXP void SetKeyfile(const std::string &keyfile) { keyfile_ = keyfile; }
+   DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) { pem_callback_ = pem_callback; }
+   DLL_IMP_EXP void SetPemUserdata(void *pem_userdata) { pem_userdata_ = pem_userdata; }
+   DLL_IMP_EXP void SetDhFile(const std::string &dhfile) { dhfile_ = dhfile; }
+   DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) { cipherlist_ = cipherlist; }
+   DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer) { verify_peer_ = verify_peer; }
+/* **************** */
+
+protected:
+   std::string ca_certfile_;
+   std::string ca_certdir_;
+   std::string crlfile_;
+   std::string certfile_;
+   std::string keyfile_;
+   CRYPTO_PEM_PASSWD_CB *pem_callback_;
+   void *pem_userdata_;
+   std::string dhfile_;
+   std::string cipherlist_;
+   bool verify_peer_;
 };
 
-DLL_IMP_EXP std::unique_ptr<Tls> CreateNewTlsContext(Tls::TlsImplementationType type);
+DLL_IMP_EXP Tls *CreateNewTlsContext(int fd, Tls::TlsImplementationType type);
 
 #endif /* BAREOS_LIB_TLS_H_ */
