@@ -424,7 +424,11 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
       }
    }
    if (!initiated_by_remote) {
-      tls_conn->TlsLogConninfo(jcr, host(), port(), who());
+      if (tls_conn) {
+         tls_conn->TlsLogConninfo(jcr, host(), port(), who());
+      } else {
+         Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who(), host(), port());
+      }
    }
    return true;
 }

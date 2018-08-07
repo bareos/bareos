@@ -419,8 +419,8 @@ std::string TlsOpenSsl::TlsCipherGetName() const
 
 void TlsOpenSsl::TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const
 {
-   if (!d_->openssl_) { /* ueb: das hier funktioniert so vermutlich nicht */
-      Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
+   if (!d_->openssl_) {
+      Qmsg(jcr, M_INFO, 0, _("No openssl to %s at %s:%d established\n"), who, host, port);
    } else {
       std::string cipher_name = TlsCipherGetName();
       if (!cipher_name.empty()) {
