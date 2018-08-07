@@ -101,7 +101,6 @@ public:
 TlsOpenSsl::TlsOpenSsl(int fd)
    : d_(new TlsOpenSslPrivate)
 {
-
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
    d_->openssl_ctx_ = SSL_CTX_new(TLS_method());
 #else
@@ -111,32 +110,6 @@ TlsOpenSsl::TlsOpenSsl(int fd)
       OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
       throw std::runtime_error(_("Error initializing SSL context"));
    }
-
-   d_->openssl_ = SSL_new(d_->openssl_ctx_);
-   if (!d_->openssl_) {
-      OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
-      SSL_free(d_->openssl_);
-      throw;
-   }
-
-   BIO *bio = BIO_new(BIO_s_socket()); /* free the fd manually */
-
-   if (!bio) {
-      OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
-      throw;
-   }
-   BIO_set_fd(bio, fd, BIO_NOCLOSE);
-
-   SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
-   SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
-
-   SSL_set_bio(d_->openssl_, bio, bio);
-
-   /* Non-blocking partial writes */
-   SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-
-
-/* ************************ */
 
    /*
     * Enable all Bug Workarounds
@@ -159,6 +132,34 @@ TlsOpenSsl::TlsOpenSsl(int fd)
       throw std::runtime_error(_("Error setting cipher list, no valid ciphers available"));
    }
 
+   //ueb: hier das erste man den psk callback registrieren und die psk eintragen
+
+
+   BIO *bio = BIO_new(BIO_s_socket()); /* free the fd manually */
+
+   if (!bio) {
+      OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
+      throw;
+   }
+   BIO_set_fd(bio, fd, BIO_NOCLOSE);
+
+   d_->openssl_ = SSL_new(d_->openssl_ctx_);
+   if (!d_->openssl_) {
+      OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
+      SSL_free(d_->openssl_);
+      throw;
+   }
+
+   SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
+   SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
+
+   SSL_set_bio(d_->openssl_, bio, bio);
+
+   /* Non-blocking partial writes */
+   SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+   /* ******************* */
+   return; //ueb
    /* ******************* */
 
    if (pem_callback_) {
