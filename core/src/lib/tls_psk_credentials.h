@@ -31,7 +31,7 @@ class PskCredentials
 public:
    PskCredentials() {}
 
-   PskCredentials(std::string &identity, std::string &psk)
+   PskCredentials(const std::string &identity, const std::string &psk)
       : identity_(identity)
       , psk_(psk) {
       Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
