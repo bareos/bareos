@@ -269,7 +269,7 @@ TlsOpenSsl::TlsOpenSsl(int fd)
 
 TlsOpenSsl::~TlsOpenSsl()
 {
-   Dmsg0(100, "Destruct TlsConnectionContextOpenSsl\n");
+   Dmsg0(100, "Destroy TLsOpenSsl Implementation Object\n");
 }
 
 /*
