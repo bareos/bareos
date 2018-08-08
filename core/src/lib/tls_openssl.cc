@@ -89,8 +89,9 @@ public:
 
    int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write);
    bool OpensslBsockSessionStart(BareosSocket *bsock, bool server);
-   int OpensslVerifyPeer(int ok, X509_STORE_CTX *store);
    int tls_pem_callback_dispatch(char *buf, int size, int rwflag, void *userdata);
+
+   static int OpensslVerifyPeer(int ok, X509_STORE_CTX *store);
 
    SSL                  *openssl_;
    SSL_CTX              *openssl_ctx_;
@@ -257,9 +258,9 @@ TlsOpenSsl::TlsOpenSsl(int fd)
       /*
        * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
        */
-//      SSL_CTX_set_verify(d_->openssl_ctx_,
-//                         SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-//                         d_->OpensslVerifyPeer);
+      SSL_CTX_set_verify(d_->openssl_ctx_,
+                         SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                         TlsOpenSslPrivate::OpensslVerifyPeer);
    } else {
       SSL_CTX_set_verify(d_->openssl_ctx_,
                          SSL_VERIFY_NONE,
@@ -277,8 +278,8 @@ TlsOpenSsl::~TlsOpenSsl()
  * OpenSSL has already performed internal certificate verification.
  * We just report any errors that occured.
  */
-int OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
-{
+int TlsOpenSslPrivate::OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
+{  /* static */
    if (!ok) {
       X509 *cert = X509_STORE_CTX_get_current_cert(store);
       int depth = X509_STORE_CTX_get_error_depth(store);
