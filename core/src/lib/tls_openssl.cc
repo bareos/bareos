@@ -59,7 +59,7 @@ TlsOpenSsl::TlsOpenSsl()
 
    if (!d_->openssl_ctx_) {
       OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
-      throw std::runtime_error(_("Error initializing SSL context"));
+      return;
    }
 
    SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_ALL);
@@ -126,7 +126,7 @@ return true;
    if (!d_->ca_certfile_.empty() || !d_->ca_certdir_.empty()) { /* at least one should be set */
       if (!SSL_CTX_load_verify_locations(d_->openssl_ctx_, d_->ca_certfile_.c_str(), d_->ca_certdir_.c_str())) {
          OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
-         throw std::runtime_error(_("Error loading certificate verification stores"));
+         return false;
       }
    } else if (d_->verify_peer_) {
       /* At least one CA is required for peer verification */
@@ -146,18 +146,18 @@ return true;
       store = SSL_CTX_get_cert_store(d_->openssl_ctx_);
       if (!store) {
          OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
-         throw std::runtime_error(_("Error loading revocation list file"));
+         return false;
       }
 
       lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
       if (!lookup) {
          OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
-         throw std::runtime_error(_("Error loading revocation list file"));
+         return false;
       }
 
       if (!LoadNewCrlFile(lookup, (char *)crlfile)) {
          OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
-         throw std::runtime_error(_("Error loading revocation list file"));
+         return false;
       }
 
       X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
@@ -171,32 +171,32 @@ return true;
    if (!d_->certfile_.empty()) {
       if (!SSL_CTX_use_certificate_chain_file(d_->openssl_ctx_, d_->certfile_.c_str())) {
          OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
-         throw std::runtime_error(_("Error loading certificate file"));
+         return false;
       }
    }
 
    if (!d_->keyfile_.empty()) {
       if (!SSL_CTX_use_PrivateKey_file(d_->openssl_ctx_, d_->keyfile_.c_str(), SSL_FILETYPE_PEM)) {
          OpensslPostErrors(M_FATAL, _("Error loading private key"));
-         throw std::runtime_error(_("Error loading private key"));
+         return false;
       }
    }
 
    if (!d_->dhfile_.empty()) { /* Diffie-Hellman parameters */
       if (!(bio = BIO_new_file(d_->dhfile_.c_str(), "r"))) {
          OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
-         throw std::runtime_error(_("Unable to open DH parameters file"));
+         return false;
       }
 //      dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL); Ueb: bio richtig initialisieren
 //      BIO_free(bio);
 //      if (!dh) {
 //         OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
-//         throw std::runtime_error(_("Unable to load DH parameters from specified file"));
+//         return false;
 //      }
 //      if (!SSL_CTX_set_tmp_dh(d_->openssl_ctx_, dh)) {
 //         OpensslPostErrors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
 //         DH_free(dh);
-//         throw std::runtime_error(_("Failed to set TLS Diffie-Hellman parameters"));
+//         return false;
 //      }
 
       SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_SINGLE_DH_USE);

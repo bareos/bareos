@@ -247,22 +247,18 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
    Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
 
    if (openssl_ctx) {
-      try {
+      if (psk_server_credentials.find(openssl_ctx) != psk_server_credentials.end()) {
          const PskCredentials &credentials = psk_server_credentials.at(openssl_ctx);
 
          if (credentials.get_identity() == std::string(identity)) {
             int psklen = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
-            result = (psklen < 0) ? 0 : psklen;
             Dmsg1(100, "psk_server_cb. psk: %s.\n", psk);
-        }
-         return result;
-      } catch (const std::out_of_range & /* exception */) {
-         // ssl context unknown
+            result = (psklen < 0) ? 0 : psklen;
+         }
+      } else {
          Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
-         return 0;
       }
    }
-   Dmsg0(100, "Error, SSL_CTX not set.\n");
    return result;
 }
 
@@ -277,7 +273,7 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
    const SSL_CTX *openssl_ctx = SSL_get_SSL_CTX(ssl);
 
    if (openssl_ctx) {
-      try {
+      if (psk_client_credentials.find(openssl_ctx) != psk_client_credentials.end()) {
          const PskCredentials &credentials = TlsOpenSslPrivate::psk_client_credentials.at(openssl_ctx);
          int ret =
              Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
@@ -296,8 +292,7 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
          Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
 
          return ret;
-      } catch (const std::out_of_range &exception) {
-         // ssl context unknown
+      } else {
          Dmsg0(100, "Error, TLS-PSK CALLBACK not set.\n");
          return 0;
       }
