@@ -39,15 +39,15 @@ public:
    Tls();
    virtual ~Tls();
 
+   virtual bool init() = 0;
+
    enum class TlsImplementationType { kTlsUnknown, kTlsOpenSsl, kTlsGnuTls };
+   static DLL_IMP_EXP Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
 
 /* ********************* */
-
    virtual DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) = 0;
    virtual DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) = 0;
 
-
-/* beachten: tls_conn aus den Funktionsparamentern entfernen und die jeweiligen Klassenvariablen zusammenführen */
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) = 0;
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) = 0;
 /* ********************* */
@@ -60,6 +60,10 @@ public:
    virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const = 0;
    virtual DLL_IMP_EXP std::string TlsCipherGetName() const { return std::string(); }
 
+/* cipher attributes */
+   DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) { cipherlist_ = cipherlist; }
+/* **************** */
+
 /* cert attributes */
    DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) { ca_certfile_ = ca_certfile; }
    DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) { ca_certdir_ = ca_certdir; }
@@ -69,11 +73,12 @@ public:
    DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) { pem_callback_ = pem_callback; }
    DLL_IMP_EXP void SetPemUserdata(void *pem_userdata) { pem_userdata_ = pem_userdata; }
    DLL_IMP_EXP void SetDhFile(const std::string &dhfile) { dhfile_ = dhfile; }
-   DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) { cipherlist_ = cipherlist; }
    DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer) { verify_peer_ = verify_peer; }
+   DLL_IMP_EXP void SetTcpFileDescriptor(const int& fd) { tcp_file_descriptor_ = fd ;}
 /* **************** */
 
 protected:
+   int tcp_file_descriptor_;
    std::string ca_certfile_;
    std::string ca_certdir_;
    std::string crlfile_;
@@ -85,7 +90,5 @@ protected:
    std::string cipherlist_;
    bool verify_peer_;
 };
-
-DLL_IMP_EXP Tls *CreateNewTlsContext(int fd, Tls::TlsImplementationType type);
 
 #endif /* BAREOS_LIB_TLS_H_ */

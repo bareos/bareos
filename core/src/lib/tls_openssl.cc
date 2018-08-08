@@ -99,7 +99,7 @@ public:
    const void           *pem_userdata_;
 };
 
-TlsOpenSsl::TlsOpenSsl(int fd)
+TlsOpenSsl::TlsOpenSsl()
    : d_(new TlsOpenSslPrivate)
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
@@ -107,23 +107,21 @@ TlsOpenSsl::TlsOpenSsl(int fd)
 #else
    d_->openssl_ctx_ = SSL_CTX_new(SSLv23_method());
 #endif
+
    if (!d_->openssl_ctx_) {
       OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
       throw std::runtime_error(_("Error initializing SSL context"));
    }
 
-   /*
-    * Enable all Bug Workarounds
-    */
    SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_ALL);
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-   /*
-    * Disallow broken sslv2 and sslv3.
-    */
    SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #endif
+}
 
+bool TlsOpenSsl::init()
+{
    if (cipherlist_.empty()) {
       cipherlist_ = TLS_DEFAULT_CIPHERS;
    }
@@ -133,34 +131,32 @@ TlsOpenSsl::TlsOpenSsl(int fd)
       throw std::runtime_error(_("Error setting cipher list, no valid ciphers available"));
    }
 
-   //ueb: hier das erste man den psk callback registrieren und die psk eintragen
-
-
-   BIO *bio = BIO_new(BIO_s_socket()); /* free the fd manually */
-
+   BIO *bio = BIO_new(BIO_s_socket());
    if (!bio) {
       OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
-      throw;
+      return false;
    }
-   BIO_set_fd(bio, fd, BIO_NOCLOSE);
+   ASSERT(tcp_file_descriptor_);
+   BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
 
    d_->openssl_ = SSL_new(d_->openssl_ctx_);
    if (!d_->openssl_) {
       OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
       SSL_free(d_->openssl_);
-      throw;
+      return false;
    }
 
-   SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
-   SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
+// Ueb: hier nicht notwendig
+//   SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
+//   SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
 
    SSL_set_bio(d_->openssl_, bio, bio);
 
    /* Non-blocking partial writes */
    SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-   /* ******************* */
-   return; //ueb
+return true;
+
    /* ******************* */
 
    if (pem_callback_) {
@@ -179,13 +175,12 @@ TlsOpenSsl::TlsOpenSsl(int fd)
          OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
          throw std::runtime_error(_("Error loading certificate verification stores"));
       }
-   } // else if (verify_peer_) {
+   } else if (verify_peer_) {
       /* At least one CA is required for peer verification */
       Jmsg0(NULL, M_ERROR, 0, _("Either a certificate file or a directory must be"
                          " specified as a verification store\n"));
-      throw std::runtime_error(_("Either a certificate file or a directory must be"
-                                    " specified as a verification store"));
-   //}
+      return false;
+   }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L)  && (OPENSSL_VERSION_NUMBER < 0x10100000L)
    /*
@@ -345,7 +340,6 @@ static unsigned int psk_client_cb(SSL *ssl,
                                   unsigned char *psk,
                                   unsigned int max_psk_len)
 {
-
    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
 
    if (ctx) {
@@ -387,9 +381,8 @@ void TlsOpenSsl::SetTlsPskClientContext(const char *cipherlist, const PskCredent
 {
    Dmsg1(50, "Preparing TLS_PSK client context for identity %s\n", credentials.get_identity().c_str());
 
-   /* credentials auf Gültigkeit prüfen!! */
    if (d_->openssl_ctx_) {
-      psk_client_credentials[d_->openssl_ctx_] = credentials;
+      psk_client_credentials.insert(std::pair<SSL_CTX*, PskCredentials>(d_->openssl_ctx_,credentials));
       SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
    }
 }
@@ -398,8 +391,7 @@ void TlsOpenSsl::SetTlsPskServerContext(const char *cipherlist, const PskCredent
 {
    Dmsg1(50, "Preparing TLS_PSK server context for identity %s\n", credentials.get_identity().c_str());
 
-   /* credentials auf Gültigkeit prüfen!! */
-   psk_server_credentials[d_->openssl_ctx_] = credentials;
+   psk_server_credentials.insert(std::pair<SSL_CTX *, PskCredentials>(d_->openssl_ctx_,credentials));
    SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
 }
 

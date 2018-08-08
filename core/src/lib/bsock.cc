@@ -409,11 +409,24 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
    TlsConfigBase *selected_local_tls;
    selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
    if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
+
+      tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
+      if (!tls_conn) {
+         Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
+         return false;
+      }
+
+      tls_conn->SetTcpFileDescriptor(fd_);
+
+      const PskCredentials psk_cred(identity, password);
+
       if (initiated_by_remote) {
+         tls_conn->SetTlsPskServerContext(nullptr, psk_cred);
          if (!DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr)) {
             return false;
          }
       } else {
+         tls_conn->SetTlsPskClientContext(nullptr, psk_cred);
          if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) {
             return false;
          }
@@ -438,16 +451,10 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                         const char* password,
                                         JobControlRecord *jcr)
 {
-   /* ueb: hier abhängig von der selected_local_tls die cipherliste umschalten */
-   selected_local_tls->SetPskCredentials(PskCredentials(identity, password));
-
-   tls_conn.reset(CreateNewTlsContext(fd_, Tls::TlsImplementationType::kTlsOpenSsl));
-   if (!tls_conn) {
-      Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
+   if (!tls_conn->init()) {
       return false;
    }
 
-//   std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation = selected_local_tls->CreateServerContext();
    alist *verify_list = nullptr;
 
    if (selected_local_tls->GetVerifyPeer()) {
@@ -466,17 +473,10 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                             const char* password,
                                             JobControlRecord *jcr)
 {
-   /* ueb: hier abhängig von der selected_local_tls die cipherliste umschalten */
-//   selected_local_tls->SetPskCredentials(std::make_shared<PskCredentials>(identity, password));
-
-   tls_conn.reset(CreateNewTlsContext(fd_, Tls::TlsImplementationType::kTlsOpenSsl));
-   if (!tls_conn) {
-      Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
+   if (!tls_conn->init()) {
       return false;
    }
 
-
-//   std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation = selected_local_tls->CreateClientContext();
    if (BnetTlsClient(this,
                      selected_local_tls->GetVerifyPeer(),
                      selected_local_tls->GetVerifyList())) {

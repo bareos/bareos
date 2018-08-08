@@ -24,6 +24,9 @@
 #include "lib/tls_gnutls.h"
 
 Tls::Tls()
+   : tcp_file_descriptor_(0)
+   , pem_callback_(nullptr)
+   , verify_peer_(false)
 {
    return;
 }
@@ -33,14 +36,14 @@ Tls::~Tls()
    return;
 }
 
-DLL_IMP_EXP Tls *CreateNewTlsContext(int fd, Tls::TlsImplementationType type)
+DLL_IMP_EXP Tls *Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
 {
    switch (type) {
       case Tls::TlsImplementationType::kTlsOpenSsl:
-         return new TlsOpenSsl(fd);
+         return new TlsOpenSsl();
 
       case Tls::TlsImplementationType::kTlsGnuTls:
-         return new TlsGnuTls(fd);
+         return new TlsGnuTls();
 
       case Tls::TlsImplementationType::kTlsUnknown:
       default:

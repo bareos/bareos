@@ -27,22 +27,19 @@
 class TlsGnuTls : public Tls
 {
 public:
-   TlsGnuTls(int fd);
-   TlsGnuTls() = delete;
-   ~TlsGnuTls() = default;
+   TlsGnuTls();
+   virtual ~TlsGnuTls();
+
+   DLL_IMP_EXP bool init() override;
 
    DLL_IMP_EXP void FreeTlsConnection();
    DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx);
-/* ********************* */
 
    virtual DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials);
    virtual DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials);
 
-
-/* beachten: tls_conn aus den Funktionsparamentern entfernen und die jeweiligen Klassenvariablen zusammenführen */
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host);
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list);
-/* ********************* */
 
    virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock);
    virtual DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);

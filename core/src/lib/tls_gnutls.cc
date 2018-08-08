@@ -28,7 +28,12 @@
 #include "include/bareos.h"
 #include <assert.h>
 
-TlsGnuTls::TlsGnuTls(int fd)
+TlsGnuTls::TlsGnuTls()
+{
+   return;
+}
+
+TlsGnuTls::~TlsGnuTls()
 {
    return;
 }
@@ -714,6 +719,7 @@ int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 
 #else /* NOT HAVE_TLS && HAVE_GNUTLS */
 
+   bool TlsGnuTls::init() { return false; }
    void TlsGnuTls::FreeTlsConnection() {}
    void TlsGnuTls::FreeTlsContext(std::shared_ptr<Tls> &ctx) {}
 

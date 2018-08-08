@@ -29,11 +29,11 @@ class TlsOpenSsl : public Tls
 {
 public:
 
-   TlsOpenSsl(int fd);
-   TlsOpenSsl() = delete;
+   TlsOpenSsl();
    virtual ~TlsOpenSsl();
 
-   /* derived publice interfaces */
+   DLL_IMP_EXP bool init() override;
+
    DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
    DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) override;
 
@@ -43,7 +43,6 @@ public:
    DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock) override;
    DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock) override;
 
-   /* specialized public interfaces */
    DLL_IMP_EXP std::string TlsCipherGetName() const;
    DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const override;
    DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) override;
