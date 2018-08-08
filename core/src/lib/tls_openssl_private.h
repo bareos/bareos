@@ -35,12 +35,12 @@ public:
 
    int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write);
    bool OpensslBsockSessionStart(BareosSocket *bsock, bool server);
-   int tls_pem_callback_dispatch(char *buf, int size, int rwflag, void *userdata);
 
    void ClientContextInsertCredentials(const PskCredentials &cred);
    void ServerContextInsertCredentials(const PskCredentials &cred);
 
 /* callbacks */
+   static int tls_pem_callback_dispatch(char *buf, int size, int rwflag, void *userdata);
    static int OpensslVerifyPeer(int ok, X509_STORE_CTX *store);
    static unsigned int psk_server_cb(SSL *ssl,
                                   const char *identity,

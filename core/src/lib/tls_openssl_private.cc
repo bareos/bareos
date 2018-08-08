@@ -221,7 +221,8 @@ cleanup:
 int TlsOpenSslPrivate::tls_pem_callback_dispatch(char *buf, int size, int rwflag,
                                      void *userdata)
 {
-   return (pem_callback_(buf, size, pem_userdata_));
+   TlsOpenSslPrivate *p = reinterpret_cast<TlsOpenSslPrivate*>(userdata);
+   return (p->pem_callback_(buf, size, p->pem_userdata_));
 }
 
 void TlsOpenSslPrivate::ClientContextInsertCredentials(const PskCredentials &credentials)

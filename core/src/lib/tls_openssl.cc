@@ -120,8 +120,8 @@ return true;
       d_->pem_userdata_ = NULL;
    }
 
-//   SSL_CTX_set_default_passwd_cb(d_->openssl_ctx_, d_->tls_pem_callback_dispatch); // Ueb: static callbacks!
-//   SSL_CTX_set_default_passwd_cb_userdata(d_->openssl_ctx_, reinterpret_cast<void *>(ctx.get()));
+   SSL_CTX_set_default_passwd_cb(d_->openssl_ctx_, TlsOpenSslPrivate::tls_pem_callback_dispatch);
+   SSL_CTX_set_default_passwd_cb_userdata(d_->openssl_ctx_, reinterpret_cast<void *>(d_.get()));
 
    if (!d_->ca_certfile_.empty() || !d_->ca_certdir_.empty()) { /* at least one should be set */
       if (!SSL_CTX_load_verify_locations(d_->openssl_ctx_, d_->ca_certfile_.c_str(), d_->ca_certdir_.c_str())) {
