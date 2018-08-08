@@ -1455,7 +1455,11 @@ int InitCrypto(void)
    SSL_load_error_strings();
 
    /* Initialize OpenSSL SSL  library */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
    SSL_library_init();
+#else
+   OPENSSL_init_ssl(0, NULL);
+#endif
 
    /* Register OpenSSL ciphers and digests */
    OpenSSL_add_all_algorithms();
