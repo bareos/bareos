@@ -24,9 +24,6 @@
 #include "lib/tls_gnutls.h"
 
 Tls::Tls()
-   : tcp_file_descriptor_(0)
-   , pem_callback_(nullptr)
-   , verify_peer_(false)
 {
    return;
 }

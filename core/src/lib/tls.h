@@ -61,34 +61,21 @@ public:
    virtual DLL_IMP_EXP std::string TlsCipherGetName() const { return std::string(); }
 
 /* cipher attributes */
-   DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) { cipherlist_ = cipherlist; }
+   virtual DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) = 0;
 /* **************** */
 
 /* cert attributes */
-   DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) { ca_certfile_ = ca_certfile; }
-   DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) { ca_certdir_ = ca_certdir; }
-   DLL_IMP_EXP void SetCrlfile(const std::string &crlfile) { crlfile_ = crlfile; }
-   DLL_IMP_EXP void SetCertfile(const std::string &certfile) { certfile_ = certfile; }
-   DLL_IMP_EXP void SetKeyfile(const std::string &keyfile) { keyfile_ = keyfile; }
-   DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) { pem_callback_ = pem_callback; }
-   DLL_IMP_EXP void SetPemUserdata(void *pem_userdata) { pem_userdata_ = pem_userdata; }
-   DLL_IMP_EXP void SetDhFile(const std::string &dhfile) { dhfile_ = dhfile; }
-   DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer) { verify_peer_ = verify_peer; }
-   DLL_IMP_EXP void SetTcpFileDescriptor(const int& fd) { tcp_file_descriptor_ = fd ;}
+   virtual DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) = 0;
+   virtual DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) = 0;
+   virtual DLL_IMP_EXP void SetCrlfile(const std::string &crlfile) = 0;
+   virtual DLL_IMP_EXP void SetCertfile(const std::string &certfile) = 0;
+   virtual DLL_IMP_EXP void SetKeyfile(const std::string &keyfile) = 0;
+   virtual DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) = 0;
+   virtual DLL_IMP_EXP void SetPemUserdata(void *pem_userdata) = 0;
+   virtual DLL_IMP_EXP void SetDhFile(const std::string &dhfile) = 0;
+   virtual DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer) = 0;
+   virtual DLL_IMP_EXP void SetTcpFileDescriptor(const int& fd) = 0;
 /* **************** */
-
-protected:
-   int tcp_file_descriptor_;
-   std::string ca_certfile_;
-   std::string ca_certdir_;
-   std::string crlfile_;
-   std::string certfile_;
-   std::string keyfile_;
-   CRYPTO_PEM_PASSWD_CB *pem_callback_;
-   void *pem_userdata_;
-   std::string dhfile_;
-   std::string cipherlist_;
-   bool verify_peer_;
 };
 
 #endif /* BAREOS_LIB_TLS_H_ */

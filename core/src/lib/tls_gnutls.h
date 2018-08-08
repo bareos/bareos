@@ -47,6 +47,19 @@ public:
    virtual DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock);
    virtual DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock);
    virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const ;
+
+   virtual DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) override {};
+
+   virtual DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) override {};
+   virtual DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) override {};
+   virtual DLL_IMP_EXP void SetCrlfile(const std::string &crlfile) override {};
+   virtual DLL_IMP_EXP void SetCertfile(const std::string &certfile) override {};
+   virtual DLL_IMP_EXP void SetKeyfile(const std::string &keyfile) override {};
+   virtual DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override {};
+   virtual DLL_IMP_EXP void SetPemUserdata(void *pem_userdata) override {};
+   virtual DLL_IMP_EXP void SetDhFile(const std::string &dhfile) override {};
+   virtual DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer) override {};
+   virtual DLL_IMP_EXP void SetTcpFileDescriptor(const int& fd) override {};
 };
 
 #endif /* BAREOS_LIB_TLS_GNUTLS_H_ */
