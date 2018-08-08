@@ -109,9 +109,11 @@ bool TlsOpenSsl::init()
    /* Non-blocking partial writes */
    SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-return true;
-
    /* ******************* */
+
+   if (d_->ca_certfile_.empty() && !d_->ca_certdir_.empty()) {
+      return true;
+   }
 
    if (d_->pem_callback_) {
       d_->pem_userdata_ = d_->pem_userdata_;
@@ -139,7 +141,7 @@ return true;
    /*
     * Set certificate revocation list.
     */
-   if (crlfile) {
+   if (!d_->crlfile.empty()) {
       X509_STORE *store;
       X509_LOOKUP *lookup;
 
@@ -155,7 +157,7 @@ return true;
          return false;
       }
 
-      if (!LoadNewCrlFile(lookup, (char *)crlfile)) {
+      if (!LoadNewCrlFile(lookup, (char *)d_->crlfile.c_str())) {
          OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
          return false;
       }
@@ -164,10 +166,6 @@ return true;
    }
 #endif
 
-   /*
-    * Load our certificate file, if available. This file may also contain a
-    * private key, though this usage is somewhat unusual.
-    */
    if (!d_->certfile_.empty()) {
       if (!SSL_CTX_use_certificate_chain_file(d_->openssl_ctx_, d_->certfile_.c_str())) {
          OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
@@ -187,17 +185,17 @@ return true;
          OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
          return false;
       }
-//      dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL); Ueb: bio richtig initialisieren
-//      BIO_free(bio);
-//      if (!dh) {
-//         OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
-//         return false;
-//      }
-//      if (!SSL_CTX_set_tmp_dh(d_->openssl_ctx_, dh)) {
-//         OpensslPostErrors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
-//         DH_free(dh);
-//         return false;
-//      }
+      DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL); // Ueb: bio richtig initialisieren
+      BIO_free(bio);
+      if (!dh) {
+         OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
+         return false;
+      }
+      if (!SSL_CTX_set_tmp_dh(d_->openssl_ctx_, dh)) {
+         OpensslPostErrors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
+         DH_free(dh);
+         return false;
+      }
 
       SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_SINGLE_DH_USE);
    }
@@ -214,6 +212,7 @@ return true;
                          SSL_VERIFY_NONE,
                          NULL);
    }
+   return true;
 }
 
 void TlsOpenSsl::SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials)
