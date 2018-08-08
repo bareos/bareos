@@ -125,7 +125,10 @@ bool TlsOpenSsl::init()
    SSL_CTX_set_default_passwd_cb(d_->openssl_ctx_, TlsOpenSslPrivate::tls_pem_callback_dispatch);
    SSL_CTX_set_default_passwd_cb_userdata(d_->openssl_ctx_, reinterpret_cast<void *>(d_.get()));
 
-   if (!d_->ca_certfile_.empty() || !d_->ca_certdir_.empty()) { /* at least one should be set */
+   bool certfile_given = !d_->ca_certfile_.empty();
+   bool certdir_given = !d_->ca_certdir_.empty();
+
+   if (certfile_given || certdir_given) { /* at least one should be set */
       if (!SSL_CTX_load_verify_locations(d_->openssl_ctx_, d_->ca_certfile_.c_str(), d_->ca_certdir_.c_str())) {
          OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
          return false;
