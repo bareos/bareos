@@ -440,8 +440,11 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
 
          if (tls_configuration->tls_psk.enable) {
             const PskCredentials psk_cred(identity, password);
-            tls_conn->SetTlsPskServerContext(psk_cred);
-            tls_conn->SetTlsPskClientContext(psk_cred);
+            if (initiated_by_remote) {
+               tls_conn->SetTlsPskServerContext(psk_cred);
+            } else {
+               tls_conn->SetTlsPskClientContext(psk_cred);
+            }
          }
 
          if (!tls_conn->init()) {
