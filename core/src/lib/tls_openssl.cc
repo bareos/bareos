@@ -82,7 +82,7 @@ bool TlsOpenSsl::init()
    }
 
    if (SSL_CTX_set_cipher_list(d_->openssl_ctx_, d_->cipherlist_.c_str()) != 1) {
-      Jmsg0(NULL, M_ERROR, 0, _("Error setting cipher list, no valid ciphers available\n"));
+      Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
       return false;
    }
 
@@ -106,9 +106,9 @@ bool TlsOpenSsl::init()
       }
    } else if (d_->verify_peer_) {
       /* At least one CA is required for peer verification */
-      Jmsg0(NULL, M_ERROR, 0, _("Either a certificate file or a directory must be"
+      Dmsg0(100, _("Either a certificate file or a directory must be"
                          " specified as a verification store\n"));
-      return false;
+//      return false; Ueb: do not return compatibility ?
    }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L)  && (OPENSSL_VERSION_NUMBER < 0x10100000L)
