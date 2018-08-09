@@ -36,12 +36,41 @@
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 
-#include "lib/tls_openssl.h"
-
-
 #define MAX_CRLS 16
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+
+static X509_LOOKUP_METHOD *X509_LOOKUP_crl_reloader(void);
+static int LoadNewCrlFile(X509_LOOKUP *lu, const char *fname);
+
+bool SetCertificateRevocationList(const std::string &crlfile, SSL_CTX *openssl_ctx)
+{
+   X509_STORE *store;
+   X509_LOOKUP *lookup;
+
+   store = SSL_CTX_get_cert_store(openssl_ctx);
+   if (!store) {
+      OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+      return false;
+   }
+
+   lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
+   if (!lookup) {
+      OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+      return false;
+   }
+
+   if (!LoadNewCrlFile(lookup, (char *)crlfile.c_str())) {
+      OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+      return false;
+   }
+
+   X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+
+   return true;
+}
+
+
 struct TlsCrlReloadContext
 {
    time_t mtime;
@@ -52,24 +81,24 @@ struct TlsCrlReloadContext
 /*
  * Automatic Certificate Revocation List reload logic.
  */
-static int CrlReloaderNew(X509_LOOKUP *ctx)
+static int CrlReloaderNew(X509_LOOKUP *lookup)
 {
    TlsCrlReloadContext *data;
 
    data = (TlsCrlReloadContext *)malloc(sizeof(TlsCrlReloadContext));
    memset(data, 0, sizeof(TlsCrlReloadContext));
 
-   ctx->method_data = (char *)data;
+   lookup->method_data = (char *)data;
    return 1;
 }
 
-static void CrlReloaderFree(X509_LOOKUP *ctx)
+static void CrlReloaderFree(X509_LOOKUP *lookup)
 {
    int cnt;
    TlsCrlReloadContext *data;
 
-   if (ctx->method_data) {
-      data = (TlsCrlReloadContext *)ctx->method_data;
+   if (lookup->method_data) {
+      data = (TlsCrlReloadContext *)lookup->method_data;
 
       if (data->crl_file_name) {
          free(data->crl_file_name);
@@ -82,21 +111,21 @@ static void CrlReloaderFree(X509_LOOKUP *ctx)
       }
 
       free(data);
-      ctx->method_data = NULL;
+      lookup->method_data = NULL;
    }
 }
 
 /*
  * Load the new content from a Certificate Revocation List (CRL).
  */
-static int CrlReloaderReloadFile(X509_LOOKUP *ctx)
+static int CrlReloaderReloadFile(X509_LOOKUP *lookup)
 {
    int cnt, ok = 0;
    struct stat st;
    BIO *in = NULL;
    TlsCrlReloadContext *data;
 
-   data = (TlsCrlReloadContext *)ctx->method_data;
+   data = (TlsCrlReloadContext *)lookup->method_data;
    if (!data->crl_file_name) {
       goto bail_out;
    }
@@ -156,13 +185,13 @@ bail_out:
 /*
  * See if the data in the Certificate Revocation List (CRL) is newer then we loaded before.
  */
-static int CrlReloaderReloadIfNewer(X509_LOOKUP *ctx)
+static int CrlReloaderReloadIfNewer(X509_LOOKUP *lookup)
 {
    int ok = 0;
    TlsCrlReloadContext *data;
    struct stat st;
 
-   data = (TlsCrlReloadContext *)ctx->method_data;
+   data = (TlsCrlReloadContext *)lookup->method_data;
    if (!data->crl_file_name) {
       return ok;
    }
@@ -172,7 +201,7 @@ static int CrlReloaderReloadIfNewer(X509_LOOKUP *ctx)
    }
 
    if (st.st_mtime > data->mtime) {
-      ok = CrlReloaderReloadFile(ctx);
+      ok = CrlReloaderReloadFile(lookup);
       if (!ok) {
          goto bail_out;
       }
@@ -186,18 +215,18 @@ bail_out:
 /*
  * Load the data from a Certificate Revocation List (CRL) into memory.
  */
-static int CrlReloaderFileLoad(X509_LOOKUP *ctx, const char *argp)
+static int CrlReloaderFileLoad(X509_LOOKUP *lookup, const char *argp)
 {
    int ok = 0;
    TlsCrlReloadContext *data;
 
-   data = (TlsCrlReloadContext *)ctx->method_data;
+   data = (TlsCrlReloadContext *)lookup->method_data;
    if (data->crl_file_name) {
       free(data->crl_file_name);
    }
    data->crl_file_name = bstrdup(argp);
 
-   ok = CrlReloaderReloadFile(ctx);
+   ok = CrlReloaderReloadFile(lookup);
    if (!ok) {
       goto bail_out;
    }
@@ -207,13 +236,13 @@ bail_out:
    return ok;
 }
 
-static int CrlReloaderCtrl(X509_LOOKUP *ctx, int cmd, const char *argp, long argl, char **ret)
+static int CrlReloaderCtrl(X509_LOOKUP *lookup, int cmd, const char *argp, long argl, char **ret)
 {
    int ok = 0;
 
    switch (cmd) {
    case X509_L_FILE_LOAD:
-      ok = CrlReloaderFileLoad(ctx, argp);
+      ok = CrlReloaderFileLoad(lookup, argp);
       break;
    default:
       break;
@@ -246,7 +275,7 @@ static int CrlEntryExpired(X509_CRL *crl)
 /*
  * Retrieve a CRL entry by Subject.
  */
-static int CrlReloaderGetBySubject(X509_LOOKUP *ctx, int type, X509_NAME *name, X509_OBJECT *ret)
+static int CrlReloaderGetBySubject(X509_LOOKUP *lookup, int type, X509_NAME *name, X509_OBJECT *ret)
 {
    int cnt, ok = 0;
    TlsCrlReloadContext *data = NULL;
@@ -255,7 +284,7 @@ static int CrlReloaderGetBySubject(X509_LOOKUP *ctx, int type, X509_NAME *name, 
       return ok;
    }
 
-   data = (TlsCrlReloadContext *)ctx->method_data;
+   data = (TlsCrlReloadContext *)lookup->method_data;
    if (!data->crls[0]) {
       return ok;
    }
@@ -263,7 +292,7 @@ static int CrlReloaderGetBySubject(X509_LOOKUP *ctx, int type, X509_NAME *name, 
    ret->type = 0;
    ret->data.crl = NULL;
    for (cnt = 0; cnt < MAX_CRLS; cnt++) {
-      if (CrlEntryExpired(data->crls[cnt]) && !CrlReloaderReloadIfNewer(ctx)) {
+      if (CrlEntryExpired(data->crls[cnt]) && !CrlReloaderReloadIfNewer(lookup)) {
          goto bail_out;
       }
 
@@ -312,4 +341,5 @@ static X509_LOOKUP_METHOD *X509_LOOKUP_crl_reloader(void)
 {
    return (&x509_crl_reloader);
 }
-#endif /* (OPENSSL_VERSION_NUMBER > 0x00907000L) */
+
+#endif /* (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L) */

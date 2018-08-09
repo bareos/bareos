@@ -40,6 +40,7 @@
 
 #include "lib/tls_openssl.h"
 #include "lib/tls_openssl_private.h"
+#include "lib/tls_openssl_crl.h"
 
 #include "parse_conf.h"
 
@@ -111,31 +112,10 @@ bool TlsOpenSsl::init()
    }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L)  && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-   /*
-    * Set certificate revocation list.
-    */
-   if (!d_->crlfile_.empty()) {
-      X509_STORE *store;
-      X509_LOOKUP *lookup;
-
-      store = SSL_CTX_get_cert_store(d_->openssl_ctx_);
-      if (!store) {
-         OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+   if (!d_->certfile_.empty()) {
+      if (!SetCertificateRevocationList(d_->certfile_, d_->openssl_ctx_)) {
          return false;
       }
-
-      lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
-      if (!lookup) {
-         OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
-         return false;
-      }
-
-      if (!LoadNewCrlFile(lookup, (char *)d_->crlfile_.c_str())) {
-         OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
-         return false;
-      }
-
-      X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
    }
 #endif
 
