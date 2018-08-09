@@ -114,7 +114,7 @@ bool TlsOpenSsl::init()
    /*
     * Set certificate revocation list.
     */
-   if (!d_->crlfile.empty()) {
+   if (!d_->crlfile_.empty()) {
       X509_STORE *store;
       X509_LOOKUP *lookup;
 
@@ -130,7 +130,7 @@ bool TlsOpenSsl::init()
          return false;
       }
 
-      if (!LoadNewCrlFile(lookup, (char *)d_->crlfile.c_str())) {
+      if (!LoadNewCrlFile(lookup, (char *)d_->crlfile_.c_str())) {
          OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
          return false;
       }
