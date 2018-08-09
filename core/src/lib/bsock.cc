@@ -434,8 +434,12 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
 
       if (tls_configuration->tls_psk.enable) {
          const PskCredentials psk_cred(identity, password);
-         tls_conn->SetTlsPskServerContext(nullptr, psk_cred);
-         tls_conn->SetTlsPskClientContext(nullptr, psk_cred);
+         tls_conn->SetTlsPskServerContext(psk_cred);
+         tls_conn->SetTlsPskClientContext(psk_cred);
+      }
+
+      if (!tls_conn->init()) {
+         return false;
       }
 
       if (initiated_by_remote) {
@@ -467,10 +471,6 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                         const char* password,
                                         JobControlRecord *jcr)
 {
-   if (!tls_conn->init()) {
-      return false;
-   }
-
    alist *verify_list = nullptr;
 
    if (selected_local_tls->GetVerifyPeer()) {
@@ -489,10 +489,6 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                             const char* password,
                                             JobControlRecord *jcr)
 {
-   if (!tls_conn->init()) {
-      return false;
-   }
-
    if (BnetTlsClient(this,
                      selected_local_tls->GetVerifyPeer(),
                      selected_local_tls->GetVerifyList())) {

@@ -45,8 +45,8 @@ public:
    static DLL_IMP_EXP Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
 
 /* ********************* */
-   virtual DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) = 0;
-   virtual DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) = 0;
+   virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) = 0;
+   virtual DLL_IMP_EXP void SetTlsPskServerContext(const PskCredentials &credentials) = 0;
 
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) = 0;
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) = 0;

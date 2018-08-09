@@ -723,8 +723,8 @@ int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
    void TlsGnuTls::FreeTlsConnection() {}
    void TlsGnuTls::FreeTlsContext(std::shared_ptr<Tls> &ctx) {}
 
-   void TlsGnuTls::SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) {}
-   void TlsGnuTls::SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) {}
+   void TlsGnuTls::SetTlsPskClientContext(const PskCredentials &credentials) {}
+   void TlsGnuTls::SetTlsPskServerContext(const PskCredentials &credentials) {}
 
    bool TlsGnuTls::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) { return false; }
    bool TlsGnuTls::TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) { return false; }

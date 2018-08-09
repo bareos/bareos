@@ -46,8 +46,8 @@ public:
    DLL_IMP_EXP std::string TlsCipherGetName() const;
    DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) override;
    DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const override;
-   DLL_IMP_EXP void SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials) override;
-   DLL_IMP_EXP void SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials) override;
+   DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) override;
+   DLL_IMP_EXP void SetTlsPskServerContext(const PskCredentials &credentials) override;
 
    DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) override;
    DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) override;

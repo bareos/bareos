@@ -85,12 +85,6 @@ bool TlsOpenSsl::init()
       return false;
    }
 
-// Ueb: hier nicht notwendig
-//   SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
-//   SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
-
-   /* ******************* */
-
    if (d_->pem_callback_) {
       d_->pem_userdata_ = d_->pem_userdata_;
    } else {
@@ -216,7 +210,7 @@ bool TlsOpenSsl::init()
    return true;
 }
 
-void TlsOpenSsl::SetTlsPskClientContext(const char *cipherlist, const PskCredentials &credentials)
+void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
 {
    Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", credentials.get_identity().c_str());
 
@@ -226,7 +220,7 @@ void TlsOpenSsl::SetTlsPskClientContext(const char *cipherlist, const PskCredent
    }
 }
 
-void TlsOpenSsl::SetTlsPskServerContext(const char *cipherlist, const PskCredentials &credentials)
+void TlsOpenSsl::SetTlsPskServerContext(const PskCredentials &credentials)
 {
    Dmsg1(50, "Preparing TLS_PSK SERVER context for identity %s\n", credentials.get_identity().c_str());
 
