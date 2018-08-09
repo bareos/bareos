@@ -38,12 +38,12 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
   , pem_callback_(nullptr)
   , pem_userdata_(nullptr)
 {
-   Dmsg0(100, "Construct TlsImplementationOpenSsl\n");
+   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 }
 
 TlsOpenSslPrivate::~TlsOpenSslPrivate() //FreeTlsContext
 {
-   Dmsg0(100, "Destruct TlsImplementationOpenSsl\n");
+   Dmsg0(100, "Destruct TlsOpenSslPrivate\n");
    if (openssl_ctx_) {
       psk_server_credentials.erase(openssl_ctx_);
       psk_client_credentials.erase(openssl_ctx_);

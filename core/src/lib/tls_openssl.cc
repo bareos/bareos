@@ -72,7 +72,7 @@ TlsOpenSsl::TlsOpenSsl()
 
 TlsOpenSsl::~TlsOpenSsl()
 {
-   Dmsg0(100, "Destroy TLsOpenSsl Implementation Object\n");
+   Dmsg0(100, "Destruct TLsOpenSsl Implementation Object\n");
 }
 
 bool TlsOpenSsl::init()
