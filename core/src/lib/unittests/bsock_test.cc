@@ -32,6 +32,8 @@
 
 #include "include/jcr.h"
 
+#define CLIENT_AS_A_THREAD  0
+
 class UaContext {
   BareosSocket *UA_sock;
 };
@@ -163,8 +165,13 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   promise->set_value(success);
 }
 
+#if CLIENT_AS_A_THREAD
 int connect_to_server(std::string console_name, std::string console_password,
                       std::string server_address, int server_port, DirectorResource *dir)
+#else
+bool connect_to_server(std::string console_name, std::string console_password,
+                      std::string server_address, int server_port, DirectorResource *dir)
+#endif
 {
   utime_t heart_beat = 0;
   char errmsg[1024];
@@ -381,7 +388,13 @@ TEST(bsock, auth_works_with_tls_psk)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
+
+#if CLIENT_AS_A_THREAD
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
+  client_thread.join();
+#else
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+#endif
 
   server_thread.join();
 
@@ -415,7 +428,13 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
+
+#if CLIENT_AS_A_THREAD
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
+  client_thread.join();
+#else
   EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+#endif
 
   server_thread.join();
 
@@ -449,7 +468,13 @@ TEST(bsock, auth_works_with_tls_cert)
                             HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
+
+#if CLIENT_AS_A_THREAD
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
+  client_thread.join();
+#else
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+#endif
 
   server_thread.join();
 
