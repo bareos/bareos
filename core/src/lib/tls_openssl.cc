@@ -76,21 +76,6 @@ TlsOpenSsl::~TlsOpenSsl()
 
 bool TlsOpenSsl::init()
 {
-   BIO *bio = BIO_new(BIO_s_socket());
-   if (!bio) {
-      OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
-      return false;
-   }
-   ASSERT(d_->tcp_file_descriptor_);
-   BIO_set_fd(bio, d_->tcp_file_descriptor_, BIO_NOCLOSE);
-
-   d_->openssl_ = SSL_new(d_->openssl_ctx_);
-   if (!d_->openssl_) {
-      OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
-      SSL_free(d_->openssl_);
-      return false;
-   }
-
    if (d_->cipherlist_.empty()) {
       d_->cipherlist_ = TLS_DEFAULT_CIPHERS;
    }
@@ -104,16 +89,7 @@ bool TlsOpenSsl::init()
 //   SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, psk_client_cb);
 //   SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, psk_server_cb);
 
-   SSL_set_bio(d_->openssl_, bio, bio);
-
-   /* Non-blocking partial writes */
-   SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-
    /* ******************* */
-
-   if (d_->ca_certfile_.empty() && !d_->ca_certdir_.empty()) {
-      return true;
-   }
 
    if (d_->pem_callback_) {
       d_->pem_userdata_ = d_->pem_userdata_;
@@ -184,6 +160,7 @@ bool TlsOpenSsl::init()
    }
 
    if (!d_->dhfile_.empty()) { /* Diffie-Hellman parameters */
+      BIO *bio;
       if (!(bio = BIO_new_file(d_->dhfile_.c_str(), "r"))) {
          OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
          return false;
@@ -215,6 +192,27 @@ bool TlsOpenSsl::init()
                          SSL_VERIFY_NONE,
                          NULL);
    }
+
+   d_->openssl_ = SSL_new(d_->openssl_ctx_);
+   if (!d_->openssl_) {
+      OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
+      return false;
+   }
+
+   /* Non-blocking partial writes */
+   SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+   BIO *bio = BIO_new(BIO_s_socket());
+   if (!bio) {
+      OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
+      return false;
+   }
+
+   ASSERT(d_->tcp_file_descriptor_);
+   BIO_set_fd(bio, d_->tcp_file_descriptor_, BIO_NOCLOSE);
+
+   SSL_set_bio(d_->openssl_, bio, bio);
+
    return true;
 }
 

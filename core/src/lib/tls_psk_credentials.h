@@ -49,6 +49,10 @@ public:
       return *this;
    }
 
+   bool empty() const {
+      return identity_.empty() && psk_.empty();
+   }
+
    const std::string &get_identity() const { return identity_; }
    const std::string &get_psk() const { return psk_; }
 

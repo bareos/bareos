@@ -416,29 +416,33 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
          return false;
       }
 
-      const std::string empty;
-
       tls_conn->SetTcpFileDescriptor(fd_);
-      tls_conn->SetCaCertfile(tls_configuration->tls_cert.CaCertfile ? *tls_configuration->tls_cert.CaCertfile : empty);
-      tls_conn->SetCaCertdir(tls_configuration->tls_cert.CaCertdir ? *tls_configuration->tls_cert.CaCertdir : empty);
-      tls_conn->SetCrlfile(tls_configuration->tls_cert.crlfile ? *tls_configuration->tls_cert.crlfile : empty);
-      tls_conn->SetCertfile(tls_configuration->tls_cert.certfile ? *tls_configuration->tls_cert.certfile : empty);
-      tls_conn->SetKeyfile(tls_configuration->tls_cert.keyfile ? *tls_configuration->tls_cert.keyfile : empty);
-//      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
-      tls_conn->SetPemUserdata(tls_configuration->tls_cert.pem_message);
-      tls_conn->SetDhFile(empty); /* was never used before */
-      tls_conn->SetCipherList(tls_configuration->tls_cert.cipherlist ? *tls_configuration->tls_cert.cipherlist : empty);
-      tls_conn->SetVerifyPeer(tls_configuration->tls_cert.VerifyPeer);
 
-      const PskCredentials psk_cred(identity, password);
+      if (tls_configuration->tls_cert.enable) {
+         const std::string empty;
+         tls_conn->SetCaCertfile(tls_configuration->tls_cert.CaCertfile ? *tls_configuration->tls_cert.CaCertfile : empty);
+         tls_conn->SetCaCertdir(tls_configuration->tls_cert.CaCertdir ? *tls_configuration->tls_cert.CaCertdir : empty);
+         tls_conn->SetCrlfile(tls_configuration->tls_cert.crlfile ? *tls_configuration->tls_cert.crlfile : empty);
+         tls_conn->SetCertfile(tls_configuration->tls_cert.certfile ? *tls_configuration->tls_cert.certfile : empty);
+         tls_conn->SetKeyfile(tls_configuration->tls_cert.keyfile ? *tls_configuration->tls_cert.keyfile : empty);
+   //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
+         tls_conn->SetPemUserdata(tls_configuration->tls_cert.pem_message);
+         tls_conn->SetDhFile(tls_configuration->tls_cert.dhfile ? *tls_configuration->tls_cert.dhfile : empty); /* was never used before */
+         tls_conn->SetCipherList(tls_configuration->tls_cert.cipherlist ? *tls_configuration->tls_cert.cipherlist : empty);
+         tls_conn->SetVerifyPeer(tls_configuration->tls_cert.VerifyPeer);
+      }
+
+      if (tls_configuration->tls_psk.enable) {
+         const PskCredentials psk_cred(identity, password);
+         tls_conn->SetTlsPskServerContext(nullptr, psk_cred);
+         tls_conn->SetTlsPskClientContext(nullptr, psk_cred);
+      }
 
       if (initiated_by_remote) {
-         tls_conn->SetTlsPskServerContext(nullptr, psk_cred);
          if (!DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr)) {
             return false;
          }
       } else {
-         tls_conn->SetTlsPskClientContext(nullptr, psk_cred);
          if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) {
             return false;
          }
