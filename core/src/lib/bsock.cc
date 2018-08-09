@@ -410,37 +410,44 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
    selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
    if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
 
-      tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
-      if (!tls_conn) {
-         Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
-         return false;
+      bool tls_on = false;
+      if (tls_configuration->tls_cert.enable || tls_configuration->tls_psk.enable) {
+         tls_on = true;
       }
 
-      tls_conn->SetTcpFileDescriptor(fd_);
+      if (tls_on) {
+         tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
+         if (!tls_conn) {
+            Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
+            return false;
+         }
 
-      if (tls_configuration->tls_cert.enable) {
-         const std::string empty;
-         tls_conn->SetCaCertfile(tls_configuration->tls_cert.CaCertfile ? *tls_configuration->tls_cert.CaCertfile : empty);
-         tls_conn->SetCaCertdir(tls_configuration->tls_cert.CaCertdir ? *tls_configuration->tls_cert.CaCertdir : empty);
-         tls_conn->SetCrlfile(tls_configuration->tls_cert.crlfile ? *tls_configuration->tls_cert.crlfile : empty);
-         tls_conn->SetCertfile(tls_configuration->tls_cert.certfile ? *tls_configuration->tls_cert.certfile : empty);
-         tls_conn->SetKeyfile(tls_configuration->tls_cert.keyfile ? *tls_configuration->tls_cert.keyfile : empty);
-   //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
-         tls_conn->SetPemUserdata(tls_configuration->tls_cert.pem_message);
-         tls_conn->SetDhFile(tls_configuration->tls_cert.dhfile ? *tls_configuration->tls_cert.dhfile : empty); /* was never used before */
-         tls_conn->SetCipherList(tls_configuration->tls_cert.cipherlist ? *tls_configuration->tls_cert.cipherlist : empty);
-         tls_conn->SetVerifyPeer(tls_configuration->tls_cert.VerifyPeer);
-      }
+         tls_conn->SetTcpFileDescriptor(fd_);
 
-      if (tls_configuration->tls_psk.enable) {
-         const PskCredentials psk_cred(identity, password);
-         tls_conn->SetTlsPskServerContext(psk_cred);
-         tls_conn->SetTlsPskClientContext(psk_cred);
-      }
+         if (tls_configuration->tls_cert.enable) {
+            const std::string empty;
+            tls_conn->SetCaCertfile(tls_configuration->tls_cert.CaCertfile ? *tls_configuration->tls_cert.CaCertfile : empty);
+            tls_conn->SetCaCertdir(tls_configuration->tls_cert.CaCertdir ? *tls_configuration->tls_cert.CaCertdir : empty);
+            tls_conn->SetCrlfile(tls_configuration->tls_cert.crlfile ? *tls_configuration->tls_cert.crlfile : empty);
+            tls_conn->SetCertfile(tls_configuration->tls_cert.certfile ? *tls_configuration->tls_cert.certfile : empty);
+            tls_conn->SetKeyfile(tls_configuration->tls_cert.keyfile ? *tls_configuration->tls_cert.keyfile : empty);
+      //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
+            tls_conn->SetPemUserdata(tls_configuration->tls_cert.pem_message);
+            tls_conn->SetDhFile(tls_configuration->tls_cert.dhfile ? *tls_configuration->tls_cert.dhfile : empty); /* was never used before */
+            tls_conn->SetCipherList(tls_configuration->tls_cert.cipherlist ? *tls_configuration->tls_cert.cipherlist : empty);
+            tls_conn->SetVerifyPeer(tls_configuration->tls_cert.VerifyPeer);
+         }
 
-      if (!tls_conn->init()) {
-         return false;
-      }
+         if (tls_configuration->tls_psk.enable) {
+            const PskCredentials psk_cred(identity, password);
+            tls_conn->SetTlsPskServerContext(psk_cred);
+            tls_conn->SetTlsPskClientContext(psk_cred);
+         }
+
+         if (!tls_conn->init()) {
+            return false;
+         }
+      } /* if (tls_on) */
 
       if (initiated_by_remote) {
          if (!DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr)) {
