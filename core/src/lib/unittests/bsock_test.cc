@@ -158,6 +158,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
          }
          success = !bs->TlsEstablished();
       }
+      bs->fsend("1234567890HALLO1234567890");
     }
   }
   bs->close();
@@ -223,6 +224,10 @@ bool connect_to_server(std::string console_name, std::string console_password,
          }
          success = !UA_sock->TlsEstablished();
       }
+      UA_sock->recv();
+      std::string msg(UA_sock->msg);
+      std::string orig("1234567890HALLO1234567890");
+      EXPECT_TRUE(orig.compare(msg) == 0);
     }
   }
   if (UA_sock) {
