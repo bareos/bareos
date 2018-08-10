@@ -65,32 +65,29 @@ BareosSocketTCP::~BareosSocketTCP()
 
 BareosSocket *BareosSocketTCP::clone()
 {
-   BareosSocketTCP *clone;
-   POOLMEM *o_msg, *o_errmsg;
+   BareosSocketTCP *clone = New(BareosSocketTCP(*this));
 
-   clone = New(BareosSocketTCP);
+   /* do not use memory buffer from copied socket */
+   clone->msg = GetPoolMemory(PM_BSOCK);
+   clone->errmsg = GetPoolMemory(PM_MESSAGE);
 
-   /*
-    * Copy the data from the original BareosSocket but preserve the msg and errmsg buffers.
-    */
-   o_msg = clone->msg;
-   o_errmsg = clone->errmsg;
-   memcpy((void *)clone, (void *)this, sizeof(BareosSocketTCP));
-   clone->msg = o_msg;
-   clone->errmsg = o_errmsg;
-
+   if (src_addr) {
+      src_addr = New(IPADDR(*(src_addr)));
+   }
    if (who_) {
-      clone->SetWho(bstrdup(who_));
+      who_ = bstrdup(who_);
    }
    if (host_) {
-      clone->SetHost(bstrdup(host_));
+      host_ = bstrdup(host_);
    }
-   if (src_addr) {
-      clone->src_addr = New(IPADDR(*(src_addr)));
-   }
+
+   /* duplicate file descriptors */
+   clone->fd_ = dup(fd_);
+   spool_fd_ = dup(spool_fd_);
+
    clone->cloned_ = true;
 
-   return (BareosSocket *)clone;
+   return clone;
 }
 
 /*
@@ -954,6 +951,17 @@ void BareosSocketTCP::destroy()
    if (src_addr) {
       free(src_addr);
       src_addr = NULL;
+   }
+   if (fd_ >= 0) {
+      socketClose(fd_);
+      fd_ = -1;
+   }
+   if(spool_fd_ >= 0) {
+      socketClose(spool_fd_);
+      spool_fd_ = -1;
+   }
+   if(src_addr) {
+      delete (src_addr);
    }
 }
 

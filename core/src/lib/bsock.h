@@ -69,7 +69,7 @@ public:
    int blocking_;                     /* Blocking state (0 = nonblocking, 1 = blocking) */
    volatile int errors;               /* Incremented for each error on socket */
    volatile bool suppress_error_msgs_;/* Set to suppress error messages */
-   int sleep_time_after_authentication_error = 5;
+   int sleep_time_after_authentication_error;
 
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
@@ -134,6 +134,7 @@ private:
 
 public:
    BareosSocket();
+   BareosSocket(const BareosSocket& other);
    virtual ~BareosSocket();
 
    /* Methods -- in bsock.c */

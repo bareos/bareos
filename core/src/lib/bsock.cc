@@ -36,21 +36,100 @@
 
 static constexpr int debuglevel = 50;
 
+BareosSocket::BareosSocket()
+/* public */
+   : fd_(-1)
+   , read_seqno(0)
+   , msg(GetPoolMemory(PM_BSOCK))
+   , errmsg(GetPoolMemory(PM_MESSAGE))
+   , spool_fd_(-1)
+   , src_addr(nullptr)
+   , in_msg_no(0)
+   , out_msg_no(0)
+   , message_length(0)
+   , timer_start { 0 }
+   , b_errno(0)
+   , blocking_(1)
+   , errors(0)
+   , suppress_error_msgs_(false)
+   , sleep_time_after_authentication_error(5)
+   , client_addr { 0 }
+   , peer_addr { 0 }
+   , local_daemon_type_(BareosDaemonType::kUndefined)
+   , remote_daemon_type_(BareosDaemonType::kUndefined)
 
-BareosSocket::BareosSocket() : tls_conn(nullptr) {
+/* protected: */
+   , jcr_(nullptr)
+   , mutex_(PTHREAD_MUTEX_INITIALIZER)
+   , who_(nullptr)
+   , host_(nullptr)
+   , port_(-1)
+   , tid_(nullptr)
+   , data_end_ { 0 }
+   , FileIndex_(0)
+   , timed_out_(false)
+   , terminated_(false)
+   , cloned_(false)
+   , spool_(false)
+   , use_locking_(false)
+   , use_bursting_(false)
+   , use_keepalive_(true)
+   , bwlimit_(0)
+   , nb_bytes_(0)
+   , last_tick_ { 0 }
+   , tls_established_(false)
+{
    Dmsg0(100, "Contruct BareosSocket\n");
-   fd_            = -1;
-   spool_fd_      = -1;
-   msg             = GetPoolMemory(PM_BSOCK);
-   errmsg          = GetPoolMemory(PM_MESSAGE);
-   blocking_      = true;
-   use_keepalive_ = true;
-   local_daemon_type_ = BareosDaemonType::kUndefined;
-   remote_daemon_type_ = BareosDaemonType::kUndefined;
-   tls_established_ = false;
 }
 
-BareosSocket::~BareosSocket() {
+BareosSocket::BareosSocket(const BareosSocket &other)
+{
+   Dmsg0(100, "Copy Contructor BareosSocket\n");
+
+   fd_                     = other.fd_;
+   read_seqno              = other.read_seqno;
+   msg                     = other.msg;
+   errmsg                  = other.errmsg;
+   spool_fd_               = other.spool_fd_;
+   src_addr                = other.src_addr;
+   in_msg_no               = other.in_msg_no;
+   out_msg_no              = other.out_msg_no;
+   message_length          = other.message_length;
+   timer_start             = other.timer_start;
+   b_errno                 = other.b_errno;
+   blocking_               = other.blocking_;
+   errors                  = other.errors;
+   suppress_error_msgs_    = other.suppress_error_msgs_;
+   sleep_time_after_authentication_error = other.sleep_time_after_authentication_error;
+   client_addr             = other.client_addr;
+   peer_addr               = other.peer_addr;
+   local_daemon_type_      = other.local_daemon_type_;
+   remote_daemon_type_     = other.remote_daemon_type_;
+
+/* protected: */
+   jcr_                    = other.jcr_;
+   mutex_                  = other.mutex_;
+   who_                    = other.who_;
+   host_                   = other.host_;
+   port_                   = other.port_;
+   tid_                    = other.tid_;
+   data_end_               = other.data_end_;
+   FileIndex_              = other.FileIndex_;
+   timed_out_              = other.timed_out_;
+   terminated_             = other.terminated_;
+   cloned_                 = other.cloned_;
+   spool_                  = other.spool_;
+   use_locking_            = other.use_locking_;
+   use_bursting_           = other.use_bursting_;
+   use_keepalive_          = other.use_keepalive_;
+   bwlimit_                = other.bwlimit_;
+   nb_bytes_               = other.nb_bytes_;
+   last_tick_              = other.last_tick_;
+   tls_established_        = other.tls_established_;
+}
+
+BareosSocket::~BareosSocket()
+{
    Dmsg0(100, "Destruct BareosSocket\n");
    // FreeTls();
 }
