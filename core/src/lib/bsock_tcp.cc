@@ -932,25 +932,23 @@ void BareosSocketTCP::destroy()
 {
    if (msg) {
       FreePoolMemory(msg);
-      msg = NULL;
-   } else {
-      ASSERT(1 == 0);              /* double close */
+      msg = nullptr;
    }
    if (errmsg) {
       FreePoolMemory(errmsg);
-      errmsg = NULL;
+      errmsg = nullptr;
    }
    if (who_) {
       free(who_);
-      who_ = NULL;
+      who_ = nullptr;
    }
    if (host_) {
       free(host_);
-      host_ = NULL;
+      host_ = nullptr;
    }
    if (src_addr) {
       free(src_addr);
-      src_addr = NULL;
+      src_addr = nullptr;
    }
    if (fd_ >= 0) {
       socketClose(fd_);
@@ -962,6 +960,7 @@ void BareosSocketTCP::destroy()
    }
    if(src_addr) {
       delete (src_addr);
+      src_addr = nullptr;
    }
 }
 
