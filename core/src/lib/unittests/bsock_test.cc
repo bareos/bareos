@@ -98,6 +98,7 @@ int create_accepted_server_socket(int port)
   return new_socket;
 }
 
+#if 0
 static bool check_cipher(const TlsResource &tls, const std::string &cipher)
 {
    bool success = false;
@@ -108,6 +109,7 @@ static bool check_cipher(const TlsResource &tls, const std::string &cipher)
    }
    return success;
 }
+#endif
 
 void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port,
@@ -149,7 +151,6 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
          cipher_server = cipher;
       }
       if (cons->tls_psk.enable || cons->tls_cert.enable) {
-         EXPECT_TRUE(check_cipher(*cons, cipher));
          Dmsg0(10, bs->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
          success = bs->TlsEstablished();
       } else {
@@ -215,7 +216,6 @@ bool connect_to_server(std::string console_name, std::string console_password,
          cipher_client = cipher;
       }
       if (dir->tls_psk.enable || dir->tls_cert.enable) {
-         EXPECT_TRUE(check_cipher(*dir, cipher));
          Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enabled\n" : "Tls failed to establish\n");
          success = UA_sock->TlsEstablished();
       } else {
@@ -337,7 +337,6 @@ TEST(bsock, auth_works_with_different_names)
   EXPECT_TRUE(future.get());
 }
 
-
 TEST(bsock, auth_fails_with_different_passwords)
 {
   port++;
@@ -387,6 +386,7 @@ TEST(bsock, auth_works_with_tls_psk)
   InitForTest();
 
   dir->tls_psk.enable = true;
+  dir->tls_cert.enable = true;
   cons->tls_psk.enable = true;
 
   Dmsg0(10, "starting listen thread...\n");
@@ -427,6 +427,7 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   InitForTest();
 
   dir->tls_psk.enable = true;
+  dir->tls_cert.enable = true;
   cons->tls_psk.enable = true;
 
   Dmsg0(10, "starting listen thread...\n");
@@ -465,9 +466,9 @@ TEST(bsock, auth_works_with_tls_cert)
 
   InitForTest();
 
+  dir->tls_psk.enable = true;
   dir->tls_cert.enable = true;
   cons->tls_cert.enable = true;
-
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
