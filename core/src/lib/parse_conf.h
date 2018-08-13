@@ -117,7 +117,7 @@ struct s_password {
          "Path of a PEM encoded TLS certificate." }, \
    { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
          "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.AllowedCns), 0, 0, NULL, NULL, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_certificate_common_names_), 0, 0, NULL, NULL, \
          "\"Common Name\"s (CNs) of the allowed peer certificates."  }
 
  /*

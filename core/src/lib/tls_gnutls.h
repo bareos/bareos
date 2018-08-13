@@ -38,8 +38,8 @@ public:
    virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) override;
    virtual DLL_IMP_EXP void SetTlsPskServerContext(const PskCredentials &credentials) override;
 
-   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host);
-   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list);
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) override;
 
    virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock);
    virtual DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);

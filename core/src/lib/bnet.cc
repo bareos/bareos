@@ -118,7 +118,7 @@ bool BnetSend(BareosSocket *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool BnetTlsServer(BareosSocket *bsock, alist *verify_list)
+bool BnetTlsServer(BareosSocket *bsock, const std::vector<std::string> &verify_list)
 {
    JobControlRecord *jcr = bsock->jcr();
 
@@ -127,8 +127,9 @@ bool BnetTlsServer(BareosSocket *bsock, alist *verify_list)
       goto err;
    }
 
-   if (verify_list) {
-      if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
+   if (!verify_list.empty()) {
+      std::vector<std::string> verify_list_;
+      if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list_)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
@@ -149,7 +150,7 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, const std::vector<std::string> &verify_list)
 {
    JobControlRecord *jcr = bsock->jcr();
 
@@ -162,8 +163,9 @@ bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
        * If there's an Allowed CN verify list, use that to validate the remote
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
-      if (verify_list) {
-         if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
+      if (!verify_list.empty()) {
+         std::vector<std::string> verify_list_;
+         if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list_)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
@@ -186,13 +188,18 @@ err:
    return false;
 }
 #else
-bool BnetTlsServer(std::shared_ptr<TlsImplementation> tls_implementation, BareosSocket * bsock, alist *verify_list)
+bool BnetTlsServer(std::shared_ptr<TlsImplementation> tls_implementation,
+                   BareosSocket *bsock,
+                   const std::vector<std::string> &verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation,
+                   BareosSocket *bsock,
+                   bool VerifyPeer,
+                   const std::vector<std::string> &verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;

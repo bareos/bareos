@@ -561,10 +561,10 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                         const char* password,
                                         JobControlRecord *jcr)
 {
-   alist *verify_list = nullptr;
+   std::vector<std::string> verify_list;
 
    if (selected_local_tls->GetVerifyPeer()) {
-      verify_list = selected_local_tls->GetVerifyList();
+      verify_list = selected_local_tls->AllowedCertificateCommonNames();
    }
    if (BnetTlsServer(this, verify_list)) {
       return true;
@@ -581,7 +581,7 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
 {
    if (BnetTlsClient(this,
                      selected_local_tls->GetVerifyPeer(),
-                     selected_local_tls->GetVerifyList())) {
+                     selected_local_tls->AllowedCertificateCommonNames())) {
       return true;
    }
    Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));

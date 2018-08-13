@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "include/bareos.h"
+#include <bareos.h>
 #include "tls_conf.h"
 #include "tls_openssl.h"
 
@@ -73,10 +73,24 @@ bool TlsConfigCert::required(u_int32_t policy)
    return ((policy >> TlsConfigCert::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
+std::vector<std::string> TlsConfigCert::AllowedCertificateCommonNames() const
+{
+   std::vector<std::string> list;
+
+   if (allowed_certificate_common_names_) {
+      const char *s;
+      foreach_alist(s, allowed_certificate_common_names_) {
+         list.push_back(std::string(s));
+      }
+   }
+
+   return list;
+}
+
 TlsConfigCert::~TlsConfigCert()
 {
-   if (AllowedCns) {
-      delete AllowedCns;
-      AllowedCns = nullptr;
+   if (allowed_certificate_common_names_) {
+      delete allowed_certificate_common_names_;
+      allowed_certificate_common_names_ = nullptr;
    }
 }

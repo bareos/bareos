@@ -251,9 +251,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.allowed_job_cmds) {
          delete res->res_dir.allowed_job_cmds;
       }
-      if (res->res_dir.tls_cert.AllowedCns) {
-         res->res_dir.tls_cert.AllowedCns->destroy();
-         free(res->res_dir.tls_cert.AllowedCns);
+      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
+         res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_dir.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_dir.tls_cert.CaCertfile) {
          delete res->res_dir.tls_cert.CaCertfile;
@@ -352,9 +352,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_client.log_timestamp_format) {
          free(res->res_client.log_timestamp_format);
       }
-      if (res->res_client.tls_cert.AllowedCns) {
-         res->res_client.tls_cert.AllowedCns->destroy();
-         free(res->res_client.tls_cert.AllowedCns);
+      if (res->res_client.tls_cert.allowed_certificate_common_names_) {
+         res->res_client.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_client.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_client.tls_cert.CaCertfile) {
          delete res->res_client.tls_cert.CaCertfile;
@@ -457,7 +457,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls_cert.AllowedCns = res_all.res_dir.tls_cert.AllowedCns;
+               res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
                res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
                res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             }
@@ -472,7 +472,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
                res->res_client.pki_signers = res_all.res_client.pki_signers;
                res->res_client.pki_recipients = res_all.res_client.pki_recipients;
                res->res_client.messages = res_all.res_client.messages;
-               res->res_client.tls_cert.AllowedCns = res_all.res_client.tls_cert.AllowedCns;
+               res->res_client.tls_cert.allowed_certificate_common_names_ = res_all.res_client.tls_cert.allowed_certificate_common_names_;
                res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
                res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             }

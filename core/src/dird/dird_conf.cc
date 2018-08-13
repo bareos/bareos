@@ -2556,9 +2556,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.log_timestamp_format) {
          free(res->res_dir.log_timestamp_format);
       }
-      if (res->res_dir.tls_cert.AllowedCns) {
-         res->res_dir.tls_cert.AllowedCns->destroy();
-         free(res->res_dir.tls_cert.AllowedCns);
+      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
+         res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_dir.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_dir.tls_cert.CaCertfile) {
          delete res->res_dir.tls_cert.CaCertfile;
@@ -2615,9 +2615,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
             res->res_con.ACL_lists[i] = NULL;
          }
       }
-      if (res->res_con.tls_cert.AllowedCns) {
-         res->res_con.tls_cert.AllowedCns->destroy();
-         free(res->res_con.tls_cert.AllowedCns);
+      if (res->res_con.tls_cert.allowed_certificate_common_names_) {
+         res->res_con.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_con.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_con.tls_cert.CaCertfile) {
          delete res->res_con.tls_cert.CaCertfile;
@@ -2666,9 +2666,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_client.rcs) {
          free(res->res_client.rcs);
       }
-      if (res->res_client.tls_cert.AllowedCns) {
-         res->res_client.tls_cert.AllowedCns->destroy();
-         free(res->res_client.tls_cert.AllowedCns);
+      if (res->res_client.tls_cert.allowed_certificate_common_names_) {
+         res->res_client.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_client.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_client.tls_cert.CaCertfile) {
          delete res->res_client.tls_cert.CaCertfile;
@@ -2744,9 +2744,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
          pthread_mutex_destroy(&res->res_store.rss->changer_lock);
          free(res->res_store.rss);
       }
-      if (res->res_store.tls_cert.AllowedCns) {
-         res->res_store.tls_cert.AllowedCns->destroy();
-         free(res->res_store.tls_cert.AllowedCns);
+      if (res->res_store.tls_cert.allowed_certificate_common_names_) {
+         res->res_store.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_store.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_store.tls_cert.CaCertfile) {
          delete res->res_store.tls_cert.CaCertfile;
@@ -2971,7 +2971,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          return false;
       } else {
-         res->res_con.tls_cert.AllowedCns = res_all.res_con.tls_cert.AllowedCns;
+         res->res_con.tls_cert.allowed_certificate_common_names_ = res_all.res_con.tls_cert.allowed_certificate_common_names_;
          res->res_con.profiles = res_all.res_con.profiles;
       }
       break;
@@ -2983,7 +2983,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          res->res_dir.plugin_names = res_all.res_dir.plugin_names;
          res->res_dir.messages = res_all.res_dir.messages;
          res->res_dir.backend_directories = res_all.res_dir.backend_directories;
-         res->res_dir.tls_cert.AllowedCns = res_all.res_dir.tls_cert.AllowedCns;
+         res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
       }
       break;
    case R_STORAGE:
@@ -2994,7 +2994,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          int status;
 
          res->res_store.paired_storage = res_all.res_store.paired_storage;
-         res->res_store.tls_cert.AllowedCns = res_all.res_store.tls_cert.AllowedCns;
+         res->res_store.tls_cert.allowed_certificate_common_names_ = res_all.res_store.tls_cert.allowed_certificate_common_names_;
 
          /*
           * We must explicitly copy the device alist pointer
@@ -3093,7 +3093,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
              */
             res->res_client.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
          }
-         res->res_client.tls_cert.AllowedCns = res_all.res_client.tls_cert.AllowedCns;
+         res->res_client.tls_cert.allowed_certificate_common_names_ = res_all.res_client.tls_cert.allowed_certificate_common_names_;
 
          res->res_client.rcs = (runtime_client_status_t *)malloc(sizeof(runtime_client_status_t));
          memset(res->res_client.rcs, 0, sizeof(runtime_client_status_t));

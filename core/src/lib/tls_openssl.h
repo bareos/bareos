@@ -35,7 +35,7 @@ public:
    DLL_IMP_EXP bool init() override;
 
    DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
-   DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) override;
+   DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) override;
 
    DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock) override;
    DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) override;

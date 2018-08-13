@@ -33,14 +33,14 @@ public:
    std::string *keyfile;      /* TLS Client Key File */
    std::string *cipherlist;   /* TLS Cipher List */
    std::string *dhfile;       /* TLS Diffie-Hellman File */
-   alist *AllowedCns;         /* TLS Allowed Certificate Common Names (Clients) */
+   alist *allowed_certificate_common_names_;
 
    std::string *pem_message;
 
    TlsConfigCert()
       : TlsConfigBase(), authenticate(false), VerifyPeer(0),
         CaCertfile(nullptr), CaCertdir(nullptr), crlfile(nullptr), certfile(nullptr),
-        keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), AllowedCns(nullptr),
+        keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), allowed_certificate_common_names_(nullptr),
         pem_message(nullptr) {}
    ~TlsConfigCert();
 
@@ -49,11 +49,8 @@ public:
    int (*TlsPemCallback)(char *buf, int size, const void *userdata);
 
    bool GetVerifyPeer() const override { return VerifyPeer; }
-   alist *GetVerifyList() const override { return AllowedCns; }
+   std::vector<std::string> AllowedCertificateCommonNames() const override;
    bool GetAuthenticate() const override { return authenticate; }
-
-//   std::shared_ptr<Tls> CreateClientContext() const override;
-//   std::shared_ptr<Tls> CreateServerContext() const override;
 
    /**
     * Checks whether the given @param policy matches the configured value

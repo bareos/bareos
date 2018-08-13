@@ -33,12 +33,9 @@ public:
 
    virtual void SetPskCredentials(const PskCredentials &credentials) {};
 
-//   virtual std::shared_ptr<Tls> CreateClientContext() const = 0;
-//   virtual std::shared_ptr<Tls> CreateServerContext() const = 0;
-
    virtual bool GetAuthenticate() const { return false; }
    virtual bool GetVerifyPeer() const { return false; }
-   virtual alist *GetVerifyList() const { return nullptr; }
+   virtual std::vector<std::string> AllowedCertificateCommonNames() const { return std::vector<std::string>(); }
 
    typedef enum {
       BNET_TLS_NONE = 0,            /*!< cannot do TLS */

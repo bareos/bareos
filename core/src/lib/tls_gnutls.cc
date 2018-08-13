@@ -324,7 +324,7 @@ static inline bool TlsCertVerify(TlsConnectionContextGnuTls *tls_conn)
  * Returns: true on success
  *          false on failure
  */
-bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list)
+bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list)
 {
    char *cn;
    int error, cnt;
@@ -727,7 +727,7 @@ int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)
    void TlsGnuTls::SetTlsPskServerContext(const PskCredentials &credentials) {}
 
    bool TlsGnuTls::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) { return false; }
-   bool TlsGnuTls::TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) { return false; }
+   bool TlsGnuTls::TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) { return false; };
 
    bool TlsGnuTls::TlsBsockAccept(BareosSocket *bsock) { return false; }
    int TlsGnuTls::TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) { return 0; }

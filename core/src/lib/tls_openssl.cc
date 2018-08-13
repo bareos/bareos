@@ -249,12 +249,11 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord *jcr, const char *host, int por
  * Returns: true on success
  *          false on failure
  */
-bool TlsOpenSsl::TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list)
+bool TlsOpenSsl::TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list)
 {
    X509 *cert;
    X509_NAME *subject;
    bool auth_success = false;
-   char data[256];
 
    if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
       Qmsg0(jcr, M_ERROR, 0, _("Peer failed to present a TLS certificate\n"));
@@ -262,13 +261,13 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_lis
    }
 
    if ((subject = X509_get_subject_name(cert)) != NULL) {
+      char data[256]; /* nullterminated by X509_NAME_get_text_by_NID */
       if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) > 0) {
-         char *cn;
-         data[255] = 0; /* NULL Terminate data */
-
-         foreach_alist(cn, verify_list) {
-            Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data, cn);
-            if (Bstrcasecmp(data, cn)) {
+         std::string cn;
+         for(const std::string &cn : verify_list) {
+            std::string d(data);
+            Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data, cn.c_str());
+            if (d.compare(cn) == 0) {
                auth_success = true;
             }
          }

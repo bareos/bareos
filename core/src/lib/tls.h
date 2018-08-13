@@ -49,7 +49,7 @@ public:
    virtual DLL_IMP_EXP void SetTlsPskServerContext(const PskCredentials &credentials) = 0;
 
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) = 0;
-   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, alist *verify_list) = 0;
+   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) = 0;
 /* ********************* */
 
    virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock) = 0;

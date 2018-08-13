@@ -515,9 +515,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.keyencrkey.value) {
          free(res->res_dir.keyencrkey.value);
       }
-      if (res->res_dir.tls_cert.AllowedCns) {
-         res->res_dir.tls_cert.AllowedCns->destroy();
-         free(res->res_dir.tls_cert.AllowedCns);
+      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
+         res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_dir.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_dir.tls_cert.CaCertfile) {
          delete res->res_dir.tls_cert.CaCertfile;
@@ -610,9 +610,9 @@ void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_store.log_timestamp_format) {
          free(res->res_store.log_timestamp_format);
       }
-      if (res->res_store.tls_cert.AllowedCns) {
-         res->res_store.tls_cert.AllowedCns->destroy();
-         free(res->res_store.tls_cert.AllowedCns);
+      if (res->res_store.tls_cert.allowed_certificate_common_names_) {
+         res->res_store.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_store.tls_cert.allowed_certificate_common_names_);
       }
       if (res->res_store.tls_cert.CaCertfile) {
          delete res->res_store.tls_cert.CaCertfile;
@@ -770,7 +770,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
          if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          } else {
-            res->res_dir.tls_cert.AllowedCns = res_all.res_dir.tls_cert.AllowedCns;
+            res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
          }
          break;
       case R_STORAGE:
@@ -780,7 +780,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             res->res_store.plugin_names = res_all.res_store.plugin_names;
             res->res_store.messages = res_all.res_store.messages;
             res->res_store.backend_directories = res_all.res_store.backend_directories;
-            res->res_store.tls_cert.AllowedCns = res_all.res_store.tls_cert.AllowedCns;
+            res->res_store.tls_cert.allowed_certificate_common_names_ = res_all.res_store.tls_cert.allowed_certificate_common_names_;
          }
          break;
       case R_AUTOCHANGER:
