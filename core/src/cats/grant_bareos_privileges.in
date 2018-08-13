@@ -27,6 +27,12 @@
 #
 # Source the Bareos config functions.
 #
+
+# remember current working directory
+CWD=`pwd`
+cd /
+
+
 . @scriptdir@/bareos-config-lib.sh
 
 db_name="${db_name:-`get_database_name @db_name@`}"
@@ -111,5 +117,8 @@ if [ "${retval}" = 0 ]; then
 else
    echo "Error creating privileges."
 fi
+
+# change back to original current working directory
+cd ${CWD}
 
 exit ${retval}

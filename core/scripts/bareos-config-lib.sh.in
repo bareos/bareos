@@ -59,7 +59,7 @@ is_function()
 
 info()
 {
-    echo "$@" >&2
+    echo "Info: $@" >&2
 }
 
 warn()
@@ -697,11 +697,12 @@ get_database_param()
 
         # if default value is given, return it anyway
         if [ -n "$DEFAULT" ]; then
-            warn "failed to get \"${PARAM}\" from config, using default value \"${DEFAULT}\", see $temp_log"
+            info "unable to get \"${PARAM}\" from config, using default value \"${DEFAULT}\". In case or problems check $temp_log"
             echo "$DEFAULT"
         else
-            warn "failed to get \"${PARAM}\" from config, see $temp_log"
+            info "unable to get \"${PARAM}\" from config, this is usually not an error. In case of problems check $temp_log"
         fi
+
 
         return 1
     fi

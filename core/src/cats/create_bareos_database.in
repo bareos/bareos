@@ -27,6 +27,12 @@
 #
 # Source the Bareos config functions.
 #
+
+# remember current working directory
+CWD=`pwd`
+cd /
+
+
 . @scriptdir@/bareos-config-lib.sh
 
 db_name="${db_name:-`get_database_name @db_name@`}"
@@ -35,6 +41,7 @@ dir_user=`get_user_dir`
 dir_group=`get_group_dir`
 default_db_type=`get_database_driver_default`
 working_dir=`get_working_dir`
+
 
 #
 # See if the first argument is a valid backend name.
@@ -140,5 +147,8 @@ if [ "${retval}" = 0 ]; then
 else
    echo "Creating of ${db_name} database failed."
 fi
+
+# change back to original current working directory
+cd ${CWD}
 
 exit ${retval}
