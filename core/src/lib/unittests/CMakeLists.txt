@@ -56,7 +56,7 @@ set_property(TEST test_lib
 add_dependencies(check test_lib)
 
 add_executable(test_bsock
-    bsock_test.cc bsock_constructor_test.cc
+    bsock_test.cc bsock_constructor_test.cc bsock_cert_verify_common_names_test.cc
     )
 target_link_libraries(test_bsock
    bareos
