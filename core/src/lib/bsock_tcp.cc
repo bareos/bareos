@@ -906,26 +906,24 @@ int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 
 void BareosSocketTCP::close()
 {
-   if (!cloned_) {
-      ClearLocking();
+   if (cloned_) {
+      return;
    }
 
-   if (!cloned_) {
-      /*
-       * Shutdown tls cleanly.
-       */
-      if (tls_conn) {
-         tls_conn->TlsBsockShutdown(this);
-         CloseTlsConnectionAndFreeMemory();
-      }
+   ClearLocking();
+
+   if (tls_conn) {
+      CloseTlsConnectionAndFreeMemory();
+   }
+
+   if (fd_ >= 0) {
       if (IsTimedOut()) {
-         shutdown(fd_, SHUT_RDWR);   /* discard any pending I/O */
+         /* discard any pending I/O */
+         shutdown(fd_, SHUT_RDWR);
       }
-      socketClose(fd_);      /* normal close */
+      socketClose(fd_);
       fd_ = -1;
    }
-
-   return;
 }
 
 void BareosSocketTCP::destroy()
