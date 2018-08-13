@@ -916,7 +916,7 @@ void BareosSocketTCP::close()
        */
       if (tls_conn) {
          tls_conn->TlsBsockShutdown(this);
-         FreeTls();
+         CloseTlsConnectionAndFreeMemory();
       }
       if (IsTimedOut()) {
          shutdown(fd_, SHUT_RDWR);   /* discard any pending I/O */

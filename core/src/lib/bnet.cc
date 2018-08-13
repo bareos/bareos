@@ -140,7 +140,7 @@ bool BnetTlsServer(BareosSocket *bsock, alist *verify_list)
    return true;
 
 err:
-   bsock->FreeTls();
+   bsock->CloseTlsConnectionAndFreeMemory();
    return false;
 }
 
@@ -182,7 +182,7 @@ bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
    return true;
 
 err:
-   bsock->FreeTls();
+   bsock->CloseTlsConnectionAndFreeMemory();
    return false;
 }
 #else

@@ -131,15 +131,14 @@ BareosSocket::BareosSocket(const BareosSocket &other)
 BareosSocket::~BareosSocket()
 {
    Dmsg0(100, "Destruct BareosSocket\n");
-   // FreeTls();
 }
 
-void BareosSocket::FreeTls()
+void BareosSocket::CloseTlsConnectionAndFreeMemory()
 {
-//   if (tls_conn != nullptr) {
-//      FreeTlsConnection(tls_conn);
-//      tls_conn = nullptr;
-//   }
+   if (tls_conn) {
+      tls_conn->TlsBsockShutdown(this);
+      tls_conn.reset();
+   }
 }
 
 /**
@@ -542,7 +541,8 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
       }
 
       if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
-         FreeTls();          /* yes, shutdown tls */
+         tls_conn->TlsBsockShutdown(this);
+         CloseTlsConnectionAndFreeMemory();          /* yes, shutdown tls */
       }
    }
    if (!initiated_by_remote) {

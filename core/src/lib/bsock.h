@@ -139,7 +139,7 @@ public:
 
    /* Methods -- in bsock.c */
   //  void free_bsock();
-   void FreeTls();
+   void CloseTlsConnectionAndFreeMemory();
    virtual BareosSocket *clone() = 0;
    virtual bool connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
                         utime_t heart_beat, const char *name, char *host,
