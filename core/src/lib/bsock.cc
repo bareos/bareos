@@ -105,6 +105,7 @@ BareosSocket::BareosSocket(const BareosSocket &other)
    peer_addr               = other.peer_addr;
    local_daemon_type_      = other.local_daemon_type_;
    remote_daemon_type_     = other.remote_daemon_type_;
+   tls_conn                = other.tls_conn;
 
 /* protected: */
    jcr_                    = other.jcr_;

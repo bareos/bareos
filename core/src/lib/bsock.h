@@ -81,7 +81,7 @@ public:
    }
    BareosDaemonType local_daemon_type_;
    BareosDaemonType remote_daemon_type_;
-   std::unique_ptr<Tls> tls_conn;    /* Associated tls connection */
+   std::shared_ptr<Tls> tls_conn;    /* Associated tls connection */
 
 protected:
    JobControlRecord *jcr_;           /* JobControlRecord or NULL for error msgs */
