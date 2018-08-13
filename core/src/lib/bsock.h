@@ -92,13 +92,13 @@ protected:
    btimer_t *tid_;                   /* Timer id */
    boffset_t data_end_;              /* Offset of last valid data written */
    int32_t FileIndex_;               /* Last valid attr spool FI */
-   volatile bool timed_out_:1;       /* Timed out in read/write */
-   volatile bool terminated_:1;      /* Set when BNET_TERMINATE arrives */
-   bool cloned_:1;                   /* Set if cloned BareosSocket */
-   bool spool_:1;                    /* Set for spooling */
-   bool use_locking_:1;              /* Set to use locking */
-   bool use_bursting_:1;             /* Set to use bandwidth bursting */
-   bool use_keepalive_:1;            /* Set to use keepalive on the socket */
+   bool timed_out_;                  /* Timed out in read/write */
+   bool terminated_;                 /* Set when BNET_TERMINATE arrives */
+   bool cloned_;                     /* Set if cloned BareosSocket */
+   bool spool_;                      /* Set for spooling */
+   bool use_locking_;                /* Set to use locking */
+   bool use_bursting_;               /* Set to use bandwidth bursting */
+   bool use_keepalive_;              /* Set to use keepalive on the socket */
    int64_t bwlimit_;                 /* Set to limit bandwidth */
    int64_t nb_bytes_;                /* Bytes sent/recv since the last tick */
    btime_t last_tick_;               /* Last tick used by bwlimit */
