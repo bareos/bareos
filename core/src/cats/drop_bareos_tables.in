@@ -27,6 +27,11 @@
 #
 # Source the Bareos config functions.
 #
+
+# change to root dir
+cd /
+
+
 . @scriptdir@/bareos-config-lib.sh
 
 db_name="${db_name:-`get_database_name @db_name@`}"

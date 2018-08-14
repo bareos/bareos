@@ -27,8 +27,7 @@
 # Source the Bareos config functions.
 #
 
-# remember current working directory
-CWD=`pwd`
+# change to root dir
 cd /
 
 
@@ -97,8 +96,5 @@ if [ ${retval} = 0 ]; then
 else
    echo "Drop of ${db_name} database failed."
 fi
-
-# change back to original current working directory
-cd ${CWD}
 
 exit ${retval}
