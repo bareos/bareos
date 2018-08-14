@@ -128,8 +128,7 @@ bool BnetTlsServer(BareosSocket *bsock, const std::vector<std::string> &verify_l
    }
 
    if (!verify_list.empty()) {
-      std::vector<std::string> verify_list_;
-      if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list_)) {
+      if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
@@ -164,8 +163,7 @@ bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, const std::vector<std::
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
       if (!verify_list.empty()) {
-         std::vector<std::string> verify_list_;
-         if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list_)) {
+         if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
