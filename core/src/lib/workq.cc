@@ -218,16 +218,7 @@ void *workq_server(void *arg)
           * Wait 2 seconds, then if no more work, exit
           */
          Dmsg0(1400, "pthread_cond_timedwait()\n");
-#ifdef xxxxxxxxxxxxxxxx_was_HAVE_CYGWIN
-         /* CYGWIN dies with a page fault the second
-          * time that pthread_cond_timedwait() is called
-          * so fake it out.
-          */
-         P(wq->mutex);
-         status = ETIMEDOUT;
-#else
          status = pthread_cond_timedwait(&wq->work, &wq->mutex, &timeout);
-#endif
          Dmsg1(1400, "timedwait=%d\n", status);
          if (status == ETIMEDOUT) {
             timedout = 1;
