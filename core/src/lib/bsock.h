@@ -40,6 +40,7 @@
 
 #include <include/bareos.h>
 #include "lib/tls.h"
+#include <mutex>
 
 struct btimer_t;                      /* forward reference */
 class BareosSocket;
@@ -85,7 +86,7 @@ public:
 
 protected:
    JobControlRecord *jcr_;           /* JobControlRecord or NULL for error msgs */
-   pthread_mutex_t mutex_;           /* For locking if use_locking set */
+   std::shared_ptr<std::mutex> mutex_;
    char *who_;                       /* Name of daemon to which we are talking */
    char *host_;                      /* Host name/IP */
    int port_;                        /* Desired port */
@@ -96,7 +97,6 @@ protected:
    bool terminated_;                 /* Set when BNET_TERMINATE arrives */
    bool cloned_;                     /* Set if cloned BareosSocket */
    bool spool_;                      /* Set for spooling */
-   bool use_locking_;                /* Set to use locking */
    bool use_bursting_;               /* Set to use bandwidth bursting */
    bool use_keepalive_;              /* Set to use keepalive on the socket */
    int64_t bwlimit_;                 /* Set to limit bandwidth */

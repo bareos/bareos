@@ -467,8 +467,8 @@ bool BareosSocketTCP::send()
       return false;
    }
 
-   if (use_locking_) {
-      P(mutex_);
+   if (mutex_) {
+      mutex_->lock();
    }
 
    /*
@@ -506,8 +506,8 @@ bool BareosSocketTCP::send()
       }
    }
 
-   if (use_locking_) {
-      V(mutex_);
+   if (mutex_) {
+      mutex_->unlock();
    }
 
    return ok;
@@ -541,8 +541,8 @@ int32_t BareosSocketTCP::recv()
       return BNET_HARDEOF;
    }
 
-   if (use_locking_) {
-      P(mutex_);
+   if (mutex_) {
+      mutex_->lock();
    }
 
    read_seqno++;            /* bump sequence number */
@@ -657,8 +657,8 @@ int32_t BareosSocketTCP::recv()
    Dsm_check(300);
 
 get_out:
-   if (use_locking_) {
-      V(mutex_);
+   if (mutex_) {
+      mutex_->unlock();
    }
 
    return nbytes;                  /* return actual length of message */

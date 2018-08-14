@@ -60,7 +60,6 @@ BareosSocket::BareosSocket()
 
 /* protected: */
    , jcr_(nullptr)
-   , mutex_(PTHREAD_MUTEX_INITIALIZER)
    , who_(nullptr)
    , host_(nullptr)
    , port_(-1)
@@ -71,7 +70,6 @@ BareosSocket::BareosSocket()
    , terminated_(false)
    , cloned_(false)
    , spool_(false)
-   , use_locking_(false)
    , use_bursting_(false)
    , use_keepalive_(true)
    , bwlimit_(0)
@@ -120,7 +118,6 @@ BareosSocket::BareosSocket(const BareosSocket &other)
    terminated_             = other.terminated_;
    cloned_                 = other.cloned_;
    spool_                  = other.spool_;
-   use_locking_            = other.use_locking_;
    use_bursting_           = other.use_bursting_;
    use_keepalive_          = other.use_keepalive_;
    bwlimit_                = other.bwlimit_;
@@ -167,33 +164,20 @@ void BareosSocket::SetSourceAddress(dlist *src_addr_list)
    }
 }
 
-/**
- * Force read/write to use locking
- */
 bool BareosSocket::SetLocking()
 {
-   int status;
-   if (use_locking_) {
-      return true;                      /* already set */
+   if (mutex_) {
+      return true;
    }
-   if ((status = pthread_mutex_init(&mutex_, nullptr)) != 0) {
-      BErrNo be;
-      Qmsg(jcr_, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
-         be.bstrerror(status));
-      return false;
-   }
-   use_locking_ = true;
+   mutex_ = std::make_shared<std::mutex>();
    return true;
 }
 
 void BareosSocket::ClearLocking()
 {
-   if (!use_locking_) {
-      return;
+   if (mutex_) {
+      mutex_.reset();
    }
-   use_locking_ = false;
-   pthread_mutex_destroy(&mutex_);
-   return;
 }
 
 /**

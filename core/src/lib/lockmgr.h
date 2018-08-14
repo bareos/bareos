@@ -27,6 +27,7 @@
 #endif
 
 #include "mutex_list.h"     /* Manage mutex with priority in a central place */
+#include <mutex>
 
 /*
  * P and V op that don't use the lock manager (for memory allocation or on win32)

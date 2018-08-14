@@ -68,7 +68,6 @@ TEST(bsock, bareossockettcp_standard_constructor_test)
    EXPECT_EQ(p->terminated_, false);
    EXPECT_EQ(p->cloned_, false);
    EXPECT_EQ(p->spool_, false);
-   EXPECT_EQ(p->use_locking_, false);
    EXPECT_EQ(p->use_bursting_, false);
    EXPECT_EQ(p->use_keepalive_, true);
    EXPECT_EQ(p->bwlimit_, 0);
@@ -115,7 +114,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
    p->terminated_ = true;
    p->cloned_ = true;
    p->spool_ = true;
-   p->use_locking_ = true;
    p->use_bursting_ = true;
    p->use_keepalive_ = true;
    p->bwlimit_ = rand();
@@ -159,7 +157,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
    EXPECT_EQ(p->terminated_, q->terminated_);
    EXPECT_EQ(p->cloned_, q->cloned_);
    EXPECT_EQ(p->spool_, q->spool_);
-   EXPECT_EQ(p->use_locking_, q->use_locking_);
    EXPECT_EQ(p->use_bursting_, q->use_bursting_);
    EXPECT_EQ(p->use_keepalive_, q->use_keepalive_);
    EXPECT_EQ(p->bwlimit_, q->bwlimit_);
