@@ -919,8 +919,10 @@ void BareosSocketTCP::close()
    }
 
    if (fd_ >= 0) {
-      if (IsTimedOut()) {
-         shutdown(fd_, SHUT_RDWR);
+      if (!cloned_) {
+         if (IsTimedOut()) {
+            shutdown(fd_, SHUT_RDWR);
+         }
       }
       socketClose(fd_);
       fd_ = -1;
