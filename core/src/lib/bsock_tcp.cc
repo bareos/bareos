@@ -82,8 +82,12 @@ BareosSocket *BareosSocketTCP::clone()
    }
 
    /* duplicate file descriptors */
-   clone->fd_ = dup(fd_);
-   spool_fd_ = dup(spool_fd_);
+   if (fd_ >= 0) {
+      clone->fd_ = dup(fd_);
+   }
+   if (spool_fd_ >= 0) {
+      clone->spool_fd_ = dup(spool_fd_);
+   }
 
    clone->cloned_ = true;
 
@@ -906,19 +910,16 @@ int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 
 void BareosSocketTCP::close()
 {
-   if (cloned_) {
-      return;
-   }
+   if (!cloned_) {
+      ClearLocking();
 
-   ClearLocking();
-
-   if (tls_conn) {
-      CloseTlsConnectionAndFreeMemory();
+      if (tls_conn) {
+         CloseTlsConnectionAndFreeMemory();
+      }
    }
 
    if (fd_ >= 0) {
       if (IsTimedOut()) {
-         /* discard any pending I/O */
          shutdown(fd_, SHUT_RDWR);
       }
       socketClose(fd_);
