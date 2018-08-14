@@ -1510,7 +1510,7 @@ extern "C" void *ndmp_thread_server(void *arg)
             /*
              * Queue client to be served
              */
-            if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL, 0)) != 0) {
+            if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL)) != 0) {
                BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to ndmp client queue: ERR=%s\n"),

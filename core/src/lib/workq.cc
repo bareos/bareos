@@ -130,7 +130,7 @@ int WorkqDestroy(workq_t *wq)
  *    priority if non-zero will cause the item to be placed on the
  *        head of the list instead of the tail.
  */
-int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
+int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item)
 {
    int status = 0;
    workq_ele_t *item;
@@ -149,24 +149,12 @@ int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority)
    P(wq->mutex);
 
    Dmsg0(1400, "add item to queue\n");
-   if (priority) {
-      /* Add to head of queue */
-      if (wq->first == NULL) {
-         wq->first = item;
-         wq->last = item;
-      } else {
-         item->next = wq->first;
-         wq->first = item;
-      }
+   if (wq->first == NULL) {
+      wq->first = item;
    } else {
-      /* Add to end of queue */
-      if (wq->first == NULL) {
-         wq->first = item;
-      } else {
-         wq->last->next = item;
-      }
-      wq->last = item;
+      wq->last->next = item;
    }
+   wq->last = item;
 
    if (wq->num_workers < wq->max_workers) {
       Dmsg0(1400, "Create worker thread\n");

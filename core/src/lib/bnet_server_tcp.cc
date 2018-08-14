@@ -376,7 +376,7 @@ void BnetThreadServerTcp(dlist *addr_list,
             /*
              * Queue client to be served
              */
-            if ((status = WorkqAdd(client_wq, (void *)bs, NULL, 0)) != 0) {
+            if ((status = WorkqAdd(client_wq, (void *)bs, NULL)) != 0) {
                BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),

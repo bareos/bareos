@@ -65,6 +65,6 @@ extern int WorkqInit(
               void   *(*engine)(void *)   /* engine routine */
                     );
 extern int WorkqDestroy(workq_t *wq);
-extern int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item, int priority);
+extern int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item);
 
 #endif /* BAREOS_LIB_WORKQ_H_ */
