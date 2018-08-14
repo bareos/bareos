@@ -1,6 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
+   Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or

@@ -1,6 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
+   Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -29,6 +30,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+/* static private */
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_server_credentials;
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials;
 
