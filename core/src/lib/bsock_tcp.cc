@@ -928,37 +928,37 @@ void BareosSocketTCP::close()
 
 void BareosSocketTCP::destroy()
 {
-   if (msg) {
+   /* if this object is cloned
+    * some memory or file descriptors
+    * are duplicated not just copied */
+
+   if (msg) { /* duplicated */
       FreePoolMemory(msg);
       msg = nullptr;
    }
-   if (errmsg) {
+   if (errmsg) { /* duplicated */
       FreePoolMemory(errmsg);
       errmsg = nullptr;
    }
-   if (who_) {
+   if (who_) { /* duplicated */
       free(who_);
       who_ = nullptr;
    }
-   if (host_) {
+   if (host_) { /* duplicated */
       free(host_);
       host_ = nullptr;
    }
-   if (src_addr) {
+   if (src_addr) { /* duplicated */
       free(src_addr);
       src_addr = nullptr;
    }
-   if (fd_ >= 0) {
+   if (fd_ >= 0) { /* duplicated */
       socketClose(fd_);
       fd_ = -1;
    }
-   if(spool_fd_ >= 0) {
+   if(spool_fd_ >= 0) { /* duplicated */
       socketClose(spool_fd_);
       spool_fd_ = -1;
-   }
-   if(src_addr) {
-      delete (src_addr);
-      src_addr = nullptr;
    }
 }
 

@@ -34,35 +34,6 @@ uint32_t TlsConfigCert::GetPolicy() const
    return result << TlsConfigCert::policy_offset;
 }
 
-
-//std::shared_ptr<TLS_IMPLEMENTATION> TlsConfigCert::CreateClientContext() const
-//{
-//   return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
-//                          (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
-//                          (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
-//                          (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
-//                          (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
-//                          TlsPemCallback,
-//                          (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
-//                          nullptr,
-//                          (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
-//                          VerifyPeer);
-//}
-//
-//std::shared_ptr<TLS_IMPLEMENTATION> TlsConfigCert::CreateServerContext() const
-//{
-//   return new_tls_context((!CaCertfile || CaCertfile->empty()) ? nullptr : CaCertfile->c_str(),
-//                          (!CaCertdir || CaCertdir->empty()) ? nullptr : CaCertdir->c_str(),
-//                          (!crlfile || crlfile->empty()) ? nullptr : crlfile->c_str(),
-//                          (!certfile || certfile->empty()) ? nullptr : certfile->c_str(),
-//                          (!keyfile || keyfile->empty()) ? nullptr : keyfile->c_str(),
-//                          TlsPemCallback,
-//                          (!pem_message || pem_message->empty()) ? nullptr : pem_message->c_str(),
-//                          nullptr,
-//                          (!cipherlist || cipherlist->empty()) ? nullptr : cipherlist->c_str(),
-//                          VerifyPeer);
-//}
-
 bool TlsConfigCert::enabled(u_int32_t policy)
 {
    return ((policy >> TlsConfigCert::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
