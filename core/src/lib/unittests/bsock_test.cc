@@ -111,9 +111,19 @@ static bool check_cipher(const TlsResource &tls, const std::string &cipher)
 }
 #endif
 
+void clone_a_server_socket(BareosSocket* bs)
+{
+   BareosSocket *bs2 = bs->clone();
+   bs2->fsend("cloned-bareos-socket-0987654321");
+   bs2->close();
+   delete bs2;
+
+   bs->fsend("bareos-socket-1234567890");
+}
+
 void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port,
-                         ConsoleResource *cons, bool clone_bareos_socket)
+                         ConsoleResource *cons)
 
 {
   int newsockfd = create_accepted_server_socket(server_port);
@@ -160,18 +170,31 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
          }
          success = !bs->TlsEstablished();
       }
-      if (clone_bareos_socket) {
-         BareosSocket *bs2 = bs->clone();
-         bs2->fsend("cloned-1234567890HALLO1234567890-cloned");
-         bs2->close();
-         delete bs2;
-      }
-      bs->fsend("1234567890HALLO1234567890");
     }
+  }
+  if (success) {
+    clone_a_server_socket(bs);
   }
   bs->close();
   delete bs;
   promise->set_value(success);
+}
+
+void clone_a_client_socket(BareosSocket *UA_sock)
+{
+   std::string received_msg;
+   std::string orig_msg2("cloned-bareos-socket-0987654321");
+   BareosSocket *UA_sock2 = UA_sock->clone();
+   UA_sock2->recv();
+   received_msg = UA_sock2->msg;
+   EXPECT_STREQ(orig_msg2.c_str(), received_msg.c_str());
+   UA_sock2->close();
+   delete UA_sock2;
+
+   std::string orig_msg("bareos-socket-1234567890");
+   UA_sock->recv();
+   received_msg = UA_sock->msg;
+   EXPECT_STREQ(orig_msg.c_str(), received_msg.c_str());
 }
 
 #if CLIENT_AS_A_THREAD
@@ -179,7 +202,7 @@ int connect_to_server(std::string console_name, std::string console_password,
                       std::string server_address, int server_port, DirectorResource *dir)
 #else
 bool connect_to_server(std::string console_name, std::string console_password,
-                      std::string server_address, int server_port, DirectorResource *dir, bool clone_bareos_socket)
+                      std::string server_address, int server_port, DirectorResource *dir)
 #endif
 {
   utime_t heart_beat = 0;
@@ -231,21 +254,10 @@ bool connect_to_server(std::string console_name, std::string console_password,
          }
          success = !UA_sock->TlsEstablished();
       }
-      std::string received_msg;
-      if (clone_bareos_socket) {
-         std::string orig_msg2("cloned-1234567890HALLO1234567890-cloned");
-         BareosSocket *UA_sock2 = UA_sock->clone();
-         UA_sock2->recv();
-         received_msg = UA_sock2->msg;
-         EXPECT_TRUE(orig_msg2.compare(received_msg) == 0);
-         UA_sock2->close();
-         delete UA_sock2;
-      }
-      std::string orig_msg("1234567890HALLO1234567890");
-      UA_sock->recv();
-      received_msg = UA_sock->msg;
-      EXPECT_TRUE(orig_msg.compare(received_msg) == 0);
     }
+  }
+  if (success) {
+    clone_a_client_socket(UA_sock);
   }
   if (UA_sock) {
    UA_sock->close();
@@ -312,10 +324,10 @@ TEST(bsock, auth_works)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, false);
+                            HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, false));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -344,10 +356,10 @@ TEST(bsock, auth_works_with_different_names)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, false);
+                            HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, false));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -375,10 +387,10 @@ TEST(bsock, auth_fails_with_different_passwords)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, false);
+                            HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, false));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 
   server_thread.join();
   EXPECT_FALSE(future.get());
@@ -407,57 +419,15 @@ TEST(bsock, auth_works_with_tls_psk)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, false);
+                            HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir, false);
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
   client_thread.join();
 #else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, false));
-#endif
-
-  server_thread.join();
-
-  EXPECT_TRUE(cipher_server == cipher_client);
-  EXPECT_TRUE(future.get());
-}
-
-TEST(bsock, auth_works_with_tls_psk_cloned_socket)
-{
-  port++;
-  std::promise<bool> promise;
-  std::future<bool> future = promise.get_future();
-
-  client_cons_name = "clientname";
-  client_cons_password = "verysecretpassword";
-
-  server_cons_name = client_cons_name;
-  server_cons_password = client_cons_password;
-
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
-
-  InitForTest();
-
-  dir->tls_psk.enable = true;
-  dir->tls_cert.enable = true;
-  cons->tls_psk.enable = true;
-
-  Dmsg0(10, "starting listen thread...\n");
-  std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, true); /* send data on cloned bareos socket */
-
-  Dmsg0(10, "connecting to server\n");
-
-#if CLIENT_AS_A_THREAD
-   /* send data on cloned bareos socket */
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir, true);
-  client_thread.join();
-#else
-/* send data on cloned bareos socket */
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, true));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 #endif
 
   server_thread.join();
@@ -489,15 +459,15 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, false);
+                            HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir, false);
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
   client_thread.join();
 #else
-  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, false));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 #endif
 
   server_thread.join();
@@ -529,15 +499,15 @@ TEST(bsock, auth_works_with_tls_cert)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons, false);
+                            HOST, port, cons);
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir, false);
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
   client_thread.join();
 #else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir, false));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
 #endif
 
   server_thread.join();
