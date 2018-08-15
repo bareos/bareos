@@ -228,7 +228,7 @@ void *workq_server(void *arg)
          V(wq->mutex);
          /* Call user's routine here */
          Dmsg0(1400, "Calling user engine.\n");
-         wq->engine(we->data);
+         wq->engine(we->data); /* HandleConnectionRequest */
          Dmsg0(1400, "Back from user engine.\n");
          free(we);                    /* release work entry */
          Dmsg0(1400, "relock mutex\n");
