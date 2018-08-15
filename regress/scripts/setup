@@ -73,6 +73,9 @@ cd ${cwd}
 bin/bareos stop
 
 mkdir -p working
+# make sure everything is cleaned up
+touch working/CLEANUPMARKER
+
 cd bin
 echo "Running database creation scripts"
 ./create_bareos_database ${DBTYPE}
