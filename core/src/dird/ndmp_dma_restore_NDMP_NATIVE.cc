@@ -258,7 +258,7 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
 {
    int cnt;
    BareosSocket *sd;
-   BootStrapRecord *bsr;
+   storagedaemon::BootStrapRecord *bsr;
    NIS *nis = NULL;
    int32_t current_fi = 0;
    struct ndm_session ndmp_sess;

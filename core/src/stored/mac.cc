@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
+#include "stored/bsr.h"
 #include "stored/append.h"
 #include "stored/device.h"
 #include "stored/label.h"
@@ -44,9 +45,7 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-/* Import functions */
-
-/* Forward referenced subroutines */
+namespace storagedaemon {
 
 /**
  * Responses sent to the Director
@@ -675,7 +674,7 @@ bool DoMacRun(JobControlRecord *jcr)
        * Ready devices for reading and writing.
        */
       if (!AcquireDeviceForRead(jcr->read_dcr) ||
-          !acquire_device_for_append(jcr->dcr)) {
+          !AcquireDeviceForAppend(jcr->dcr)) {
          ok = false;
          goto bail_out;
       }
@@ -822,3 +821,5 @@ bail_out:
 
    return false;                      /* Continue DIR session ? */
 }
+
+} /* namespace storagedaemon */

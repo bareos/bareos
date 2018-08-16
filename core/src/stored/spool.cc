@@ -35,6 +35,8 @@
 #include "lib/util.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 /* Forward referenced subroutines */
 static void MakeUniqueDataSpoolFilename(DeviceControlRecord *dcr, POOLMEM *&name);
 static bool OpenDataSpoolFile(DeviceControlRecord *dcr);
@@ -394,7 +396,7 @@ static bool DespoolData(DeviceControlRecord *dcr, bool commit)
     */
    rdcr->jcr = NULL;
    rdcr->SetDev(NULL);
-   FreeDcr(rdcr);
+   FreeDeviceControlRecord(rdcr);
    free(rdev);
    dcr->spooling = true;           /* turn on spooling again */
    dcr->despooling = false;
@@ -851,3 +853,5 @@ static bool CloseAttrSpoolFile(JobControlRecord *jcr, BareosSocket *bs)
 
    return true;
 }
+
+} /* namespace storagedaemon */

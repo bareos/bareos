@@ -26,9 +26,13 @@
 
 #include <bareos.h>
 
+namespace storagedaemon {
+
 extern void *start_heap;
 extern bool init_done;
 extern uint32_t vol_session_time;
 extern uint32_t NewVolSessionId();
+
+} /* namespace storagedaemon */
 
 #endif /* BAREOS_STORED_STORED_GLOBALS_H_ */

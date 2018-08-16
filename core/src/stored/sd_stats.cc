@@ -30,6 +30,8 @@
 #include "lib/util.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 static char OKstats[] =
    "2000 OK statistics\n";
 static char DevStats[] =
@@ -418,7 +420,8 @@ int StartStatisticsThread(void)
    /*
     * First see if device and job stats collection is enabled.
     */
-   if (!me->stats_collect_interval || (!me->collect_dev_stats && !me->collect_job_stats)) {
+   if (!me->stats_collect_interval
+   || (!me->collect_dev_stats && !me->collect_job_stats)) {
       return 0;
    }
 
@@ -607,3 +610,5 @@ bool StatsCmd(JobControlRecord *jcr)
 
    return false;
 }
+
+} /* namespace storagedaemon */

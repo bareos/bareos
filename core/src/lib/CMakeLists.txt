@@ -33,7 +33,7 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 		../include/jcr.h ../include/version.h
 		address_conf.h alist.h attr.h base64.h berrno.h
 		bits.h bpipe.h breg.h bregex.h bsock.h
-		bsock_tcp.h bsr.h btime.h btimers.h cbuf.h
+		bsock_tcp.h btime.h btimers.h cbuf.h
 		crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
 		guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
 		md5.h mem_pool.h message.h mntent_cache.h ordered_cbuf.h parse_conf.h

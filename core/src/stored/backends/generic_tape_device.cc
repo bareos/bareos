@@ -36,6 +36,8 @@
 #include "stored/autochanger.h"
 #include "lib/scsi_lli.h"
 
+namespace storagedaemon {
+
 /**
  * Open a tape device
  */
@@ -1488,3 +1490,5 @@ bool generic_tape_device::d_truncate(DeviceControlRecord *dcr)
    */
   return true;                    /* We don't really truncate tapes */
 }
+
+} /* namespace storagedaemon  */

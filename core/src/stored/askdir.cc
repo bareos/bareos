@@ -35,8 +35,11 @@
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"
 #include "stored/wait.h"
+#include "stored/dev.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+
+namespace storagedaemon {
 
 static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -749,3 +752,5 @@ DeviceControlRecord *DeviceControlRecord::get_new_spooling_dcr()
 
    return dcr;
 }
+
+} /* namespace storagedaemon */

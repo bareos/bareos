@@ -34,6 +34,8 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 
+#include "lib/parse_bsr.h"
+
 #if HAVE_NDMP
 #include "dird/ndmp_dma_generic.h"
 #include "dird/ndmp_dma_restore_common.h"
@@ -485,11 +487,11 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord *jcr)
 {
    int cnt;
    BareosSocket *sd;
-   BootStrapRecord *bsr;
+   storagedaemon::BootStrapRecord *bsr;
    NIS *nis = NULL;
    int32_t current_fi;
    bootstrap_info info;
-   BsrFileIndex *fileindex;
+   storagedaemon::BsrFileIndex *fileindex;
    struct ndm_session ndmp_sess;
    struct ndm_job_param ndmp_job;
    bool session_initialized = false;
@@ -505,7 +507,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord *jcr)
    /*
     * We first parse the BootStrapRecord ourself so we know what to restore.
     */
-   jcr->bsr = parse_bsr(jcr, jcr->RestoreBootstrap);
+   jcr->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
    if (!jcr->bsr) {
       Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
       goto bail_out;

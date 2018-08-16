@@ -52,6 +52,7 @@
 
 #include "include/bareos.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"

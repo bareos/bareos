@@ -39,18 +39,22 @@
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
 #include "stored/butil.h"
 #include "stored/device.h"
 #include "stored/label.h"
-#include "stored/parse_bsr.h"
 #include "stored/read_record.h"
 #include "stored/sd_backends.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
-/* Dummy functions */
-extern bool ParseSdConfig(const char *configfile, int exit_code);
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
 
 /* Exported variables */
 int quit = 0;
@@ -207,7 +211,7 @@ int main(int margc, char *margv[])
    while ((ch = getopt(margc, margv, "b:c:D:d:psv?")) != -1) {
       switch (ch) {
       case 'b':                    /* bootstrap file */
-         bsr = parse_bsr(NULL, optarg);
+         bsr = libbareos::parse_bsr(NULL, optarg);
 //       DumpBsr(bsr, true);
          break;
 
@@ -299,7 +303,7 @@ int main(int margc, char *margv[])
    }
 
    dcr = New(BTAPE_DCR);
-   jcr = setup_jcr("btape", margv[0], bsr, director, dcr, NULL, false); /* write device */
+   jcr = SetupJcr("btape", margv[0], bsr, director, dcr, NULL, false); /* write device */
    if (!jcr) {
       exit(1);
    }
@@ -342,7 +346,7 @@ static void TerminateBtape(int status)
    }
 
    if (bsr) {
-      FreeBsr(bsr);
+      libbareos::FreeBsr(bsr);
    }
 
    FreeVolumeLists();
@@ -2273,14 +2277,14 @@ static void fillcmd()
     *   subroutine.
     */
    Dmsg0(100, "just before acquire_device\n");
-   if (!acquire_device_for_append(dcr)) {
+   if (!AcquireDeviceForAppend(dcr)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       exit_code = 1;
       return;
    }
    block = jcr->dcr->block;
 
-   Dmsg0(100, "Just after acquire_device_for_append\n");
+   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
    /*
     * Write Begin Session Record
     */

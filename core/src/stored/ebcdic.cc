@@ -29,6 +29,8 @@
  * ebcdic <-> ascii conversion routines
  */
 
+namespace storagedaemon {
+
 /* Mapping of EBCDIC codes to ASCII equivalents. */
 static char to_ascii_table[256] = {
    '\000', '\001', '\002', '\003',
@@ -187,3 +189,5 @@ void EbcdicToAscii(char *dst, char *src, int count)
       *dst++ = to_ascii_table[0377 & *src++];
    }
 }
+
+} /* namespace storagedaemon */

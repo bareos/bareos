@@ -27,6 +27,10 @@
  */
 #define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
 
+#include "stored/dev.h"
+
+namespace storagedaemon {
+
 /*
  * Resource codes -- they must be sequential for indexing
  */
@@ -196,3 +200,5 @@ union UnionOfResources {
 
 ConfigurationParser *InitSdConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
+
+} /* namespace storagedaemon */

@@ -36,6 +36,17 @@
 
 #include <include/bareos.h>
 
+#ifdef STORAGE_DAEMON
+#include "stored/read_ctx.h"
+
+namespace storagedaemon {
+   class VolumeList;
+   class DeviceControlRecord;
+   class DirectorResource;
+   class BootStrapRecord;
+}
+#endif
+
 /**
  * Backup/Verify level code. These are stored in the DB
  */
@@ -333,8 +344,8 @@ public:
    bool sendJobStatus();                  /**< in lib/jcr.c */
    bool sendJobStatus(int newJobStatus);  /**< in lib/jcr.c */
    bool JobReads();                       /**< in lib/jcr.c */
-   void MyThreadSendSignal(int sig);   /**< in lib/jcr.c */
-   void SetKillable(bool killable);      /**< in lib/jcr.c */
+   void MyThreadSendSignal(int sig);      /**< in lib/jcr.c */
+   void SetKillable(bool killable);       /**< in lib/jcr.c */
    bool IsKillable() const { return my_thread_killable; }
 
    /*
@@ -342,9 +353,9 @@ public:
     */
    dlink link;                            /**< JobControlRecord chain link */
    pthread_t my_thread_id;                /**< Id of thread controlling jcr */
-   BareosSocket *dir_bsock;                      /**< Director bsock or NULL if we are him */
-   BareosSocket *store_bsock;                    /**< Storage connection socket */
-   BareosSocket *file_bsock;                     /**< File daemon connection socket */
+   BareosSocket *dir_bsock;               /**< Director bsock or NULL if we are him */
+   BareosSocket *store_bsock;             /**< Storage connection socket */
+   BareosSocket *file_bsock;              /**< File daemon connection socket */
    JCR_free_HANDLER *daemon_free_jcr;     /**< Local free routine */
    dlist *msg_queue;                      /**< Queued messages */
    pthread_mutex_t msg_queue_mutex;       /**< message queue mutex */
@@ -407,17 +418,17 @@ public:
                                            * normal and fatal errors.
                                            */
    int32_t buf_size;                      /**< Length of buffer */
-   CompressionContext compress;                    /**< Compression ctx */
+   CompressionContext compress;           /**< Compression ctx */
 #ifdef HAVE_WIN32
-   CopyThreadContext *cp_thread;              /**< Copy Thread ctx */
+   CopyThreadContext *cp_thread;          /**< Copy Thread ctx */
 #endif
    POOLMEM *attr;                         /**< Attribute string from SD */
-   BareosDb *db;                              /**< database pointer */
-   BareosDb *db_batch;                        /**< database pointer for batch and accurate */
+   BareosDb *db;                          /**< database pointer */
+   BareosDb *db_batch;                    /**< database pointer for batch and accurate */
    uint64_t nb_base_files;                /**< Number of base files */
    uint64_t nb_base_files_used;           /**< Number of useful files in base */
 
-   AttributesDbRecord *ar;                          /**< DB attribute record */
+   AttributesDbRecord *ar;                /**< DB attribute record */
    guid_list *id_list;                    /**< User/group id to name list */
 
    alist *plugin_ctx_list;                /**< List of contexts for plugins */
@@ -442,10 +453,10 @@ public:
    pthread_cond_t term_wait;              /**< Wait for job termination */
    pthread_cond_t nextrun_ready;          /**< Wait for job next run to become ready */
    workq_ele_t *work_item;                /**< Work queue item if scheduled */
-   BareosSocket *ua;                             /**< User agent */
+   BareosSocket *ua;                      /**< User agent */
    Resources res;                         /**< Resources assigned */
    TREE_ROOT *restore_tree_root;          /**< Selected files to restore (some protocols need this info) */
-   BootStrapRecord *bsr;                              /**< Bootstrap record -- has everything */
+   storagedaemon::BootStrapRecord *bsr;   /**< Bootstrap record -- has everything */
    char *backup_format;                   /**< Backup format used when doing a NDMP backup */
    char *plugin_options;                  /**< User set options for plugin */
    uint32_t SDJobFiles;                   /**< Number of files written, this job */
@@ -458,9 +469,9 @@ public:
    uint32_t MediaId;                      /**< DB record IDs associated with this job */
    uint32_t FileIndex;                    /**< Last FileIndex processed */
    utime_t MaxRunSchedTime;               /**< Max run time in seconds from Initial Scheduled time */
-   JobDbRecord jr;                            /**< Job DB record for current job */
-   JobDbRecord previous_jr;                   /**< Previous job database record */
-   JobControlRecord *mig_jcr;                          /**< JobControlRecord for migration/copy job */
+   JobDbRecord jr;                        /**< Job DB record for current job */
+   JobDbRecord previous_jr;               /**< Previous job database record */
+   JobControlRecord *mig_jcr;             /**< JobControlRecord for migration/copy job */
    char FSCreateTime[MAX_TIME_LENGTH];    /**< FileSet CreateTime as returned from DB */
    char since[MAX_TIME_LENGTH];           /**< Since time */
    char PrevJob[MAX_NAME_LENGTH];         /**< Previous job name assiciated with since time */
@@ -519,10 +530,10 @@ public:
    bool incremental;                      /**< Set if incremental for SINCE */
    utime_t mtime;                         /**< Begin time for SINCE */
    int listing;                           /**< Job listing in estimate */
-   int32_t Ticket;                           /**< Ticket */
+   int32_t Ticket;                        /**< Ticket */
    char *big_buf;                         /**< I/O buffer */
    int32_t replace;                       /**< Replace options */
-   FindFilesPacket *ff;                            /**< Find Files packet */
+   FindFilesPacket *ff;                   /**< Find Files packet */
    char PrevJob[MAX_NAME_LENGTH];         /**< Previous job name assiciated with since time */
    uint32_t ExpectedFiles;                /**< Expected restore files */
    uint32_t StartFile;
@@ -534,8 +545,8 @@ public:
    std::shared_ptr<BareosSocket> hb_bsock;       /**< Duped SD socket */
    std::shared_ptr<BareosSocket> hb_dir_bsock;   /**< Duped DIR socket */
    alist *RunScripts;                     /**< Commands to run before and after job */
-   CryptoContext crypto;                     /**< Crypto ctx */
-   DirectorResource *director;                      /**< Director resource */
+   CryptoContext crypto;                  /**< Crypto ctx */
+   DirectorResource *director;            /**< Director resource */
    bool enable_vss;                       /**< VSS used by FD */
    bool got_metadata;                     /**< Set when found job_metadata */
    bool multi_restore;                    /**< Dir can do multiple storage restore */
@@ -550,34 +561,34 @@ public:
    /*
     * Storage Daemon specific part of JobControlRecord
     */
-   JobControlRecord *next_dev;                         /**< Next JobControlRecord attached to device */
-   JobControlRecord *prev_dev;                         /**< Previous JobControlRecord attached to device */
+   JobControlRecord *next_dev;            /**< Next JobControlRecord attached to device */
+   JobControlRecord *prev_dev;            /**< Previous JobControlRecord attached to device */
    char *dir_auth_key;                    /**< Dir auth key */
    pthread_cond_t job_start_wait;         /**< Wait for FD to start Job */
    pthread_cond_t job_end_wait;           /**< Wait for Job to end */
    int32_t type;
-   DeviceControlRecord *read_dcr;                         /**< Device context for reading */
-   DeviceControlRecord *dcr;                              /**< Device context record */
+   storagedaemon::DeviceControlRecord *read_dcr; /**< Device context for reading */
+   storagedaemon::DeviceControlRecord *dcr;      /**< Device context record */
    alist *dcrs;                           /**< List of dcrs open */
    POOLMEM *job_name;                     /**< Base Job name (not unique) */
    POOLMEM *fileset_name;                 /**< FileSet */
    POOLMEM *fileset_md5;                  /**< MD5 for FileSet */
    POOLMEM *backup_format;                /**< Backup format used when doing a NDMP backup */
-   VolumeList *VolList;                     /**< List to read */
+   storagedaemon::VolumeList *VolList;    /**< List to read */
    int32_t NumWriteVolumes;               /**< Number of volumes written */
    int32_t NumReadVolumes;                /**< Total number of volumes to read */
    int32_t CurReadVolume;                 /**< Current read volume number */
    int32_t label_errors;                  /**< Count of label errors */
    bool session_opened;
    bool remote_replicate;                 /**< Replicate data to remote SD */
-   int32_t Ticket;                           /**< Ticket for this job */
+   int32_t Ticket;                        /**< Ticket for this job */
    bool ignore_label_errors;              /**< Ignore Volume label errors */
    bool spool_attributes;                 /**< Set if spooling attributes */
    bool no_attributes;                    /**< Set if no attributes wanted */
    int64_t spool_size;                    /**< Spool size for this job */
    bool spool_data;                       /**< Set to spool data */
    int32_t CurVol;                        /**< Current Volume count */
-   DirectorResource *director;                      /**< Director resource */
+   storagedaemon::DirectorResource *director; /**< Director resource */
    alist *plugin_options;                 /**< Specific Plugin Options sent by DIR */
    alist *write_store;                    /**< List of write storage devices sent by DIR */
    alist *read_store;                     /**< List of read devices sent by DIR */
@@ -591,8 +602,8 @@ public:
    /*
     * Parameters for Open Read Session
     */
-   READ_CTX *rctx;                        /**< Read context used to keep track of what is processed or not */
-   BootStrapRecord *bsr;                              /**< Bootstrap record -- has everything */
+   storagedaemon::READ_CTX *rctx;         /**< Read context used to keep track of what is processed or not */
+   storagedaemon::BootStrapRecord *bsr;   /**< Bootstrap record -- has everything */
    bool mount_next_volume;                /**< Set to cause next volume mount */
    uint32_t read_VolSessionId;
    uint32_t read_VolSessionTime;

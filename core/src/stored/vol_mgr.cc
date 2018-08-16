@@ -33,6 +33,8 @@
 #include "stored/autochanger.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 const int debuglevel = 150;
 
 static brwlock_t vol_list_lock;
@@ -1002,3 +1004,5 @@ void FreeTempVolList(dlist *temp_vol_list)
    FreeVolumeList("temp_vol_list", temp_vol_list);
    delete temp_vol_list;
 }
+
+} /* namespace storagedaemon */

@@ -21,9 +21,13 @@
 #ifndef BAREOS_STORED_NDMP_TAPE_H_
 #define BAREOS_STORED_NDMP_TAPE_H_
 
+namespace storagedaemon {
+
 void EndOfNdmpBackup(JobControlRecord *jcr);
 void EndOfNdmpRestore(JobControlRecord *jcr);
 int StartNdmpThreadServer(dlist *addr_list, int max_clients);
 void StopNdmpThreadServer();
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_NDMP_TAPE_H_

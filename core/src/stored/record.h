@@ -31,6 +31,7 @@
 #ifndef BAREOS_STORED_RECORD_H_
 #define BAREOS_STORED_RECORD_H_ 1
 
+namespace storagedaemon {
 
 /**
  * Return codes from read_device_volume_label()
@@ -252,7 +253,6 @@ struct Read_Context {
    uint32_t records_processed;        /**< Number of records processed from this block */
    int32_t lastFileIndex;             /**< Last File Index processed */
 };
-typedef struct Read_Context READ_CTX;
 
 struct DelayedDataStream {
    int32_t stream;                     /**< stream less new bits */
@@ -280,5 +280,7 @@ DLL_IMP_EXP void EmptyRecord(DeviceRecord *rec);
 DLL_IMP_EXP void CopyRecordState(DeviceRecord *dst, DeviceRecord *src);
 DLL_IMP_EXP void FreeRecord(DeviceRecord *rec);
 DLL_IMP_EXP uint64_t GetRecordAddress(const DeviceRecord *rec);
+
+} /* namespace storagedaemon */
 
 #endif

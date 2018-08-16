@@ -31,11 +31,10 @@
 #include "include/bareos.h"                   /* pull in global headers */
 #include "stored/stored.h"                   /* pull in Storage Daemon headers */
 #include "stored/label.h"
+#include "stored/ebcdic.h"
 #include "include/jcr.h"
 
-/* Imported functions */
-void AsciiToEbcdic(char *dst, char *src, int count);
-void EbcdicToAscii(char *dst, char *src, int count);
+namespace storagedaemon {
 
 /* Forward referenced functions */
 static char *ansi_date(time_t td, char *buf);
@@ -506,3 +505,5 @@ static char *ansi_date(time_t td, char *buf)
 
    return buf;
 }
+
+} /* namespace storagedaemon */

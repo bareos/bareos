@@ -38,6 +38,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/backup.h"
+#include "dird/bsr.h"
 #include "dird/job.h"
 #include "dird/migration.h"
 #include "dird/msgchan.h"
@@ -518,10 +519,10 @@ static bool CreateBootstrapFile(JobControlRecord *jcr, char *jobids)
    }
    if (jcr->ExpectedFiles == 0) {
       FreeUaContext(ua);
-      FreeBsr(rx.bsr);
+      directordaemon::FreeBsr(rx.bsr);
       return false;
    }
    FreeUaContext(ua);
-   FreeBsr(rx.bsr);
+   directordaemon::FreeBsr(rx.bsr);
    return true;
 }

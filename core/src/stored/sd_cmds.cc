@@ -43,6 +43,8 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
@@ -371,3 +373,5 @@ static bool EndReplicationSession(JobControlRecord *jcr)
    }
    return sd->fsend(OK_end_replicate);
 }
+
+} /* namespace storagedaemon */

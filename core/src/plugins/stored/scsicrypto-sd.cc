@@ -65,6 +65,8 @@
 #include "lib/crypto_wrap.h"
 #include "lib/scsi_crypto.h"
 
+using namespace storagedaemon;
+
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "March 2012"

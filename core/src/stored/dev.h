@@ -67,6 +67,9 @@
 #include "stored/block.h"
 #include "lib/bsys.h"
 
+namespace storagedaemon
+{
+
 
 /**
  * Return values from WaitForSysop()
@@ -176,12 +179,12 @@ enum {
 /**
  * Keep this set to the last entry in the enum.
  */
-#define CAP_MAX CAP_ADJWRITESIZE
+constexpr int CAP_MAX = CAP_ADJWRITESIZE;
 
 /**
  * Make sure you have enough bits to store all above bit fields.
  */
-#define CAP_BYTES NbytesForBits(CAP_MAX + 1)
+constexpr int CAP_BYTES = NbytesForBits(CAP_MAX + 1);
 
 /**
  * Device state bits
@@ -410,14 +413,8 @@ public:
    bool CanWrite() const { return IsOpen() && CanAppend() &&
                                    IsLabeled() && !AtWeot(); }
    bool CanRead() const { return BitIsSet(ST_READREADY, state); }
-   bool CanStealLock() const { return blocked_ &&
-                    (blocked_ == BST_UNMOUNTED ||
-                     blocked_ == BST_WAITING_FOR_SYSOP ||
-                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); }
-   bool waiting_for_mount() const { return
-                    (blocked_ == BST_UNMOUNTED ||
-                     blocked_ == BST_WAITING_FOR_SYSOP ||
-                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); }
+   bool CanStealLock() const;
+   bool waiting_for_mount() const;
    bool MustUnload() const { return unload_; }
    bool must_load() const { return load_; }
    const char *strerror() const;
@@ -570,8 +567,8 @@ public:
    void dunblock(bool locked = false);
    bool IsDeviceUnmounted();
    void SetBlocked(int block) { blocked_ = block; }
+   bool IsBlocked() const;
    int blocked() const { return blocked_; }
-   bool IsBlocked() const { return blocked_ != BST_NOT_BLOCKED; }
    const char *print_blocked() const;
 
 protected:
@@ -606,23 +603,23 @@ enum get_vol_info_rw {
  */
 class SD_IMP_EXP DeviceControlRecord : public SmartAlloc {
 private:
-   bool dev_locked_;                 /**< Set if dev already locked */
-   int dev_lock_;                    /**< Non-zero if rLock already called */
-   bool reserved_;                   /**< Set if reserved device */
-   bool found_in_use_;               /**< Set if a volume found in use */
-   bool will_write_;                 /**< Set if DeviceControlRecord will be used for writing */
+   bool dev_locked_;                  /**< Set if dev already locked */
+   int dev_lock_;                     /**< Non-zero if rLock already called */
+   bool reserved_;                    /**< Set if reserved device */
+   bool found_in_use_;                /**< Set if a volume found in use */
+   bool will_write_;                  /**< Set if DeviceControlRecord will be used for writing */
 
 public:
    dlink dev_link;                    /**< Link to attach to dev */
-   JobControlRecord *jcr;                          /**< Pointer to JobControlRecord */
-   bthread_mutex_t mutex_;           /**< Access control */
+   JobControlRecord *jcr;             /**< Pointer to JobControlRecord */
+   bthread_mutex_t mutex_;            /**< Access control */
    pthread_mutex_t r_mutex;           /**< rLock pre-mutex */
    Device * volatile dev;             /**< Pointer to device */
-   DeviceResource *device;                    /**< Pointer to device resource */
-   DeviceBlock *block;                  /**< Pointer to current block */
-   DeviceRecord *rec;                   /**< Pointer to record being processed */
-   DeviceRecord *before_rec;            /**< Pointer to record before translation */
-   DeviceRecord *after_rec;             /**< Pointer to record after translation */
+   DeviceResource *device;            /**< Pointer to device resource */
+   DeviceBlock *block;                /**< Pointer to current block */
+   DeviceRecord *rec;                 /**< Pointer to record being processed */
+   DeviceRecord *before_rec;          /**< Pointer to record before translation */
+   DeviceRecord *after_rec;           /**< Pointer to record after translation */
    pthread_t tid;                     /**< Thread running this dcr */
    int spool_fd;                      /**< Fd if spooling */
    bool spool_data;                   /**< Set to spool data */
@@ -657,7 +654,7 @@ public:
    char dev_name[MAX_NAME_LENGTH];    /**< Dev name */
    int Copy;                          /**< Identical copy number */
    int Stripe;                        /**< RAIT stripe */
-   VolumeCatalogInfo VolCatInfo;        /**< Catalog info for desired volume */
+   VolumeCatalogInfo VolCatInfo;      /**< Catalog info for desired volume */
 
    /*
     * Constructor/Destructor.
@@ -825,4 +822,7 @@ bool DoubleDevWaitTime(Device *dev);
 #define MTEOM MTEOD
 #endif
 #endif
+
+} /* namespace storagedaemon */
+
 #endif

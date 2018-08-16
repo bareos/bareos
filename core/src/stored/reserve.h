@@ -36,6 +36,12 @@
  *      the media and pool info in the JobControlRecord.  This class is used
  *      only temporarily in this file.
  */
+
+#ifndef BAREOS_STORED_RESERVE_H_
+#define BAREOS_STORED_RESERVE_H_ 1
+
+namespace storagedaemon {
+
 class DirectorStorage {
 public:
    alist *device;
@@ -131,3 +137,8 @@ DLL_IMP_EXP extern int read_vol_list_lock_count;
 #define UnlockReadVolumes() _unLockReadVolumes()
 #endif
 
+bool use_cmd(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
+
+#endif /* BAREOS_STORED_RESERVE_H_ */

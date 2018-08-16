@@ -33,6 +33,8 @@
 #include "stored/stored.h"
 #include "stored/sd_backends.h"
 
+namespace storagedaemon {
+
 /**
  * First and last resource ids
  */
@@ -439,6 +441,154 @@ static void StoreCompressionalgorithm(LEX *lc, ResourceItem *item, int index, in
 }
 
 /**
+ * callback function for init_resource
+ * See ../lib/parse_conf.c, function InitResource, for more generic handling.
+ */
+static void InitResourceCb(ResourceItem *item, int pass)
+{
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_AUTHTYPE:
+         for (int i = 0; authmethods[i].name; i++) {
+            if (Bstrcasecmp(item->default_value, authmethods[i].name)) {
+               *(uint32_t *)(item->value) = authmethods[i].token;
+            }
+         }
+         break;
+      default:
+         break;
+      }
+      break;
+   default:
+      break;
+   }
+}
+
+/**
+ * callback function for parse_config
+ * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
+ */
+static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
+{
+   switch (item->type) {
+   case CFG_TYPE_AUTOPASSWORD:
+      StoreAutopassword(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUTHTYPE:
+      StoreAuthtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DEVTYPE:
+      StoreDevtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_MAXBLOCKSIZE:
+      StoreMaxblocksize(lc, item, index, pass);
+      break;
+   case CFG_TYPE_IODIRECTION:
+      StoreIoDirection(lc, item, index, pass);
+      break;
+   case CFG_TYPE_CMPRSALGO:
+      StoreCompressionalgorithm(lc, item, index, pass);
+      break;
+   default:
+      break;
+   }
+}
+
+ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
+{
+   return new ConfigurationParser(
+                configfile,
+                nullptr,
+                nullptr,
+                InitResourceCb,
+                ParseConfigCb,
+                nullptr,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                R_FIRST,
+                R_LAST,
+                resources,
+                res_head,
+                CONFIG_FILE,
+                "bareos-sd.d");
+}
+
+bool ParseSdConfig(const char *configfile, int exit_code)
+{
+   bool retval;
+
+   retval = my_config->ParseConfig();
+
+   if (retval) {
+      me = (StorageResource *)GetNextRes(R_STORAGE, NULL);
+      if (!me) {
+         Emsg1(exit_code, 0, _("No Storage resource defined in %s. Cannot continue.\n"), configfile);
+         return retval;
+      }
+
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+      SdSetBackendDirs(me->backend_directories);
+#endif
+   }
+
+   return retval;
+}
+
+/**
+ * Print configuration file schema in json format
+ */
+#ifdef HAVE_JANSSON
+bool PrintConfigSchemaJson(PoolMem &buffer)
+{
+   ResourceTable *resources = my_config->resources_;
+
+   InitializeJson();
+
+   json_t *json = json_object();
+   json_object_set_new(json, "format-version", json_integer(2));
+   json_object_set_new(json, "component", json_string("bareos-sd"));
+   json_object_set_new(json, "version", json_string(VERSION));
+
+   /*
+    * Resources
+    */
+   json_t *resource = json_object();
+   json_object_set(json, "resource", resource);
+   json_t *bareos_sd = json_object();
+   json_object_set(resource, "bareos-sd", bareos_sd);
+
+   for (int r = 0; resources[r].name; r++) {
+      ResourceTable resource = my_config->resources_[r];
+      json_object_set(bareos_sd, resource.name, json_items(resource.items));
+   }
+
+   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   json_decref(json);
+
+   return true;
+}
+#else
+bool PrintConfigSchemaJson(PoolMem &buffer)
+{
+   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   return false;
+}
+#endif
+
+/* **************************************************************************** */
+} /* namespace storagedaemon  */
+/* **************************************************************************** */
+
+/**
+ * starting from here "override" methods to use in parse_conf.cc
+ * that must not be in the namespace of storage daemon
+ **/
+
+using namespace storagedaemon;
+
+/**
  * Dump contents of resource
  */
 void DumpResource(int type, CommonResourceHeader *reshdr,
@@ -476,6 +626,144 @@ void DumpResource(int type, CommonResourceHeader *reshdr,
    if (recurse && res->res_dir.hdr.next) {
       DumpResource(type, (CommonResourceHeader *)res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }
+}
+
+/**
+ * Save the new resource by chaining it into the head list for
+ * the resource. If this is pass 2, we update any resource
+ * or alist pointers.
+ */
+bool SaveResource(int type, ResourceItem *items, int pass)
+{
+   UnionOfResources *res;
+   int rindex = type - R_FIRST;
+   int i;
+   int error = 0;
+
+   /*
+    * Ensure that all required items are present
+    */
+   for (i = 0; items[i].name; i++) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
+         if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
+            Emsg2(M_ERROR_TERM, 0,
+                  _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
+                  items[i].name, resources[rindex].name);
+          }
+      }
+      /*
+       * If this triggers, take a look at lib/parse_conf.h
+       */
+      if (i >= MAX_RES_ITEMS) {
+         Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"), resources[rindex].name);
+      }
+   }
+
+   /*
+    * During pass 2, we looked up pointers to all the resources
+    * referrenced in the current resource, , now we
+    * must copy their address from the static record to the allocated
+    * record.
+    */
+   if (pass == 2) {
+      DeviceResource *dev;
+      int errstat;
+
+      switch (type) {
+      case R_DEVICE:
+      case R_MSGS:
+      case R_NDMP:
+         /*
+          * Resources not containing a resource
+          */
+         break;
+      case R_DIRECTOR:
+         /*
+          * Resources containing a resource or an alist
+          */
+         if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
+         } else {
+            res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
+         }
+         break;
+      case R_STORAGE:
+         if ((res = (UnionOfResources *)GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_store.name());
+         } else {
+            res->res_store.plugin_names = res_all.res_store.plugin_names;
+            res->res_store.messages = res_all.res_store.messages;
+            res->res_store.backend_directories = res_all.res_store.backend_directories;
+            res->res_store.tls_cert.allowed_certificate_common_names_ = res_all.res_store.tls_cert.allowed_certificate_common_names_;
+         }
+         break;
+      case R_AUTOCHANGER:
+         if ((res = (UnionOfResources *)GetResWithName(type, res_all.res_changer.name())) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.name());
+         } else {
+            /*
+             * We must explicitly copy the device alist pointer
+             */
+            res->res_changer.device = res_all.res_changer.device;
+
+            /*
+             * Now update each device in this resource to point back to the changer resource.
+             */
+            foreach_alist(dev, res->res_changer.device) {
+               dev->changer_res = (AutochangerResource *)&res->res_changer;
+            }
+
+            if ((errstat = RwlInit(&res->res_changer.changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
+               BErrNo be;
+               Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"), be.bstrerror(errstat));
+            }
+         }
+         break;
+      default:
+         printf(_("Unknown resource type %d\n"), type);
+         error = 1;
+         break;
+      }
+
+      if (res_all.res_dir.hdr.name) {
+         free(res_all.res_dir.hdr.name);
+         res_all.res_dir.hdr.name = NULL;
+      }
+
+      if (res_all.res_dir.hdr.desc) {
+         free(res_all.res_dir.hdr.desc);
+         res_all.res_dir.hdr.desc = NULL;
+      }
+
+      return (error == 0);
+   }
+
+   /*
+    * Common
+    */
+   if (!error) {
+      res = (UnionOfResources *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
+      if (!res_head[rindex]) {
+         res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
+      } else {
+         CommonResourceHeader *next, *last;
+         /*
+          * Add new res to end of chain
+          */
+         for (last = next = res_head[rindex]; next; next = next->next) {
+            last = next;
+            if (bstrcmp(next->name, res->res_dir.name())) {
+               Emsg2(M_ERROR_TERM, 0,
+                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
+                  resources[rindex].name, res->res_dir.name());
+            }
+         }
+         last->next = (CommonResourceHeader *)res;
+         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
+      }
+   }
+   return (error == 0);
 }
 
 /**
@@ -713,278 +1001,3 @@ void FreeResource(CommonResourceHeader *sres, int type)
       FreeResource(nres, type);
    }
 }
-
-/**
- * Save the new resource by chaining it into the head list for
- * the resource. If this is pass 2, we update any resource
- * or alist pointers.
- */
-bool SaveResource(int type, ResourceItem *items, int pass)
-{
-   UnionOfResources *res;
-   int rindex = type - R_FIRST;
-   int i;
-   int error = 0;
-
-   /*
-    * Ensure that all required items are present
-    */
-   for (i = 0; items[i].name; i++) {
-      if (items[i].flags & CFG_ITEM_REQUIRED) {
-         if (!BitIsSet(i, res_all.res_dir.hdr.item_present)) {
-            Emsg2(M_ERROR_TERM, 0,
-                  _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-                  items[i].name, resources[rindex].name);
-          }
-      }
-      /*
-       * If this triggers, take a look at lib/parse_conf.h
-       */
-      if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"), resources[rindex].name);
-      }
-   }
-
-   /*
-    * During pass 2, we looked up pointers to all the resources
-    * referrenced in the current resource, , now we
-    * must copy their address from the static record to the allocated
-    * record.
-    */
-   if (pass == 2) {
-      DeviceResource *dev;
-      int errstat;
-
-      switch (type) {
-      case R_DEVICE:
-      case R_MSGS:
-      case R_NDMP:
-         /*
-          * Resources not containing a resource
-          */
-         break;
-      case R_DIRECTOR:
-         /*
-          * Resources containing a resource or an alist
-          */
-         if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
-         } else {
-            res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
-         }
-         break;
-      case R_STORAGE:
-         if ((res = (UnionOfResources *)GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_store.name());
-         } else {
-            res->res_store.plugin_names = res_all.res_store.plugin_names;
-            res->res_store.messages = res_all.res_store.messages;
-            res->res_store.backend_directories = res_all.res_store.backend_directories;
-            res->res_store.tls_cert.allowed_certificate_common_names_ = res_all.res_store.tls_cert.allowed_certificate_common_names_;
-         }
-         break;
-      case R_AUTOCHANGER:
-         if ((res = (UnionOfResources *)GetResWithName(type, res_all.res_changer.name())) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.name());
-         } else {
-            /*
-             * We must explicitly copy the device alist pointer
-             */
-            res->res_changer.device = res_all.res_changer.device;
-
-            /*
-             * Now update each device in this resource to point back to the changer resource.
-             */
-            foreach_alist(dev, res->res_changer.device) {
-               dev->changer_res = (AutochangerResource *)&res->res_changer;
-            }
-
-            if ((errstat = RwlInit(&res->res_changer.changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
-               BErrNo be;
-               Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"), be.bstrerror(errstat));
-            }
-         }
-         break;
-      default:
-         printf(_("Unknown resource type %d\n"), type);
-         error = 1;
-         break;
-      }
-
-      if (res_all.res_dir.hdr.name) {
-         free(res_all.res_dir.hdr.name);
-         res_all.res_dir.hdr.name = NULL;
-      }
-
-      if (res_all.res_dir.hdr.desc) {
-         free(res_all.res_dir.hdr.desc);
-         res_all.res_dir.hdr.desc = NULL;
-      }
-
-      return (error == 0);
-   }
-
-   /*
-    * Common
-    */
-   if (!error) {
-      res = (UnionOfResources *)malloc(resources[rindex].size);
-      memcpy(res, &res_all, resources[rindex].size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
-      } else {
-         CommonResourceHeader *next, *last;
-         /*
-          * Add new res to end of chain
-          */
-         for (last = next = res_head[rindex]; next; next = next->next) {
-            last = next;
-            if (bstrcmp(next->name, res->res_dir.name())) {
-               Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.name());
-            }
-         }
-         last->next = (CommonResourceHeader *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
-      }
-   }
-   return (error == 0);
-}
-
-/**
- * callback function for init_resource
- * See ../lib/parse_conf.c, function InitResource, for more generic handling.
- */
-static void InitResourceCb(ResourceItem *item, int pass)
-{
-   switch (pass) {
-   case 1:
-      switch (item->type) {
-      case CFG_TYPE_AUTHTYPE:
-         for (int i = 0; authmethods[i].name; i++) {
-            if (Bstrcasecmp(item->default_value, authmethods[i].name)) {
-               *(uint32_t *)(item->value) = authmethods[i].token;
-            }
-         }
-         break;
-      default:
-         break;
-      }
-      break;
-   default:
-      break;
-   }
-}
-
-/**
- * callback function for parse_config
- * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
- */
-static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
-{
-   switch (item->type) {
-   case CFG_TYPE_AUTOPASSWORD:
-      StoreAutopassword(lc, item, index, pass);
-      break;
-   case CFG_TYPE_AUTHTYPE:
-      StoreAuthtype(lc, item, index, pass);
-      break;
-   case CFG_TYPE_DEVTYPE:
-      StoreDevtype(lc, item, index, pass);
-      break;
-   case CFG_TYPE_MAXBLOCKSIZE:
-      StoreMaxblocksize(lc, item, index, pass);
-      break;
-   case CFG_TYPE_IODIRECTION:
-      StoreIoDirection(lc, item, index, pass);
-      break;
-   case CFG_TYPE_CMPRSALGO:
-      StoreCompressionalgorithm(lc, item, index, pass);
-      break;
-   default:
-      break;
-   }
-}
-
-ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
-{
-   return new ConfigurationParser(
-                configfile,
-                nullptr,
-                nullptr,
-                InitResourceCb,
-                ParseConfigCb,
-                nullptr,
-                exit_code,
-                (void *)&res_all,
-                res_all_size,
-                R_FIRST,
-                R_LAST,
-                resources,
-                res_head,
-                CONFIG_FILE,
-                "bareos-sd.d");
-}
-
-bool ParseSdConfig(const char *configfile, int exit_code)
-{
-   bool retval;
-
-   retval = my_config->ParseConfig();
-
-   if (retval) {
-      me = (StorageResource *)GetNextRes(R_STORAGE, NULL);
-      if (!me) {
-         Emsg1(exit_code, 0, _("No Storage resource defined in %s. Cannot continue.\n"), configfile);
-         return retval;
-      }
-
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-      SdSetBackendDirs(me->backend_directories);
-#endif
-   }
-
-   return retval;
-}
-
-/**
- * Print configuration file schema in json format
- */
-#ifdef HAVE_JANSSON
-bool PrintConfigSchemaJson(PoolMem &buffer)
-{
-   ResourceTable *resources = my_config->resources_;
-
-   InitializeJson();
-
-   json_t *json = json_object();
-   json_object_set_new(json, "format-version", json_integer(2));
-   json_object_set_new(json, "component", json_string("bareos-sd"));
-   json_object_set_new(json, "version", json_string(VERSION));
-
-   /*
-    * Resources
-    */
-   json_t *resource = json_object();
-   json_object_set(json, "resource", resource);
-   json_t *bareos_sd = json_object();
-   json_object_set(resource, "bareos-sd", bareos_sd);
-
-   for (int r = 0; resources[r].name; r++) {
-      ResourceTable resource = my_config->resources_[r];
-      json_object_set(bareos_sd, resource.name, json_items(resource.items));
-   }
-
-   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
-   json_decref(json);
-
-   return true;
-}
-#else
-bool PrintConfigSchemaJson(PoolMem &buffer)
-{
-   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
-   return false;
-}
-#endif

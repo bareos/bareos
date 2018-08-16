@@ -38,6 +38,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
 #include "stored/device.h"
 #include "stored/job.h"
 #include "stored/label.h"
@@ -51,8 +52,14 @@
 #include "lib/bsignal.h"
 #include "include/jcr.h"
 
+
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
+
 /* Imported functions */
-extern bool ParseSdConfig(const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
@@ -255,7 +262,8 @@ int main (int argc, char *argv[])
    }
 
    if (!CheckResources()) {
-      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"),
+                                         my_config->get_base_config_path().c_str());
    }
 
    InitReservationsLock();
@@ -639,7 +647,7 @@ void *device_initialization(void *arg)
          if (!FirstOpenDevice(dcr)) {
             Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"), dev->print_name());
             Dmsg1(20, "Could not open device %s\n", dev->print_name());
-            FreeDcr(dcr);
+            FreeDeviceControlRecord(dcr);
             jcr->dcr = NULL;
             continue;
          }
@@ -656,13 +664,13 @@ void *device_initialization(void *arg)
             break;
          }
       }
-      FreeDcr(dcr);
+      FreeDeviceControlRecord(dcr);
       jcr->dcr = NULL;
    }
 #ifdef xxx
    if (jcr->dcr) {
-      Dmsg1(000, "FreeDcr=%p\n", jcr->dcr);
-      FreeDcr(jcr->dcr);
+      Dmsg1(000, "FreeDeviceControlRecord=%p\n", jcr->dcr);
+      FreeDeviceControlRecord(jcr->dcr);
       jcr->dcr = NULL;
    }
 #endif

@@ -21,6 +21,10 @@
 #ifndef BAREOS_STORED_MOUNT_H_
 #define BAREOS_STORED_MOUNT_H_
 
+namespace storagedaemon {
+
 bool MountNextReadVolume(DeviceControlRecord *dcr);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_MOUNT_H_

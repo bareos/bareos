@@ -36,6 +36,8 @@
 #include "lib/util.h"
 #include "lib/btimers.h"
 
+namespace storagedaemon {
+
 /**
  * Open a fifo device
  */
@@ -367,3 +369,5 @@ extern "C" void SD_IMP_EXP flush_backend(void)
 {
 }
 #endif
+
+} /* namespace storagedaemon  */

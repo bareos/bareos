@@ -31,6 +31,8 @@
 #include "stored/stored.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 const int debuglevel = 50;
 
 static char Dir_sorry[] =
@@ -218,3 +220,5 @@ bool AuthenticateWithFiledaemon(JobControlRecord *jcr)
 
    return true;
 }
+
+} /* namespace storagedaemon */

@@ -30,6 +30,8 @@
 #include "stored/stored.h"
 #include "lib/scsi_tapealert.h"
 
+using namespace storagedaemon;
+
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "November 2013"

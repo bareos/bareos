@@ -46,23 +46,30 @@
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
 #include "stored/fd_cmds.h"
 #include "stored/job.h"
 #include "stored/label.h"
 #include "stored/ndmp_tape.h"
-#include "stored/parse_bsr.h"
+#include "stored/reserve.h"
 #include "stored/sd_cmds.h"
+#include "stored/status.h"
 #include "stored/sd_stats.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
+#include "stored/job.h"
+#include "stored/mac.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
-
-/* Exported variables */
 
 /* Imported variables */
 extern struct s_last_job last_job;
+
+extern void terminate_child();
+
+namespace storagedaemon {
 
 /* Commands received from director that need scanning */
 static char setbandwidth[] =
@@ -128,20 +135,6 @@ static char OKpluginoptions[] =
 static char OKsecureerase[] =
    "2000 OK SDSecureEraseCmd %s \n";
 
-/* Imported functions */
-extern bool FinishCmd(JobControlRecord *jcr);
-extern bool job_cmd(JobControlRecord *jcr);
-extern bool nextRunCmd(JobControlRecord *jcr);
-extern bool DotstatusCmd(JobControlRecord *jcr);
-//extern bool QueryCmd(JobControlRecord *jcr);
-extern bool StatusCmd(JobControlRecord *sjcr);
-extern bool use_cmd(JobControlRecord *jcr);
-extern bool StatsCmd(JobControlRecord *jcr);
-
-extern bool DoJobRun(JobControlRecord *jcr);
-extern bool DoMacRun(JobControlRecord *jcr);
-extern void terminate_child();
-
 /* Forward referenced functions */
 //static bool ActionOnPurgeCmd(JobControlRecord *jcr);
 static bool BootstrapCmd(JobControlRecord *jcr);
@@ -198,7 +191,6 @@ static struct s_cmds cmds[] = {
    { "nextrun", nextRunCmd, false },       /**< Prepare for next backup/restore part of same Job */
    { "passive", PassiveCmd, false },
    { "pluginoptions", PluginoptionsCmd, false },
-// { "query", QueryCmd, false },
    { "readlabel", ReadlabelCmd, false },
    { "relabel", RelabelCmd, false },       /**< Relabel a tape */
    { "release", ReleaseCmd, false },
@@ -242,7 +234,7 @@ static inline bool count_running_jobs()
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-void *handle_director_connection(BareosSocket *dir)
+void *HandleDirectorConnection(BareosSocket *dir)
 {
    JobControlRecord *jcr;
    int i, errstat;
@@ -385,9 +377,11 @@ static bool die_cmd(JobControlRecord *jcr)
 static bool SecureerasereqCmd(JobControlRecord *jcr) {
    BareosSocket *dir = jcr->dir_bsock;
 
-   Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
+   Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline
+                                              ? me->secure_erase_cmdline : "*None*"));
 
-   return dir->fsend(OKsecureerase, (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
+   return dir->fsend(OKsecureerase, (me->secure_erase_cmdline
+                                   ? me->secure_erase_cmdline : "*None*"));
 }
 
 /**
@@ -672,7 +666,7 @@ static bool do_label(JobControlRecord *jcr, bool relabel)
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
       }
@@ -1072,7 +1066,7 @@ static bool MountCmd(JobControlRecord *jcr)
             break;
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device %s not found or could not be opened.\n"), devname.c_str());
       }
@@ -1159,7 +1153,7 @@ static bool UnmountCmd(JobControlRecord *jcr)
             }
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1268,7 +1262,7 @@ static bool ReleaseCmd(JobControlRecord *jcr)
                dev->print_name());
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1296,7 +1290,8 @@ static inline bool GetBootstrapFile(JobControlRecord *jcr, BareosSocket *sock)
    }
    P(bsr_mutex);
    bsr_uniq++;
-   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
+   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+      me->name(),
       jcr->Job, bsr_uniq);
    V(bsr_mutex);
    Dmsg1(400, "bootstrap=%s\n", fname);
@@ -1315,13 +1310,13 @@ static inline bool GetBootstrapFile(JobControlRecord *jcr, BareosSocket *sock)
    }
    fclose(bs);
    Dmsg0(10, "=== end bootstrap file ===\n");
-   jcr->bsr = parse_bsr(jcr, jcr->RestoreBootstrap);
+   jcr->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
    if (!jcr->bsr) {
       Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
       goto bail_out;
    }
    if (debug_level >= 10) {
-      DumpBsr(jcr->bsr, true);
+      libbareos::DumpBsr(jcr->bsr, true);
    }
    /* If we got a bootstrap, we are reading, so create read volume list */
    CreateRestoreVolumeList(jcr);
@@ -1404,7 +1399,7 @@ static bool ChangerCmd(JobControlRecord *jcr)
             }
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1445,7 +1440,7 @@ static bool ReadlabelCmd(JobControlRecord *jcr)
             ReadVolumeLabel(jcr, dcr, dev, slot);
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1781,3 +1776,5 @@ bail_out:
    dir->fsend(BADcmd, "plugin options");
    return false;
 }
+
+} /* namespace storagedaemon */

@@ -23,6 +23,8 @@
 
 #include "stored_globals.h"
 
+namespace storagedaemon {
+
 void *start_heap = nullptr;
 bool  init_done = false;
 uint32_t vol_session_time;
@@ -40,3 +42,5 @@ uint32_t NewVolSessionId()
    mutex_.unlock();
    return id;
 }
+
+} /* namespace storagedaemon */

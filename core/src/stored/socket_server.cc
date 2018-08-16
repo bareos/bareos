@@ -29,13 +29,15 @@
  */
 
 #include "include/bareos.h"
+#include "stored/autochanger.h"
 #include "stored/stored.h"
 #include "stored/dir_cmd.h"
 #include "stored/fd_cmds.h"
 #include "stored/sd_cmds.h"
 #include "lib/bnet_sever_tcp.h"
 
-/* Global variables */
+namespace storagedaemon {
+
 static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
@@ -101,7 +103,7 @@ void *HandleConnectionRequest(void *arg)
 
    Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
-   return handle_director_connection(bs);
+   return HandleDirectorConnection(bs);
 }
 
 void StartSocketServer(dlist *addrs)
@@ -135,3 +137,5 @@ void StopSocketServer()
       sock_fds = NULL;
    }
 }
+
+} /* namespace storagedaemon */

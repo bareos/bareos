@@ -34,6 +34,8 @@
 #include "backends/gfapi_device.h"
 #include "lib/edit.h"
 
+namespace storagedaemon {
+
 /**
  * Options that can be specified for this device type.
  */
@@ -655,4 +657,5 @@ extern "C" void SD_IMP_EXP flush_backend(void)
 {
 }
 #endif
+} /* namespace storagedaemon */
 #endif /* HAVE_GFAPI */

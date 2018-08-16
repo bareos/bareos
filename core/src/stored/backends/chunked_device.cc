@@ -37,6 +37,8 @@
 #endif
 #endif
 
+namespace storagedaemon {
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
@@ -1378,4 +1380,7 @@ chunked_device::chunked_device()
    offset_ = 0;
    use_mmap_ = false;
 }
+
+} /* namespace storagedaemon */
+
 #endif /* HAVE_DROPLET */

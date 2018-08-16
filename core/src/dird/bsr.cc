@@ -175,6 +175,8 @@ RestoreBootstrapRecord *new_bsr()
    return bsr;
 }
 
+namespace directordaemon {
+
 /**
  * Free the entire BootStrapRecord
  */
@@ -198,6 +200,8 @@ void FreeBsr(RestoreBootstrapRecord *bsr)
       bsr = next;
    }
 }
+
+} /* namespace director */
 
 /**
  * Complete the BootStrapRecord by filling in the VolumeName and

@@ -73,6 +73,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/block.h"
 #include "stored/stored.h"
 #include "stored/autochanger.h"
 #include "stored/sd_backends.h"
@@ -116,17 +117,17 @@
 #define O_NONBLOCK 0
 #endif
 
-/* Forward referenced functions */
-
-static const char *modes[] = {
-   "CREATE_READ_WRITE",
-   "OPEN_READ_WRITE",
-   "OPEN_READ_ONLY",
-   "OPEN_WRITE_ONLY"
-};
+namespace storagedaemon {
 
 const char *Device::mode_to_str(int mode)
 {
+   static const char *modes[] = {
+      "CREATE_READ_WRITE",
+      "OPEN_READ_WRITE",
+      "OPEN_READ_ONLY",
+      "OPEN_WRITE_ONLY"
+   };
+
    static char buf[100];
 
    if (mode < 1 || mode > 4) {
@@ -422,6 +423,68 @@ Device *InitDev(JobControlRecord *jcr, DeviceResource *device)
    dev = init_dev_(jcr, device, false);
    return dev;
 }
+
+/**
+ * This routine initializes the device wait timers
+ */
+void InitDeviceWaitTimers(DeviceControlRecord *dcr)
+{
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+
+   /* ******FIXME******* put these on config variables */
+   dev->min_wait = 60 * 60;
+   dev->max_wait = 24 * 60 * 60;
+   dev->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
+   dev->wait_sec = dev->min_wait;
+   dev->rem_wait_sec = dev->wait_sec;
+   dev->num_wait = 0;
+   dev->poll = false;
+
+   jcr->min_wait = 60 * 60;
+   jcr->max_wait = 24 * 60 * 60;
+   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
+   jcr->wait_sec = jcr->min_wait;
+   jcr->rem_wait_sec = jcr->wait_sec;
+   jcr->num_wait = 0;
+}
+
+void InitJcrDeviceWaitTimers(JobControlRecord *jcr)
+{
+   /* ******FIXME******* put these on config variables */
+   jcr->min_wait = 60 * 60;
+   jcr->max_wait = 24 * 60 * 60;
+   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
+   jcr->wait_sec = jcr->min_wait;
+   jcr->rem_wait_sec = jcr->wait_sec;
+   jcr->num_wait = 0;
+}
+
+/**
+ * The dev timers are used for waiting on a particular device
+ *
+ * Returns: true if time doubled
+ *          false if max time expired
+ */
+bool DoubleDevWaitTime(Device *dev)
+{
+   dev->wait_sec *= 2;               /* Double wait time */
+   if (dev->wait_sec > dev->max_wait) { /* But not longer than maxtime */
+      dev->wait_sec = dev->max_wait;
+   }
+   dev->num_wait++;
+   dev->rem_wait_sec = dev->wait_sec;
+   if (dev->num_wait >= dev->max_num_wait) {
+      return false;
+   }
+   return true;
+}
+
+Device::Device()
+{
+   fd_ = -1;
+}
+
 
 /**
  * Set the block size of the device.
@@ -1261,63 +1324,25 @@ void Device::term()
    delete this;
 }
 
-/**
- * This routine initializes the device wait timers
- */
-void InitDeviceWaitTimers(DeviceControlRecord *dcr)
+bool Device::CanStealLock() const
 {
-   Device *dev = dcr->dev;
-   JobControlRecord *jcr = dcr->jcr;
-
-   /* ******FIXME******* put these on config variables */
-   dev->min_wait = 60 * 60;
-   dev->max_wait = 24 * 60 * 60;
-   dev->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   dev->wait_sec = dev->min_wait;
-   dev->rem_wait_sec = dev->wait_sec;
-   dev->num_wait = 0;
-   dev->poll = false;
-
-   jcr->min_wait = 60 * 60;
-   jcr->max_wait = 24 * 60 * 60;
-   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   jcr->wait_sec = jcr->min_wait;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   jcr->num_wait = 0;
+   return   blocked_ &&
+           (blocked_ == BST_UNMOUNTED ||
+            blocked_ == BST_WAITING_FOR_SYSOP ||
+            blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
 }
 
-void InitJcrDeviceWaitTimers(JobControlRecord *jcr)
+bool Device::waiting_for_mount() const
 {
-   /* ******FIXME******* put these on config variables */
-   jcr->min_wait = 60 * 60;
-   jcr->max_wait = 24 * 60 * 60;
-   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   jcr->wait_sec = jcr->min_wait;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   jcr->num_wait = 0;
+   return
+           (blocked_ == BST_UNMOUNTED ||
+            blocked_ == BST_WAITING_FOR_SYSOP ||
+            blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
 }
 
-/**
- * The dev timers are used for waiting on a particular device
- *
- * Returns: true if time doubled
- *          false if max time expired
- */
-bool DoubleDevWaitTime(Device *dev)
+bool Device::IsBlocked() const
 {
-   dev->wait_sec *= 2;               /* Double wait time */
-   if (dev->wait_sec > dev->max_wait) { /* But not longer than maxtime */
-      dev->wait_sec = dev->max_wait;
-   }
-   dev->num_wait++;
-   dev->rem_wait_sec = dev->wait_sec;
-   if (dev->num_wait >= dev->max_num_wait) {
-      return false;
-   }
-   return true;
+   return blocked_ != BST_NOT_BLOCKED;
 }
 
-Device::Device()
-{
-   fd_ = -1;
-}
+} /* namespace storagedaemon */

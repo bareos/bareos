@@ -35,6 +35,8 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 const int debuglevel = 400;
 
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -282,3 +284,5 @@ static bool DoubleJcrWaitTime(JobControlRecord *jcr)
    return true;
 }
 #endif
+
+} /* namespace storagedaemon */

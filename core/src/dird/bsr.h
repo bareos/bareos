@@ -76,7 +76,9 @@ struct bootstrap_info
 #include "dird/ua.h"
 
 RestoreBootstrapRecord *new_bsr();
-DLL_IMP_EXP void FreeBsr(RestoreBootstrapRecord *bsr);
+namespace directordaemon {
+   DLL_IMP_EXP void FreeBsr(RestoreBootstrapRecord *bsr);
+} /* namespace director */
 bool CompleteBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
 uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx);
 void DisplayBsrInfo(UaContext *ua, RestoreContext &rx);

@@ -32,7 +32,7 @@
 #include "lib/connection_pool.h"
 #include "lib/runscript.h"
 #include "lib/breg.h"
-#include "lib/bsr.h"
+#include "stored/bsr.h"
 #include "dird_conf.h"
 
 #define DIRECTOR_DAEMON 1
@@ -41,7 +41,7 @@
 #include "cats/cats.h"
 
 #include "jcr.h"
-#include "bsr.h"
+#include "dird/bsr.h"
 #include "ua.h"
 #include "jobq.h"
 

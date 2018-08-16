@@ -33,6 +33,8 @@
 #include "stored/stored.h"
 #include "elasto_device.h"
 
+namespace storagedaemon {
+
 #define ELASTO_GRANULARITY 512
 
  /*
@@ -412,4 +414,5 @@ extern "C" void SD_IMP_EXP flush_backend(void)
 {
 }
 #endif
+} /* namespace storagedaemon */
 #endif /* HAVE_ELASTO */

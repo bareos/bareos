@@ -28,6 +28,10 @@
 #ifndef BAREOS_STORED_BACKENDS_GENERIC_TAPE_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_GENERIC_TAPE_DEVICE_H_
 
+#include "stored/dev.h"
+
+namespace storagedaemon {
+
 class generic_tape_device: public Device {
 public:
    generic_tape_device() {};
@@ -66,4 +70,7 @@ public:
    virtual ssize_t d_write(int fd, const void *buffer, size_t count);
    virtual bool d_truncate(DeviceControlRecord *dcr);
 };
+
+} /* namespace storagedaemon */
+
 #endif /* BAREOS_STORED_BACKENDS_GENERIC_TAPE_DEVICE_H_ */

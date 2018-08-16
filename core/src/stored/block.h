@@ -29,6 +29,10 @@
 #ifndef BAREOS_STORED_BLOCK_H_
 #define BAREOS_STORED_BLOCK_H_ 1
 
+namespace storagedaemon {
+
+class Device;                           /* for forward reference */
+
 #define MAX_BLOCK_LENGTH  20000000      /**< this is a sort of sanity check */
 #define DEFAULT_BLOCK_SIZE (512 * 126)  /**< 64,512 N.B. do not use 65,536 here
                                            the POSIX standard defaults the size of a
@@ -75,8 +79,6 @@
    uint32_t VolSessionTime;
  */
 
-class Device;                         /* for forward reference */
-
 /**
  * DeviceBlock for reading and writing blocks.
  * This is the basic unit that is written to the device, and
@@ -110,8 +112,13 @@ struct DeviceBlock {
    POOLMEM *buf;                      /* actual data buffer */
 };
 
-#define BlockWriteNavail(block) ((block)->buf_len - (block)->binbuf)
-#define block_is_empty(block) ((block)->read_len == 0)
+inline uint32_t BlockWriteNavail(DeviceBlock *block) {
+   return ((block)->buf_len - (block)->binbuf);
+}
+
+inline bool block_is_empty(DeviceBlock *block) {
+   return ((block)->read_len == 0);
+}
 
 void DumpBlock(DeviceBlock *b, const char *msg);
 DeviceBlock *new_block(Device *dev);
@@ -122,5 +129,6 @@ void FreeBlock(DeviceBlock *block);
 void PrintBlockReadErrors(JobControlRecord *jcr, DeviceBlock *block);
 void SerBlockHeader(DeviceBlock *block);
 
+} /* namespace storagedaemon */
 
 #endif

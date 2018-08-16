@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,13 +20,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_READ_H_
-#define BAREOS_STORED_READ_H_
+
+#ifndef BAREOS_STORED_MAC_H_
+#define BAREOS_STORED_MAC_H_ 1
 
 namespace storagedaemon {
 
-DLL_IMP_EXP bool DoReadData(JobControlRecord *jcr);
+bool DoMacRun(JobControlRecord *jcr);
 
-} /* namespace storagedaemon */
+} /* namespace storagedaemon  */
 
-#endif // BAREOS_STORED_READ_H_
+#endif /* BAREOS_STORED_MAC_H_ */

@@ -43,6 +43,7 @@
 
 #include "ndmp/ndmagents.h"
 #include "stored/acquire.h"
+#include "stored/bsr.h"
 #include "stored/device.h"
 #include "stored/label.h"
 #include "stored/mount.h"
@@ -71,6 +72,7 @@
 #include <sys/poll.h>
 #endif
 
+namespace storagedaemon {
 
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread
@@ -663,7 +665,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
          /*
           * Actually acquire the device which we reserved.
           */
-         if (!acquire_device_for_append(dcr)) {
+         if (!AcquireDeviceForAppend(dcr)) {
             goto bail_out;
          }
 
@@ -776,7 +778,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
 
          Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
 
-         position_device_to_first_file(jcr, dcr);
+         PositionDeviceToFirstFile(jcr, dcr);
          jcr->mount_next_volume = false;
 
          /*
@@ -1581,3 +1583,5 @@ void EndOfNdmpRestore(JobControlRecord *jcr)
 {
 }
 #endif /* HAVE_NDMP */
+
+} /* namespace storagedaemon */

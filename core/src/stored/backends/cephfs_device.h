@@ -30,6 +30,8 @@
 
 #include <cephfs/libcephfs.h>
 
+namespace storagedaemon {
+
 class cephfs_device: public Device {
 private:
    char *cephfs_configstring_;
@@ -53,4 +55,7 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+
+} /* namespace storagedaemon */
+
 #endif /* BAREOS_STORED_BACKENDS_CEPHFS_DEVICE_H_ */

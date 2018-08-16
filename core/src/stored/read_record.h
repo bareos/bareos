@@ -21,6 +21,10 @@
 #ifndef BAREOS_STORED_READ_RECORD_H_
 #define BAREOS_STORED_READ_RECORD_H_
 
+#include "stored/read_ctx.h"
+
+namespace storagedaemon {
+
 DLL_IMP_EXP READ_CTX *new_read_context(void);
 DLL_IMP_EXP void FreeReadContext(READ_CTX *rctx);
 DLL_IMP_EXP void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
@@ -36,5 +40,6 @@ DLL_IMP_EXP bool ReadRecords(DeviceControlRecord *dcr,
                   bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                   bool mount_cb(DeviceControlRecord *dcr));
 
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_READ_RECORD_H_

@@ -60,7 +60,7 @@
 #include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
 #include "lib/edit.h"
-
+#include "lib/parse_bsr.h"
 
 
 /* Forward referenced subroutines */
@@ -1589,7 +1589,7 @@ void DirdFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->bsr) {
-      FreeBsr(jcr->bsr);
+      libbareos::FreeBsr(jcr->bsr);
       jcr->bsr = NULL;
    }
 
@@ -1843,13 +1843,13 @@ int CreateRestoreBootstrapFile(JobControlRecord *jcr)
       goto bail_out;
    }
    FreeUaContext(ua);
-   FreeBsr(rx.bsr);
+   directordaemon::FreeBsr(rx.bsr);
    jcr->needs_sd = true;
    return jcr->ExpectedFiles;
 
 bail_out:
    FreeUaContext(ua);
-   FreeBsr(rx.bsr);
+   directordaemon::FreeBsr(rx.bsr);
    return files;
 }
 

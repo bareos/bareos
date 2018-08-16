@@ -40,6 +40,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_tree.h"
 #include "dird/ua_run.h"
+#include "dird/bsr.h"
 #include "lib/edit.h"
 
 /* Imported functions */
@@ -378,7 +379,7 @@ static void GetAndDisplayBasejobs(UaContext *ua, RestoreContext *rx)
 
 static void free_rx(RestoreContext *rx)
 {
-   FreeBsr(rx->bsr);
+   directordaemon::FreeBsr(rx->bsr);
    rx->bsr = NULL;
 
    if (rx->ClientName) {

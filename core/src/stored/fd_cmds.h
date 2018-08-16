@@ -21,8 +21,12 @@
 #ifndef BAREOS_STORED_FD_CMDS_H_
 #define BAREOS_STORED_FD_CMDS_H_
 
+namespace storagedaemon {
+
 void *HandleFiledConnection(BareosSocket *fd, char *job_name);
 void RunJob(JobControlRecord *jcr);
 void DoFdCommands(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_FD_CMDS_H_

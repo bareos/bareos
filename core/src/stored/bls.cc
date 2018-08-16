@@ -41,10 +41,14 @@
 #include "findlib/match.h"
 #include "lib/attribs.h"
 #include "lib/bsignal.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
-/* Dummy functions */
-extern bool ParseSdConfig(const char *configfile, int exit_code);
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
 
 static void DoBlocks(char *infname);
 static void do_jobs(char *infname);
@@ -243,10 +247,10 @@ int main (int argc, char *argv[])
 
    for (i=0; i < argc; i++) {
       if (bsrName) {
-         bsr = parse_bsr(NULL, bsrName);
+         bsr = libbareos::parse_bsr(NULL, bsrName);
       }
       dcr = New(DeviceControlRecord);
-      jcr = setup_jcr("bls", argv[i], bsr, director, dcr, VolumeName, true); /* read device */
+      jcr = SetupJcr("bls", argv[i], bsr, director, dcr, VolumeName, true); /* read device */
       if (!jcr) {
          exit(1);
       }
@@ -278,7 +282,7 @@ int main (int argc, char *argv[])
       do_close(jcr);
    }
    if (bsr) {
-      FreeBsr(bsr);
+      libbareos::FreeBsr(bsr);
    }
    TermIncludeExcludeFiles(ff);
    TermFindFiles(ff);
@@ -291,7 +295,7 @@ static void do_close(JobControlRecord *jcr)
    FreeRecord(rec);
    CleanDevice(jcr->dcr);
    dev->term();
-   FreeDcr(jcr->dcr);
+   FreeDeviceControlRecord(jcr->dcr);
    FreeJcr(jcr);
 }
 
@@ -440,7 +444,9 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
    return true;
 }
 
-static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
+static void GetSessionRecord(Device *dev,
+                             DeviceRecord *rec,
+                             SESSION_LABEL *sessrec)
 {
    const char *rtype;
    memset(sessrec, 0, sizeof(SESSION_LABEL));
@@ -486,3 +492,4 @@ static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sess
             rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
    }
 }
+

@@ -21,10 +21,16 @@
 #ifndef BAREOS_STORED_PARSE_BSR_H_
 #define BAREOS_STORED_PARSE_BSR_H_
 
-BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
-void DumpBsr(BootStrapRecord *bsr, bool recurse);
-DLL_IMP_EXP void FreeBsr(BootStrapRecord *bsr);
-void FreeRestoreVolumeList(JobControlRecord *jcr);
-void CreateRestoreVolumeList(JobControlRecord *jcr);
+class JobControlRecord;
+
+namespace libbareos {
+
+DLL_IMP_EXP storagedaemon::BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
+DLL_IMP_EXP void FreeBsr(storagedaemon::BootStrapRecord *bsr);
+DLL_IMP_EXP void DumpBsr(storagedaemon::BootStrapRecord *bsr, bool recurse);
+
+void DumpBsr(storagedaemon::BootStrapRecord *bsr, bool recurse);
+
+} /* namespace libbareos */
 
 #endif // BAREOS_STORED_PARSE_BSR_H_

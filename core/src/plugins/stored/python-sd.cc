@@ -30,6 +30,8 @@
 #include <Python.h>
 #include "stored/stored.h"
 
+using namespace storagedaemon;
+
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
 #endif

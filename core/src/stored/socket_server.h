@@ -23,8 +23,12 @@
 
 struct dlist;
 
+namespace storagedaemon {
+
 void StartSocketServer(dlist *addrs);
 void StopSocketServer();
 void *HandleConnectionRequest(void *arg);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_SOCKET_SERVER_H_

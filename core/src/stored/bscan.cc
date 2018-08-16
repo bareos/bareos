@@ -44,11 +44,16 @@
 #include "stored/read_record.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
+#include "lib/parse_bsr.h"
 #include "lib/bsignal.h"
 #include "include/jcr.h"
 
 /* Dummy functions */
-extern bool ParseSdConfig(const char *configfile, int exit_code);
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
 
 /* Forward referenced functions */
 static void do_scan(void);
@@ -176,7 +181,7 @@ int main (int argc, char *argv[])
          break;
 
       case 'b':
-         bsr = parse_bsr(NULL, optarg);
+         bsr = libbareos::parse_bsr(NULL, optarg);
          break;
 
       case 'c':                    /* specify config file */
@@ -311,7 +316,7 @@ int main (int argc, char *argv[])
    }
 
    dcr = New(DeviceControlRecord);
-   bjcr = setup_jcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
+   bjcr = SetupJcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
    if (!bjcr) {
       exit(1);
    }
@@ -370,7 +375,7 @@ int main (int argc, char *argv[])
 
    CleanDevice(bjcr->dcr);
    dev->term();
-   FreeDcr(bjcr->dcr);
+   FreeDeviceControlRecord(bjcr->dcr);
    FreeJcr(bjcr);
 
    return 0;
@@ -735,7 +740,7 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
             if( mjcr->insert_jobmedia_records ) {
                CreateJobmediaRecord(db, mjcr);
             }
-            FreeDcr(mjcr->read_dcr);
+            FreeDeviceControlRecord(mjcr->read_dcr);
             FreeJcr(mjcr);
          }
          break;
@@ -1043,12 +1048,12 @@ static void BscanFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->dcr) {
-      FreeDcr(jcr->dcr);
+      FreeDeviceControlRecord(jcr->dcr);
       jcr->dcr = NULL;
    }
 
    if (jcr->read_dcr) {
-      FreeDcr(jcr->read_dcr);
+      FreeDeviceControlRecord(jcr->read_dcr);
       jcr->read_dcr = NULL;
    }
 

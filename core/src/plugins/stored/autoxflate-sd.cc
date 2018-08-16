@@ -37,6 +37,8 @@
 #include <fastlzlib.h>
 #endif
 
+using namespace storagedaemon;
+
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "June 2013"

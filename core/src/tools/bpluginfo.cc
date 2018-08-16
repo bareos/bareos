@@ -70,7 +70,7 @@ typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
    pDirFuncs pdirfuncs;
    pFuncs pfdfuncs;
-   psdFuncs psdfuncs;
+   storagedaemon::psdFuncs psdfuncs;
 };
 
 /*
@@ -102,7 +102,7 @@ typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
    bDirInfo bdirinfo;
    bInfo bfdinfo;
-   bsdInfo bsdinfo;
+   storagedaemon::bsdInfo bsdinfo;
 };
 
 typedef struct _progdata progdata;

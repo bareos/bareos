@@ -30,10 +30,13 @@
 
 #include "include/bareos.h"                   /* pull in global headers */
 #include "stored/stored.h"                   /* pull in Storage Daemon headers */
+#include "stored/dev.h"
 #include "stored/device.h"
 #include "stored/label.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 /* Forward referenced functions */
 static void CreateVolumeLabelRecord(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec);
@@ -473,155 +476,6 @@ bail_out:
    dev->ClearVolhdr();
    dev->ClearAppend();               /* remove append since this is PRE_LABEL */
    return false;
-}
-
-/**
- * Write a volume label. This is ONLY called if we have a valid Bareos
- *   label of type PRE_LABEL or we are recyling an existing Volume.
- *
- *  Returns: true if OK
- *           false if unable to write it
- */
-bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
-{
-   DeviceControlRecord *dcr = this;
-
-   /*
-    * Set the label blocksize to write the label
-    */
-   dev->SetLabelBlocksize(dcr);
-
-   if (!dev->open(dcr, OPEN_READ_WRITE)) {
-      Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
-            dev->print_name(), dcr->VolumeName, dev->bstrerror());
-      return false;
-   }
-
-   Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd(), dev);
-
-   /*
-    * Let any stored plugin know that we are (re)writing the label.
-    */
-   if (GeneratePluginEvent(jcr, bsdEventLabelWrite, dcr) != bRC_OK) {
-      Dmsg0(200, "Error from bsdEventLabelWrite plugin event.\n");
-      return false;
-   }
-
-   dev->VolHdr.LabelType = VOL_LABEL; /* set Volume label */
-   dev->SetAppend();
-   if (!WriteVolumeLabelToBlock(dcr)) {
-      Dmsg0(200, "Error from write volume label.\n");
-      return false;
-   }
-
-   Dmsg1(150, "wrote vol label to block. Vol=%s\n", dcr->VolumeName);
-
-   dev->setVolCatInfo(false);
-   dev->VolCatInfo.VolCatBytes = 0;        /* reset byte count */
-
-   /*
-    * If we are not dealing with a streaming device,
-    *  write the block now to ensure we have write permission.
-    *  It is better to find out now rather than later.
-    * We do not write the block now if this is an ANSI label. This
-    *  avoids re-writing the ANSI label, which we do not want to do.
-    */
-   if (!dev->HasCap(CAP_STREAM)) {
-      if (!dev->rewind(dcr)) {
-         Jmsg2(jcr, M_FATAL, 0, _("Rewind error on device %s: ERR=%s\n"),
-               dev->print_name(), dev->print_errmsg());
-         return false;
-      }
-      if (recycle) {
-         Dmsg1(150, "Doing recycle. Vol=%s\n", dcr->VolumeName);
-         if (!dev->truncate(dcr)) {
-            Jmsg2(jcr, M_FATAL, 0, _("Truncate error on device %s: ERR=%s\n"),
-                  dev->print_name(), dev->print_errmsg());
-            return false;
-         }
-         if (!dev->open(dcr, OPEN_READ_WRITE)) {
-            Jmsg2(jcr, M_FATAL, 0,
-               _("Failed to re-open after truncate on device %s: ERR=%s\n"),
-               dev->print_name(), dev->print_errmsg());
-            return false;
-         }
-      }
-
-      /*
-       * If we have already detected an ANSI label, re-read it
-       *   to skip past it. Otherwise, we write a new one if
-       *   so requested.
-       */
-      if (dev->label_type != B_BAREOS_LABEL) {
-         if (ReadAnsiIbmLabel(dcr) != VOL_OK) {
-            dev->rewind(dcr);
-            return false;
-         }
-      } else if (!WriteAnsiIbmLabels(dcr, ANSI_VOL_LABEL, dev->VolHdr.VolumeName)) {
-         return false;
-      }
-
-      /* Attempt write to check write permission */
-      Dmsg1(200, "Attempt to write to device fd=%d.\n", dev->fd());
-      if (!dcr->WriteBlockToDev()) {
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to write device %s: ERR=%s\n"),
-            dev->print_name(), dev->print_errmsg());
-         Dmsg0(200, "===ERROR write block to dev\n");
-         return false;
-      }
-   }
-   dev->SetLabeled();
-   /* Set or reset Volume statistics */
-   dev->VolCatInfo.VolCatJobs = 0;
-   dev->VolCatInfo.VolCatFiles = 0;
-   dev->VolCatInfo.VolCatErrors = 0;
-   dev->VolCatInfo.VolCatBlocks = 0;
-   dev->VolCatInfo.VolCatRBytes = 0;
-   if (recycle) {
-      dev->VolCatInfo.VolCatMounts++;
-      dev->VolCatInfo.VolCatRecycles++;
-      dcr->DirCreateJobmediaRecord(true);
-   } else {
-      dev->VolCatInfo.VolCatMounts = 1;
-      dev->VolCatInfo.VolCatRecycles = 0;
-      dev->VolCatInfo.VolCatWrites = 1;
-      dev->VolCatInfo.VolCatReads = 1;
-   }
-   Dmsg1(150, "dir_update_vol_info. Set Append vol=%s\n", dcr->VolumeName);
-   dev->VolCatInfo.VolFirstWritten = time(NULL);
-   bstrncpy(dev->VolCatInfo.VolCatStatus, "Append", sizeof(dev->VolCatInfo.VolCatStatus));
-   dev->setVolCatName(dcr->VolumeName);
-   if (!dcr->DirUpdateVolumeInfo(true, true)) {  /* indicate doing relabel */
-      return false;
-   }
-   if (recycle) {
-      Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\" on device %s, all previous data lost.\n"),
-         dcr->VolumeName, dev->print_name());
-   } else {
-      Jmsg(jcr, M_INFO, 0, _("Wrote label to prelabeled Volume \"%s\" on device %s\n"),
-         dcr->VolumeName, dev->print_name());
-   }
-   /*
-    * End writing real Volume label (from pre-labeled tape), or recycling
-    *  the volume.
-    */
-   Dmsg1(150, "OK from rewrite vol label. Vol=%s\n", dcr->VolumeName);
-
-   /*
-    * reset blocksizes from volinfo to device as we set blocksize to
-    * DEFAULT_BLOCK_SIZE to write the label
-    */
-   dev->SetBlocksizes(dcr);
-
-   /*
-    * Let any stored plugin know the label was rewritten and as such is verified .
-    */
-   if (GeneratePluginEvent(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
-      Dmsg0(200, "Error from bsdEventLabelVerified plugin event.\n");
-      return false;
-   }
-
-   return true;
 }
 
 /**
@@ -1200,3 +1054,155 @@ void DumpLabelRecord(Device *dev, DeviceRecord *rec, bool verbose)
    }
    debug_level = dbl;
 }
+
+/**
+ * Write a volume label. This is ONLY called if we have a valid Bareos
+ *   label of type PRE_LABEL or we are recyling an existing Volume.
+ *
+ *  Returns: true if OK
+ *           false if unable to write it
+ */
+bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
+{
+   DeviceControlRecord *dcr = this;
+
+   /*
+    * Set the label blocksize to write the label
+    */
+   dev->SetLabelBlocksize(dcr);
+
+   if (!dev->open(dcr, OPEN_READ_WRITE)) {
+      Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+            dev->print_name(), dcr->VolumeName, dev->bstrerror());
+      return false;
+   }
+
+   Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd(), dev);
+
+   /*
+    * Let any stored plugin know that we are (re)writing the label.
+    */
+   if (GeneratePluginEvent(jcr, bsdEventLabelWrite, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelWrite plugin event.\n");
+      return false;
+   }
+
+   dev->VolHdr.LabelType = VOL_LABEL; /* set Volume label */
+   dev->SetAppend();
+   if (!WriteVolumeLabelToBlock(dcr)) {
+      Dmsg0(200, "Error from write volume label.\n");
+      return false;
+   }
+
+   Dmsg1(150, "wrote vol label to block. Vol=%s\n", dcr->VolumeName);
+
+   dev->setVolCatInfo(false);
+   dev->VolCatInfo.VolCatBytes = 0;        /* reset byte count */
+
+   /*
+    * If we are not dealing with a streaming device,
+    *  write the block now to ensure we have write permission.
+    *  It is better to find out now rather than later.
+    * We do not write the block now if this is an ANSI label. This
+    *  avoids re-writing the ANSI label, which we do not want to do.
+    */
+   if (!dev->HasCap(CAP_STREAM)) {
+      if (!dev->rewind(dcr)) {
+         Jmsg2(jcr, M_FATAL, 0, _("Rewind error on device %s: ERR=%s\n"),
+               dev->print_name(), dev->print_errmsg());
+         return false;
+      }
+      if (recycle) {
+         Dmsg1(150, "Doing recycle. Vol=%s\n", dcr->VolumeName);
+         if (!dev->truncate(dcr)) {
+            Jmsg2(jcr, M_FATAL, 0, _("Truncate error on device %s: ERR=%s\n"),
+                  dev->print_name(), dev->print_errmsg());
+            return false;
+         }
+         if (!dev->open(dcr, OPEN_READ_WRITE)) {
+            Jmsg2(jcr, M_FATAL, 0,
+               _("Failed to re-open after truncate on device %s: ERR=%s\n"),
+               dev->print_name(), dev->print_errmsg());
+            return false;
+         }
+      }
+
+      /*
+       * If we have already detected an ANSI label, re-read it
+       *   to skip past it. Otherwise, we write a new one if
+       *   so requested.
+       */
+      if (dev->label_type != B_BAREOS_LABEL) {
+         if (ReadAnsiIbmLabel(dcr) != VOL_OK) {
+            dev->rewind(dcr);
+            return false;
+         }
+      } else if (!WriteAnsiIbmLabels(dcr, ANSI_VOL_LABEL, dev->VolHdr.VolumeName)) {
+         return false;
+      }
+
+      /* Attempt write to check write permission */
+      Dmsg1(200, "Attempt to write to device fd=%d.\n", dev->fd());
+      if (!dcr->WriteBlockToDev()) {
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to write device %s: ERR=%s\n"),
+            dev->print_name(), dev->print_errmsg());
+         Dmsg0(200, "===ERROR write block to dev\n");
+         return false;
+      }
+   }
+   dev->SetLabeled();
+   /* Set or reset Volume statistics */
+   dev->VolCatInfo.VolCatJobs = 0;
+   dev->VolCatInfo.VolCatFiles = 0;
+   dev->VolCatInfo.VolCatErrors = 0;
+   dev->VolCatInfo.VolCatBlocks = 0;
+   dev->VolCatInfo.VolCatRBytes = 0;
+   if (recycle) {
+      dev->VolCatInfo.VolCatMounts++;
+      dev->VolCatInfo.VolCatRecycles++;
+      dcr->DirCreateJobmediaRecord(true);
+   } else {
+      dev->VolCatInfo.VolCatMounts = 1;
+      dev->VolCatInfo.VolCatRecycles = 0;
+      dev->VolCatInfo.VolCatWrites = 1;
+      dev->VolCatInfo.VolCatReads = 1;
+   }
+   Dmsg1(150, "dir_update_vol_info. Set Append vol=%s\n", dcr->VolumeName);
+   dev->VolCatInfo.VolFirstWritten = time(NULL);
+   bstrncpy(dev->VolCatInfo.VolCatStatus, "Append", sizeof(dev->VolCatInfo.VolCatStatus));
+   dev->setVolCatName(dcr->VolumeName);
+   if (!dcr->DirUpdateVolumeInfo(true, true)) {  /* indicate doing relabel */
+      return false;
+   }
+   if (recycle) {
+      Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\" on device %s, all previous data lost.\n"),
+         dcr->VolumeName, dev->print_name());
+   } else {
+      Jmsg(jcr, M_INFO, 0, _("Wrote label to prelabeled Volume \"%s\" on device %s\n"),
+         dcr->VolumeName, dev->print_name());
+   }
+   /*
+    * End writing real Volume label (from pre-labeled tape), or recycling
+    *  the volume.
+    */
+   Dmsg1(150, "OK from rewrite vol label. Vol=%s\n", dcr->VolumeName);
+
+   /*
+    * reset blocksizes from volinfo to device as we set blocksize to
+    * DEFAULT_BLOCK_SIZE to write the label
+    */
+   dev->SetBlocksizes(dcr);
+
+   /*
+    * Let any stored plugin know the label was rewritten and as such is verified .
+    */
+   if (GeneratePluginEvent(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
+      Dmsg0(200, "Error from bsdEventLabelVerified plugin event.\n");
+      return false;
+   }
+
+   return true;
+}
+
+} /* namespace storagedaemon */
+

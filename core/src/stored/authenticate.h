@@ -22,10 +22,14 @@
 #ifndef BAREOS_STORED_AUTHENTICATE_H_
 #define BAREOS_STORED_AUTHENTICATE_H_
 
+namespace storagedaemon {
+
 bool AuthenticateDirector(JobControlRecord *jcr);
 bool AuthenticateStoragedaemon(JobControlRecord *jcr);
 bool AuthenticateWithStoragedaemon(JobControlRecord *jcr);
 bool AuthenticateFiledaemon(JobControlRecord *jcr);
 bool AuthenticateWithFiledaemon(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_AUTHENTICATE_H_

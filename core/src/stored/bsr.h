@@ -36,6 +36,8 @@
 #include <regex.h>
 #endif
 
+namespace storagedaemon {
+
 /**
  * List of Volume names to be read by Storage daemon.
  *  Formed by Storage daemon from BootStrapRecord
@@ -169,7 +171,9 @@ struct BootStrapRecord {
    Attributes *attr;                        /* scratch space for unpacking */
 };
 
-DLL_IMP_EXP BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
-DLL_IMP_EXP void DumpBsr(BootStrapRecord *bsr, bool recurse);
-DLL_IMP_EXP void FreeBsr(BootStrapRecord *bsr);
 #endif
+
+void CreateRestoreVolumeList(JobControlRecord *jcr);
+void FreeRestoreVolumeList(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
