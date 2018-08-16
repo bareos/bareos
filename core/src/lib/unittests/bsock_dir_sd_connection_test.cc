@@ -18,13 +18,18 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_SOCKET_SERVER_H_
-#define BAREOS_STORED_SOCKET_SERVER_H_
+#include "bsock_test.h"
+#include "gtest/gtest.h"
+#include "stored/socket_server.h"
 
-struct dlist;
+static void start_sd_server()
+{
+   int newsockfd = create_accepted_server_socket(BSOCK_TEST_PORT_NUMBER);
+   BareosSocket *bs = create_new_bareos_socket(newsockfd);
+   HandleConnectionRequest(bs);
+}
 
-void StartSocketServer(dlist *addrs);
-void StopSocketServer();
-void *HandleConnectionRequest(void *arg);
-
-#endif // BAREOS_STORED_SOCKET_SERVER_H_
+TEST(bsock_dir_sd, dir_to_sd_connection_test)
+{
+//   start_sd_server();
+}

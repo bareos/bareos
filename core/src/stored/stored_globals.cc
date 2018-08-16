@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,13 +20,23 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_SOCKET_SERVER_H_
-#define BAREOS_STORED_SOCKET_SERVER_H_
 
-struct dlist;
+#include "stored_globals.h"
 
-void StartSocketServer(dlist *addrs);
-void StopSocketServer();
-void *HandleConnectionRequest(void *arg);
+void *start_heap = nullptr;
+bool  init_done = false;
+uint32_t vol_session_time;
 
-#endif // BAREOS_STORED_SOCKET_SERVER_H_
+static std::mutex mutex_;
+static uint32_t vol_session_id_ = 0;
+
+uint32_t NewVolSessionId()
+{
+   uint32_t id;
+
+   mutex_.lock();
+   vol_session_id_++;
+   id = vol_session_id_;
+   mutex_.unlock();
+   return id;
+}

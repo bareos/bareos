@@ -18,13 +18,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_SOCKET_SERVER_H_
-#define BAREOS_STORED_SOCKET_SERVER_H_
 
-struct dlist;
+#ifndef BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
+#define BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
 
-void StartSocketServer(dlist *addrs);
-void StopSocketServer();
-void *HandleConnectionRequest(void *arg);
+#define BSOCK_TEST_PORT_NUMBER 54321
 
-#endif // BAREOS_STORED_SOCKET_SERVER_H_
+class BareosSocket;
+
+int create_accepted_server_socket(int port);
+BareosSocket *create_new_bareos_socket(int fd);
+
+
+#endif /* BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_ */

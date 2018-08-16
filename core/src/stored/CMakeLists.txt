@@ -84,10 +84,10 @@ set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
          ${AVAILABLE_DEVICE_API_SRCS}
     )
 
-set(SDSRCS append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
+set(SDSRCS stored_globals.cc append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
-         socket_server.cc status.cc stored.cc
-)
+         socket_server.cc status.cc stored.cc    )
+
 IF(HAVE_WIN32)
    LIST(APPEND SDSRCS
       ../win32/generic/main.cc

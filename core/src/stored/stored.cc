@@ -45,6 +45,7 @@
 #include "stored/sd_backends.h"
 #include "stored/sd_stats.h"
 #include "stored/socket_server.h"
+#include "stored/stored_globals.h"
 #include "stored/wait.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
@@ -64,19 +65,8 @@ static void CleanUpOldFiles();
 
 extern "C" void *device_initialization(void *arg);
 
-/* Global variables exported */
-char OK_msg[]   = "3000 OK\n";
-char TERM_msg[] = "3999 Terminate\n";
-
-void *start_heap;
-
-static uint32_t VolSessionId = 0;
-uint32_t VolSessionTime;
-bool init_done = false;
-
 /* Global static variables */
 static bool foreground = 0;
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void usage()
 {
@@ -298,8 +288,8 @@ int main (int argc, char *argv[])
    /* Ensure that Volume Session Time and Id are both
     * set and are both non-zero.
     */
-   VolSessionTime = (uint32_t)daemon_start_time;
-   if (VolSessionTime == 0) { /* paranoid */
+   vol_session_time = (uint32_t)daemon_start_time;
+   if (vol_session_time == 0) { /* paranoid */
       Jmsg0(NULL, M_ABORT, 0, _("Volume Session Time is ZERO!\n"));
    }
 
@@ -338,18 +328,6 @@ int main (int argc, char *argv[])
 
 bail_out:
    return 0;
-}
-
-/* Return a new Session Id */
-uint32_t newVolSessionId()
-{
-   uint32_t Id;
-
-   P(mutex);
-   VolSessionId++;
-   Id = VolSessionId;
-   V(mutex);
-   return Id;
 }
 
 /* Check Configuration file for necessary info */

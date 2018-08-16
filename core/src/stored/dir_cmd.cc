@@ -53,6 +53,7 @@
 #include "stored/parse_bsr.h"
 #include "stored/sd_cmds.h"
 #include "stored/sd_stats.h"
+#include "stored/stored_globals.h"
 #include "stored/wait.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
@@ -62,7 +63,6 @@
 
 /* Imported variables */
 extern struct s_last_job last_job;
-extern bool init_done;
 
 /* Commands received from director that need scanning */
 static char setbandwidth[] =

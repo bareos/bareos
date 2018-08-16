@@ -35,6 +35,7 @@
 #include "stored/ndmp_tape.h"
 #include "stored/parse_bsr.h"
 #include "stored/read_record.h"
+#include "stored/stored_globals.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
 
@@ -44,7 +45,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 extern uint32_t VolSessionTime;
 
 /* Imported functions */
-extern uint32_t newVolSessionId();
+extern uint32_t NewVolSessionId();
 
 /* Requests from the Director daemon */
 static char jobcmd[] =
@@ -130,8 +131,8 @@ bool job_cmd(JobControlRecord *jcr)
     * are given to us (same as restarted job).
     */
    if (!jcr->rerunning) {
-      jcr->VolSessionId = newVolSessionId();
-      jcr->VolSessionTime = VolSessionTime;
+      jcr->VolSessionId = NewVolSessionId();
+      jcr->VolSessionTime = vol_session_time;
    }
    bstrncpy(jcr->Job, job, sizeof(jcr->Job));
    UnbashSpaces(job_name);

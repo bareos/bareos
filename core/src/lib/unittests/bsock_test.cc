@@ -18,6 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#include "bsock_test.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <fstream>
@@ -43,7 +44,6 @@ class StorageResource;
 
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN 175 + 25
-#define PORT 54321
 #define HOST "127.0.0.1"
 #define CONSOLENAME "testconsole"
 #define CONSOLEPASSWORD "secret"
@@ -98,6 +98,18 @@ int create_accepted_server_socket(int port)
   return new_socket;
 }
 
+BareosSocket *create_new_bareos_socket(int fd)
+{
+  BareosSocket *bs;
+  bs = New(BareosSocketTCP);
+  bs->sleep_time_after_authentication_error = 0;
+  bs->fd_ = fd;
+  bs->SetWho(bstrdup("client"));
+  memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
+  return bs;
+}
+
+
 #if 0
 static bool check_cipher(const TlsResource &tls, const std::string &cipher)
 {
@@ -111,7 +123,7 @@ static bool check_cipher(const TlsResource &tls, const std::string &cipher)
 }
 #endif
 
-void clone_a_server_socket(BareosSocket* bs)
+static void clone_a_server_socket(BareosSocket* bs)
 {
    BareosSocket *bs2 = bs->clone();
    bs2->fsend("cloned-bareos-socket-0987654321");
@@ -129,12 +141,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   int newsockfd = create_accepted_server_socket(server_port);
   bool success = false;
 
-  BareosSocket *bs;
-  bs = New(BareosSocketTCP);
-  bs->sleep_time_after_authentication_error = 0;
-  bs->fd_ = newsockfd;
-  bs->SetWho(bstrdup("client"));
-  memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
+  BareosSocket *bs = create_new_bareos_socket(newsockfd);
 
   char *name = (char *)console_name.c_str();
   s_password *password = new (s_password);
@@ -283,7 +290,7 @@ DirectorResource *CreateAndInitializeNewDirectorResource()
 {
   DirectorResource *dir = new (DirectorResource);
   dir->address = (char *)HOST;
-  dir->DIRport = htons(PORT);
+  dir->DIRport = htons(BSOCK_TEST_PORT_NUMBER);
   dir->tls_psk.enable = false;
   dir->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
   dir->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
@@ -300,7 +307,7 @@ std::string client_cons_password;
 std::string server_cons_name;
 std::string server_cons_password;
 
-int port = PORT;
+int port = BSOCK_TEST_PORT_NUMBER;
 
 TEST(bsock, auth_works)
 {
