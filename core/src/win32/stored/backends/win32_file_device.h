@@ -28,6 +28,8 @@
 #ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
 #define BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
 
+namespace storagedaemon {
+
 class win32_file_device: public Device {
 public:
    win32_file_device();
@@ -46,4 +48,6 @@ public:
    boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+
+} /* namespace storagedaemon */
 #endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_ */
