@@ -109,6 +109,8 @@ class IXMLDOMDocument;
 
 #include "vss.h"
 
+namespace filedaemon {
+
 static void JmsgVssApiStatus(JobControlRecord *jcr, int msg_status, HRESULT hr, const char *apiName)
 {
    const char *errmsg;
@@ -1138,4 +1140,6 @@ bool VSSClientGeneric::CheckWriterStatus()
 
    return true;
 }
+
+} /* namespace filedaemon */
 #endif /* WIN32_VSS */

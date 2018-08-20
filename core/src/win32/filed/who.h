@@ -28,4 +28,6 @@
 #define SERVICE_DESC "Provides file backup and restore services (bareos client)."
 
 #define TerminateApp(x) TerminateFiled(x)
+namespace filedaemon {
 void TerminateFiled(int sig);
+} /* namespace filedaemon */

@@ -47,6 +47,9 @@
 #include <adoid.h>
 #include <adoint.h>
 
+
+namespace filedaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -1919,3 +1922,5 @@ static bRC checkFile(bpContext *ctx, char *fname)
 {
    return bRC_OK;
 }
+
+} /* namespace filedaemon */
