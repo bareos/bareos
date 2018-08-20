@@ -30,9 +30,12 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
 #include "lib/bnet_sever_tcp.h"
+
+namespace directordaemon {
 
 static char hello_client_with_version[] =
    "Hello Client %127s FdProtocolVersion=%d calling";
@@ -155,3 +158,4 @@ void StopSocketServer()
       delete(client_connections);
    }
 }
+} /* namespace directordaemon */

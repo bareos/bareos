@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "findlib/find.h"
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"
@@ -46,6 +47,8 @@
 #include "dird/verify.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Commands sent to File daemon */
 static char verifycmd[] =
@@ -919,3 +922,4 @@ static void PrtFname(JobControlRecord *jcr)
       jcr->fn_printed = true;
    }
 }
+} /* namespace directordaemon */

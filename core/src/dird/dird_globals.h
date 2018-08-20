@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,14 +20,21 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_DIRD_STATS_H_
-#define BAREOS_DIRD_STATS_H_
+
+#ifndef BAREOS_DIRD_DIRD_GLOBALS_H_
+#define BAREOS_DIRD_DIRD_GLOBALS_H_ 1
+
+class ConfigurationParser;
+extern ConfigurationParser *my_config;
 
 namespace directordaemon {
 
-int StartStatisticsThread(void);
-void StopStatisticsThread();
-void stats_job_started();
+class DirectorResource;
+extern DirectorResource *me;
+
+extern char *configfile;
+extern void *start_heap;
 
 } /* namespace directordaemon */
-#endif // BAREOS_DIRD_STATS_H_
+
+#endif /* BAREOS_DIRD_DIRD_GLOBALS_H_ */

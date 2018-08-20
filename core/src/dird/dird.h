@@ -45,9 +45,7 @@
 #include "ua.h"
 #include "jobq.h"
 
-/* Globals that dird.c exports */
-extern DirectorResource *me;                   /**< Our Global resource */
-extern ConfigurationParser *my_config;            /**< Our Global config */
+namespace directordaemon {
 
 /* Used in ua_prune.c and ua_purge.c */
 
@@ -190,5 +188,8 @@ struct runtime_job_status_t {
 #define FD_VERSION_53 53
 #define FD_VERSION_54 54
 
+bool DoReloadConfig();
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_DIRD_H_

@@ -22,6 +22,9 @@
 #ifndef BAREOS_DIRD_UA_RESTORE_H_
 #define BAREOS_DIRD_UA_RESTORE_H_
 
+namespace directordaemon {
+
 void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char *MediaType);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_UA_RESTORE_H_

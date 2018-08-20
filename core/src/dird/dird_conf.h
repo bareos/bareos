@@ -33,6 +33,8 @@
 
 #define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
 
+namespace directordaemon {
+
 /**
  * Resource codes -- they must be sequential for indexing
  */
@@ -662,4 +664,5 @@ const char *get_configure_usage_string();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_DIRD_CONF_H_

@@ -50,6 +50,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 static char *find_msg_start(char *msg);
 
@@ -401,3 +403,4 @@ bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *c
          cmd, BnetStrerror(bs));
    return false;
 }
+} /* namespace directordaemon */

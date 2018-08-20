@@ -40,6 +40,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
@@ -49,6 +50,8 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Commands sent to File daemon */
 static char restorecmd[] =
@@ -633,3 +636,4 @@ void GenerateRestoreSummary(JobControlRecord *jcr, int msg_type, const char *Ter
       break;
    }
 }
+} /* namespace directordaemon */

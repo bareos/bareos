@@ -20,7 +20,7 @@
 
 
 set(DIRDSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
-   consolidate.cc dir_plugins.cc dird_conf.cc dird.cc expand.cc fd_cmds.cc
+   consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc dird.cc expand.cc fd_cmds.cc
    getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc mountreq.cc msgchan.cc
    ndmp_dma_storage.cc
    ndmp_dma_backup_common.cc ndmp_dma_backup_NDMP_BAREOS.cc ndmp_dma_backup_NDMP_NATIVE.cc
@@ -49,12 +49,12 @@ ELSE()
 ENDIF()
 
 
-set(DBCHKSRCS dbcheck.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
+set(DBCHKSRCS dbcheck.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
 IF(HAVE_WIN32)
    LIST(APPEND DBCHKSRCS ../win32/dird/dbcheckres.rc)
 ENDIF()
 
-set(TSTFNDSRCS testfind.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
+set(TSTFNDSRCS testfind.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
 
 set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs messages pool profile schedule storage)
 

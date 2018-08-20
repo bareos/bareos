@@ -37,6 +37,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/bsr.h"
 #include "dird/job.h"
@@ -48,6 +49,8 @@
 #include "dird/ua_purge.h"
 #include "dird/vbackup.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 static const int dbglevel = 10;
 
@@ -526,3 +529,4 @@ static bool CreateBootstrapFile(JobControlRecord *jcr, char *jobids)
    directordaemon::FreeBsr(rx.bsr);
    return true;
 }
+} /* namespace directordaemon */

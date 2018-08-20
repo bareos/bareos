@@ -30,6 +30,8 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_PRIV_H_
 #define BAREOS_DIRD_NDMP_DMA_PRIV_H_ 1
 
+namespace directordaemon {
+
 #ifdef NDMP_NEED_ENV_KEYWORDS
 /**
  * Array used for storing fixed NDMP env keywords.
@@ -150,4 +152,6 @@ void NdmpFhdbMemProcessDb(struct ndmlog *ixlog);
 bool StoreNdmmediaInfoInDatabase(ndmmedia *media, JobControlRecord  *jcr);
 bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *jcr);
 extern "C" int BndmpFhdbAddFile(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
-#endif
+
+} /* namespace directordaemon */
+#endif /* BAREOS_DIRD_NDMP_DMA_PRIV_H_ */

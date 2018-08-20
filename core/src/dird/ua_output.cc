@@ -32,6 +32,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/job.h"
 #include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
@@ -39,6 +40,8 @@
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Imported subroutines */
 
@@ -1898,3 +1901,4 @@ void UaContext::SendCmdUsage(const char *fmt, ...)
 
    send->message(NULL, message);
 }
+} /* namespace directordaemon */

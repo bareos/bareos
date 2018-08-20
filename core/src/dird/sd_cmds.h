@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_SD_CMDS_H_
 #define BAREOS_DIRD_SD_CMDS_H_
 
+namespace directordaemon {
+
 bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
                                int max_retry_time, bool verbose);
 BareosSocket *open_sd_bsock(UaContext *ua);
@@ -43,4 +45,5 @@ bool SendSecureEraseReqToSd(JobControlRecord *jcr);
 bool DoStorageResolve(UaContext *ua, StorageResource *store);
 bool DoStoragePluginOptions(JobControlRecord *jcr);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_SD_CMDS_H_

@@ -36,6 +36,8 @@
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Imported variables */
 extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
@@ -1907,3 +1909,4 @@ bool GetUserJobLevelSelection(UaContext *ua, int *joblevel)
    }
    return true;
 }
+} /* namespace directordaemon */

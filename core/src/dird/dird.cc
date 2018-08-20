@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird_globals.h"
 #include "dird/job.h"
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
@@ -57,6 +58,8 @@
 int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
+using namespace directordaemon;
+
 /* Forward referenced subroutines */
 #if !defined(HAVE_WIN32)
 static
@@ -68,14 +71,10 @@ static void CleanUpOldFiles();
 static bool InitSighandlerSighup();
 
 /* Exported subroutines */
-extern bool DoReloadConfig();
-extern void InvalidateSchedules();
 extern bool ParseDirConfig(const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
-void InitJobServer(int max_workers);
-void TermJobServer();
 void StoreJobtype(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreProtocoltype(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreLevel(LEX *lc, ResourceItem *item, int index, int pass);
@@ -87,12 +86,6 @@ static char *runjob = NULL;
 static bool background = true;
 static bool test_config = false;
 static alist *reload_table = NULL;
-
-/* Globals Exported */
-DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
-char *configfile = NULL;
-void *start_heap;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
@@ -566,6 +559,7 @@ static bool InitSighandlerSighup()
    return retval;
 }
 
+namespace directordaemon {
 bool DoReloadConfig()
 {
    static bool is_reloading = false;
@@ -658,6 +652,7 @@ bail_out:
    is_reloading = false;
    return reloaded;
 }
+} /* namespace directordaemon */
 
 /*
  * See if two storage definitions point to the same Storage Daemon.

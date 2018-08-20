@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/msgchan.h"
 #include "dird/next_vol.h"
 #include "dird/ndmp_dma_storage.h"
@@ -41,6 +42,8 @@
 #include "dird/ua_select.h"
 #include "lib/crypto_wrap.h"
 #include "lib/passphrase.h"
+
+namespace directordaemon {
 
 /* Forward referenced functions */
 
@@ -774,3 +777,4 @@ bool IsVolumeNameLegal(UaContext *ua, const char *name)
    }
    return 1;
 }
+} /* namespace directordaemon */

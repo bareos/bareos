@@ -32,6 +32,8 @@
 #include "include/bareos.h"
 #include "dird.h"
 
+namespace directordaemon {
+
 static int date_item(JobControlRecord *jcr,
                      int code,
                      const char **val_ptr,
@@ -535,3 +537,4 @@ bail_out:
 
    return rtn_stat;
 }
+} /* namespace directordaemon */

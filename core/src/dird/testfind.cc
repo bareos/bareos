@@ -37,6 +37,8 @@
 #define isatty(fd) (fd==0)
 #endif
 
+using namespace directordaemon;
+
 /* Dummy functions */
 void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
 extern bool ParseDirConfig(const char *configfile, int exit_code);
@@ -48,9 +50,6 @@ static int max_path_len = 0;
 static int trunc_fname = 0;
 static int trunc_path = 0;
 static int attrs = 0;
-
-DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 static JobControlRecord *jcr;
 

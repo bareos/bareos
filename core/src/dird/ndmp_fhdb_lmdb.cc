@@ -36,6 +36,8 @@
 #include "ndmp_dma_priv.h"
 #include "lmdb.h"
 
+namespace directordaemon {
+
 /*
  * What is actually stored in the LMDB
  */
@@ -680,4 +682,6 @@ void NdmpFhdbLmdbProcessDb(struct ndmlog *ixlog)
 
    Jmsg0(nis->jcr, M_INFO, 0,  "Processing lmdb database done\n");
 }
+
+} /* namespace directordaemon */
 #endif /* HAVE_LMDB */

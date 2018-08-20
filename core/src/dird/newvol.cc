@@ -44,6 +44,8 @@
 #include "dird/ua_label.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /*
  * Forward referenced functions
  */
@@ -184,3 +186,4 @@ static bool PerformFullNameSubstitution(JobControlRecord *jcr, MediaDbRecord *mr
 
    return ok;
 }
+} /* namespace directordaemon */

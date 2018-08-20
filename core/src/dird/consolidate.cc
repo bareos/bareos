@@ -40,6 +40,8 @@
 #include "dird/ua_run.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 static const int debuglevel = 100;
 
 bool DoConsolidateInit(JobControlRecord *jcr)
@@ -358,3 +360,4 @@ void ConsolidateCleanup(JobControlRecord *jcr, int TermCode)
 
    Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");
 }
+} /* namespace directordaemon */

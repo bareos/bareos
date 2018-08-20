@@ -22,8 +22,12 @@
 #ifndef BAREOS_DIRD_CATREQ_H_
 #define BAREOS_DIRD_CATREQ_H_
 
+namespace directordaemon {
+
 void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs);
 void CatalogUpdate(JobControlRecord *jcr, BareosSocket *bs);
 bool DespoolAttributesFromFile(JobControlRecord *jcr, const char *file);
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_CATREQ_H_

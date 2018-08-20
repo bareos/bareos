@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
@@ -42,6 +43,8 @@
 #include "dird/ua_run.h"
 #include "dird/bsr.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Imported functions */
 extern void PrintBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
@@ -1688,3 +1691,4 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
       Dmsg1(200, "Set store=%s\n", rx.store->name());
    }
 }
+} /* namespace directordaemon */

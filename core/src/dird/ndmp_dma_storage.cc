@@ -29,14 +29,18 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 
 #if HAVE_NDMP
-
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif
 
+namespace directordaemon {
+
+#if HAVE_NDMP
 /* Imported variables */
 
 /* Forward referenced functions */
@@ -951,4 +955,6 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
+
 #endif /* HAVE_NDMP */
+} /* namespace directordaemon */

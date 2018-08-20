@@ -36,6 +36,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
@@ -49,6 +50,8 @@
 #include "cats/sql.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Commands sent to File daemon */
 static char backupcmd[] =
@@ -1230,3 +1233,4 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         secure_erase_status.c_str(),
         TermMsg);
 }
+} /* namespace directordaemon */

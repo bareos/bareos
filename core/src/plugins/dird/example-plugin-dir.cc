@@ -35,6 +35,8 @@
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Test Director Daemon Plugin"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
 static bRC freePlugin(bpContext *ctx);
@@ -181,3 +183,4 @@ static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
    bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
    return bRC_OK;
 }
+} /* namespace directordaemon */

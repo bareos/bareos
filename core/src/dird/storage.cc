@@ -35,6 +35,8 @@
 #include "dird/ndmp_dma_storage.h"
 #include "dird/storage.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 
 /**
@@ -927,3 +929,4 @@ slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
 
    return retval;
 }
+} /* namespace directordaemon */

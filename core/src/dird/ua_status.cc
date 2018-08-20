@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
 #include "dird/ndmp_dma_generic.h"
@@ -46,6 +47,8 @@
 #include "lib/edit.h"
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
+
+namespace directordaemon {
 
 extern void *start_heap;
 
@@ -1798,3 +1801,4 @@ bail_out:
 
    return;
 }
+} /* namespace directordaemon */

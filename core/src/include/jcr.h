@@ -226,23 +226,23 @@ struct CryptoContext {
 
 #ifdef DIRECTOR_DAEMON
 struct Resources {
-   JobResource *job;                           /**< Job resource */
-   JobResource *verify_job;                    /**< Job resource of verify previous job */
-   JobResource *previous_job;                  /**< Job resource of migration previous job */
-   StorageResource *rstore;                      /**< Selected read storage */
-   StorageResource *wstore;                      /**< Selected write storage */
-   StorageResource *pstore;                      /**< Selected paired storage (saved wstore or rstore) */
-   ClientResource *client;                     /**< Client resource */
-   PoolResource *pool;                         /**< Pool resource = write for migration */
-   PoolResource *rpool;                        /**< Read pool. Used only in migration */
-   PoolResource *full_pool;                    /**< Full backup pool resource */
-   PoolResource *vfull_pool;                   /**< Virtual Full backup pool resource */
-   PoolResource *inc_pool;                     /**< Incremental backup pool resource */
-   PoolResource *diff_pool;                    /**< Differential backup pool resource */
-   PoolResource *next_pool;                    /**< Next Pool used for migration/copy and virtual backup */
-   FilesetResource *fileset;                   /**< FileSet resource */
-   CatalogResource *catalog;                       /**< Catalog resource */
-   MessagesResource *messages;                     /**< Default message handler */
+   directordaemon::JobResource *job;         /**< Job resource */
+   directordaemon::JobResource *verify_job;  /**< Job resource of verify previous job */
+   directordaemon::JobResource *previous_job;/**< Job resource of migration previous job */
+   directordaemon::StorageResource *rstore;  /**< Selected read storage */
+   directordaemon::StorageResource *wstore;  /**< Selected write storage */
+   directordaemon::StorageResource *pstore;  /**< Selected paired storage (saved wstore or rstore) */
+   directordaemon::ClientResource *client;   /**< Client resource */
+   directordaemon::PoolResource *pool;       /**< Pool resource = write for migration */
+   directordaemon::PoolResource *rpool;      /**< Read pool. Used only in migration */
+   directordaemon::PoolResource *full_pool;  /**< Full backup pool resource */
+   directordaemon::PoolResource *vfull_pool; /**< Virtual Full backup pool resource */
+   directordaemon::PoolResource *inc_pool;   /**< Incremental backup pool resource */
+   directordaemon::PoolResource *diff_pool;  /**< Differential backup pool resource */
+   directordaemon::PoolResource *next_pool;  /**< Next Pool used for migration/copy and virtual backup */
+   directordaemon::FilesetResource *fileset; /**< FileSet resource */
+   directordaemon::CatalogResource *catalog; /**< Catalog resource */
+   MessagesResource *messages;            /**< Default message handler */
    POOLMEM *pool_source;                  /**< Where pool came from */
    POOLMEM *npool_source;                 /**< Where next pool came from */
    POOLMEM *rpool_source;                 /**< Where migrate read pool came from */

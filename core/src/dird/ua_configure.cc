@@ -28,7 +28,10 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_select.h"
+
+namespace directordaemon {
 
 static void ConfigureLexErrorHandler(const char *file, int line, LEX *lc, PoolMem &msg)
 {
@@ -440,3 +443,4 @@ bool ConfigureCmd(UaContext *ua, const char *cmd)
 
    return result;
 }
+} /* namespace directordaemon */

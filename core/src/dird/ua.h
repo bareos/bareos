@@ -31,6 +31,11 @@
 #ifndef BAREOS_DIRD_UA_H_
 #define BAREOS_DIRD_UA_H_ 1
 
+namespace directordaemon {
+
+class UaContext;
+class RestoreBootstrapRecord;
+
 #define MAX_ID_LIST_LEN 2000000
 
 struct ua_cmdstruct {
@@ -253,4 +258,6 @@ public:
                store = new UnifiedStorageResource; }
    ~RunContext() { delete store; }
 };
-#endif
+
+} /* namespace directordaemon */
+#endif /* BAREOS_DIRD_UA_H_ */

@@ -29,10 +29,13 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
+
+namespace directordaemon {
 
 /*
  * Commands received from storage daemon that need scanning
@@ -337,3 +340,4 @@ void stats_job_started()
       need_flush = true;
    }
 }
+} /* namespace directordaemon */

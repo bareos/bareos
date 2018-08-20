@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/getmsg.h"
 #include "dird/msgchan.h"
 #include "dird/sd_cmds.h"
@@ -44,7 +45,11 @@
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
 
+namespace directordaemon {
+
+#if HAVE_NDMP
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
@@ -923,4 +928,6 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord *jcr)
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
+
 #endif /* HAVE_NDMP */
+} /* namespace directordaemon */

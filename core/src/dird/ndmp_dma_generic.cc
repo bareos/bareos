@@ -29,16 +29,20 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 
 #if HAVE_NDMP
-
 #define SMTAPE_MIN_BLOCKSIZE 4096 /**< 4 Kb */
 #define SMTAPE_MAX_BLOCKSIZE 262144 /**< 256 Kb */
 #define SMTAPE_BLOCKSIZE_INCREMENTS 4096 /**< 4 Kb */
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
 
+namespace directordaemon {
+
+#if HAVE_NDMP
 /* Imported variables */
 
 /* Forward referenced functions */
@@ -685,4 +689,6 @@ void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
+
 #endif /* HAVE_NDMP */
+} /* namespace directordaemon */

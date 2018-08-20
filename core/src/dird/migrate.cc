@@ -41,6 +41,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/job.h"
 #include "dird/migration.h"
@@ -60,6 +61,8 @@
 #else
 #include <regex.h>
 #endif
+
+namespace directordaemon {
 
 /* Commands sent to other storage daemon */
 static char replicatecmd[]  =
@@ -2043,3 +2046,4 @@ void MigrationCleanup(JobControlRecord *jcr, int TermCode)
 
    Dmsg0(100, "Leave migrate_cleanup()\n");
 }
+} /* namespace directordaemon */

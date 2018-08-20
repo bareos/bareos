@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_STORAGE_H_
 #define BAREOS_DIRD_STORAGE_H_
 
+namespace directordaemon {
+
 void CopyRwstorage(JobControlRecord *jcr, alist *storage, const char *where);
 void SetRwstorage(JobControlRecord *jcr, UnifiedStorageResource *store);
 void FreeRwstorage(JobControlRecord *jcr);
@@ -53,4 +55,5 @@ void InvalidateVolList(StorageResource *store);
 int CompareStorageMapping(void *e1, void *e2);
 slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
                                      s_mapping_type map_type, slot_number_t slot);
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_STORAGE_H_

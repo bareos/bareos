@@ -94,6 +94,8 @@
  ********************************************************************
  */
 
+#ifndef BAREOS_NDMP_NDMAGENTS_H_
+#define BAREOS_NDMP_NDMAGENTS_H_ 1
 
 #include "ndmp/ndmlib.h"
 
@@ -1361,3 +1363,5 @@ extern void	ndma_send_logmsg (struct ndm_session *sess,
 #endif
 
 #endif /* !NDMOS_EFFECT_NO_SERVER_AGENTS */
+
+#endif /* BAREOS_NDMP_NDMAGENTS_H_ */

@@ -32,6 +32,8 @@
 #include "dird.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /**
  * Check if access is permitted to item in acl
  */
@@ -443,3 +445,5 @@ ScheduleResource *UaContext::GetScheduleResWithName(const char *name, bool audit
 {
    return (ScheduleResource *)GetResWithName(R_SCHEDULE, name, audit_event, lock);
 }
+
+} /* namespace directordaemon */

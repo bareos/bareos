@@ -45,6 +45,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Commands sent to Storage daemon */
@@ -569,3 +571,5 @@ void InitDeviceResources()
    }
 }
 #endif
+
+} /* namespace directordaemon */

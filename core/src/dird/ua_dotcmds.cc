@@ -45,6 +45,8 @@
 #include "dird/storage.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Imported variables */
 extern struct s_jl joblevels[];
 extern struct s_jt jobtypes[];
@@ -1612,3 +1614,4 @@ bool DotDefaultsCmd(UaContext *ua, const char *cmd)
 
    return true;
 }
+} /* namespace directordaemon */

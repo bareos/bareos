@@ -36,6 +36,8 @@
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 #define UA_CMD_SIZE 1000
 
 /* Forward referenced functions */
@@ -892,3 +894,4 @@ void CloseBootstrapFile(bootstrap_info &info)
       FreeUaContext(info.ua);
    }
 }
+} /* namespace directordaemon */

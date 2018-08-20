@@ -22,7 +22,10 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_BACKUP_NATIVE_NDMP_H_
 #define BAREOS_DIRD_NDMP_DMA_BACKUP_NATIVE_NDMP_H_
 
+namespace directordaemon {
+
 bool DoNdmpBackupInitNdmpNative(JobControlRecord *jcr);
 bool DoNdmpBackupNdmpNative(JobControlRecord *jcr);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_NDMP_DMA_BACKUP_NATIVE_NDMP_H_

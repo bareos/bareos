@@ -37,6 +37,8 @@
 #include "dird/ua_run.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Forward referenced subroutines */
 static void SelectJobLevel(UaContext *ua, JobControlRecord *jcr);
 static bool DisplayJobParameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
@@ -2246,3 +2248,4 @@ static bool ScanCommandLineArguments(UaContext *ua, RunContext &rc)
    }
    return true;
 }
+} /* namespace directordaemon */

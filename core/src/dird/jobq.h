@@ -33,6 +33,8 @@
 #ifndef BAREOS_DIRD_JOBQ_H_
 #define BAREOS_DIRD_JOBQ_H_ 1
 
+namespace directordaemon {
+
 /**
  * Structure to keep track of job queue request
  */
@@ -71,4 +73,6 @@ extern int JobqRemove(jobq_t *wq, JobControlRecord *jcr);
 
 bool IncReadStore(JobControlRecord *jcr);
 void DecReadStore(JobControlRecord *jcr);
+
+} /* namespace directordaemon */
 #endif /* BAREOS_DIRD_JOBQ_H_ */

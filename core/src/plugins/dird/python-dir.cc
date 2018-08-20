@@ -35,6 +35,11 @@
 #error "Need at least Python version 2.6 or newer"
 #endif
 
+#include "python-dir.h"
+#include "lib/edit.h"
+
+namespace directordaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -105,9 +110,6 @@ struct plugin_ctx {
    PyObject *pDict;                   /* Python Dictionary */
    PyObject *bpContext;               /* Python representation of plugin context */
 };
-
-#include "python-dir.h"
-#include "lib/edit.h"
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -1149,3 +1151,4 @@ static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args)
 
    return pRetVal;
 }
+} /* namespace directordaemon */

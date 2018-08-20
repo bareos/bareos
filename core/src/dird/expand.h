@@ -22,6 +22,10 @@
 #ifndef BAREOS_DIRD_EXPAND_H_
 #define BAREOS_DIRD_EXPAND_H_
 
+namespace directordaemon {
+
 int VariableExpansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp);
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_EXPAND_H_

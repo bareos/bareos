@@ -50,6 +50,9 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/inc_conf.h"
+#include "dird/dird_globals.h"
+
+namespace directordaemon {
 
 /**
  * Used by print_config_schema_json
@@ -2351,97 +2354,6 @@ const char *level_to_str(int level)
 }
 
 /**
- * Dump contents of resource
- */
-void DumpResource(int type, CommonResourceHeader *ures,
-                   void sendit(void *sock, const char *fmt, ...),
-                   void *sock, bool hide_sensitive_data, bool verbose)
-{
-   PoolMem buf;
-   bool recurse = true;
-   UnionOfResources *res = (UnionOfResources *)ures;
-   UaContext *ua = (UaContext *)sock;
-
-   if (!res) {
-      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
-      return;
-   }
-
-   if (type < 0) { /* no recursion */
-      type = -type;
-      recurse = false;
-   }
-
-   if (ua && !ua->IsResAllowed(ures)) {
-      goto bail_out;
-   }
-
-   switch (type) {
-   case R_DIRECTOR:
-      res->res_dir.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_PROFILE:
-      res->res_profile.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_CONSOLE:
-      res->res_con.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_COUNTER:
-      res->res_counter.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_CLIENT:
-      res->res_client.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_DEVICE:
-      res->res_dev.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_STORAGE:
-      res->res_store.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_CATALOG:
-      res->res_cat.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_JOBDEFS:
-   case R_JOB:
-      res->res_job.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_FILESET:
-      res->res_fs.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_SCHEDULE:
-      res->res_sch.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_POOL:
-      res->res_pool.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   case R_MSGS:
-      res->res_msgs.PrintConfig(buf, hide_sensitive_data, verbose);
-      sendit(sock, "%s", buf.c_str());
-      break;
-   default:
-      sendit(sock, _("Unknown resource type %d in DumpResource.\n"), type);
-      break;
-   }
-
-bail_out:
-   if (recurse && res->res_dir.hdr.next) {
-      DumpResource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
-   }
-}
-
-/**
  * Free all the members of an IncludeExcludeItem structure
  */
 static void FreeIncexe(IncludeExcludeItem *incexe)
@@ -2477,452 +2389,6 @@ static void FreeIncexe(IncludeExcludeItem *incexe)
    }
    incexe->ignoredir.destroy();
    free(incexe);
-}
-
-/**
- * Free memory of resource -- called when daemon terminates.
- * NB, we don't need to worry about freeing any references
- * to other resources as they will be freed when that
- * resource chain is traversed.  Mainly we worry about freeing
- * allocated strings (names).
- */
-void FreeResource(CommonResourceHeader *sres, int type)
-{
-   int num;
-   CommonResourceHeader *nres; /* next resource if linked */
-   UnionOfResources *res = (UnionOfResources *)sres;
-
-   if (!res)
-      return;
-
-   /*
-    * Common stuff -- free the resource name and description
-    */
-   nres = (CommonResourceHeader *)res->res_dir.hdr.next;
-   if (res->res_dir.hdr.name) {
-      free(res->res_dir.hdr.name);
-   }
-   if (res->res_dir.hdr.desc) {
-      free(res->res_dir.hdr.desc);
-   }
-
-   switch (type) {
-   case R_DIRECTOR:
-      if (res->res_dir.working_directory) {
-         free(res->res_dir.working_directory);
-      }
-      if (res->res_dir.scripts_directory) {
-         free(res->res_dir.scripts_directory);
-      }
-      if (res->res_dir.plugin_directory) {
-         free(res->res_dir.plugin_directory);
-      }
-      if (res->res_dir.plugin_names) {
-         delete res->res_dir.plugin_names;
-      }
-      if (res->res_dir.pid_directory) {
-         free(res->res_dir.pid_directory);
-      }
-      if (res->res_dir.subsys_directory) {
-         free(res->res_dir.subsys_directory);
-      }
-      if (res->res_dir.backend_directories) {
-         delete res->res_dir.backend_directories;
-      }
-      if (res->res_dir.password.value) {
-         free(res->res_dir.password.value);
-      }
-      if (res->res_dir.query_file) {
-         free(res->res_dir.query_file);
-      }
-      if (res->res_dir.DIRaddrs) {
-         FreeAddresses(res->res_dir.DIRaddrs);
-      }
-      if (res->res_dir.DIRsrc_addr) {
-         FreeAddresses(res->res_dir.DIRsrc_addr);
-      }
-      if (res->res_dir.verid) {
-         free(res->res_dir.verid);
-      }
-      if (res->res_dir.keyencrkey.value) {
-         free(res->res_dir.keyencrkey.value);
-      }
-      if (res->res_dir.audit_events) {
-         delete res->res_dir.audit_events;
-      }
-      if (res->res_dir.secure_erase_cmdline) {
-         free(res->res_dir.secure_erase_cmdline);
-      }
-      if (res->res_dir.log_timestamp_format) {
-         free(res->res_dir.log_timestamp_format);
-      }
-      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
-         res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
-         free(res->res_dir.tls_cert.allowed_certificate_common_names_);
-      }
-      if (res->res_dir.tls_cert.CaCertfile) {
-         delete res->res_dir.tls_cert.CaCertfile;
-      }
-      if (res->res_dir.tls_cert.CaCertdir) {
-         delete res->res_dir.tls_cert.CaCertdir;
-      }
-      if (res->res_dir.tls_cert.crlfile) {
-         delete res->res_dir.tls_cert.crlfile;
-      }
-      if (res->res_dir.tls_cert.certfile) {
-         delete res->res_dir.tls_cert.certfile;
-      }
-      if (res->res_dir.tls_cert.keyfile) {
-         delete res->res_dir.tls_cert.keyfile;
-      }
-      if (res->res_dir.tls_cert.cipherlist) {
-         delete res->res_dir.tls_cert.cipherlist;
-      }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
-      if (res->res_dir.tls_cert.dhfile) {
-         delete res->res_dir.tls_cert.dhfile;
-      }
-      if (res->res_dir.tls_cert.pem_message) {
-         delete res->res_dir.tls_cert.pem_message;
-      }
-      break;
-   case R_DEVICE:
-   case R_COUNTER:
-      break;
-   case R_PROFILE:
-      for (int i = 0; i < Num_ACL; i++) {
-         if (res->res_profile.ACL_lists[i]) {
-            delete res->res_profile.ACL_lists[i];
-            res->res_profile.ACL_lists[i] = NULL;
-         }
-      }
-      break;
-   case R_CONSOLE:
-      if (res->res_con.password.value) {
-         free(res->res_con.password.value);
-      }
-      if (res->res_con.profiles) {
-         delete res->res_con.profiles;
-      }
-      for (int i = 0; i < Num_ACL; i++) {
-         if (res->res_con.ACL_lists[i]) {
-            delete res->res_con.ACL_lists[i];
-            res->res_con.ACL_lists[i] = NULL;
-         }
-      }
-      if (res->res_con.tls_cert.allowed_certificate_common_names_) {
-         res->res_con.tls_cert.allowed_certificate_common_names_->destroy();
-         free(res->res_con.tls_cert.allowed_certificate_common_names_);
-      }
-      if (res->res_con.tls_cert.CaCertfile) {
-         delete res->res_con.tls_cert.CaCertfile;
-      }
-      if (res->res_con.tls_cert.CaCertdir) {
-         delete res->res_con.tls_cert.CaCertdir;
-      }
-      if (res->res_con.tls_cert.crlfile) {
-         delete res->res_con.tls_cert.crlfile;
-      }
-      if (res->res_con.tls_cert.certfile) {
-         delete res->res_con.tls_cert.certfile;
-      }
-      if (res->res_con.tls_cert.keyfile) {
-         delete res->res_con.tls_cert.keyfile;
-      }
-      if (res->res_con.tls_cert.cipherlist) {
-         delete res->res_con.tls_cert.cipherlist;
-      }
-      if (res->res_con.tls_cert.dhfile) {
-         delete res->res_con.tls_cert.dhfile;
-      }
-      if (res->res_con.tls_cert.dhfile) {
-         delete res->res_con.tls_cert.dhfile;
-      }
-      if (res->res_con.tls_cert.dhfile) {
-         delete res->res_con.tls_cert.dhfile;
-      }
-      if (res->res_con.tls_cert.pem_message) {
-         delete res->res_con.tls_cert.pem_message;
-      }
-      break;
-   case R_CLIENT:
-      if (res->res_client.address) {
-         free(res->res_client.address);
-      }
-      if (res->res_client.lanaddress) {
-         free(res->res_client.lanaddress);
-      }
-      if (res->res_client.username) {
-         free(res->res_client.username);
-      }
-      if (res->res_client.password.value) {
-         free(res->res_client.password.value);
-      }
-      if (res->res_client.rcs) {
-         free(res->res_client.rcs);
-      }
-      if (res->res_client.tls_cert.allowed_certificate_common_names_) {
-         res->res_client.tls_cert.allowed_certificate_common_names_->destroy();
-         free(res->res_client.tls_cert.allowed_certificate_common_names_);
-      }
-      if (res->res_client.tls_cert.CaCertfile) {
-         delete res->res_client.tls_cert.CaCertfile;
-      }
-      if (res->res_client.tls_cert.CaCertdir) {
-         delete res->res_client.tls_cert.CaCertdir;
-      }
-      if (res->res_client.tls_cert.crlfile) {
-         delete res->res_client.tls_cert.crlfile;
-      }
-      if (res->res_client.tls_cert.certfile) {
-         delete res->res_client.tls_cert.certfile;
-      }
-      if (res->res_client.tls_cert.keyfile) {
-         delete res->res_client.tls_cert.keyfile;
-      }
-      if (res->res_client.tls_cert.cipherlist) {
-         delete res->res_client.tls_cert.cipherlist;
-      }
-      if (res->res_client.tls_cert.dhfile) {
-         delete res->res_client.tls_cert.dhfile;
-      }
-      if (res->res_client.tls_cert.dhfile) {
-         delete res->res_client.tls_cert.dhfile;
-      }
-      if (res->res_client.tls_cert.dhfile) {
-         delete res->res_client.tls_cert.dhfile;
-      }
-      if (res->res_client.tls_cert.pem_message) {
-         delete res->res_client.tls_cert.pem_message;
-      }
-      break;
-   case R_STORAGE:
-      if (res->res_store.address) {
-         free(res->res_store.address);
-      }
-      if (res->res_store.lanaddress) {
-         free(res->res_store.lanaddress);
-      }
-      if (res->res_store.username) {
-         free(res->res_store.username);
-      }
-      if (res->res_store.password.value) {
-         free(res->res_store.password.value);
-      }
-      if (res->res_store.media_type) {
-         free(res->res_store.media_type);
-      }
-      if (res->res_store.ndmp_changer_device) {
-         free(res->res_store.ndmp_changer_device);
-      }
-      if (res->res_store.device) {
-         delete res->res_store.device;
-      }
-      if (res->res_store.rss) {
-         if (res->res_store.rss->storage_mappings) {
-            delete res->res_store.rss->storage_mappings;
-         }
-         if (res->res_store.rss->vol_list) {
-            if (res->res_store.rss->vol_list->contents) {
-               vol_list_t *vl;
-
-               foreach_dlist(vl, res->res_store.rss->vol_list->contents) {
-                  if (vl->VolName) {
-                     free(vl->VolName);
-                  }
-               }
-               res->res_store.rss->vol_list->contents->destroy();
-               delete res->res_store.rss->vol_list->contents;
-            }
-            free(res->res_store.rss->vol_list);
-         }
-         pthread_mutex_destroy(&res->res_store.rss->changer_lock);
-         free(res->res_store.rss);
-      }
-      if (res->res_store.tls_cert.allowed_certificate_common_names_) {
-         res->res_store.tls_cert.allowed_certificate_common_names_->destroy();
-         free(res->res_store.tls_cert.allowed_certificate_common_names_);
-      }
-      if (res->res_store.tls_cert.CaCertfile) {
-         delete res->res_store.tls_cert.CaCertfile;
-      }
-      if (res->res_store.tls_cert.CaCertdir) {
-         delete res->res_store.tls_cert.CaCertdir;
-      }
-      if (res->res_store.tls_cert.crlfile) {
-         delete res->res_store.tls_cert.crlfile;
-      }
-      if (res->res_store.tls_cert.certfile) {
-         delete res->res_store.tls_cert.certfile;
-      }
-      if (res->res_store.tls_cert.keyfile) {
-         delete res->res_store.tls_cert.keyfile;
-      }
-      if (res->res_store.tls_cert.cipherlist) {
-         delete res->res_store.tls_cert.cipherlist;
-      }
-      if (res->res_store.tls_cert.dhfile) {
-         delete res->res_store.tls_cert.dhfile;
-      }
-      if (res->res_store.tls_cert.dhfile) {
-         delete res->res_store.tls_cert.dhfile;
-      }
-      if (res->res_store.tls_cert.dhfile) {
-         delete res->res_store.tls_cert.dhfile;
-      }
-      if (res->res_store.tls_cert.pem_message) {
-         delete res->res_store.tls_cert.pem_message;
-      }
-      break;
-   case R_CATALOG:
-      if (res->res_cat.db_address) {
-         free(res->res_cat.db_address);
-      }
-      if (res->res_cat.db_socket) {
-         free(res->res_cat.db_socket);
-      }
-      if (res->res_cat.db_user) {
-         free(res->res_cat.db_user);
-      }
-      if (res->res_cat.db_name) {
-         free(res->res_cat.db_name);
-      }
-      if (res->res_cat.db_driver) {
-         free(res->res_cat.db_driver);
-      }
-      if (res->res_cat.db_password.value) {
-         free(res->res_cat.db_password.value);
-      }
-      break;
-   case R_FILESET:
-      if ((num=res->res_fs.num_includes)) {
-         while (--num >= 0) {
-            FreeIncexe(res->res_fs.include_items[num]);
-         }
-         free(res->res_fs.include_items);
-      }
-      res->res_fs.num_includes = 0;
-      if ((num=res->res_fs.num_excludes)) {
-         while (--num >= 0) {
-            FreeIncexe(res->res_fs.exclude_items[num]);
-         }
-         free(res->res_fs.exclude_items);
-      }
-      res->res_fs.num_excludes = 0;
-      break;
-   case R_POOL:
-      if (res->res_pool.pool_type) {
-         free(res->res_pool.pool_type);
-      }
-      if (res->res_pool.label_format) {
-         free(res->res_pool.label_format);
-      }
-      if (res->res_pool.cleaning_prefix) {
-         free(res->res_pool.cleaning_prefix);
-      }
-      if (res->res_pool.storage) {
-         delete res->res_pool.storage;
-      }
-      break;
-   case R_SCHEDULE:
-      if (res->res_sch.run) {
-         RunResource *nrun, *next;
-         nrun = res->res_sch.run;
-         while (nrun) {
-            next = nrun->next;
-            free(nrun);
-            nrun = next;
-         }
-      }
-      break;
-   case R_JOBDEFS:
-   case R_JOB:
-      if (res->res_job.backup_format) {
-         free(res->res_job.backup_format);
-      }
-      if (res->res_job.RestoreWhere) {
-         free(res->res_job.RestoreWhere);
-      }
-      if (res->res_job.RegexWhere) {
-         free(res->res_job.RegexWhere);
-      }
-      if (res->res_job.strip_prefix) {
-         free(res->res_job.strip_prefix);
-      }
-      if (res->res_job.add_prefix) {
-         free(res->res_job.add_prefix);
-      }
-      if (res->res_job.add_suffix) {
-         free(res->res_job.add_suffix);
-      }
-      if (res->res_job.RestoreBootstrap) {
-         free(res->res_job.RestoreBootstrap);
-      }
-      if (res->res_job.WriteBootstrap) {
-         free(res->res_job.WriteBootstrap);
-      }
-      if (res->res_job.WriteVerifyList) {
-         free(res->res_job.WriteVerifyList);
-      }
-      if (res->res_job.selection_pattern) {
-         free(res->res_job.selection_pattern);
-      }
-      if (res->res_job.run_cmds) {
-         delete res->res_job.run_cmds;
-      }
-      if (res->res_job.storage) {
-         delete res->res_job.storage;
-      }
-      if (res->res_job.FdPluginOptions) {
-         delete res->res_job.FdPluginOptions;
-      }
-      if (res->res_job.SdPluginOptions) {
-         delete res->res_job.SdPluginOptions;
-      }
-      if (res->res_job.DirPluginOptions) {
-         delete res->res_job.DirPluginOptions;
-      }
-      if (res->res_job.base) {
-         delete res->res_job.base;
-      }
-      if (res->res_job.RunScripts) {
-         FreeRunscripts(res->res_job.RunScripts);
-         delete res->res_job.RunScripts;
-      }
-      if (res->res_job.rjs) {
-         free(res->res_job.rjs);
-      }
-      break;
-   case R_MSGS:
-      if (res->res_msgs.mail_cmd) {
-         free(res->res_msgs.mail_cmd);
-      }
-      if (res->res_msgs.operator_cmd) {
-         free(res->res_msgs.operator_cmd);
-      }
-      if (res->res_msgs.timestamp_format) {
-         free(res->res_msgs.timestamp_format);
-      }
-      FreeMsgsRes((MessagesResource *)res); /* free message resource */
-      res = NULL;
-      break;
-   default:
-      printf(_("Unknown resource type %d in FreeResource.\n"), type);
-   }
-   /*
-    * Common stuff again -- free the resource, recurse to next one
-    */
-   if (res) {
-      free(res);
-   }
-   if (nres) {
-      FreeResource(nres, type);
-   }
 }
 
 static bool UpdateResourcePointer(int type, ResourceItem *items)
@@ -3134,88 +2600,6 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
    }
 
    return result;
-}
-
-/**
- * Save the new resource by chaining it into the head list for
- * the resource. If this is pass 2, we update any resource
- * pointers because they may not have been defined until
- * later in pass 1.
- */
-bool SaveResource(int type, ResourceItem *items, int pass)
-{
-   UnionOfResources *res;
-   int rindex = type - R_FIRST;
-
-   switch (type) {
-   case R_JOBDEFS:
-      break;
-   case R_JOB:
-      /*
-       * Check Job requirements after applying JobDefs
-       * Ensure that the name item is present however.
-       */
-      if (items[0].flags & CFG_ITEM_REQUIRED) {
-         if (!BitIsSet(0, res_all.res_dir.hdr.item_present)) {
-            Emsg2(M_ERROR, 0,
-                  _("%s item is required in %s resource, but not found.\n"),
-                  items[0].name, resources[rindex].name);
-            return false;
-         }
-      }
-      break;
-   default:
-      /*
-       * Ensure that all required items are present
-       */
-      if (!ValidateResource(type, items, &res_all.res_dir)) {
-         return false;
-      }
-   }
-
-   /*
-    * During pass 2 in each "store" routine, we looked up pointers
-    * to all the resources referenced in the current resource, now we
-    * must copy their addresses from the static record to the allocated
-    * record.
-    */
-   if (pass == 2) {
-      return UpdateResourcePointer(type, items);
-   }
-
-   /*
-    * Common
-    */
-   res = (UnionOfResources *)malloc(resources[rindex].size);
-   memcpy(res, &res_all, resources[rindex].size);
-   if (!res_head[rindex]) {
-      res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
-      Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
-            res->res_dir.name(), rindex);
-   } else {
-      CommonResourceHeader *next, *last;
-      if (!res->res_dir.name()) {
-         Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
-               resources[rindex].name);
-         return false;
-      }
-      /*
-       * Add new res to end of chain
-       */
-      for (last = next = res_head[rindex]; next; next = next->next) {
-         last = next;
-         if (bstrcmp(next->name, res->res_dir.name())) {
-            Emsg2(M_ERROR, 0,
-                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.name());
-            return false;
-         }
-      }
-      last->next = (CommonResourceHeader *)res;
-      Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
-            res->res_dir.name(), rindex, pass);
-   }
-   return true;
 }
 
 bool PropagateJobdefs(int res_type, JobResource *res)
@@ -4413,4 +3797,636 @@ ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
                 res_head,
                 CONFIG_FILE,
                 "bareos-dir.d");
+}
+
+/* **************************************************************************** */
+} /* namespace directordaemon */
+/* **************************************************************************** */
+
+/**
+ * starting from here "override" methods to use in parse_conf.cc
+ * that must not be in the namespace of director daemon
+ **/
+
+using namespace directordaemon;
+
+/**
+ * Dump contents of resource
+ */
+void DumpResource(int type, CommonResourceHeader *ures,
+                   void sendit(void *sock, const char *fmt, ...),
+                   void *sock, bool hide_sensitive_data, bool verbose)
+{
+   PoolMem buf;
+   bool recurse = true;
+   UnionOfResources *res = (UnionOfResources *)ures;
+   UaContext *ua = (UaContext *)sock;
+
+   if (!res) {
+      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
+      return;
+   }
+
+   if (type < 0) { /* no recursion */
+      type = -type;
+      recurse = false;
+   }
+
+   if (ua && !ua->IsResAllowed(ures)) {
+      goto bail_out;
+   }
+
+   switch (type) {
+   case R_DIRECTOR:
+      res->res_dir.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_PROFILE:
+      res->res_profile.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_CONSOLE:
+      res->res_con.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_COUNTER:
+      res->res_counter.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_CLIENT:
+      res->res_client.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_DEVICE:
+      res->res_dev.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_STORAGE:
+      res->res_store.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_CATALOG:
+      res->res_cat.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_JOBDEFS:
+   case R_JOB:
+      res->res_job.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_FILESET:
+      res->res_fs.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_SCHEDULE:
+      res->res_sch.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_POOL:
+      res->res_pool.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_MSGS:
+      res->res_msgs.PrintConfig(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   default:
+      sendit(sock, _("Unknown resource type %d in DumpResource.\n"), type);
+      break;
+   }
+
+bail_out:
+   if (recurse && res->res_dir.hdr.next) {
+      DumpResource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
+   }
+}
+
+
+/**
+ * Free memory of resource -- called when daemon terminates.
+ * NB, we don't need to worry about freeing any references
+ * to other resources as they will be freed when that
+ * resource chain is traversed.  Mainly we worry about freeing
+ * allocated strings (names).
+ */
+void FreeResource(CommonResourceHeader *sres, int type)
+{
+   int num;
+   CommonResourceHeader *nres; /* next resource if linked */
+   UnionOfResources *res = (UnionOfResources *)sres;
+
+   if (!res)
+      return;
+
+   /*
+    * Common stuff -- free the resource name and description
+    */
+   nres = (CommonResourceHeader *)res->res_dir.hdr.next;
+   if (res->res_dir.hdr.name) {
+      free(res->res_dir.hdr.name);
+   }
+   if (res->res_dir.hdr.desc) {
+      free(res->res_dir.hdr.desc);
+   }
+
+   switch (type) {
+   case R_DIRECTOR:
+      if (res->res_dir.working_directory) {
+         free(res->res_dir.working_directory);
+      }
+      if (res->res_dir.scripts_directory) {
+         free(res->res_dir.scripts_directory);
+      }
+      if (res->res_dir.plugin_directory) {
+         free(res->res_dir.plugin_directory);
+      }
+      if (res->res_dir.plugin_names) {
+         delete res->res_dir.plugin_names;
+      }
+      if (res->res_dir.pid_directory) {
+         free(res->res_dir.pid_directory);
+      }
+      if (res->res_dir.subsys_directory) {
+         free(res->res_dir.subsys_directory);
+      }
+      if (res->res_dir.backend_directories) {
+         delete res->res_dir.backend_directories;
+      }
+      if (res->res_dir.password.value) {
+         free(res->res_dir.password.value);
+      }
+      if (res->res_dir.query_file) {
+         free(res->res_dir.query_file);
+      }
+      if (res->res_dir.DIRaddrs) {
+         FreeAddresses(res->res_dir.DIRaddrs);
+      }
+      if (res->res_dir.DIRsrc_addr) {
+         FreeAddresses(res->res_dir.DIRsrc_addr);
+      }
+      if (res->res_dir.verid) {
+         free(res->res_dir.verid);
+      }
+      if (res->res_dir.keyencrkey.value) {
+         free(res->res_dir.keyencrkey.value);
+      }
+      if (res->res_dir.audit_events) {
+         delete res->res_dir.audit_events;
+      }
+      if (res->res_dir.secure_erase_cmdline) {
+         free(res->res_dir.secure_erase_cmdline);
+      }
+      if (res->res_dir.log_timestamp_format) {
+         free(res->res_dir.log_timestamp_format);
+      }
+      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
+         res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_dir.tls_cert.allowed_certificate_common_names_);
+      }
+      if (res->res_dir.tls_cert.CaCertfile) {
+         delete res->res_dir.tls_cert.CaCertfile;
+      }
+      if (res->res_dir.tls_cert.CaCertdir) {
+         delete res->res_dir.tls_cert.CaCertdir;
+      }
+      if (res->res_dir.tls_cert.crlfile) {
+         delete res->res_dir.tls_cert.crlfile;
+      }
+      if (res->res_dir.tls_cert.certfile) {
+         delete res->res_dir.tls_cert.certfile;
+      }
+      if (res->res_dir.tls_cert.keyfile) {
+         delete res->res_dir.tls_cert.keyfile;
+      }
+      if (res->res_dir.tls_cert.cipherlist) {
+         delete res->res_dir.tls_cert.cipherlist;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.pem_message) {
+         delete res->res_dir.tls_cert.pem_message;
+      }
+      break;
+   case R_DEVICE:
+   case R_COUNTER:
+      break;
+   case R_PROFILE:
+      for (int i = 0; i < Num_ACL; i++) {
+         if (res->res_profile.ACL_lists[i]) {
+            delete res->res_profile.ACL_lists[i];
+            res->res_profile.ACL_lists[i] = NULL;
+         }
+      }
+      break;
+   case R_CONSOLE:
+      if (res->res_con.password.value) {
+         free(res->res_con.password.value);
+      }
+      if (res->res_con.profiles) {
+         delete res->res_con.profiles;
+      }
+      for (int i = 0; i < Num_ACL; i++) {
+         if (res->res_con.ACL_lists[i]) {
+            delete res->res_con.ACL_lists[i];
+            res->res_con.ACL_lists[i] = NULL;
+         }
+      }
+      if (res->res_con.tls_cert.allowed_certificate_common_names_) {
+         res->res_con.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_con.tls_cert.allowed_certificate_common_names_);
+      }
+      if (res->res_con.tls_cert.CaCertfile) {
+         delete res->res_con.tls_cert.CaCertfile;
+      }
+      if (res->res_con.tls_cert.CaCertdir) {
+         delete res->res_con.tls_cert.CaCertdir;
+      }
+      if (res->res_con.tls_cert.crlfile) {
+         delete res->res_con.tls_cert.crlfile;
+      }
+      if (res->res_con.tls_cert.certfile) {
+         delete res->res_con.tls_cert.certfile;
+      }
+      if (res->res_con.tls_cert.keyfile) {
+         delete res->res_con.tls_cert.keyfile;
+      }
+      if (res->res_con.tls_cert.cipherlist) {
+         delete res->res_con.tls_cert.cipherlist;
+      }
+      if (res->res_con.tls_cert.dhfile) {
+         delete res->res_con.tls_cert.dhfile;
+      }
+      if (res->res_con.tls_cert.dhfile) {
+         delete res->res_con.tls_cert.dhfile;
+      }
+      if (res->res_con.tls_cert.dhfile) {
+         delete res->res_con.tls_cert.dhfile;
+      }
+      if (res->res_con.tls_cert.pem_message) {
+         delete res->res_con.tls_cert.pem_message;
+      }
+      break;
+   case R_CLIENT:
+      if (res->res_client.address) {
+         free(res->res_client.address);
+      }
+      if (res->res_client.lanaddress) {
+         free(res->res_client.lanaddress);
+      }
+      if (res->res_client.username) {
+         free(res->res_client.username);
+      }
+      if (res->res_client.password.value) {
+         free(res->res_client.password.value);
+      }
+      if (res->res_client.rcs) {
+         free(res->res_client.rcs);
+      }
+      if (res->res_client.tls_cert.allowed_certificate_common_names_) {
+         res->res_client.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_client.tls_cert.allowed_certificate_common_names_);
+      }
+      if (res->res_client.tls_cert.CaCertfile) {
+         delete res->res_client.tls_cert.CaCertfile;
+      }
+      if (res->res_client.tls_cert.CaCertdir) {
+         delete res->res_client.tls_cert.CaCertdir;
+      }
+      if (res->res_client.tls_cert.crlfile) {
+         delete res->res_client.tls_cert.crlfile;
+      }
+      if (res->res_client.tls_cert.certfile) {
+         delete res->res_client.tls_cert.certfile;
+      }
+      if (res->res_client.tls_cert.keyfile) {
+         delete res->res_client.tls_cert.keyfile;
+      }
+      if (res->res_client.tls_cert.cipherlist) {
+         delete res->res_client.tls_cert.cipherlist;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.pem_message) {
+         delete res->res_client.tls_cert.pem_message;
+      }
+      break;
+   case R_STORAGE:
+      if (res->res_store.address) {
+         free(res->res_store.address);
+      }
+      if (res->res_store.lanaddress) {
+         free(res->res_store.lanaddress);
+      }
+      if (res->res_store.username) {
+         free(res->res_store.username);
+      }
+      if (res->res_store.password.value) {
+         free(res->res_store.password.value);
+      }
+      if (res->res_store.media_type) {
+         free(res->res_store.media_type);
+      }
+      if (res->res_store.ndmp_changer_device) {
+         free(res->res_store.ndmp_changer_device);
+      }
+      if (res->res_store.device) {
+         delete res->res_store.device;
+      }
+      if (res->res_store.rss) {
+         if (res->res_store.rss->storage_mappings) {
+            delete res->res_store.rss->storage_mappings;
+         }
+         if (res->res_store.rss->vol_list) {
+            if (res->res_store.rss->vol_list->contents) {
+               vol_list_t *vl;
+
+               foreach_dlist(vl, res->res_store.rss->vol_list->contents) {
+                  if (vl->VolName) {
+                     free(vl->VolName);
+                  }
+               }
+               res->res_store.rss->vol_list->contents->destroy();
+               delete res->res_store.rss->vol_list->contents;
+            }
+            free(res->res_store.rss->vol_list);
+         }
+         pthread_mutex_destroy(&res->res_store.rss->changer_lock);
+         free(res->res_store.rss);
+      }
+      if (res->res_store.tls_cert.allowed_certificate_common_names_) {
+         res->res_store.tls_cert.allowed_certificate_common_names_->destroy();
+         free(res->res_store.tls_cert.allowed_certificate_common_names_);
+      }
+      if (res->res_store.tls_cert.CaCertfile) {
+         delete res->res_store.tls_cert.CaCertfile;
+      }
+      if (res->res_store.tls_cert.CaCertdir) {
+         delete res->res_store.tls_cert.CaCertdir;
+      }
+      if (res->res_store.tls_cert.crlfile) {
+         delete res->res_store.tls_cert.crlfile;
+      }
+      if (res->res_store.tls_cert.certfile) {
+         delete res->res_store.tls_cert.certfile;
+      }
+      if (res->res_store.tls_cert.keyfile) {
+         delete res->res_store.tls_cert.keyfile;
+      }
+      if (res->res_store.tls_cert.cipherlist) {
+         delete res->res_store.tls_cert.cipherlist;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.pem_message) {
+         delete res->res_store.tls_cert.pem_message;
+      }
+      break;
+   case R_CATALOG:
+      if (res->res_cat.db_address) {
+         free(res->res_cat.db_address);
+      }
+      if (res->res_cat.db_socket) {
+         free(res->res_cat.db_socket);
+      }
+      if (res->res_cat.db_user) {
+         free(res->res_cat.db_user);
+      }
+      if (res->res_cat.db_name) {
+         free(res->res_cat.db_name);
+      }
+      if (res->res_cat.db_driver) {
+         free(res->res_cat.db_driver);
+      }
+      if (res->res_cat.db_password.value) {
+         free(res->res_cat.db_password.value);
+      }
+      break;
+   case R_FILESET:
+      if ((num=res->res_fs.num_includes)) {
+         while (--num >= 0) {
+            FreeIncexe(res->res_fs.include_items[num]);
+         }
+         free(res->res_fs.include_items);
+      }
+      res->res_fs.num_includes = 0;
+      if ((num=res->res_fs.num_excludes)) {
+         while (--num >= 0) {
+            FreeIncexe(res->res_fs.exclude_items[num]);
+         }
+         free(res->res_fs.exclude_items);
+      }
+      res->res_fs.num_excludes = 0;
+      break;
+   case R_POOL:
+      if (res->res_pool.pool_type) {
+         free(res->res_pool.pool_type);
+      }
+      if (res->res_pool.label_format) {
+         free(res->res_pool.label_format);
+      }
+      if (res->res_pool.cleaning_prefix) {
+         free(res->res_pool.cleaning_prefix);
+      }
+      if (res->res_pool.storage) {
+         delete res->res_pool.storage;
+      }
+      break;
+   case R_SCHEDULE:
+      if (res->res_sch.run) {
+         RunResource *nrun, *next;
+         nrun = res->res_sch.run;
+         while (nrun) {
+            next = nrun->next;
+            free(nrun);
+            nrun = next;
+         }
+      }
+      break;
+   case R_JOBDEFS:
+   case R_JOB:
+      if (res->res_job.backup_format) {
+         free(res->res_job.backup_format);
+      }
+      if (res->res_job.RestoreWhere) {
+         free(res->res_job.RestoreWhere);
+      }
+      if (res->res_job.RegexWhere) {
+         free(res->res_job.RegexWhere);
+      }
+      if (res->res_job.strip_prefix) {
+         free(res->res_job.strip_prefix);
+      }
+      if (res->res_job.add_prefix) {
+         free(res->res_job.add_prefix);
+      }
+      if (res->res_job.add_suffix) {
+         free(res->res_job.add_suffix);
+      }
+      if (res->res_job.RestoreBootstrap) {
+         free(res->res_job.RestoreBootstrap);
+      }
+      if (res->res_job.WriteBootstrap) {
+         free(res->res_job.WriteBootstrap);
+      }
+      if (res->res_job.WriteVerifyList) {
+         free(res->res_job.WriteVerifyList);
+      }
+      if (res->res_job.selection_pattern) {
+         free(res->res_job.selection_pattern);
+      }
+      if (res->res_job.run_cmds) {
+         delete res->res_job.run_cmds;
+      }
+      if (res->res_job.storage) {
+         delete res->res_job.storage;
+      }
+      if (res->res_job.FdPluginOptions) {
+         delete res->res_job.FdPluginOptions;
+      }
+      if (res->res_job.SdPluginOptions) {
+         delete res->res_job.SdPluginOptions;
+      }
+      if (res->res_job.DirPluginOptions) {
+         delete res->res_job.DirPluginOptions;
+      }
+      if (res->res_job.base) {
+         delete res->res_job.base;
+      }
+      if (res->res_job.RunScripts) {
+         FreeRunscripts(res->res_job.RunScripts);
+         delete res->res_job.RunScripts;
+      }
+      if (res->res_job.rjs) {
+         free(res->res_job.rjs);
+      }
+      break;
+   case R_MSGS:
+      if (res->res_msgs.mail_cmd) {
+         free(res->res_msgs.mail_cmd);
+      }
+      if (res->res_msgs.operator_cmd) {
+         free(res->res_msgs.operator_cmd);
+      }
+      if (res->res_msgs.timestamp_format) {
+         free(res->res_msgs.timestamp_format);
+      }
+      FreeMsgsRes((MessagesResource *)res); /* free message resource */
+      res = NULL;
+      break;
+   default:
+      printf(_("Unknown resource type %d in FreeResource.\n"), type);
+   }
+   /*
+    * Common stuff again -- free the resource, recurse to next one
+    */
+   if (res) {
+      free(res);
+   }
+   if (nres) {
+      FreeResource(nres, type);
+   }
+}
+
+
+/**
+ * Save the new resource by chaining it into the head list for
+ * the resource. If this is pass 2, we update any resource
+ * pointers because they may not have been defined until
+ * later in pass 1.
+ */
+bool SaveResource(int type, ResourceItem *items, int pass)
+{
+   UnionOfResources *res;
+   int rindex = type - R_FIRST;
+
+   switch (type) {
+   case R_JOBDEFS:
+      break;
+   case R_JOB:
+      /*
+       * Check Job requirements after applying JobDefs
+       * Ensure that the name item is present however.
+       */
+      if (items[0].flags & CFG_ITEM_REQUIRED) {
+         if (!BitIsSet(0, res_all.res_dir.hdr.item_present)) {
+            Emsg2(M_ERROR, 0,
+                  _("%s item is required in %s resource, but not found.\n"),
+                  items[0].name, resources[rindex].name);
+            return false;
+         }
+      }
+      break;
+   default:
+      /*
+       * Ensure that all required items are present
+       */
+      if (!ValidateResource(type, items, &res_all.res_dir)) {
+         return false;
+      }
+   }
+
+   /*
+    * During pass 2 in each "store" routine, we looked up pointers
+    * to all the resources referenced in the current resource, now we
+    * must copy their addresses from the static record to the allocated
+    * record.
+    */
+   if (pass == 2) {
+      return UpdateResourcePointer(type, items);
+   }
+
+   /*
+    * Common
+    */
+   res = (UnionOfResources *)malloc(resources[rindex].size);
+   memcpy(res, &res_all, resources[rindex].size);
+   if (!res_head[rindex]) {
+      res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
+      Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
+            res->res_dir.name(), rindex);
+   } else {
+      CommonResourceHeader *next, *last;
+      if (!res->res_dir.name()) {
+         Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
+               resources[rindex].name);
+         return false;
+      }
+      /*
+       * Add new res to end of chain
+       */
+      for (last = next = res_head[rindex]; next; next = next->next) {
+         last = next;
+         if (bstrcmp(next->name, res->res_dir.name())) {
+            Emsg2(M_ERROR, 0,
+                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+                  resources[rindex].name, res->res_dir.name());
+            return false;
+         }
+      }
+      last->next = (CommonResourceHeader *)res;
+      Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
+            res->res_dir.name(), rindex, pass);
+   }
+   return true;
 }

@@ -39,9 +39,7 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 
-/* Imported variables */
-
-/* Forward referenced functions */
+namespace directordaemon {
 
 /**
  * Create a Job Control Record for a control "job", filling in all the appropriate fields.
@@ -193,3 +191,4 @@ void FreeUaContext(UaContext *ua)
    }
    free(ua);
 }
+} /* namespace directordaemon */

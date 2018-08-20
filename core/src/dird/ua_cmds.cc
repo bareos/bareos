@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/expand.h"
 #include "dird/fd_cmds.h"
@@ -48,6 +49,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Imported subroutines */
 
 /* Imported variables */
@@ -55,8 +58,6 @@
 /*
  * Imported functions
  */
-/* dird.c */
-extern bool DoReloadConfig();
 
 /* ua_cmds.c */
 extern bool AutodisplayCmd(UaContext *ua, const char *cmd);
@@ -2807,3 +2808,4 @@ static bool VersionCmd(UaContext *ua, const char *cmd)
    return true;
 }
 #endif
+} /* namespace directordaemon */

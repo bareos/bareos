@@ -33,7 +33,10 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/fd_cmds.h"
+#include "dird/dird_globals.h"
 #include "lib/bnet.h"
+
+namespace directordaemon {
 
 static const int debuglevel = 50;
 
@@ -294,3 +297,4 @@ bool AuthenticateUserAgent(UaContext *uac)
 
    return true;
 }
+} /* namespace directordaemon */

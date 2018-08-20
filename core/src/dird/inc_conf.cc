@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "findlib/match.h"
 
 #ifndef HAVE_REGEX_H
@@ -40,7 +41,10 @@
 #endif
 #include "findlib/find.h"
 
-/* Forward referenced subroutines */
+#include "inc_conf.h"
+#include "lib/edit.h"
+
+namespace directordaemon {
 
 /*
  * Imported subroutines
@@ -108,9 +112,6 @@ ResourceItem options_items[] = {
    { "Meta", CFG_TYPE_META, { 0 }, 0, 0, 0, NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
-
-#include "inc_conf.h"
-#include "lib/edit.h"
 
 /**
  * determine used compression algorithms
@@ -845,3 +846,4 @@ json_t *json_options(const int type)
    return json_datatype(type, options_items);
 }
 #endif
+} /* namespace directordaemon */

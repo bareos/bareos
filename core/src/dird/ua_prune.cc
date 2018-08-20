@@ -32,6 +32,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_input.h"
 #include "cats/sql.h"
 #include "dird/ua_db.h"
@@ -40,9 +41,7 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 
-/* Imported variables */
-
-/* Imported functions */
+namespace directordaemon {
 
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext *ua, ClientResource *client);
@@ -979,3 +978,4 @@ int ExcludeRunningJobsFromList(del_ctx *prune_list)
    }
    return count;
 }
+} /* namespace directordaemon */

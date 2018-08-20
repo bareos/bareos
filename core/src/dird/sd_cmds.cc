@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/authenticate.h"
 #include "dird/getmsg.h"
 #include "dird/job.h"
@@ -40,6 +41,8 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Commands sent to Storage daemon */
 static char readlabelcmd[] =
@@ -982,3 +985,4 @@ bool DoStoragePluginOptions(JobControlRecord *jcr)
 
    return true;
 }
+} /* namespace directordaemon */

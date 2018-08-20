@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/admin.h"
 #include "dird/archive.h"
 #include "dird/autoprune.h"
@@ -62,6 +63,8 @@
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
 
+
+namespace directordaemon {
 
 /* Forward referenced subroutines */
 static void *job_thread(void *arg);
@@ -1870,3 +1873,4 @@ bool RunConsoleCommand(JobControlRecord *jcr, const char *cmd)
    FreeJcr(ljcr);
    return ok;
 }
+} /* namespace directordaemon */

@@ -45,6 +45,8 @@
 #define DBGLVL 200
 #endif
 
+namespace directordaemon {
+
 const int debuglevel = DBGLVL;
 
 /* Local variables */
@@ -516,3 +518,4 @@ static void dump_job(job_item *ji, const char *msg)
    debug_level = save_debug;
 #endif
 }
+} /* namespace directordaemon */

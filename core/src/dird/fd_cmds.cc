@@ -36,6 +36,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
@@ -44,6 +45,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+
+namespace directordaemon {
 
 const int debuglevel = 400;
 
@@ -1238,3 +1241,4 @@ getout:
    delete(fd);
    return NULL;
 }
+} /* namespace directordaemon */

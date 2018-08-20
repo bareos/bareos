@@ -32,7 +32,10 @@
 #include "cats/cats_backends.h"
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
+
+using namespace directordaemon;
 
 extern bool ParseDirConfig(const char *configfile, int exit_code);
 
@@ -66,9 +69,6 @@ static const char *idx_tmp_name;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 #endif
-
-DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 #define MAX_ID_LIST_LEN 10000000
 

@@ -31,7 +31,10 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 extern struct s_jl joblevels[];
 
@@ -750,3 +753,4 @@ void StoreRun(LEX *lc, ResourceItem *item, int index, int pass)
    SetBit(index, res_all->res_sch.hdr.item_present);
    ClearBit(index, res_all->hdr.inherit_content);
 }
+} /* namespace directordaemon */
