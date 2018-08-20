@@ -28,4 +28,6 @@
 #define SERVICE_DESC "Provides bareos director services."
 
 #define TerminateApp(x) TerminateDird(x)
+namespace directordaemon {
 extern void TerminateDird(int sig);
+} /* namespace directordaemon  */
