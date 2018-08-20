@@ -61,10 +61,13 @@ int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 using namespace directordaemon;
 
 /* Forward referenced subroutines */
-#if !defined(HAVE_WIN32)
-static
-#endif
-void TerminateDird(int sig);
+namespace directordaemon {
+   #if !defined(HAVE_WIN32)
+   static
+   #endif
+   void TerminateDird(int sig);
+}
+
 static bool CheckResources();
 static bool InitializeSqlPooling(void);
 static void CleanUpOldFiles();
@@ -459,6 +462,8 @@ bail_out:
  * Cleanup and then exit
  *
  */
+namespace directordaemon {
+
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -510,6 +515,7 @@ void TerminateDird(int sig)
 
    exit(sig);
 }
+} /* namespace directordaemon */
 
 /**
  * If we get here, we have received a SIGHUP, which means to reread our configuration file.

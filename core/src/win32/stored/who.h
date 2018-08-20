@@ -27,7 +27,7 @@
 #define APP_DESC "Bareos Storage Service"
 #define SERVICE_DESC "Provides bareos storage services."
 
-#define TerminateApp(x) TerminateStored(x)
+#define TerminateApp(x) storagedaemon::TerminateStored(x)
 namespace storagedaemon {
 extern void TerminateStored(int sig);
 } /* namespace storagedaemon */

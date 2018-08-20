@@ -848,5 +848,5 @@ void NdmpFhdbMemProcessDb(struct ndmlog *ixlog)
    }
 }
 
-} /* namespace directordaemon */
 #endif /* #if HAVE_NDMP */
+} /* namespace directordaemon */
