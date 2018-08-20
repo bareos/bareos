@@ -33,6 +33,8 @@
 #include "accurate.h"
 #include "lib/attribs.h"
 
+namespace filedaemon {
+
 static int debuglevel = 100;
 
 BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JobControlRecord *jcr, uint32_t number_of_files)
@@ -194,3 +196,5 @@ void BareosAccurateFilelistHtable::destroy()
 
    filenr_ = 0;
 }
+
+} /* namespace filedaemon */

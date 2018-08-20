@@ -46,6 +46,9 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
+
+namespace filedaemon {
 
 /**
  * Define the first and last resource ID record
@@ -170,6 +173,155 @@ static ResourceTable resources[] = {
    { "Messages", msgs_items, R_MSGS, sizeof(MessagesResource) },
    { NULL, NULL, 0}
 };
+
+static struct s_kw CryptoCiphers[] = {
+   { "blowfish", CRYPTO_CIPHER_BLOWFISH_CBC },
+   { "3des", CRYPTO_CIPHER_3DES_CBC },
+   { "aes128", CRYPTO_CIPHER_AES_128_CBC },
+   { "aes192", CRYPTO_CIPHER_AES_192_CBC },
+   { "aes256", CRYPTO_CIPHER_AES_256_CBC },
+   { "camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC },
+   { "camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC },
+   { "camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC },
+   { "aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1 },
+   { "aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1 },
+   { NULL, 0 }
+};
+
+static void StoreCipher(LEX *lc, ResourceItem *item, int index, int pass)
+{
+   int i;
+   LexGetToken(lc, BCT_NAME);
+
+   /*
+    * Scan Crypto Ciphers name.
+    */
+   for (i = 0; CryptoCiphers[i].name; i++) {
+      if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
+         *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
+   }
+   ScanToEol(lc);
+   SetBit(index, res_all.hdr.item_present);
+   ClearBit(index, res_all.hdr.inherit_content);
+}
+
+/**
+ * callback function for init_resource
+ * See ../lib/parse_conf.c, function InitResource, for more generic handling.
+ */
+static void InitResourceCb(ResourceItem *item, int pass)
+{
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_CIPHER:
+         for (int i = 0; CryptoCiphers[i].name; i++) {
+            if (Bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
+               *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+            }
+         }
+         break;
+      default:
+         break;
+      }
+      break;
+   default:
+      break;
+   }
+}
+
+/**
+ * callback function for parse_config
+ * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
+ */
+static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
+{
+   switch (item->type) {
+   case CFG_TYPE_CIPHER:
+      StoreCipher(lc, item, index, pass);
+      break;
+   default:
+      break;
+   }
+}
+
+ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
+{
+   return new ConfigurationParser (
+                configfile,
+                nullptr,
+                nullptr,
+                InitResourceCb,
+                ParseConfigCb,
+                nullptr,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                R_FIRST,
+                R_LAST,
+                resources,
+                res_head,
+                CONFIG_FILE,
+                "bareos-fd.d");
+}
+
+/**
+ * Print configuration file schema in json format
+ */
+#ifdef HAVE_JANSSON
+bool PrintConfigSchemaJson(PoolMem &buffer)
+{
+   ResourceTable *resources = my_config->resources_;
+
+   InitializeJson();
+
+   json_t *json = json_object();
+   json_object_set_new(json, "format-version", json_integer(2));
+   json_object_set_new(json, "component", json_string("bareos-fd"));
+   json_object_set_new(json, "version", json_string(VERSION));
+
+   /*
+    * Resources
+    */
+   json_t *resource = json_object();
+   json_object_set(json, "resource", resource);
+   json_t *bareos_fd = json_object();
+   json_object_set(resource, "bareos-fd", bareos_fd);
+
+   for (int r = 0; resources[r].name; r++) {
+      ResourceTable resource = my_config->resources_[r];
+      json_object_set(bareos_fd, resource.name, json_items(resource.items));
+   }
+
+   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   json_decref(json);
+
+   return true;
+}
+#else
+bool PrintConfigSchemaJson(PoolMem &buffer)
+{
+   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   return false;
+}
+#endif
+
+/* **************************************************************************** */
+} /* namespace filedaemon */
+/* **************************************************************************** */
+
+/**
+ * starting from here "override" methods to use in parse_conf.cc
+ * that must not be in the namespace of file daemon
+ **/
+
+using namespace filedaemon;
 
 /**
  * Dump contents of resource
@@ -525,141 +677,3 @@ bool SaveResource(int type, ResourceItem *items, int pass)
    }
    return (error == 0);
 }
-
-static struct s_kw CryptoCiphers[] = {
-   { "blowfish", CRYPTO_CIPHER_BLOWFISH_CBC },
-   { "3des", CRYPTO_CIPHER_3DES_CBC },
-   { "aes128", CRYPTO_CIPHER_AES_128_CBC },
-   { "aes192", CRYPTO_CIPHER_AES_192_CBC },
-   { "aes256", CRYPTO_CIPHER_AES_256_CBC },
-   { "camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC },
-   { "camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC },
-   { "camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC },
-   { "aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1 },
-   { "aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1 },
-   { NULL, 0 }
-};
-
-static void StoreCipher(LEX *lc, ResourceItem *item, int index, int pass)
-{
-   int i;
-   LexGetToken(lc, BCT_NAME);
-
-   /*
-    * Scan Crypto Ciphers name.
-    */
-   for (i = 0; CryptoCiphers[i].name; i++) {
-      if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
-         *(uint32_t *)(item->value) = CryptoCiphers[i].token;
-         i = 0;
-         break;
-      }
-   }
-   if (i != 0) {
-      scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
-   }
-   ScanToEol(lc);
-   SetBit(index, res_all.hdr.item_present);
-   ClearBit(index, res_all.hdr.inherit_content);
-}
-
-/**
- * callback function for init_resource
- * See ../lib/parse_conf.c, function InitResource, for more generic handling.
- */
-static void InitResourceCb(ResourceItem *item, int pass)
-{
-   switch (pass) {
-   case 1:
-      switch (item->type) {
-      case CFG_TYPE_CIPHER:
-         for (int i = 0; CryptoCiphers[i].name; i++) {
-            if (Bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
-               *(uint32_t *)(item->value) = CryptoCiphers[i].token;
-            }
-         }
-         break;
-      default:
-         break;
-      }
-      break;
-   default:
-      break;
-   }
-}
-
-/**
- * callback function for parse_config
- * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
- */
-static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
-{
-   switch (item->type) {
-   case CFG_TYPE_CIPHER:
-      StoreCipher(lc, item, index, pass);
-      break;
-   default:
-      break;
-   }
-}
-
-ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
-{
-   return new ConfigurationParser (
-                configfile,
-                nullptr,
-                nullptr,
-                InitResourceCb,
-                ParseConfigCb,
-                nullptr,
-                exit_code,
-                (void *)&res_all,
-                res_all_size,
-                R_FIRST,
-                R_LAST,
-                resources,
-                res_head,
-                CONFIG_FILE,
-                "bareos-fd.d");
-}
-
-/**
- * Print configuration file schema in json format
- */
-#ifdef HAVE_JANSSON
-bool PrintConfigSchemaJson(PoolMem &buffer)
-{
-   ResourceTable *resources = my_config->resources_;
-
-   InitializeJson();
-
-   json_t *json = json_object();
-   json_object_set_new(json, "format-version", json_integer(2));
-   json_object_set_new(json, "component", json_string("bareos-fd"));
-   json_object_set_new(json, "version", json_string(VERSION));
-
-   /*
-    * Resources
-    */
-   json_t *resource = json_object();
-   json_object_set(json, "resource", resource);
-   json_t *bareos_fd = json_object();
-   json_object_set(resource, "bareos-fd", bareos_fd);
-
-   for (int r = 0; resources[r].name; r++) {
-      ResourceTable resource = my_config->resources_[r];
-      json_object_set(bareos_fd, resource.name, json_items(resource.items));
-   }
-
-   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
-   json_decref(json);
-
-   return true;
-}
-#else
-bool PrintConfigSchemaJson(PoolMem &buffer)
-{
-   PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
-   return false;
-}
-#endif

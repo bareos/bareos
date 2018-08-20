@@ -30,6 +30,8 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
+namespace filedaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -919,3 +921,4 @@ static bRC plugin_has_all_arguments(bpContext *ctx)
 
    return retval;
 }
+} /* namespace filedaemon */

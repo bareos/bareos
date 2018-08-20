@@ -32,6 +32,7 @@
 #include "filed/filed.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
+#include "filed/restore.h"
 #include "filed/verify.h"
 #include "ch.h"
 #include "findlib/create_file.h"
@@ -47,6 +48,11 @@
 
 #if defined(HAVE_DARWIN_OS)
 #include <sys/attr.h>
+#endif
+
+namespace filedaemon {
+
+#if defined(HAVE_DARWIN_OS)
 const bool have_darwin_os = true;
 #else
 const bool have_darwin_os = false;
@@ -1407,3 +1413,5 @@ void FreeSession(r_ctx &rctx)
       rctx.cs = NULL;
    }
 }
+
+} /* namespace filedaemon */

@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/accurate.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
@@ -40,6 +41,8 @@
 #include "findlib/hardlink.h"
 #include "findlib/find_one.h"
 #include "lib/btimers.h"
+
+namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
@@ -1623,3 +1626,4 @@ static void CloseVssBackupSession(JobControlRecord *jcr)
    }
 #endif
 }
+} /* namespace filedaemon */

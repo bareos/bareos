@@ -33,6 +33,8 @@
 #include "lib/ini.h"
 #include <wchar.h>
 
+namespace filedaemon {
+
 static const int debuglevel = 000;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -710,3 +712,4 @@ static bRC checkFile(bpContext *ctx, char *fname)
 {
    return bRC_OK;
 }
+} /* namespace filedaemon */

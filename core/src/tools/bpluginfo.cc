@@ -69,7 +69,7 @@ enum plugintype {
 typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
    directordaemon::pDirFuncs pdirfuncs;
-   pFuncs pfdfuncs;
+   filedaemon::pFuncs pfdfuncs;
    storagedaemon::psdFuncs psdfuncs;
 };
 
@@ -101,7 +101,7 @@ struct _bareosfuncs {
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
    directordaemon::bDirInfo bdirinfo;
-   bInfo bfdinfo;
+   filedaemon::bInfo bfdinfo;
    storagedaemon::bsdInfo bsdinfo;
 };
 

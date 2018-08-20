@@ -30,11 +30,14 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
+
+using namespace filedaemon;
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
@@ -43,16 +46,6 @@ extern void PrintMessage(void *sock, const char *fmt, ...);
 /* Forward referenced functions */
 static bool CheckResources();
 
-/* Exported variables */
-ClientResource *me = NULL;                 /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
-
-bool no_signals = false;
-bool backup_only_mode = false;
-bool restore_only_mode = false;
-void *start_heap;
-
-char *configfile = NULL;
 static bool foreground = false;
 
 static void usage()
@@ -302,6 +295,8 @@ bail_out:
    exit(0);
 }
 
+namespace filedaemon {
+
 void TerminateFiled(int sig)
 {
    static bool already_here = false;
@@ -340,6 +335,7 @@ void TerminateFiled(int sig)
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }
+} /* namespace filedaemon */
 
 /**
 * Make a quick check to see that we have all the

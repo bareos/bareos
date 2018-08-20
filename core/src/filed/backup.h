@@ -24,6 +24,8 @@
 #ifndef BAREOS_FILED_BACKUP_H_
 #define BAREOS_FILED_BACKUP_H_
 
+namespace filedaemon {
+
 struct b_save_ctx {
    JobControlRecord *jcr;                    /* Current Job Control Record */
    FindFilesPacket *ff_pkt;              /* File being processed */
@@ -66,4 +68,5 @@ bool EncodeAndSendAttributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int
 void StripPath(FindFilesPacket *ff_pkt);
 void UnstripPath(FindFilesPacket *ff_pkt);
 
+} /* namespace filedaemon */
 #endif

@@ -30,9 +30,12 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
 #include "lib/bnet_sever_tcp.h"
+
+namespace filedaemon {
 
 /* Global variables */
 static workq_t socket_workq;
@@ -128,3 +131,4 @@ void StopSocketServer(bool wait)
       }
    }
 }
+} /* namespace filedaemon */

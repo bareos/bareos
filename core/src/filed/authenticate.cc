@@ -30,7 +30,11 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "lib/bnet.h"
+#include "restore.h"
+
+namespace filedaemon {
 
 const int debuglevel = 50;
 
@@ -195,3 +199,4 @@ bool AuthenticateWithStoragedaemon(JobControlRecord *jcr)
 
    return result;
 }
+} /* namespace filedaemon */

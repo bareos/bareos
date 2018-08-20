@@ -29,6 +29,8 @@
 
 #include <rados/librados.h>
 
+namespace filedaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -1224,3 +1226,4 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
 bail_out:
    return bRC_Error;
 }
+} /* namespace filedaemon */

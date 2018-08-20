@@ -26,6 +26,11 @@
  * Kern Sibbald, Sep MM
  */
 
+#ifndef BAREOS_FILED_FILED_CONF_H_
+#define BAREOS_FILED_FILED_CONF_H_ 1
+
+namespace filedaemon {
+
 #define CONFIG_FILE "bareos-fd.conf"  /* default config file */
 
 /*
@@ -120,3 +125,6 @@ union UnionOfResources {
 
 ConfigurationParser *InitFdConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
+
+} /* namespace filedaemon */
+#endif /* BAREOS_FILED_FILED_CONF_H_ */

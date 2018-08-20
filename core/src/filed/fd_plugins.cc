@@ -29,6 +29,7 @@
  */
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/accurate.h"
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
@@ -38,10 +39,20 @@
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
 
-extern ClientResource *me;
+/**
+ * Function pointers to be set here (findlib)
+ */
+extern DLL_IMP_EXP int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+extern DLL_IMP_EXP int (*plugin_bclose)(BareosWinFilePacket *bfd);
+extern DLL_IMP_EXP ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count);
+extern DLL_IMP_EXP ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count);
+extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence);
+
 extern DLL_IMP_EXP char *exepath;
 extern DLL_IMP_EXP char *version;
 extern DLL_IMP_EXP char *dist_name;
+
+namespace filedaemon {
 
 const int debuglevel = 150;
 #ifdef HAVE_WIN32
@@ -53,15 +64,6 @@ static alist *fd_plugin_list = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern int SaveFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
-
-/**
- * Function pointers to be set here
- */
-extern DLL_IMP_EXP int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
-extern DLL_IMP_EXP int (*plugin_bclose)(BareosWinFilePacket *bfd);
-extern DLL_IMP_EXP ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count);
-extern DLL_IMP_EXP ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count);
-extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence);
 
 /**
  * Forward referenced functions
@@ -2712,3 +2714,4 @@ int main(int argc, char *argv[])
 }
 
 #endif /* TEST_PROGRAM */
+} /* namespace filedaemon */

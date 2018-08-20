@@ -30,11 +30,13 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "lib/status.h"
 #include "lib/edit.h"
 #include "findlib/enable_priv.h"
 
-extern void *start_heap;
+namespace filedaemon {
+
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
 
 /* Forward referenced functions */
@@ -635,3 +637,4 @@ done:
 }
 
 #endif /* HAVE_WIN32 */
+} /* namespace filedaemon */

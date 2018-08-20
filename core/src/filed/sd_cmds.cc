@@ -28,8 +28,11 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
+
+namespace filedaemon {
 
 static int debuglevel = 100;
 
@@ -103,3 +106,4 @@ void *handle_stored_connection(BareosSocket *sd)
 
    return NULL;
 }
+} /* namespace filedaemon */

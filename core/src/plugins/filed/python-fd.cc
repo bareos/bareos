@@ -32,7 +32,9 @@
 #include <Python.h>
 #include "filed/fd_plugins.h"
 #include "plugins/filed/fd_common.h"
+#include "python-fd.h"
 
+namespace filedaemon {
 
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
@@ -153,8 +155,6 @@ struct plugin_ctx {
    PyObject *pDict;                   /* Python Dictionary */
    PyObject *bpContext;               /* Python representation of plugin context */
 };
-
-#include "python-fd.h"
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -3855,3 +3855,4 @@ static void PyXattrPacket_dealloc(PyXattrPacket *self)
    }
    PyObject_Del(self);
 }
+} /* namespace filedaemon */

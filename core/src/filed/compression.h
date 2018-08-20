@@ -19,7 +19,15 @@
    02110-1301, USA.
 */
 
+#ifndef BAREOS_FILED_COMPRESSION_H
+#define BAREOS_FILED_COMPRESSION_H 1
+
+namespace filedaemon {
+
 bool AdjustCompressionBuffers(JobControlRecord *jcr);
 bool AdjustDecompressionBuffers(JobControlRecord *jcr);
 bool SetupCompressionContext(b_ctx &bctx);
 
+} /* namespace filedaemon */
+
+#endif /* BAREOS_FILED_COMPRESSION_H */

@@ -29,6 +29,8 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
+namespace filedaemon {
+
 static const int debuglevel = 0;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -463,3 +465,4 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 // Dmsg(ctx, debuglevel, "delta-test-fd: setFileAttributes\n");
    return bRC_OK;
 }
+} /* namespace filedaemon */

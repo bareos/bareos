@@ -32,6 +32,8 @@
 #include <dirent.h>
 #include <cephfs/libcephfs.h>
 
+namespace filedaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -1930,3 +1932,5 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
 
    return bRC_OK;
 }
+
+} /* namespace filedaemon */

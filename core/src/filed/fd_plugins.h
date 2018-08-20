@@ -56,6 +56,13 @@
 #include "vss.h"
 #endif
 
+#ifdef FILE_DAEMON
+struct BareosWinFilePacket;
+struct FindFilesPacket;
+#endif /* FILE_DAEMON */
+
+namespace filedaemon {
+
 /*
  * This packet is used for the restore objects
  *  It is passed to the plugin when restoring
@@ -248,8 +255,6 @@ typedef struct s_bareosInfo {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef FILE_DAEMON
-struct BareosWinFilePacket;                   /* forward referenced */
-struct FindFilesPacket;
 void LoadFdPlugins(const char *plugin_dir, alist *plugin_names);
 void UnloadFdPlugins(void);
 int ListFdPlugins(PoolMem &msg);
@@ -357,4 +362,5 @@ typedef struct s_pluginFuncs {
 }
 #endif
 
+} /* namespace filedaemon */
 #endif /* BAREOS_FILED_FD_PLUGINS_H_ */

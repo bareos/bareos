@@ -33,6 +33,8 @@
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 
+namespace filedaemon {
+
 /* Data received from Storage Daemon */
 static char rec_header[] =
    "rechdr %ld %ld %ld %ld %ld";
@@ -268,3 +270,4 @@ ok_out:
    FreePoolMemory(lname);
    Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%" lld "\n", jcr->JobFiles, jcr->JobBytes);
 }
+} /* namespace filedaemon */

@@ -47,6 +47,13 @@ namespace storagedaemon {
 }
 #endif
 
+#ifdef FILE_DAEMON
+namespace filedaemon {
+class BareosAccurateFilelist;
+struct save_pkt;
+}
+#endif /* FILE_DAEMON */
+
 /**
  * Backup/Verify level code. These are stored in the DB
  */
@@ -198,7 +205,6 @@ class BareosSocket;
 struct FindFilesPacket;
 class BareosDb;
 struct AttributesDbRecord;
-struct save_pkt;
 struct bpContext;
 #ifdef HAVE_WIN32
 struct CopyThreadContext;
@@ -206,7 +212,6 @@ struct CopyThreadContext;
 
 #ifdef FILE_DAEMON
 class htable;
-class BareosAccurateFilelist;
 struct acl_data_t;
 struct xattr_data_t;
 
@@ -433,7 +438,6 @@ public:
 
    alist *plugin_ctx_list;                /**< List of contexts for plugins */
    bpContext *plugin_ctx;                 /**< Current plugin context */
-   save_pkt *plugin_sp;                   /**< Plugin save packet */
    POOLMEM *comment;                      /**< Comment for this Job */
    int64_t max_bandwidth;                 /**< Bandwidth limit for this Job */
    htable *path_list;                     /**< Directory list (used by findlib) */
@@ -546,12 +550,13 @@ public:
    std::shared_ptr<BareosSocket> hb_dir_bsock;   /**< Duped DIR socket */
    alist *RunScripts;                     /**< Commands to run before and after job */
    CryptoContext crypto;                  /**< Crypto ctx */
-   DirectorResource *director;            /**< Director resource */
+   filedaemon::DirectorResource *director;/**< Director resource */
    bool enable_vss;                       /**< VSS used by FD */
    bool got_metadata;                     /**< Set when found job_metadata */
    bool multi_restore;                    /**< Dir can do multiple storage restore */
-   BareosAccurateFilelist *file_list;     /**< Previous file list (accurate mode) */
+   filedaemon::BareosAccurateFilelist *file_list; /**< Previous file list (accurate mode) */
    uint64_t base_size;                    /**< Compute space saved with base job */
+   filedaemon::save_pkt *plugin_sp;       /**< Plugin save packet */
 #ifdef HAVE_WIN32
    VSSClient *pVSSClient;                 /**< VSS Client Instance */
 #endif

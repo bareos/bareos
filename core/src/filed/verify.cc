@@ -34,6 +34,8 @@
 #include "lib/attribs.h"
 #include "lib/bnet.h"
 
+namespace filedaemon {
+
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
 #else
@@ -453,3 +455,4 @@ bool CalculateAndCompareFileChksum(JobControlRecord *jcr, FindFilesPacket *ff_pk
 
    return retval;
 }
+} /* namespace filedaemon */

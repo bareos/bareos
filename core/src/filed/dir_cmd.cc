@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "ch.h"
 #include "filed/authenticate.h"
 #include "filed/dir_cmd.h"
@@ -37,6 +38,7 @@
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/socket_server.h"
+#include "filed/restore.h"
 #include "filed/verify.h"
 #include "findlib/enable_priv.h"
 #include "findlib/shadowing.h"
@@ -49,6 +51,8 @@
 #include "win32/findlib/win32.h"
 #include "vss.h"
 #endif
+
+namespace filedaemon {
 
 extern bool backup_only_mode;
 extern bool restore_only_mode;
@@ -2658,3 +2662,4 @@ bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *c
    }
    return false;
 }
+} /* namespace filedaemon */

@@ -42,10 +42,8 @@
 #include "fd_plugins.h"
 #include "ch.h"
 #include "backup.h"
-#include "restore.h"
 
-extern ClientResource *me;                 /* "Global" Client resource */
-extern ConfigurationParser *my_config;             /* Our Global config */
+namespace filedaemon {
 
 void TerminateFiled(int sig);
 
@@ -54,4 +52,5 @@ void TerminateFiled(int sig);
  */
 const int FD_PROTOCOL_VERSION = 54;
 
+} /* namespace filedaemon */
 #endif /* BAREOS_FILED_FILED_H_ */
