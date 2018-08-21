@@ -25,9 +25,15 @@
 #define BSOCK_TEST_PORT_NUMBER 54321
 
 class BareosSocket;
+class StorageResource;
+
+namespace directordaemon {
+   class StorageResource;
+}
 
 int create_accepted_server_socket(int port);
 BareosSocket *create_new_bareos_socket(int fd);
 
+directordaemon::StorageResource *CreateAndInitializeNewStorageResource();
 
 #endif /* BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_ */

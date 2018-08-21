@@ -48,8 +48,12 @@
 #define isatty(fd) (fd==0)
 #endif
 
+using namespace console;
+
 /* Exported variables */
-ConsoleResource *me = NULL;                    /* Our Global resource */
+namespace console {
+   ConsoleResource *me = NULL;                    /* Our Global resource */
+}
 ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 //extern int rl_catch_signals;

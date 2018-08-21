@@ -28,6 +28,11 @@
  * Bareos User Agent specific configuration and defines
  */
 
+class ConfigurationParser;
+extern ConfigurationParser *my_config;             /* Our Global config */
+
+namespace console {
+
 #define CONFIG_FILE "bconsole.conf"   /* default configuration file */
 
 /**
@@ -88,7 +93,8 @@ union UnionOfResources {
 };
 
 extern ConsoleResource *me;                    /* "Global" Client resource */
-extern ConfigurationParser *my_config;             /* Our Global config */
 
 ConfigurationParser *InitConsConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
+
+} /* namespace console */

@@ -63,12 +63,17 @@ add_executable(test_bsock
 )
 
 target_link_libraries(test_bsock
-   bareos
-   bareossd
-   bareoscfg
-   bareosndmp
    stored_objects
    dird_objects
+   bareossd
+   bareos
+   bareoscats
+   bareoscfg
+   bareossql
+   bareosfind
+   dird_objects
+   ${LMDB_LIBS}
+   ${NDMP_LIBS}
    ${JANSSON_LIBRARIES}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}

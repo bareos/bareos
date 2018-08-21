@@ -26,10 +26,37 @@
 //{
 //   int newsockfd = create_accepted_server_socket(BSOCK_TEST_PORT_NUMBER);
 //   BareosSocket *bs = create_new_bareos_socket(newsockfd);
-//   HandleConnectionRequest(bs);
+//   storagedaemon::HandleConnectionRequest(bs);
+//}
+//
+//#define DIRECTOR_DAEMON
+//#include "include/bareos.h"
+//#include "console/console_conf.h"
+//#include "lib/tls_openssl.h"
+//
+//#include "include/jcr.h"
+//#include "dird/sd_cmds.h"
+//#include "dird/dird_globals.h"
+//#include "dird/dird_conf.h"
+//
+//#include <thread>
+//
+//static void connect_dir_to_sd()
+//{
+//   JobControlRecord jcr;
+//   directordaemon::ConnectToStorageDaemon(&jcr, 10, 1, true);
+//}
+//#undef DIRECTOR_DAEMON
+//
+//TEST(bsock_dir_sd, dir_to_sd_connection_test)
+//{
+//   std::thread server_thread(start_sd_server);
+//   connect_dir_to_sd();
 //}
 
-TEST(bsock_dir_sd, dir_to_sd_connection_test)
-{
-//   start_sd_server();
+/* ********************************************************/
+/* dummy wrapper for unused methods from other namespaces */
+/* ********************************************************/
+namespace directordaemon {
+   bool DoReloadConfig() { return false; }
 }

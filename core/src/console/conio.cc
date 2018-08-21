@@ -52,7 +52,9 @@
 /* We are in Bareos */
 #include "include/bareos.h"
 
-#endif
+#endif /* TEST_PROGRAM */
+
+namespace console {
 
 #ifdef HAVE_CONIO
 
@@ -1190,3 +1192,4 @@ static void asdell()
 }
 
 #endif
+} /* namespace console */

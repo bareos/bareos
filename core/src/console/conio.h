@@ -21,6 +21,9 @@
 
 #ifndef BAREOS_CONSOLE_CONIO_H_
 #define BAREOS_CONSOLE_CONIO_H_
+
+namespace console {
+
 extern int  InputLine(char *line, int len);
 extern void ConInit(FILE *input);
 
@@ -35,4 +38,6 @@ extern void t_char(char c);
 extern int  usrbrk(void);
 extern void clrbrk(void);
 extern void trapctlc(void);
+
+} /* namespace console */
 #endif

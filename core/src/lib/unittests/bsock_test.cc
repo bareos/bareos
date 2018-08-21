@@ -32,6 +32,7 @@
 #include "lib/tls_openssl.h"
 
 #include "include/jcr.h"
+#include "dird/dird_conf.h"
 
 
 #define CLIENT_AS_A_THREAD  0
@@ -135,7 +136,7 @@ static void clone_a_server_socket(BareosSocket* bs)
 
 void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port,
-                         ConsoleResource *cons)
+                         directordaemon::ConsoleResource *cons)
 
 {
   int newsockfd = create_accepted_server_socket(server_port);
@@ -206,10 +207,10 @@ void clone_a_client_socket(BareosSocket *UA_sock)
 
 #if CLIENT_AS_A_THREAD
 int connect_to_server(std::string console_name, std::string console_password,
-                      std::string server_address, int server_port, DirectorResource *dir)
+                      std::string server_address, int server_port, console::DirectorResource *dir)
 #else
 bool connect_to_server(std::string console_name, std::string console_password,
-                      std::string server_address, int server_port, DirectorResource *dir)
+                      std::string server_address, int server_port, console::DirectorResource *dir)
 #endif
 {
   utime_t heart_beat = 0;
@@ -273,9 +274,9 @@ bool connect_to_server(std::string console_name, std::string console_password,
   return success;
 }
 
-ConsoleResource *CreateAndInitializeNewConsoleResource()
+directordaemon::ConsoleResource *CreateAndInitializeNewConsoleResource()
 {
-  ConsoleResource *cons = new (ConsoleResource);
+  directordaemon::ConsoleResource *cons = new (directordaemon::ConsoleResource);
   cons->tls_psk.enable = false;  // enable_tls_psk;
   cons->tls_cert.certfile = new (std::string)(CERTDIR "/console.bareos.org-cert.pem");
   cons->tls_cert.keyfile = new (std::string)(CERTDIR "/console.bareos.org-key.pem");
@@ -286,9 +287,9 @@ ConsoleResource *CreateAndInitializeNewConsoleResource()
   return cons;
 }
 
-DirectorResource *CreateAndInitializeNewDirectorResource()
+console::DirectorResource *CreateAndInitializeNewDirectorResource()
 {
-  DirectorResource *dir = new (DirectorResource);
+  console::DirectorResource *dir = new (console::DirectorResource);
   dir->address = (char *)HOST;
   dir->DIRport = htons(BSOCK_TEST_PORT_NUMBER);
   dir->tls_psk.enable = false;
@@ -299,6 +300,21 @@ DirectorResource *CreateAndInitializeNewDirectorResource()
   dir->tls_cert.VerifyPeer = false;
   dir->tls_cert.require = false;
   return dir;
+}
+
+directordaemon::StorageResource *CreateAndInitializeNewStorageResource()
+{
+  directordaemon::StorageResource *store = new (directordaemon::StorageResource);
+  store->address = (char *)HOST;
+  store->SDport = htons(BSOCK_TEST_PORT_NUMBER);
+  store->tls_psk.enable = false;
+  store->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
+  store->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
+  store->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
+  store->tls_cert.enable = false;
+  store->tls_cert.VerifyPeer = false;
+  store->tls_cert.require = false;
+  return store;
 }
 
 std::string client_cons_name;
@@ -321,8 +337,8 @@ TEST(bsock, auth_works)
   server_cons_name = client_cons_name;
   server_cons_password = client_cons_password;
 
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
+  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
 
   InitForTest();
 
@@ -353,8 +369,8 @@ TEST(bsock, auth_works_with_different_names)
   server_cons_name = "differentclientname";
   server_cons_password = client_cons_password;
 
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
+  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
 
   InitForTest();
 
@@ -384,8 +400,8 @@ TEST(bsock, auth_fails_with_different_passwords)
   server_cons_name = client_cons_name;
   server_cons_password = "othersecretpassword";
 
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
+  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
 
   InitForTest();
 
@@ -415,8 +431,8 @@ TEST(bsock, auth_works_with_tls_psk)
   server_cons_name = client_cons_name;
   server_cons_password = client_cons_password;
 
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
+  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
 
   InitForTest();
 
@@ -455,8 +471,8 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   server_cons_name = "differentclientname";
   server_cons_password = client_cons_password;
 
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
+  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
 
   InitForTest();
 
@@ -495,8 +511,8 @@ TEST(bsock, auth_works_with_tls_cert)
   server_cons_name = client_cons_name;
   server_cons_password = client_cons_password;
 
-  ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
+  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
 
   InitForTest();
 

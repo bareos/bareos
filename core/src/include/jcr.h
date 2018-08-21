@@ -38,21 +38,32 @@
 
 #ifdef STORAGE_DAEMON
 #include "stored/read_ctx.h"
+#endif
+
+#ifdef DIRECTOR_DAEMON
+#include "cats/cats.h"
+#endif
+
+namespace directordaemon {
+   class JobResource;
+   class StorageResource;
+   class ClientResource;
+   class PoolResource;
+   class FilesetResource;
+   class CatalogResource;
+}
 
 namespace storagedaemon {
    class VolumeList;
    class DeviceControlRecord;
    class DirectorResource;
-   class BootStrapRecord;
+   struct BootStrapRecord;
 }
-#endif
 
-#ifdef FILE_DAEMON
 namespace filedaemon {
-class BareosAccurateFilelist;
-struct save_pkt;
+   class BareosAccurateFilelist;
+   struct save_pkt;
 }
-#endif /* FILE_DAEMON */
 
 /**
  * Backup/Verify level code. These are stored in the DB

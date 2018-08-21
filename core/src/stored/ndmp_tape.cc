@@ -1178,7 +1178,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
 
    sess->param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(sess->param, 0, sizeof(struct ndm_session_param));
-   sess->param->log.deliver = NdmpLoghandler;
+   sess->param->log.deliver = storagedaemon::NdmpLoghandler;
    nis = (NIS *)malloc(sizeof(NIS));
    sess->param->log.ctx = nis;
    sess->param->log_level = NativeToNdmpLoglevel(debug_level, nis);

@@ -48,6 +48,8 @@
 #include "console_conf.h"
 #include "lib/json.h"
 
+namespace console {
+
 /**
  * Define the first and last resource ID record
  * types. Note, these should be unique for each
@@ -111,6 +113,9 @@ static ResourceTable resources[] = {
    { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
    { NULL, NULL, 0 }
 };
+} /* namespace console */
+
+using namespace console;
 
 /**
  * Dump contents of resource
@@ -354,6 +359,8 @@ bool SaveResource(int type, ResourceItem *items, int pass)
    return (error == 0);
 }
 
+namespace console {
+
 ConfigurationParser *InitConsConfig(const char *configfile, int exit_code)
 {
    return new ConfigurationParser (
@@ -414,3 +421,4 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
    return false;
 }
 #endif
+} /* namespace console */

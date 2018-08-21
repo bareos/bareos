@@ -22,7 +22,12 @@
 #ifndef BAREOS_DIRD_SD_CMDS_H_
 #define BAREOS_DIRD_SD_CMDS_H_
 
+class JobControlRecord;
+
 namespace directordaemon {
+
+class UaContext;
+class StorageResource;
 
 bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
                                int max_retry_time, bool verbose);
