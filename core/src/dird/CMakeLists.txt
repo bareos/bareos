@@ -63,12 +63,12 @@ add_library(dird_objects STATIC ${DIRDSRCS})
 add_executable(bareos-dir dird.cc)
 
 set(BAREOS_DIR_LIBRARIES
+   dird_objects
    bareos
    bareoscats
    bareoscfg
    bareossql
    bareosfind
-   dird_objects
    ${LMDB_LIBS}
    ${NDMP_LIBS}
    )
