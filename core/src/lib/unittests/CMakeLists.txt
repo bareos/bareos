@@ -55,36 +55,11 @@ set_property(TEST test_lib
 
 add_dependencies(check test_lib)
 
-set (STORED_OBJS 
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/append.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/askdir.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/authenticate.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/dir_cmd.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/fd_cmds.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/job.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/mac.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/ndmp_tape.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/read.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/sd_cmds.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/sd_stats.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/socket_server.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/status.cc.o
-    ${CMAKE_BINARY_DIR}/src/stored/CMakeFiles/bareos-sd.dir/stored_globals.cc.o
-)
-
-SET_SOURCE_FILES_PROPERTIES (
-    ${STORED_OBJS}
-    PROPERTIES
-    EXTERNAL_OBJECT true
-    GENERATED true
-)
-
 add_executable(test_bsock
     bsock_test.cc 
     bsock_dir_sd_connection_test.cc 
     bsock_constructor_test.cc 
     bsock_cert_verify_common_names_test.cc
-    ${STORED_OBJS}
 )
 
 target_link_libraries(test_bsock
@@ -92,6 +67,8 @@ target_link_libraries(test_bsock
    bareossd
    bareoscfg
    bareosndmp
+   stored_objects
+   dird_objects
    ${JANSSON_LIBRARIES}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}

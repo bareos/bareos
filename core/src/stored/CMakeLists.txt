@@ -86,10 +86,11 @@ set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
 
 set(SDSRCS stored_globals.cc append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
-         socket_server.cc status.cc stored.cc    )
+         socket_server.cc status.cc )
 
 IF(HAVE_WIN32)
    LIST(APPEND SDSRCS
+      stored.cc
       ../win32/generic/main.cc
       ../win32/generic/service.cc
       ../win32/stored/storedres.rc
@@ -178,7 +179,9 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
 endif()
 
-add_executable(bareos-sd ${SDSRCS})
+add_library(stored_objects STATIC ${SDSRCS})
+
+add_executable(bareos-sd stored.cc)
 
 SET(BAREOS_SD_LIBRARIES
    bareos bareossd bareosfind bareoscfg
@@ -192,6 +195,7 @@ IF(HAVE_WIN32)
 ENDIF()
 
 target_link_libraries(bareos-sd
+   stored_objects
    ${BAREOS_SD_LIBRARIES}
    )
 

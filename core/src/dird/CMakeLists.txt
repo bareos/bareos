@@ -20,7 +20,7 @@
 
 
 set(DIRDSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
-   consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc dird.cc expand.cc fd_cmds.cc
+   consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc expand.cc fd_cmds.cc
    getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc mountreq.cc msgchan.cc
    ndmp_dma_storage.cc
    ndmp_dma_backup_common.cc ndmp_dma_backup_NDMP_BAREOS.cc ndmp_dma_backup_NDMP_NATIVE.cc
@@ -58,7 +58,9 @@ set(TSTFNDSRCS testfind.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc ru
 
 set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs messages pool profile schedule storage)
 
-add_executable(bareos-dir ${DIRDSRCS})
+add_library(dird_objects STATIC ${DIRDSRCS})
+
+add_executable(bareos-dir dird.cc)
 
 set(BAREOS_DIR_LIBRARIES
    bareos
@@ -66,6 +68,7 @@ set(BAREOS_DIR_LIBRARIES
    bareoscfg
    bareossql
    bareosfind
+   dird_objects
    ${LMDB_LIBS}
    ${NDMP_LIBS}
    )
@@ -90,6 +93,7 @@ ENDIF()
 target_link_libraries(bareos-dbcheck
    ${DBCHECK_LIBRARIES}
    )
+
 
 # is not built by default
 
