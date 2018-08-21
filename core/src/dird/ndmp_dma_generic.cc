@@ -483,7 +483,7 @@ bail_out:
 /**
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
-extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
+void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
    int internal_level;
    NIS *nis;

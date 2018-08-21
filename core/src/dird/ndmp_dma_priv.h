@@ -121,7 +121,7 @@ bool NdmpBuildStorageJob(JobControlRecord *jcr, StorageResource *store, bool ini
 bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr, StorageResource *store, ClientResource *client,
                            bool init_tape, bool init_robot, int operation, struct ndm_job_param *job);
 
-extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg);
+void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg);
 void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
 
 /*
