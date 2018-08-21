@@ -63,10 +63,12 @@ using namespace storagedaemon;
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
-#if !defined(HAVE_WIN32)
-static
-#endif
-void TerminateStored(int sig);
+namespace storagedaemon {
+   #if !defined(HAVE_WIN32)
+   static
+   #endif
+   void TerminateStored(int sig);
+}
 static int CheckResources();
 static void CleanUpOldFiles();
 
@@ -683,6 +685,8 @@ void *device_initialization(void *arg)
 /**
  * Clean up and then exit
  */
+namespace storagedaemon {
+
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -790,3 +794,6 @@ void TerminateStored(int sig)
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }
+
+} /* namespace storagedaemon */
+

@@ -35,9 +35,9 @@
 #include "lib/edit.h"
 #include "findlib/enable_priv.h"
 
-namespace filedaemon {
-
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
+
+namespace filedaemon {
 
 /* Forward referenced functions */
 static void ListTerminatedJobs(StatusPacket *sp);

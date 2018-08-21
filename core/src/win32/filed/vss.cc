@@ -37,7 +37,7 @@
 #include "ms_atl.h"
 #include <objbase.h>
 
-namespace filedaemon {
+using namespace filedaemon;
 
 /*
  * { b5946137-7b9f-4925-af80-51abd60b20d5 }
@@ -263,4 +263,3 @@ void VSSClient::DestroyWriterInfo()
 }
 #endif
 
-} /* namespace filedaemon */

@@ -71,8 +71,10 @@
 #elif HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
+#endif /* #if HAVE_NDMP */
 
 namespace storagedaemon {
+#if HAVE_NDMP
 
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread
@@ -1583,5 +1585,5 @@ void EndOfNdmpRestore(JobControlRecord *jcr)
 {
 }
 #endif /* HAVE_NDMP */
-
 } /* namespace storagedaemon */
+

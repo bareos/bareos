@@ -36,10 +36,10 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-namespace storagedaemon {
-
 /* Imported functions */
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
+
+namespace storagedaemon {
 
 /* Imported variables */
 extern void *start_heap;
