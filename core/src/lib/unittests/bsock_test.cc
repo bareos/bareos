@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 #include "bsock_test.h"
+#include "create_resource.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <fstream>
@@ -29,11 +30,12 @@
 
 #include "include/bareos.h"
 #include "console/console_conf.h"
+#include "stored/stored_conf.h"
+#include "dird/dird_conf.h"
+
 #include "lib/tls_openssl.h"
 
 #include "include/jcr.h"
-#include "dird/dird_conf.h"
-
 
 #define CLIENT_AS_A_THREAD  0
 
@@ -50,7 +52,7 @@ class StorageResource;
 
 static std::string cipher_server, cipher_client;
 
-static void InitForTest()
+void InitForTest()
 {
   setlocale(LC_ALL, "");
   bindtextdomain("bareos", LOCALEDIR);
@@ -73,27 +75,40 @@ int create_accepted_server_socket(int port)
 
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("socket failed");
-    exit(EXIT_FAILURE);
+    return -1;
   }
 
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
     perror("setsockopt");
-    exit(EXIT_FAILURE);
+    return -1;
   }
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(port);
   if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
     perror("bind failed");
-    exit(EXIT_FAILURE);
+    return -1;
   }
+
+  struct timeval timeout;
+  timeout.tv_sec  = 1;  // after 1 seconds connect() will timeout
+  timeout.tv_usec = 0;
+
+  if (setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+    perror("setsockopt");
+    return -1;
+  }
+
   if (listen(server_fd, 3) < 0) {
     perror("listen");
-    exit(EXIT_FAILURE);
+    return -1;
   }
+
   if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
-    perror("accept");
-    exit(EXIT_FAILURE);
+    if (errno == EWOULDBLOCK || errno == EAGAIN) {
+      perror("Socket accept timeout");
+    }
+    return -1;
   }
   return new_socket;
 }
@@ -125,10 +140,9 @@ static bool check_cipher(const TlsResource &tls, const std::string &cipher)
 
 static void clone_a_server_socket(BareosSocket* bs)
 {
-   BareosSocket *bs2 = bs->clone();
+   std::unique_ptr<BareosSocket> bs2(bs->clone());
    bs2->fsend("cloned-bareos-socket-0987654321");
    bs2->close();
-   delete bs2;
 
    bs->fsend("bareos-socket-1234567890");
 }
@@ -138,10 +152,14 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          directordaemon::ConsoleResource *cons)
 
 {
-  int newsockfd = create_accepted_server_socket(server_port);
   bool success = false;
+  int newsockfd = create_accepted_server_socket(server_port);
 
-  BareosSocket *bs = create_new_bareos_socket(newsockfd);
+  if (newsockfd < 0) {
+     return;
+  }
+
+  std::unique_ptr<BareosSocket> bs(create_new_bareos_socket(newsockfd));
 
   char *name = (char *)console_name.c_str();
   s_password *password = new (s_password);
@@ -180,23 +198,21 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
     }
   }
   if (success) {
-    clone_a_server_socket(bs);
+    clone_a_server_socket(bs.get());
   }
   bs->close();
-  delete bs;
   promise->set_value(success);
 }
 
-void clone_a_client_socket(BareosSocket *UA_sock)
+void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 {
    std::string received_msg;
    std::string orig_msg2("cloned-bareos-socket-0987654321");
-   BareosSocket *UA_sock2 = UA_sock->clone();
+   std::unique_ptr<BareosSocket> UA_sock2(UA_sock->clone());
    UA_sock2->recv();
    received_msg = UA_sock2->msg;
    EXPECT_STREQ(orig_msg2.c_str(), received_msg.c_str());
    UA_sock2->close();
-   delete UA_sock2;
 
    std::string orig_msg("bareos-socket-1234567890");
    UA_sock->recv();
@@ -225,9 +241,9 @@ bool connect_to_server(std::string console_name, std::string console_password,
   password->encoding = p_encoding_md5;
   password->value = (char *)console_password.c_str();
 
-  BareosSocketTCP *UA_sock = New(BareosSocketTCP);
+  std::shared_ptr<BareosSocketTCP> UA_sock(New(BareosSocketTCP));
   UA_sock->sleep_time_after_authentication_error = 0;
-  jcr.dir_bsock = UA_sock;
+  jcr.dir_bsock = UA_sock.get();
   UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
   UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
 
@@ -236,8 +252,6 @@ bool connect_to_server(std::string console_name, std::string console_password,
   if (!UA_sock->connect(NULL, 1, 15, heart_beat, "Director daemon", (char *)server_address.c_str(),
                         NULL, server_port, false)) {
     Dmsg0(10, "socket connect failed\n");
-    delete UA_sock;
-    UA_sock = nullptr;
   } else {
     Dmsg0(10, "socket connect OK\n");
 
@@ -268,52 +282,8 @@ bool connect_to_server(std::string console_name, std::string console_password,
   }
   if (UA_sock) {
    UA_sock->close();
-   delete UA_sock;
   }
   return success;
-}
-
-directordaemon::ConsoleResource *CreateAndInitializeNewConsoleResource()
-{
-  directordaemon::ConsoleResource *cons = new (directordaemon::ConsoleResource);
-  cons->tls_psk.enable = false;  // enable_tls_psk;
-  cons->tls_cert.certfile = new (std::string)(CERTDIR "/console.bareos.org-cert.pem");
-  cons->tls_cert.keyfile = new (std::string)(CERTDIR "/console.bareos.org-key.pem");
-  cons->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
-  cons->tls_cert.enable = false;
-  cons->tls_cert.VerifyPeer = false;
-  cons->tls_cert.require = false;
-  return cons;
-}
-
-console::DirectorResource *CreateAndInitializeNewDirectorResource()
-{
-  console::DirectorResource *dir = new (console::DirectorResource);
-  dir->address = (char *)HOST;
-  dir->DIRport = htons(BSOCK_TEST_PORT_NUMBER);
-  dir->tls_psk.enable = false;
-  dir->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
-  dir->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
-  dir->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
-  dir->tls_cert.enable = false;
-  dir->tls_cert.VerifyPeer = false;
-  dir->tls_cert.require = false;
-  return dir;
-}
-
-directordaemon::StorageResource *CreateAndInitializeNewStorageResource()
-{
-  directordaemon::StorageResource *store = new (directordaemon::StorageResource);
-  store->address = (char *)HOST;
-  store->SDport = htons(BSOCK_TEST_PORT_NUMBER);
-  store->tls_psk.enable = false;
-  store->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
-  store->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
-  store->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
-  store->tls_cert.enable = false;
-  store->tls_cert.VerifyPeer = false;
-  store->tls_cert.require = false;
-  return store;
 }
 
 std::string client_cons_name;
@@ -336,8 +306,8 @@ TEST(bsock, auth_works)
   server_cons_name = client_cons_name;
   server_cons_password = client_cons_password;
 
-  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  std::unique_ptr<directordaemon::ConsoleResource> cons(directordaemon::CreateAndInitializeNewConsoleResource());
+  std::unique_ptr<console::DirectorResource> dir(console::CreateAndInitializeNewDirectorResource());
 
   InitForTest();
 
@@ -346,10 +316,10 @@ TEST(bsock, auth_works)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons);
+                            HOST, port, cons.get());
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir.get()));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -368,8 +338,8 @@ TEST(bsock, auth_works_with_different_names)
   server_cons_name = "differentclientname";
   server_cons_password = client_cons_password;
 
-  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  std::unique_ptr<directordaemon::ConsoleResource> cons(directordaemon::CreateAndInitializeNewConsoleResource());
+  std::unique_ptr<console::DirectorResource> dir(console::CreateAndInitializeNewDirectorResource());
 
   InitForTest();
 
@@ -378,10 +348,10 @@ TEST(bsock, auth_works_with_different_names)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons);
+                            HOST, port, cons.get());
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir.get()));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -399,8 +369,8 @@ TEST(bsock, auth_fails_with_different_passwords)
   server_cons_name = client_cons_name;
   server_cons_password = "othersecretpassword";
 
-  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  std::unique_ptr<directordaemon::ConsoleResource> cons(directordaemon::CreateAndInitializeNewConsoleResource());
+  std::unique_ptr<console::DirectorResource> dir(console::CreateAndInitializeNewDirectorResource());
 
   InitForTest();
 
@@ -409,10 +379,10 @@ TEST(bsock, auth_fails_with_different_passwords)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons);
+                            HOST, port, cons.get());
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir.get()));
 
   server_thread.join();
   EXPECT_FALSE(future.get());
@@ -430,8 +400,8 @@ TEST(bsock, auth_works_with_tls_psk)
   server_cons_name = client_cons_name;
   server_cons_password = client_cons_password;
 
-  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  std::unique_ptr<directordaemon::ConsoleResource> cons(directordaemon::CreateAndInitializeNewConsoleResource());
+  std::unique_ptr<console::DirectorResource> dir(console::CreateAndInitializeNewDirectorResource());
 
   InitForTest();
 
@@ -441,15 +411,15 @@ TEST(bsock, auth_works_with_tls_psk)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons);
+                            HOST, port, cons.get());
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir.get());
   client_thread.join();
 #else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir.get()));
 #endif
 
   server_thread.join();
@@ -470,8 +440,8 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   server_cons_name = "differentclientname";
   server_cons_password = client_cons_password;
 
-  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  std::unique_ptr<directordaemon::ConsoleResource> cons(directordaemon::CreateAndInitializeNewConsoleResource());
+  std::unique_ptr<console::DirectorResource> dir(console::CreateAndInitializeNewDirectorResource());
 
   InitForTest();
 
@@ -481,15 +451,15 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons);
+                            HOST, port, cons.get());
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir.get());
   client_thread.join();
 #else
-  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir.get()));
 #endif
 
   server_thread.join();
@@ -510,8 +480,8 @@ TEST(bsock, auth_works_with_tls_cert)
   server_cons_name = client_cons_name;
   server_cons_password = client_cons_password;
 
-  directordaemon::ConsoleResource *cons = CreateAndInitializeNewConsoleResource();
-  console::DirectorResource *dir = CreateAndInitializeNewDirectorResource();
+  std::unique_ptr<directordaemon::ConsoleResource> cons(directordaemon::CreateAndInitializeNewConsoleResource());
+  std::unique_ptr<console::DirectorResource> dir(console::CreateAndInitializeNewDirectorResource());
 
   InitForTest();
 
@@ -521,15 +491,15 @@ TEST(bsock, auth_works_with_tls_cert)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port, cons);
+                            HOST, port, cons.get());
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir);
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, dir.get());
   client_thread.join();
 #else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port, dir.get()));
 #endif
 
   server_thread.join();
