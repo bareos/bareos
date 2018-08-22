@@ -18,8 +18,10 @@
 #   02110-1301, USA.
 
 
+set(DIRDSRCS dird.cc)
 
-set(DIRDSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
+#DIRD_OBJECTS_SRCS also used in a separate library for unittests
+set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
    consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc expand.cc fd_cmds.cc
    getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc mountreq.cc msgchan.cc
    ndmp_dma_storage.cc
@@ -35,7 +37,7 @@ set(DIRDSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc c
    ua_run.cc ua_select.cc ua_server.cc ua_status.cc ua_tree.cc ua_update.cc
    vbackup.cc verify.cc)
 IF(HAVE_WIN32)
-   LIST(APPEND DIRDSRCS ../win32/dird/dirdres.rc)
+   LIST(APPEND DIRD_OBJECTS_SRCS ../win32/dird/dirdres.rc)
 ENDIF()
 
 IF(HAVE_WIN32)
@@ -58,9 +60,10 @@ set(TSTFNDSRCS testfind.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc ru
 
 set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs messages pool profile schedule storage)
 
-add_library(dird_objects STATIC ${DIRDSRCS})
+#dird_objects is also used as library for unittests
+add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
 
-add_executable(bareos-dir dird.cc)
+add_executable(bareos-dir ${DIRDSRCS})
 
 set(BAREOS_DIR_LIBRARIES
    dird_objects
