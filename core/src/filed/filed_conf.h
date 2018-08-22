@@ -31,7 +31,7 @@
 
 namespace filedaemon {
 
-#define CONFIG_FILE "bareos-fd.conf"  /* default config file */
+static const std::string default_config_filename("bareos-fd.conf");
 
 /*
  * Resource codes -- they must be sequential for indexing

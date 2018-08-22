@@ -44,7 +44,7 @@
 #include "include/bareos.h"
 #include "tray_conf.h"
 
-#define CONFIG_FILE "tray-monitor.conf"   /* default configuration file */
+static const std::string default_config_filename("tray-monitor.conf");
 
 /*
  * Define the first and last resource ID record
@@ -388,7 +388,7 @@ ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head,
-                CONFIG_FILE,
+                default_config_filename.c_str(),
                 "tray-monitor.d");
 }
 

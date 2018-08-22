@@ -25,11 +25,14 @@
  * @file bareos storage daemon configuration definitions
  *
  */
-#define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
+#ifndef BAREOS_STORED_STORED_CONF_H_
+#define BAREOS_STORED_STORED_CONF_H_ 1
 
 #include "stored/dev.h"
 
 namespace storagedaemon {
+
+static const std::string default_config_filename("bareos-sd.conf");
 
 /*
  * Resource codes -- they must be sequential for indexing
@@ -202,3 +205,4 @@ ConfigurationParser *InitSdConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
 
 } /* namespace storagedaemon */
+#endif /* BAREOS_STORED_STORED_CONF_H_ */

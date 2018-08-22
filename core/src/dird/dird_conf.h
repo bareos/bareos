@@ -31,9 +31,9 @@
 #define BAREOS_DIRD_DIRD_CONF_H_
 /* NOTE:  #includes at the end of this file */
 
-#define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
-
 namespace directordaemon {
+
+static std::string default_config_filename("bareos-dir.conf");
 
 /**
  * Resource codes -- they must be sequential for indexing

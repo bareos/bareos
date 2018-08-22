@@ -28,12 +28,15 @@
  * Bareos User Agent specific configuration and defines
  */
 
+#ifndef BAREOS_CONSOLE_CONSOLE_CONF_H_
+#define BAREOS_CONSOLE_CONSOLE_CONF_H_ 1
+
 class ConfigurationParser;
 extern ConfigurationParser *my_config;             /* Our Global config */
 
 namespace console {
 
-#define CONFIG_FILE "bconsole.conf"   /* default configuration file */
+static const std::string default_config_filename("bconsole.conf");
 
 /**
  * Resource codes -- they must be sequential for indexing
@@ -98,3 +101,4 @@ ConfigurationParser *InitConsConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
 
 } /* namespace console */
+#endif /* BAREOS_CONSOLE_CONSOLE_CONF_H_ */

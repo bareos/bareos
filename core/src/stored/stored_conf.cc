@@ -512,7 +512,7 @@ ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head,
-                CONFIG_FILE,
+                default_config_filename.c_str(),
                 "bareos-sd.d");
 }
 
