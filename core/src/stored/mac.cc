@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "stored/acquire.h"
 #include "stored/bsr.h"
 #include "stored/append.h"

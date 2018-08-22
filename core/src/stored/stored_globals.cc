@@ -25,6 +25,9 @@
 
 namespace storagedaemon {
 
+StorageResource *me;
+char *configfile;
+
 void *start_heap = nullptr;
 bool  init_done = false;
 uint32_t vol_session_time;

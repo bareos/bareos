@@ -40,6 +40,7 @@
 #if HAVE_NDMP
 
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 
 #include "ndmp/ndmagents.h"
 #include "stored/acquire.h"

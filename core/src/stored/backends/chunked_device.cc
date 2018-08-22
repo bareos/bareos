@@ -37,6 +37,8 @@
 #endif
 #endif
 
+#include "stored/stored_globals.h"
+
 namespace storagedaemon {
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

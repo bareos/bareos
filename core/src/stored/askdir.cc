@@ -29,8 +29,9 @@
  * Reqests/commands from the Director are handled in dircmd.c
  */
 
-#include "include/bareos.h"                   /* pull in global headers */
-#include "stored/stored.h"                   /* pull in Storage Daemon headers */
+#include "include/bareos.h"
+#include "stored/stored.h"
+#include "stored/stored_globals.h"
 
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"

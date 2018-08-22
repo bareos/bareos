@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"                   /* pull in global headers */
 #include "stored/stored.h"                   /* pull in Storage Daemon headers */
+#include "stored/stored_globals.h"
 #include "stored/dev.h"
 #include "stored/device.h"
 #include "stored/label.h"

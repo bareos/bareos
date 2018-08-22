@@ -31,6 +31,7 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "stored/sd_backends.h"
 
 namespace storagedaemon {

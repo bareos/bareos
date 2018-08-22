@@ -77,14 +77,14 @@ ENDIF()
 
 set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
          block.cc bsr.cc
-		   butil.cc crc32.cc dev.cc device.cc ebcdic.cc label.cc lock.cc
-		   mount.cc read_record.cc record.cc reserve.cc scan.cc
-		   sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc
-		   stored_conf.cc vol_mgr.cc wait.cc
+         butil.cc crc32.cc dev.cc device.cc ebcdic.cc label.cc lock.cc
+         mount.cc read_record.cc record.cc reserve.cc scan.cc
+         sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc
+         stored_globals.cc stored_conf.cc vol_mgr.cc wait.cc
          ${AVAILABLE_DEVICE_API_SRCS}
     )
 
-set(SDSRCS stored_globals.cc append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
+set(SDSRCS append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
          socket_server.cc status.cc )
 

@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {

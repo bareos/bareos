@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"

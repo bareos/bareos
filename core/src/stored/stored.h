@@ -82,9 +82,7 @@ extern ConfigurationParser SD_IMP_EXP *my_config;  /* Our Global config */
 
 namespace storagedaemon {
 
-extern char SD_IMP_EXP *configfile;
 extern bool SD_IMP_EXP forge_on;      /* Proceed inspite of I/O errors */
-extern StorageResource SD_IMP_EXP *me;         /* "Global" daemon resource */
 uint32_t new_VolSessionId();
 
 } /* namespace storagedaemon */

@@ -28,6 +28,11 @@
 
 namespace storagedaemon {
 
+class StorageResource;
+extern StorageResource *me;
+
+extern char *configfile;
+
 extern void *start_heap;
 extern bool init_done;
 extern uint32_t vol_session_time;

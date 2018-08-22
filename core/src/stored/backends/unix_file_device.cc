@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "unix_file_device.h"
 #include "lib/util.h"
 
