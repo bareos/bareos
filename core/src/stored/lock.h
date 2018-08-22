@@ -75,6 +75,8 @@ enum {
    DEV_UNLOCKED = false
 };
 
+class Device;
+
 void _lockDevice(const char *file, int line, Device *dev);
 void _unlockDevice(const char *file, int line, Device *dev);
 void _blockDevice(const char *file, int line, Device *dev, int state);

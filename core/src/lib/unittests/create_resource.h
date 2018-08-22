@@ -19,22 +19,28 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
-#define BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
-
-#define HOST "127.0.0.1"
-#define BSOCK_TEST_PORT_NUMBER 54321
-
-class BareosSocket;
-class StorageResource;
+#ifndef BAREOS_LIB_UNITTESTS_CREATE_RESOURCE_H_
+#define BAREOS_LIB_UNITTESTS_CREATE_RESOURCE_H_
 
 namespace directordaemon {
    class StorageResource;
+   class DirectorResource;
+   class ConsoleResource;
+   directordaemon::StorageResource  *CreateAndInitializeNewStorageResource();
+   directordaemon::DirectorResource *CreateAndInitializeNewDirectorResource();
+   directordaemon::ConsoleResource  *CreateAndInitializeNewConsoleResource();
 }
 
-int create_accepted_server_socket(int port);
-BareosSocket *create_new_bareos_socket(int fd);
+namespace storagedaemon {
+   class StorageResource;
+   class DirectorResource;
+   storagedaemon::StorageResource *CreateAndInitializeNewStorageResource();
+   storagedaemon::DirectorResource *CreateAndInitializeNewDirectorResource();
+} /* namespace storagedaemon */
 
-directordaemon::StorageResource *CreateAndInitializeNewStorageResource();
+namespace console {
+   class DirectorResource;
+   console::DirectorResource *CreateAndInitializeNewDirectorResource();
+}
 
-#endif /* BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_ */
+#endif /* BAREOS_LIB_UNITTESTS_CREATE_RESOURCE_H_ */

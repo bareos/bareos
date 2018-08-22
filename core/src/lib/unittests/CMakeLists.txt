@@ -60,6 +60,7 @@ add_executable(test_bsock
     bsock_dir_sd_connection_test.cc 
     bsock_constructor_test.cc 
     bsock_cert_verify_common_names_test.cc
+    create_resource.cc
 )
 
 target_link_libraries(test_bsock

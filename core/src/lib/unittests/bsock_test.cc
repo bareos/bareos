@@ -45,7 +45,6 @@ class StorageResource;
 
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN 175 + 25
-#define HOST "127.0.0.1"
 #define CONSOLENAME "testconsole"
 #define CONSOLEPASSWORD "secret"
 
