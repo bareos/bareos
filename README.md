@@ -34,7 +34,7 @@ policy at
 
   * https://www.bareos.org/en/howto-contribute.html
 
-### Mailingslists
+### Mailing lists
 
 The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 
