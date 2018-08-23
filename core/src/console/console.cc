@@ -28,6 +28,7 @@
  * Bareos Console interface to the Director
  */
 
+#include "console.h"
 #include "include/bareos.h"
 #include "console_conf.h"
 #include "jcr.h"
@@ -1076,6 +1077,40 @@ try_again:
    return 1;
 }
 
+namespace console {
+bool ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
+{
+   BareosSocketTCP *UA_sock = New(BareosSocketTCP);
+   UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
+   UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
+   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL, director_resource->DIRport, false)) {
+      delete UA_sock;
+      TerminateConsole(0);
+      return false;
+   }
+   jcr.dir_bsock = UA_sock;
+
+   const char *name;
+   s_password *password = NULL;
+
+   if (console_resource) {
+      name = console_resource->name();
+      ASSERT(console_resource->password.encoding == p_encoding_md5);
+      password = &console_resource->password;
+   } else { /* default console */
+      name = "*UserAgent*";
+      ASSERT(director_resource->password.encoding == p_encoding_md5);
+      password = &director_resource->password;
+   }
+
+   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
+      sendit(errmsg);
+      TerminateConsole(0);
+      return false;
+   }
+   return true;
+}
+} /* namespace console */
 /*
  * Main Bareos Console -- User Interface Program
  */
@@ -1084,8 +1119,6 @@ int main(int argc, char *argv[])
    int ch;
    int errmsg_len;
    char *director = NULL;
-   const char *name;
-   s_password *password = NULL;
    char errmsg[1024];
    bool list_directors = false;
    bool no_signals = false;
@@ -1258,32 +1291,7 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   UA_sock = New(BareosSocketTCP);
-   UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
-   UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
-   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL, director_resource->DIRport, false)) {
-      delete UA_sock;
-      TerminateConsole(0);
-      return 1;
-   }
-   jcr.dir_bsock = UA_sock;
-
-   /*
-    * If console_resource == NULL, default console will be used
-    */
-   if (console_resource) {
-      name = console_resource->name();
-      ASSERT(console_resource->password.encoding == p_encoding_md5);
-      password = &console_resource->password;
-   } else {
-      name = "*UserAgent*";
-      ASSERT(director_resource->password.encoding == p_encoding_md5);
-      password = &director_resource->password;
-   }
-
-   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
-      sendit(errmsg);
-      TerminateConsole(0);
+   if (!ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len)) {
       return 1;
    }
 
