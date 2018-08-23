@@ -74,8 +74,8 @@ extern "C" void GotSigtin(int sig);
 /* Static variables */
 static char *configfile = NULL;
 static BareosSocket *UA_sock = NULL;
-static DirectorResource *dir = NULL;
-static ConsoleResource *cons = NULL;
+static DirectorResource *director_resource = NULL;
+static ConsoleResource *console_resource = NULL;
 static FILE *output = stdout;
 static bool teeout = false;               /* output to output and stdout */
 static bool stop = false;
@@ -968,49 +968,49 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    int numcon=0, numdir=0;
    int i=0, item=0;
    BareosSocket *UA_sock;
-   DirectorResource *dir = NULL;
-   ConsoleResource *cons = NULL;
+   DirectorResource *director_resource = NULL;
+   ConsoleResource *console_resource = NULL;
 
    *ret_cons = NULL;
    *ret_dir = NULL;
 
    LockRes();
    numdir = 0;
-   foreach_res(dir, R_DIRECTOR) {
+   foreach_res(director_resource, R_DIRECTOR) {
       numdir++;
    }
    numcon = 0;
-   foreach_res(cons, R_CONSOLE) {
+   foreach_res(console_resource, R_CONSOLE) {
       numcon++;
    }
    UnlockRes();
 
    if (numdir == 1) {           /* No choose */
-      dir = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+      director_resource = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
    }
 
    if (director) {    /* Command line choice overwrite the no choose option */
       LockRes();
-      foreach_res(dir, R_DIRECTOR) {
-         if (bstrcmp(dir->name(), director)) {
+      foreach_res(director_resource, R_DIRECTOR) {
+         if (bstrcmp(director_resource->name(), director)) {
             break;
          }
       }
       UnlockRes();
-      if (!dir) {               /* Can't find Director used as argument */
+      if (!director_resource) {               /* Can't find Director used as argument */
          senditf(_("Can't find %s in Director list\n"), director);
          return 0;
       }
    }
 
-   if (!dir) {                  /* prompt for director */
+   if (!director_resource) {                  /* prompt for director */
       UA_sock = New(BareosSocketTCP);
 try_again:
       sendit(_("Available Directors:\n"));
       LockRes();
       numdir = 0;
-      foreach_res(dir, R_DIRECTOR) {
-         senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->name(), dir->address, dir->DIRport);
+      foreach_res(director_resource, R_DIRECTOR) {
+         senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, director_resource->name(), director_resource->address, director_resource->DIRport);
       }
       UnlockRes();
       if (GetCmd(stdin, _("Select Director by entering a number: "),
@@ -1033,7 +1033,7 @@ try_again:
       delete UA_sock;
       LockRes();
       for (i=0; i<item; i++) {
-         dir = (DirectorResource *)GetNextRes(R_DIRECTOR, (CommonResourceHeader *)dir);
+         director_resource = (DirectorResource *)GetNextRes(R_DIRECTOR, (CommonResourceHeader *)director_resource);
       }
       UnlockRes();
    }
@@ -1043,35 +1043,35 @@ try_again:
     */
    LockRes();
    for (i=0; i<numcon; i++) {
-      cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)cons);
-      if (cons->director && bstrcmp(cons->director, dir->name())) {
+      console_resource = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+      if (console_resource->director && bstrcmp(console_resource->director, director_resource->name())) {
          break;
       }
-      cons = NULL;
+      console_resource = NULL;
    }
 
    /*
     * Look for the first non-linked console
     */
-   if (cons == NULL) {
+   if (console_resource == NULL) {
       for (i=0; i<numcon; i++) {
-         cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)cons);
-         if (cons->director == NULL)
+         console_resource = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+         if (console_resource->director == NULL)
             break;
-         cons = NULL;
+         console_resource = NULL;
       }
    }
 
    /*
     * If no console, take first one
     */
-   if (!cons) {
-      cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
+   if (!console_resource) {
+      console_resource = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
    }
    UnlockRes();
 
-   *ret_dir = dir;
-   *ret_cons = cons;
+   *ret_dir = director_resource;
+   *ret_cons = console_resource;
 
    return 1;
 }
@@ -1227,8 +1227,8 @@ int main(int argc, char *argv[])
 
    if (list_directors) {
       LockRes();
-      foreach_res(dir, R_DIRECTOR) {
-         senditf("%s\n", dir->name());
+      foreach_res(director_resource, R_DIRECTOR) {
+         senditf("%s\n", director_resource->name());
       }
       UnlockRes();
    }
@@ -1244,16 +1244,16 @@ int main(int argc, char *argv[])
 
    StartWatchdog();                        /* Start socket watchdog */
 
-   if (!SelectDirector(director, &dir, &cons)) {
+   if (!SelectDirector(director, &director_resource, &console_resource)) {
       return 1;
    }
 
-   senditf(_("Connecting to Director %s:%d\n"), dir->address,dir->DIRport);
+   senditf(_("Connecting to Director %s:%d\n"), director_resource->address,director_resource->DIRport);
 
-   if (dir->heartbeat_interval) {
-      heart_beat = dir->heartbeat_interval;
-   } else if (cons) {
-      heart_beat = cons->heartbeat_interval;
+   if (director_resource->heartbeat_interval) {
+      heart_beat = director_resource->heartbeat_interval;
+   } else if (console_resource) {
+      heart_beat = console_resource->heartbeat_interval;
    } else {
       heart_beat = 0;
    }
@@ -1261,7 +1261,7 @@ int main(int argc, char *argv[])
    UA_sock = New(BareosSocketTCP);
    UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
    UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
-   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
+   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL, director_resource->DIRport, false)) {
       delete UA_sock;
       TerminateConsole(0);
       return 1;
@@ -1269,19 +1269,19 @@ int main(int argc, char *argv[])
    jcr.dir_bsock = UA_sock;
 
    /*
-    * If cons == NULL, default console will be used
+    * If console_resource == NULL, default console will be used
     */
-   if (cons) {
-      name = cons->name();
-      ASSERT(cons->password.encoding == p_encoding_md5);
-      password = &cons->password;
+   if (console_resource) {
+      name = console_resource->name();
+      ASSERT(console_resource->password.encoding == p_encoding_md5);
+      password = &console_resource->password;
    } else {
       name = "*UserAgent*";
-      ASSERT(dir->password.encoding == p_encoding_md5);
-      password = &dir->password;
+      ASSERT(director_resource->password.encoding == p_encoding_md5);
+      password = &director_resource->password;
    }
 
-   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, dir)) {
+   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
       sendit(errmsg);
       TerminateConsole(0);
       return 1;
