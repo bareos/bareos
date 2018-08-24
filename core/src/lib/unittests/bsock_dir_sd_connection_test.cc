@@ -89,3 +89,7 @@ static void connect_dir_to_sd()
 namespace directordaemon {
    bool DoReloadConfig() { return false; }
 }
+
+namespace storagedaemon {
+   bool DoReloadConfig() { return false; }
+}
