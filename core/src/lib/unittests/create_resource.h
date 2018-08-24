@@ -40,7 +40,9 @@ namespace storagedaemon {
 
 namespace console {
    class DirectorResource;
+   class ConsoleResource;
    console::DirectorResource *CreateAndInitializeNewDirectorResource();
+   console::ConsoleResource *CreateAndInitializeNewConsoleResource();
 }
 
 #endif /* BAREOS_LIB_UNITTESTS_CREATE_RESOURCE_H_ */

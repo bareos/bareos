@@ -1002,3 +1002,13 @@ void FreeResource(CommonResourceHeader *sres, int type)
       FreeResource(nres, type);
    }
 }
+
+bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
+{
+//   char *fq_name_buffer = bstrdup(fq_name_);
+//   UnbashSpaces(fq_name_buffer);
+//   std::string fq_name(fq_name_buffer);
+//   free(fq_name_buffer);
+
+   return false;
+}

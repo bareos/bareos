@@ -181,7 +181,7 @@ struct ResourceItem {
  */
 class CommonResourceHeader {
 public:
-   CommonResourceHeader *next;                           /* Pointer to next resource of this type */
+   CommonResourceHeader *next;          /* Pointer to next resource of this type */
    char *name;                          /* Resource name */
    char *desc;                          /* Resource description */
    uint32_t rcode;                      /* Resource id or type */
@@ -196,7 +196,7 @@ public:
  */
  struct ResourceTable {
    const char *name;        /* Resource name */
-   ResourceItem *items;         /* List of resource keywords */
+   ResourceItem *items;     /* List of resource keywords */
    uint32_t rcode;          /* Code if needed */
    uint32_t size;           /* Size of resource */
 
@@ -500,6 +500,7 @@ DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
 DLL_IMP_EXP bool SaveResource(int type, ResourceItem *item, int pass);
 DLL_IMP_EXP bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
 DLL_IMP_EXP const char *res_to_str(int rcode);
+DLL_IMP_EXP bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value);
 
 
 #ifdef HAVE_JANSSON

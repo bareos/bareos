@@ -33,14 +33,6 @@ public:
 
    virtual uint32_t GetPolicy() const override;
 
-   void SetPskCredentials(const PskCredentials &credentials) override
-   {
-      psk_credentials_ = credentials;
-   };
-
-//   std::shared_ptr<Tls> CreateClientContext() const override;
-//   std::shared_ptr<Tls> CreateServerContext() const override;
-
    /**
     * Checks whether the given @param policy matches the configured value
     * @param policy
@@ -57,7 +49,6 @@ public:
 
 private:
    static u_int32_t const policy_offset = 2;
-   PskCredentials psk_credentials_;
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_PSK_H */

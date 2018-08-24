@@ -53,6 +53,9 @@ public:
       return identity_.empty() && psk_.empty();
    }
 
+   void set_identity(const char *in) { identity_ = in; }
+   void set_psk(const char *in) { psk_ = in; }
+
    const std::string &get_identity() const { return identity_; }
    const std::string &get_psk() const { return psk_; }
 

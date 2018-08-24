@@ -238,10 +238,10 @@ void TlsOpenSslPrivate::ServerContextInsertCredentials(const PskCredentials &cre
    TlsOpenSslPrivate::psk_server_credentials.insert(
                std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_,credentials));
 }
-
+#include "parse_conf.h"
 unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
                                   const char *identity,
-                                  unsigned char *psk,
+                                  unsigned char *psk_output,
                                   unsigned int max_psk_len)
 {
    unsigned int result = 0;
@@ -250,14 +250,11 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
    Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
 
    if (openssl_ctx) {
-      if (psk_server_credentials.find(openssl_ctx) != psk_server_credentials.end()) {
-         const PskCredentials &credentials = psk_server_credentials.at(openssl_ctx);
-
-         if (credentials.get_identity() == std::string(identity)) {
-            int psklen = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
-            Dmsg1(100, "psk_server_cb. psk: %s.\n", psk);
-            result = (psklen < 0) ? 0 : psklen;
-         }
+      std::string configured_psk;
+      if (GetTlsResourceByFullyQualifiedResourceName(identity, configured_psk)) {
+         int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
+         Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
+         result = (psklen < 0) ? 0 : psklen;
       } else {
          Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
       }

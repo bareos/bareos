@@ -4430,3 +4430,26 @@ bool SaveResource(int type, ResourceItem *items, int pass)
    }
    return true;
 }
+
+bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
+{
+   char *fq_name_buffer = bstrdup(fq_name_);
+   UnbashSpaces(fq_name_buffer);
+   std::string fq_name(fq_name_buffer);
+   free(fq_name_buffer);
+
+   const std::string ua("*UserAgent*");
+
+   bool success = false;
+   if (fq_name == ua) {
+      psk_return_value = me->password.value;
+      success = true;
+   } else {
+      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(GetResWithName(R_CONSOLE, fq_name.c_str()));
+      if(res) {
+         psk_return_value = res->password.value;
+         success = true;
+      }
+   }
+   return success;
+}

@@ -40,7 +40,25 @@ console::DirectorResource *CreateAndInitializeNewDirectorResource()
   dir->tls_cert.VerifyPeer = false;
   dir->tls_cert.require = false;
   dir->hdr.name = (char*)"director";
+  dir->password.encoding = p_encoding_md5;
+  dir->password.value = (char *)"verysecretpassword";
   return dir;
+}
+
+console::ConsoleResource *CreateAndInitializeNewConsoleResource()
+{
+  console::ConsoleResource *cons = new (console::ConsoleResource);
+  cons->tls_psk.enable = false;
+  cons->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
+  cons->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
+  cons->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
+  cons->tls_cert.enable = false;
+  cons->tls_cert.VerifyPeer = false;
+  cons->tls_cert.require = false;
+  cons->hdr.name = (char*)"clientname";
+  cons->password.encoding = p_encoding_md5;
+  cons->password.value = (char *)"verysecretpassword";
+  return cons;
 }
 } /* namespace console */
 
@@ -48,14 +66,16 @@ namespace directordaemon {
 directordaemon::ConsoleResource *CreateAndInitializeNewConsoleResource()
 {
   directordaemon::ConsoleResource *cons = new (directordaemon::ConsoleResource);
-  cons->tls_psk.enable = false;  // enable_tls_psk;
+  cons->tls_psk.enable = false;
   cons->tls_cert.certfile = new (std::string)(CERTDIR "/console.bareos.org-cert.pem");
   cons->tls_cert.keyfile = new (std::string)(CERTDIR "/console.bareos.org-key.pem");
   cons->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
   cons->tls_cert.enable = false;
   cons->tls_cert.VerifyPeer = false;
   cons->tls_cert.require = false;
-  cons->hdr.name = (char*)"console";
+  cons->hdr.name = (char*)"clientname";
+  cons->password.encoding = p_encoding_md5;
+  cons->password.value = (char *)"verysecretpassword";
   return cons;
 }
 
@@ -87,6 +107,8 @@ directordaemon::DirectorResource *CreateAndInitializeNewDirectorResource()
   dir->tls_cert.require = false;
   dir->DIRsrc_addr = 0;
   dir->hdr.name = (char*)"director";
+  dir->password.encoding = p_encoding_md5;
+  dir->password.value = (char*)"verysecretpassword";
   return dir;
 }
 } /* namespace directordaemon */
