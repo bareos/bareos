@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = BareosDeveloperGuide
 SOURCEDIR     = source
-BUILDDIR      = .
+BUILDDIR      = html/BareosDeveloperGuide
 
 ## Put it first so that "make" without argument is like "make help".
 #help:
