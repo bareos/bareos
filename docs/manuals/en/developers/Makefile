@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = BareosDeveloperGuide
 SOURCEDIR     = source
-BUILDDIR      = html/BareosDeveloperGuide
+BUILDDIR      = .
 
 ## Put it first so that "make" without argument is like "make help".
 #help:
@@ -17,6 +17,7 @@ BUILDDIR      = html/BareosDeveloperGuide
 
 html:
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -M latexpdf "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 packageclean:
 	rm -Rf $(BUILDDIR)/*
