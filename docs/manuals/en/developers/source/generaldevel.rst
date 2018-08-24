@@ -5,6 +5,39 @@ This document is intended mostly for developers and describes how you
 can contribute to the Bareos project and the general framework of making
 Bareos source changes.
 
+.. uml::
+   :caption: This is an example UML diagram
+
+   :Standard User: as User
+   :Root User: as Root
+   (uses PAM password) as (usePamPassword)
+   (root uses Configfile password) as (rootUseConfigPassword)
+   (std uses Configfile password) as (stdUseConfigPassword)
+   (Uses Root Console) as (RootConsole)
+   (Uses Named Console) as (NamedConsole)
+   (Use TLS Transport Encryption) as (TLS)
+   (Use MD5 Cram authentication) as (MD5)
+   (Use TLS Authentication) as (TLSAUTH)
+
+   title BConsole connection Modes\n\n
+
+   User --> (NamedConsole)
+   (NamedConsole) --> (usePamPassword)
+   (NamedConsole) --> (stdUseConfigPassword)
+
+   note right of (NamedConsole): Named Console\nhas       UserAccessControlList (ACL)
+
+   (stdUseConfigPassword) --> (TLSAUTH)
+   (usePamPassword) --> (TLSAUTH)
+   (TLSAUTH) --> (TLS)
+
+   Root --> (RootConsole)
+   (RootConsole) --> (rootUseConfigPassword)
+   note left of (RootConsole): Root Console\nhas all rights
+   (rootUseConfigPassword) --> (MD5)
+   (MD5) --> (TLS)
+
+
 History
 ~~~~~~~
 
