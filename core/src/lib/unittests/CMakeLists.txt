@@ -66,13 +66,13 @@ add_executable(test_bsock
 target_link_libraries(test_bsock
    stored_objects
    dird_objects
+   console_objects
    bareossd
    bareos
    bareoscats
    bareoscfg
    bareossql
    bareosfind
-   dird_objects
    ${LMDB_LIBS}
    ${NDMP_LIBS}
    ${JANSSON_LIBRARIES}

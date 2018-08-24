@@ -19,15 +19,16 @@
 
 include_directories(. .. ../include )
 
-SET (BCONSSRCS console.cc console_conf.cc)
+SET (BCONSSRCS console_conf.cc console_globals.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()
 
-add_executable(bconsole ${BCONSSRCS})
+add_executable(bconsole console.cc)
 
+add_library(console_objects STATIC ${BCONSSRCS})
 
-set(CONSOLE_LINK_LIBRARIES bareos bareoscfg ${Readline_LIBRARY})
+set(CONSOLE_LINK_LIBRARIES console_objects bareos bareoscfg ${Readline_LIBRARY})
 
 IF(HAVE_WIN32)
   LIST(APPEND CONSOLE_LINK_LIBRARIES bareosstatic)

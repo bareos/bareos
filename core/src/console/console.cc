@@ -31,6 +31,7 @@
 #include "console.h"
 #include "include/bareos.h"
 #include "console_conf.h"
+#include "console_globals.h"
 #include "jcr.h"
 #include "lib/bnet.h"
 
@@ -51,11 +52,7 @@
 
 using namespace console;
 
-/* Exported variables */
-namespace console {
-   ConsoleResource *me = NULL;                    /* Our Global resource */
-}
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;
 
 //extern int rl_catch_signals;
 
@@ -75,8 +72,6 @@ extern "C" void GotSigtin(int sig);
 /* Static variables */
 static char *configfile = NULL;
 static BareosSocket *UA_sock = NULL;
-static DirectorResource *director_resource = NULL;
-static ConsoleResource *console_resource = NULL;
 static FILE *output = stdout;
 static bool teeout = false;               /* output to output and stdout */
 static bool stop = false;
@@ -1078,7 +1073,7 @@ try_again:
 }
 
 namespace console {
-bool ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
+BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
 {
    BareosSocketTCP *UA_sock = New(BareosSocketTCP);
    UA_sock->local_daemon_type_ = BareosDaemonType::kConsole;
@@ -1086,7 +1081,7 @@ bool ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, 
    if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL, director_resource->DIRport, false)) {
       delete UA_sock;
       TerminateConsole(0);
-      return false;
+      return nullptr;
    }
    jcr.dir_bsock = UA_sock;
 
@@ -1106,9 +1101,9 @@ bool ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, 
    if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
       sendit(errmsg);
       TerminateConsole(0);
-      return false;
+      return nullptr;
    }
-   return true;
+   return UA_sock;
 }
 } /* namespace console */
 /*
@@ -1291,7 +1286,8 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   if (!ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len)) {
+   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
+   if (!UA_sock) {
       return 1;
    }
 

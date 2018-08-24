@@ -29,7 +29,7 @@ class JobControlRecord;
 
 namespace console {
 
-bool ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len);
+BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len);
 
 }
 #endif /* BAREOS_CONSOLE_CONSOLE_H_ */
