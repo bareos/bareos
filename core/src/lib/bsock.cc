@@ -401,7 +401,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
 
     btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
-    if (!IsConsoleDirectorConnection(this)) { /* not console: start with md5 handshake */
+    if (true) { /* not console: start with md5 handshake */
       auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
       if (!auth_success) {
         Jmsg(jcr, M_FATAL, 0,
@@ -458,6 +458,10 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
                                   const char *password,
                                   JobControlRecord *jcr)
 {
+  if (tls_conn) {
+    return true;
+  }
+
   TlsConfigBase *selected_local_tls;
   selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
   if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
@@ -528,10 +532,10 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_configurati
   }
 
   if (tls_configuration->tls_psk.enable) {
-    const PskCredentials psk_cred(identity, password);
     if (initiated_by_remote) {
-      tls_conn->SetTlsPskServerContext(psk_cred);
+      tls_conn->SetTlsPskServerContext();
     } else {
+      const PskCredentials psk_cred(identity, password);
       tls_conn->SetTlsPskClientContext(psk_cred);
     }
   }

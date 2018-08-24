@@ -129,12 +129,6 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                           s_password &password,
                           TlsResource *tls_configuration,
                           bool initiated_by_remote);
-  bool DoTlsHandshake(uint32_t remote_tls_policy,
-                      TlsResource *tls_configuration,
-                      bool initiated_by_remote,
-                      const char *identity,
-                      const char *password,
-                      JobControlRecord *jcr);
   bool DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                 const char *identity,
                                 const char *password,
@@ -143,10 +137,6 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                                 const char *identity,
                                 const char *password,
                                 JobControlRecord *jcr);
-  bool ParameterizeAndInitTlsConnection(TlsResource *tls_configuration,
-                                        const char *identity,
-                                        const char *password,
-                                        bool initiated_by_remote);
 
  public:
   BareosSocket();
@@ -193,6 +183,16 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                                 char *response,
                                 int response_len,
                                 TlsResource *tls_configuration);
+  bool ParameterizeAndInitTlsConnection(TlsResource *tls_configuration,
+                                        const char *identity,
+                                        const char *password,
+                                        bool initiated_by_remote);
+  bool DoTlsHandshake(uint32_t remote_tls_policy,
+                      TlsResource *tls_configuration,
+                      bool initiated_by_remote,
+                      const char *identity,
+                      const char *password,
+                      JobControlRecord *jcr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist *src_addr_list);
