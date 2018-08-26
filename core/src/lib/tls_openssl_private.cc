@@ -26,6 +26,8 @@
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
 
+#include "parse_conf.h"
+
 #include <bareos.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -234,7 +236,7 @@ void TlsOpenSslPrivate::ServerContextInsertCredentials(const PskCredentials &cre
   TlsOpenSslPrivate::psk_server_credentials.insert(
       std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
 }
-#include "parse_conf.h"
+
 unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
                                               const char *identity,
                                               unsigned char *psk_output,
