@@ -500,7 +500,7 @@ DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
 DLL_IMP_EXP bool SaveResource(int type, ResourceItem *item, int pass);
 DLL_IMP_EXP bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
 DLL_IMP_EXP const char *res_to_str(int rcode);
-DLL_IMP_EXP bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value);
+DLL_IMP_EXP bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value) __attribute__((weak));
 
 
 #ifdef HAVE_JANSSON

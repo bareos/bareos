@@ -26,7 +26,7 @@
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
 
-#include "parse_conf.h"
+#include "lib/parse_conf.h"
 
 #include <bareos.h>
 #include <openssl/err.h>
