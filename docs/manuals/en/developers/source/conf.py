@@ -51,7 +51,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Bareos Developer Guide'
-copyright = '2018, Bareos GmbH & Co. KG'
+copyright = '1999-2012, Free Software Foundation Europe e.V. / 2013-2018, Bareos GmbH & Co. KG'
+
 author = 'Bareos GmbH & Co. KG'
 
 # The version info for the project you're documenting, acts as replacement for
