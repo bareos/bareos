@@ -48,16 +48,6 @@ class Tls;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
-enum class BareosDaemonType
-{
-  kUndefined,
-  kDirector,
-  kFiledaemon,
-  kStoragedaemon,
-  kTrayMonitor,
-  kConsole
-};
-
 class DLL_IMP_EXP BareosSocket : public SmartAlloc {
   /*
    * Note, keep this public part before the private otherwise
@@ -84,8 +74,6 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
   struct sockaddr_in peer_addr; /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
-  BareosDaemonType local_daemon_type_;
-  BareosDaemonType remote_daemon_type_;
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
 
  protected:

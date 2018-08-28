@@ -52,8 +52,6 @@ TEST(bsock, bareossockettcp_standard_constructor_test)
    EXPECT_EQ(p->client_addr.sa_data[0], 0);
    EXPECT_EQ(p->peer_addr.sin_port, 0);
    EXPECT_EQ(p->peer_addr.sin_addr.s_addr, 0);
-   EXPECT_EQ(p->local_daemon_type_, BareosDaemonType::kUndefined);
-   EXPECT_EQ(p->remote_daemon_type_, BareosDaemonType::kUndefined);
 
 /* protected BAREOS_SOCKET: */
    EXPECT_EQ(p->jcr_, nullptr);
@@ -98,8 +96,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
    p->errors = rand();
    p->suppress_error_msgs_ = true;
    p->sleep_time_after_authentication_error = rand();
-   p->local_daemon_type_ = BareosDaemonType::kConsole;
-   p->remote_daemon_type_ = BareosDaemonType::kDirector;
 
 /* protected BAREOS_SOCKET: */
    p->jcr_ = (JobControlRecord *)0x2222;
@@ -141,8 +137,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
    EXPECT_EQ(p->errors, q->errors);
    EXPECT_EQ(p->suppress_error_msgs_, q->suppress_error_msgs_);
    EXPECT_EQ(p->sleep_time_after_authentication_error, q->sleep_time_after_authentication_error);
-   EXPECT_EQ(p->local_daemon_type_, q->local_daemon_type_);
-   EXPECT_EQ(p->remote_daemon_type_, q->remote_daemon_type_);
 
 /* protected BAREOS_SOCKET: */
    EXPECT_EQ(p->jcr_, q->jcr_);

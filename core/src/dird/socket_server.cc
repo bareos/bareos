@@ -98,8 +98,6 @@ static void *HandleConnectionRequest(void *arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  bs->local_daemon_type_ = BareosDaemonType::kDirector;
-
   /*
    * See if this is a File daemon connection. If so call FD handler.
    */

@@ -1053,8 +1053,6 @@ namespace console {
 BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
 {
   BareosSocketTCP *UA_sock     = New(BareosSocketTCP);
-  UA_sock->local_daemon_type_  = BareosDaemonType::kConsole;
-  UA_sock->remote_daemon_type_ = BareosDaemonType::kDirector;
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
                         director_resource->DIRport, false)) {
     delete UA_sock;

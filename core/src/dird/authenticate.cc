@@ -266,7 +266,6 @@ bool AuthenticateUserAgent(UaContext *uac)
    }
 
    if (bstrcmp(name, "*UserAgent*")) { /* default console */
-      ua->remote_daemon_type_ = BareosDaemonType::kConsole;
       auth_success = ua->AuthenticateInboundConnection(
           NULL, "Console", "*UserAgent*", me->password, me);
    } else {
@@ -278,7 +277,6 @@ bool AuthenticateUserAgent(UaContext *uac)
 
          if (auth_success) {
             uac->cons = cons; /* save console resource pointer */
-            ua->remote_daemon_type_ = BareosDaemonType::kConsole;
          }
       }
    }
