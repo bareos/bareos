@@ -80,36 +80,26 @@ where
 
 ``ERROR_CODE`` is one of the following:
 
-+-----+----------------------------------------------------------------+
-| ERR | Description                                                    |
-| OR_ |                                                                |
-| COD |                                                                |
-| E   |                                                                |
-+=====+================================================================+
-| M_A | Causes the daemon to immediately abort. This should be used    |
-| BOR | only in extrem e cases. It attempts to produce a traceback.    |
-| T   |                                                                |
-+-----+----------------------------------------------------------------+
-| M_E | Causes the daemon to immediately terminate. This should be     |
-| RRO | used only in extreme cases. It does not produce a traceback.   |
-| R_T |                                                                |
-| ERM |                                                                |
-+-----+----------------------------------------------------------------+
-| M_F | Causes the daemon to terminate the current job, but the daemon |
-| ATA | keeps running.                                                 |
-| L   |                                                                |
-+-----+----------------------------------------------------------------+
-| M_E | Reports the error. The daemon and the job continue running.    |
-| RRO |                                                                |
-| R   |                                                                |
-+-----+----------------------------------------------------------------+
-| M_W | Reports an warning message. The daemon and the job continue    |
-| ARN | running.                                                       |
-| ING |                                                                |
-+-----+----------------------------------------------------------------+
-| M_I | Reports an informational message.                              |
-| NFO |                                                                |
-+-----+----------------------------------------------------------------+
++---------------+----------------------------------------------------------------+
+| ERROR OR CODE | Description                                                    |
++===============+================================================================+
+| M_ABORT       | Causes the daemon to immediately abort. This should be used    |
+|               | only in extrem e cases. It attempts to produce a traceback.    |
++---------------+----------------------------------------------------------------+
+| M_ERROR_TERM  | Causes the daemon to immediately terminate. This should be     |
+|               | used only in extreme cases. It does not produce a traceback.   |
++---------------+----------------------------------------------------------------+
+| M_FATAL       | Causes the daemon to terminate the current job, but the daemon |
+|               | keeps running.                                                 |
+|               |                                                                |
++---------------+----------------------------------------------------------------+
+| M_ERROR       | Reports the error. The daemon and the job continue running.    |
++---------------+----------------------------------------------------------------+
+| M_WARNING     | Reports an warning message. The daemon and the job continue    |
+|               | running.                                                       |
++---------------+----------------------------------------------------------------+
+| M_INFO        | Reports an informational message.                              |
++---------------+----------------------------------------------------------------+
 
 The Jmsg() takes varargs so can have any number of arguments for
 substituted in a printf like format. Output from the Jmsg() will go to
