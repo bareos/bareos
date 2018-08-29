@@ -358,7 +358,7 @@ class RestoreController extends AbstractActionController
             }
          }
 
-         if($fnum > 0) {
+         if($tmp > 0 && $fnum > 0) {
             $items .= ",";
          }
 
