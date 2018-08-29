@@ -303,6 +303,8 @@ class JobController extends AbstractActionController
 
       if ($jobname != null) {
          $jobdefaults = $this->getJobModel()->getJobDefaults($this->bsock, $jobname);
+      } else {
+         $jobdefaults = null;
       }
 
       // Get required form construction data, jobs, clients, etc.
