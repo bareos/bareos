@@ -82,6 +82,7 @@ class AuthController extends AbstractActionController
             $password = $form->getInputFilter()->getValue('password');
             $locale = $form->getInputFilter()->getValue('locale');
             $bareos_updates = $form->getInputFilter()->getValue('bareos_updates');
+            $rememberme = $form->getInputFilter()->getValue('remember_me');
 
             $config = $this->getServiceLocator()->get('Config');
 
@@ -98,6 +99,13 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['idletime'] = time();
                $_SESSION['bareos']['product-updates'] = $bareos_updates;
                $_SESSION['bareos']['dird-update-available'] = false;
+
+               if($rememberme == '1'){
+                  $_SESSION['bareos']['rememberme'] = true;
+               }
+               else{
+                  $_SESSION['bareos']['rememberme'] = false;
+               }
 
                if(isset($bareos_updates) && $bareos_updates != false) {
                   $_SESSION['bareos']['product-updates-status'] = true;
