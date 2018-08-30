@@ -663,6 +663,7 @@ extern "C" char *job_code_callback_director(JobControlRecord *jcr, const char*);
 const char *get_configure_usage_string();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
+bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value);
 
 } /* namespace directordaemon */
 #endif // BAREOS_DIRD_DIRD_CONF_H_

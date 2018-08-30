@@ -51,6 +51,7 @@
 #include "dird.h"
 #include "dird/inc_conf.h"
 #include "dird/dird_globals.h"
+#include "lib/tls_conf.h"
 
 namespace directordaemon {
 
@@ -3779,6 +3780,35 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
    }
 }
 
+bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
+{
+   char *fq_name_buffer = bstrdup(fq_name_);
+   UnbashSpaces(fq_name_buffer);
+   std::string fq_name(fq_name_buffer);
+   free(fq_name_buffer);
+
+   const std::string ua("*UserAgent*");
+
+   bool success = false;
+   if (fq_name == ua) {
+      psk_return_value = me->password.value;
+      success = true;
+   } else {
+      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(GetResWithName(R_CONSOLE, fq_name.c_str()));
+      if(res) {
+         psk_return_value = res->password.value;
+         success = true;
+      }
+   }
+   return success;
+}
+
+static void ConfigInitLateCb(ConfigurationParser &my_config)
+{
+  DirectorResource *dir_resource = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+  dir_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
+}
+
 ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
 {
    return new ConfigurationParser (
@@ -3796,7 +3826,8 @@ ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
                 resources,
                 res_head,
                 default_config_filename.c_str(),
-                "bareos-dir.d");
+                "bareos-dir.d",
+                ConfigInitLateCb);
 }
 
 /* **************************************************************************** */
@@ -4429,27 +4460,4 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             res->res_dir.name(), rindex, pass);
    }
    return true;
-}
-
-bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
-{
-   char *fq_name_buffer = bstrdup(fq_name_);
-   UnbashSpaces(fq_name_buffer);
-   std::string fq_name(fq_name_buffer);
-   free(fq_name_buffer);
-
-   const std::string ua("*UserAgent*");
-
-   bool success = false;
-   if (fq_name == ua) {
-      psk_return_value = me->password.value;
-      success = true;
-   } else {
-      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(GetResWithName(R_CONSOLE, fq_name.c_str()));
-      if(res) {
-         psk_return_value = res->password.value;
-         success = true;
-      }
-   }
-   return success;
 }

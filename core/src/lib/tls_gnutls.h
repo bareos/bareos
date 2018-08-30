@@ -36,7 +36,7 @@ public:
    DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx);
 
    virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) override;
-   virtual DLL_IMP_EXP void SetTlsPskServerContext() override;
+   virtual DLL_IMP_EXP void SetTlsPskServerContext(GetTlsPskByFullyQualifiedResourceNameCb_t cb) override;
 
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
    virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) override;

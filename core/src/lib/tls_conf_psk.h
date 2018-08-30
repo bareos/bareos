@@ -23,32 +23,40 @@
 #define BAREOS_LIB_TLS_CONF_PSK_H
 
 #include "lib/tls_psk_credentials.h"
+#include "lib/tls_conf_base.h"
+#include "lib/tls_conf_psk_callback.h"
+
+#include <bareos.h>
 
 class DLL_IMP_EXP TlsConfigPsk : public TlsConfigBase {
-public:
-   char *cipherlist; /* TLS Cipher List */
+ public:
+  char *cipherlist; /* TLS Cipher List */
 
-   TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr) {}
-   ~TlsConfigPsk();
+  GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb;
 
-   virtual uint32_t GetPolicy() const override;
+  TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr), GetTlsPskByFullyQualifiedResourceNameCb(nullptr)
+  {
+  }
+  ~TlsConfigPsk();
 
-   /**
-    * Checks whether the given @param policy matches the configured value
-    * @param policy
-    * @return true if policy means enabled
-    */
-   static bool enabled(u_int32_t policy);
+  virtual uint32_t GetPolicy() const override;
 
-   /**
-    * Checks whether the given @param policy matches the configured value
-    * @param policy
-    * @return true if policy means required
-    */
-   static bool required(u_int32_t policy);
+  /**
+   * Checks whether the given @param policy matches the configured value
+   * @param policy
+   * @return true if policy means enabled
+   */
+  static bool enabled(u_int32_t policy);
 
-private:
-   static u_int32_t const policy_offset = 2;
+  /**
+   * Checks whether the given @param policy matches the configured value
+   * @param policy
+   * @return true if policy means required
+   */
+  static bool required(u_int32_t policy);
+
+ private:
+  static u_int32_t const policy_offset = 2;
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_PSK_H */

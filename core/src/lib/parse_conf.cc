@@ -115,7 +115,8 @@ ConfigurationParser::ConfigurationParser(
                   ResourceTable *resources,
                   CommonResourceHeader **res_head,
                   const char* config_default_filename,
-                  const char* config_include_dir)
+                  const char* config_include_dir,
+                  void (*ParseConfigReadyCallback)(ConfigurationParser&))
    : ConfigurationParser()
 {
    cf_ = cf == nullptr ? "" : cf;
@@ -135,6 +136,7 @@ ConfigurationParser::ConfigurationParser(
    res_head_ = res_head;
    config_default_filename_ = config_default_filename == nullptr ? "" : config_default_filename;
    config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
+   ParseConfigReadyCallback_ = ParseConfigReadyCallback;
 }
 
 ConfigurationParser::~ConfigurationParser() {
@@ -162,7 +164,11 @@ bool ConfigurationParser::ParseConfig()
    }
    used_config_path_ = config_path.c_str();
    Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-   return ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
+   bool success = ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
+   if (ParseConfigReadyCallback_) {
+     ParseConfigReadyCallback_(*this);
+   }
+   return success;
 }
 
 bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError,

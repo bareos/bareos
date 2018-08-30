@@ -429,7 +429,8 @@ public:
                   ResourceTable *resources,
                   CommonResourceHeader **res_head,
                   const char* config_default_filename,
-                  const char* config_include_dir);
+                  const char* config_include_dir,
+                  void (*DoneParseConfigCallback)(ConfigurationParser&) = nullptr);
 
    ~ConfigurationParser();
 
@@ -468,6 +469,7 @@ private:
    bool use_config_include_dir_;                 /* Use the config include directory */
    std::string config_include_naming_format_;    /* Format string for file paths of resources */
    std::string used_config_path_;                /* Config file that is used. */
+   void (*ParseConfigReadyCallback_)(ConfigurationParser&);
 
    const char *get_default_configdir();
    bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);
@@ -500,8 +502,6 @@ DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
 DLL_IMP_EXP bool SaveResource(int type, ResourceItem *item, int pass);
 DLL_IMP_EXP bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
 DLL_IMP_EXP const char *res_to_str(int rcode);
-DLL_IMP_EXP bool GetTlsResourceByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value) __attribute__((weak));
-
 
 #ifdef HAVE_JANSSON
 /*

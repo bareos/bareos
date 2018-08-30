@@ -21,6 +21,8 @@
 #ifndef BAREOS_LIB_TLS_OPENSSL_H_
 #define BAREOS_LIB_TLS_OPENSSL_H_
 
+#include "tls_conf_psk_callback.h"
+
 #include <bareos.h>
 #include <memory>
 
@@ -50,7 +52,7 @@ class TlsOpenSsl : public Tls {
                                   int port,
                                   const char *who) const override;
   DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) override;
-  DLL_IMP_EXP void SetTlsPskServerContext() override;
+  DLL_IMP_EXP void SetTlsPskServerContext(GetTlsPskByFullyQualifiedResourceNameCb_t cb) override;
 
   DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) override;
   DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) override;

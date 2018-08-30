@@ -33,6 +33,8 @@ class TlsOpenSslPrivate {
   TlsOpenSslPrivate();
   ~TlsOpenSslPrivate();
 
+  enum SslCtxExDataIndex: int { kTlsOpenSslPrivate = 0 };
+
   int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write);
   bool OpensslBsockSessionStart(BareosSocket *bsock, bool server);
 
@@ -60,8 +62,6 @@ class TlsOpenSslPrivate {
   /* psk attributes list for all connections */
   static std::map<const SSL_CTX *, PskCredentials> psk_client_credentials;
   /* *************** */
-
-
 
   /* cert attributes */
   int tcp_file_descriptor_;

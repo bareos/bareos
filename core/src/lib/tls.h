@@ -28,6 +28,7 @@
 #define BAREOS_LIB_TLS_H_
 
 #include <bareos.h>
+#include "lib/tls_conf_psk.h"
 
 class BareosSocket;
 class JobControlRecord;
@@ -49,7 +50,7 @@ class Tls {
   static DLL_IMP_EXP Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
 
   virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) = 0;
-  virtual DLL_IMP_EXP void SetTlsPskServerContext()                                  = 0;
+  virtual DLL_IMP_EXP void SetTlsPskServerContext(GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
 
   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host)   = 0;
   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr,

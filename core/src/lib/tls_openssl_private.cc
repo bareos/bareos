@@ -20,6 +20,7 @@
    02110-1301, USA.
 */
 
+#include <bareos.h>
 #include "tls_openssl.h"
 #include "tls_openssl_private.h"
 
@@ -27,8 +28,8 @@
 #include "lib/crypto_openssl.h"
 
 #include "lib/parse_conf.h"
+#include "lib/tls_conf_psk_callback.h"
 
-#include <bareos.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
@@ -36,7 +37,10 @@
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials;
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
-    : openssl_(nullptr), openssl_ctx_(nullptr), pem_callback_(nullptr), pem_userdata_(nullptr)
+    : openssl_(nullptr)
+    , openssl_ctx_(nullptr)
+    , pem_callback_(nullptr)
+    , pem_userdata_(nullptr)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 }
@@ -237,11 +241,15 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
   unsigned int result = 0;
 
   SSL_CTX *openssl_ctx = SSL_get_SSL_CTX(ssl);
+
   Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
 
   if (openssl_ctx) {
     std::string configured_psk;
-    if (GetTlsResourceByFullyQualifiedResourceName(identity, configured_psk)) {
+    GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
+        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(
+            SSL_CTX_get_ex_data(openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kTlsOpenSslPrivate));
+    if (GetTlsPskByFullyQualifiedResourceNameCb(identity, configured_psk)) {
       int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
       Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
       result = (psklen < 0) ? 0 : psklen;

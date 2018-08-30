@@ -679,7 +679,7 @@ void TlsGnuTls::FreeTlsConnection() {}
 void TlsGnuTls::FreeTlsContext(std::shared_ptr<Tls> &ctx) {}
 
 void TlsGnuTls::SetTlsPskClientContext(const PskCredentials &credentials) {}
-void TlsGnuTls::SetTlsPskServerContext() {}
+void TlsGnuTls::SetTlsPskServerContext(GetTlsPskByFullyQualifiedResourceNameCb_t cb) {}
 
 bool TlsGnuTls::TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) { return false; }
 bool TlsGnuTls::TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list)
