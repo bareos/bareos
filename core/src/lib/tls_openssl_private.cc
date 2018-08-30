@@ -33,7 +33,6 @@
 #include <openssl/ssl.h>
 
 /* static private */
-std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_server_credentials;
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials;
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
@@ -46,7 +45,6 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()  // FreeTlsContext
 {
   Dmsg0(100, "Destruct TlsOpenSslPrivate\n");
   if (openssl_ctx_) {
-    psk_server_credentials.erase(openssl_ctx_);
     psk_client_credentials.erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
   }
@@ -228,12 +226,6 @@ int TlsOpenSslPrivate::tls_pem_callback_dispatch(char *buf, int size, int rwflag
 void TlsOpenSslPrivate::ClientContextInsertCredentials(const PskCredentials &credentials)
 {
   TlsOpenSslPrivate::psk_client_credentials.insert(
-      std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
-}
-
-void TlsOpenSslPrivate::ServerContextInsertCredentials(const PskCredentials &credentials)
-{
-  TlsOpenSslPrivate::psk_server_credentials.insert(
       std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
 }
 

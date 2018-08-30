@@ -58,9 +58,10 @@ class TlsOpenSslPrivate {
   SSL_CTX *openssl_ctx_;
 
   /* psk attributes list for all connections */
-  static std::map<const SSL_CTX *, PskCredentials> psk_server_credentials;
   static std::map<const SSL_CTX *, PskCredentials> psk_client_credentials;
   /* *************** */
+
+
 
   /* cert attributes */
   int tcp_file_descriptor_;
