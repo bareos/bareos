@@ -251,6 +251,22 @@ static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
    }
 }
 
+bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
+{
+//   char *fq_name_buffer = bstrdup(fq_name_);
+//   UnbashSpaces(fq_name_buffer);
+//   std::string fq_name(fq_name_buffer);
+//   free(fq_name_buffer);
+
+   return false;
+}
+
+static void ConfigInitLateCb(ConfigurationParser &my_config)
+{
+  ClientResource *client_resource = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+  client_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
+}
+
 ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
 {
    return new ConfigurationParser (
@@ -268,7 +284,8 @@ ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
                 resources,
                 res_head,
                 default_config_filename.c_str(),
-                "bareos-fd.d");
+                "bareos-fd.d",
+                ConfigInitLateCb);
 }
 
 /**
@@ -311,16 +328,6 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
    return false;
 }
 #endif
-
-bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
-{
-//   char *fq_name_buffer = bstrdup(fq_name_);
-//   UnbashSpaces(fq_name_buffer);
-//   std::string fq_name(fq_name_buffer);
-//   free(fq_name_buffer);
-
-   return false;
-}
 
 /* **************************************************************************** */
 } /* namespace filedaemon */
