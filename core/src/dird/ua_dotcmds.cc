@@ -36,6 +36,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
+#include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
 #include "dird/fd_cmds.h"
 #include "cats/bvfs.h"

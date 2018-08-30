@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
 #include "filed/restore.h"
@@ -425,7 +426,7 @@ void DoRestore(JobControlRecord *jcr)
    jcr->setJobStatus(JS_Running);
 
    LockRes();
-   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+   ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    if (client) {
       buf_size = client->max_network_buffer_size;

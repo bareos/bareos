@@ -612,7 +612,7 @@ bool DoReloadConfig()
       }
 
       // me is changed above by CheckResources()
-      me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+      me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
 
       FreeSavedResources(&temp_config);
       goto bail_out;
@@ -691,8 +691,8 @@ static bool CheckResources()
 
    LockRes();
 
-   job = (JobResource *)GetNextRes(R_JOB, NULL);
-   me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+   job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
+   me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
    if (!me) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
                                "Without that I don't know who I am :-(\n"), configfile.c_str());
@@ -713,7 +713,7 @@ static bool CheckResources()
        * See if message resource is specified.
        */
       if (!me->messages) {
-         me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MessagesResource *)my_config->GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile.c_str());
             OK = false;
@@ -732,7 +732,7 @@ static bool CheckResources()
          goto bail_out;
       }
 
-      if (GetNextRes(R_DIRECTOR, (CommonResourceHeader *)me) != NULL) {
+      if (my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile.c_str());
          OK = false;
@@ -930,7 +930,7 @@ static bool CheckResources()
        */
       if (store->collectstats) {
          nstore = store;
-         while ((nstore = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
+         while ((nstore = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
             if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
                nstore->collectstats = false;
                Dmsg1(200, _("Disabling collectstats for storage \"%s\""

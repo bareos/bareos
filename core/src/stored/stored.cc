@@ -347,19 +347,19 @@ static int CheckResources()
    bool tls_needed;
    const std::string &configfile = my_config->get_base_config_path();
 
-   if (GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
+   if (my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
          configfile.c_str());
       OK = false;
    }
 
-   if (GetNextRes(R_DIRECTOR, NULL) == NULL) {
+   if (my_config->GetNextRes(R_DIRECTOR, NULL) == NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("No Director resource defined in %s. Cannot continue.\n"),
          configfile.c_str());
       OK = false;
    }
 
-   if (GetNextRes(R_DEVICE, NULL) == NULL){
+   if (my_config->GetNextRes(R_DEVICE, NULL) == NULL){
       Jmsg1(NULL, M_ERROR, 0, _("No Device resource defined in %s. Cannot continue.\n"),
            configfile.c_str());
       OK = false;
@@ -373,7 +373,7 @@ static int CheckResources()
    }
 
    if (!me->messages) {
-      me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
+      me->messages = (MessagesResource *)my_config->GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
          Jmsg1(NULL, M_ERROR, 0, _("No Messages resource defined in %s. Cannot continue.\n"),
             configfile.c_str());

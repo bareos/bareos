@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 
@@ -68,7 +69,7 @@ void DoVerifyVolume(JobControlRecord *jcr)
    jcr->setJobStatus(JS_Running);
 
    LockRes();
-   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+   ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    uint32_t buf_size;
    if (client) {

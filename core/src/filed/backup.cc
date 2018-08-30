@@ -96,7 +96,7 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
    Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
 
    LockRes();
-   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+   ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    uint32_t buf_size;
    if (client) {

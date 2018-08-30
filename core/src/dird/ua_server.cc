@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/authenticate.h"
 #include "dird/job.h"
 #include "dird/ua_cmds.h"
@@ -55,7 +56,7 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
     * everything is correctly initialized.
     */
    LockRes();
-   jcr->res.job = (JobResource *)GetNextRes(R_JOB, NULL);
+   jcr->res.job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
    SetJcrDefaults(jcr, jcr->res.job);
    UnlockRes();
 

@@ -457,6 +457,8 @@ public:
    bool GetPathOfNewResource(PoolMem &path, PoolMem &extramsg, const char *component,
                                  const char *resourcetype, const char *name,
                                  bool error_if_exits = false, bool create_directories = false);
+  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
+
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;
    ConfigurationParser operator=(const ConfigurationParser&) = delete;
@@ -491,7 +493,6 @@ DLL_IMP_EXP const char *datatype_to_description(int type);
  * Resource routines
  */
 DLL_IMP_EXP CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
-DLL_IMP_EXP CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
 DLL_IMP_EXP void b_LockRes(const char *file, int line);
 DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
 DLL_IMP_EXP void DumpResource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),
@@ -517,8 +518,8 @@ DLL_IMP_EXP json_t *json_items(ResourceItem items[]);
  */
 #ifdef HAVE_TYPEOF
 #define foreach_res(var, type) \
-        for((var)=NULL; ((var)=(typeof(var))GetNextRes((type), (CommonResourceHeader *)var));)
+        for((var)=NULL; ((var)=(typeof(var))my_config->GetNextRes((type), (CommonResourceHeader *)var));)
 #else
 #define foreach_res(var, type) \
-    for(var=NULL; (*((void **)&(var))=(void *)GetNextRes((type), (CommonResourceHeader *)var));)
+    for(var=NULL; (*((void **)&(var))=(void *)my_config->GetNextRes((type), (CommonResourceHeader *)var));)
 #endif

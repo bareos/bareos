@@ -263,7 +263,7 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
 
 static void ConfigInitLateCb(ConfigurationParser &my_config)
 {
-  ClientResource *client_resource = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+  ClientResource *client_resource = (ClientResource *)my_config.GetNextRes(R_CLIENT, NULL);
   client_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
 }
 

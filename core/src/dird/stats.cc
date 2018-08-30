@@ -125,7 +125,7 @@ void *statistics_thread(void *arg)
 
    jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
-   jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
+   jcr->res.catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
    jcr->db = DbSqlGetPooledConnection(jcr,
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
@@ -173,7 +173,7 @@ void *statistics_thread(void *arg)
             store = NULL;
          }
 
-         store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
+         store = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
          if (!store) {
             PmStrcpy(current_store, "");
             UnlockRes();

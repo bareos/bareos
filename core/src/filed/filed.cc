@@ -349,7 +349,7 @@ static bool CheckResources()
 
    LockRes();
 
-   me = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+   me = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    if (!me) {
       Emsg1(M_FATAL, 0, _("No File daemon resource defined in %s\n"
             "Without that I don't know who I am :-(\n"), configfile.c_str());
@@ -362,14 +362,14 @@ static bool CheckResources()
          me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
       }
 
-      if (GetNextRes(R_CLIENT, (CommonResourceHeader *) me) != NULL) {
+      if (my_config->GetNextRes(R_CLIENT, (CommonResourceHeader *) me) != NULL) {
          Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
               configfile.c_str());
          OK = false;
       }
       MyNameIs(0, NULL, me->name());
       if (!me->messages) {
-         me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MessagesResource *)my_config->GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
              Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile.c_str());
              OK = false;
@@ -491,7 +491,7 @@ static bool CheckResources()
 
    /* Verify that a director record exists */
    LockRes();
-   director = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+   director = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
    UnlockRes();
    if (!director) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),

@@ -124,13 +124,13 @@ CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock)
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res)
+CommonResourceHeader *ConfigurationParser::GetNextRes(int rcode, CommonResourceHeader *res)
 {
    CommonResourceHeader *nres;
-   int rindex = rcode - my_config->r_first_;
+   int rindex = rcode - r_first_;
 
    if (res == NULL) {
-      nres = my_config->res_head_[rindex];
+      nres = res_head_[rindex];
    } else {
       nres = res->next;
    }

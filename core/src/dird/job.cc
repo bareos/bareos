@@ -1730,7 +1730,7 @@ void SetJcrDefaults(JobControlRecord *jcr, JobResource *job)
             jcr->res.catalog = job->client->catalog;
             PmStrcpy(jcr->res.catalog_source, _("Client resource"));
          } else {
-            jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
+            jcr->res.catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
             PmStrcpy(jcr->res.catalog_source, _("Default catalog"));
          }
       }

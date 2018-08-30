@@ -38,6 +38,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
 #include "dird/ua_run.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
 
 namespace directordaemon {

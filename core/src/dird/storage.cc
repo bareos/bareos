@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
 #include "dird/ndmp_dma_storage.h"
 #include "dird/storage.h"
@@ -262,13 +263,13 @@ void SetPairedStorage(JobControlRecord *jcr)
           */
          jcr->res.pstorage = New(alist(10, not_owned_by_alist));
          foreach_alist(pstore, jcr->res.rstorage) {
-            store = (StorageResource *)GetNextRes(R_STORAGE, NULL);
+            store = (StorageResource *)my_config->GetNextRes(R_STORAGE, NULL);
             while (store) {
                if (store->paired_storage == pstore) {
                   break;
                }
 
-               store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
+               store = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
             }
 
             /*

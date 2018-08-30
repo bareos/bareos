@@ -2558,7 +2558,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
             /*
              * No catalog overwrite given use the first catalog definition.
              */
-            res->res_client.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
+            res->res_client.catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
          }
          res->res_client.tls_cert.allowed_certificate_common_names_ = res_all.res_client.tls_cert.allowed_certificate_common_names_;
 
@@ -3805,7 +3805,7 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
 
 static void ConfigInitLateCb(ConfigurationParser &my_config)
 {
-  DirectorResource *dir_resource = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+  DirectorResource *dir_resource = (DirectorResource *)my_config.GetNextRes(R_DIRECTOR, NULL);
   dir_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
 }
 

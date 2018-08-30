@@ -1238,10 +1238,10 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
    /*
     * Find Unique Storage address/port
     */
-   store = (StorageResource *)GetNextRes(R_STORAGE, NULL);
+   store = (StorageResource *)my_config->GetNextRes(R_STORAGE, NULL);
    i = 0;
    unique_store[i++] = store;
-   while ((store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store))) {
+   while ((store = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)store))) {
       found = 0;
       for (j = 0; j < i; j++) {
          if (bstrcmp(unique_store[j]->address, store->address) &&
@@ -1279,10 +1279,10 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
    /*
     * Find Unique Client address/port
     */
-   client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+   client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    i = 0;
    unique_client[i++] = client;
-   while ((client = (ClientResource *)GetNextRes(R_CLIENT, (CommonResourceHeader *)client))) {
+   while ((client = (ClientResource *)my_config->GetNextRes(R_CLIENT, (CommonResourceHeader *)client))) {
       found = 0;
       for (j = 0; j < i; j++) {
          if (bstrcmp(unique_client[j]->address, client->address) &&

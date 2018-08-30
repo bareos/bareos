@@ -958,7 +958,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
   UnlockRes();
 
   if (numdir == 1) { /* No choose */
-    director_resource = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+    director_resource = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
   }
 
   if (director) { /* Command line choice overwrite the no choose option */
@@ -1007,7 +1007,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
     LockRes();
     for (i = 0; i < item; i++) {
       director_resource =
-          (DirectorResource *)GetNextRes(R_DIRECTOR, (CommonResourceHeader *)director_resource);
+          (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader *)director_resource);
     }
     UnlockRes();
   }
@@ -1017,7 +1017,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    */
   LockRes();
   for (i = 0; i < numcon; i++) {
-    console_resource = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+    console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
     if (console_resource->director && bstrcmp(console_resource->director, director_resource->name())) {
       break;
     }
@@ -1029,7 +1029,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    */
   if (console_resource == NULL) {
     for (i = 0; i < numcon; i++) {
-      console_resource = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+      console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
       if (console_resource->director == NULL) break;
       console_resource = NULL;
     }
@@ -1039,7 +1039,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    * If no console, take first one
    */
   if (!console_resource) {
-    console_resource = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
+    console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
   }
   UnlockRes();
 
@@ -1389,7 +1389,7 @@ static int CheckResources()
     OK = false;
   }
 
-  me = (ConsoleResource *)GetNextRes(R_CONSOLE, NULL);
+  me = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, NULL);
 
   UnlockRes();
 

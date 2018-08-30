@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/storage.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
@@ -235,7 +236,7 @@ CatalogResource *get_catalog_resource(UaContext *ua)
 
    if (ua->gui && !catalog) {
       LockRes();
-      catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
+      catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
       UnlockRes();
 
       if (!catalog) {

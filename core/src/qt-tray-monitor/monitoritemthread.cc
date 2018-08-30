@@ -118,7 +118,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
             monitorItems, configfile.c_str());
    }
 
-   monitor = reinterpret_cast<MonitorResource*>(GetNextRes(R_MONITOR, (CommonResourceHeader *)NULL));
+   monitor = reinterpret_cast<MonitorResource*>(my_config->GetNextRes(R_MONITOR, (CommonResourceHeader *)NULL));
 
    int nitems = 0;
 

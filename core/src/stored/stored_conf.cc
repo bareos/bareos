@@ -508,7 +508,7 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
 
 static void ConfigInitLateCb(ConfigurationParser &my_config)
 {
-  StorageResource *client_resource = (StorageResource *)GetNextRes(R_STORAGE, NULL);
+  StorageResource *client_resource = (StorageResource *)my_config.GetNextRes(R_STORAGE, NULL);
   client_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
 }
 
@@ -540,7 +540,7 @@ bool ParseSdConfig(const char *configfile, int exit_code)
    retval = my_config->ParseConfig();
 
    if (retval) {
-      me = (StorageResource *)GetNextRes(R_STORAGE, NULL);
+      me = (StorageResource *)my_config->GetNextRes(R_STORAGE, NULL);
       if (!me) {
          Emsg1(exit_code, 0, _("No Storage resource defined in %s. Cannot continue.\n"), configfile);
          return retval;

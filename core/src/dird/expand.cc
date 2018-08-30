@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 
 namespace directordaemon {
 
@@ -230,7 +231,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
    (buf.c_str())[var_len] = 0;
 
    LockRes();
-   for (counter = NULL; (counter = (CounterResource *)GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
+   for (counter = NULL; (counter = (CounterResource *)my_config->GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
       if (bstrcmp(counter->name(), buf.c_str())) {
          Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
          /*
@@ -437,7 +438,7 @@ static var_rc_t operate_var(var_t *var,
       Dmsg1(100, "Val=%s\n", buf.c_str());
 
       LockRes();
-      for (counter = NULL; (counter = (CounterResource *)GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
+      for (counter = NULL; (counter = (CounterResource *)my_config->GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
          if (bstrcmp(counter->name(), buf.c_str())) {
             Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf.c_str());
             break;
