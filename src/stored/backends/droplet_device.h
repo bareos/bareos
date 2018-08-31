@@ -31,6 +31,17 @@
 #include <droplet.h>
 #include <droplet/vfs.h>
 
+/*
+ * Generic callback for the droplet_device::walk_directory() function.
+ *
+ * Returns DPL_SUCCESS - success
+ *         other dpl_status_t value: failure
+ */
+typedef dpl_status_t (*t_dpl_walk_directory_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
+                                                       const char *dirname, void *data);
+
+
+
 class droplet_device: public chunked_device {
 private:
    /*
@@ -59,6 +70,8 @@ private:
    bool read_remote_chunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
    bool truncate_remote_chunked_volume(DCR *dcr);
+
+   bool walk_directory(const char *dirname, t_dpl_walk_directory_call_back callback, void *data);
 
 public:
    /*

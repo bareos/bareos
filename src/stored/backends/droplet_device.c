@@ -152,20 +152,12 @@ static inline int droplet_errno_to_system_errno(dpl_status_t status)
 }
 
 /*
- * Generic callback for the walk_dpl_directory() function.
- *
- * Returns true - abort loop
- *         false - continue loop
- */
-typedef bool (*t_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                            const char *dirname, void *data);
-
-/*
  * Callback for getting the total size of a chunked volume.
  */
-static bool chunked_volume_size_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                         const char *dirname, void *data)
+static dpl_status_t chunked_volume_size_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
+                                                 const char *dirname, void *data)
 {
+   dpl_status_t status = DPL_SUCCESS;
    ssize_t *volumesize = (ssize_t *)data;
 
    /*
@@ -175,16 +167,18 @@ static bool chunked_volume_size_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
       *volumesize = *volumesize + dirent->size;
    }
 
-   return false;
+   return status;
 }
 
 /*
  * Callback for truncating a chunked volume.
+ *
+ * @return DPL_SUCCESS on success, on error: a dpl_status_t value that represents the error.
  */
-static bool chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                             const char *dirname, void *data)
+static dpl_status_t chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
+                                                     const char *dirname, void *data)
 {
-   dpl_status_t status;
+   dpl_status_t status = DPL_SUCCESS;
 
    /*
     * Make sure it starts with [0-9] e.g. a volume chunk.
@@ -196,40 +190,53 @@ static bool chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_ctx_t *ct
       case DPL_SUCCESS:
          break;
       default:
-         return true;
+         /* no error message here, as error will be set by calling function. */
+         return status;
       }
    }
 
-   return false;
+   return status;
 }
+
+
 
 /*
  * Generic function that walks a dirname and calls the callback
  * function for each entry it finds in that directory.
+ *
+ * @return: true - if no error occured
+ *          false - if an error has occured. Sets dev_errno and errmsg to the first error.
  */
-static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back callback, void *data)
+bool droplet_device::walk_directory(const char *dirname, t_dpl_walk_directory_call_back callback, void *data)
 {
+   bool retval = true;
    void *dir_hdl;
    dpl_status_t status;
    dpl_dirent_t dirent;
 
    if (dirname) {
-      status = dpl_chdir(ctx, dirname);
+      status = dpl_chdir(m_ctx, dirname);
 
       switch (status) {
       case DPL_SUCCESS:
          break;
       default:
+         Mmsg2(errmsg, _("Failed to enter volume %s: ERR=%s.\n"),
+               getVolCatName(), dpl_status_str(status));
+         dev_errno = droplet_errno_to_system_errno(status);
          return false;
       }
    }
 
-   status = dpl_opendir(ctx, ".", &dir_hdl);
+   status = dpl_opendir(m_ctx, ".", &dir_hdl);
 
    switch (status) {
    case DPL_SUCCESS:
       break;
    default:
+      Mmsg2(errmsg, _("Failed to enter volume %s: ERR=%s.\n"),
+            getVolCatName(), dpl_status_str(status));
+      dev_errno = droplet_errno_to_system_errno(status);
       return false;
    }
 
@@ -240,6 +247,8 @@ static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back 
       case DPL_SUCCESS:
          break;
       default:
+         Mmsg2(errmsg, _("Failed to retrieve chunks from volume %s: ERR=%s.\n"),
+               getVolCatName(), dpl_status_str(status));
          dpl_closedir(dir_hdl);
          return false;
       }
@@ -252,7 +261,13 @@ static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back 
          continue;
       }
 
-      if (callback(&dirent, ctx, dirname, data)) {
+      status = callback(&dirent, m_ctx, dirname, data);
+      if (status != DPL_SUCCESS) {
+         Mmsg2(errmsg, _("Operation failed on chunk %s: ERR=%s."),
+               dirent.fqn.path, dpl_status_str(status));
+         dev_errno = droplet_errno_to_system_errno(status);
+         retval = false;
+         /* exit loop on the first error */
          break;
       }
    }
@@ -260,17 +275,20 @@ static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back 
    dpl_closedir(dir_hdl);
 
    if (dirname) {
-      status = dpl_chdir(ctx, "/");
+      status = dpl_chdir(m_ctx, "/");
 
       switch (status) {
       case DPL_SUCCESS:
          break;
       default:
+         Mmsg2(errmsg, _("Failed to change back to root directory %s: ERR=%s."),
+               dirent.fqn.path, dpl_status_str(status));
+         dev_errno = droplet_errno_to_system_errno(status);
          return false;
       }
    }
 
-   return true;
+   return retval;
 }
 
 
@@ -595,7 +613,8 @@ bool droplet_device::truncate_remote_chunked_volume(DCR *dcr)
    POOL_MEM chunk_dir(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", getVolCatName());
-   if (!walk_dpl_directory(m_ctx, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
+   if (!walk_directory(chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
+      /* errno already set in walk_directory. */
       return false;
    }
 
@@ -901,7 +920,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    /*
     * FIXME: With the current version of libdroplet a dpl_getattr() on a directory
     *        fails with DPL_ENOENT even when the directory does exist. All other
-    *        operations succeed and as walk_dpl_directory() does a dpl_chdir() anyway
+    *        operations succeed and as walk_directory() does a dpl_chdir() anyway
     *        that will fail if the directory doesn't exist for now we should be
     *        mostly fine.
     */
@@ -934,7 +953,8 @@ ssize_t droplet_device::chunked_remote_volume_size()
    }
 #endif
 
-   if (!walk_dpl_directory(m_ctx, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+   if (!walk_directory(chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+      /* errno is already set in walk_directory */
       volumesize = -1;
       goto bail_out;
    }
