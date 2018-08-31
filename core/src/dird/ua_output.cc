@@ -1608,7 +1608,7 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
           strlen(row[tuple->u.res_filter.column]) == 0) {
          retval = OF_FILTER_STATE_UNKNOWN;
       } else {
-         if (!GetResWithName(tuple->u.res_filter.restype,
+         if (!my_config->GetResWithName(tuple->u.res_filter.restype,
                              row[tuple->u.res_filter.column], false)) {
             Dmsg2(200, "filterit: Filter on resource_type %d value %s, suppress output\n",
                   tuple->u.res_filter.restype, row[tuple->u.res_filter.column]);

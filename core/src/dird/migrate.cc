@@ -293,7 +293,7 @@ static inline bool SetMigrationNextPool(JobControlRecord *jcr, PoolResource **re
    /*
     * Get the pool resource corresponding to the original job
     */
-   pool = (PoolResource *)GetResWithName(R_POOL, pr.Name);
+   pool = (PoolResource *)my_config->GetResWithName(R_POOL, pr.Name);
    *retpool = pool;
    if (!pool) {
       Jmsg(jcr, M_FATAL, 0, _("Pool resource \"%s\" not found.\n"), pr.Name);
@@ -1131,8 +1131,8 @@ bool DoMigrationInit(JobControlRecord *jcr)
       Dmsg5(dbglevel, "JobId=%d: Current: Name=%s JobId=%d Type=%c Level=%c\n",
             (int)jcr->JobId, jcr->jr.Name, (int)jcr->jr.JobId, jcr->jr.JobType, jcr->jr.JobLevel);
 
-      job = (JobResource *)GetResWithName(R_JOB, jcr->jr.Name);
-      prev_job = (JobResource *)GetResWithName(R_JOB, jcr->previous_jr.Name);
+      job = (JobResource *)my_config->GetResWithName(R_JOB, jcr->jr.Name);
+      prev_job = (JobResource *)my_config->GetResWithName(R_JOB, jcr->previous_jr.Name);
 
       if (!job) {
          Jmsg(jcr, M_FATAL, 0, _("Job resource not found for \"%s\".\n"), jcr->jr.Name);

@@ -2417,7 +2417,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
        *
        * Find resource saved in pass 1
        */
-      if (!(res = (UnionOfResources *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(R_POOL, res_all.res_pool.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
          return false;
       } else {
@@ -2434,7 +2434,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
       }
       break;
    case R_CONSOLE:
-      if (!(res = (UnionOfResources *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          return false;
       } else {
@@ -2443,7 +2443,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
       }
       break;
    case R_DIRECTOR:
-      if (!(res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          return false;
       } else {
@@ -2454,7 +2454,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
       }
       break;
    case R_STORAGE:
-      if (!(res = (UnionOfResources *)GetResWithName(type, res_all.res_store.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(type, res_all.res_store.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
          return false;
       } else {
@@ -2479,7 +2479,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
       break;
    case R_JOBDEFS:
    case R_JOB:
-      if (!(res = (UnionOfResources *)GetResWithName(type, res_all.res_job.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(type, res_all.res_job.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
          return false;
       } else {
@@ -2539,7 +2539,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
       }
       break;
    case R_COUNTER:
-      if (!(res = (UnionOfResources *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
          return false;
       } else {
@@ -2548,7 +2548,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
       }
       break;
    case R_CLIENT:
-      if (!(res = (UnionOfResources *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(R_CLIENT, res_all.res_client.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
          return false;
       } else {
@@ -2573,7 +2573,7 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
        * in by run_conf.c during pass 2, so here we jam the pointer
        * into the Schedule resource.
        */
-      if (!(res = (UnionOfResources *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
+      if (!(res = (UnionOfResources *)my_config->GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
          return false;
       } else {
@@ -3138,7 +3138,7 @@ static void StoreRunscriptTarget(LEX *lc, ResourceItem *item, int index, int pas
       } else {
          CommonResourceHeader *res;
 
-         if (!(res = GetResWithName(R_CLIENT, lc->str))) {
+         if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
             scan_err3(lc, _("Could not find config Resource %s referenced on line %d : %s\n"),
                       lc->str, lc->line_no, lc->line);
          }
@@ -3794,7 +3794,7 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
       psk_return_value = me->password.value;
       success = true;
    } else {
-      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(GetResWithName(R_CONSOLE, fq_name.c_str()));
+      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(my_config->GetResWithName(R_CONSOLE, fq_name.c_str()));
       if(res) {
          psk_return_value = res->password.value;
          success = true;

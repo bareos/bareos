@@ -491,7 +491,7 @@ TEST(bsock, auth_works_with_tls_cert)
   EXPECT_TRUE(future.get());
 }
 
-CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock)
+CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock)
 {
    std::string clientname(name);
    std::string configured_name(dir_cons_config->hdr.name);

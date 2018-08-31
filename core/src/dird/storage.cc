@@ -460,7 +460,7 @@ bool SelectNextRstore(JobControlRecord *jcr, bootstrap_info &info)
       return true;                 /* Same SD nothing to change */
    }
 
-   if (!(ustore.store = (StorageResource *)GetResWithName(R_STORAGE,info.storage))) {
+   if (!(ustore.store = (StorageResource *)my_config->GetResWithName(R_STORAGE,info.storage))) {
       Jmsg(jcr, M_FATAL, 0,
            _("Could not get storage resource '%s'.\n"), info.storage);
       jcr->setJobStatus(JS_ErrorTerminated);

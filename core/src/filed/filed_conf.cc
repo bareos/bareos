@@ -623,7 +623,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             /*
              * Resources containing another resource
              */
-            if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+            if ((res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
@@ -632,7 +632,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             }
             break;
          case R_CLIENT:
-            if ((res = (UnionOfResources *)GetResWithName(R_CLIENT, res_all.res_dir.name())) == NULL) {
+            if ((res = (UnionOfResources *)my_config->GetResWithName(R_CLIENT, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_client.plugin_names = res_all.res_client.plugin_names;

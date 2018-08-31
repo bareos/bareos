@@ -116,7 +116,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
    }
 
    UnbashSpaces(dirname.c_str());
-   director = (DirectorResource *)GetResWithName(R_DIRECTOR, dirname.c_str());
+   director = (DirectorResource *)my_config->GetResWithName(R_DIRECTOR, dirname.c_str());
 
    if (!director) {
       char addr[64];

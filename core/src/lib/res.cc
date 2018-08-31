@@ -95,7 +95,7 @@ void b_UnlockRes(const char *file, int line)
 /*
  * Return resource of type rcode that matches name
  */
-CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock)
+CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock)
 {
    CommonResourceHeader *res;
    int rindex = rcode - my_config->r_first_;
@@ -575,7 +575,7 @@ static void StoreRes(LEX *lc, ResourceItem *item, int index, int pass)
 
    LexGetToken(lc, BCT_NAME);
    if (pass == 2) {
-      res = GetResWithName(item->code, lc->str);
+      res = my_config->GetResWithName(item->code, lc->str);
       if (res == NULL) {
          scan_err3(lc, _("Could not find config resource \"%s\" referenced on line %d: %s"),
                    lc->str, lc->line_no, lc->line);
@@ -629,7 +629,7 @@ static void StoreAlistRes(LEX *lc, ResourceItem *item, int index, int pass)
 
       for (;;) {
          LexGetToken(lc, BCT_NAME);   /* scan next item */
-         res = GetResWithName(item->code, lc->str);
+         res = my_config->GetResWithName(item->code, lc->str);
          if (res == NULL) {
             scan_err3(lc, _("Could not find config Resource \"%s\" referenced on line %d : %s\n"),
                       item->name, lc->line_no, lc->line);
@@ -790,7 +790,7 @@ static void StoreDefs(LEX *lc, ResourceItem *item, int index, int pass)
    LexGetToken(lc, BCT_NAME);
    if (pass == 2) {
       Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
-      res = GetResWithName(item->code, lc->str);
+      res = my_config->GetResWithName(item->code, lc->str);
       if (res == NULL) {
          scan_err3(lc, _("Missing config Resource \"%s\" referenced on line %d : %s\n"),
                    lc->str, lc->line_no, lc->line);

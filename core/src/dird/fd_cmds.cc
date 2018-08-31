@@ -1205,7 +1205,7 @@ void *HandleFiledConnection(ConnectionPool *connections, BareosSocket *fd,
    ClientResource *client_resource;
    Connection *connection = NULL;
 
-   client_resource = (ClientResource *)GetResWithName(R_CLIENT, client_name);
+   client_resource = (ClientResource *)my_config->GetResWithName(R_CLIENT, client_name);
    if (!client_resource) {
       Emsg1(M_WARNING, 0, "Client \"%s\" tries to connect, "
                           "but no matching resource is defined.\n", client_name);

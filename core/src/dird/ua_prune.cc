@@ -634,21 +634,21 @@ static int JobSelectHandler(void *ctx, int num_fields, char **row)
    /*
     * If this job doesn't exist anymore in the configuration, delete it.
     */
-   if (GetResWithName(R_JOB, row[0], false) == NULL) {
+   if (my_config->GetResWithName(R_JOB, row[0], false) == NULL) {
       return 0;
    }
 
    /*
     * If this fileset doesn't exist anymore in the configuration, delete it.
     */
-   if (GetResWithName(R_FILESET, row[1], false) == NULL) {
+   if (my_config->GetResWithName(R_FILESET, row[1], false) == NULL) {
       return 0;
    }
 
    /*
     * If this client doesn't exist anymore in the configuration, delete it.
     */
-   if (GetResWithName(R_CLIENT, row[2], false) == NULL) {
+   if (my_config->GetResWithName(R_CLIENT, row[2], false) == NULL) {
       return 0;
    }
 

@@ -108,7 +108,7 @@ JobControlRecord *wait_for_next_job(char *one_shot_job_to_run)
       /* Create scheduled jobs list */
       jobs_to_run = New(dlist(next_job, &next_job->link));
       if (one_shot_job_to_run) {            /* one shot */
-         job = (JobResource *)GetResWithName(R_JOB, one_shot_job_to_run);
+         job = (JobResource *)my_config->GetResWithName(R_JOB, one_shot_job_to_run);
          if (!job) {
             Emsg1(M_ABORT, 0, _("Job %s not found\n"), one_shot_job_to_run);
          }

@@ -458,6 +458,7 @@ public:
                                  const char *resourcetype, const char *name,
                                  bool error_if_exits = false, bool create_directories = false);
   CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
+  CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
 
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;
@@ -492,7 +493,6 @@ DLL_IMP_EXP const char *datatype_to_description(int type);
 /*
  * Resource routines
  */
-DLL_IMP_EXP CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
 DLL_IMP_EXP void b_LockRes(const char *file, int line);
 DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
 DLL_IMP_EXP void DumpResource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),

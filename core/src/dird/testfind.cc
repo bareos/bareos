@@ -143,7 +143,7 @@ main (int argc, char *const *argv)
    }
 
    jcr = new_jcr(sizeof(JobControlRecord), NULL);
-   jcr->res.fileset = (FilesetResource *)GetResWithName(R_FILESET, fileset_name);
+   jcr->res.fileset = (FilesetResource *)my_config->GetResWithName(R_FILESET, fileset_name);
 
    if (jcr->res.fileset == NULL) {
       fprintf(stderr, "%s: Fileset not found\n", fileset_name);

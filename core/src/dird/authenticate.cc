@@ -200,7 +200,7 @@ bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
    bool auth_success = false;
 
    UnbashSpaces(client_name);
-   client = (ClientResource *)GetResWithName(R_CLIENT, client_name);
+   client = (ClientResource *)my_config->GetResWithName(R_CLIENT, client_name);
    if (client) {
       if (IsConnectFromClientAllowed(client)) {
          auth_success = fd->AuthenticateInboundConnection(
@@ -270,7 +270,7 @@ bool AuthenticateUserAgent(UaContext *uac)
           NULL, "Console", "*UserAgent*", me->password, me);
    } else {
       UnbashSpaces(name);
-      cons = (ConsoleResource *)GetResWithName(R_CONSOLE, name);
+      cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, name);
       if (cons) {
          auth_success =
              ua->AuthenticateInboundConnection(NULL, "Console", name, cons->password, cons);

@@ -292,7 +292,7 @@ static inline bool ConfigureAddResource(UaContext *ua, int first_parameter, Reso
       return false;
    }
 
-   if (GetResWithName(res_table->rcode, name.c_str())) {
+   if (my_config->GetResWithName(res_table->rcode, name.c_str())) {
       ua->ErrorMsg("Resource \"%s\" with name \"%s\" already exists.\n", res_table->name, name.c_str());
       return false;
    }
@@ -324,7 +324,7 @@ static inline bool ConfigureAddResource(UaContext *ua, int first_parameter, Reso
     * therefore we explicitly check the new resource here.
     */
    if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
-      res = (JobResource *)GetResWithName(res_table->rcode, name.c_str());
+      res = (JobResource *)my_config->GetResWithName(res_table->rcode, name.c_str());
       PropagateJobdefs(res_table->rcode, res);
       if (!ValidateResource(res_table->rcode, res_table->items, (BareosResource *)res)) {
          ua->ErrorMsg("failed to create config resource \"%s\"\n", name.c_str());

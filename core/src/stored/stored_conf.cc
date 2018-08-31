@@ -699,14 +699,14 @@ bool SaveResource(int type, ResourceItem *items, int pass)
          /*
           * Resources containing a resource or an alist
           */
-         if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+         if ((res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          } else {
             res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
          }
          break;
       case R_STORAGE:
-         if ((res = (UnionOfResources *)GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
+         if ((res = (UnionOfResources *)my_config->GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_store.name());
          } else {
             res->res_store.plugin_names = res_all.res_store.plugin_names;
@@ -716,7 +716,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
          }
          break;
       case R_AUTOCHANGER:
-         if ((res = (UnionOfResources *)GetResWithName(type, res_all.res_changer.name())) == NULL) {
+         if ((res = (UnionOfResources *)my_config->GetResWithName(type, res_all.res_changer.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.name());
          } else {
             /*

@@ -311,14 +311,14 @@ bool SaveResource(int type, ResourceItem *items, int pass)
    if (pass == 2) {
       switch (type) {
          case R_CONSOLE:
-            if ((res = (UnionOfResources *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
+            if ((res = (UnionOfResources *)my_config->GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
             } else {
                res->res_cons.tls_cert.allowed_certificate_common_names_ = res_all.res_cons.tls_cert.allowed_certificate_common_names_;
             }
             break;
          case R_DIRECTOR:
-            if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+            if ((res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;

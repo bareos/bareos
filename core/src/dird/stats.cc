@@ -168,7 +168,7 @@ void *statistics_thread(void *arg)
 
          LockRes();
          if ((current_store.c_str())[0]) {
-            store = (StorageResource *)GetResWithName(R_STORAGE, current_store.c_str());
+            store = (StorageResource *)my_config->GetResWithName(R_STORAGE, current_store.c_str());
          } else {
             store = NULL;
          }
