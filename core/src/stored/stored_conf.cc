@@ -342,18 +342,18 @@ static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_NDMP:
-      StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
    default:
-      StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -388,7 +388,7 @@ static void StoreDevtype(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void StoreMaxblocksize(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
+   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
    if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
       scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
          *(uint32_t *)(item->value), MAX_BLOCK_LENGTH);
@@ -619,7 +619,7 @@ void DumpResource(int type, CommonResourceHeader *reshdr,
    int recurse = 1;
 
    if (res == NULL) {
-      sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), res_to_str(type), type);
+      sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), my_config->res_to_str(type), type);
       return;
    }
 
@@ -778,7 +778,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             }
          }
          last->next = (CommonResourceHeader *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
+         Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type), res->res_dir.name());
       }
    }
    return (error == 0);

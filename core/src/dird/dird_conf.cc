@@ -1313,7 +1313,7 @@ bool ValidateResource(int res_type, ResourceItem *items, BareosResource *res)
          if (!BitIsSet(i, res->hdr.item_present)) {
             Jmsg(NULL, M_ERROR, 0,
                  _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
-                 items[i].name, res_to_str(res_type), res->name());
+                 items[i].name, my_config->res_to_str(res_type), res->name());
             return false;
          }
       }
@@ -1322,7 +1322,7 @@ bool ValidateResource(int res_type, ResourceItem *items, BareosResource *res)
        * If this triggers, take a look at lib/parse_conf.h
        */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_to_str(res_type));
+         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), my_config->res_to_str(res_type));
          return false;
       }
    }
@@ -2763,7 +2763,7 @@ static void StoreDevice(LEX *lc, ResourceItem *item, int index, int pass)
          res->res_dev.hdr.name = bstrdup(lc->str);
          res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-               res_to_str(R_DEVICE), res->res_dir.name(), rindex);
+               my_config->res_to_str(R_DEVICE), res->res_dir.name(), rindex);
       } else {
          CommonResourceHeader *next;
          /*
@@ -2781,7 +2781,7 @@ static void StoreDevice(LEX *lc, ResourceItem *item, int index, int pass)
             res->res_dev.hdr.name = bstrdup(lc->str);
             next->next = (CommonResourceHeader *)res;
             Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-                  res_to_str(R_DEVICE), res->res_dir.name(), rindex, pass);
+                  my_config->res_to_str(R_DEVICE), res->res_dir.name(), rindex, pass);
          }
       }
 
@@ -2789,7 +2789,7 @@ static void StoreDevice(LEX *lc, ResourceItem *item, int index, int pass)
       SetBit(index, res_all.hdr.item_present);
       ClearBit(index, res_all.hdr.inherit_content);
    } else {
-      StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
+      my_config->StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
    }
 }
 
@@ -2999,10 +2999,10 @@ static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -3011,10 +3011,10 @@ static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -3023,18 +3023,18 @@ static void StoreAutopassword(LEX *lc, ResourceItem *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+         my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_CATALOG:
-      StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
    default:
-      StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -3854,7 +3854,7 @@ void DumpResource(int type, CommonResourceHeader *ures,
    UaContext *ua = (UaContext *)sock;
 
    if (!res) {
-      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
+      sendit(sock, _("No %s resource defined\n"), my_config->res_to_str(type));
       return;
    }
 
@@ -4434,7 +4434,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
    memcpy(res, &res_all, resources[rindex].size);
    if (!res_head[rindex]) {
       res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
-      Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
+      Dmsg3(900, "Inserting first %s res: %s index=%d\n", my_config->res_to_str(type),
             res->res_dir.name(), rindex);
    } else {
       CommonResourceHeader *next, *last;
@@ -4456,7 +4456,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
          }
       }
       last->next = (CommonResourceHeader *)res;
-      Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
+      Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), my_config->res_to_str(type),
             res->res_dir.name(), rindex, pass);
    }
    return true;

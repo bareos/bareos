@@ -141,7 +141,7 @@ void DumpResource(int type, CommonResourceHeader *reshdr,
    bool recurse = true;
 
    if (res == NULL) {
-      sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), res_to_str(type), type);
+      sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), my_config->res_to_str(type), type);
       return;
    }
    if (type < 0) {                    /* no recursion */
@@ -364,7 +364,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
             }
          }
          last->next = (CommonResourceHeader *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
+         Dmsg2(90, "Inserting %s res: %s\n", my_config->res_to_str(type), res->res_dir.name());
       }
    }
    return (error == 0);
