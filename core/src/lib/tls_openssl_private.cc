@@ -37,10 +37,7 @@
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials;
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
-    : openssl_(nullptr)
-    , openssl_ctx_(nullptr)
-    , pem_callback_(nullptr)
-    , pem_userdata_(nullptr)
+    : openssl_(nullptr), openssl_ctx_(nullptr), pem_callback_(nullptr), pem_userdata_(nullptr)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 }
@@ -247,8 +244,8 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
   if (openssl_ctx) {
     std::string configured_psk;
     GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
-        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(
-            SSL_CTX_get_ex_data(openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kTlsOpenSslPrivate));
+        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
+            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
     if (!GetTlsPskByFullyQualifiedResourceNameCb) {
       Dmsg0(100, "GetTlsPskByFullyQualifiedResourceNameCb not set for psk server callback\n");
       return result;

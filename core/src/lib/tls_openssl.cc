@@ -204,7 +204,9 @@ void TlsOpenSsl::SetTlsPskServerContext(GetTlsPskByFullyQualifiedResourceNameCb_
 {
   Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
 
-  SSL_CTX_set_ex_data(d_->openssl_ctx_, TlsOpenSslPrivate::SslCtxExDataIndex::kTlsOpenSslPrivate, (void*)cb);
+  SSL_CTX_set_ex_data(d_->openssl_ctx_,
+                      TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb,
+                      (void *)cb);
 
   if (d_->openssl_ctx_) {
     SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_server_cb);
