@@ -249,6 +249,10 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
     GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
         reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(
             SSL_CTX_get_ex_data(openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kTlsOpenSslPrivate));
+    if (!GetTlsPskByFullyQualifiedResourceNameCb) {
+      Dmsg0(100, "GetTlsPskByFullyQualifiedResourceNameCb not set for psk server callback\n");
+      return result;
+    }
     if (GetTlsPskByFullyQualifiedResourceNameCb(identity, configured_psk)) {
       int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
       Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
