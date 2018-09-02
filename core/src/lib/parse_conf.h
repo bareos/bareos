@@ -470,14 +470,13 @@ typedef void(STORE_RES_HANDLER)(LEX *lc, ResourceItem *item, int index, int pass
 typedef void(
     PRINT_RES_HANDLER)(ResourceItem *items, int i, PoolMem &cfg_str, bool hide_sensitive_data, bool inherited);
 
+class QualifiedResourceNameTypeConverter;
+
 /*
  * New C++ configuration routines
  */
 class DLL_IMP_EXP ConfigurationParser {
  public:
-  /*
-   * Members
-   */
   std::string cf_;                    /* Config file parameter */
   LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */
   LEX_WARNING_HANDLER *scan_warning_; /* Warning handler if non-null */
@@ -495,10 +494,7 @@ class DLL_IMP_EXP ConfigurationParser {
   ResourceTable *resources_;        /* Pointer to table of permitted resources */
   CommonResourceHeader **res_head_; /* Pointer to defined resources */
   brwlock_t res_lock_;              /* Resource lock */
-
-  /*
-   * Methods
-   */
+  std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
 
   ConfigurationParser();
   ConfigurationParser(const char *cf,
@@ -559,6 +555,7 @@ class DLL_IMP_EXP ConfigurationParser {
   void b_UnlockRes(const char *file, int line);
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
+  void InitializeQualifiedResourceNameTypeConverter(std::map<std::string, int> &);
 
  private:
   ConfigurationParser(const ConfigurationParser &) = delete;

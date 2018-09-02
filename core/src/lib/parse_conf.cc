@@ -53,6 +53,7 @@
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
@@ -144,6 +145,11 @@ ConfigurationParser::~ConfigurationParser() {
       FreeResource(res_head_[i-r_first_], i);
       res_head_[i-r_first_] = NULL;
    }
+}
+
+void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(std::map<std::string,int> &map)
+{
+  qualified_resource_name_type_converter_.reset(new QualifiedResourceNameTypeConverter(map));
 }
 
 bool ConfigurationParser::ParseConfig()

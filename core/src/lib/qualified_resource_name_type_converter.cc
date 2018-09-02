@@ -48,3 +48,16 @@ std::string QualifiedResourceNameTypeConverter::ResourceNameToFullyQualifiedStri
 {
   return std::string();
 }
+
+#if 0
+template <class T1, class T2>
+map<T2, T1> swapPairs(map<T1, T2> m) {
+    map<T2, T1> m1;
+
+    for (auto&& item : m) {
+        m1.emplace(item.second, item.first);
+    }
+
+    return m1;
+};
+#endif
