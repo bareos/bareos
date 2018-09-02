@@ -473,6 +473,7 @@ class BareosBSock implements BareosBSockInterface
           * But that does mean we need to capture the certficate.
           */
          $result = stream_context_set_option($context, 'ssl', 'verify_peer', false);
+         $result = stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
          $result = stream_context_set_option($context, 'ssl', 'capture_peer_cert', true);
 
          /*
@@ -482,6 +483,7 @@ class BareosBSock implements BareosBSockInterface
             $result = stream_context_set_option($context, 'ssl', 'cafile', $this->config['ca_file']);
             if ($this->config['tls_verify_peer']) {
                $result = stream_context_set_option($context, 'ssl', 'verify_peer', true);
+               $result = stream_context_set_option($context, 'ssl', 'verify_peer_name', true);
             }
          } else {
             $result = stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
