@@ -566,7 +566,7 @@ bool BareosSocket::IsCleartextBareosHello()
   if (ret == 10) {
     std::string hello("Hello ");
     std::string received(&buffer[4]);
-    if (!hello.compare(received)) {
+    if (hello == received) {
       return true;
     }
   }
