@@ -506,7 +506,7 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
    return false;
 }
 
-static void ConfigInitLateCb(ConfigurationParser &my_config)
+static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
   StorageResource *client_resource = (StorageResource *)my_config.GetNextRes(R_STORAGE, NULL);
   client_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
@@ -530,7 +530,7 @@ ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
                 res_head,
                 default_config_filename.c_str(),
                 "bareos-sd.d",
-                ConfigInitLateCb);
+                ConfigReadyCallback);
 }
 
 bool ParseSdConfig(const char *configfile, int exit_code)

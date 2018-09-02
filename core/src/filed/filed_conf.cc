@@ -261,7 +261,7 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
    return false;
 }
 
-static void ConfigInitLateCb(ConfigurationParser &my_config)
+static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
   ClientResource *client_resource = (ClientResource *)my_config.GetNextRes(R_CLIENT, NULL);
   client_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
@@ -285,7 +285,7 @@ ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
                 res_head,
                 default_config_filename.c_str(),
                 "bareos-fd.d",
-                ConfigInitLateCb);
+                ConfigReadyCallback);
 }
 
 /**

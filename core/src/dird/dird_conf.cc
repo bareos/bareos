@@ -3803,10 +3803,9 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
    return success;
 }
 
-static void ConfigInitLateCb(ConfigurationParser &my_config)
+static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
-  DirectorResource *dir_resource = (DirectorResource *)my_config.GetNextRes(R_DIRECTOR, NULL);
-  dir_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
+
 }
 
 ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
@@ -3827,7 +3826,7 @@ ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
                 res_head,
                 default_config_filename.c_str(),
                 "bareos-dir.d",
-                ConfigInitLateCb);
+                ConfigReadyCallback);
 }
 
 /* **************************************************************************** */
