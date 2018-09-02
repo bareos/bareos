@@ -18,8 +18,8 @@
 #   02110-1301, USA.
 
 IF(NOT client-only)
-#   add_subdirectory(tools)
-#   add_subdirectory(tests)
+   add_subdirectory(tools)
+   add_subdirectory(tests)
    add_subdirectory(cats)
    IF(NOT HAVE_WIN32)
       add_subdirectory(ndmp)
