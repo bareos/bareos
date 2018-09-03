@@ -52,7 +52,7 @@ add_test(NAME test_lib
    )
 
 set_property(TEST test_lib
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib"
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored"
    PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
    )
 
@@ -88,7 +88,7 @@ add_test(NAME test_bsock
    )
 
 set_property(TEST test_bsock
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib"
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
    PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
    )
 
