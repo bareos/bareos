@@ -3805,7 +3805,11 @@ bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &ps
 
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
-
+  DirectorResource *resource = reinterpret_cast<DirectorResource*>(my_config.GetNextRes(R_DIRECTOR, NULL));
+  TlsResource *tls = dynamic_cast<TlsResource*>(resource);
+  if (tls) {
+    tls->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
+  }
 }
 
 ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
