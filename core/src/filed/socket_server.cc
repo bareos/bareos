@@ -54,7 +54,7 @@ static alist *sock_fds = NULL;
  *  - If it was a connection from an SD, call handle_stored_connection()
  *  - Otherwise it was a connection from the DIR, call handle_director_connection()
  */
-static void *HandleConnectionRequest(void *arg)
+static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
    char tbuf[100];
@@ -112,7 +112,8 @@ void StartSocketServer(dlist *addrs)
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,
-                          HandleConnectionRequest);
+                          HandleConnectionRequest,
+                          my_config);
 }
 
 void StopSocketServer(bool wait)

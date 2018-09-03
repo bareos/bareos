@@ -58,7 +58,7 @@ extern "C" void *workq_server(void *arg);
  *  Returns: 0 on success
  *           errno on failure
  */
-int WorkqInit(workq_t *wq, int max_workers, void *(*engine)(void *arg))
+int WorkqInit(workq_t *wq, int max_workers, void *(*HandleConnectionRequest)(ConfigurationParser *config, void *arg))
 {
    int status;
 
@@ -80,9 +80,9 @@ int WorkqInit(workq_t *wq, int max_workers, void *(*engine)(void *arg))
    }
    wq->quit = 0;
    wq->first = wq->last = NULL;
-   wq->max_workers = max_workers;     /* max threads to create */
-   wq->num_workers = 0;               /* no threads yet */
-   wq->engine = engine;               /* routine to run */
+   wq->max_workers = max_workers;                           /* max threads to create */
+   wq->num_workers = 0;                                     /* no threads yet */
+   wq->HandleConnectionRequest = HandleConnectionRequest;   /* routine to run */
    wq->valid = WORKQ_VALID;
    return 0;
 }
@@ -130,7 +130,7 @@ int WorkqDestroy(workq_t *wq)
  *    priority if non-zero will cause the item to be placed on the
  *        head of the list instead of the tail.
  */
-int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item)
+int WorkqAdd(workq_t *wq, ConfigurationParser *config, void *element, workq_ele_t **work_item)
 {
    int status = 0;
    workq_ele_t *item;
@@ -145,6 +145,7 @@ int WorkqAdd(workq_t *wq, void *element, workq_ele_t **work_item)
       return ENOMEM;
    }
    item->data = element;
+   item->config = config;
    item->next = NULL;
    P(wq->mutex);
 
@@ -228,7 +229,7 @@ void *workq_server(void *arg)
          V(wq->mutex);
          /* Call user's routine here */
          Dmsg0(1400, "Calling user engine.\n");
-         wq->engine(we->data); /* HandleConnectionRequest */
+         wq->HandleConnectionRequest(we->config, we->data);
          Dmsg0(1400, "Back from user engine.\n");
          free(we);                    /* release work entry */
          Dmsg0(1400, "relock mutex\n");

@@ -22,12 +22,13 @@
 #define BAREOS_STORED_SOCKET_SERVER_H_
 
 struct dlist;
+class ConfigurationParser;
 
 namespace storagedaemon {
 
 void StartSocketServer(dlist *addrs);
 void StopSocketServer();
-void *HandleConnectionRequest(void *arg);
+void *HandleConnectionRequest(ConfigurationParser *config, void *arg);
 
 } /* namespace storagedaemon */
 

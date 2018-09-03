@@ -129,7 +129,9 @@ void BnetThreadServerTcp(dlist *addr_list,
                             alist *sockfds,
                             workq_t *client_wq,
                             bool nokeepalive,
-                            void *handle_client_request(void *bsock))
+                            void *HandleConnectionRequest(ConfigurationParser *config,
+                                                        void *bsock),
+                            ConfigurationParser *config)
 {
    int newsockfd, status;
    socklen_t clilen;
@@ -242,7 +244,7 @@ void BnetThreadServerTcp(dlist *addr_list,
    /*
     * Start work queue thread
     */
-   if ((status = WorkqInit(client_wq, max_clients, handle_client_request)) != 0) {
+   if ((status = WorkqInit(client_wq, max_clients, HandleConnectionRequest)) != 0) {
       BErrNo be;
       be.SetErrno(status);
       Emsg1(M_ABORT, 0, _("Could not init client queue: ERR=%s\n"), be.bstrerror());
@@ -376,7 +378,7 @@ void BnetThreadServerTcp(dlist *addr_list,
             /*
              * Queue client to be served
              */
-            if ((status = WorkqAdd(client_wq, (void *)bs, NULL)) != 0) {
+            if ((status = WorkqAdd(client_wq, config, (void *)bs, NULL)) != 0) {
                BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),

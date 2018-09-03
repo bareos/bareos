@@ -60,7 +60,7 @@ static pthread_t tcp_server_tid;
  *  - If it was a connection from another SD, call handle_stored_connection()
  *  - Otherwise it was a connection from the DIR, call handle_director_connection()
  */
-void *HandleConnectionRequest(void *arg)
+void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
    char name[MAX_NAME_LENGTH];
@@ -126,7 +126,8 @@ void StartSocketServer(dlist *addrs)
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,
-                          HandleConnectionRequest);
+                          HandleConnectionRequest,
+                          my_config);
 }
 
 void StopSocketServer()

@@ -1156,7 +1156,7 @@ void EndOfNdmpRestore(JobControlRecord *jcr)
    }
 }
 
-extern "C" void *handle_ndmp_client_request(void *arg)
+extern "C" void *HandleNdmpConnectionRequest(ConfigurationParser *config, void *arg)
 {
    int status;
    struct ndmconn *conn;
@@ -1167,7 +1167,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    handle = (struct ndmp_session_handle *)arg;
    if (!handle) {
       Emsg0(M_ABORT, 0,
-            _("Illegal call to handle_ndmp_client_request with NULL session handle\n"));
+            _("Illegal call to HandleNdmpConnectionRequest with NULL session handle\n"));
       return NULL;
    }
 
@@ -1394,7 +1394,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    /*
     * Start work queue thread
     */
-   if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, handle_ndmp_client_request)) != 0) {
+   if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, HandleNdmpConnectionRequest)) != 0) {
       BErrNo be;
       be.SetErrno(status);
       Emsg1(M_ABORT, 0,
@@ -1515,7 +1515,7 @@ extern "C" void *ndmp_thread_server(void *arg)
             /*
              * Queue client to be served
              */
-            if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL)) != 0) {
+            if ((status = WorkqAdd(ntsa->client_wq, my_config, (void *)new_handle, NULL)) != 0) {
                BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to ndmp client queue: ERR=%s\n"),

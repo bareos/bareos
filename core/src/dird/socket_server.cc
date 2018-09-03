@@ -60,7 +60,7 @@ struct s_addr_port {
 
 ConnectionPool *get_client_connections() { return client_connections; }
 
-static void *HandleConnectionRequest(void *arg)
+static void *HandleConnectionRequest(ConfigurationParser *my_config, void *arg)
 {
   BareosSocket *bs = (BareosSocket *)arg;
   char name[MAX_NAME_LENGTH];
@@ -120,7 +120,7 @@ extern "C" void *connect_thread(void *arg)
    */
   sock_fds = New(alist(10, not_owned_by_alist));
   BnetThreadServerTcp((dlist *)arg, me->MaxConnections, sock_fds, &socket_workq, me->nokeepalive,
-                      HandleConnectionRequest);
+                      HandleConnectionRequest, my_config);
 
   return NULL;
 }

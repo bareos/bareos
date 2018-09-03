@@ -48,7 +48,7 @@ static void start_sd_server()
       return;
    }
    std::unique_ptr<BareosSocket> bs(create_new_bareos_socket(newsockfd));
-   storagedaemon::HandleConnectionRequest(bs.get());
+   storagedaemon::HandleConnectionRequest(my_config, bs.get());
 
    delete storagedaemon::me;
    storagedaemon::me = nullptr;
