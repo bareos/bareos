@@ -208,10 +208,7 @@ static struct s_cmds cmds[] = {
    { NULL, NULL, false } /**< list terminator */
 };
 
- /*
-  * Count the number of running jobs.
-  */
-static inline bool count_running_jobs()
+static inline bool AreMaxConcurrentJobsExceeded()
 {
    JobControlRecord *jcr;
    unsigned int cnt = 0;
@@ -221,7 +218,7 @@ static inline bool count_running_jobs()
    }
    endeach_jcr(jcr);
 
-   return (cnt >= me->MaxConcurrentJobs) ? false : true;
+   return (cnt >= me->MaxConcurrentJobs) ? true : false;
 }
 
 /**
@@ -241,7 +238,7 @@ void *HandleDirectorConnection(BareosSocket *dir)
    int bnet_stat = 0;
    bool found, quit;
 
-   if (!count_running_jobs()) {
+   if (AreMaxConcurrentJobsExceeded()) {
       Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
       dir->signal(BNET_TERMINATE);
       return NULL;

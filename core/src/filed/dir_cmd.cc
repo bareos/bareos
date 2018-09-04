@@ -444,10 +444,7 @@ static inline void CleanupFileset(JobControlRecord *jcr)
    jcr->ff->fileset = NULL;
 }
 
-/**
- * Count the number of running jobs.
- */
-static inline bool count_running_jobs()
+static inline bool AreMaxConcurrentJobsExceeded()
 {
    JobControlRecord *jcr;
    unsigned int cnt = 0;
@@ -457,7 +454,7 @@ static inline bool count_running_jobs()
    }
    endeach_jcr(jcr);
 
-   return (cnt >= me->MaxConcurrentJobs) ? false : true;
+   return (cnt >= me->MaxConcurrentJobs) ? true : false;
 }
 
 JobControlRecord *create_new_director_session(BareosSocket *dir)
@@ -640,7 +637,7 @@ void *handle_director_connection(BareosSocket *dir)
    PreventOsSuspensions();
 #endif
 
-   if (!count_running_jobs()) {
+   if (AreMaxConcurrentJobsExceeded()) {
       Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
       return NULL;
    }
