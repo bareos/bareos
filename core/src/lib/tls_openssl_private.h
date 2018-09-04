@@ -33,7 +33,7 @@ class TlsOpenSslPrivate {
   TlsOpenSslPrivate();
   ~TlsOpenSslPrivate();
 
-  enum SslCtxExDataIndex: int { kGetTlsPskByFullyQualifiedResourceNameCb = 0 };
+  enum SslCtxExDataIndex: int { kGetTlsPskByFullyQualifiedResourceNameCb = 0, kConfigurationParserPtr = 1 };
 
   int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write);
   bool OpensslBsockSessionStart(BareosSocket *bsock, bool server);

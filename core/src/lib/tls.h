@@ -51,7 +51,8 @@ class Tls {
   static DLL_IMP_EXP Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
 
   virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) = 0;
-  virtual DLL_IMP_EXP void SetTlsPskServerContext(GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
+  virtual DLL_IMP_EXP void SetTlsPskServerContext(ConfigurationParser *config,
+                                          GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
 
   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host)   = 0;
   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr,

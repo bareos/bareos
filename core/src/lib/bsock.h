@@ -118,8 +118,6 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                           TlsResource *tls_configuration,
                           bool initiated_by_remote);
   bool DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
-                                const char *identity,
-                                const char *password,
                                 JobControlRecord *jcr);
   bool DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                 const char *identity,
@@ -175,11 +173,15 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                                         const char *identity,
                                         const char *password,
                                         bool initiated_by_remote);
+  bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config);
   bool DoTlsHandshake(uint32_t remote_tls_policy,
                       TlsResource *tls_configuration,
                       bool initiated_by_remote,
                       const char *identity,
                       const char *password,
+                      JobControlRecord *jcr);
+  bool DoTlsHandshakeAsAServer(
+                      ConfigurationParser *config,
                       JobControlRecord *jcr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */

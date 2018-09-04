@@ -142,7 +142,8 @@ const char *ConfigurationParser::res_to_str(int rcode) const
   }
 }
 
-bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(const char *fq_name_in,
+bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
+                                                                const char *fq_name_in,
                                                                 std::string &psk)
 {
   char *fq_name_buffer = bstrdup(fq_name_in);
@@ -150,6 +151,11 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(const char *fq_n
   std::string fq_name(fq_name_buffer);
   free(fq_name_buffer);
 
+  TlsResource *tls = reinterpret_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+  if (tls) {
+    psk = tls->password.value;
+    return true;
+  }
   return false;
 }
 

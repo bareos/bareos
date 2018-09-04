@@ -60,7 +60,7 @@ struct s_addr_port {
 
 ConnectionPool *get_client_connections() { return client_connections; }
 
-static void *HandleConnectionRequest(ConfigurationParser *my_config, void *arg)
+static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 {
   BareosSocket *bs = (BareosSocket *)arg;
   char name[MAX_NAME_LENGTH];
@@ -73,9 +73,7 @@ static void *HandleConnectionRequest(ConfigurationParser *my_config, void *arg)
   jcr.ua = bs;
 
   if (!bs->IsCleartextBareosHello()) {
-    TlsResource *tls_configuration = dynamic_cast<TlsResource *>(me);
-    ASSERT(tls_configuration);
-    bs->DoTlsHandshake(4, tls_configuration, true, "", "", &jcr);
+    bs->DoTlsHandshakeAsAServer(config, &jcr);
   }
 
   if (bs->recv() <= 0) {

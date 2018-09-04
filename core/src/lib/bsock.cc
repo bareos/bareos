@@ -413,6 +413,73 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
   return auth_success;
 }
 
+bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config,
+                                           JobControlRecord *jcr)
+{
+  ASSERT(!tls_conn);
+
+  TlsResource *tls_configuration = reinterpret_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+
+  if (!ParameterizeAndInitTlsConnectionAsAServer(config)) {
+    return false;
+  }
+
+  if (!DoTlsHandshakeWithClient(&tls_configuration->tls_cert, jcr)) {
+    return false;
+  }
+
+  if (tls_configuration->tls_cert.GetAuthenticate()) { /* tls authentication only? */
+    tls_conn->TlsBsockShutdown(this);
+    CloseTlsConnectionAndFreeMemory(); /* yes, shutdown tls */
+  }
+
+  return true;
+}
+
+bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config)
+{
+  TlsResource *tls_configuration = reinterpret_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+
+  if (!tls_configuration->tls_cert.enable && !tls_configuration->tls_psk.enable) {
+    return true; /* cleartext connection */
+  }
+  tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
+  if (!tls_conn) {
+    Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
+    return false;
+  }
+
+  tls_conn->SetTcpFileDescriptor(fd_);
+
+  if (tls_configuration->tls_cert.enable) {
+    const std::string empty;
+    tls_conn->SetCaCertfile(tls_configuration->tls_cert.CaCertfile ? *tls_configuration->tls_cert.CaCertfile
+                                                                   : empty);
+    tls_conn->SetCaCertdir(tls_configuration->tls_cert.CaCertdir ? *tls_configuration->tls_cert.CaCertdir
+                                                                 : empty);
+    tls_conn->SetCrlfile(tls_configuration->tls_cert.crlfile ? *tls_configuration->tls_cert.crlfile : empty);
+    tls_conn->SetCertfile(tls_configuration->tls_cert.certfile ? *tls_configuration->tls_cert.certfile
+                                                               : empty);
+    tls_conn->SetKeyfile(tls_configuration->tls_cert.keyfile ? *tls_configuration->tls_cert.keyfile : empty);
+    //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
+    tls_conn->SetPemUserdata(tls_configuration->tls_cert.pem_message);
+    tls_conn->SetDhFile(tls_configuration->tls_cert.dhfile ? *tls_configuration->tls_cert.dhfile
+                                                           : empty); /* was never used before */
+    tls_conn->SetCipherList(tls_configuration->tls_cert.cipherlist ? *tls_configuration->tls_cert.cipherlist
+                                                                   : empty);
+    tls_conn->SetVerifyPeer(tls_configuration->tls_cert.VerifyPeer);
+  }
+
+  if (tls_configuration->tls_psk.enable) {
+    tls_conn->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
+  }
+
+  if (!tls_conn->init()) {
+    return false;
+  }
+  return true;
+}
+
 bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
                                   TlsResource *tls_configuration,
                                   bool initiated_by_remote,
@@ -433,7 +500,7 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
     }
 
     if (initiated_by_remote) {
-      if (!DoTlsHandshakeWithClient(selected_local_tls, identity, password, jcr)) {
+      if (!DoTlsHandshakeWithClient(selected_local_tls, jcr)) {
         return false;
       }
     } else {
@@ -509,8 +576,6 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_configurati
 }
 
 bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
-                                            const char *identity,
-                                            const char *password,
                                             JobControlRecord *jcr)
 {
   std::vector<std::string> verify_list;

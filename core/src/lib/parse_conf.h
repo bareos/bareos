@@ -491,7 +491,7 @@ class DLL_IMP_EXP ConfigurationParser {
 
   int32_t r_first_;                 /* First daemon resource type */
   int32_t r_last_;                  /* Last daemon resource type */
-  int32_t r_own_;                    /* own resource type */
+  int32_t r_own_;                   /* own resource type */
   ResourceTable *resources_;        /* Pointer to table of permitted resources */
   CommonResourceHeader **res_head_; /* Pointer to defined resources */
   brwlock_t res_lock_;              /* Resource lock */
@@ -550,14 +550,16 @@ class DLL_IMP_EXP ConfigurationParser {
                             const char *name,
                             bool error_if_exits     = false,
                             bool create_directories = false);
-  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
+  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res) __attribute__((weak));
   CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
   void b_LockRes(const char *file, int line);
   void b_UnlockRes(const char *file, int line);
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
   void InitializeQualifiedResourceNameTypeConverter(std::map<std::string, int> &);
-  bool GetTlsPskByFullyQualifiedResourceName(const char *fully_qualified_name, std::string &psk);
+  static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
+                                                    const char *fully_qualified_name,
+                                                    std::string &psk) __attribute__((weak));
 
  private:
   ConfigurationParser(const ConfigurationParser &) = delete;
