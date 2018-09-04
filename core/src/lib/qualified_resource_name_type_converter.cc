@@ -21,43 +21,61 @@
 
 #include "qualified_resource_name_type_converter.h"
 
-QualifiedResourceNameTypeConverter::QualifiedResourceNameTypeConverter(std::map<std::string, int> map)
+template <class T1, class T2>
+std::map<T2, T1> swapPairs(std::map<T1, T2> m)
 {
-  name_type_relation_map_ = map;
+  std::map<T2, T1> m1;
+
+  for (auto &&item : m) {
+    m1.emplace(item.second, item.first);
+  }
+
+  return m1;
+};
+
+QualifiedResourceNameTypeConverter::QualifiedResourceNameTypeConverter(std::map<int, std::string> map)
+{
+  type_name_relation_map_ = map;
+  name_type_relation_map_ = swapPairs(map);
 }
 
-std::string QualifiedResourceNameTypeConverter::ResourceTypeToString(int type)
+std::string QualifiedResourceNameTypeConverter::ResourceTypeToString(const int &r_type) const
 {
-  if (name_type_relation_map_.empty()) {
+  if (type_name_relation_map_.empty()) {
     return std::string();
   }
-  return std::string();
+  if (type_name_relation_map_.find(r_type) == type_name_relation_map_.end()) {
+    return std::string();
+  }
+  return type_name_relation_map_.at(r_type);
 }
 
-int QualifiedResourceNameTypeConverter::StringToResourceType(const std::string &)
+int QualifiedResourceNameTypeConverter::StringToResourceType(const std::string &r_name) const
 {
   if (name_type_relation_map_.empty()) {
     return -1;
   }
-  return -1;
+  if (name_type_relation_map_.find(r_name) == name_type_relation_map_.end()) {
+    return -1;
+  }
+  return name_type_relation_map_.at(r_name);
 }
 
-std::string QualifiedResourceNameTypeConverter::ResourceNameToFullyQualifiedString(
-    std::string name_of_resource,
-    int type_of_resource)
+bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &name_of_resource,
+                                                          const int &r_type,
+                                                          std::string &out) const
 {
-  return std::string();
+  std::string r_name = ResourceTypeToString(r_type);
+  if (r_name.empty()) {
+    return false;
+  }
+  out = r_name + std::to_string(':') + name_of_resource;
+  return true;
 }
 
-#if 0
-template <class T1, class T2>
-map<T2, T1> swapPairs(map<T1, T2> m) {
-    map<T2, T1> m1;
-
-    for (auto&& item : m) {
-        m1.emplace(item.second, item.first);
-    }
-
-    return m1;
-};
-#endif
+bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
+                                                          int &r_type,
+                                                          const std::string &in) const
+{
+  return true;
+}
