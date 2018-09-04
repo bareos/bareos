@@ -3783,18 +3783,11 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
 
-   const std::string ua("*UserAgent*");
-
    bool success = false;
-   if (fq_name == ua) {
-      psk_return_value = me->password.value;
-      success = true;
-   } else {
-      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(my_config->GetResWithName(R_CONSOLE, fq_name.c_str()));
-      if(res) {
-         psk_return_value = res->password.value;
-         success = true;
-      }
+   ConsoleResource *res = reinterpret_cast<ConsoleResource*>(my_config->GetResWithName(R_CONSOLE, fq_name.c_str()));
+   if(res) {
+     psk_return_value = res->password.value;
+     success = true;
    }
    return success;
 }
