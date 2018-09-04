@@ -83,6 +83,7 @@ extern void StoreRun(LEX *lc, ResourceItem *item, int index, int pass);
 /**
  * Forward referenced subroutines
  */
+static bool CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config);
 
 /**
  * We build the current resource here as we are
@@ -3782,14 +3783,7 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
 
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
-
-   bool success = false;
-   ConsoleResource *res = reinterpret_cast<ConsoleResource*>(my_config->GetResWithName(R_CONSOLE, fq_name.c_str()));
-   if(res) {
-     psk_return_value = res->password.value;
-     success = true;
-   }
-   return success;
+  CreateAndAddUserAgentConsoleResource(my_config);
 }
 
 
@@ -3832,7 +3826,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources *res_to_add, int type) 
  * connections can be handled in unique way
  *
  */
-bool CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config) {
+static bool CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config) {
 
   DirectorResource *dir_resource = (DirectorResource *)my_config.GetNextRes(R_DIRECTOR, NULL);
   ConsoleResource console;
@@ -3847,16 +3841,6 @@ bool CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config) {
   console.hdr.refcnt = 1;
 
   AddResourceCopyToEndOfChain((UnionOfResources*)&console, R_CONSOLE);
-}
-
-
-static void ConfigInitLateCb(ConfigurationParser &my_config)
-{
-  DirectorResource *dir_resource = (DirectorResource *)my_config.GetNextRes(R_DIRECTOR, NULL);
-  dir_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
-
-  CreateAndAddUserAgentConsoleResource(my_config);
-
 }
 
 ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
