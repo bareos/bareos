@@ -496,20 +496,8 @@ static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
    }
 }
 
-bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
-{
-//   char *fq_name_buffer = bstrdup(fq_name_);
-//   UnbashSpaces(fq_name_buffer);
-//   std::string fq_name(fq_name_buffer);
-//   free(fq_name_buffer);
-
-   return false;
-}
-
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
-  StorageResource *client_resource = (StorageResource *)my_config.GetNextRes(R_STORAGE, NULL);
-  client_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
 }
 
 ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)

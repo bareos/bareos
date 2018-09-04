@@ -495,7 +495,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_configurati
 
   if (tls_configuration->tls_psk.enable) {
     if (initiated_by_remote) {
-      tls_conn->SetTlsPskServerContext(tls_configuration->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb);
+      //tls_conn->SetTlsPskServerContext(tls_configuration->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb);
     } else {
       const PskCredentials psk_cred(identity, password);
       tls_conn->SetTlsPskClientContext(psk_cred);

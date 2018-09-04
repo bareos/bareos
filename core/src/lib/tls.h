@@ -29,6 +29,7 @@
 
 #include <bareos.h>
 #include "lib/tls_conf_psk.h"
+#include "tls_conf_psk_callback.h"
 
 class BareosSocket;
 class JobControlRecord;

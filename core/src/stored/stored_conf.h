@@ -203,7 +203,6 @@ union UnionOfResources {
 
 ConfigurationParser *InitSdConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
-bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value);
 
 } /* namespace storagedaemon */
 #endif /* BAREOS_STORED_STORED_CONF_H_ */

@@ -3780,36 +3780,9 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
    }
 }
 
-bool GetTlsPskByFullyQualifiedResourceName(const char *fq_name_, std::string &psk_return_value)
-{
-   char *fq_name_buffer = bstrdup(fq_name_);
-   UnbashSpaces(fq_name_buffer);
-   std::string fq_name(fq_name_buffer);
-   free(fq_name_buffer);
-
-   const std::string ua("*UserAgent*");
-
-   bool success = false;
-   if (fq_name == ua) {
-      psk_return_value = me->password.value;
-      success = true;
-   } else {
-      ConsoleResource *res = reinterpret_cast<ConsoleResource*>(my_config->GetResWithName(R_CONSOLE, fq_name.c_str()));
-      if(res) {
-         psk_return_value = res->password.value;
-         success = true;
-      }
-   }
-   return success;
-}
-
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
-  DirectorResource *resource = reinterpret_cast<DirectorResource*>(my_config.GetNextRes(R_DIRECTOR, NULL));
-  TlsResource *tls = dynamic_cast<TlsResource*>(resource);
-  if (tls) {
-    tls->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = GetTlsPskByFullyQualifiedResourceName;
-  }
+
 }
 
 ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)

@@ -24,7 +24,6 @@
 
 #include "lib/tls_psk_credentials.h"
 #include "lib/tls_conf_base.h"
-#include "lib/tls_conf_psk_callback.h"
 
 #include <bareos.h>
 
@@ -32,9 +31,7 @@ class DLL_IMP_EXP TlsConfigPsk : public TlsConfigBase {
  public:
   char *cipherlist; /* TLS Cipher List */
 
-  GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb;
-
-  TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr), GetTlsPskByFullyQualifiedResourceNameCb(nullptr)
+  TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr)
   {
   }
   ~TlsConfigPsk();

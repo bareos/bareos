@@ -67,7 +67,6 @@ directordaemon::ConsoleResource *CreateAndInitializeNewConsoleResource()
 {
   directordaemon::ConsoleResource *cons = new (directordaemon::ConsoleResource);
   cons->tls_psk.enable = false;
-  cons->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = directordaemon::GetTlsPskByFullyQualifiedResourceName;
   cons->tls_cert.certfile = new (std::string)(CERTDIR "/console.bareos.org-cert.pem");
   cons->tls_cert.keyfile = new (std::string)(CERTDIR "/console.bareos.org-key.pem");
   cons->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
@@ -86,7 +85,6 @@ directordaemon::StorageResource *CreateAndInitializeNewStorageResource()
   store->address = (char *)HOST;
   store->SDport = htons(BSOCK_TEST_PORT_NUMBER);
   store->tls_psk.enable = false;
-  store->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = directordaemon::GetTlsPskByFullyQualifiedResourceName;
   store->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
   store->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   store->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
@@ -101,7 +99,6 @@ directordaemon::DirectorResource *CreateAndInitializeNewDirectorResource()
 {
   directordaemon::DirectorResource *dir = new (directordaemon::DirectorResource);
   dir->tls_psk.enable = false;
-  dir->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = directordaemon::GetTlsPskByFullyQualifiedResourceName;
   dir->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
   dir->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   dir->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
@@ -121,7 +118,6 @@ storagedaemon::DirectorResource *CreateAndInitializeNewDirectorResource()
 {
   storagedaemon::DirectorResource *dir = new (storagedaemon::DirectorResource);
   dir->tls_psk.enable = false;
-  dir->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb = storagedaemon::GetTlsPskByFullyQualifiedResourceName;
   dir->tls_cert.certfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-cert.pem");
   dir->tls_cert.keyfile = new (std::string)(CERTDIR "/bareos-dir.bareos.org-key.pem");
   dir->tls_cert.CaCertfile = new (std::string)(CERTDIR "/bareos-ca.pem");
