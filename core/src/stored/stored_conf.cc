@@ -514,23 +514,26 @@ static void ConfigReadyCallback(ConfigurationParser &my_config)
 
 ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
 {
-   return new ConfigurationParser(
-                configfile,
-                nullptr,
-                nullptr,
-                InitResourceCb,
-                ParseConfigCb,
-                nullptr,
-                exit_code,
-                (void *)&res_all,
-                res_all_size,
-                R_FIRST,
-                R_LAST,
-                resources,
-                res_head,
-                default_config_filename.c_str(),
-                "bareos-sd.d",
-                ConfigReadyCallback);
+   ConfigurationParser *config = new ConfigurationParser(configfile,
+                                                         nullptr,
+                                                         nullptr,
+                                                         InitResourceCb,
+                                                         ParseConfigCb,
+                                                         nullptr,
+                                                         exit_code,
+                                                         (void *)&res_all,
+                                                         res_all_size,
+                                                         R_FIRST,
+                                                         R_LAST,
+                                                         resources,
+                                                         res_head,
+                                                         default_config_filename.c_str(),
+                                                         "bareos-sd.d",
+                                                         ConfigReadyCallback);
+   if (config) {
+     config->r_own_ = R_STORAGE;
+   }
+   return config;
 }
 
 bool ParseSdConfig(const char *configfile, int exit_code)

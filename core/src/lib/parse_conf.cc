@@ -95,6 +95,7 @@ ConfigurationParser::ConfigurationParser()
    , omit_defaults_ (false)
    , r_first_ (0)
    , r_last_ (0)
+   , r_own_ (0)
    , resources_ (0)
    , res_head_(nullptr)
    , use_config_include_dir_ (false) {

@@ -491,6 +491,7 @@ class DLL_IMP_EXP ConfigurationParser {
 
   int32_t r_first_;                 /* First daemon resource type */
   int32_t r_last_;                  /* Last daemon resource type */
+  int32_t r_own_;                    /* own resource type */
   ResourceTable *resources_;        /* Pointer to table of permitted resources */
   CommonResourceHeader **res_head_; /* Pointer to defined resources */
   brwlock_t res_lock_;              /* Resource lock */

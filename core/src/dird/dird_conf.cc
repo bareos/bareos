@@ -3814,23 +3814,26 @@ static void ConfigReadyCallback(ConfigurationParser &my_config)
 
 ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
 {
-   return new ConfigurationParser (
-                configfile,
-                nullptr,
-                nullptr,
-                InitResourceCb,
-                ParseConfigCb,
-                PrintConfigCb,
-                exit_code,
-                (void *)&res_all,
-                res_all_size,
-                R_FIRST,
-                R_LAST,
-                resources,
-                res_head,
-                default_config_filename.c_str(),
-                "bareos-dir.d",
-                ConfigReadyCallback);
+   ConfigurationParser *config = new ConfigurationParser (configfile,
+                                                          nullptr,
+                                                          nullptr,
+                                                          InitResourceCb,
+                                                          ParseConfigCb,
+                                                          PrintConfigCb,
+                                                          exit_code,
+                                                          (void *)&res_all,
+                                                          res_all_size,
+                                                          R_FIRST,
+                                                          R_LAST,
+                                                          resources,
+                                                          res_head,
+                                                          default_config_filename.c_str(),
+                                                          "bareos-dir.d",
+                                                          ConfigReadyCallback);
+   if (config) {
+     config->r_own_ = R_DIRECTOR;
+   }
+   return config;
 }
 
 /* **************************************************************************** */
