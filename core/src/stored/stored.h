@@ -53,13 +53,14 @@ const int sd_debuglevel = 300;
 #endif
 #endif
 #endif
-#include "ch.h"
+#include "stored/bsr.h"
+#include "include/ch.h"
 #include "lock.h"
 #include "block.h"
 #include "record.h"
 #include "dev.h"
 #include "stored_conf.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "vol_mgr.h"
 #include "reserve.h"
 

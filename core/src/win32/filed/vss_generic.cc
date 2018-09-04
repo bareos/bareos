@@ -32,10 +32,10 @@
 #ifdef WIN32_VSS
 
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "findlib/find.h"
 #define FILE_DAEMON 1
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 
 #undef setlocale
 

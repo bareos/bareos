@@ -28,10 +28,10 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "sql.h"
+#include "cats/cats.h"
+#include "cats/sql.h"
 #include "lib/htable.h"
-#include "bvfs.h"
+#include "cats/bvfs.h"
 #include "lib/edit.h"
 
 #define dbglevel 10

@@ -25,7 +25,7 @@
 #include "lib/tls_psk_credentials.h"
 #include "lib/tls_conf_base.h"
 
-#include <bareos.h>
+#include "include/bareos.h"
 
 class DLL_IMP_EXP TlsConfigPsk : public TlsConfigBase {
  public:

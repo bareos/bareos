@@ -18,9 +18,6 @@
 #   02110-1301, USA.
 
 
-include_directories(../include ..)
-
-
 add_executable(bregtest bregtest.cc )
 target_link_libraries(bregtest bareos ${JANSSON_LIBRARIES})
 

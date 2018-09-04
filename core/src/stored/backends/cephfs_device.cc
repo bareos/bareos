@@ -31,7 +31,7 @@
 
 #ifdef HAVE_CEPHFS
 #include "stored/stored.h"
-#include "backends/cephfs_device.h"
+#include "stored/backends/cephfs_device.h"
 
 namespace storagedaemon {
 

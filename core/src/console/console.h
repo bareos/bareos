@@ -23,7 +23,7 @@
 #ifndef BAREOS_CONSOLE_CONSOLE_H_
 #define BAREOS_CONSOLE_CONSOLE_H_
 
-#include <bareos.h>
+#include "include/bareos.h"
 
 class JobControlRecord;
 

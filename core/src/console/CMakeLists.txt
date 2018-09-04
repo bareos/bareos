@@ -17,7 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(. .. ../include )
 
 SET (BCONSSRCS console_conf.cc console_globals.cc)
 IF(HAVE_WIN32)

@@ -21,7 +21,7 @@
 #include "create_resource.h"
 #include "bsock_test.h"
 
-#include <bareos.h>
+#include "include/bareos.h"
 #include "console/console_conf.h"
 #include "stored/stored_conf.h"
 #include "dird/dird_conf.h"

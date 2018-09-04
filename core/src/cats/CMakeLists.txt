@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-include_directories(. .. ../include ${MYSQL_INCLUDE_DIR} ${PostgreSQL_INCLUDE_DIR})
+include_directories(${MYSQL_INCLUDE_DIR} ${PostgreSQL_INCLUDE_DIR})
 
 
 add_definitions( -D_BDB_PRIV_INTERFACE_)

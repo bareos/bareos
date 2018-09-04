@@ -879,7 +879,7 @@ struct SqlPoolDescriptor {
    dlink link;                            /**< list management */
 };
 
-#include "jcr.h"
+#include "include/jcr.h"
 
 /**
  * Object used in db_list_xxx function

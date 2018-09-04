@@ -40,7 +40,7 @@
 #include "dir_plugins.h"
 #include "cats/cats.h"
 
-#include "jcr.h"
+#include "include/jcr.h"
 #include "dird/bsr.h"
 #include "ua.h"
 #include "jobq.h"

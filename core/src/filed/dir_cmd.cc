@@ -31,7 +31,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "ch.h"
+#include "include/ch.h"
 #include "filed/authenticate.h"
 #include "filed/dir_cmd.h"
 #include "filed/estimate.h"

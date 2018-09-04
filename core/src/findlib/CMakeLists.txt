@@ -17,8 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(../include .. .)
-
 SET(BAREOSFIND_SRCS acl.cc attribs.cc bfile.cc create_file.cc drivetype.cc
       enable_priv.cc find_one.cc find.cc fstype.cc hardlink.cc match.cc
       mkpath.cc shadowing.cc xattr.cc)

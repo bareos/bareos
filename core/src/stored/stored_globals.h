@@ -24,7 +24,7 @@
 #ifndef BAREOS_STORED_STORED_GLOBALS_H_
 #define BAREOS_STORED_STORED_GLOBALS_H_
 
-#include <bareos.h>
+#include "include/bareos.h"
 
 namespace storagedaemon {
 

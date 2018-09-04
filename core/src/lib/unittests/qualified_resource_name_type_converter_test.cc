@@ -22,9 +22,9 @@
 
 #include "gtest/gtest.h"
 #define private public
-#include "qualified_resource_name_type_converter.h"
+#include "lib/qualified_resource_name_type_converter.h"
 #undef private
-#include <bareos.h>
+#include "include/bareos.h"
 
 enum
 {

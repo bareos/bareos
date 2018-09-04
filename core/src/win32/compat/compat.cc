@@ -32,7 +32,7 @@
  * compatibilty layer to make bareos-fd run natively under windows
  */
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "dlfcn.h"
 #include "findlib/find.h"
 #include "lib/btimers.h"

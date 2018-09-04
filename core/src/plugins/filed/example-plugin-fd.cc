@@ -14,7 +14,7 @@
 #define BUILDING_DLL            /* required for Windows plugin */
 
 #include "include/bareos.h"
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Your name"

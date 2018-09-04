@@ -22,7 +22,7 @@
 #ifndef BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
 #define BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_ 1
 
-#include <bareos.h>
+#include "include/bareos.h"
 
 class QualifiedResourceNameTypeConverter {
  public:

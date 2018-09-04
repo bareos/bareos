@@ -22,7 +22,7 @@
 #ifndef BAREOS_LIB_TLS_PSK_CREDENTIALS_H_
 #define BAREOS_LIB_TLS_PSK_CREDENTIALS_H_
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #include <string>
 

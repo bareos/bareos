@@ -27,7 +27,7 @@
  */
 
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "findlib/find.h"
 #include "filed/fd_plugins.h"
 #include "findlib/match.h"

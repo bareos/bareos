@@ -31,7 +31,7 @@
 #ifndef BAREOS_FINDLIB_FIND_H_
 #define BAREOS_FINDLIB_FIND_H_
 
-#include "fileopts.h"
+#include "include/fileopts.h"
 #include "bfile.h"
 
 #ifdef HAVE_DIRENT_H

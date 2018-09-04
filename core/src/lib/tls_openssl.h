@@ -23,7 +23,7 @@
 
 #include "lib/tls.h"
 
-#include <bareos.h>
+#include "include/bareos.h"
 #include <memory>
 
 class TlsOpenSslPrivate;

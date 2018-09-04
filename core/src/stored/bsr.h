@@ -27,8 +27,8 @@
  * @file
  * BootStrap record definition -- for restoring files.
  */
-#ifndef BAREOS_LIB_BSR_H_
-#define BAREOS_LIB_BSR_H_ 1
+#ifndef BAREOS_STORED_BSR_H_
+#define BAREOS_STORED_BSR_H_ 1
 
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
@@ -171,9 +171,10 @@ struct BootStrapRecord {
    Attributes *attr;                        /* scratch space for unpacking */
 };
 
-#endif
 
 void CreateRestoreVolumeList(JobControlRecord *jcr);
 void FreeRestoreVolumeList(JobControlRecord *jcr);
 
 } /* namespace storagedaemon */
+
+#endif /* BAREOS_STORED_BSR_H_ */

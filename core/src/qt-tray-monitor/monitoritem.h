@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 #include "tray_conf.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "tray-monitor.h"
 
 class MonitorItemPrivate;

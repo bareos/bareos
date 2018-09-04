@@ -33,7 +33,7 @@
  */
 
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "find.h"
 #include "findlib/find_one.h"
 

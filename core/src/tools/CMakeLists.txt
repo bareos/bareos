@@ -17,9 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(../include .. ../dird ../filed ../stored)
-
-
 SET(BSMTPSRCS bsmtp.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)

@@ -36,12 +36,7 @@ IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/lib
-      ../include
-      ..
-      ../lib
       )
-ELSE()
-   include_directories(. .. ../include ../lib)
 ENDIF()
 
 

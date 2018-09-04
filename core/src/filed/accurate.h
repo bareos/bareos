@@ -41,7 +41,7 @@
  * also cost some bytes.
  */
 
-#include "hostconfig.h"
+#include "include/hostconfig.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push,4)
@@ -155,7 +155,7 @@ public:
 
 #ifdef HAVE_LMDB
 
-#include "lmdb.h"
+#include "lmdb/lmdb.h"
 
 /*
  * Lightning Memory DataBase (LMDB) specific storage abstraction class using the Symas LMDB.

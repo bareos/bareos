@@ -18,9 +18,7 @@
 #   02110-1301, USA.
 
 IF(HAVE_WIN32)
-   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends ../include .. .)
-ELSE()
-   include_directories(. .. ../lib ../include ../lmdb ../ndmp)
+   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends)
 ENDIF()
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})

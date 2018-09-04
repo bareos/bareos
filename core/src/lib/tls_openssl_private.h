@@ -23,7 +23,7 @@
 #ifndef BAREOS_LIB_TLS_OPENSSL_PRIVATE_H_
 #define BAREOS_LIB_TLS_OPENSSL_PRIVATE_H_
 
-#include <bareos.h>
+#include "include/bareos.h"
 #include <string>
 
 #include <openssl/x509v3.h>

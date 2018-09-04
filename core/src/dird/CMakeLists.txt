@@ -41,13 +41,11 @@ IF(HAVE_WIN32)
 ENDIF()
 
 IF(HAVE_WIN32)
-   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/dird ../include ..)
+   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/dird)
    LIST(APPEND DIRDSRCS
       ../win32/generic/main.cc
       ../win32/generic/service.cc
       )
-ELSE()
-   include_directories(. .. ../include ../lmdb ../ndmp)
 ENDIF()
 
 

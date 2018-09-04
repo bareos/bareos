@@ -45,8 +45,8 @@
 #endif
 
 #include <sys/types.h>
-#include "hostconfig.h"
-#include "bc_types.h"
+#include "include/hostconfig.h"
+#include "include/bc_types.h"
 #include "lib/plugins.h"
 
 namespace directordaemon {

@@ -27,7 +27,7 @@
 #ifndef BAREOS_LIB_TLS_H_
 #define BAREOS_LIB_TLS_H_
 
-#include <bareos.h>
+#include "include/bareos.h"
 #include "lib/tls_conf_psk.h"
 #include "tls_conf_psk_callback.h"
 

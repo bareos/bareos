@@ -28,11 +28,10 @@
  * Bareos Console interface to the Director
  */
 
-#include "console.h"
-#include "console_conf.h"
 #include "include/bareos.h"
+#include "console/console_conf.h"
 #include "console_globals.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
 

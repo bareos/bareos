@@ -36,7 +36,7 @@
 #include "filed/crypto.h"
 #include "filed/heartbeat.h"
 #include "filed/backup.h"
-#include "ch.h"
+#include "include/ch.h"
 #include "findlib/attribs.h"
 #include "findlib/hardlink.h"
 #include "findlib/find_one.h"

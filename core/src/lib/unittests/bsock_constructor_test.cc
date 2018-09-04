@@ -25,7 +25,7 @@
 /* test private members */
 #define protected public
 #define private public
-#include <bareos.h>
+#include "include/bareos.h"
 
 
 TEST(bsock, bareossockettcp_standard_constructor_test)

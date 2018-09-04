@@ -20,7 +20,7 @@
    02110-1301, USA.
 */
 
-#include <bareos.h>
+#include "include/bareos.h"
 #include "tls_openssl.h"
 #include "tls_openssl_private.h"
 
