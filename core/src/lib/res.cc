@@ -142,6 +142,17 @@ const char *ConfigurationParser::res_to_str(int rcode) const
   }
 }
 
+bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(const char *fq_name_in,
+                                                                std::string &psk)
+{
+  char *fq_name_buffer = bstrdup(fq_name_in);
+  UnbashSpaces(fq_name_buffer);
+  std::string fq_name(fq_name_buffer);
+  free(fq_name_buffer);
+
+  return false;
+}
+
 /*
  * Scan for message types and add them to the message
  * destination. The basic job here is to connect message types
