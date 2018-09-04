@@ -17,7 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(.. ../.. ../../include/)
 IF(HAVE_WIN32)
    link_libraries(kernel32
       user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)

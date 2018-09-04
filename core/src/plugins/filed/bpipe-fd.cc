@@ -27,7 +27,7 @@
  * A simple pipe plugin for the Bareos File Daemon
  */
 #include "include/bareos.h"
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 #include "fd_common.h"
 
 static const int debuglevel = 150;

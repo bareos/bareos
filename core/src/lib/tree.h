@@ -27,9 +27,9 @@
  * Directory tree build/traverse routines
  */
 
-#include "htable.h"
+#include "lib/htable.h"
 
-#include "hostconfig.h"
+#include "include/hostconfig.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push,4)

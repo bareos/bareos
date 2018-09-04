@@ -18,7 +18,6 @@
 #   02110-1301, USA.
 
 
-include_directories(../.. . ../../include ../../stored)
 
 LIST(APPEND CMAKE_INSTALL_RPATH ${backenddir})
 

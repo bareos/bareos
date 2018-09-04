@@ -58,7 +58,7 @@
  */
 
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #define MY_NAME "bsmtp"
 
 #if defined(HAVE_WIN32)

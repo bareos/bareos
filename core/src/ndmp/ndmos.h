@@ -137,7 +137,7 @@
  * already included as that leaves a nice fingerprint.
  */
 #ifndef BAREOS_INCLUDE_BAREOS_H_
-#include "config.h"
+#include "include/config.h"
 #endif
 
 /*

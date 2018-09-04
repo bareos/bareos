@@ -28,10 +28,10 @@
 
 #include "monitoritem.h"
 #include "authenticate.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "monitoritemthread.h"
 
-#include "tls_conf.h"
+#include "lib/tls_conf.h"
 #include "lib/bnet.h"
 
 const int debuglevel = 50;

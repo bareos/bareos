@@ -33,7 +33,7 @@
 #include "filed/filed.h"
 #include "findlib/match.h"
 #include "lib/edit.h"
-#include "ch.h"
+#include "include/ch.h"
 
 #ifdef HAVE_WIN32
 #include "win32/findlib/win32.h"

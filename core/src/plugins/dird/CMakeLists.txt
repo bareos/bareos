@@ -23,13 +23,9 @@ IF(HAVE_WIN32)
       ${CMAKE_SOURCE_DIR}/src/win32/generic
       ${CMAKE_SOURCE_DIR}/src/win32/dird
       ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
-      ../../include
-      ../../dird
-      ../..)
+      )
    link_directories(${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS})
    add_definitions(-DMS_WIN${WINDOWS_BITS})
-ELSE()
-   include_directories(../.. . ../../include ../../dird)
 ENDIF()
 
 IF(HAVE_PYTHON)

@@ -17,8 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(.. ../.. ../../include/)
-
 set (TEST_SRC
 #   drivetype_test.cc
 #   fstype_test.cc

@@ -34,15 +34,15 @@
 #ifdef HAVE_WIN32
 #include "vss.h"
 #endif
-#include "jcr.h"
+#include "include/jcr.h"
 #include "lib/breg.h"
 #include "lib/htable.h"
 #include "lib/runscript.h"
 #include "findlib/find.h"
 #include "fd_plugins.h"
-#include "ch.h"
-#include "backup.h"
-#include "restore.h"
+#include "include/ch.h"
+#include "filed/backup.h"
+#include "filed/restore.h"
 
 extern ClientResource *me;                 /* "Global" Client resource */
 extern ConfigurationParser *my_config;             /* Our Global config */

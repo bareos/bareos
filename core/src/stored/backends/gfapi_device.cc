@@ -31,7 +31,7 @@
 
 #ifdef HAVE_GFAPI
 #include "stored/stored.h"
-#include "backends/gfapi_device.h"
+#include "stored/backends/gfapi_device.h"
 #include "lib/edit.h"
 
 /**

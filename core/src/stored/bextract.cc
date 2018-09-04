@@ -39,7 +39,7 @@
 #include "findlib/attribs.h"
 #include "findlib/create_file.h"
 #include "findlib/match.h"
-#include "findlib//get_priv.h"
+#include "findlib/get_priv.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"

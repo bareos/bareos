@@ -22,9 +22,8 @@ IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/generic
       ${CMAKE_SOURCE_DIR}/src/win32/filed
-      ${CMAKE_SOURCE_DIR}/src/win32/vss/include  ../include . .. ../lmdb/)
-ELSE()
-   include_directories(. .. ../include ../lmdb)
+      ${CMAKE_SOURCE_DIR}/src/win32/vss/include
+      )
 ENDIF()
 
 set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmds.cc verify.cc

@@ -34,7 +34,7 @@
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
-#include "lmdb.h"
+#include "lmdb/lmdb.h"
 
 /*
  * What is actually stored in the LMDB

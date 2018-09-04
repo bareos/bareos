@@ -124,8 +124,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/compat/include
-      #${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include
-      #${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
       )
    set(HAVE_WIN32 1)
 
@@ -254,6 +252,7 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 
 include_directories(${PYTHON_INCLUDE_PATH})
 
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # trick for socklen_t
 set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")

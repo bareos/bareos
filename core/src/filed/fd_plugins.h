@@ -44,11 +44,11 @@
 
 #include <sys/types.h>
 
-#include "hostconfig.h"
+#include "include/hostconfig.h"
 
-#include "version.h"
-#include "bc_types.h"
-#include "fileopts.h"
+#include "include/version.h"
+#include "include/bc_types.h"
+#include "include/fileopts.h"
 #include "lib/plugins.h"
 #include <sys/stat.h>
 

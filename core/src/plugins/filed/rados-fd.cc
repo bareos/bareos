@@ -24,7 +24,7 @@
  * CEPH rados plugin for the Bareos File Daemon
  */
 #include "include/bareos.h"
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 #include "fd_common.h"
 
 #include <rados/librados.h>

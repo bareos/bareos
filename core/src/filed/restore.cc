@@ -33,7 +33,7 @@
 #include "filed/compression.h"
 #include "filed/crypto.h"
 #include "filed/verify.h"
-#include "ch.h"
+#include "include/ch.h"
 #include "findlib/create_file.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
