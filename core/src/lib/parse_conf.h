@@ -495,7 +495,6 @@ class DLL_IMP_EXP ConfigurationParser {
   ResourceTable *resources_;        /* Pointer to table of permitted resources */
   CommonResourceHeader **res_head_; /* Pointer to defined resources */
   brwlock_t res_lock_;              /* Resource lock */
-  std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
 
   ConfigurationParser();
   ConfigurationParser(const char *cf,
@@ -556,7 +555,7 @@ class DLL_IMP_EXP ConfigurationParser {
   void b_UnlockRes(const char *file, int line);
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
-  void InitializeQualifiedResourceNameTypeConverter(std::map<std::string, int> &);
+  void InitializeQualifiedResourceNameTypeConverter(std::map<int,std::string> &);
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk) __attribute__((weak));
@@ -579,6 +578,7 @@ class DLL_IMP_EXP ConfigurationParser {
   bool use_config_include_dir_;         /* Use the config include directory */
   std::string config_include_naming_format_; /* Format string for file paths of resources */
   std::string used_config_path_;             /* Config file that is used. */
+  std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
   void (*ParseConfigReadyCallback_)(ConfigurationParser &);
 
   const char *get_default_configdir();

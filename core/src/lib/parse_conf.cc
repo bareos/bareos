@@ -148,7 +148,7 @@ ConfigurationParser::~ConfigurationParser() {
    }
 }
 
-void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(std::map<std::string,int> &map)
+void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(std::map<int,std::string> &map)
 {
   qualified_resource_name_type_converter_.reset(new QualifiedResourceNameTypeConverter(map));
 }

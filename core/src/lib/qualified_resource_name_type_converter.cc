@@ -21,6 +21,10 @@
 
 #include "qualified_resource_name_type_converter.h"
 
+#include <sstream>
+#include <algorithm>
+#include <iterator>
+
 template <class T1, class T2>
 std::map<T2, T1> swapPairs(std::map<T1, T2> m)
 {
@@ -69,13 +73,37 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
   if (r_name.empty()) {
     return false;
   }
-  out = r_name + std::to_string(':') + name_of_resource;
+  out = r_name + std::string(":") + name_of_resource;
   return true;
+}
+
+template <class Container>
+void split(const std::string &str, Container &cont, char delim, int max_substring)
+{
+  std::stringstream ss(str);
+  std::string token;
+  int max = max_substring;
+  while (std::getline(ss, token, delim) && max) {
+    cont.push_back(token);
+    max--;
+  }
 }
 
 bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
                                                           int &r_type,
                                                           const std::string &in) const
 {
+  std::vector<std::string> string_list;
+  split(in, string_list, ':', 2);
+  if (string_list.size() < 2) {
+    return false;
+  }
+  std::string r_type_str = string_list.at(0);
+  int r_type_eval = StringToResourceType(r_type_str);
+  if (r_type_eval == -1) {
+    return false;
+  }
+  r_type = r_type_eval;
+  name_of_resource = string_list.at(1);
   return true;
 }

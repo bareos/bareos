@@ -26,15 +26,16 @@
 
 class QualifiedResourceNameTypeConverter {
  public:
-  QualifiedResourceNameTypeConverter(std::map<int,std::string> map);
-  std::string ResourceTypeToString(const int &type) const;
-  int StringToResourceType(const std::string &) const;
+  QualifiedResourceNameTypeConverter(std::map<int, std::string> map);
   bool ResourceToString(const std::string &name_of_resource, const int &r_type, std::string &out) const;
   bool StringToResource(std::string &name_of_resource, int &r_type, const std::string &in) const;
 
  private:
-  std::map<int,std::string> type_name_relation_map_;
-  std::map<std::string,int> name_type_relation_map_;
+  std::map<int, std::string> type_name_relation_map_;
+  std::map<std::string, int> name_type_relation_map_;
+
+  std::string ResourceTypeToString(const int &type) const;
+  int StringToResourceType(const std::string &) const;
 };
 
 #endif /* BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_ */

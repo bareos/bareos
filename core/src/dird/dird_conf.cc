@@ -52,6 +52,7 @@
 #include "dird/inc_conf.h"
 #include "dird/dird_globals.h"
 #include "lib/tls_conf.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 namespace directordaemon {
 
@@ -3784,6 +3785,23 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
   CreateAndAddUserAgentConsoleResource(my_config);
+
+  std::map<int, std::string> map;
+  map.insert(std::make_pair(R_DIRECTOR, "R_DIRECTOR"));
+  map.insert(std::make_pair(R_CLIENT, "R_CLIENT"));
+  map.insert(std::make_pair(R_JOBDEFS, "R_JOBDEFS"));
+  map.insert(std::make_pair(R_JOB, "R_JOB"));
+  map.insert(std::make_pair(R_STORAGE, "R_STORAGE"));
+  map.insert(std::make_pair(R_CATALOG, "R_CATALOG"));
+  map.insert(std::make_pair(R_SCHEDULE, "R_SCHEDULE"));
+  map.insert(std::make_pair(R_FILESET, "R_FILESET"));
+  map.insert(std::make_pair(R_POOL, "R_POOL"));
+  map.insert(std::make_pair(R_MSGS, "R_MSGS"));
+  map.insert(std::make_pair(R_COUNTER, "R_COUNTER"));
+  map.insert(std::make_pair(R_PROFILE, "R_PROFILE"));
+  map.insert(std::make_pair(R_CONSOLE, "R_CONSOLE"));
+  map.insert(std::make_pair(R_DEVICE, "R_DEVICE"));
+  my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
 
