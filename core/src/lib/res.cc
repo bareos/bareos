@@ -136,7 +136,7 @@ const char *ConfigurationParser::res_to_str(int rcode) const
     return resources_[rcode - r_first_].name;
   }
 }
-#include "dird/dird_conf.h"
+
 bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                                 const char *fq_name_in,
                                                                 std::string &psk)
