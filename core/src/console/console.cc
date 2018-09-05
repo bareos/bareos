@@ -41,7 +41,7 @@
 #else
 #define ConInit(x)
 #define ConTerm()
-#define ConSetZedKeys();
+#define ConSetZedKeys()
 #define trapctlc()
 #define clrbrk()
 #define usrbrk() 0
@@ -187,9 +187,7 @@ static int Do_a_command(FILE *input, BareosSocket *UA_sock)
   status = 1;
 
   Dmsg1(120, "Command: %s\n", UA_sock->msg);
-  if (argc == 0) {
-    return 1;
-  }
+  if (argc == 0) { return 1; }
 
   cmd = argk[0] + 1;
   if (*cmd == '#') { /* comment */
@@ -228,20 +226,14 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
     }
     if (tty_input) {
       status = GetCmd(input, prompt, UA_sock, 30);
-      if (usrbrk() == 1) {
-        clrbrk();
-      }
-      if (usrbrk()) {
-        break;
-      }
+      if (usrbrk() == 1) { clrbrk(); }
+      if (usrbrk()) { break; }
     } else {
       /*
        * Reading input from a file
        */
       int len = SizeofPoolMemory(UA_sock->msg) - 1;
-      if (usrbrk()) {
-        break;
-      }
+      if (usrbrk()) { break; }
       if (fgets(UA_sock->msg, len, input) == NULL) {
         status = -1;
       } else {
@@ -268,9 +260,7 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
        */
       if (UA_sock->msg[0] == '@') {
         ParseArgs(UA_sock->msg, args, &argc, argk, argv, MAX_CMD_ARGS);
-        if (!Do_a_command(input, UA_sock)) {
-          break;
-        }
+        if (!Do_a_command(input, UA_sock)) { break; }
         continue;
       }
       tid = StartBsockTimer(UA_sock, timeout);
@@ -281,9 +271,7 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
       StopBsockTimer(tid);
     }
 
-    if (bstrcmp(UA_sock->msg, ".quit") || bstrcmp(UA_sock->msg, ".exit")) {
-      break;
-    }
+    if (bstrcmp(UA_sock->msg, ".quit") || bstrcmp(UA_sock->msg, ".exit")) { break; }
 
     tid = StartBsockTimer(UA_sock, timeout);
     while ((status = UA_sock->recv()) >= 0 ||
@@ -300,9 +288,7 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
       }
 
       if (at_prompt) {
-        if (!stop) {
-          sendit("\n");
-        }
+        if (!stop) { sendit("\n"); }
         at_prompt = false;
       }
 
@@ -310,9 +296,7 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
        * Suppress output if running in background or user hit ctl-c
        */
       if (!stop && !usrbrk()) {
-        if (UA_sock->msg) {
-          sendit(UA_sock->msg);
-        }
+        if (UA_sock->msg) { sendit(UA_sock->msg); }
       }
     }
     StopBsockTimer(tid);
@@ -322,16 +306,12 @@ static void ReadAndProcessInput(FILE *input, BareosSocket *UA_sock)
     } else {
       clrbrk();
     }
-    if (!stop) {
-      fflush(stdout);
-    }
+    if (!stop) { fflush(stdout); }
 
     if (IsBnetStop(UA_sock)) {
       break; /* error or term */
     } else if (status == BNET_SIGNAL) {
-      if (UA_sock->message_length == BNET_SUB_PROMPT) {
-        at_prompt = true;
-      }
+      if (UA_sock->message_length == BNET_SUB_PROMPT) { at_prompt = true; }
       Dmsg1(100, "Got poll %s\n", BnetSigToAscii(UA_sock));
     }
   }
@@ -406,9 +386,7 @@ static char *get_previous_keyword(int current_point, int nb)
      * First we look for a space before the current word
      */
     for (i = current_point; i >= 0; i--) {
-      if (rl_line_buffer[i] == ' ' || rl_line_buffer[i] == '=') {
-        break;
-      }
+      if (rl_line_buffer[i] == ' ' || rl_line_buffer[i] == '=') { break; }
     }
 
     /*
@@ -424,20 +402,14 @@ static char *get_previous_keyword(int current_point, int nb)
     /*
      * No end of string
      */
-    if (end == -1) {
-      return NULL;
-    }
+    if (end == -1) { return NULL; }
 
     /*
      * Look for the start of the command
      */
     for (start = end; start > 0; start--) {
-      if (rl_line_buffer[start] == '"') {
-        inquotes = !inquotes;
-      }
-      if ((rl_line_buffer[start - 1] == ' ') && inquotes == 0) {
-        break;
-      }
+      if (rl_line_buffer[start] == '"') { inquotes = !inquotes; }
+      if ((rl_line_buffer[start - 1] == ' ') && inquotes == 0) { break; }
       current_point = start;
     }
   }
@@ -482,9 +454,7 @@ static void match_kw(regex_t *preg, const char *what, int len, POOLMEM *&buf)
   int nmatch = 20;
   regmatch_t pmatch[20];
 
-  if (len <= 0) {
-    return;
-  }
+  if (len <= 0) { return; }
   rc = regexec(preg, what, nmatch, pmatch, 0);
   if (rc == 0) {
 #if 0
@@ -517,9 +487,7 @@ void GetArguments(const char *what)
   init_items();
 
   rc = regcomp(&preg, "(([a-z_]+=)|([a-z]+)( |$))", REG_EXTENDED);
-  if (rc != 0) {
-    return;
-  }
+  if (rc != 0) { return; }
 
   buf = GetPoolMemory(PM_MESSAGE);
   UA_sock->fsend(".help item=%s", what);
@@ -661,9 +629,7 @@ static char **readline_completion(const char *text, int start, int end)
       /*
        * See if this keyword is allowed with the current file_selection setting.
        */
-      if (cpl_keywords[i].file_selection != file_selection) {
-        continue;
-      }
+      if (cpl_keywords[i].file_selection != file_selection) { continue; }
 
       if (Bstrcasecmp(s, cpl_keywords[i].key)) {
         cpl_item = cpl_keywords[i].cmd;
@@ -687,9 +653,7 @@ static char **readline_completion(const char *text, int start, int end)
     cpl_type = ITEM_ARG;
     matches  = rl_completion_matches(text, cpl_generator);
   }
-  if (cmd) {
-    free(cmd);
-  }
+  if (cmd) { free(cmd); }
   return (matches);
 }
 
@@ -724,9 +688,7 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
    * so, be we have to use the real free
    */
   line = readline((char *)prompt); /* cast needed for old readlines */
-  if (!line) {
-    return -1; /* error return and exit */
-  }
+  if (!line) { return -1; /* error return and exit */ }
   StripTrailingJunk(line);
   command = line;
 
@@ -738,23 +700,15 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
     next = NULL;
   } else {
     next = strchr(command, eol);
-    if (next) {
-      *next = '\0';
-    }
+    if (next) { *next = '\0'; }
   }
-  if (command != line && isatty(fileno(input))) {
-    senditf("%s%s\n", prompt, command);
-  }
+  if (command != line && isatty(fileno(input))) { senditf("%s%s\n", prompt, command); }
 
   sock->message_length = PmStrcpy(sock->msg, command);
-  if (sock->message_length) {
-    do_history++;
-  }
+  if (sock->message_length) { do_history++; }
 
   if (!next) {
-    if (do_history) {
-      add_history(line);
-    }
+    if (do_history) { add_history(line); }
     Actuallyfree(line); /* allocated by readline() malloc */
     line = NULL;
   }
@@ -766,9 +720,7 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 #ifdef HAVE_CONIO
 static bool bisatty(int fd)
 {
-  if (no_conio) {
-    return false;
-  }
+  if (no_conio) { return false; }
   return isatty(fd);
 }
 #endif
@@ -785,9 +737,7 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
   int len;
 
   if (!stop) {
-    if (output == stdout || teeout) {
-      sendit(prompt);
-    }
+    if (output == stdout || teeout) { sendit(prompt); }
   }
 
 again:
@@ -805,18 +755,12 @@ again:
 #endif
 
   if (input == stdin) {
-    if (win32_cgets(sock->msg, len) == NULL) {
-      return -1;
-    }
+    if (win32_cgets(sock->msg, len) == NULL) { return -1; }
   } else {
-    if (fgets(sock->msg, len, input) == NULL) {
-      return -1;
-    }
+    if (fgets(sock->msg, len, input) == NULL) { return -1; }
   }
 
-  if (usrbrk()) {
-    clrbrk();
-  }
+  if (usrbrk()) { clrbrk(); }
 
   StripTrailingJunk(sock->msg);
   sock->message_length = strlen(sock->msg);
@@ -836,9 +780,7 @@ int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
   int len;
 
   if (!stop) {
-    if (output == stdout || teeout) {
-      sendit(prompt);
-    }
+    if (output == stdout || teeout) { sendit(prompt); }
   }
 
 again:
@@ -859,15 +801,11 @@ again:
         break;
       }
 #endif
-      if (fgets(sock->msg, len, input) == NULL) {
-        return -1;
-      }
+      if (fgets(sock->msg, len, input) == NULL) { return -1; }
       break;
   }
 
-  if (usrbrk()) {
-    clrbrk();
-  }
+  if (usrbrk()) { clrbrk(); }
 
   StripTrailingJunk(sock->msg);
   sock->message_length = strlen(sock->msg);
@@ -889,9 +827,7 @@ static int ConsoleUpdateHistory(const char *histfile)
    */
   max_history_length = (me) ? me->history_length : 100;
   truncate_entries   = max_history_length - history_length;
-  if (truncate_entries < 0) {
-    truncate_entries = 0;
-  }
+  if (truncate_entries < 0) { truncate_entries = 0; }
 
   /*
    * First, try to truncate the history file, and if it
@@ -966,9 +902,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
     LockRes();
     foreach_res(director_resource, R_DIRECTOR)
     {
-      if (bstrcmp(director_resource->name(), director)) {
-        break;
-      }
+      if (bstrcmp(director_resource->name(), director)) { break; }
     }
     UnlockRes();
     if (!director_resource) { /* Can't find Director used as argument */
@@ -1018,7 +952,8 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    */
   LockRes();
   for (i = 0; i < numcon; i++) {
-    console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+    console_resource =
+        (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
     if (console_resource->director && bstrcmp(console_resource->director, director_resource->name())) {
       break;
     }
@@ -1030,7 +965,8 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    */
   if (console_resource == NULL) {
     for (i = 0; i < numcon; i++) {
-      console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+      console_resource =
+          (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
       if (console_resource->director == NULL) break;
       console_resource = NULL;
     }
@@ -1053,7 +989,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
 namespace console {
 BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
 {
-  BareosSocketTCP *UA_sock     = New(BareosSocketTCP);
+  BareosSocketTCP *UA_sock = New(BareosSocketTCP);
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
                         director_resource->DIRport, false)) {
     delete UA_sock;
@@ -1069,31 +1005,29 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
   if (console_resource) {
     name = console_resource->name();
     ASSERT(console_resource->password.encoding == p_encoding_md5);
-    password = &console_resource->password;
-    tls_configuration = dynamic_cast<TlsResource*>(console_resource);
+    password          = &console_resource->password;
+    tls_configuration = dynamic_cast<TlsResource *>(console_resource);
   } else { /* default console */
     name = "*UserAgent*";
     ASSERT(director_resource->password.encoding == p_encoding_md5);
-    password = &director_resource->password;
-    tls_configuration = dynamic_cast<TlsResource*>(director_resource);
+    password          = &director_resource->password;
+    tls_configuration = dynamic_cast<TlsResource *>(director_resource);
   }
 
   std::string qualified_resource_name;
-  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name,
-                                                                       my_config->r_own_,
-                                                                       qualified_resource_name)) {
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
+                                                                            qualified_resource_name)) {
     sendit("Could not generate qualified resource name\n");
     TerminateConsole(0);
     return nullptr;
   }
 
-  if (!UA_sock->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
-                               password->value, &jcr))
-    {
-      sendit(errmsg);
-      TerminateConsole(0);
-      return nullptr;
-    }
+  if (!UA_sock->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), password->value,
+                               &jcr)) {
+    sendit(errmsg);
+    TerminateConsole(0);
+    return nullptr;
+  }
 
   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
     sendit(errmsg);
@@ -1136,9 +1070,7 @@ int main(int argc, char *argv[])
   while ((ch = getopt(argc, argv, "D:lc:d:nstu:x:?")) != -1) {
     switch (ch) {
       case 'D': /* Director */
-        if (director) {
-          free(director);
-        }
+        if (director) { free(director); }
         director = bstrdup(optarg);
         break;
 
@@ -1148,9 +1080,7 @@ int main(int argc, char *argv[])
         break;
 
       case 'c': /* configuration file */
-        if (configfile != NULL) {
-          free(configfile);
-        }
+        if (configfile != NULL) { free(configfile); }
         configfile = bstrdup(optarg);
         break;
 
@@ -1159,9 +1089,7 @@ int main(int argc, char *argv[])
           dbg_timestamp = true;
         } else {
           debug_level = atoi(optarg);
-          if (debug_level <= 0) {
-            debug_level = 1;
-          }
+          if (debug_level <= 0) { debug_level = 1; }
         }
         break;
 
@@ -1200,9 +1128,7 @@ int main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
-  if (!no_signals) {
-    InitSignals(TerminateConsole);
-  }
+  if (!no_signals) { InitSignals(TerminateConsole); }
 
 #if !defined(HAVE_WIN32)
   /* Override Bareos default signals */
@@ -1238,18 +1164,14 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  if (InitCrypto() != 0) {
-    Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
-  }
+  if (InitCrypto() != 0) { Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n")); }
 
   if (!CheckResources()) {
     Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
   }
 
-  if (!no_conio) {
-    ConInit(stdin);
-  }
+  if (!no_conio) { ConInit(stdin); }
 
   if (list_directors) {
     LockRes();
@@ -1268,9 +1190,7 @@ int main(int argc, char *argv[])
 
   StartWatchdog(); /* Start socket watchdog */
 
-  if (!SelectDirector(director, &director_resource, &console_resource)) {
-    return 1;
-  }
+  if (!SelectDirector(director, &director_resource, &console_resource)) { return 1; }
 
   senditf(_("Connecting to Director %s:%d\n"), director_resource->address, director_resource->DIRport);
 
@@ -1283,9 +1203,7 @@ int main(int argc, char *argv[])
   }
 
   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
-  if (!UA_sock) {
-    return 1;
-  }
+  if (!UA_sock) { return 1; }
 
   sendit(errmsg);
 
@@ -1343,9 +1261,7 @@ int main(int argc, char *argv[])
     UA_sock->close();
   }
 
-  if (history_file.size()) {
-    ConsoleUpdateHistory(history_file.c_str());
-  }
+  if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
 
   TerminateConsole(0);
   return 0;
@@ -1365,15 +1281,11 @@ static void TerminateConsole(int sig)
   my_config = NULL;
   CleanupCrypto();
   FreePoolMemory(args);
-  if (!no_conio) {
-    ConTerm();
-  }
+  if (!no_conio) { ConTerm(); }
   WSACleanup(); /* Cleanup Windows sockets */
   LmgrCleanupMain();
 
-  if (sig != 0) {
-    exit(1);
-  }
+  if (sig != 0) { exit(1); }
   return;
 }
 
@@ -1470,9 +1382,7 @@ static int DoOutputcmd(FILE *input, BareosSocket *UA_sock)
     }
     return 1;
   }
-  if (argc == 3) {
-    mode = argk[2];
-  }
+  if (argc == 3) { mode = argk[2]; }
   fd = fopen(argk[1], mode);
   if (!fd) {
     BErrNo be;
@@ -1497,9 +1407,7 @@ static int ExecCmd(FILE *input, BareosSocket *UA_sock)
     sendit(_("Too many arguments. Enclose command in double quotes.\n"));
     return 1;
   }
-  if (argc == 3) {
-    wait = atoi(argk[2]);
-  }
+  if (argc == 3) { wait = atoi(argk[2]); }
   bpipe = OpenBpipe(argk[1], wait, "r");
   if (!bpipe) {
     BErrNo be;
@@ -1507,9 +1415,7 @@ static int ExecCmd(FILE *input, BareosSocket *UA_sock)
     return 1;
   }
 
-  while (fgets(line, sizeof(line), bpipe->rfd)) {
-    senditf("%s", line);
-  }
+  while (fgets(line, sizeof(line), bpipe->rfd)) { senditf("%s", line); }
   status = CloseBpipe(bpipe);
   if (status != 0) {
     BErrNo be;
@@ -1522,9 +1428,7 @@ static int ExecCmd(FILE *input, BareosSocket *UA_sock)
 /* @echo xxx yyy */
 static int EchoCmd(FILE *input, BareosSocket *UA_sock)
 {
-  for (int i = 1; i < argc; i++) {
-    senditf("%s ", argk[i]);
-  }
+  for (int i = 1; i < argc; i++) { senditf("%s ", argk[i]); }
   sendit("\n");
   return 1;
 }
@@ -1536,18 +1440,14 @@ static int QuitCmd(FILE *input, BareosSocket *UA_sock) { return 0; }
 static int HelpCmd(FILE *input, BareosSocket *UA_sock)
 {
   int i;
-  for (i = 0; i < comsize; i++) {
-    senditf("  %-10s %s\n", commands[i].key, commands[i].help);
-  }
+  for (i = 0; i < comsize; i++) { senditf("  %-10s %s\n", commands[i].key, commands[i].help); }
   return 1;
 }
 
 /* @sleep secs */
 static int SleepCmd(FILE *input, BareosSocket *UA_sock)
 {
-  if (argc > 1) {
-    sleep(atoi(argk[1]));
-  }
+  if (argc > 1) { sleep(atoi(argk[1])); }
   return 1;
 }
 

@@ -72,9 +72,7 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
   jcr.ua = bs;
 
-  if (!bs->IsCleartextBareosHello()) {
-    bs->DoTlsHandshakeAsAServer(config, &jcr);
-  }
+  if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config, &jcr); }
 
   if (bs->recv() <= 0) {
     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
@@ -133,9 +131,7 @@ void StartSocketServer(dlist *addrs)
   int status;
   static dlist *myaddrs = addrs;
 
-  if (client_connections == NULL) {
-    client_connections = New(ConnectionPool());
-  }
+  if (client_connections == NULL) { client_connections = New(ConnectionPool()); }
   if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
@@ -152,8 +148,6 @@ void StopSocketServer()
     delete sock_fds;
     sock_fds = NULL;
   }
-  if (client_connections) {
-    delete (client_connections);
-  }
+  if (client_connections) { delete (client_connections); }
 }
 } /* namespace directordaemon */
