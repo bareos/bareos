@@ -389,6 +389,44 @@ TEST(bsock, auth_fails_with_different_passwords)
   EXPECT_FALSE(future.get());
 }
 
+TEST(bsock, auth_works_with_tls_cert)
+{
+  port++;
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  cons_dir_config->tls_psk.enable = true;
+  cons_dir_config->tls_cert.enable = true;
+  dir_cons_config->tls_cert.enable = true;
+
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
+                            HOST, port);
+
+  Dmsg0(10, "connecting to server\n");
+
+#if CLIENT_AS_A_THREAD
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, cons_dir_config.get());
+  client_thread.join();
+#else
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+#endif
+
+  server_thread.join();
+
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_TRUE(future.get());
+}
+
+#if 0
 TEST(bsock, auth_works_with_tls_psk)
 {
   port++;
@@ -453,51 +491,4 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   EXPECT_TRUE(cipher_server == cipher_client);
   EXPECT_FALSE(future.get());
 }
-
-TEST(bsock, auth_works_with_tls_cert)
-{
-  port++;
-  std::promise<bool> promise;
-  std::future<bool> future = promise.get_future();
-
-  client_cons_name = "clientname";
-  client_cons_password = "verysecretpassword";
-
-  server_cons_name = client_cons_name;
-  server_cons_password = client_cons_password;
-
-  InitForTest();
-
-  cons_dir_config->tls_psk.enable = true;
-  cons_dir_config->tls_cert.enable = true;
-  dir_cons_config->tls_cert.enable = true;
-
-  Dmsg0(10, "starting listen thread...\n");
-  std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
-
-  Dmsg0(10, "connecting to server\n");
-
-#if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, cons_dir_config.get());
-  client_thread.join();
-#else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
 #endif
-
-  server_thread.join();
-
-  EXPECT_TRUE(cipher_server == cipher_client);
-  EXPECT_TRUE(future.get());
-}
-
-CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock)
-{
-   std::string clientname(name);
-   std::string configured_name(dir_cons_config->hdr.name);
-   if (clientname == configured_name) {
-      return reinterpret_cast<CommonResourceHeader*>(dir_cons_config.get());
-   } else {
-      return nullptr;
-   }
-}
