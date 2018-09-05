@@ -84,7 +84,7 @@ extern void StoreRun(LEX *lc, ResourceItem *item, int index, int pass);
 /**
  * Forward referenced subroutines
  */
-static bool CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config);
+static void CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config);
 
 /**
  * We build the current resource here as we are
@@ -3844,7 +3844,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources *res_to_add, int type) 
  * connections can be handled in unique way
  *
  */
-static bool CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config) {
+static void CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config) {
 
   DirectorResource *dir_resource = (DirectorResource *)my_config.GetNextRes(R_DIRECTOR, NULL);
   ConsoleResource console;
