@@ -1,0 +1,17 @@
+BasedOnStyle: Google
+BreakBeforeBraces: Custom
+BraceWrapping: 
+   AfterFunction: true
+   AfterEnum: true
+ColumnLimit:     111
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+AlignOperands: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: true
+AllowShortFunctionsOnASingleLine: true
+BinPackParameters: false
+BreakConstructorInitializers: BeforeComma
+BreakBeforeInheritanceComma: true
+BreakBeforeTernaryOperators: true
+SortIncludes: false
