@@ -32,7 +32,6 @@
 #include "lib/edit.h"
 #include "qualified_resource_name_type_converter.h"
 
-
 /* Forward referenced subroutines */
 
 extern ConfigurationParser *my_config; /* Our Global config */
@@ -97,21 +96,15 @@ CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char 
   CommonResourceHeader *res;
   int rindex = rcode - r_first_;
 
-  if (lock) {
-    LockRes();
-  }
+  if (lock) { LockRes(); }
 
   res = res_head_[rindex];
   while (res) {
-    if (bstrcmp(res->name, name)) {
-      break;
-    }
+    if (bstrcmp(res->name, name)) { break; }
     res = res->next;
   }
 
-  if (lock) {
-    UnlockRes();
-  }
+  if (lock) { UnlockRes(); }
 
   return res;
 }
@@ -156,10 +149,8 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   int r_type;
   std::string name;
   bool ok = config->GetQualifiedResourceNameTypeConverter()->StringToResource(name, r_type, fq_name_in);
-  if (!ok || r_type < 0) {
-    return false;
-  }
-  TlsResource *tls = reinterpret_cast<TlsResource*>(config->GetResWithName(r_type, name.c_str()));
+  if (!ok || r_type < 0) { return false; }
+  TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
   if (tls) {
     psk = tls->password.value;
     return true;
@@ -216,9 +207,7 @@ void ConfigurationParser::scan_types(LEX *lc,
     } else {
       AddMsgDest(msg, dest_code, msg_type, where, cmd, timestamp_format);
     }
-    if (lc->ch != ',') {
-      break;
-    }
+    if (lc->ch != ',') { break; }
     Dmsg0(900, "call LexGetToken() to eat comma\n");
     LexGetToken(lc, BCT_ALL); /* eat comma */
   }
@@ -325,9 +314,7 @@ void ConfigurationParser::StoreMsgs(LEX *lc, ResourceItem *item, int index, int 
           dest_len += lc->str_len;
           Dmsg2(900, "StoreMsgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
           token = LexGetToken(lc, BCT_SKIP_EOL);
-          if (token == BCT_COMMA) {
-            continue; /* Get another destination */
-          }
+          if (token == BCT_COMMA) { continue; /* Get another destination */ }
           if (token != BCT_EQUALS) {
             scan_err1(lc, _("expected an =, got: %s"), lc->str);
             return;
@@ -470,9 +457,7 @@ void ConfigurationParser::StoreDir(LEX *lc, ResourceItem *item, int index, int p
     if (*(item->value)) { /* free old item */
       free(*(item->value));
     }
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
+    if (lc->str[0] != '|') { DoShellExpansion(lc->str, SizeofPoolMemory(lc->str)); }
     *(item->value) = bstrdup(lc->str);
   }
   ScanToEol(lc);
@@ -489,9 +474,7 @@ void ConfigurationParser::StoreStdstrdir(LEX *lc, ResourceItem *item, int index,
     if (*(item->strValue)) { /* free old item */
       delete (*(item->value));
     }
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
+    if (lc->str[0] != '|') { DoShellExpansion(lc->str, SizeofPoolMemory(lc->str)); }
     *(item->strValue) = new std::string(lc->str);
   }
   ScanToEol(lc);
@@ -511,9 +494,7 @@ void ConfigurationParser::store_md5password(LEX *lc, ResourceItem *item, int ind
   if (pass == 1) { /* free old item */
     pwd = item->pwdvalue;
 
-    if (pwd->value) {
-      free(pwd->value);
-    }
+    if (pwd->value) { free(pwd->value); }
 
     /*
      * See if we are parsing an MD5 encoded password already.
@@ -555,9 +536,7 @@ void ConfigurationParser::StoreClearpassword(LEX *lc, ResourceItem *item, int in
   if (pass == 1) {
     pwd = item->pwdvalue;
 
-    if (pwd->value) {
-      free(pwd->value);
-    }
+    if (pwd->value) { free(pwd->value); }
 
     pwd->encoding = p_encoding_clear;
     pwd->value    = bstrdup(lc->str);
@@ -614,15 +593,12 @@ void ConfigurationParser::StoreAlistRes(LEX *lc, ResourceItem *item, int index, 
   if (pass == 2) {
     if (count == 0) { /* always store in item->value */
       i = 0;
-      if (!item->alistvalue[i]) {
-        item->alistvalue[i] = New(alist(10, not_owned_by_alist));
-      }
+      if (!item->alistvalue[i]) { item->alistvalue[i] = New(alist(10, not_owned_by_alist)); }
     } else {
       /*
        * Find empty place to store this directive
        */
-      while ((item->value)[i] != NULL && i++ < count) {
-      }
+      while ((item->value)[i] != NULL && i++ < count) {}
       if (i >= count) {
         scan_err4(lc, _("Too many %s directives. Max. is %d. line %d: %s\n"), lc->str, count, lc->line_no,
                   lc->line);
@@ -662,9 +638,7 @@ void ConfigurationParser::StoreAlistStr(LEX *lc, ResourceItem *item, int index, 
   UnionOfResources *res_all = reinterpret_cast<UnionOfResources *>(res_all_);
 
   if (pass == 2) {
-    if (!*(item->value)) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
-    }
+    if (!*(item->value)) { *(item->alistvalue) = New(alist(10, owned_by_alist)); }
     list = *(item->alistvalue);
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
@@ -705,17 +679,13 @@ void ConfigurationParser::StoreAlistDir(LEX *lc, ResourceItem *item, int index, 
   UnionOfResources *res_all = reinterpret_cast<UnionOfResources *>(res_all_);
 
   if (pass == 2) {
-    if (!*(item->alistvalue)) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
-    }
+    if (!*(item->alistvalue)) { *(item->alistvalue) = New(alist(10, owned_by_alist)); }
     list = *(item->alistvalue);
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list, list->size(), item->name);
 
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
+    if (lc->str[0] != '|') { DoShellExpansion(lc->str, SizeofPoolMemory(lc->str)); }
 
     /*
      * See if we need to drop the default value from the alist.
@@ -752,9 +722,7 @@ void ConfigurationParser::StorePluginNames(LEX *lc, ResourceItem *item, int inde
   if (pass == 2) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
 
-    if (!*(item->alistvalue)) {
-      *(item->alistvalue) = New(alist(10, owned_by_alist));
-    }
+    if (!*(item->alistvalue)) { *(item->alistvalue) = New(alist(10, owned_by_alist)); }
     list = *(item->alistvalue);
 
     plugin_names = bstrdup(lc->str);
@@ -936,9 +904,7 @@ void ConfigurationParser::store_int_unit(LEX *lc,
       scan_err2(lc, _("expected a %s, got: %s"), (type == STORE_SIZE) ? _("size") : _("speed"), lc->str);
       return;
   }
-  if (token != BCT_EOL) {
-    ScanToEol(lc);
-  }
+  if (token != BCT_EOL) { ScanToEol(lc); }
   SetBit(index, res_all->hdr.item_present);
   ClearBit(index, res_all->hdr.inherit_content);
   Dmsg0(900, "Leave store_unit\n");
@@ -1008,9 +974,7 @@ void ConfigurationParser::StoreTime(LEX *lc, ResourceItem *item, int index, int 
       scan_err1(lc, _("expected a time period, got: %s"), lc->str);
       return;
   }
-  if (token != BCT_EOL) {
-    ScanToEol(lc);
-  }
+  if (token != BCT_EOL) { ScanToEol(lc); }
   SetBit(index, res_all->hdr.item_present);
   ClearBit(index, res_all->hdr.inherit_content);
 }
@@ -1137,13 +1101,9 @@ void ConfigurationParser::StoreAddresses(LEX *lc, ResourceItem *item, int index,
   int port    = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token != BCT_BOB) {
-    scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
-  }
+  if (token != BCT_BOB) { scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str); }
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token == BCT_EOB) {
-    scan_err0(lc, _("Empty addr block is not allowed"));
-  }
+  if (token == BCT_EOB) { scan_err0(lc, _("Empty addr block is not allowed")); }
   do {
     if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
       scan_err1(lc, _("Expected a string, got: %s"), lc->str);
@@ -1162,39 +1122,27 @@ void ConfigurationParser::StoreAddresses(LEX *lc, ResourceItem *item, int index,
     }
 #endif
     token = LexGetToken(lc, BCT_SKIP_EOL);
-    if (token != BCT_EQUALS) {
-      scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
-    }
+    if (token != BCT_EQUALS) { scan_err1(lc, _("Expected a equal =, got: %s"), lc->str); }
     token = LexGetToken(lc, BCT_SKIP_EOL);
-    if (token != BCT_BOB) {
-      scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
-    }
+    if (token != BCT_BOB) { scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str); }
     token       = LexGetToken(lc, BCT_SKIP_EOL);
     exist       = EMPTYLINE;
     port_str[0] = hostname_str[0] = '\0';
     do {
-      if (token != BCT_IDENTIFIER) {
-        scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
-      }
+      if (token != BCT_IDENTIFIER) { scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str); }
       if (Bstrcasecmp("port", lc->str)) {
         next_line = PORTLINE;
-        if (exist & PORTLINE) {
-          scan_err0(lc, _("Only one port per address block"));
-        }
+        if (exist & PORTLINE) { scan_err0(lc, _("Only one port per address block")); }
         exist |= PORTLINE;
       } else if (Bstrcasecmp("addr", lc->str)) {
         next_line = ADDRLINE;
-        if (exist & ADDRLINE) {
-          scan_err0(lc, _("Only one addr per address block"));
-        }
+        if (exist & ADDRLINE) { scan_err0(lc, _("Only one addr per address block")); }
         exist |= ADDRLINE;
       } else {
         scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
-      if (token != BCT_EQUALS) {
-        scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
-      }
+      if (token != BCT_EQUALS) { scan_err1(lc, _("Expected a equal =, got: %s"), lc->str); }
       token = LexGetToken(lc, BCT_SKIP_EOL);
       switch (next_line) {
         case PORTLINE:
@@ -1215,18 +1163,14 @@ void ConfigurationParser::StoreAddresses(LEX *lc, ResourceItem *item, int index,
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
     } while (token == BCT_IDENTIFIER);
-    if (token != BCT_EOB) {
-      scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
-    }
+    if (token != BCT_EOB) { scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str); }
     if (pass == 1 && !AddAddress(item->dlistvalue, IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
                                  port_str, errmsg, sizeof(errmsg))) {
       scan_err3(lc, _("Can't add hostname(%s) and port(%s) to addrlist (%s)"), hostname_str, port_str, errmsg);
     }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
-  if (token != BCT_EOB) {
-    scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
-  }
+  if (token != BCT_EOB) { scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str); }
 }
 
 void ConfigurationParser::StoreAddressesAddress(LEX *lc, ResourceItem *item, int index, int pass)
@@ -1366,9 +1310,7 @@ bool ConfigurationParser::StoreResource(int type, LEX *lc, ResourceItem *item, i
 
 void IndentConfigItem(PoolMem &cfg_str, int level, const char *config_item, bool inherited)
 {
-  for (int i = 0; i < level; i++) {
-    PmStrcat(cfg_str, DEFAULT_INDENT_STRING);
-  }
+  for (int i = 0; i < level; i++) { PmStrcat(cfg_str, DEFAULT_INDENT_STRING); }
   if (inherited) {
     PmStrcat(cfg_str, "#");
     PmStrcat(cfg_str, DEFAULT_INDENT_STRING);
@@ -1406,9 +1348,7 @@ static void PrintConfigSize(ResourceItem *item, PoolMem &cfg_str, bool inherited
         PmStrcat(volspec, temp.c_str());
         Dmsg1(200, " volspec: %s\n", volspec.c_str());
       }
-      if (bytes == 0) {
-        break;
-      }
+      if (bytes == 0) { break; }
     }
   }
 
@@ -1442,9 +1382,7 @@ static void PrintConfigTime(ResourceItem *item, PoolMem &cfg_str, bool inherited
         Mmsg(temp, "%d %s ", factor, modifier[t]);
         PmStrcat(timespec, temp.c_str());
       }
-      if (secs == 0) {
-        break;
-      }
+      if (secs == 0) { break; }
     }
   }
 
@@ -1655,17 +1593,13 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
   /*
    * If entry is not used, then there is nothing to print.
    */
-  if (this->hdr.rcode < (uint32_t)my_config->r_first_ || this->hdr.refcnt <= 0) {
-    return true;
-  }
+  if (this->hdr.rcode < (uint32_t)my_config->r_first_ || this->hdr.refcnt <= 0) { return true; }
   rindex = this->hdr.rcode - my_config->r_first_;
 
   /*
    * Make sure the resource class has any items.
    */
-  if (!my_config->resources_[rindex].items) {
-    return true;
-  }
+  if (!my_config->resources_[rindex].items) { return true; }
 
   memcpy(my_config->res_all_, this, my_config->resources_[rindex].size);
 
@@ -1681,9 +1615,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
     /*
      * If this is an alias for another config keyword suppress it.
      */
-    if ((items[i].flags & CFG_ITEM_ALIAS)) {
-      continue;
-    }
+    if ((items[i].flags & CFG_ITEM_ALIAS)) { continue; }
 
     if ((!verbose) && inherited) {
       /*
@@ -1768,9 +1700,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
              * Supress printing default value.
              */
             if (items[i].flags & CFG_ITEM_DEFAULT) {
-              if (Bstrcasecmp(items[i].default_value, tapelabels[j].name)) {
-                break;
-              }
+              if (Bstrcasecmp(items[i].default_value, tapelabels[j].name)) { break; }
             }
 
             Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
@@ -1817,14 +1747,10 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
         break;
       case CFG_TYPE_SIZE64:
       case CFG_TYPE_SIZE32:
-        if (print_item) {
-          PrintConfigSize(&items[i], cfg_str, inherited);
-        }
+        if (print_item) { PrintConfigSize(&items[i], cfg_str, inherited); }
         break;
       case CFG_TYPE_TIME:
-        if (print_item) {
-          PrintConfigTime(&items[i], cfg_str, inherited);
-        }
+        if (print_item) { PrintConfigTime(&items[i], cfg_str, inherited); }
         break;
       case CFG_TYPE_BOOL:
         if (print_item) {
@@ -1853,9 +1779,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
              * If this is the default value skip it.
              */
             if (items[i].flags & CFG_ITEM_DEFAULT) {
-              if (bstrcmp(value, items[i].default_value)) {
-                continue;
-              }
+              if (bstrcmp(value, items[i].default_value)) { continue; }
             }
             Mmsg(temp, "%s = \"%s\"\n", items[i].name, value);
             IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
@@ -1987,9 +1911,7 @@ json_t *json_item(ResourceItem *item)
   json_object_set_new(json, "datatype", json_string(datatype_to_str(item->type)));
   json_object_set_new(json, "code", json_integer(item->code));
 
-  if (item->flags & CFG_ITEM_ALIAS) {
-    json_object_set_new(json, "alias", json_true());
-  }
+  if (item->flags & CFG_ITEM_ALIAS) { json_object_set_new(json, "alias", json_true()); }
   if (item->flags & CFG_ITEM_DEFAULT) {
     /* FIXME? would it be better to convert it to the right type before returning? */
     json_object_set_new(json, "default_value", json_string(item->default_value));
@@ -1997,23 +1919,15 @@ json_t *json_item(ResourceItem *item)
   if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
     json_object_set_new(json, "platform_specific", json_true());
   }
-  if (item->flags & CFG_ITEM_DEPRECATED) {
-    json_object_set_new(json, "deprecated", json_true());
-  }
+  if (item->flags & CFG_ITEM_DEPRECATED) { json_object_set_new(json, "deprecated", json_true()); }
   if (item->flags & CFG_ITEM_NO_EQUALS) {
     json_object_set_new(json, "equals", json_false());
   } else {
     json_object_set_new(json, "equals", json_true());
   }
-  if (item->flags & CFG_ITEM_REQUIRED) {
-    json_object_set_new(json, "required", json_true());
-  }
-  if (item->versions) {
-    json_object_set_new(json, "versions", json_string(item->versions));
-  }
-  if (item->description) {
-    json_object_set_new(json, "description", json_string(item->description));
-  }
+  if (item->flags & CFG_ITEM_REQUIRED) { json_object_set_new(json, "required", json_true()); }
+  if (item->versions) { json_object_set_new(json, "versions", json_string(item->versions)); }
+  if (item->description) { json_object_set_new(json, "description", json_string(item->description)); }
 
   return json;
 }
@@ -2032,9 +1946,7 @@ json_t *json_items(ResourceItem items[])
   json_t *json = json_object();
 
   if (items) {
-    for (int i = 0; items[i].name; i++) {
-      json_object_set_new(json, items[i].name, json_item(&items[i]));
-    }
+    for (int i = 0; items[i].name; i++) { json_object_set_new(json, items[i].name, json_item(&items[i])); }
   }
 
   return json;
@@ -2149,9 +2061,7 @@ DatatypeName *get_datatype(int number)
 const char *datatype_to_str(int type)
 {
   for (int i = 0; datatype_names[i].name; i++) {
-    if (datatype_names[i].number == type) {
-      return datatype_names[i].name;
-    }
+    if (datatype_names[i].number == type) { return datatype_names[i].name; }
   }
 
   return "unknown";
@@ -2160,9 +2070,7 @@ const char *datatype_to_str(int type)
 const char *datatype_to_description(int type)
 {
   for (int i = 0; datatype_names[i].name; i++) {
-    if (datatype_names[i].number == type) {
-      return datatype_names[i].description;
-    }
+    if (datatype_names[i].number == type) { return datatype_names[i].description; }
   }
 
   return NULL;
