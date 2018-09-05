@@ -306,9 +306,7 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
   dir->StartTimer(60 * 5);
   dir->fsend(hello, bashed_name);
 
-  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) {
-    goto bail_out;
-  }
+  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) { goto bail_out; }
 
   Dmsg1(6, ">dird: %s", dir->msg);
   if (dir->recv() <= 0) {
@@ -397,8 +395,7 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
 {
   ASSERT(!tls_conn);
 
-  TlsResource *tls_resource =
-      reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
+  TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
   if (!ParameterizeAndInitTlsConnectionAsAServer(config)) { return false; }
 
@@ -412,32 +409,27 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
   return true;
 }
 
-void BareosSocket::ParameterizeTlsCert(Tls* tls_conn, TlsResource *tls_resource)
+void BareosSocket::ParameterizeTlsCert(Tls *tls_conn, TlsResource *tls_resource)
 {
   if (tls_resource->tls_cert.enable) {
     const std::string empty;
-    tls_conn->SetCaCertfile(tls_resource->tls_cert.CaCertfile ? *tls_resource->tls_cert.CaCertfile
-                                                                   : empty);
-    tls_conn->SetCaCertdir(tls_resource->tls_cert.CaCertdir ? *tls_resource->tls_cert.CaCertdir
-                                                                 : empty);
+    tls_conn->SetCaCertfile(tls_resource->tls_cert.CaCertfile ? *tls_resource->tls_cert.CaCertfile : empty);
+    tls_conn->SetCaCertdir(tls_resource->tls_cert.CaCertdir ? *tls_resource->tls_cert.CaCertdir : empty);
     tls_conn->SetCrlfile(tls_resource->tls_cert.crlfile ? *tls_resource->tls_cert.crlfile : empty);
-    tls_conn->SetCertfile(tls_resource->tls_cert.certfile ? *tls_resource->tls_cert.certfile
-                                                               : empty);
+    tls_conn->SetCertfile(tls_resource->tls_cert.certfile ? *tls_resource->tls_cert.certfile : empty);
     tls_conn->SetKeyfile(tls_resource->tls_cert.keyfile ? *tls_resource->tls_cert.keyfile : empty);
     //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
     tls_conn->SetPemUserdata(tls_resource->tls_cert.pem_message);
     tls_conn->SetDhFile(tls_resource->tls_cert.dhfile ? *tls_resource->tls_cert.dhfile
-                                                           : empty); /* was never used before */
-    tls_conn->SetCipherList(tls_resource->tls_cert.cipherlist ? *tls_resource->tls_cert.cipherlist
-                                                                   : empty);
+                                                      : empty); /* was never used before */
+    tls_conn->SetCipherList(tls_resource->tls_cert.cipherlist ? *tls_resource->tls_cert.cipherlist : empty);
     tls_conn->SetVerifyPeer(tls_resource->tls_cert.VerifyPeer);
   }
 }
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config)
 {
-  TlsResource *tls_resource =
-      reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
+  TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
   if (!tls_resource->tls_cert.enable && !tls_resource->tls_psk.enable) {
     return true; /* cleartext connection */
