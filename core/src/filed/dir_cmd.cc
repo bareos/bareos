@@ -46,6 +46,7 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/path_list.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 #if defined(WIN32_VSS)
 #include "win32/findlib/win32.h"
@@ -81,7 +82,7 @@ const bool have_encryption = false;
 
 /* Global variables to handle Client Initiated Connections */
 static bool quit_client_initiate_connection       = false;
-static alist *client_initiated_connection_threads = NULL;
+static alist *client_initiated_connection_threads = nullptr;
 
 /* Imported functions */
 extern bool AccurateCmd(JobControlRecord *jcr);
@@ -168,7 +169,7 @@ static struct s_cmds cmds[] = {
     {"storage ", StorageCmd, false},
     {"sm_dump", SmDumpCmd, false},
     {"verify", VerifyCmd, false},
-    {NULL, NULL, false} /* list terminator */
+    {nullptr, nullptr, false} /* list terminator */
 };
 
 /**
@@ -363,7 +364,7 @@ static inline void CleanupFileset(JobControlRecord *jcr)
     fileset->exclude_list.destroy();
     free(fileset);
   }
-  jcr->ff->fileset = NULL;
+  jcr->ff->fileset = nullptr;
 }
 
 static inline bool AreMaxConcurrentJobsExceeded()
@@ -385,7 +386,7 @@ JobControlRecord *create_new_director_session(BareosSocket *dir)
   jcr                = new_jcr(sizeof(JobControlRecord), FiledFreeJcr); /* create JobControlRecord */
   jcr->dir_bsock     = dir;
   jcr->ff            = init_find_files();
-  jcr->start_time    = time(NULL);
+  jcr->start_time    = time(nullptr);
   jcr->RunScripts    = New(alist(10, not_owned_by_alist));
   jcr->last_fname    = GetPoolMemory(PM_FNAME);
   jcr->last_fname[0] = 0;
@@ -400,7 +401,7 @@ JobControlRecord *create_new_director_session(BareosSocket *dir)
   if (dir) { dir->SetJcr(jcr); }
   SetJcrInTsd(jcr);
 
-  EnableBackupPrivileges(NULL, 1 /* ignore_errors */);
+  EnableBackupPrivileges(nullptr, 1 /* ignore_errors */);
 
   return jcr;
 }
@@ -501,7 +502,7 @@ void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir)
   AllowOsSuspensions();
 #endif
 
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -512,7 +513,7 @@ static bool StartProcessDirectorCommands(JobControlRecord *jcr)
   int result = 0;
   pthread_t thread;
 
-  if ((result = pthread_create(&thread, NULL, process_director_commands, (void *)jcr)) != 0) {
+  if ((result = pthread_create(&thread, nullptr, process_director_commands, (void *)jcr)) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"), be.bstrerror(result));
   }
@@ -550,7 +551,7 @@ void *handle_director_connection(BareosSocket *dir)
 
   if (AreMaxConcurrentJobsExceeded()) {
     Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
-    return NULL;
+    return nullptr;
   }
 
   jcr = create_new_director_session(dir);
@@ -578,8 +579,8 @@ static bool ParseOkVersion(const char *string)
 static void *handle_connection_to_director(void *director_resource)
 {
   DirectorResource *dir_res = (DirectorResource *)director_resource;
-  BareosSocket *dir_bsock   = NULL;
-  JobControlRecord *jcr     = NULL;
+  BareosSocket *dir_bsock   = nullptr;
+  JobControlRecord *jcr     = nullptr;
   int data_available        = 0;
   int retry_period          = 60;
   const int timeout_data    = 60;
@@ -590,7 +591,7 @@ static void *handle_connection_to_director(void *director_resource)
       jcr = nullptr;
     }
 
-    jcr       = create_new_director_session(NULL);
+    jcr       = create_new_director_session(nullptr);
     dir_bsock = connect_to_director(jcr, dir_res, true);
     if (!dir_bsock) {
       Emsg2(M_ERROR, 0, "Failed to connect to Director \"%s\". Retry in %ds.\n", dir_res->name(),
@@ -620,8 +621,8 @@ static void *handle_connection_to_director(void *director_resource)
             /*
              * jcr (and dir_bsock) are now used by another thread.
              */
-            dir_bsock = NULL;
-            jcr       = NULL;
+            dir_bsock = nullptr;
+            jcr       = nullptr;
           }
         }
       }
@@ -636,13 +637,13 @@ static void *handle_connection_to_director(void *director_resource)
     FreeJcr(jcr);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 bool StartConnectToDirectorThreads()
 {
   bool result               = false;
-  DirectorResource *dir_res = NULL;
+  DirectorResource *dir_res = nullptr;
   int pthread_create_result = 0;
   if (!client_initiated_connection_threads) { client_initiated_connection_threads = New(alist()); }
   pthread_t *thread;
@@ -661,7 +662,7 @@ bool StartConnectToDirectorThreads()
               dir_res->port);
         thread = (pthread_t *)bmalloc(sizeof(pthread_t));
         if ((pthread_create_result =
-                 pthread_create(thread, NULL, handle_connection_to_director, (void *)dir_res)) == 0) {
+                 pthread_create(thread, nullptr, handle_connection_to_director, (void *)dir_res)) == 0) {
           client_initiated_connection_threads->append(thread);
         } else {
           BErrNo be;
@@ -678,7 +679,7 @@ bool StartConnectToDirectorThreads()
 bool StopConnectToDirectorThreads(bool wait)
 {
   bool result                     = true;
-  pthread_t *thread               = NULL;
+  pthread_t *thread               = nullptr;
   quit_client_initiate_connection = true;
   if (client_initiated_connection_threads) {
     while (!client_initiated_connection_threads->empty()) {
@@ -686,7 +687,7 @@ bool StopConnectToDirectorThreads(bool wait)
       if (thread) {
         pthread_kill(*thread, TIMEOUT_SIGNAL);
         if (wait) {
-          if (pthread_join(*thread, NULL) != 0) { result = false; }
+          if (pthread_join(*thread, nullptr) != 0) { result = false; }
         }
         bfree(thread);
       }
@@ -717,7 +718,7 @@ static bool ResolveCmd(JobControlRecord *jcr)
 
   sscanf(dir->msg, resolvecmd, &hostname);
 
-  if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
+  if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
     dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
     goto bail_out;
   }
@@ -764,7 +765,7 @@ static bool CancelCmd(JobControlRecord *jcr)
     if (!(cjcr = get_jcr_by_full_name(Job))) {
       dir->fsend(_("2901 Job %s not found.\n"), Job);
     } else {
-      GeneratePluginEvent(cjcr, bEventCancelCommand, NULL);
+      GeneratePluginEvent(cjcr, bEventCancelCommand, nullptr);
       cjcr->setJobStatus(JS_Canceled);
       if (cjcr->store_bsock) {
         cjcr->store_bsock->SetTimedOut();
@@ -1134,7 +1135,7 @@ static bool RestoreObjectCmd(JobControlRecord *jcr)
 
   Dmsg1(100, "Enter restoreobject_cmd: %s", dir->msg);
   if (bstrcmp(dir->msg, endrestoreobjectcmd)) {
-    GeneratePluginEvent(jcr, bEventRestoreObject, NULL);
+    GeneratePluginEvent(jcr, bEventRestoreObject, nullptr);
     return dir->fsend(OKRestoreObject);
   }
 
@@ -1303,7 +1304,7 @@ static void FreeBootstrap(JobControlRecord *jcr)
   if (jcr->RestoreBootstrap) {
     SecureErase(jcr, jcr->RestoreBootstrap);
     FreePoolMemory(jcr->RestoreBootstrap);
-    jcr->RestoreBootstrap = NULL;
+    jcr->RestoreBootstrap = nullptr;
   }
 }
 
@@ -1361,7 +1362,7 @@ static bool BootstrapCmd(JobControlRecord *jcr)
 static bool LevelCmd(JobControlRecord *jcr)
 {
   BareosSocket *dir = jcr->dir_bsock;
-  POOLMEM *level, *buf = NULL;
+  POOLMEM *level, *buf = nullptr;
   int mtime_only;
 
   level = GetMemory(dir->message_length + 1);
@@ -1504,7 +1505,7 @@ static void SetStorageAuthKey(JobControlRecord *jcr, char *key)
    */
   if (jcr->store_bsock) {
     delete jcr->store_bsock;
-    jcr->store_bsock = NULL;
+    jcr->store_bsock = nullptr;
   }
 
   /**
@@ -1572,12 +1573,12 @@ static bool StorageCmd(JobControlRecord *jcr)
    * Open command communications with Storage daemon
    */
   if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval, _("Storage daemon"),
-                   stored_addr, NULL, stored_port, 1)) {
+                   stored_addr, nullptr, stored_port, 1)) {
     delete sd;
-    sd = NULL;
+    sd = nullptr;
   }
 
-  if (sd == NULL) {
+  if (sd == nullptr) {
     Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"), stored_addr, stored_port);
     Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr, stored_port);
     goto bail_out;
@@ -1836,7 +1837,7 @@ static bool BackupCmd(JobControlRecord *jcr)
   jcr->setJobType(JT_BACKUP);
   Dmsg1(100, "begin backup ff=%p\n", jcr->ff);
 
-  if (sd == NULL) {
+  if (sd == nullptr) {
     Jmsg(jcr, M_FATAL, 0, _("Cannot contact Storage daemon\n"));
     dir->fsend(BADcmd, "backup");
     goto cleanup;
@@ -1964,7 +1965,7 @@ static bool BackupCmd(JobControlRecord *jcr)
    * Send Files to Storage daemon
    */
   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket *)jcr->ff);
-  if (!BlastDataToStorageDaemon(jcr, NULL, cipher)) {
+  if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
     jcr->setJobStatus(JS_ErrorTerminated);
     BnetSuppressErrorMessages(sd, 1);
     Dmsg0(110, "Error in blast_data.\n");
@@ -2110,24 +2111,36 @@ static bool VerifyCmd(JobControlRecord *jcr)
  */
 static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource *dir_res, bool verbose)
 {
-  BareosSocket *dir = NULL;
-  utime_t heart_beat;
-  int retry_interval = 0;
-  int max_retry_time = 0;
+  ASSERT(dir_res != nullptr);
 
-  ASSERT(dir_res != NULL);
-
-  dir = New(BareosSocketTCP);
+  BareosSocket *dir = New(BareosSocketTCP);
   if (me->nokeepalive) { dir->ClearKeepalive(); }
 
-  heart_beat = me->heartbeat_interval;
-
   dir->SetSourceAddress(me->FDsrc_addr);
-  if (!dir->connect(jcr, retry_interval, max_retry_time, heart_beat, dir_res->name(), dir_res->address, NULL,
-                    dir_res->port, verbose)) {
+
+  int retry_interval = 0;
+  int max_retry_time = 0;
+  utime_t heart_beat = me->heartbeat_interval;
+  if (!dir->connect(jcr, retry_interval, max_retry_time, heart_beat, dir_res->name(), dir_res->address,
+                    nullptr, dir_res->port, verbose)) {
     delete dir;
-    dir = NULL;
-    return NULL;
+    dir = nullptr;
+    return nullptr;
+  }
+
+  std::string qualified_resource_name;
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                            qualified_resource_name)) {
+    Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+    return nullptr;
+  }
+
+  TlsResource *tls_configuration = dynamic_cast<TlsResource *>(dir_res);
+
+  if (!dir->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
+                           dir_res->password.value, jcr)) {
+    Dmsg0(100, "Could not DoTlsHandshake() with director\n");
+    return nullptr;
   }
 
   Dmsg1(10, "Opened connection with Director %s\n", dir_res->name());
@@ -2135,10 +2148,10 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
 
   dir->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
   if (!AuthenticateWithDirector(jcr, dir_res)) {
-    jcr->dir_bsock = NULL;
+    jcr->dir_bsock = nullptr;
     delete dir;
-    dir = NULL;
-    return NULL;
+    dir = nullptr;
+    return nullptr;
   }
 
   dir->recv();
@@ -2410,20 +2423,20 @@ static void FiledFreeJcr(JobControlRecord *jcr)
 #if defined(WIN32_VSS)
   if (jcr->pVSSClient) {
     delete jcr->pVSSClient;
-    jcr->pVSSClient = NULL;
+    jcr->pVSSClient = nullptr;
   }
 #endif
 
   if (jcr->store_bsock) {
     jcr->store_bsock->close();
     delete jcr->store_bsock;
-    jcr->store_bsock = NULL;
+    jcr->store_bsock = nullptr;
   }
 
   if (jcr->dir_bsock) {
     jcr->dir_bsock->close();
     delete jcr->dir_bsock;
-    jcr->dir_bsock = NULL;
+    jcr->dir_bsock = nullptr;
   }
 
   if (jcr->last_fname) { FreePoolMemory(jcr->last_fname); }
@@ -2434,11 +2447,11 @@ static void FiledFreeJcr(JobControlRecord *jcr)
 
   if (jcr->path_list) {
     FreePathList(jcr->path_list);
-    jcr->path_list = NULL;
+    jcr->path_list = nullptr;
   }
 
   TermFindFiles(jcr->ff);
-  jcr->ff = NULL;
+  jcr->ff = nullptr;
 
   if (jcr->JobId != 0) {
     WriteStateFile(me->working_directory, "bareos-fd", GetFirstPortHostOrder(me->FDaddrs));
