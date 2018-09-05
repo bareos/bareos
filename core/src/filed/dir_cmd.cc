@@ -666,7 +666,7 @@ static bool ParseOkVersion(const char *string)
    return (number == 5);
 }
 
-void *handle_connection_to_director(void *director_resource)
+static void *handle_connection_to_director(void *director_resource)
 {
    DirectorResource *dir_res = (DirectorResource *)director_resource;
    BareosSocket *dir_bsock = NULL;
@@ -677,10 +677,8 @@ void *handle_connection_to_director(void *director_resource)
 
    while (!quit_client_initiate_connection) {
       if (jcr) {
-         /*
-          * cleanup old data structures
-          */
          FreeJcr(jcr);
+         jcr = nullptr;
       }
 
       jcr = create_new_director_session(NULL);
