@@ -127,9 +127,7 @@ bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store
  */
 bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 {
-  if (jcr->authenticated) {
-    return true;
-  }
+  if (jcr->authenticated) { return true; }
 
   std::string qualified_resource_name;
   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
@@ -138,9 +136,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
     return false;
   }
 
-  ClientResource *client = jcr->res.client;
+  ClientResource *client         = jcr->res.client;
   TlsResource *tls_configuration = dynamic_cast<TlsResource *>(client);
-  BareosSocket *fd       = jcr->file_bsock;
+  BareosSocket *fd               = jcr->file_bsock;
 
   if (!fd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), client->password.value,
                           jcr)) {
