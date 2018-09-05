@@ -182,7 +182,7 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                       JobControlRecord *jcr);
   bool DoTlsHandshakeAsAServer(
                       ConfigurationParser *config,
-                      JobControlRecord *jcr);
+                      JobControlRecord *jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist *src_addr_list);

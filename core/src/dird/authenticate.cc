@@ -35,6 +35,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/dird_globals.h"
 #include "lib/bnet.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 namespace directordaemon {
 
@@ -67,13 +68,25 @@ static char Dir_sorry[] =
  */
 bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store)
 {
-   BareosSocket *sd = jcr->store_bsock;
-   char dirname[MAX_NAME_LENGTH];
-   bool auth_success = false;
+   std::string qualified_resource_name;
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name,
+                                                                       my_config->r_own_,
+                                                                       qualified_resource_name)) {
+     Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+     return false;
+   }
 
-   /**
-    * Send my name to the Storage daemon then do authentication
-    */
+   TlsResource *tls_configuration = dynamic_cast<TlsResource*>(store);
+   BareosSocket *sd = jcr->store_bsock;
+
+   if (!sd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
+                               store->password.value, jcr))
+   {
+     Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
+     return false;
+   }
+
+   char dirname[MAX_NAME_LENGTH];
    bstrncpy(dirname, me->hdr.name, sizeof(dirname));
    BashSpaces(dirname);
 
@@ -83,6 +96,7 @@ bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store
       return false;
    }
 
+   bool auth_success = false;
    auth_success = sd->AuthenticateOutboundConnection(
        jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {

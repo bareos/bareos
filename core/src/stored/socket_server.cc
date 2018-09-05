@@ -66,6 +66,10 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
    char name[MAX_NAME_LENGTH];
    char tbuf[MAX_TIME_LENGTH];
 
+   if (!bs->IsCleartextBareosHello()) {
+      bs->DoTlsHandshakeAsAServer(config);
+   }
+
    if (bs->recv() <= 0) {
       Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
       Bmicrosleep(5, 0);   /* make user wait 5 seconds */
