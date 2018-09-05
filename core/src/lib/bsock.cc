@@ -157,18 +157,14 @@ void BareosSocket::SetSourceAddress(dlist *src_addr_list)
 
 bool BareosSocket::SetLocking()
 {
-  if (mutex_) {
-    return true;
-  }
+  if (mutex_) { return true; }
   mutex_ = std::make_shared<std::mutex>();
   return true;
 }
 
 void BareosSocket::ClearLocking()
 {
-  if (mutex_) {
-    mutex_.reset();
-  }
+  if (mutex_) { mutex_.reset(); }
 }
 
 /**
@@ -177,9 +173,7 @@ void BareosSocket::ClearLocking()
 bool BareosSocket::signal(int signal)
 {
   message_length = signal;
-  if (signal == BNET_TERMINATE) {
-    suppress_error_msgs_ = true;
-  }
+  if (signal == BNET_TERMINATE) { suppress_error_msgs_ = true; }
   return send();
 }
 
@@ -228,9 +222,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize
     }
 
     send();
-    if (jcr && JobCanceled(jcr)) {
-      return false;
-    }
+    if (jcr && JobCanceled(jcr)) { return false; }
   }
   UpdateAttrSpoolSize(tsize - last);
 
@@ -244,9 +236,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize
 const char *BareosSocket::bstrerror()
 {
   BErrNo be;
-  if (errmsg == nullptr) {
-    errmsg = GetPoolMemory(PM_MESSAGE);
-  }
+  if (errmsg == nullptr) { errmsg = GetPoolMemory(PM_MESSAGE); }
   PmStrcpy(errmsg, be.bstrerror(b_errno));
   return errmsg;
 }
@@ -261,9 +251,7 @@ bool BareosSocket::fsend(const char *fmt, ...)
   va_list arg_ptr;
   int maxlen;
 
-  if (errors || IsTerminated()) {
-    return false;
-  }
+  if (errors || IsTerminated()) { return false; }
   /* This probably won't work, but we vsnprintf, then if we
    * get a negative length or a length greater than our buffer
    * (depending on which library is used), the printf was truncated, so
@@ -274,9 +262,7 @@ bool BareosSocket::fsend(const char *fmt, ...)
     va_start(arg_ptr, fmt);
     message_length = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
     va_end(arg_ptr);
-    if (message_length >= 0 && message_length < (maxlen - 5)) {
-      break;
-    }
+    if (message_length >= 0 && message_length < (maxlen - 5)) { break; }
     msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
   }
   return send();
@@ -284,9 +270,7 @@ bool BareosSocket::fsend(const char *fmt, ...)
 
 void BareosSocket::SetKillable(bool killable)
 {
-  if (jcr_) {
-    jcr_->SetKillable(killable);
-  }
+  if (jcr_) { jcr_->SetKillable(killable); }
 }
 
 /** Commands sent to Director */
@@ -401,32 +385,24 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
                                identity, password.value, jcr)) {
       auth_success = false;
     }
-    if (tid) {
-      StopBsockTimer(tid);
-    }
+    if (tid) { StopBsockTimer(tid); }
   }
 
-  if (jcr) {
-    jcr->authenticated = auth_success;
-  }
+  if (jcr) { jcr->authenticated = auth_success; }
 
   return auth_success;
 }
 
-bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config,
-                                           JobControlRecord *jcr)
+bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobControlRecord *jcr)
 {
   ASSERT(!tls_conn);
 
-  TlsResource *tls_configuration = reinterpret_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+  TlsResource *tls_configuration =
+      reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
-  if (!ParameterizeAndInitTlsConnectionAsAServer(config)) {
-    return false;
-  }
+  if (!ParameterizeAndInitTlsConnectionAsAServer(config)) { return false; }
 
-  if (!DoTlsHandshakeWithClient(&tls_configuration->tls_cert, jcr)) {
-    return false;
-  }
+  if (!DoTlsHandshakeWithClient(&tls_configuration->tls_cert, jcr)) { return false; }
 
   if (tls_configuration->tls_cert.GetAuthenticate()) { /* tls authentication only? */
     tls_conn->TlsBsockShutdown(this);
@@ -438,7 +414,8 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config,
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config)
 {
-  TlsResource *tls_configuration = reinterpret_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+  TlsResource *tls_configuration =
+      reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
   if (!tls_configuration->tls_cert.enable && !tls_configuration->tls_psk.enable) {
     return true; /* cleartext connection */
@@ -474,9 +451,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
     tls_conn->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
   }
 
-  if (!tls_conn->init()) {
-    return false;
-  }
+  if (!tls_conn->init()) { return false; }
   return true;
 }
 
@@ -487,9 +462,7 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
                                   const char *password,
                                   JobControlRecord *jcr)
 {
-  if (tls_conn) {
-    return true;
-  }
+  if (tls_conn) { return true; }
 
   TlsConfigBase *selected_local_tls;
   selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
@@ -500,13 +473,9 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
     }
 
     if (initiated_by_remote) {
-      if (!DoTlsHandshakeWithClient(selected_local_tls, jcr)) {
-        return false;
-      }
+      if (!DoTlsHandshakeWithClient(selected_local_tls, jcr)) { return false; }
     } else {
-      if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) {
-        return false;
-      }
+      if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) { return false; }
     }
 
     if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
@@ -529,9 +498,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_configurati
                                                     const char *password,
                                                     bool initiated_by_remote)
 {
-  if (!tls_configuration->tls_cert.enable && !tls_configuration->tls_psk.enable) {
-    return true;
-  }
+  if (!tls_configuration->tls_cert.enable && !tls_configuration->tls_psk.enable) { return true; }
 
   tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn) {
@@ -562,30 +529,25 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_configurati
 
   if (tls_configuration->tls_psk.enable) {
     if (initiated_by_remote) {
-      //tls_conn->SetTlsPskServerContext(tls_configuration->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb);
+      // tls_conn->SetTlsPskServerContext(tls_configuration->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb);
     } else {
       const PskCredentials psk_cred(identity, password);
       tls_conn->SetTlsPskClientContext(psk_cred);
     }
   }
 
-  if (!tls_conn->init()) {
-    return false;
-  }
+  if (!tls_conn->init()) { return false; }
   return true;
 }
 
-bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
-                                            JobControlRecord *jcr)
+bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, JobControlRecord *jcr)
 {
   std::vector<std::string> verify_list;
 
   if (selected_local_tls->GetVerifyPeer()) {
     verify_list = selected_local_tls->AllowedCertificateCommonNames();
   }
-  if (BnetTlsServer(this, verify_list)) {
-    return true;
-  }
+  if (BnetTlsServer(this, verify_list)) { return true; }
   Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
   Dmsg0(debuglevel, "TLS negotiation failed.\n");
   return false;
@@ -631,9 +593,7 @@ bool BareosSocket::IsCleartextBareosHello()
   if (ret == 10) {
     std::string hello("Hello ");
     std::string received(&buffer[4]);
-    if (hello == received) {
-      return true;
-    }
+    if (hello == received) { return true; }
   }
   return false;
 }
@@ -649,9 +609,7 @@ void BareosSocket::ControlBwlimit(int bytes)
   /*
    * If nothing written or read nothing todo.
    */
-  if (bytes == 0) {
-    return;
-  }
+  if (bytes == 0) { return; }
 
   /*
    * See if this is the first time we enter here.
@@ -688,9 +646,7 @@ void BareosSocket::ControlBwlimit(int bytes)
   /*
    * Take care of clock problems (>10s)
    */
-  if (temp > 10000000) {
-    return;
-  }
+  if (temp > 10000000) { return; }
 
   /*
    * Remove what was authorised to be written in temp usecs.
@@ -702,9 +658,7 @@ void BareosSocket::ControlBwlimit(int bytes)
      * reset the counter as these bytes cannot be used later on when
      * we are exceeding our bandwidth.
      */
-    if (!use_bursting_) {
-      nb_bytes_ = 0;
-    }
+    if (!use_bursting_) { nb_bytes_ = 0; }
     return;
   }
 
@@ -713,9 +667,7 @@ void BareosSocket::ControlBwlimit(int bytes)
    */
   usec_sleep = (int64_t)(nb_bytes_ / ((double)bwlimit_ / 1000000.0));
   if (usec_sleep > 100) {
-    if (debug_level >= 400) {
-      Dmsg1(400, "ControlBwlimit: sleeping for %lld usecs\n", usec_sleep);
-    }
+    if (debug_level >= 400) { Dmsg1(400, "ControlBwlimit: sleeping for %lld usecs\n", usec_sleep); }
 
     /*
      * Sleep the right number of usecs.
