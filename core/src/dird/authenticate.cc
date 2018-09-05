@@ -127,21 +127,28 @@ bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store
  */
 bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 {
-  BareosSocket *fd       = jcr->file_bsock;
-  ClientResource *client = jcr->res.client;
-  char dirname[MAX_NAME_LENGTH];
-  bool auth_success = false;
-
   if (jcr->authenticated) {
-    /*
-     * already authenticated
-     */
     return true;
   }
 
-  /**
-   * Send my name to the File daemon then do authentication
-   */
+  std::string qualified_resource_name;
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                            qualified_resource_name)) {
+    Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+    return false;
+  }
+
+  ClientResource *client = jcr->res.client;
+  TlsResource *tls_configuration = dynamic_cast<TlsResource *>(client);
+  BareosSocket *fd       = jcr->file_bsock;
+
+  if (!fd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), client->password.value,
+                          jcr)) {
+    Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
+    return false;
+  }
+
+  char dirname[MAX_NAME_LENGTH];
   bstrncpy(dirname, me->name(), sizeof(dirname));
   BashSpaces(dirname);
 
@@ -152,6 +159,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   }
   Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
+  bool auth_success;
   auth_success = fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password, client);
 
   if (!auth_success) {

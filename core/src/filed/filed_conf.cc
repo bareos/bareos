@@ -253,6 +253,12 @@ static void ParseConfigCb(LEX *lc, ResourceItem *item, int index, int pass)
 
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
+  std::map<int, std::string> map;
+  map.insert(std::make_pair(R_DIRECTOR, "R_DIRECTOR"));
+  map.insert(std::make_pair(R_CLIENT, "R_CLIENT"));
+//  map.insert(std::make_pair(R_STORAGE, "R_STORAGE"));
+  map.insert(std::make_pair(R_MSGS, "R_MSGS"));
+  my_config.InitializeQualifiedResourceNameTypeConverter(map);
 
 }
 
