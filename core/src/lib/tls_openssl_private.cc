@@ -250,7 +250,7 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
     ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
             openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
 
-    if (!GetTlsPskByFullyQualifiedResourceNameCb) {
+    if (!GetTlsPskByFullyQualifiedResourceNameCb || !config) {
       Dmsg0(100, "GetTlsPskByFullyQualifiedResourceNameCb not set for psk server callback\n");
       return result;
     }
