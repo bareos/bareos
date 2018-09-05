@@ -123,6 +123,7 @@ class DLL_IMP_EXP BareosSocket : public SmartAlloc {
                                 const char *identity,
                                 const char *password,
                                 JobControlRecord *jcr);
+  void ParameterizeTlsCert(Tls* tls_conn, TlsResource *tls_configuration);
 
  public:
   BareosSocket();
