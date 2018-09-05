@@ -1,0 +1,15 @@
+@startuml
+
+Title: Startsequence of a Director to \nstoragedeamon TLS connection\n\n\
+
+autonumber
+Director <-> Storage : InitiateTCPConnection
+Director <-> Storage : InitiateTlsConnection
+
+Director -> Storage : "Hello Director 'xyz' calling"
+Director <- Storage : "auth cram-md5 'random,time,hostname' ssl='[0|1|2]'"
+Director -> Storage : "md5(password)"
+Director -> Storage : "auth cram-md5 'random,time,hostname' ssl='[0|1|2]'"
+Director <- Storage : "md5(password)"
+
+@enduml
