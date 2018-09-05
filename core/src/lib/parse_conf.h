@@ -556,6 +556,9 @@ class DLL_IMP_EXP ConfigurationParser {
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
   void InitializeQualifiedResourceNameTypeConverter(std::map<int,std::string> &);
+  QualifiedResourceNameTypeConverter *GetQualifiedResourceNameTypeConverter() const {
+    return qualified_resource_name_type_converter_.get();
+  }
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk) __attribute__((weak));

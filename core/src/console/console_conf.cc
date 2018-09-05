@@ -362,24 +362,37 @@ bool SaveResource(int type, ResourceItem *items, int pass)
 
 namespace console {
 
+static void ConfigReadyCallback(ConfigurationParser &my_config)
+{
+  std::map<int, std::string> map;
+  map.insert(std::make_pair(R_DIRECTOR, "R_DIRECTOR"));
+  map.insert(std::make_pair(R_CONSOLE, "R_CONSOLE"));
+  my_config.InitializeQualifiedResourceNameTypeConverter(map);
+}
+
 ConfigurationParser *InitConsConfig(const char *configfile, int exit_code)
 {
-   return new ConfigurationParser (
-                configfile,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr,
-                exit_code,
-                (void *)&res_all,
-                res_all_size,
-                R_FIRST,
-                R_LAST,
-                resources,
-                res_head,
-                default_config_filename.c_str(),
-                "bconsole.d");
+   ConfigurationParser *config = new ConfigurationParser (configfile,
+                                                          nullptr,
+                                                          nullptr,
+                                                          nullptr,
+                                                          nullptr,
+                                                          nullptr,
+                                                          exit_code,
+                                                          (void *)&res_all,
+                                                          res_all_size,
+                                                          R_FIRST,
+                                                          R_LAST,
+                                                          resources,
+                                                          res_head,
+                                                          default_config_filename.c_str(),
+                                                          "bconsole.d",
+                                                          ConfigReadyCallback);
+   if (config) {
+     config->r_own_ = R_CONSOLE;
+   }
+   return config;
+
 }
 
 /**

@@ -30,6 +30,8 @@
 #include "include/bareos.h"
 #include "generic_res.h"
 #include "lib/edit.h"
+#include "qualified_resource_name_type_converter.h"
+
 
 /* Forward referenced subroutines */
 
@@ -151,7 +153,13 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   std::string fq_name(fq_name_buffer);
   free(fq_name_buffer);
 
-  TlsResource *tls = reinterpret_cast<TlsResource*>(config->GetResWithName(directordaemon::R_CONSOLE, fq_name.c_str()));
+  int r_type;
+  std::string name;
+  bool ok = config->GetQualifiedResourceNameTypeConverter()->StringToResource(name, r_type, fq_name_in);
+  if (!ok || r_type < 0) {
+    return false;
+  }
+  TlsResource *tls = reinterpret_cast<TlsResource*>(config->GetResWithName(r_type, name.c_str()));
   if (tls) {
     psk = tls->password.value;
     return true;

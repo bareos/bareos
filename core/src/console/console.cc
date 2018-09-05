@@ -34,6 +34,7 @@
 #include "console_globals.h"
 #include "jcr.h"
 #include "lib/bnet.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 #ifdef HAVE_CONIO
 #include "conio.h"
@@ -1077,7 +1078,16 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     tls_configuration = dynamic_cast<TlsResource*>(director_resource);
   }
 
-  if (!UA_sock->DoTlsHandshake(4, tls_configuration, false, name,
+  std::string qualified_resource_name;
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name,
+                                                                       my_config->r_own_,
+                                                                       qualified_resource_name)) {
+    sendit("Could not generate qualified resource name\n");
+    TerminateConsole(0);
+    return nullptr;
+  }
+
+  if (!UA_sock->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
                                password->value, &jcr))
     {
       sendit(errmsg);
