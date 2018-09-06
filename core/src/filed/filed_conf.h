@@ -40,8 +40,9 @@ enum {
    R_DIRECTOR = 1001,
    R_CLIENT,
    R_MSGS,
+   R_STORAGE,
    R_FIRST = R_DIRECTOR,
-   R_LAST = R_MSGS                    /* keep this updated */
+   R_LAST = R_STORAGE                    /* keep this updated */
 };
 
 /*
