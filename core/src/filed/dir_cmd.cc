@@ -283,8 +283,7 @@ static bool ValidateCommand(JobControlRecord *jcr, const char *cmd, alist *allow
    */
   if (!allowed_job_cmds) { return true; }
 
-  foreach_alist(allowed_job_cmd, allowed_job_cmds)
-  {
+  foreach_alist (allowed_job_cmd, allowed_job_cmds) {
     if (Bstrcasecmp(cmd, allowed_job_cmd)) {
       allowed = true;
       break;
@@ -372,7 +371,9 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord *jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr(jcr) { cnt++; }
+  foreach_jcr (jcr) {
+    cnt++;
+  }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
@@ -648,8 +649,7 @@ bool StartConnectToDirectorThreads()
   if (!client_initiated_connection_threads) { client_initiated_connection_threads = New(alist()); }
   pthread_t *thread;
 
-  foreach_res(dir_res, R_DIRECTOR)
-  {
+  foreach_res (dir_res, R_DIRECTOR) {
     if (dir_res->conn_from_fd_to_dir) {
       if (!dir_res->address) {
         Emsg1(M_ERROR, 0, "Failed to connect to Director \"%s\". The address config directive is missing.\n",
@@ -1534,8 +1534,8 @@ static bool StorageCmd(JobControlRecord *jcr)
   int enable_ssl;  /* enable ssl to sd */
   char stored_addr[MAX_NAME_LENGTH];
   PoolMem sd_auth_key(PM_MESSAGE);
-  BareosSocket *dir = jcr->dir_bsock;
-  BareosSocket *sd = nullptr; /* storage daemon bsock */
+  BareosSocket *dir         = jcr->dir_bsock;
+  BareosSocket *sd          = nullptr; /* storage daemon bsock */
   TlsResource *tls_resource = nullptr;
   std::string qualified_resource_name;
 
@@ -1589,14 +1589,13 @@ static bool StorageCmd(JobControlRecord *jcr)
 
   jcr->store_bsock = sd;
 
-  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(jcr->client_name, my_config->r_own_,
-                                                                            qualified_resource_name)) {
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+          jcr->client_name, my_config->r_own_, qualified_resource_name)) {
     goto bail_out;
   }
 
   tls_resource = dynamic_cast<TlsResource *>(me);
-  if (!sd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key,
-                               jcr)) {
+  if (!sd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
     goto bail_out;
   }
 
