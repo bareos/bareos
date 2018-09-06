@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "generic_res.h"
 #include "lib/edit.h"
+#include "include/jcr.h"
 #include "qualified_resource_name_type_converter.h"
 
 /* Forward referenced subroutines */
@@ -153,6 +154,11 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
   if (tls) {
     psk = tls->password.value;
+    return true;
+  }
+  const char *psk_cstr = jcr_get_authenticate_key_by_client_name(name.c_str());
+  if (psk_cstr) {
+    psk = psk_cstr;
     return true;
   }
   return false;

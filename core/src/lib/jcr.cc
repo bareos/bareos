@@ -828,6 +828,25 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
   return jcr;
 }
 
+const char *jcr_get_authenticate_key_by_client_name(const char *client_name)
+{
+  if (!client_name) { return nullptr; }
+
+  JobControlRecord *jcr;
+  const char *auth_key;
+  foreach_jcr(jcr)
+  {
+    if (bstrcmp(jcr->client_name, client_name)) {
+      auth_key = jcr->sd_auth_key;
+      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
+      break;
+    }
+  }
+  endeach_jcr(jcr);
+
+  return auth_key;
+}
+
 static void UpdateWaitTime(JobControlRecord *jcr, int newJobStatus)
 {
   bool enter_in_waittime;

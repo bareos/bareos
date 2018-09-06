@@ -44,8 +44,9 @@ enum {
    R_DEVICE,
    R_MSGS,
    R_AUTOCHANGER,
+   R_CLIENT, /* needed for client name conversion */
    R_FIRST = R_DIRECTOR,
-   R_LAST = R_AUTOCHANGER             /* keep this updated */
+   R_LAST = R_CLIENT             /* keep this updated */
 };
 
 enum {

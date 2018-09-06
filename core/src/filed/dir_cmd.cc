@@ -1535,7 +1535,9 @@ static bool StorageCmd(JobControlRecord *jcr)
   char stored_addr[MAX_NAME_LENGTH];
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket *dir = jcr->dir_bsock;
-  BareosSocket *sd; /* storage daemon bsock */
+  BareosSocket *sd = nullptr; /* storage daemon bsock */
+  TlsResource *tls_resource = nullptr;
+  std::string qualified_resource_name;
 
   sd = New(BareosSocketTCP);
   if (me->nokeepalive) { sd->ClearKeepalive(); }
@@ -1586,6 +1588,17 @@ static bool StorageCmd(JobControlRecord *jcr)
   Dmsg0(110, "Connection OK to SD.\n");
 
   jcr->store_bsock = sd;
+
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(jcr->client_name, my_config->r_own_,
+                                                                            qualified_resource_name)) {
+    goto bail_out;
+  }
+
+  tls_resource = dynamic_cast<TlsResource *>(me);
+  if (!sd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key,
+                               jcr)) {
+    goto bail_out;
+  }
 
   sd->fsend("Hello Start Job %s\n", jcr->Job);
   if (!AuthenticateWithStoragedaemon(jcr)) {
