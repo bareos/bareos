@@ -1,9 +1,12 @@
 BasedOnStyle: Google
+Language: Cpp
+Standard: Cpp11
 BreakBeforeBraces: Custom
 BraceWrapping: 
    AfterFunction: true
    AfterEnum: true
-ColumnLimit:     111
+ColumnLimit: 111
+Cpp11BracedListStyle: true
 AlignConsecutiveAssignments: true
 AlignTrailingComments: true
 AlignOperands: true
@@ -15,3 +18,4 @@ BreakConstructorInitializers: BeforeComma
 BreakBeforeInheritanceComma: true
 BreakBeforeTernaryOperators: true
 SortIncludes: false
+ForEachMacros: ['foreach_alist', 'foreach_alist_index', 'foreach_alist_rindex', 'foreach_dlist', 'foreach_jcr', 'foreach_res', 'foreach_vol']
