@@ -77,6 +77,19 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
   return true;
 }
 
+bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &name_of_resource,
+                                                          const int &r_type,
+                                                          const int &job_id,
+                                                          std::string &out) const
+{
+  std::string r_name = ResourceTypeToString(r_type);
+  if (r_name.empty()) {
+    return false;
+  }
+  out = r_name + std::string(":") + name_of_resource + std::string(":") + std::to_string(job_id);
+  return true;
+}
+
 template <class Container>
 void split(const std::string &str, Container &cont, char delim, int max_substring)
 {
@@ -91,11 +104,12 @@ void split(const std::string &str, Container &cont, char delim, int max_substrin
 
 bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
                                                           int &r_type,
+                                                          int &job_id,
                                                           const std::string &in) const
 {
   std::vector<std::string> string_list;
-  split(in, string_list, ':', 2);
-  if (string_list.size() < 2) {
+  split(in, string_list, ':', 3);
+  if (string_list.size() < 2) { /* minimum of parameters are name and r_type */
     return false;
   }
   std::string r_type_str = string_list.at(0);
@@ -105,5 +119,17 @@ bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_r
   }
   r_type = r_type_eval;
   name_of_resource = string_list.at(1);
+
+  if (string_list.size() == 3) {
+    int job_id_temp;
+    std::string job_id_str = string_list.at(2);
+    try {
+      job_id_temp = std::stoi(job_id_str);
+    }
+    catch (const std::exception &e) {
+      return false;
+    }
+    job_id = job_id_temp;
+  }
   return true;
 }

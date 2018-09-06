@@ -1590,7 +1590,7 @@ static bool StorageCmd(JobControlRecord *jcr)
   jcr->store_bsock = sd;
 
   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-          jcr->client_name, my_config->r_own_, qualified_resource_name)) {
+          jcr->client_name, my_config->r_own_, jcr->JobId, qualified_resource_name)) {
     goto bail_out;
   }
 

@@ -67,11 +67,18 @@ TEST(QualifiedResourceNameTypeConverter, ResourceTypeToString)
 
   std::string name;
   int r_type;
-  ok = c.StringToResource(name, r_type, "kOne:Developer");
+  int job_id = -1;
+  ok = c.StringToResource(name, r_type, job_id, "kOne:Developer:123");
   EXPECT_EQ(ok, true);
   EXPECT_EQ(r_type, kOne);
+  EXPECT_EQ(job_id, 123);
   EXPECT_STREQ(name.c_str(), "Developer");
 
-  ok = c.StringToResource(name, r_type, "kOneDeveloper");
+  ok = c.StringToResource(name, r_type, job_id, "kOneDeveloper");
   EXPECT_EQ(ok, false);
+
+  job_id = -1;
+  ok = c.StringToResource(name, r_type, job_id, "kOne:Developer");
+  EXPECT_EQ(ok, true);
+  EXPECT_EQ(job_id, -1);
 }

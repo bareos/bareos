@@ -148,8 +148,9 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   free(fq_name_buffer);
 
   int r_type;
+  int job_id;
   std::string name;
-  bool ok = config->GetQualifiedResourceNameTypeConverter()->StringToResource(name, r_type, fq_name_in);
+  bool ok = config->GetQualifiedResourceNameTypeConverter()->StringToResource(name, r_type, job_id, fq_name_in);
   if (!ok || r_type < 0) { return false; }
   TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
   if (tls) {
