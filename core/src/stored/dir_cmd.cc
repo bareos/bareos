@@ -62,6 +62,7 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
+#include "lib/qualified_resource_name_type_converter.h"
 #include "include/jcr.h"
 
 /* Imported variables */
@@ -1584,6 +1585,8 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *sd;                      /* storage daemon bsock */
+   std::string qualified_resource_name;
+   TlsResource *tls_resource;
 
    sd = New(BareosSocketTCP);
    if (me->nokeepalive) {
@@ -1635,6 +1638,16 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+           jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+     goto bail_out;
+   }
+
+   tls_resource = dynamic_cast<TlsResource *>(me);
+   if (!sd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+     goto bail_out;
+   }
+
    jcr->store_bsock = sd;
 
    sd->fsend("Hello Start Storage Job %s\n", JobName);
@@ -1681,6 +1694,8 @@ static bool PassiveCmd(JobControlRecord *jcr)
    char filed_addr[MAX_NAME_LENGTH];
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *fd;                      /* file daemon bsock */
+   std::string qualified_resource_name;
+   TlsResource *tls_resource;
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
@@ -1716,6 +1731,16 @@ static bool PassiveCmd(JobControlRecord *jcr)
       goto bail_out;
    }
    Dmsg0(110, "Connection OK to FD.\n");
+
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+           jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+     goto bail_out;
+   }
+
+   tls_resource = dynamic_cast<TlsResource *>(me);
+   if (!fd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+     goto bail_out;
+   }
 
    jcr->file_bsock = fd;
    fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
