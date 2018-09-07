@@ -555,7 +555,7 @@ class DLL_IMP_EXP ConfigurationParser {
   void b_UnlockRes(const char *file, int line);
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
-  void InitializeQualifiedResourceNameTypeConverter(std::map<int,std::string> &);
+  void InitializeQualifiedResourceNameTypeConverter(const std::map<int,std::string> &);
   QualifiedResourceNameTypeConverter *GetQualifiedResourceNameTypeConverter() const {
     return qualified_resource_name_type_converter_.get();
   }

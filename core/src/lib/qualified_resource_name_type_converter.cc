@@ -30,70 +30,56 @@ std::map<T2, T1> swapPairs(std::map<T1, T2> m)
 {
   std::map<T2, T1> m1;
 
-  for (auto &&item : m) {
-    m1.emplace(item.second, item.first);
-  }
+  for (auto &&item : m) { m1.emplace(item.second, item.first); }
 
   return m1;
 };
 
-QualifiedResourceNameTypeConverter::QualifiedResourceNameTypeConverter(std::map<int, std::string> map)
+QualifiedResourceNameTypeConverter::QualifiedResourceNameTypeConverter(const std::map<int, std::string> &map)
+    : type_name_relation_map_(map), name_type_relation_map_(swapPairs(map))
 {
-  type_name_relation_map_ = map;
-  name_type_relation_map_ = swapPairs(map);
+  return;
 }
 
 std::string QualifiedResourceNameTypeConverter::ResourceTypeToString(const int &r_type) const
 {
-  if (type_name_relation_map_.empty()) {
-    return std::string();
-  }
-  if (type_name_relation_map_.find(r_type) == type_name_relation_map_.end()) {
-    return std::string();
-  }
+  if (type_name_relation_map_.empty()) { return std::string(); }
+  if (type_name_relation_map_.find(r_type) == type_name_relation_map_.end()) { return std::string(); }
   return type_name_relation_map_.at(r_type);
 }
 
 int QualifiedResourceNameTypeConverter::StringToResourceType(const std::string &r_name) const
 {
-  if (name_type_relation_map_.empty()) {
-    return -1;
-  }
-  if (name_type_relation_map_.find(r_name) == name_type_relation_map_.end()) {
-    return -1;
-  }
+  if (name_type_relation_map_.empty()) { return -1; }
+  if (name_type_relation_map_.find(r_name) == name_type_relation_map_.end()) { return -1; }
   return name_type_relation_map_.at(r_name);
 }
 
 bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &name_of_resource,
                                                           const int &r_type,
-                                                          std::string &out) const
+                                                          std::string &str_out) const
 {
   std::string r_name = ResourceTypeToString(r_type);
-  if (r_name.empty()) {
-    return false;
-  }
-  out = r_name + std::string(":") + name_of_resource;
+  if (r_name.empty()) { return false; }
+  str_out = r_name + std::string(":") + name_of_resource;
   return true;
 }
 
 bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &name_of_resource,
                                                           const int &r_type,
                                                           const int &job_id,
-                                                          std::string &out) const
+                                                          std::string &str_out) const
 {
   std::string r_name = ResourceTypeToString(r_type);
-  if (r_name.empty()) {
-    return false;
-  }
-  out = r_name + std::string(":") + name_of_resource + std::string(":") + std::to_string(job_id);
+  if (r_name.empty()) { return false; }
+  str_out = r_name + std::string(":") + name_of_resource + std::string(":") + std::to_string(job_id);
   return true;
 }
 
 template <class Container>
-void split(const std::string &str, Container &cont, char delim, int max_substring)
+static void SplitStringIntoList(const std::string &str_in, Container &cont, char delim, int max_substring)
 {
-  std::stringstream ss(str);
+  std::stringstream ss(str_in);
   std::string token;
   int max = max_substring;
   while (std::getline(ss, token, delim) && max) {
@@ -105,28 +91,25 @@ void split(const std::string &str, Container &cont, char delim, int max_substrin
 bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
                                                           int &r_type,
                                                           int &job_id,
-                                                          const std::string &in) const
+                                                          const std::string &str_in) const
 {
   std::vector<std::string> string_list;
-  split(in, string_list, ':', 3);
-  if (string_list.size() < 2) { /* minimum of parameters are name and r_type */
+  SplitStringIntoList(str_in, string_list, ':', 3);
+  if (string_list.size() < 2) { /* minimum of parameters are name_of_resource and r_type */
     return false;
   }
   std::string r_type_str = string_list.at(0);
-  int r_type_eval = StringToResourceType(r_type_str);
-  if (r_type_eval == -1) {
-    return false;
-  }
-  r_type = r_type_eval;
+  int r_type_temp        = StringToResourceType(r_type_str);
+  if (r_type_temp == -1) { return false; }
+  r_type           = r_type_temp;
   name_of_resource = string_list.at(1);
 
-  if (string_list.size() == 3) {
+  if (string_list.size() == 3) { /* str_in contains probably a job_id */
     int job_id_temp;
     std::string job_id_str = string_list.at(2);
     try {
       job_id_temp = std::stoi(job_id_str);
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
       return false;
     }
     job_id = job_id_temp;
