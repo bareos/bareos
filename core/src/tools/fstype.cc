@@ -27,6 +27,9 @@
  * Program for determining file system type
  */
 
+/* pull in dummy functions that libbareos depends ons */
+#include "dummy_config_parser.cc"
+
 #include "include/bareos.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"

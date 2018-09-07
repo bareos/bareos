@@ -17,18 +17,21 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+
 SET(BSMTPSRCS bsmtp.cc)
+
 IF(HAVE_WIN32)
    LIST(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
 ENDIF()
 add_executable(bsmtp ${BSMTPSRCS})
-target_link_libraries(bsmtp bareos ${JANSSON_LIBRARIES})
+target_link_libraries(bsmtp bareos  ${JANSSON_LIBRARIES})
 
 add_executable(drivetype drivetype.cc)
 target_link_libraries(drivetype bareos bareosfind ${JANSSON_LIBRARIES})
 
 add_executable(fstype fstype.cc)
 target_link_libraries(fstype bareos bareosfind ${JANSSON_LIBRARIES})
+
 
 SET(BREGEXSRCS bregex.cc)
 IF(HAVE_WIN32)

@@ -27,6 +27,9 @@
  * Test program for testing wild card expressions
  */
 
+/* pull in dummy functions that libbareos depends ons */
+#include "dummy_config_parser.cc"
+
 #include "include/bareos.h"
 #include "lib/fnmatch.h"
 

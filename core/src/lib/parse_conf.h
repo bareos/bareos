@@ -549,7 +549,7 @@ class DLL_IMP_EXP ConfigurationParser {
                             const char *name,
                             bool error_if_exits     = false,
                             bool create_directories = false);
-  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res) __attribute__((weak));
+  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
   CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
   void b_LockRes(const char *file, int line);
   void b_UnlockRes(const char *file, int line);
@@ -561,7 +561,7 @@ class DLL_IMP_EXP ConfigurationParser {
   }
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
-                                                    std::string &psk) __attribute__((weak));
+                                                    std::string &psk);
 
  private:
   ConfigurationParser(const ConfigurationParser &) = delete;
