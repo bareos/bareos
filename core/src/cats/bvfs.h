@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,6 +65,10 @@ class Bvfs {
   Bvfs(JobControlRecord* j, BareosDb* mdb);
   virtual ~Bvfs();
 
+ public:
+  Bvfs(JobControlRecord* j, BareosDb* mdb);
+  virtual ~Bvfs();
+
   void SetJobid(JobId_t id);
   void SetJobids(char* ids);
 
@@ -78,6 +82,14 @@ class Bvfs {
     pattern = CheckPoolMemorySize(pattern, len * 2 + 1);
     db->EscapeString(jcr, pattern, p, len);
   }
+
+  void SetClientname(char* p)
+  {
+    uint32_t len = strlen(p);
+    clientname = CheckPoolMemorySize(clientname, len * 2 + 1);
+    db->EscapeString(jcr, clientname, p, len);
+  }
+
 
   /* Get the root point */
   DBId_t get_root();
@@ -152,6 +164,7 @@ class Bvfs {
   uint32_t offset;
   uint32_t nb_record; /* number of records of the last query */
   POOLMEM* pattern;
+  POOLMEM* clientname;
   DBId_t pwd_id;     /* Current pathid */
   POOLMEM* prev_dir; /* ls_dirs query returns all versions, take the 1st one */
   Attributes* attr;  /* Can be use by handler to call DecodeStat() */

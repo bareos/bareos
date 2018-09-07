@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -843,9 +843,11 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_fill_path_query)) {
-    Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n", errmsg);
-    jcr->db_batch->SqlQuery(SQL_QUERY_batch_unlock_tables_query);
+  /*
+   * We have to lock tables
+   */
+  if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_lock_path_query)) {
+    Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
     goto bail_out;
   }
 
@@ -865,6 +867,13 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
      goto bail_out;
   }
   /* clang-format on */
+
+  /*
+     if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_insert_file_table_1,
+     jcr->ClientId)) { Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", errmsg);
+        goto bail_out;
+     }
+  */
 
   jcr->JobStatus = JobStatus; /* reset entry status */
   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
@@ -988,13 +997,13 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
     digest = ar->Digest;
   }
 
-  /* clang-format off */
+  /* Must create it */
   Mmsg(cmd,
        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
-       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%llu,%llu)",
-       ar->FileIndex, ar->JobId, ar->PathId, esc_name,
-       ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
-  /* clang-format on */
+       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode, ClientId) VALUES "
+       "(%u,%u,%u,'%s','%s','%s',%u,%llu,%llu,%u)",
+       ar->FileIndex, ar->JobId, ar->PathId, esc_name, ar->attr, digest,
+       ar->DeltaSeq, ar->Fhinfo, ar->Fhnode, ar->ClientId);
 
   ar->FileId = SqlInsertAutokeyRecord(cmd, NT_("File"));
   if (ar->FileId == 0) {

@@ -78,5 +78,6 @@ const char *BareosDb::query_names[] = {
 "bvfs_ls_sub_dirs_5",
 "list_volumes_select_0",
 "list_volumes_select_long_0",
+"batch_insert_file_table_1",
 NULL
 };

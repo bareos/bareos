@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -458,11 +458,13 @@ bool DotBvfsRestoreCmd(UaContext* ua, const char* cmd)
  * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  */
 bool DotBvfsLsfilesCmd(UaContext* ua, const char* cmd)
+// maik: das kommt von der CLI
 {
   int i;
   DBId_t pathid = 0;
   char* pattern = NULL;
   int limit = 2000, offset = 0;
+  int clientid = -1;
   char *path = NULL, *jobid = NULL;
   PoolMem filtered_jobids(PM_FNAME);
 
@@ -477,6 +479,12 @@ bool DotBvfsLsfilesCmd(UaContext* ua, const char* cmd)
   }
 
   if ((i = FindArgWithValue(ua, "pattern")) >= 0) { pattern = ua->argv[i]; }
+
+  /*
+     if ((i = FindArgWithValue(ua, "clientid")) >= 0) {
+        clientid = ua->argv[i]; // noch int raus machen, vgl. BvfsValidateJobids
+     }
+  */
 
   if (!ua->guid) { ua->guid = new_guid_list(); }
 

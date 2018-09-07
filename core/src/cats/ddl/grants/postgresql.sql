@@ -30,6 +30,11 @@ GRANT ALL ON DeviceStats TO @DB_USER@;
 GRANT ALL ON JobStats TO @DB_USER@;
 GRANT ALL ON TapeAlerts TO @DB_USER@;
 
+-- Need ownership for @DB_USER@ for partioned tables
+-- to be able to create sub-tables
+ALTER TABLE File OWNER TO @DB_USER@;
+ALTER TABLE Job OWNER TO @DB_USER@;
+
 -- For sequences ON those tables
 GRANT SELECT, UPDATE ON path_pathid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON fileset_filesetid_seq TO @DB_USER@;
