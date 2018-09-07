@@ -179,8 +179,7 @@ uint64_t WriteLastJobsList(int fd, uint64_t addr)
       Pmsg1(000, "Error writing num_items: ERR=%s\n", be.bstrerror());
       goto bail_out;
     }
-    foreach_dlist(je, last_jobs)
-    {
+    foreach_dlist (je, last_jobs) {
       if (write(fd, je, sizeof(struct s_last_job)) != sizeof(struct s_last_job)) {
         BErrNo be;
         Pmsg1(000, "Error writing job: ERR=%s\n", be.bstrerror());
@@ -714,8 +713,7 @@ JobControlRecord *get_jcr_by_id(uint32_t JobId)
 {
   JobControlRecord *jcr;
 
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     if (jcr->JobId == JobId) {
       jcr->IncUseCount();
       Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
@@ -738,8 +736,7 @@ uint32_t GetJobidFromTid(pthread_t tid)
   JobControlRecord *jcr = nullptr;
   bool found            = false;
 
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     if (pthread_equal(jcr->my_thread_id, tid)) {
       found = true;
       break;
@@ -762,8 +759,7 @@ JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
 {
   JobControlRecord *jcr;
 
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     if (jcr->VolSessionId == SessionId && jcr->VolSessionTime == SessionTime) {
       jcr->IncUseCount();
       Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
@@ -790,8 +786,7 @@ JobControlRecord *get_jcr_by_partial_name(char *Job)
   if (!Job) { return nullptr; }
 
   len = strlen(Job);
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     if (bstrncmp(Job, jcr->Job, len)) {
       jcr->IncUseCount();
       Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
@@ -815,8 +810,7 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
 
   if (!Job) { return nullptr; }
 
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, Job)) {
       jcr->IncUseCount();
       Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
@@ -834,8 +828,7 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
 
   JobControlRecord *jcr;
   const char *auth_key;
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
       auth_key = jcr->sd_auth_key;
       Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
@@ -1139,8 +1132,7 @@ static void JcrTimeoutCheck(watchdog_t *self)
   /* Walk through all JCRs checking if any one is
    * blocked for more than specified max time.
    */
-  foreach_jcr(jcr)
-  {
+  foreach_jcr (jcr) {
     Dmsg2(debuglevel, "JcrTimeoutCheck JobId=%u jcr=0x%x\n", jcr->JobId, jcr);
     if (jcr->JobId == 0) { continue; }
     bs = jcr->store_bsock;

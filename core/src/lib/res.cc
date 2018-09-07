@@ -1788,8 +1788,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
         list = *(items[i].alistvalue);
 
         if (list != NULL) {
-          foreach_alist(value, list)
-          {
+          foreach_alist (value, list) {
             /*
              * If this is the default value skip it.
              */
@@ -1817,8 +1816,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
           IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
 
           PmStrcpy(res_names, "");
-          foreach_alist(res, list)
-          {
+          foreach_alist (res, list) {
             if (cnt) {
               Mmsg(temp, ",\"%s\"", res->name);
             } else {
@@ -1862,8 +1860,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
 
         Mmsg(temp, "%s = {\n", items[i].name);
         IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        foreach_dlist(adr, addrs)
-        {
+        foreach_dlist (adr, addrs) {
           char tmp[1024];
 
           adr->BuildConfigString(tmp, sizeof(tmp));
