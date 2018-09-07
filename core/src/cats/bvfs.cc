@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -666,7 +666,7 @@ bool Bvfs::ls_dirs()
 
   return true;
 }
-
+// maik: hier ClientId reinbringen
 static void build_ls_files_query(JobControlRecord* jcr,
                                  BareosDb* db,
                                  PoolMem& query,
@@ -677,6 +677,7 @@ static void build_ls_files_query(JobControlRecord* jcr,
                                  int64_t offset)
 {
   if (db->GetTypeIndex() == SQL_TYPE_POSTGRESQL) {
+    // maik: query kopieren und mit clientname/id neu machen
     db->FillQuery(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId,
                   JobId, PathId, filter, limit, offset);
   } else {

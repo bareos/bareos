@@ -873,13 +873,11 @@ const char *BareosDbMysql::query_definitions[] = {
 "WHERE Log.JobId=%s "
 ,
 
-/* 0072_get_orphaned_paths_0 */
-"SELECT DISTINCT Path.PathId, File.PathId, Path.Path "
-"FROM Path "
-"LEFT JOIN File USING (PathId) "
-"LEFT JOIN PathHierarchy ON (Path.Pathid = PathHierarchy.PPathId) "
+/* 0072_get_orphaned_paths_0.mysql */
+"SELECT DISTINCT ParentPath.PathId,File.PathId,ParentPath.Path "
+"FROM Path AS ParentPath LEFT OUTER JOIN File USING(PathId) "
 "WHERE File.PathId IS NULL "
-  "AND PathHierarchy.PPathId IS NULL "
+  "AND NOT EXISTS (SELECT 1 FROM Path WHERE Path LIKE CONCAT(ParentPath.Path,'_%%')) "
 "LIMIT 300000 "
 ,
 
@@ -1006,6 +1004,14 @@ const char *BareosDbMysql::query_definitions[] = {
           "Storage.Name AS Storage "
 "FROM      Media "
 "LEFT JOIN Storage USING(StorageId) "
+,
+
+/* 0078_batch_insert_file_table_1 */
+"INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode, ClientId) "
+                     "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
+                     "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode, %u "
+                     "FROM batch "
+                     "JOIN Path ON (batch.Path = Path.Path) "
 ,
 
 NULL

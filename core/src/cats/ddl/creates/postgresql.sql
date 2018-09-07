@@ -34,16 +34,22 @@ CREATE TABLE File (
    LStat            TEXT        NOT NULL,
    Md5              TEXT        NOT NULL,
    Name             TEXT        NOT NULL,
-   PRIMARY KEY (FileId)
-);
-CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
+   ClientId         INTEGER     NOT NULL  DEFAULT 0
+-- Primary keys not supported by partitioned tables
+--   PRIMARY KEY (FileId)
+) PARTITION BY LIST (ClientId);
+
+
+-- Indices (as of Postgres 10) are not supported for partioned tables
+-- and have to created for each partion
+--CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 -- This index is important for bvfs performance, especially
 -- for .bvfs_lsdirs which is used by bareos-webui.
 -- As it's a partial index, it will only contain data from
 -- from accurate jobs with delete directories, so that the
 -- impact on backups will be low. Nevertheless, it will
 -- improve the performance, even when not using accurate.
-CREATE INDEX file_pjidpart_idx ON File(PathId,JobId) WHERE FileIndex = 0 AND Name = '';
+--CREATE INDEX file_pjidpart_idx ON File(PathId,JobId) WHERE FileIndex = 0 AND Name = '';
 
 --
 -- Add this if you have a good number of job
@@ -73,6 +79,7 @@ CREATE TABLE RestoreObject (
 );
 CREATE INDEX restore_jobid_idx ON RestoreObject(JobId);
 
+-- Job Table partitioned
 CREATE TABLE Job
 (
     JobId             SERIAL      NOT NULL,
@@ -101,11 +108,14 @@ CREATE TABLE Job
     HasBase           SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
-    Comment           TEXT,
-    PRIMARY KEY (JobId)
-);
+    Comment           TEXT
+-- Primary keys not supported by partitioned tables
+--    PRIMARY KEY (JobId)
+) PARTITION BY LIST (ClientId);
 
-CREATE INDEX job_name_idx ON job (Name);
+-- Indices have to be created in sub-tables
+-- CREATE INDEX job_name_idx ON job (Name);
+
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
@@ -285,6 +295,57 @@ CREATE TABLE Client
 );
 
 CREATE UNIQUE INDEX client_name_idx ON Client (Name);
+
+-- Get ClientId for a job, Postgres will cache results for
+-- functions marked immutable
+CREATE OR REPLACE FUNCTION client_of_job ( Id INTEGER) RETURNS INTEGER AS $$
+BEGIN
+   RETURN (SELECT ClientId from Job WHERE JobId=Id);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
+-- Function and trigger to partition Job and File table
+-- when client is inserted into Client table
+CREATE OR REPLACE FUNCTION partition_by_client()
+   RETURNS TRIGGER AS $$
+   DECLARE
+        file_table TEXT;
+        job_table TEXT;
+        table_stmt TEXT;
+        suffix TEXT;
+   BEGIN
+        suffix := NEW.ClientId;
+        file_table := 'file_' || suffix;
+        job_table := 'job_' || suffix;
+        IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname=file_table) THEN
+                RAISE NOTICE 'Creating Partition : %', file_table;
+                table_stmt := 'CREATE TABLE ' || file_table
+                        || ' PARTITION OF file FOR VALUES IN ( ' || NEW.ClientId || ');'
+                        || ' CREATE INDEX file_jpfid_idx_' || suffix || ' ON '
+                        || file_table || ' (JobId, PathId, Name);'
+                        || ' CREATE INDEX file_pjidpart_idx_' || suffix || ' ON '
+                        || file_table || ' (PathId,JobId) WHERE FileIndex = 0 AND Name = '''';' ;
+                EXECUTE table_stmt;
+        END IF;
+        IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname=job_table) THEN
+                RAISE NOTICE 'Creating Partition : %', job_table;
+                table_stmt := 'CREATE TABLE ' || job_table
+                        || ' PARTITION OF job FOR VALUES IN ( ' || NEW.ClientId || ');'
+                        || ' CREATE INDEX job_name__idx_' || suffix || ' ON ' || job_table || ' (Name);';
+                EXECUTE table_stmt;
+        END IF;
+
+        RETURN NEW;
+   END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE TRIGGER insert_to_client
+        BEFORE INSERT OR UPDATE
+        ON client
+        FOR EACH ROW
+        EXECUTE PROCEDURE partition_by_client();
+
 
 CREATE TABLE Log
 (
