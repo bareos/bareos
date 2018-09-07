@@ -681,7 +681,7 @@ DLL_IMP_EXP extern JobControlRecord *get_jcr_by_id(uint32_t JobId);
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_partial_name(char *Job);
 DLL_IMP_EXP extern JobControlRecord *get_jcr_by_full_name(char *Job);
-DLL_IMP_EXP extern const char *jcr_get_authenticate_key_by_client_name(const char *client_name);
+DLL_IMP_EXP extern const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name);
 DLL_IMP_EXP extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
 DLL_IMP_EXP extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
 DLL_IMP_EXP extern int DLL_IMP_EXP num_jobs_run;

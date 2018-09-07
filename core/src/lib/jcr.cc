@@ -828,15 +828,15 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
   return jcr;
 }
 
-const char *jcr_get_authenticate_key_by_client_name(const char *client_name)
+const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
 {
-  if (!client_name) { return nullptr; }
+  if (!unified_job_name) { return nullptr; }
 
   JobControlRecord *jcr;
   const char *auth_key;
   foreach_jcr(jcr)
   {
-    if (bstrcmp(jcr->client_name, client_name)) {
+    if (bstrcmp(jcr->Job, unified_job_name)) {
       auth_key = jcr->sd_auth_key;
       Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
       break;

@@ -147,20 +147,28 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   std::string fq_name(fq_name_buffer);
   free(fq_name_buffer);
 
+  QualifiedResourceNameTypeConverter *c = config->GetQualifiedResourceNameTypeConverter();
+  if (!c) { return false; }
+
   int r_type;
-  int job_id;
-  std::string name;
-  bool ok = config->GetQualifiedResourceNameTypeConverter()->StringToResource(name, r_type, job_id, fq_name_in);
-  if (!ok || r_type < 0) { return false; }
-  TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
-  if (tls) {
-    psk = tls->password.value;
-    return true;
-  }
-  const char *psk_cstr = jcr_get_authenticate_key_by_client_name(name.c_str());
-  if (psk_cstr) {
-    psk = psk_cstr;
-    return true;
+  int job_id = -1;
+  std::string name; /* either unique job name or client name */
+
+  bool ok = c->StringToResource(name, r_type, job_id, fq_name_in);
+  if (!ok) { return false; }
+
+  if (job_id > 0 && fq_name.find("R_JOB") != std::string::npos) {
+    const char *psk_cstr = JcrGetAuthenticateKey(job_id, name.c_str());
+    if (psk_cstr) {
+      psk = psk_cstr;
+      return true;
+    }
+  } else {
+    TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
+    if (tls) {
+      psk = tls->password.value;
+      return true;
+    }
   }
   return false;
 }

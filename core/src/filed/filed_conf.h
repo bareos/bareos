@@ -41,8 +41,9 @@ enum {
    R_CLIENT,
    R_MSGS,
    R_STORAGE,
+   R_JOB,
    R_FIRST = R_DIRECTOR,
-   R_LAST = R_STORAGE                    /* keep this updated */
+   R_LAST = R_JOB                    /* keep this updated */
 };
 
 /*

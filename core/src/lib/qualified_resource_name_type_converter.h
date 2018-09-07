@@ -34,13 +34,13 @@ class QualifiedResourceNameTypeConverter {
                         std::string &out) const;
   bool StringToResource(std::string &name_of_resource, int &r_type, int &job_id, const std::string &in) const;
 
-private:
+  std::string ResourceTypeToString(const int &type) const;
+  int StringToResourceType(const std::string &) const;
+
+ private:
   static constexpr char record_separator_ = 0x1e;
   const std::map<int, std::string> type_name_relation_map_;
   const std::map<std::string, int> name_type_relation_map_;
-
-  std::string ResourceTypeToString(const int &type) const;
-  int StringToResourceType(const std::string &) const;
 };
 
 #endif /* BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_ */
