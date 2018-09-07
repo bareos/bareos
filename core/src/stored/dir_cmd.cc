@@ -102,7 +102,7 @@ static char releasecmd[] =
 static char readlabelcmd[] =
    "readlabel %127s Slot=%hd drive=%hd";
 static char replicatecmd[] =
-   "replicate Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
+   "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
 static char passiveclientcmd[] =
    "passive client address=%s port=%d ssl=%d";
 static char resolvecmd[] =
@@ -1582,6 +1582,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    int enable_ssl;                 /* enable ssl to sd */
    char JobName[MAX_NAME_LENGTH];
    char stored_addr[MAX_NAME_LENGTH];
+   uint32_t JobId = 0;
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *sd;                      /* storage daemon bsock */
@@ -1595,7 +1596,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->message_length);
 
-   if (sscanf(dir->msg, replicatecmd, JobName, stored_addr, &stored_port,
+   if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 5) {
       dir->fsend(BADcmd, "replicate", dir->msg);
       goto bail_out;
@@ -1639,7 +1640,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    Dmsg0(110, "Connection OK to SD.\n");
 
    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-           jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+           JobName, R_JOB, JobId, qualified_resource_name)) {
      goto bail_out;
    }
 

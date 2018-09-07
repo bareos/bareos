@@ -66,7 +66,7 @@ namespace directordaemon {
 
 /* Commands sent to other storage daemon */
 static char replicatecmd[]  =
-   "replicate Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
+   "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
 /**
  * Get Job names in Pool
@@ -1549,7 +1549,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
 
       char *connection_target_address = StorageAddressToContact(rstore, wstore);
 
-      Mmsg(command, replicatecmd, mig_jcr->Job, connection_target_address,
+      Mmsg(command, replicatecmd, mig_jcr->JobId, mig_jcr->Job, connection_target_address,
            wstore->SDDport, tls_need, mig_jcr->sd_auth_key);
 
       if (!jcr->store_bsock->fsend(command.c_str())) {

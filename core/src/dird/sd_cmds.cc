@@ -41,6 +41,7 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 namespace directordaemon {
 
@@ -136,6 +137,20 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
       return false;
    }
    jcr->store_bsock = sd;
+
+   std::string qualified_resource_name;
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                             qualified_resource_name)) {
+     Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+     return false;
+   }
+
+   TlsResource *tls_configuration = dynamic_cast<TlsResource *>(store);
+   if (!sd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
+                            tls_configuration->password.value, jcr)) {
+     Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
+     return false;
+   }
 
    if (!AuthenticateWithStorageDaemon(jcr, store)) {
       sd->close();
