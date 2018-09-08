@@ -23,7 +23,9 @@
 /*
  * Kern Sibbald, January MM
  */
-#pragma once
+#ifndef BAREOS_CORE_SRC_LIB_PARSE_CONF_H_
+#define BAREOS_CORE_SRC_LIB_PARSE_CONF_H_
+
 
 #include "include/bareos.h"
 #include "include/bc_types.h"
@@ -666,3 +668,5 @@ json_t *json_items(ResourceItem items[]);
 #define foreach_res(var, type) \
   for (var = NULL; (*((void **)&(var)) = (void *)my_config->GetNextRes((type), (CommonResourceHeader *)var));)
 #endif
+
+#endif // BAREOS_CORE_SRC_LIB_PARSE_CONF_H_
