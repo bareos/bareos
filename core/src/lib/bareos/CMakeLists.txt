@@ -52,6 +52,7 @@ IF(HAVE_WIN32)
       ../../win32/compat/print.cc
       ../../win32/compat/winapi.cc
       )
+   set(BAREOSCFG_IMPORT_LIB bareoscfg_import_a)
 ELSE()
    LIST(APPEND BAREOS_SRCS
      scsi_tapealert.cc)
@@ -63,23 +64,22 @@ add_library(bareos SHARED ${BAREOS_SRCS})
 target_link_libraries(bareos
    ${OPENSSL_LIBRARIES} ${PTHREAD_LIBRARIES} ${FASTLZ_LIBRARIES} ${ZLIB_LIBRARIES}
    ${ACL_LIBRARIES} ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${WRAP_LIBRARIES} ${CAM_LIBRARIES}
-   ${WINDOWS_LIBRARIES} ${JANSSON_LIBRARIES} bareoscfg_import_a)
+   ${WINDOWS_LIBRARIES} ${JANSSON_LIBRARIES} ${BAREOSCFG_IMPORT_LIB})
 
 INSTALL(TARGETS bareos DESTINATION ${libdir})
 
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                       SOVERSION "${SOVERSION}")
 
-ADD_CUSTOM_COMMAND(
-   PRE_LINK
-   TARGET bareos
-   DEPENDS libbareoscfg.def
-   COMMAND x86_64-w64-mingw32-dlltool -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg.def -l libbareoscfg_import_a 
-   COMMAND echo ${CMAKE_CURRENT_BINARY_DIR}
-   COMMAND cp libbareoscfg_import_a  ${WINDOWS_IMPORT_LIB_DIRECTORY}/libbareoscfg_import_a.a
-)
-
 IF(HAVE_WIN32)
+   ADD_CUSTOM_COMMAND(
+      PRE_LINK
+      TARGET bareos
+      DEPENDS libbareoscfg.def
+      COMMAND x86_64-w64-mingw32-dlltool -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg.def -l libbareoscfg_import_a 
+      COMMAND echo ${CMAKE_CURRENT_BINARY_DIR}
+      COMMAND cp libbareoscfg_import_a  ${WINDOWS_IMPORT_LIB_DIRECTORY}/libbareoscfg_import_a.a)
+
    set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_BAREOS_DLL")
 ENDIF()
 
