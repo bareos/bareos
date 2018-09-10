@@ -325,7 +325,7 @@ bool show_cmd(UaContext *ua, const char *cmd)
                continue;
             default:
                if (my_config->res_head_[j - my_config->r_first_]) {
-                  DumpResource(j, my_config->res_head_[j - my_config->r_first_],
+                  my_config->DumpResourceCb_(j, my_config->res_head_[j - my_config->r_first_],
                                 bsendmsg, ua, hide_sensitive_data, verbose);
                }
                break;
@@ -345,7 +345,7 @@ bool show_cmd(UaContext *ua, const char *cmd)
          ua->ErrorMsg(_("Resource %s not found\n"), res_name);
          goto bail_out;
       default:
-         DumpResource(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data, verbose);
+         my_config->DumpResourceCb_(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data, verbose);
          break;
       }
    }

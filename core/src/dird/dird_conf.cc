@@ -85,7 +85,14 @@ extern void StoreRun(LEX *lc, ResourceItem *item, int index, int pass);
  * Forward referenced subroutines
  */
 static void CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config);
-
+static bool SaveResource(int type, ResourceItem *items, int pass);
+static void FreeResource(CommonResourceHeader *sres, int type);
+static void DumpResource(int type,
+                  CommonResourceHeader *ures,
+                  void sendit(void *sock, const char *fmt, ...),
+                  void *sock,
+                  bool hide_sensitive_data,
+                  bool verbose);
 /**
  * We build the current resource here as we are
  * scanning the resource configuration definition,
@@ -3790,26 +3797,17 @@ ConfigurationParser *InitDirConfig(const char *configfile, int exit_code)
   ConfigurationParser *config =
       new ConfigurationParser(configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, PrintConfigCb,
                               exit_code, (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                              default_config_filename.c_str(), "bareos-dir.d", ConfigReadyCallback);
+                              default_config_filename.c_str(), "bareos-dir.d", ConfigReadyCallback,
+                              SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
   return config;
 }
 
-/* **************************************************************************** */
-} /* namespace directordaemon */
-/* **************************************************************************** */
-
-/**
- * starting from here "override" methods to use in parse_conf.cc
- * that must not be in the namespace of director daemon
- **/
-
-using namespace directordaemon;
 
 /**
  * Dump contents of resource
  */
-void DumpResource(int type,
+static void DumpResource(int type,
                   CommonResourceHeader *ures,
                   void sendit(void *sock, const char *fmt, ...),
                   void *sock,
@@ -3905,7 +3903,7 @@ bail_out:
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader *sres, int type)
 {
   int num;
   CommonResourceHeader *nres; /* next resource if linked */
@@ -4133,7 +4131,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem *items, int pass)
 {
   UnionOfResources *res;
   int rindex = type - R_FIRST;
@@ -4174,3 +4172,5 @@ bool SaveResource(int type, ResourceItem *items, int pass)
         rindex, pass);
   return true;
 }
+
+} /* namespace directordaemon */

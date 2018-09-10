@@ -19,7 +19,7 @@
 
 include_directories(..)
 
-set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc )
+set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc res.cc parse_conf.cc res.cc qualified_resource_name_type_converter.cc)
 set (BAREOS_STATIC_SRCS parse_conf.cc res.cc qualified_resource_name_type_converter.cc)
 
 IF(HAVE_WIN32)

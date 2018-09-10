@@ -27,6 +27,7 @@
 
 #include "include/bareos.h"
 #include "include/bc_types.h"
+#include "lib/parse_conf_callbacks.h"
 
 #include <functional>
 
@@ -489,6 +490,10 @@ class BAREOSCFG_DLL_IMP_EXP ConfigurationParser {
   CommonResourceHeader **res_head_; /* Pointer to defined resources */
   brwlock_t res_lock_;              /* Resource lock */
 
+  SaveResourceCb_t SaveResourceCb_;
+  DumpResourceCb_t DumpResourceCb_;
+  FreeResourceCb_t FreeResourceCb_;
+
   ConfigurationParser();
   ConfigurationParser(const char *cf,
                       LEX_ERROR_HANDLER *ScanError,
@@ -505,7 +510,10 @@ class BAREOSCFG_DLL_IMP_EXP ConfigurationParser {
                       CommonResourceHeader **res_head,
                       const char *config_default_filename,
                       const char *config_include_dir,
-                      void (*DoneParseConfigCallback)(ConfigurationParser &) = nullptr);
+                      void (*ParseConfigReadyCb)(ConfigurationParser &),
+                      SaveResourceCb_t SaveResourceCb,
+                      DumpResourceCb_t DumpResourceCb,
+                      FreeResourceCb_t FreeResourceCb);
 
   ~ConfigurationParser();
 
@@ -575,7 +583,7 @@ class BAREOSCFG_DLL_IMP_EXP ConfigurationParser {
   std::string config_include_naming_format_; /* Format string for file paths of resources */
   std::string used_config_path_;             /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
-  void (*ParseConfigReadyCallback_)(ConfigurationParser &);
+  ParseConfigReadyCb_t ParseConfigReadyCb_;
 
   const char *get_default_configdir();
   bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);
@@ -633,19 +641,11 @@ DLL_IMP_EXP const char *datatype_to_description(int type);
 /*
  * Resource routines
  */
-DLL_IMP_EXP void DumpResource(int type,
-                              CommonResourceHeader *res,
-                              void sendmsg(void *sock, const char *fmt, ...),
-                              void *sock,
-                              bool hide_sensitive_data = false,
-                              bool verbose             = false);
 DLL_IMP_EXP void IndentConfigItem(PoolMem &cfg_str,
                                   int level,
                                   const char *config_item,
                                   bool inherited = false);
-DLL_IMP_EXP void FreeResource(CommonResourceHeader *res, int type);
 DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
-DLL_IMP_EXP bool SaveResource(int type, ResourceItem *item, int pass);
 
 #ifdef HAVE_JANSSON
 /*

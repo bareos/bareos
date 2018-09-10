@@ -45,6 +45,14 @@ static CommonResourceHeader **res_head = sres_head;
 /**
  * Forward referenced subroutines
  */
+static void FreeResource(CommonResourceHeader *sres, int type);
+static bool SaveResource(int type, ResourceItem *items, int pass);
+static void DumpResource(int type,
+                  CommonResourceHeader *reshdr,
+                  void sendit(void *sock, const char *fmt, ...),
+                  void *sock,
+                  bool hide_sensitive_data,
+                  bool verbose);
 
 /**
  * We build the current resource here statically,
@@ -533,7 +541,8 @@ ConfigurationParser *InitSdConfig(const char *configfile, int exit_code)
   ConfigurationParser *config =
       new ConfigurationParser(configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr, exit_code,
                               (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                              default_config_filename.c_str(), "bareos-sd.d", ConfigReadyCallback);
+                              default_config_filename.c_str(), "bareos-sd.d", ConfigReadyCallback,
+                              SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }
@@ -600,21 +609,7 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
 }
 #endif
 
-/* **************************************************************************** */
-} /* namespace storagedaemon  */
-/* **************************************************************************** */
-
-/**
- * starting from here "override" methods to use in parse_conf.cc
- * that must not be in the namespace of storage daemon
- **/
-
-using namespace storagedaemon;
-
-/**
- * Dump contents of resource
- */
-void DumpResource(int type,
+static void DumpResource(int type,
                   CommonResourceHeader *reshdr,
                   void sendit(void *sock, const char *fmt, ...),
                   void *sock,
@@ -660,7 +655,7 @@ void DumpResource(int type,
  * the resource. If this is pass 2, we update any resource
  * or alist pointers.
  */
-bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem *items, int pass)
 {
   UnionOfResources *res;
   int rindex = type - R_FIRST;
@@ -803,7 +798,7 @@ bool SaveResource(int type, ResourceItem *items, int pass)
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader *sres, int type)
 {
   CommonResourceHeader *nres;
   UnionOfResources *res = (UnionOfResources *)sres;
@@ -908,3 +903,5 @@ void FreeResource(CommonResourceHeader *sres, int type)
   if (res) { free(res); }
   if (nres) { FreeResource(nres, type); }
 }
+
+} /* namespace storagedaemon  */

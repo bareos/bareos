@@ -115,7 +115,7 @@ static void FreeSavedResources(resource_table_reference *table)
    }
 
    for (int j = 0; j < num; j++) {
-      FreeResource(table->res_table[j], my_config->r_first_ + j);
+      my_config->FreeResourceCb_(table->res_table[j], my_config->r_first_ + j);
    }
    free(table->res_table);
 }

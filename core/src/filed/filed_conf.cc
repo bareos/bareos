@@ -61,6 +61,14 @@ static CommonResourceHeader **res_head = sres_head;
 /**
  * Forward referenced subroutines
  */
+static bool SaveResource(int type, ResourceItem *items, int pass);
+static void FreeResource(CommonResourceHeader *sres, int type);
+static void DumpResource(int type,
+                  CommonResourceHeader *reshdr,
+                  void sendit(void *sock, const char *fmt, ...),
+                  void *sock,
+                  bool hide_sensitive_data,
+                  bool verbose);
 
 /**
  * We build the current resource here as we are
@@ -276,7 +284,8 @@ ConfigurationParser *InitFdConfig(const char *configfile, int exit_code)
   ConfigurationParser *config =
       new ConfigurationParser(configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr, exit_code,
                               (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                              default_config_filename.c_str(), "bareos-fd.d", ConfigReadyCallback);
+                              default_config_filename.c_str(), "bareos-fd.d", ConfigReadyCallback,
+                              SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }
@@ -322,21 +331,7 @@ bool PrintConfigSchemaJson(PoolMem &buffer)
 }
 #endif
 
-/* **************************************************************************** */
-} /* namespace filedaemon */
-/* **************************************************************************** */
-
-/**
- * starting from here "override" methods to use in parse_conf.cc
- * that must not be in the namespace of file daemon
- **/
-
-using namespace filedaemon;
-
-/**
- * Dump contents of resource
- */
-void DumpResource(int type,
+static void DumpResource(int type,
                   CommonResourceHeader *reshdr,
                   void sendit(void *sock, const char *fmt, ...),
                   void *sock,
@@ -383,7 +378,7 @@ void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader *sres, int type)
 {
   CommonResourceHeader *nres;
   UnionOfResources *res = (UnionOfResources *)sres;
@@ -484,7 +479,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem *items, int pass)
 {
   UnionOfResources *res;
   int rindex = type - R_FIRST;
@@ -592,3 +587,4 @@ bool SaveResource(int type, ResourceItem *items, int pass)
   }
   return (error == 0);
 }
+} /* namespace filedaemon */

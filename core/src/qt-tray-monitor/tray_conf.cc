@@ -54,6 +54,14 @@ static const std::string default_config_filename("tray-monitor.conf");
 static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
 static CommonResourceHeader **res_head = sres_head;
 
+static bool SaveResource(int type, ResourceItem *items, int pass);
+static void FreeResource(CommonResourceHeader *sres, int type);
+static void DumpResource(int type,
+                  CommonResourceHeader *reshdr,
+                  void sendit(void *sock, const char *fmt, ...),
+                  void *sock,
+                  bool hide_sensitive_data,
+                  bool verbose);
 /*
  * We build the current resource here as we are
  * scanning the resource configuration definition,
@@ -178,7 +186,7 @@ static ResourceTable resources[] = {
 /*
  * Dump contents of resource
  */
-void DumpResource(int type,
+static void DumpResource(int type,
                   CommonResourceHeader *reshdr,
                   void sendit(void *sock, const char *fmt, ...),
                   void *sock,
@@ -207,7 +215,7 @@ void DumpResource(int type,
   sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->res_monitor.hdr.next) {
-    DumpResource(type, res->res_monitor.hdr.next, sendit, sock, hide_sensitive_data, verbose);
+    my_config->DumpResourceCb_(type, res->res_monitor.hdr.next, sendit, sock, hide_sensitive_data, verbose);
   }
 }
 
@@ -218,7 +226,7 @@ void DumpResource(int type,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void FreeResource(CommonResourceHeader *sres, int type)
+static void FreeResource(CommonResourceHeader *sres, int type)
 {
   CommonResourceHeader *nres; /* next resource if linked */
   UnionOfResources *res = reinterpret_cast<UnionOfResources*>(sres);
@@ -276,7 +284,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
     free(res);
   }
   if (nres) {
-    FreeResource(nres, type);
+    my_config->FreeResourceCb_(nres, type);
   }
 }
 
@@ -286,7 +294,7 @@ void FreeResource(CommonResourceHeader *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-bool SaveResource(int type, ResourceItem *items, int pass)
+static bool SaveResource(int type, ResourceItem *items, int pass)
 {
   UnionOfResources *res;
   int rindex = type - R_FIRST;
@@ -379,7 +387,8 @@ ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code)
 {
   return new ConfigurationParser(configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
                                  (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
-                                 default_config_filename.c_str(), "tray-monitor.d");
+                                 default_config_filename.c_str(), "tray-monitor.d", nullptr,
+                                 SaveResource, DumpResource, FreeResource);
 }
 
 /*
