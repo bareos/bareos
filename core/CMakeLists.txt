@@ -128,6 +128,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/compat/include
       )
+   
+   #used for import libraries:
+   set(WINDOWS_IMPORT_LIB_DIRECTORY ${PROJECT_BINARY_DIR}/src/lib/bareos) 
+   link_directories(${WINDOWS_IMPORT_LIB_DIRECTORY})
+
    set(HAVE_WIN32 1)
 
    set(WINDOWS_LIBRARIES ws2_32)

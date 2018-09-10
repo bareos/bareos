@@ -475,7 +475,7 @@ class QualifiedResourceNameTypeConverter;
 /*
  * New C++ configuration routines
  */
-class DLL_IMP_EXP ConfigurationParser {
+class BAREOSCFG_DLL_IMP_EXP ConfigurationParser {
  public:
   std::string cf_;                    /* Config file parameter */
   LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */
