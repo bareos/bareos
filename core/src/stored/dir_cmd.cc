@@ -1597,7 +1597,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    sd_auth_key.check_size(dir->message_length);
 
    if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-              &enable_ssl, sd_auth_key.c_str()) != 5) {
+              &enable_ssl, sd_auth_key.c_str()) != 6) {
       dir->fsend(BADcmd, "replicate", dir->msg);
       goto bail_out;
    }
