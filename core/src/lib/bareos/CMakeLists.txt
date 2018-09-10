@@ -82,8 +82,8 @@ IF(HAVE_WIN32)
    ADD_CUSTOM_COMMAND(
       PRE_LINK
       TARGET bareos
-      DEPENDS libbareoscfg.def
-      COMMAND ${DLLTOOL} -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg.def -l libbareoscfg_import_a 
+      DEPENDS libbareoscfg_${WINDOWS_BITS}.def
+      COMMAND ${DLLTOOL} -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg_${WINDOWS_BITS}.def -l libbareoscfg_import_a 
       COMMAND echo ${CMAKE_CURRENT_BINARY_DIR}
       COMMAND cp libbareoscfg_import_a  ${WINDOWS_IMPORT_LIB_DIRECTORY}/libbareoscfg_import_a.a)
 
