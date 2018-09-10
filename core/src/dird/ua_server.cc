@@ -55,10 +55,10 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
     * The job and defaults are not really used, but we set them up to ensure that
     * everything is correctly initialized.
     */
-   LockRes();
+   LockRes(my_config);
    jcr->res.job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
    SetJcrDefaults(jcr, jcr->res.job);
-   UnlockRes();
+   UnlockRes(my_config);
 
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
    CreateUniqueJobName(jcr, base_name);

@@ -33,10 +33,6 @@
 #include "include/jcr.h"
 #include "qualified_resource_name_type_converter.h"
 
-/* Forward referenced subroutines */
-
-extern ConfigurationParser *my_config; /* Our Global config */
-
 /*
  * Set default indention e.g. 2 spaces.
  */
@@ -97,7 +93,7 @@ CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char 
   CommonResourceHeader *res;
   int rindex = rcode - r_first_;
 
-  if (lock) { LockRes(); }
+  if (lock) { LockRes(this); }
 
   res = res_head_[rindex];
   while (res) {
@@ -105,7 +101,7 @@ CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char 
     res = res->next;
   }
 
-  if (lock) { UnlockRes(); }
+  if (lock) { UnlockRes(this); }
 
   return res;
 }
@@ -1608,20 +1604,20 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
   /*
    * If entry is not used, then there is nothing to print.
    */
-  if (this->hdr.rcode < (uint32_t)my_config->r_first_ || this->hdr.refcnt <= 0) { return true; }
-  rindex = this->hdr.rcode - my_config->r_first_;
+  if (this->hdr.rcode < (uint32_t)hdr.my_config_->r_first_ || this->hdr.refcnt <= 0) { return true; }
+  rindex = this->hdr.rcode - hdr.my_config_->r_first_;
 
   /*
    * Make sure the resource class has any items.
    */
-  if (!my_config->resources_[rindex].items) { return true; }
+  if (!hdr.my_config_->resources_[rindex].items) { return true; }
 
-  memcpy(my_config->res_all_, this, my_config->resources_[rindex].size);
+  memcpy(hdr.my_config_->res_all_, this, hdr.my_config_->resources_[rindex].size);
 
-  PmStrcat(cfg_str, my_config->res_to_str(this->hdr.rcode));
+  PmStrcat(cfg_str, hdr.my_config_->res_to_str(this->hdr.rcode));
   PmStrcat(cfg_str, " {\n");
 
-  items = my_config->resources_[rindex].items;
+  items = hdr.my_config_->resources_[rindex].items;
 
   for (i = 0; items[i].name; i++) {
     bool print_item = false;
@@ -1639,9 +1635,9 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
       continue;
     }
 
-    if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->omit_defaults_) {
+    if ((items[i].flags & CFG_ITEM_REQUIRED) || !hdr.my_config_->omit_defaults_) {
       /*
-       * Always print required items or if my_config->omit_defaults_ is false
+       * Always print required items or if hdr.my_config_->omit_defaults_ is false
        */
       print_item = true;
     }
@@ -1885,8 +1881,8 @@ bool BareosResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool v
         /*
          * This is a non-generic type call back to the daemon to get things printed.
          */
-        if (my_config->print_res_) {
-          my_config->print_res_(items, i, cfg_str, hide_sensitive_data, inherited);
+        if (hdr.my_config_->print_res_) {
+          hdr.my_config_->print_res_(items, i, cfg_str, hide_sensitive_data, inherited);
         }
         break;
     }

@@ -1227,7 +1227,7 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
    /*
     * Count Storage items
     */
-   LockRes();
+   LockRes(my_config);
    store = NULL;
    i = 0;
    foreach_res(store, R_STORAGE) {
@@ -1255,7 +1255,7 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
          Dmsg2(140, "Stuffing: %s:%d\n", store->address, store->SDport);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /*
     * Call each unique Storage daemon
@@ -1268,7 +1268,7 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
    /*
     * Count Client items
     */
-   LockRes();
+   LockRes(my_config);
    client = NULL;
    i = 0;
    foreach_res(client, R_CLIENT) {
@@ -1296,7 +1296,7 @@ static void do_all_setdebug(UaContext *ua, int level, int trace_flag,
          Dmsg2(140, "Stuffing: %s:%d\n", client->address, client->FDport);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    /*
     * Call each unique File daemon

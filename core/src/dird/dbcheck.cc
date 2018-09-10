@@ -1238,7 +1238,7 @@ int main (int argc, char *argv[])
       }
       my_config = InitDirConfig(configfile, M_ERROR_TERM);
       my_config->ParseConfig();
-      LockRes();
+      LockRes(my_config);
       foreach_res(catalog, R_CATALOG) {
          if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
             ++found;
@@ -1248,7 +1248,7 @@ int main (int argc, char *argv[])
            break;
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
       if (!found) {
          if (catalogname) {
             Pmsg2(0, _("Error can not find the Catalog name[%s] in the given config file [%s]\n"), catalogname, configfile);
@@ -1257,9 +1257,9 @@ int main (int argc, char *argv[])
          }
          exit(1);
       } else {
-         LockRes();
+         LockRes(my_config);
          me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
-         UnlockRes();
+         UnlockRes(my_config);
          if (!me) {
             Pmsg0(0, _("Error no Director resource defined.\n"));
             exit(1);

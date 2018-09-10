@@ -886,24 +886,24 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
   *ret_cons = NULL;
   *ret_dir  = NULL;
 
-  LockRes();
+  LockRes(my_config);
   numdir = 0;
   foreach_res(director_resource, R_DIRECTOR) { numdir++; }
   numcon = 0;
   foreach_res(console_resource, R_CONSOLE) { numcon++; }
-  UnlockRes();
+  UnlockRes(my_config);
 
   if (numdir == 1) { /* No choose */
     director_resource = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
   }
 
   if (director) { /* Command line choice overwrite the no choose option */
-    LockRes();
+    LockRes(my_config);
     foreach_res(director_resource, R_DIRECTOR)
     {
       if (bstrcmp(director_resource->name(), director)) { break; }
     }
-    UnlockRes();
+    UnlockRes(my_config);
     if (!director_resource) { /* Can't find Director used as argument */
       senditf(_("Can't find %s in Director list\n"), director);
       return 0;
@@ -914,14 +914,14 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
     UA_sock = New(BareosSocketTCP);
   try_again:
     sendit(_("Available Directors:\n"));
-    LockRes();
+    LockRes(my_config);
     numdir = 0;
     foreach_res(director_resource, R_DIRECTOR)
     {
       senditf(_("%2d:  %s at %s:%d\n"), 1 + numdir++, director_resource->name(), director_resource->address,
               director_resource->DIRport);
     }
-    UnlockRes();
+    UnlockRes(my_config);
     if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600) < 0) {
       WSACleanup(); /* Cleanup Windows sockets */
       return 0;
@@ -938,18 +938,18 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
       goto try_again;
     }
     delete UA_sock;
-    LockRes();
+    LockRes(my_config);
     for (i = 0; i < item; i++) {
       director_resource =
           (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader *)director_resource);
     }
-    UnlockRes();
+    UnlockRes(my_config);
   }
 
   /*
    * Look for a console linked to this director
    */
-  LockRes();
+  LockRes(my_config);
   for (i = 0; i < numcon; i++) {
     console_resource =
         (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
@@ -977,7 +977,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
   if (!console_resource) {
     console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
   }
-  UnlockRes();
+  UnlockRes(my_config);
 
   *ret_dir  = director_resource;
   *ret_cons = console_resource;
@@ -1173,9 +1173,9 @@ int main(int argc, char *argv[])
   if (!no_conio) { ConInit(stdin); }
 
   if (list_directors) {
-    LockRes();
+    LockRes(my_config);
     foreach_res(director_resource, R_DIRECTOR) { senditf("%s\n", director_resource->name()); }
-    UnlockRes();
+    UnlockRes(my_config);
   }
 
   if (test_config) {
@@ -1296,7 +1296,7 @@ static int CheckResources()
   bool OK = true;
   DirectorResource *director;
 
-  LockRes();
+  LockRes(my_config);
 
   numdir = 0;
   foreach_res(director, R_DIRECTOR) { numdir++; }
@@ -1312,7 +1312,7 @@ static int CheckResources()
 
   me = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, NULL);
 
-  UnlockRes();
+  UnlockRes(my_config);
 
   return OK;
 }

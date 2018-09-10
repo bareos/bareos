@@ -598,7 +598,7 @@ void *device_initialization(void *arg)
    Device *dev;
    int errstat;
 
-   LockRes();
+   LockRes(my_config);
 
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JobControlRecord), StoredFreeJcr);
@@ -678,7 +678,7 @@ void *device_initialization(void *arg)
 #endif
    FreeJcr(jcr);
    init_done = true;
-   UnlockRes();
+   UnlockRes(my_config);
    return NULL;
 }
 

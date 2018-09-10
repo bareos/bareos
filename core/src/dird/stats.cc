@@ -166,7 +166,7 @@ void *statistics_thread(void *arg)
          StorageResource *store;
          int64_t StorageId;
 
-         LockRes();
+         LockRes(my_config);
          if ((current_store.c_str())[0]) {
             store = (StorageResource *)my_config->GetResWithName(R_STORAGE, current_store.c_str());
          } else {
@@ -176,13 +176,13 @@ void *statistics_thread(void *arg)
          store = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
          if (!store) {
             PmStrcpy(current_store, "");
-            UnlockRes();
+            UnlockRes(my_config);
             break;
          }
 
          PmStrcpy(current_store, store->name());
          if (!store->collectstats) {
-            UnlockRes();
+            UnlockRes(my_config);
             continue;
          }
 
@@ -190,20 +190,20 @@ void *statistics_thread(void *arg)
          case APT_NATIVE:
             break;
          default:
-            UnlockRes();
+            UnlockRes(my_config);
             continue;
          }
 
          jcr->res.rstore = store;
          if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
-            UnlockRes();
+            UnlockRes(my_config);
             continue;
          }
 
          StorageId = store->StorageId;
          sd = jcr->store_bsock;
 
-         UnlockRes();
+         UnlockRes(my_config);
 
          /*
           * Do our work retrieving the statistics from the remote SD.

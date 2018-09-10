@@ -371,7 +371,7 @@ static void find_runs()
    /*
     * Loop through all jobs
     */
-   LockRes();
+   LockRes(my_config);
    foreach_res(job, R_JOB) {
       sched = job->schedule;
       if (sched == NULL ||
@@ -446,7 +446,7 @@ static void find_runs()
          }
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    Dmsg0(debuglevel, "Leave find_runs()\n");
 }
 

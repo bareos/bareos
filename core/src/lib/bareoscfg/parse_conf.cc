@@ -652,6 +652,7 @@ void ConfigurationParser::InitResource(int type,
    }
    res_all->hdr.rcode  = type;
    res_all->hdr.refcnt = 1;
+   res_all->hdr.my_config_ = this;
 
    /*
     * See what pass of the config parsing this is.

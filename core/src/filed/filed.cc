@@ -347,7 +347,7 @@ static bool CheckResources()
    DirectorResource *director;
    const std::string &configfile = my_config->get_base_config_path();
 
-   LockRes();
+   LockRes(my_config);
 
    me = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    if (!me) {
@@ -490,16 +490,16 @@ static bool CheckResources()
 
 
    /* Verify that a director record exists */
-   LockRes();
+   LockRes(my_config);
    director = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
-   UnlockRes();
+   UnlockRes(my_config);
    if (!director) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
             configfile.c_str());
       OK = false;
    }
 
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (OK) {
       CloseMsg(NULL);                /* close temp message handler */

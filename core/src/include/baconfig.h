@@ -344,8 +344,8 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
         strerror(errstat)); \
 } while(0)
 
-#define LockRes()   my_config->b_LockRes(__FILE__, __LINE__)
-#define UnlockRes() my_config->b_UnlockRes(__FILE__, __LINE__)
+#define LockRes(x)   (x)->b_LockRes(__FILE__, __LINE__)
+#define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
 #ifdef DEBUG_MEMSET
 #define memset(a, v, n) b_memset(__FILE__, __LINE__, a, v, n)

@@ -130,7 +130,7 @@ static void ReloadJobEndCb(JobControlRecord *jcr, void *ctx)
    resource_table_reference *table;
 
    LockJobs();
-   LockRes();
+   LockRes(my_config);
 
    foreach_alist_index(i, table, reload_table) {
       if (table == (resource_table_reference *)ctx) {
@@ -147,7 +147,7 @@ static void ReloadJobEndCb(JobControlRecord *jcr, void *ctx)
       }
    }
 
-   UnlockRes();
+   UnlockRes(my_config);
    UnlockJobs();
 }
 
@@ -585,7 +585,7 @@ bool DoReloadConfig()
    StopStatisticsThread();
 
    LockJobs();
-   LockRes();
+   LockRes(my_config);
 
    DbSqlPoolFlush();
 
@@ -653,7 +653,7 @@ bool DoReloadConfig()
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    UnlockJobs();
    is_reloading = false;
    return reloaded;
@@ -689,7 +689,7 @@ static bool CheckResources()
    bool need_tls;
    const std::string &configfile = my_config->get_base_config_path();
 
-   LockRes();
+   LockRes(my_config);
 
    job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
    me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
@@ -952,7 +952,7 @@ static bool CheckResources()
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    return OK;
 }
 

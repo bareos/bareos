@@ -537,7 +537,7 @@ extern "C" void *device_thread(void *arg)
          Dmsg0(900, "Failed connecting to SD.\n");
          continue;
       }
-      LockRes();
+      LockRes(this);
       foreach_res(dev, R_DEVICE) {
          if (!UpdateDeviceRes(jcr, dev)) {
             Dmsg1(900, "Error updating device=%s\n", dev->name());
@@ -545,7 +545,7 @@ extern "C" void *device_thread(void *arg)
             Dmsg1(900, "Updated Device=%s\n", dev->name());
          }
       }
-      UnlockRes();
+      UnlockRes(this);
       jcr->store_bsock->close();
       delete jcr->store_bsock;
       jcr->store_bsock = NULL;

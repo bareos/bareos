@@ -240,7 +240,7 @@ static DeviceResource *find_device_res(char *device_name, bool readonly)
    DeviceResource *device;
 
    Dmsg0(900, "Enter find_device_res\n");
-   LockRes();
+   LockRes(my_config);
    foreach_res(device, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device->device_name, device_name);
       if (bstrcmp(device->device_name, device_name)) {
@@ -267,7 +267,7 @@ static DeviceResource *find_device_res(char *device_name, bool readonly)
          }
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (!found) {
       Pmsg2(0, _("Could not find device \"%s\" in config file %s.\n"), device_name,

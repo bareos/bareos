@@ -425,9 +425,9 @@ void DoRestore(JobControlRecord *jcr)
    sd = jcr->store_bsock;
    jcr->setJobStatus(JS_Running);
 
-   LockRes();
+   LockRes(my_config);
    ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
-   UnlockRes();
+   UnlockRes(my_config);
    if (client) {
       buf_size = client->max_network_buffer_size;
    } else {

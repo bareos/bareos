@@ -249,7 +249,7 @@ bool show_cmd(UaContext *ua, const char *cmd)
       verbose = true;
    }
 
-   LockRes();
+   LockRes(my_config);
    for (i = 1; i < ua->argc; i++) {
       /*
        * skip verbose keyword, already handled earlier.
@@ -351,7 +351,7 @@ bool show_cmd(UaContext *ua, const char *cmd)
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
@@ -1210,7 +1210,7 @@ static inline bool parse_fileset_selection_param(PoolMem &selection,
       FilesetResource *fs;
       PoolMem temp(PM_MESSAGE);
 
-      LockRes();
+      LockRes(my_config);
       foreach_res(fs, R_FILESET) {
          if (!ua->AclAccessOk(FileSet_ACL, fs->name(), false)) {
             continue;
@@ -1223,7 +1223,7 @@ static inline bool parse_fileset_selection_param(PoolMem &selection,
          PmStrcat(selection, temp.c_str());
       }
       PmStrcat(selection, ") ");
-      UnlockRes();
+      UnlockRes(my_config);
    } else if (fileset >= 0) {
       if (!ua->AclAccessOk(FileSet_ACL, ua->argv[fileset], true)) {
          ua->ErrorMsg(_("Access to specified FileSet not allowed.\n"));

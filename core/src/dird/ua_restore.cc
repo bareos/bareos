@@ -174,7 +174,7 @@ bool RestoreCmd(UaContext *ua, const char *cmd)
    }
 
    /* Ensure there is at least one Restore Job */
-   LockRes();
+   LockRes(my_config);
    foreach_res(job, R_JOB) {
       if (job->JobType == JT_RESTORE) {
          if (!rx.restore_job) {
@@ -183,7 +183,7 @@ bool RestoreCmd(UaContext *ua, const char *cmd)
          rx.restore_jobs++;
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (!rx.restore_jobs) {
       ua->ErrorMsg(_(
          "No Restore Job Resource found in %s.\n"
@@ -1626,7 +1626,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
    /*
     * Try looking up Storage by name
     */
-   LockRes();
+   LockRes(my_config);
    foreach_res(store, R_STORAGE) {
       if (bstrcmp(Storage, store->name())) {
          if (ua->AclAccessOk(Storage_ACL, store->name())) {
@@ -1635,7 +1635,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
          break;
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (rx.store) {
       int i;
@@ -1660,7 +1660,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
     * If no storage resource, try to find one from MediaType
     */
    if (!rx.store) {
-      LockRes();
+      LockRes(my_config);
       foreach_res(store, R_STORAGE) {
          if (bstrcmp(MediaType, store->media_type)) {
             if (ua->AclAccessOk(Storage_ACL, store->name())) {
@@ -1674,11 +1674,11 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
                                   Storage, store->name(), MediaType);
                }
             }
-            UnlockRes();
+            UnlockRes(my_config);
             return;
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
       ua->WarningMsg(_("\nUnable to find Storage resource for\n"
                         "MediaType \"%s\", needed by the Jobs you selected.\n"), MediaType);
    }

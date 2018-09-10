@@ -30,21 +30,16 @@
 
 #include <functional>
 
-struct ResourceItem;        /* Declare forward referenced structure */
-class CommonResourceHeader; /* Declare forward referenced structure */
+struct ResourceItem;
+class CommonResourceHeader;
+class ConfigurationParser;
 
-/*
- * Parser state
- */
 enum parse_state
 {
   p_none,
   p_resource
 };
 
-/*
- * Password encodings.
- */
 enum password_encoding
 {
   p_encoding_clear,
@@ -76,9 +71,6 @@ struct s_kw {
   uint32_t token;
 };
 
-/*
- * Used to store passwords with their encoding.
- */
 struct s_password {
   enum password_encoding encoding;
   char *value;
@@ -251,6 +243,7 @@ class CommonResourceHeader {
   char *desc;                          /* Resource description */
   uint32_t rcode;                      /* Resource id or type */
   int32_t refcnt;                      /* Reference count for releasing */
+  ConfigurationParser *my_config_;     /* Pointer to config parser that created this resource */
   char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
   char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
 };
