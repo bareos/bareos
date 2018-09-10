@@ -71,12 +71,19 @@ INSTALL(TARGETS bareos DESTINATION ${libdir})
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                       SOVERSION "${SOVERSION}")
 
+
 IF(HAVE_WIN32)
+   IF ("${WINDOWS_BITS}" STREQUAL "64")
+      set(DLLTOOL x86_64-w64-mingw32-dlltool)
+   ELSE() 
+      set(DLLTOOL i686-w64-mingw32-dlltool)
+   ENDIF()
+
    ADD_CUSTOM_COMMAND(
       PRE_LINK
       TARGET bareos
       DEPENDS libbareoscfg.def
-      COMMAND x86_64-w64-mingw32-dlltool -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg.def -l libbareoscfg_import_a 
+      COMMAND ${DLLTOOL} -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg.def -l libbareoscfg_import_a 
       COMMAND echo ${CMAKE_CURRENT_BINARY_DIR}
       COMMAND cp libbareoscfg_import_a  ${WINDOWS_IMPORT_LIB_DIRECTORY}/libbareoscfg_import_a.a)
 
