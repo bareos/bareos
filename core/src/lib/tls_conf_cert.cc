@@ -25,23 +25,13 @@
 uint32_t TlsConfigCert::GetPolicy() const
 {
    uint32_t result = TlsConfigBase::BNET_TLS_NONE;
-   if (enable) {
+   if (enabled) {
       result = TlsConfigBase::BNET_TLS_ENABLED;
    }
-   if (require) {
-      result = TlsConfigBase::BNET_TLS_REQUIRED | TlsConfigBase::BNET_TLS_ENABLED;
+   if (required) {
+      result = TlsConfigBase::BNET_TLS_REQUIRED;
    }
-   return result << TlsConfigCert::policy_offset;
-}
-
-bool TlsConfigCert::enabled(u_int32_t policy)
-{
-   return ((policy >> TlsConfigCert::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
-}
-
-bool TlsConfigCert::required(u_int32_t policy)
-{
-   return ((policy >> TlsConfigCert::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
+   return result;
 }
 
 std::vector<std::string> TlsConfigCert::AllowedCertificateCommonNames() const

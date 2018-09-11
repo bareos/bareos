@@ -122,6 +122,10 @@ bool BnetTlsServer(BareosSocket *bsock, const std::vector<std::string> &verify_l
 {
    JobControlRecord *jcr = bsock->jcr();
 
+   if (!bsock->tls_conn) {
+     Dmsg0(100, "No Tsl Connection: Cannot call TlsBsockAccept\n");
+   }
+
    if (!bsock->tls_conn->TlsBsockAccept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;

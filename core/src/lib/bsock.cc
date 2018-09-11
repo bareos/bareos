@@ -411,7 +411,7 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
 
 void BareosSocket::ParameterizeTlsCert(Tls *tls_conn, TlsResource *tls_resource)
 {
-  if (tls_resource->tls_cert.enable) {
+  if (tls_resource->tls_cert.enabled) {
     const std::string empty;
     tls_conn->SetCaCertfile(tls_resource->tls_cert.CaCertfile ? *tls_resource->tls_cert.CaCertfile : empty);
     tls_conn->SetCaCertdir(tls_resource->tls_cert.CaCertdir ? *tls_resource->tls_cert.CaCertdir : empty);
@@ -431,7 +431,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
 {
   TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
-  if (!tls_resource->tls_cert.enable && !tls_resource->tls_psk.enable) {
+  if (!tls_resource->tls_cert.enabled && !tls_resource->tls_psk.enabled) {
     return true; /* cleartext connection */
   }
   tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
@@ -444,7 +444,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
 
   ParameterizeTlsCert(tls_conn.get(), tls_resource);
 
-  if (tls_resource->tls_psk.enable) {
+  if (tls_resource->tls_psk.enabled) {
     tls_conn->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
   }
 
@@ -463,6 +463,9 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
 
   TlsConfigBase *selected_local_tls;
   selected_local_tls = SelectTlsFromPolicy(tls_resource, remote_tls_policy);
+  if (selected_local_tls->GetPolicy() == TlsConfigBase::BNET_TLS_DENY) { /* tls required but not configured */
+    return false;
+  }
   if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
 
     if (!ParameterizeAndInitTlsConnection(tls_resource, identity, password, initiated_by_remote)) {
@@ -495,7 +498,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                                     const char *password,
                                                     bool initiated_by_remote)
 {
-  if (!tls_resource->tls_cert.enable && !tls_resource->tls_psk.enable) { return true; }
+  if (!tls_resource->tls_cert.enabled && !tls_resource->tls_psk.enabled) { return true; }
 
   tls_conn.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn) {
@@ -507,7 +510,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
 
   ParameterizeTlsCert(tls_conn.get(), tls_resource);
 
-  if (tls_resource->tls_psk.enable) {
+  if (tls_resource->tls_psk.enabled) {
     if (initiated_by_remote) {
       // tls_conn->SetTlsPskServerContext(tls_resource->tls_psk.GetTlsPskByFullyQualifiedResourceNameCb);
     } else {

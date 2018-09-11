@@ -26,25 +26,25 @@ struct PskCredentials;
 
 class TlsConfigBase {
 public:
-   bool enable;  /*!< Enable TLS */
-   bool require; /*!< Require TLS */
+   bool enabled;  /*!< Enable TLS */
+   bool required; /*!< Require TLS */
 
    virtual uint32_t GetPolicy() const = 0;
-
-   virtual void SetPskCredentials(const PskCredentials &credentials) {};
 
    virtual bool GetAuthenticate() const { return false; }
    virtual bool GetVerifyPeer() const { return false; }
    virtual std::vector<std::string> AllowedCertificateCommonNames() const { return std::vector<std::string>(); }
 
    typedef enum {
-      BNET_TLS_NONE = 0,            /*!< cannot do TLS */
-      BNET_TLS_ENABLED = 1 << 0,    /*!< TLS with certificates is allowed but not required on my end */
-      BNET_TLS_REQUIRED = 1 << 1,   /*!< TLS with certificates is required */
+      BNET_TLS_NONE = 0,            /*!< No TLS configured */
+      BNET_TLS_ENABLED = 1,         /*!< TLS with certificates is allowed but not required on my end */
+      BNET_TLS_REQUIRED = 2,        /*!< TLS with certificates is required */
+      BNET_TLS_AUTO = 4,            /*!< TLS with certificates is required */
+      BNET_TLS_DENY = 0xFF          /*!< TLS connection not allowed */
    } Policy_e;
 
 protected:
-   TlsConfigBase() : enable(false), require(false) {}
+   TlsConfigBase() : enabled(false), required(false) {}
    virtual ~TlsConfigBase() {}
 };
 

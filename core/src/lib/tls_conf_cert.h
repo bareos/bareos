@@ -52,20 +52,6 @@ public:
    std::vector<std::string> AllowedCertificateCommonNames() const override;
    bool GetAuthenticate() const override { return authenticate; }
 
-   /**
-    * Checks whether the given @param policy matches the configured value
-    * @param policy
-    * @return true if policy means enabled
-    */
-   static bool enabled(u_int32_t policy);
-
-   /**
-    * Checks whether the given @param policy matches the configured value
-    * @param policy
-    * @return true if policy means required
-    */
-   static bool required(u_int32_t policy);
-
 private:
    static u_int32_t const policy_offset = 0;
 };

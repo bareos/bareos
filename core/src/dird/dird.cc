@@ -742,7 +742,7 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (me->tls_cert.require || me->tls_psk.require) {
+      if (me->tls_cert.required || me->tls_psk.required) {
          if (have_tls) {
             // me->tls.enable = true;
          } else {
@@ -752,7 +752,7 @@ static bool CheckResources()
          }
       }
 
-      need_tls = me->tls_cert.enable || me->tls_cert.authenticate;
+      need_tls = me->tls_cert.enabled || me->tls_cert.authenticate;
 
       if ((me->tls_cert.certfile == nullptr || me->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(),configfile.c_str());
@@ -819,7 +819,7 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (cons->tls_cert.require) {
+      if (cons->tls_cert.required) {
          if (have_tls) {
             // cons->tls_cert.enable = true;
          } else {
@@ -829,7 +829,7 @@ static bool CheckResources()
          }
       }
 
-      need_tls = cons->tls_cert.enable || cons->tls_cert.authenticate;
+      need_tls = cons->tls_cert.enabled || cons->tls_cert.authenticate;
 
       if ((cons->tls_cert.certfile == nullptr || cons->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
@@ -874,7 +874,7 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (client->tls_cert.require) {
+      if (client->tls_cert.required) {
          if (have_tls) {
             // client->tls_cert.enable = true;
          } else {
@@ -883,7 +883,7 @@ static bool CheckResources()
             goto bail_out;
          }
       }
-      need_tls = client->tls_cert.enable || client->tls_cert.authenticate;
+      need_tls = client->tls_cert.enabled || client->tls_cert.authenticate;
       if ((client->tls_cert.CaCertfile == nullptr || client->tls_cert.CaCertfile->empty()) &&
           (client->tls_cert.CaCertdir == nullptr || client->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
@@ -902,7 +902,7 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (store->tls_cert.require) {
+      if (store->tls_cert.required) {
          if (have_tls) {
             // store->tls.enable = true;
          } else {
@@ -912,7 +912,7 @@ static bool CheckResources()
          }
       }
 
-      need_tls = store->tls_cert.enable || store->tls_cert.authenticate;
+      need_tls = store->tls_cert.enabled || store->tls_cert.authenticate;
 
       if ((store->tls_cert.CaCertfile == nullptr || store->tls_cert.CaCertfile->empty()) &&
           (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty()) && need_tls) {

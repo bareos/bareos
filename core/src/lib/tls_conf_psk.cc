@@ -25,24 +25,14 @@
 uint32_t TlsConfigPsk::GetPolicy() const
 {
    uint32_t result = TlsConfigBase::BNET_TLS_NONE;
-   if (enable) {
+   if (enabled) {
       result = TlsConfigBase::BNET_TLS_ENABLED;
    }
-   if (require) {
-      result = TlsConfigBase::BNET_TLS_REQUIRED | TlsConfigBase::BNET_TLS_ENABLED;
+   if (required) {
+      result = TlsConfigBase::BNET_TLS_REQUIRED;
    }
 
-   return result << TlsConfigPsk::policy_offset;
-}
-
-bool TlsConfigPsk::enabled(u_int32_t policy)
-{
-   return ((policy >> TlsConfigPsk::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
-}
-
-bool TlsConfigPsk::required(u_int32_t policy)
-{
-   return ((policy >> TlsConfigPsk::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
+   return result;
 }
 
 TlsConfigPsk::~TlsConfigPsk()

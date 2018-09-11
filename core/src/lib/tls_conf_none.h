@@ -23,18 +23,16 @@
 #define BAREOS_LIB_TLS_CONF_NONE_H_
 
 class TlsConfigNone : public TlsConfigBase {
-
  public:
-   char *cipherlist; /* TLS Cipher List */
-
-   TlsConfigNone() : TlsConfigBase(), cipherlist(nullptr) {}
-   ~TlsConfigNone() {};
-
+   TlsConfigNone() : TlsConfigBase() {}
    virtual uint32_t GetPolicy() const override { return BNET_TLS_NONE; }
-//   std::shared_ptr<Tls> CreateClientContext() const override { return nullptr; }
-//   std::shared_ptr<Tls> CreateServerContext() const override { return nullptr; }
-   static bool enabled(u_int32_t policy) { return false; }
-   static bool required(u_int32_t policy) { return false; }
 };
+
+class TlsConfigAuto : public TlsConfigBase {
+ public:
+   TlsConfigAuto() : TlsConfigBase() {}
+   virtual uint32_t GetPolicy() const override { return BNET_TLS_AUTO; }
+};
+
 
 #endif /* BAREOS_LIB_TLS_CONF_NONE_H_ */

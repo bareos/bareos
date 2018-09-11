@@ -389,16 +389,16 @@ static int CheckResources()
 
    StorageResource *store = me;
    /* tls_require implies tls_enable */
-   if (store->tls_cert.require) {
+   if (store->tls_cert.required) {
       if (have_tls) {
-         store->tls_cert.enable = true;
+         store->tls_cert.enabled = true;
       } else {
          Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
          OK = false;
       }
    }
 
-   tls_needed = store->tls_cert.enable || store->tls_cert.authenticate;
+   tls_needed = store->tls_cert.enabled || store->tls_cert.authenticate;
 
    if ((store->tls_cert.certfile == nullptr || store->tls_cert.certfile->empty()) && tls_needed) {
       Jmsg(NULL,
@@ -438,11 +438,11 @@ static int CheckResources()
    DirectorResource *director;
    foreach_res(director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
-      if (director->tls_cert.require) {
-         director->tls_cert.enable = true;
+      if (director->tls_cert.required) {
+         director->tls_cert.enabled = true;
       }
 
-      tls_needed = director->tls_cert.enable || director->tls_cert.authenticate;
+      tls_needed = director->tls_cert.enabled || director->tls_cert.authenticate;
 
       if ((director->tls_cert.certfile == nullptr || director->tls_cert.certfile->empty()) &&
           tls_needed) {
