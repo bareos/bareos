@@ -31,9 +31,6 @@
 #endif
 #endif
 
-/* pull in dummy functions that libbareos depends ons */
-#include "tools/dummy_config_parser.cc"
-
 #include "include/bareos.h"
 #include "lib/edit.h"
 

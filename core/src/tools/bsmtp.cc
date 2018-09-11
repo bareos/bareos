@@ -56,9 +56,6 @@
      copyright.  See:
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
  */
-/* pull in dummy functions that libbareos depends ons */
-#include "dummy_config_parser.cc"
-
 #include "include/bareos.h"
 #include "include/jcr.h"
 #define MY_NAME "bsmtp"

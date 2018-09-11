@@ -27,9 +27,6 @@
  * Test program for testing regular expressions.
  */
 
-/* pull in dummy functions that libbareos depends ons */
-#include "dummy_config_parser.cc"
-
 #include "include/bareos.h"
 
 /**

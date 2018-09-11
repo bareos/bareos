@@ -27,9 +27,6 @@
  * Program for determining drive type
  */
 
-/* pull in dummy functions that libbareos depends ons */
-#include "dummy_config_parser.cc"
-
 #include "include/bareos.h"
 #include "findlib/find.h"
 #include "findlib/drivetype.h"

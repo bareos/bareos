@@ -29,9 +29,6 @@
  * using a lowlevel SCSI interface.
  */
 
-/* pull in dummy functions that libbareos depends ons */
-#include "dummy_config_parser.cc"
-
 #include "include/bareos.h"
 #include "lib/crypto_cache.h"
 #include "lib/crypto_wrap.h"
