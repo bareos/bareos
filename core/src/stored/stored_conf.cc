@@ -645,7 +645,7 @@ static void DumpResource(int type,
   sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->res_dir.hdr.next) {
-    DumpResource(type, (CommonResourceHeader *)res->res_dir.hdr.next, sendit, sock, hide_sensitive_data,
+    my_config->DumpResourceCb_(type, (CommonResourceHeader *)res->res_dir.hdr.next, sendit, sock, hide_sensitive_data,
                  verbose);
   }
 }
@@ -901,7 +901,7 @@ static void FreeResource(CommonResourceHeader *sres, int type)
    * Common stuff again -- free the resource, recurse to next one
    */
   if (res) { free(res); }
-  if (nres) { FreeResource(nres, type); }
+  if (nres) { my_config->FreeResourceCb_(nres, type); }
 }
 
 } /* namespace storagedaemon  */

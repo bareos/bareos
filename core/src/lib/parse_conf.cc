@@ -98,7 +98,11 @@ ConfigurationParser::ConfigurationParser()
    , r_own_ (0)
    , resources_ (0)
    , res_head_(nullptr)
-   , use_config_include_dir_ (false) {
+   , use_config_include_dir_ (false)
+   , ParseConfigReadyCb_(nullptr)
+   , SaveResourceCb_(nullptr)
+   , DumpResourceCb_(nullptr)
+   , FreeResourceCb_(nullptr) {
    return;
 }
 
@@ -142,6 +146,9 @@ ConfigurationParser::ConfigurationParser(
    config_default_filename_ = config_default_filename == nullptr ? "" : config_default_filename;
    config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
    ParseConfigReadyCb_ = ParseConfigReadyCb;
+   ASSERT(SaveResourceCb);
+   ASSERT(DumpResourceCb);
+   ASSERT(FreeResourceCb);
    SaveResourceCb_ = SaveResourceCb;
    DumpResourceCb_ = DumpResourceCb;
    FreeResourceCb_ = FreeResourceCb;
