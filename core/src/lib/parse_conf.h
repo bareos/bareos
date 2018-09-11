@@ -382,7 +382,7 @@ struct DatatypeName {
 /*
  * Base Class for all Resource Classes
  */
-class BareosResource {
+class DLL_IMP_EXP BareosResource {
  public:
   CommonResourceHeader hdr;
 
@@ -396,7 +396,7 @@ class BareosResource {
   // virtual inline bool validate() { return true; };
 };
 
-class TlsResource : public BareosResource {
+class DLL_IMP_EXP TlsResource : public BareosResource {
  public:
   s_password password;    /* UA server password */
   TlsConfigCert tls_cert; /* TLS structure */
@@ -406,7 +406,7 @@ class TlsResource : public BareosResource {
 /*
  * Message Resource
  */
-class MessagesResource : public BareosResource {
+class DLL_IMP_EXP MessagesResource : public BareosResource {
   /*
    * Members
    */
@@ -469,7 +469,7 @@ class QualifiedResourceNameTypeConverter;
 /*
  * New C++ configuration routines
  */
-class BAREOSCFG_DLL_IMP_EXP ConfigurationParser {
+class DLL_IMP_EXP ConfigurationParser {
  public:
   std::string cf_;                    /* Config file parameter */
   LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */

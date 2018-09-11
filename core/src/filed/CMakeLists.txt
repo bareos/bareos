@@ -50,13 +50,13 @@ ENDIF()
 add_executable(bareos-fd ${FDSRCS})
 
 SET(BAREOS_FD_LIBRARIES
-         bareosfind bareoscfg bareos
+         bareosfind bareos
          pthread
          ${LMDB_LIBS}
          )
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_FD_LIBRARIES
-      comctl32 bareosstatic
+      comctl32
       )
 
    SET (FD_COMPILE_DEFINITIONS -DWIN32_VSS)

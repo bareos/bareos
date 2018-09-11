@@ -166,13 +166,6 @@ ENDIF()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 
-
-IF(HAVE_WIN32)
-   LIST(APPEND LIBBAREOSSD_LIBRARIES
-      bareosstatic
-      )
-ENDIF()
-
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
 endif()
@@ -182,7 +175,7 @@ add_library(stored_objects STATIC ${SDSRCS})
 add_executable(bareos-sd stored.cc)
 
 SET(BAREOS_SD_LIBRARIES
-   bareos bareossd bareosfind bareoscfg
+   bareos bareossd bareosfind 
    ${NDMP_LIBS}
    )
 
@@ -199,29 +192,29 @@ target_link_libraries(bareos-sd
 
 add_executable(bls ${BLSSRCS})
 target_link_libraries(bls
-   bareos bareossd bareosfind bareoscfg
+   bareos bareossd bareosfind 
    )
 
 add_executable(bextract ${BEXTRACTSRS})
 target_link_libraries(bextract
-   bareossd bareosfind bareos bareoscfg
+   bareossd bareosfind bareos 
     )
 
 add_executable(bscan ${BSCANSRCS})
 target_link_libraries(bscan
-   bareos bareossd bareosfind bareoscfg bareossql bareoscats
+   bareos bareossd bareosfind bareossql bareoscats
     )
 
 add_executable(btape ${BTAPESRCS})
 target_link_libraries(btape
-   bareossd bareos bareoscfg
+   bareossd bareos 
     )
 
 add_executable(bcopy ${BCOPYSRCS})
 
 
 target_link_libraries(bcopy
-   bareossd bareos bareoscfg
+   bareossd bareos 
     )
 
 INSTALL(TARGETS bareossd DESTINATION ${libdir})

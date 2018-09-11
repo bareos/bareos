@@ -17,7 +17,7 @@ CONFIG( debug, debug|release )  {
 
 QMAKE_LIBDIR += ../lib
 QMAKE_CXXFLAGS += @JANSSON_INC@
-LIBS         += -lbareoscfg -lbareos
+LIBS         += -lbareos
 
 bins.path            = /$(DESTDIR)@bindir@
 bins.files           = bareos-tray-monitor

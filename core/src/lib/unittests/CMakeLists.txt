@@ -41,7 +41,6 @@ target_link_libraries(test_lib
    stored_objects
    bareossd
    bareos
-   bareoscfg
    ${JANSSON_LIBRARIES}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
@@ -73,7 +72,6 @@ target_link_libraries(test_bsock
    bareossd
    bareos
    bareoscats
-   bareoscfg
    bareossql
    bareosfind
    ${LMDB_LIBS}

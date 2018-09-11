@@ -67,7 +67,6 @@ set(BAREOS_DIR_LIBRARIES
    dird_objects
    bareos
    bareoscats
-   bareoscfg
    bareossql
    bareosfind
    ${LMDB_LIBS}
@@ -76,7 +75,6 @@ set(BAREOS_DIR_LIBRARIES
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_DIR_LIBRARIES
-      bareosstatic
       comctl32
       )
 ENDIF()
@@ -85,10 +83,10 @@ target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
-SET(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscfg bareoscats)
+SET(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats)
 
 IF(HAVE_WIN32)
-   LIST(APPEND DBCHECK_LIBRARIES bareosstatic)
+   LIST(APPEND DBCHECK_LIBRARIES)
 ENDIF()
 
 target_link_libraries(bareos-dbcheck
@@ -99,7 +97,7 @@ target_link_libraries(bareos-dbcheck
 # is not built by default
 
 #add_executable(testfind ${TSTFNDSRCS})
-#target_link_libraries(testfind bareos bareosfind bareoscfg
+#target_link_libraries(testfind bareos bareosfind 
 #                      jansson ${OPENSSL_LIBS} acl cap lzo2
 #)
 

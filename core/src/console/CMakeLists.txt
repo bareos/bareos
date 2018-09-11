@@ -27,10 +27,10 @@ add_executable(bconsole console.cc)
 
 add_library(console_objects STATIC ${BCONSSRCS})
 
-set(CONSOLE_LINK_LIBRARIES console_objects bareos bareoscfg ${Readline_LIBRARY})
+set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY})
 
 IF(HAVE_WIN32)
-  LIST(APPEND CONSOLE_LINK_LIBRARIES bareosstatic)
+  LIST(APPEND CONSOLE_LINK_LIBRARIES)
 ENDIF()
 
 target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES})

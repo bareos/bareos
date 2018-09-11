@@ -1,5 +1,4 @@
 @libdir@/libbareos.so*
-@libdir@/libbareoscfg.so*
 @libdir@/libbareosfind.so*
 @libdir@/libbareoslmdb.so*
 @libdir@/libbareosndmp.so*

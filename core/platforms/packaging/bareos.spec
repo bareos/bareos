@@ -1166,7 +1166,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 %dir %{backend_dir}
 %{library_dir}/libbareos.so*
-%{library_dir}/libbareoscfg.so*
 %{library_dir}/libbareosfind.so*
 %{library_dir}/libbareoslmdb.so*
 %if !0%{?client_only}

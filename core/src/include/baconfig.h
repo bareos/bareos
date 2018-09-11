@@ -105,31 +105,9 @@ void InitWinAPIWrapper();
 
 #define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
-#if defined(BUILDING_DLL)
-#define DLL_IMP_EXP _declspec(dllexport)
-#define CATS_IMP_EXP _declspec(dllexport)
-#define SD_IMP_EXP _declspec(dllexport)
-#define BAREOSCFG_DLL_IMP_EXP _declspec(dllimport)
-#elif defined(BUILDING_BAREOS_DLL)
-#define DLL_IMP_EXP _declspec(dllexport)
-#define CATS_IMP_EXP _declspec(dllexport)
-#define SD_IMP_EXP _declspec(dllexport)
-#define BAREOSCFG_DLL_IMP_EXP _declspec(dllimport)
-#elif defined(BUILDING_BAREOSCFG_DLL)
-#define DLL_IMP_EXP _declspec(dllexport)
-#define CATS_IMP_EXP _declspec(dllexport)
-#define SD_IMP_EXP _declspec(dllexport)
-#define BAREOSCFG_DLL_IMP_EXP _declspec(dllexport)
-#elif defined(USING_DLL)
-#define DLL_IMP_EXP _declspec(dllimport)
-#define CATS_IMP_EXP _declspec(dllimport)
-#define SD_IMP_EXP _declspec(dllimport)
-#else
-#define BAREOSCFG_DLL_IMP_EXP
 #define DLL_IMP_EXP
 #define CATS_IMP_EXP
 #define SD_IMP_EXP
-#endif
 
 #else  /* HAVE_WIN32 */
 

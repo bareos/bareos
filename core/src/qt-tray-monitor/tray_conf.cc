@@ -44,6 +44,8 @@
 #include "include/bareos.h"
 #include "tray_conf.h"
 
+#include "lib/parse_conf.h"
+
 static const std::string default_config_filename("tray-monitor.conf");
 
 /*

@@ -52,11 +52,13 @@ IF(HAVE_WIN32)
       ../../win32/compat/print.cc
       ../../win32/compat/winapi.cc
       )
-   set(BAREOSCFG_IMPORT_LIB bareoscfg_import_a)
 ELSE()
    LIST(APPEND BAREOS_SRCS
      scsi_tapealert.cc)
 ENDIF()
+
+set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc res.cc parse_conf.cc res.cc qualified_resource_name_type_converter.cc)
+LIST(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
 
 #link_directories(${PROJECT_BINARY_DIR}/src/lib/bareos)
 add_library(bareos SHARED ${BAREOS_SRCS})
@@ -71,22 +73,7 @@ INSTALL(TARGETS bareos DESTINATION ${libdir})
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                       SOVERSION "${SOVERSION}")
 
-
 IF(HAVE_WIN32)
-   IF ("${WINDOWS_BITS}" STREQUAL "64")
-      set(DLLTOOL x86_64-w64-mingw32-dlltool)
-   ELSE() 
-      set(DLLTOOL i686-w64-mingw32-dlltool)
-   ENDIF()
-
-   ADD_CUSTOM_COMMAND(
-      PRE_LINK
-      TARGET bareos
-      DEPENDS libbareoscfg_${WINDOWS_BITS}.def
-      COMMAND ${DLLTOOL} -d ${CMAKE_CURRENT_SOURCE_DIR}/libbareoscfg_${WINDOWS_BITS}.def -l libbareoscfg_import_a 
-      COMMAND echo ${CMAKE_CURRENT_BINARY_DIR}
-      COMMAND cp libbareoscfg_import_a  ${WINDOWS_IMPORT_LIB_DIRECTORY}/libbareoscfg_import_a.a)
-
-   set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_BAREOS_DLL")
+   set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
 ENDIF()
 

@@ -33,7 +33,6 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
-add_subdirectory(bareoscfg)
 add_subdirectory(bareos)
 
 IF(NOT HAVE_WIN32 AND GTEST_FOUND)
