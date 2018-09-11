@@ -21,9 +21,9 @@
 #ifndef BAREOS_FINDLIB_HARDLINK_H_
 #define BAREOS_FINDLIB_HARDLINK_H_
 
-DLL_IMP_EXP CurLink *lookup_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, ino_t ino, dev_t dev);
-DLL_IMP_EXP CurLink *new_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname, ino_t ino, dev_t dev);
-DLL_IMP_EXP void FfPktSetLinkDigest(FindFilesPacket *ff_pkt,
+CurLink *lookup_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, ino_t ino, dev_t dev);
+CurLink *new_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname, ino_t ino, dev_t dev);
+void FfPktSetLinkDigest(FindFilesPacket *ff_pkt,
                             int32_t digest_stream,
                             const char *digest,
                             uint32_t len);

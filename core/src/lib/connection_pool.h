@@ -28,7 +28,7 @@
 #ifndef BAREOS_LIB_CONNECTION_POOL_H_
 #define BAREOS_LIB_CONNECTION_POOL_H_
 
-class DLL_IMP_EXP Connection : public SmartAlloc {
+class Connection : public SmartAlloc {
 public:
    Connection(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
    ~Connection();
@@ -57,7 +57,7 @@ private:
    pthread_mutex_t mutex_;
 };
 
-class DLL_IMP_EXP ConnectionPool : public SmartAlloc {
+class ConnectionPool : public SmartAlloc {
 public:
    ConnectionPool();
    ~ConnectionPool();

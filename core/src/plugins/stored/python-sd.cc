@@ -128,7 +128,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
+bRC loadPlugin(bsdInfo *lbinfo,
                            bsdFuncs *lbfuncs,
                            genpInfo **pinfo,
                            psdFuncs **pfuncs)
@@ -152,7 +152,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    /*
     * Terminate Python

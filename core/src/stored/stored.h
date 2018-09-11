@@ -79,11 +79,11 @@ int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 #include "sd_plugins.h"
 
-extern ConfigurationParser SD_IMP_EXP *my_config;  /* Our Global config */
+extern ConfigurationParser *my_config;  /* Our Global config */
 
 namespace storagedaemon {
 
-extern bool SD_IMP_EXP forge_on;      /* Proceed inspite of I/O errors */
+extern bool forge_on;      /* Proceed inspite of I/O errors */
 uint32_t new_VolSessionId();
 
 } /* namespace storagedaemon */

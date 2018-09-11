@@ -23,30 +23,30 @@
 
 #include "tls.h"
 
-DLL_IMP_EXP int32_t BnetRecv(BareosSocket *bsock);
-DLL_IMP_EXP bool BnetSend(BareosSocket *bsock);
-DLL_IMP_EXP bool BnetFsend(BareosSocket *bs, const char *fmt, ...);
-DLL_IMP_EXP bool BnetSetBufferSize(BareosSocket *bs, uint32_t size, int rw);
-DLL_IMP_EXP bool BnetSig(BareosSocket *bs, int sig);
-DLL_IMP_EXP bool BnetTlsServer(BareosSocket *bsock,
+int32_t BnetRecv(BareosSocket *bsock);
+bool BnetSend(BareosSocket *bsock);
+bool BnetFsend(BareosSocket *bs, const char *fmt, ...);
+bool BnetSetBufferSize(BareosSocket *bs, uint32_t size, int rw);
+bool BnetSig(BareosSocket *bs, int sig);
+bool BnetTlsServer(BareosSocket *bsock,
                      const std::vector<std::string> &verify_list);
-DLL_IMP_EXP bool BnetTlsClient(BareosSocket *bsock,
+bool BnetTlsClient(BareosSocket *bsock,
                      bool VerifyPeer, const std::vector<std::string> &verify_list);
-DLL_IMP_EXP int BnetGetPeer(BareosSocket *bs, char *buf, socklen_t buflen);
-DLL_IMP_EXP BareosSocket *dup_bsock(BareosSocket *bsock);
-DLL_IMP_EXP const char *BnetStrerror(BareosSocket *bsock);
-DLL_IMP_EXP const char *BnetSigToAscii(BareosSocket *bsock);
-DLL_IMP_EXP int BnetWaitData(BareosSocket *bsock, int sec);
-DLL_IMP_EXP int BnetWaitDataIntr(BareosSocket *bsock, int sec);
-DLL_IMP_EXP bool IsBnetStop(BareosSocket *bsock);
-DLL_IMP_EXP int IsBnetError(BareosSocket *bsock);
-DLL_IMP_EXP void BnetSuppressErrorMessages(BareosSocket *bsock, bool flag);
-DLL_IMP_EXP dlist *BnetHost2IpAddrs(const char *host, int family, const char **errstr);
-DLL_IMP_EXP int BnetSetBlocking(BareosSocket *sock);
-DLL_IMP_EXP int BnetSetNonblocking(BareosSocket *sock);
-DLL_IMP_EXP void BnetRestoreBlocking(BareosSocket *sock, int flags);
-DLL_IMP_EXP int NetConnect(int port);
-DLL_IMP_EXP BareosSocket *BnetBind(int port);
-DLL_IMP_EXP BareosSocket *BnetAccept(BareosSocket *bsock, char *who);
+int BnetGetPeer(BareosSocket *bs, char *buf, socklen_t buflen);
+BareosSocket *dup_bsock(BareosSocket *bsock);
+const char *BnetStrerror(BareosSocket *bsock);
+const char *BnetSigToAscii(BareosSocket *bsock);
+int BnetWaitData(BareosSocket *bsock, int sec);
+int BnetWaitDataIntr(BareosSocket *bsock, int sec);
+bool IsBnetStop(BareosSocket *bsock);
+int IsBnetError(BareosSocket *bsock);
+void BnetSuppressErrorMessages(BareosSocket *bsock, bool flag);
+dlist *BnetHost2IpAddrs(const char *host, int family, const char **errstr);
+int BnetSetBlocking(BareosSocket *sock);
+int BnetSetNonblocking(BareosSocket *sock);
+void BnetRestoreBlocking(BareosSocket *sock, int flags);
+int NetConnect(int port);
+BareosSocket *BnetBind(int port);
+BareosSocket *BnetAccept(BareosSocket *bsock, char *who);
 
 #endif // BAREOS_LIB_BNET_H_

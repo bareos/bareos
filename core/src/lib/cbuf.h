@@ -29,7 +29,7 @@
 
 #define QSIZE 10              /**< # of pointers in the queue */
 
-class DLL_IMP_EXP CircularBuffer : public SmartAlloc {
+class CircularBuffer : public SmartAlloc {
    int size_;
    int next_in_;
    int next_out_;

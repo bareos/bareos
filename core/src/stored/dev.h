@@ -601,7 +601,7 @@ enum get_vol_info_rw {
  * same DeviceControlRecord. Consequently, when creating/attaching/detaching
  * and freeing the DeviceControlRecord we must lock it (mutex_).
  */
-class SD_IMP_EXP DeviceControlRecord : public SmartAlloc {
+class DeviceControlRecord : public SmartAlloc {
 private:
    bool dev_locked_;                  /**< Set if dev already locked */
    int dev_lock_;                     /**< Non-zero if rLock already called */
@@ -762,7 +762,7 @@ public:
    bool RewriteVolumeLabel(bool recycle);
 };
 
-class SD_IMP_EXP StorageDaemonDeviceControlRecord : public DeviceControlRecord {
+class StorageDaemonDeviceControlRecord : public DeviceControlRecord {
 public:
    /*
     * Virtual Destructor.

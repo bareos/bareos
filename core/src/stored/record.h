@@ -268,18 +268,18 @@ struct DelayedDataStream {
 class DeviceControlRecord; /* Forward Reference */
 class DeviceBlock;         /* Forward Reference */
 
-DLL_IMP_EXP const char *FI_to_ascii(char *buf, int fi);
-DLL_IMP_EXP const char *stream_to_ascii(char *buf, int stream, int fi);
-DLL_IMP_EXP const char *record_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec);
-DLL_IMP_EXP void DumpRecord(const char *tag, const DeviceRecord *rec);
-DLL_IMP_EXP bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
-DLL_IMP_EXP bool CanWriteRecordToBlock(DeviceBlock *block, const DeviceRecord *rec);
-DLL_IMP_EXP bool ReadRecordFromBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
-DLL_IMP_EXP DeviceRecord *new_record(bool with_data = true);
-DLL_IMP_EXP void EmptyRecord(DeviceRecord *rec);
-DLL_IMP_EXP void CopyRecordState(DeviceRecord *dst, DeviceRecord *src);
-DLL_IMP_EXP void FreeRecord(DeviceRecord *rec);
-DLL_IMP_EXP uint64_t GetRecordAddress(const DeviceRecord *rec);
+const char *FI_to_ascii(char *buf, int fi);
+const char *stream_to_ascii(char *buf, int stream, int fi);
+const char *record_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec);
+void DumpRecord(const char *tag, const DeviceRecord *rec);
+bool WriteRecordToBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
+bool CanWriteRecordToBlock(DeviceBlock *block, const DeviceRecord *rec);
+bool ReadRecordFromBlock(DeviceControlRecord *dcr, DeviceRecord *rec);
+DeviceRecord *new_record(bool with_data = true);
+void EmptyRecord(DeviceRecord *rec);
+void CopyRecordState(DeviceRecord *dst, DeviceRecord *src);
+void FreeRecord(DeviceRecord *rec);
+uint64_t GetRecordAddress(const DeviceRecord *rec);
 
 } /* namespace storagedaemon */
 

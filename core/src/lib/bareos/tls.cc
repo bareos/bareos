@@ -33,7 +33,7 @@ Tls::~Tls()
    return;
 }
 
-DLL_IMP_EXP Tls *Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
+Tls *Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
 {
    switch (type) {
       case Tls::TlsImplementationType::kTlsOpenSsl:

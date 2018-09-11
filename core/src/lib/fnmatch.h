@@ -50,6 +50,6 @@
 #define FNM_IGNORECASE  FNM_CASEFOLD
 #define FNM_FILE_NAME   FNM_PATHNAME
 
-extern "C" DLL_IMP_EXP int fnmatch(const char *, const char *, int);
+extern "C" int fnmatch(const char *, const char *, int);
 
 #endif                          /* !BAREOS_LIB_FNMATCH_H_ */

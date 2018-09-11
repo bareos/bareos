@@ -34,18 +34,8 @@
 #define L_INCREMENTAL            'I'  /* since last backup */
 #define L_DIFFERENTIAL           'D'  /* since last full backup */
 
-#ifndef DLL_IMP_EXP
-#if defined(BUILDING_DLL)
-#define DLL_IMP_EXP _declspec(dllexport)
-#elif defined(USING_DLL)
-#define DLL_IMP_EXP _declspec(dllimport)
-#else
-#define DLL_IMP_EXP
-#endif
-#endif
-
-DLL_IMP_EXP void *reallymalloc(const char *fname, int lineno, unsigned int nbytes);
-DLL_IMP_EXP void Reallyfree(const char *file, int line, void *fp);
+void *reallymalloc(const char *fname, int lineno, unsigned int nbytes);
+void Reallyfree(const char *file, int line, void *fp);
 
 #ifdef SMARTALLOC
 #ifndef bmalloc
@@ -63,8 +53,8 @@ DLL_IMP_EXP void Reallyfree(const char *file, int line, void *fp);
 #define malloc(s)    sm_malloc(__FILE__, __LINE__, (s))
 #define free(o)      sm_free(__FILE__, __LINE__, (o))
 
-DLL_IMP_EXP void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
-DLL_IMP_EXP void sm_free(const char *file, int line, void *fp);
+void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
+void sm_free(const char *file, int line, void *fp);
 
 void *operator new(size_t size, char const * file, int line)
 {

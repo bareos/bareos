@@ -22,7 +22,7 @@
 #ifndef BAREOS_LIB_TLS_CONF_NONE_H_
 #define BAREOS_LIB_TLS_CONF_NONE_H_
 
-class DLL_IMP_EXP TlsConfigNone : public TlsConfigBase {
+class TlsConfigNone : public TlsConfigBase {
 
  public:
    char *cipherlist; /* TLS Cipher List */

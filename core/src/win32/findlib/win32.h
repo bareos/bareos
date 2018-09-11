@@ -23,12 +23,12 @@
 #define BAREOS_WIN32_FINDLIB_WIN32_H_
 
 
-DLL_IMP_EXP bool expand_win32_fileset(findFILESET *fileset);
-DLL_IMP_EXP bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFilesPacket *ff);
-DLL_IMP_EXP int get_win32_driveletters(findFILESET *fileset, char *szDrives);
-DLL_IMP_EXP bool win32_onefs_is_disabled(findFILESET *fileset);
-DLL_IMP_EXP void win32_cleanup_copy_thread(JobControlRecord *jcr);
-DLL_IMP_EXP void win32_flush_copy_thread(JobControlRecord *jcr);
-DLL_IMP_EXP int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length);
+bool expand_win32_fileset(findFILESET *fileset);
+bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFilesPacket *ff);
+int get_win32_driveletters(findFILESET *fileset, char *szDrives);
+bool win32_onefs_is_disabled(findFILESET *fileset);
+void win32_cleanup_copy_thread(JobControlRecord *jcr);
+void win32_flush_copy_thread(JobControlRecord *jcr);
+int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length);
 
 #endif // BAREOS_WIN32_FINDLIB_WIN32_H_

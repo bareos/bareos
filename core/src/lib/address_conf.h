@@ -27,7 +27,7 @@
  * address configuration
  */
 
-class DLL_IMP_EXP IPADDR : public SmartAlloc {
+class IPADDR : public SmartAlloc {
  public:
    typedef enum { R_SINGLE, R_SINGLE_PORT, R_SINGLE_ADDR, R_MULTIPLE,
                   R_DEFAULT, R_EMPTY
@@ -75,23 +75,23 @@ class DLL_IMP_EXP IPADDR : public SmartAlloc {
    dlink link;
 };
 
-DLL_IMP_EXP void InitDefaultAddresses(dlist ** addr, const char *port);
-DLL_IMP_EXP void FreeAddresses(dlist * addrs);
+void InitDefaultAddresses(dlist ** addr, const char *port);
+void FreeAddresses(dlist * addrs);
 
-DLL_IMP_EXP const char *GetFirstAddress(dlist * addrs, char *outputbuf, int outlen);
-DLL_IMP_EXP int GetFirstPortNetOrder(dlist * addrs);
-DLL_IMP_EXP int GetFirstPortHostOrder(dlist * addrs);
+const char *GetFirstAddress(dlist * addrs, char *outputbuf, int outlen);
+int GetFirstPortNetOrder(dlist * addrs);
+int GetFirstPortHostOrder(dlist * addrs);
 
-DLL_IMP_EXP int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
+int AddAddress(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen);
-DLL_IMP_EXP const char *BuildAddressesString(dlist *addrs, char *buf, int blen, bool print_port=true);
+const char *BuildAddressesString(dlist *addrs, char *buf, int blen, bool print_port=true);
 
-DLL_IMP_EXP int SockaddrGetPortNetOrder(const struct sockaddr *sa);
-DLL_IMP_EXP int SockaddrGetPort(const struct sockaddr *sa);
-DLL_IMP_EXP char *SockaddrToAscii(const struct sockaddr *sa, char *buf, int len);
+int SockaddrGetPortNetOrder(const struct sockaddr *sa);
+int SockaddrGetPort(const struct sockaddr *sa);
+char *SockaddrToAscii(const struct sockaddr *sa, char *buf, int len);
 #ifdef WIN32
 #undef HAVE_OLD_SOCKOPT
 #endif
 #ifdef HAVE_OLD_SOCKOPT
-DLL_IMP_EXP int inet_aton(const char *cp, struct in_addr *inp);
+int inet_aton(const char *cp, struct in_addr *inp);
 #endif

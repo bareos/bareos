@@ -195,7 +195,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
+bRC loadPlugin(bInfo *lbinfo,
                            bFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pFuncs **pfuncs)
@@ -211,7 +211,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    return bRC_OK;
 }

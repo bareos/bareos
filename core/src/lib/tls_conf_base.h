@@ -24,7 +24,7 @@
 
 struct PskCredentials;
 
-class DLL_IMP_EXP TlsConfigBase {
+class TlsConfigBase {
 public:
    bool enable;  /*!< Enable TLS */
    bool require; /*!< Require TLS */

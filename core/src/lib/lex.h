@@ -169,23 +169,23 @@ lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
 #define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
 lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
-DLL_IMP_EXP void ScanToEol(LEX *lc);
-DLL_IMP_EXP int ScanToNextNotEol(LEX * lc);
+void ScanToEol(LEX *lc);
+int ScanToNextNotEol(LEX * lc);
 
-DLL_IMP_EXP LEX *lex_close_file(LEX *lf);
-DLL_IMP_EXP LEX *lex_open_file(LEX *lf,
+LEX *lex_close_file(LEX *lf);
+LEX *lex_open_file(LEX *lf,
                    const char *fname,
                    LEX_ERROR_HANDLER *ScanError,
                    LEX_WARNING_HANDLER *scan_warning);
-DLL_IMP_EXP LEX *lex_new_buffer(LEX *lf,
+LEX *lex_new_buffer(LEX *lf,
                     LEX_ERROR_HANDLER *ScanError,
                     LEX_WARNING_HANDLER *scan_warning);
-DLL_IMP_EXP int LexGetChar(LEX *lf);
-DLL_IMP_EXP void LexUngetChar(LEX *lf);
-DLL_IMP_EXP const char *lex_tok_to_str(int token);
-DLL_IMP_EXP int LexGetToken(LEX *lf, int expect);
-DLL_IMP_EXP void LexSetDefaultErrorHandler(LEX *lf);
-DLL_IMP_EXP void LexSetDefaultWarningHandler(LEX *lf);
-DLL_IMP_EXP void LexSetErrorHandlerErrorType(LEX *lf, int err_type);
+int LexGetChar(LEX *lf);
+void LexUngetChar(LEX *lf);
+const char *lex_tok_to_str(int token);
+int LexGetToken(LEX *lf, int expect);
+void LexSetDefaultErrorHandler(LEX *lf);
+void LexSetDefaultWarningHandler(LEX *lf);
+void LexSetErrorHandlerErrorType(LEX *lf, int err_type);
 
 #endif /* BAREOS_LIB_LEX_H_ */

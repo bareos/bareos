@@ -24,7 +24,7 @@
 
 #include "include/bareos.h"
 
-class DLL_IMP_EXP QualifiedResourceNameTypeConverter {
+class QualifiedResourceNameTypeConverter {
  public:
   QualifiedResourceNameTypeConverter(const std::map<int, std::string> &map);
   bool ResourceToString(const std::string &name_of_resource, const int &r_type, std::string &out) const;

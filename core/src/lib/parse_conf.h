@@ -382,7 +382,7 @@ struct DatatypeName {
 /*
  * Base Class for all Resource Classes
  */
-class DLL_IMP_EXP BareosResource {
+class BareosResource {
  public:
   CommonResourceHeader hdr;
 
@@ -396,7 +396,7 @@ class DLL_IMP_EXP BareosResource {
   // virtual inline bool validate() { return true; };
 };
 
-class DLL_IMP_EXP TlsResource : public BareosResource {
+class TlsResource : public BareosResource {
  public:
   s_password password;    /* UA server password */
   TlsConfigCert tls_cert; /* TLS structure */
@@ -406,7 +406,7 @@ class DLL_IMP_EXP TlsResource : public BareosResource {
 /*
  * Message Resource
  */
-class DLL_IMP_EXP MessagesResource : public BareosResource {
+class MessagesResource : public BareosResource {
   /*
    * Members
    */
@@ -469,7 +469,7 @@ class QualifiedResourceNameTypeConverter;
 /*
  * New C++ configuration routines
  */
-class DLL_IMP_EXP ConfigurationParser {
+class ConfigurationParser {
  public:
   std::string cf_;                    /* Config file parameter */
   LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */
@@ -629,31 +629,31 @@ class DLL_IMP_EXP ConfigurationParser {
                   char *timestamp_format);
 };
 
-DLL_IMP_EXP void PrintMessage(void *sock, const char *fmt, ...);
+void PrintMessage(void *sock, const char *fmt, ...);
 
 /*
  * Data type routines
  */
-DLL_IMP_EXP DatatypeName *get_datatype(int number);
-DLL_IMP_EXP const char *datatype_to_str(int type);
-DLL_IMP_EXP const char *datatype_to_description(int type);
+DatatypeName *get_datatype(int number);
+const char *datatype_to_str(int type);
+const char *datatype_to_description(int type);
 
 /*
  * Resource routines
  */
-DLL_IMP_EXP void IndentConfigItem(PoolMem &cfg_str,
+void IndentConfigItem(PoolMem &cfg_str,
                                   int level,
                                   const char *config_item,
                                   bool inherited = false);
-DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
+void InitResource(int type, ResourceItem *item);
 
 #ifdef HAVE_JANSSON
 /*
  * JSON output helper functions
  */
-DLL_IMP_EXP json_t *json_item(s_kw *item);
-DLL_IMP_EXP json_t *json_item(ResourceItem *item);
-DLL_IMP_EXP json_t *json_items(ResourceItem items[]);
+json_t *json_item(s_kw *item);
+json_t *json_item(ResourceItem *item);
+json_t *json_items(ResourceItem items[]);
 #endif
 
 /*

@@ -30,37 +30,37 @@ public:
    TlsGnuTls();
    virtual ~TlsGnuTls();
 
-   DLL_IMP_EXP bool init() override;
+   bool init() override;
 
-   DLL_IMP_EXP void FreeTlsConnection();
-   DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<Tls> &ctx);
+   void FreeTlsConnection();
+   void FreeTlsContext(std::shared_ptr<Tls> &ctx);
 
-   virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) override;
-   virtual DLL_IMP_EXP void SetTlsPskServerContext(ConfigurationParser *config,
+   virtual void SetTlsPskClientContext(const PskCredentials &credentials) override;
+   virtual void SetTlsPskServerContext(ConfigurationParser *config,
                                           GetTlsPskByFullyQualifiedResourceNameCb_t cb) override;
 
-   virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
-   virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) override;
+   virtual bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
+   virtual bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) override;
 
-   virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock);
-   virtual DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);
-   virtual DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes);
-   virtual DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock);
-   virtual DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock);
-   virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const ;
+   virtual bool TlsBsockAccept(BareosSocket *bsock);
+   virtual int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);
+   virtual int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes);
+   virtual bool TlsBsockConnect(BareosSocket *bsock);
+   virtual void TlsBsockShutdown(BareosSocket *bsock);
+   virtual void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const ;
 
-   virtual DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) override {};
+   virtual void SetCipherList(const std::string &cipherlist) override {};
 
-   virtual DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile) override {};
-   virtual DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir) override {};
-   virtual DLL_IMP_EXP void SetCrlfile(const std::string &crlfile) override {};
-   virtual DLL_IMP_EXP void SetCertfile(const std::string &certfile) override {};
-   virtual DLL_IMP_EXP void SetKeyfile(const std::string &keyfile) override {};
-   virtual DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override {};
-   virtual DLL_IMP_EXP void SetPemUserdata(void *pem_userdata) override {};
-   virtual DLL_IMP_EXP void SetDhFile(const std::string &dhfile) override {};
-   virtual DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer) override {};
-   virtual DLL_IMP_EXP void SetTcpFileDescriptor(const int& fd) override {};
+   virtual void SetCaCertfile(const std::string &ca_certfile) override {};
+   virtual void SetCaCertdir(const std::string &ca_certdir) override {};
+   virtual void SetCrlfile(const std::string &crlfile) override {};
+   virtual void SetCertfile(const std::string &certfile) override {};
+   virtual void SetKeyfile(const std::string &keyfile) override {};
+   virtual void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override {};
+   virtual void SetPemUserdata(void *pem_userdata) override {};
+   virtual void SetDhFile(const std::string &dhfile) override {};
+   virtual void SetVerifyPeer(const bool &verify_peer) override {};
+   virtual void SetTcpFileDescriptor(const int& fd) override {};
 };
 
 #endif /* BAREOS_LIB_TLS_GNUTLS_H_ */

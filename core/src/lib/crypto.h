@@ -130,39 +130,39 @@ typedef enum {
 
 #endif /* HAVE_OPENSSL */
 
-DLL_IMP_EXP int InitCrypto(void);
-DLL_IMP_EXP int CleanupCrypto(void);
-DLL_IMP_EXP DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type);
-DLL_IMP_EXP bool CryptoDigestUpdate(DIGEST *digest, const uint8_t *data, uint32_t length);
-DLL_IMP_EXP bool CryptoDigestFinalize(DIGEST *digest, uint8_t *dest, uint32_t *length);
-DLL_IMP_EXP void CryptoDigestFree(DIGEST *digest);
-DLL_IMP_EXP SIGNATURE *crypto_sign_new(JobControlRecord *jcr);
-DLL_IMP_EXP crypto_error_t CryptoSignGetDigest(SIGNATURE *sig, X509_KEYPAIR *keypair,
+int InitCrypto(void);
+int CleanupCrypto(void);
+DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type);
+bool CryptoDigestUpdate(DIGEST *digest, const uint8_t *data, uint32_t length);
+bool CryptoDigestFinalize(DIGEST *digest, uint8_t *dest, uint32_t *length);
+void CryptoDigestFree(DIGEST *digest);
+SIGNATURE *crypto_sign_new(JobControlRecord *jcr);
+crypto_error_t CryptoSignGetDigest(SIGNATURE *sig, X509_KEYPAIR *keypair,
                                       crypto_digest_t &algorithm, DIGEST **digest);
-DLL_IMP_EXP crypto_error_t CryptoSignVerify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest);
-DLL_IMP_EXP int CryptoSignAddSigner(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair);
-DLL_IMP_EXP int CryptoSignEncode(SIGNATURE *sig, uint8_t *dest, uint32_t *length);
-DLL_IMP_EXP SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uint32_t length);
-DLL_IMP_EXP void CryptoSignFree(SIGNATURE *sig);
-DLL_IMP_EXP CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys);
-DLL_IMP_EXP void CryptoSessionFree(CRYPTO_SESSION *cs);
-DLL_IMP_EXP bool CryptoSessionEncode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length);
-DLL_IMP_EXP crypto_error_t CryptoSessionDecode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session);
-DLL_IMP_EXP CRYPTO_SESSION *CryptoSessionDecode(const uint8_t *data, uint32_t length);
-DLL_IMP_EXP CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *blocksize);
-DLL_IMP_EXP bool CryptoCipherUpdate(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written);
-DLL_IMP_EXP bool CryptoCipherFinalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written);
-DLL_IMP_EXP void CryptoCipherFree(CIPHER_CONTEXT *cipher_ctx);
-DLL_IMP_EXP X509_KEYPAIR *crypto_keypair_new(void);
-DLL_IMP_EXP X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair);
-DLL_IMP_EXP int CryptoKeypairLoadCert(X509_KEYPAIR *keypair, const char *file);
-DLL_IMP_EXP bool CryptoKeypairHasKey(const char *file);
-DLL_IMP_EXP int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata);
-DLL_IMP_EXP void CryptoKeypairFree(X509_KEYPAIR *keypair);
-DLL_IMP_EXP int CryptoDefaultPemCallback(char *buf, int size, const void *userdata);
-DLL_IMP_EXP const char *crypto_digest_name(crypto_digest_t type);
-DLL_IMP_EXP const char *crypto_digest_name(DIGEST *digest);
-DLL_IMP_EXP crypto_digest_t CryptoDigestStreamType(int stream);
-DLL_IMP_EXP const char *crypto_strerror(crypto_error_t error);
+crypto_error_t CryptoSignVerify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest);
+int CryptoSignAddSigner(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair);
+int CryptoSignEncode(SIGNATURE *sig, uint8_t *dest, uint32_t *length);
+SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uint32_t length);
+void CryptoSignFree(SIGNATURE *sig);
+CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys);
+void CryptoSessionFree(CRYPTO_SESSION *cs);
+bool CryptoSessionEncode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length);
+crypto_error_t CryptoSessionDecode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session);
+CRYPTO_SESSION *CryptoSessionDecode(const uint8_t *data, uint32_t length);
+CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *blocksize);
+bool CryptoCipherUpdate(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written);
+bool CryptoCipherFinalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written);
+void CryptoCipherFree(CIPHER_CONTEXT *cipher_ctx);
+X509_KEYPAIR *crypto_keypair_new(void);
+X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair);
+int CryptoKeypairLoadCert(X509_KEYPAIR *keypair, const char *file);
+bool CryptoKeypairHasKey(const char *file);
+int CryptoKeypairLoadKey(X509_KEYPAIR *keypair, const char *file, CRYPTO_PEM_PASSWD_CB *pem_callback, const void *pem_userdata);
+void CryptoKeypairFree(X509_KEYPAIR *keypair);
+int CryptoDefaultPemCallback(char *buf, int size, const void *userdata);
+const char *crypto_digest_name(crypto_digest_t type);
+const char *crypto_digest_name(DIGEST *digest);
+crypto_digest_t CryptoDigestStreamType(int stream);
+const char *crypto_strerror(crypto_error_t error);
 
 #endif /* BAREOS_LIB_CRYPTO_H_ */

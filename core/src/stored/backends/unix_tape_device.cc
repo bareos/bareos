@@ -63,7 +63,7 @@ unix_tape_device::unix_tape_device()
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
+extern "C" Device *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
    Device *dev = NULL;
 
@@ -79,7 +79,7 @@ extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int dev
    return dev;
 }
 
-extern "C" void SD_IMP_EXP flush_backend(void)
+extern "C" void flush_backend(void)
 {
 }
 #endif

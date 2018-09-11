@@ -42,15 +42,15 @@
 /**
  * Function pointers to be set here (findlib)
  */
-extern DLL_IMP_EXP int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
-extern DLL_IMP_EXP int (*plugin_bclose)(BareosWinFilePacket *bfd);
-extern DLL_IMP_EXP ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count);
-extern DLL_IMP_EXP ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count);
-extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence);
+extern int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+extern int (*plugin_bclose)(BareosWinFilePacket *bfd);
+extern ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count);
+extern ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count);
+extern boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence);
 
-extern DLL_IMP_EXP char *exepath;
-extern DLL_IMP_EXP char *version;
-extern DLL_IMP_EXP char *dist_name;
+extern char *exepath;
+extern char *version;
+extern char *dist_name;
 
 namespace filedaemon {
 

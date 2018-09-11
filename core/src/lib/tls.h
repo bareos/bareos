@@ -48,39 +48,39 @@ class Tls {
     kTlsOpenSsl,
     kTlsGnuTls
   };
-  static DLL_IMP_EXP Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
+  static Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
 
-  virtual DLL_IMP_EXP void SetTlsPskClientContext(const PskCredentials &credentials) = 0;
-  virtual DLL_IMP_EXP void SetTlsPskServerContext(ConfigurationParser *config,
+  virtual void SetTlsPskClientContext(const PskCredentials &credentials) = 0;
+  virtual void SetTlsPskServerContext(ConfigurationParser *config,
                                           GetTlsPskByFullyQualifiedResourceNameCb_t cb) = 0;
 
-  virtual DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host)   = 0;
-  virtual DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr,
+  virtual bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host)   = 0;
+  virtual bool TlsPostconnectVerifyCn(JobControlRecord *jcr,
                                                   const std::vector<std::string> &verify_list) = 0;
 
-  virtual DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock)                           = 0;
-  virtual DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) = 0;
-  virtual DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)  = 0;
-  virtual DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock)                          = 0;
-  virtual DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock)                         = 0;
-  virtual DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr,
+  virtual bool TlsBsockAccept(BareosSocket *bsock)                           = 0;
+  virtual int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) = 0;
+  virtual int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes)  = 0;
+  virtual bool TlsBsockConnect(BareosSocket *bsock)                          = 0;
+  virtual void TlsBsockShutdown(BareosSocket *bsock)                         = 0;
+  virtual void TlsLogConninfo(JobControlRecord *jcr,
                                           const char *host,
                                           int port,
                                           const char *who) const                         = 0;
-  virtual DLL_IMP_EXP std::string TlsCipherGetName() const { return std::string(); }
+  virtual std::string TlsCipherGetName() const { return std::string(); }
 
-  virtual DLL_IMP_EXP void SetCipherList(const std::string &cipherlist) = 0;
+  virtual void SetCipherList(const std::string &cipherlist) = 0;
 
-  virtual DLL_IMP_EXP void SetCaCertfile(const std::string &ca_certfile)     = 0;
-  virtual DLL_IMP_EXP void SetCaCertdir(const std::string &ca_certdir)       = 0;
-  virtual DLL_IMP_EXP void SetCrlfile(const std::string &crlfile)            = 0;
-  virtual DLL_IMP_EXP void SetCertfile(const std::string &certfile)          = 0;
-  virtual DLL_IMP_EXP void SetKeyfile(const std::string &keyfile)            = 0;
-  virtual DLL_IMP_EXP void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) = 0;
-  virtual DLL_IMP_EXP void SetPemUserdata(void *pem_userdata)                = 0;
-  virtual DLL_IMP_EXP void SetDhFile(const std::string &dhfile)              = 0;
-  virtual DLL_IMP_EXP void SetVerifyPeer(const bool &verify_peer)            = 0;
-  virtual DLL_IMP_EXP void SetTcpFileDescriptor(const int &fd)               = 0;
+  virtual void SetCaCertfile(const std::string &ca_certfile)     = 0;
+  virtual void SetCaCertdir(const std::string &ca_certdir)       = 0;
+  virtual void SetCrlfile(const std::string &crlfile)            = 0;
+  virtual void SetCertfile(const std::string &certfile)          = 0;
+  virtual void SetKeyfile(const std::string &keyfile)            = 0;
+  virtual void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) = 0;
+  virtual void SetPemUserdata(void *pem_userdata)                = 0;
+  virtual void SetDhFile(const std::string &dhfile)              = 0;
+  virtual void SetVerifyPeer(const bool &verify_peer)            = 0;
+  virtual void SetTcpFileDescriptor(const int &fd)               = 0;
 };
 
 #endif /* BAREOS_LIB_TLS_H_ */

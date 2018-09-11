@@ -27,7 +27,7 @@
 
 #include "include/bareos.h"
 
-class DLL_IMP_EXP TlsConfigPsk : public TlsConfigBase {
+class TlsConfigPsk : public TlsConfigBase {
  public:
   char *cipherlist; /* TLS Cipher List */
 

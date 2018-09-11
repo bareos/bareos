@@ -79,7 +79,7 @@ struct bootstrap_info
 
 RestoreBootstrapRecord *new_bsr();
 namespace directordaemon {
-   DLL_IMP_EXP void FreeBsr(RestoreBootstrapRecord *bsr);
+   void FreeBsr(RestoreBootstrapRecord *bsr);
 } /* namespace director */
 bool CompleteBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
 uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx);

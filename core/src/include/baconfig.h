@@ -105,19 +105,9 @@ void InitWinAPIWrapper();
 
 #define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
-#define DLL_IMP_EXP
-#define CATS_IMP_EXP
-#define SD_IMP_EXP
-
 #else  /* HAVE_WIN32 */
 
 #define ClearThreadId(x) x = 0
-
-#define BAREOSCFG_DLL_IMP_EXP
-#define DLL_IMP_EXP
-#define CATS_IMP_EXP
-#define SD_IMP_EXP
-
 #define  OSDependentInit()
 
 #endif /* HAVE_WIN32 */
@@ -553,18 +543,18 @@ msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
 class PoolMem;
 
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-DLL_IMP_EXP int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
-DLL_IMP_EXP int Mmsg(PoolMem &msgbuf, const char *fmt, ...);
-DLL_IMP_EXP int Mmsg(PoolMem *&msgbuf, const char *fmt, ...);
+int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
+int Mmsg(PoolMem &msgbuf, const char *fmt, ...);
+int Mmsg(PoolMem *&msgbuf, const char *fmt, ...);
 
 class JobControlRecord;
-DLL_IMP_EXP void d_msg(const char *file, int line, int level, const char *fmt, ...);
-DLL_IMP_EXP void p_msg(const char *file, int line, int level, const char *fmt, ...);
-DLL_IMP_EXP void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
-DLL_IMP_EXP void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
-DLL_IMP_EXP void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+void d_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
+void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
+void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 
 #include "lib/bsys.h"
 #include "lib/scan.h"

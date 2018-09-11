@@ -23,7 +23,7 @@
 
 namespace storagedaemon {
 
-DLL_IMP_EXP bool DoReadData(JobControlRecord *jcr);
+bool DoReadData(JobControlRecord *jcr);
 
 } /* namespace storagedaemon */
 

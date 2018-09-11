@@ -21,7 +21,7 @@
 #include "include/bareos.h"
 #include "tls_conf.h"
 
-DLL_IMP_EXP uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration)
+uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration)
 {
    uint32_t merged_policy = TlsConfigBase::BNET_TLS_NONE;
 

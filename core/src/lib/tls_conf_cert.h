@@ -22,7 +22,7 @@
 #ifndef BAREOS_LIB_TLS_CONF_CERT_H_
 #define BAREOS_LIB_TLS_CONF_CERT_H_
 
-class DLL_IMP_EXP TlsConfigCert : public TlsConfigBase {
+class TlsConfigCert : public TlsConfigBase {
 public:
    bool authenticate;         /* Authenticate with TLS */
    bool VerifyPeer;           /* TLS Verify Peer Certificate */

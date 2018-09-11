@@ -25,18 +25,18 @@
 
 namespace storagedaemon {
 
-DLL_IMP_EXP READ_CTX *new_read_context(void);
-DLL_IMP_EXP void FreeReadContext(READ_CTX *rctx);
-DLL_IMP_EXP void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
-DLL_IMP_EXP bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
+READ_CTX *new_read_context(void);
+void FreeReadContext(READ_CTX *rctx);
+void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
+bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
                                  SESSION_LABEL *sessrec,
                                  bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                                  bool mount_cb(DeviceControlRecord *dcr),
                                  bool *status);
-DLL_IMP_EXP bool ReadNextRecordFromBlock(DeviceControlRecord *dcr,
+bool ReadNextRecordFromBlock(DeviceControlRecord *dcr,
                                  READ_CTX *rctx,
                                  bool *done);
-DLL_IMP_EXP bool ReadRecords(DeviceControlRecord *dcr,
+bool ReadRecords(DeviceControlRecord *dcr,
                   bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                   bool mount_cb(DeviceControlRecord *dcr));
 

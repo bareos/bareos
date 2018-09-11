@@ -23,8 +23,8 @@
 
 class ConfigurationParser;
 
-DLL_IMP_EXP void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq);
-DLL_IMP_EXP void BnetThreadServerTcp(dlist *addr_list,
+void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq);
+void BnetThreadServerTcp(dlist *addr_list,
                             int max_clients,
                             alist *sockfds,
                             workq_t *client_wq,
@@ -32,6 +32,6 @@ DLL_IMP_EXP void BnetThreadServerTcp(dlist *addr_list,
                             void *HandleConnectionRequest(ConfigurationParser *config,
                                                         void *bsock),
                             ConfigurationParser *config);
-DLL_IMP_EXP void BnetStopThreadServerTcp(pthread_t tid);
+void BnetStopThreadServerTcp(pthread_t tid);
 
 #endif // BAREOS_LIB_BNET_SEVER_TCP_H_

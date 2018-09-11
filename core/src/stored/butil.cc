@@ -43,7 +43,7 @@
 #include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
-ConfigurationParser SD_IMP_EXP *my_config = NULL;  /* Our Global config */
+ConfigurationParser *my_config = NULL;  /* Our Global config */
 
 namespace storagedaemon {
 

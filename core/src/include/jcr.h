@@ -305,7 +305,7 @@ typedef void (JCR_free_HANDLER)(JobControlRecord *jcr);
 /**
  * Job Control Record (JobControlRecord)
  */
-class DLL_IMP_EXP JobControlRecord {
+class JobControlRecord {
 private:
    pthread_mutex_t mutex;                 /**< Jcr mutex */
    volatile int32_t _use_count;           /**< Use count */
@@ -669,25 +669,25 @@ struct s_last_job {
 };
 
 extern struct s_last_job last_job;
-extern DLL_IMP_EXP dlist *last_jobs;
+extern dlist *last_jobs;
 
 /*
  * The following routines are found in lib/jcr.c
  */
-DLL_IMP_EXP extern int GetNextJobidFromList(char **p, uint32_t *JobId);
-DLL_IMP_EXP extern bool InitJcrSubsystem(int timeout);
-DLL_IMP_EXP extern JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
-DLL_IMP_EXP extern JobControlRecord *get_jcr_by_id(uint32_t JobId);
-DLL_IMP_EXP extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
-DLL_IMP_EXP extern JobControlRecord *get_jcr_by_partial_name(char *Job);
-DLL_IMP_EXP extern JobControlRecord *get_jcr_by_full_name(char *Job);
-DLL_IMP_EXP extern const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name);
-DLL_IMP_EXP extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
-DLL_IMP_EXP extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
-DLL_IMP_EXP extern int DLL_IMP_EXP num_jobs_run;
+extern int GetNextJobidFromList(char **p, uint32_t *JobId);
+extern bool InitJcrSubsystem(int timeout);
+extern JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
+extern JobControlRecord *get_jcr_by_id(uint32_t JobId);
+extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
+extern JobControlRecord *get_jcr_by_partial_name(char *Job);
+extern JobControlRecord *get_jcr_by_full_name(char *Job);
+extern const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name);
+extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
+extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
+extern int num_jobs_run;
 
 #ifdef DEBUG
-DLL_IMP_EXP extern void b_free_jcr(const char *file, int line, JobControlRecord *jcr);
+extern void b_free_jcr(const char *file, int line, JobControlRecord *jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 #else
 extern void FreeJcr(JobControlRecord *jcr);
@@ -697,6 +697,6 @@ extern void FreeJcr(JobControlRecord *jcr);
  * Used to display specific job information after a fatal signal
  */
 typedef void (dbg_jcr_hook_t)(JobControlRecord *jcr, FILE *fp);
-DLL_IMP_EXP extern void DbgJcrAddHook(dbg_jcr_hook_t *fct);
+extern void DbgJcrAddHook(dbg_jcr_hook_t *fct);
 
 #endif /** BAREOS_INCLUDE_JCR_H_ */

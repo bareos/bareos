@@ -90,7 +90,7 @@ extern "C" {
 /*
  * Plugin called here when it is first loaded
  */
-bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
+bRC loadPlugin(bInfo *lbinfo,
                            bFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pFuncs **pfuncs)
