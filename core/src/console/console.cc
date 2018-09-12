@@ -999,18 +999,18 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
 
   const char *name;
   s_password *password = NULL;
-  TlsResource *tls_configuration;
 
+  TlsResource *local_tls_resource;
   if (console_resource) {
     name = console_resource->name();
     ASSERT(console_resource->password.encoding == p_encoding_md5);
     password          = &console_resource->password;
-    tls_configuration = dynamic_cast<TlsResource *>(console_resource);
+    local_tls_resource = console_resource;
   } else { /* default console */
     name = "*UserAgent*";
     ASSERT(director_resource->password.encoding == p_encoding_md5);
     password          = &director_resource->password;
-    tls_configuration = dynamic_cast<TlsResource *>(director_resource);
+    local_tls_resource = director_resource;
   }
 
   std::string qualified_resource_name;
@@ -1021,7 +1021,7 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     return nullptr;
   }
 
-  if (!UA_sock->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), password->value,
+  if (!UA_sock->DoTlsHandshake(4, local_tls_resource, false, qualified_resource_name.c_str(), password->value,
                                &jcr)) {
     sendit(errmsg);
     TerminateConsole(0);
