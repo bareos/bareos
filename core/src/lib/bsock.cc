@@ -448,7 +448,10 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
     tls_conn->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
   }
 
-  if (!tls_conn->init()) { return false; }
+  if (!tls_conn->init()) {
+    tls_conn.reset();
+    return false;
+  }
   return true;
 }
 
@@ -519,7 +522,10 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
     }
   }
 
-  if (!tls_conn->init()) { return false; }
+  if (!tls_conn->init()) {
+    tls_conn.reset();
+    return false;
+  }
   return true;
 }
 
@@ -530,7 +536,10 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, J
   if (selected_local_tls->GetVerifyPeer()) {
     verify_list = selected_local_tls->AllowedCertificateCommonNames();
   }
-  if (BnetTlsServer(this, verify_list)) { return true; }
+  if (BnetTlsServer(this, verify_list)) {
+    tls_conn.reset();
+    return true;
+  }
   Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
   Dmsg0(debuglevel, "TLS negotiation failed.\n");
   return false;
@@ -543,6 +552,7 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
 {
   if (BnetTlsClient(this, selected_local_tls->GetVerifyPeer(),
                     selected_local_tls->AllowedCertificateCommonNames())) {
+    tls_conn.reset();
     return true;
   }
   Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));

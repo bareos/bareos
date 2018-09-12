@@ -84,6 +84,11 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int
   int nleft    = 0;
   int nwritten = 0;
 
+  if (!openssl_) {
+    Dmsg0(100, "Attempt to write on a non initialized tls connection\n");
+    return 0;
+  }
+
   /* Ensure that socket is non-blocking */
   flags = bsock->SetNonblocking();
 
