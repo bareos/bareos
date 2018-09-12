@@ -72,7 +72,11 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
   jcr.ua = bs;
 
-  if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config, &jcr); }
+  if (!bs->IsCleartextBareosHello()) {
+    if (!bs->DoTlsHandshakeAsAServer(config, &jcr)) {
+      return nullptr;
+    }
+  }
 
   if (bs->recv() <= 0) {
     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
