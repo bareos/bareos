@@ -1432,11 +1432,19 @@ static inline bool parse_gfapi_devicename(char* devicename,
 
       /*
        * See if there is a dir specified.
+       * As we use an unix socket, we need to check if we are not using the
+       * path specified for the unix socket.
+       * It can happen if there is no subdirectory in the URI
        */
-      bp = strchr(bp, '/');
-      if (bp) {
+      char *before_parameter = strchr(bp, '?');
+      char *before_dir = strchr(bp, '/');
+
+      if (before_dir && (!before_parameter || before_parameter > before_dir)) {
+        bp = before_dir;
         *bp++ = '\0';
         *dir = bp;
+      } else {
+        *dir = nullptr;
       }
     }
   } else {
