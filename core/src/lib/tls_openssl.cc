@@ -64,9 +64,7 @@ TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate)
 
   SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_ALL);
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
   SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-#endif
 }
 
 TlsOpenSsl::~TlsOpenSsl()
