@@ -126,7 +126,7 @@ struct s_password {
    ITEM(res.tls_cert.VerifyPeer),                                                                         \
    0,                                                                                                     \
    CFG_ITEM_DEFAULT,                                                                                      \
-   "false",                                                                                               \
+   "true",                                                                                                \
    NULL,                                                                                                  \
    "If disabled, all certificates signed by a known CA will be accepted. "                                \
    "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."},            \
