@@ -33,7 +33,7 @@
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
-#include "lib/bnet_sever_tcp.h"
+#include "lib/bnet_server_tcp.h"
 
 namespace directordaemon {
 

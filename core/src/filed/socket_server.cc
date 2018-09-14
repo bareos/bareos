@@ -33,7 +33,7 @@
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
-#include "lib/bnet_sever_tcp.h"
+#include "lib/bnet_server_tcp.h"
 
 namespace filedaemon {
 
