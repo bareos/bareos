@@ -47,7 +47,7 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bpipe.cc
    breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc
    bsys.cc btime.cc btimers.cc  cbuf.cc compression.cc
-   connection_pool.cc cram-md5.cc crypto.cc  crypto_cache.cc crypto_gnutls.cc
+   connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc crypto_gnutls.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
    jcr.cc json.cc  lockmgr.cc md5.cc mem_pool.cc message.cc mntent_cache.cc

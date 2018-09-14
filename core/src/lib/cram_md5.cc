@@ -51,7 +51,7 @@ CramMd5Handshake::CramMd5Handshake(BareosSocket *bs,
  *   Returns: false if authentication failed
  *            true if OK
  */
-bool CramMd5Handshake::CramMd5Challange()
+bool CramMd5Handshake::CramMd5Challenge()
 {
    PoolMem chal(PM_NAME),
            host(PM_NAME);
@@ -149,14 +149,14 @@ bool CramMd5Handshake::CramMd5Response()
 bool CramMd5Handshake::DoHandshake(bool initiated_by_remote)
 {
    if (initiated_by_remote) {
-      if (CramMd5Challange()) {
+      if (CramMd5Challenge()) {
          if (CramMd5Response()) {
             return true;
          }
       }
    } else {
       if (CramMd5Response()) {
-         if (CramMd5Challange()) {
+         if (CramMd5Challenge()) {
             return true;
          }
       }

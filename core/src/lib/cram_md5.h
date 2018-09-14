@@ -30,18 +30,16 @@ public:
 
 private:
    static constexpr int debuglevel_ = 50;
-   bool compatible_ = false;
+   bool compatible_ = true;
    BareosSocket *bs_;
    const char *password_;
    uint32_t local_tls_policy_;
    uint32_t remote_tls_policy_;
-   bool CramMd5Challange();
+   bool CramMd5Challenge();
    bool CramMd5Response();
    void InitRandom() const;
 };
 
-bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *remote_tls_policy, bool *compatible);
-bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t local_tls_policy, bool compatible);
 void hmac_md5(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *hmac);
 
 #endif // LIB_CRAM_MD5_H_
