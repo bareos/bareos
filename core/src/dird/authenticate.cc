@@ -132,7 +132,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   BareosSocket *fd               = jcr->file_bsock;
   ClientResource *client         = jcr->res.client;
 
-  if (jcr->connection_handshake_tries_ == JobControlRecord::ConnectionHandshakeTries::kTryTlsFirst) {
+  if (jcr->connection_handshake_try_ == JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                               qualified_resource_name)) {

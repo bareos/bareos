@@ -163,46 +163,55 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
 {
    bool success = false;
 
-   /* try the connection twice in case of a client that cannot do Tls
-    * immediately without cleartext handshake first */
+   /* try the connection mode in case a client that cannot do Tls
+    * immediately without cleartext md5-handshake first */
+   jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kTlsFirst;
+   jcr->connection_successful_handshake_ = JobControlRecord::ConnectionHandshakeMode::kUndefined;
 
-   jcr->connection_handshake_tries_ = JobControlRecord::ConnectionHandshakeTries::kTryTlsFirst;
-   do {
+   do { /* while (!success && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed) */
+     /* connect the tcp socket */
      if (!jcr->file_bsock) {
         if (!UseWaitingClient(jcr, 0)) {
            if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
-              /*
-               * Check if a waiting client connection exist.
-               * If yes, use it, otherwise jcr->file_bsock will not be set.
-               */
-              UseWaitingClient(jcr, max_retry_time);
+              UseWaitingClient(jcr, max_retry_time); /* will set jcr->file_bsock accordingly */
            }
         }
      }
 
+     /* try to establish tls and authenticate the daemon */
      if (jcr->file_bsock) {
         jcr->setJobStatus(JS_Running);
         if (AuthenticateWithFileDaemon(jcr)) {
            success = true;
+           jcr->connection_successful_handshake_ = jcr->connection_handshake_try_;
         } else {
-          if (jcr->connection_handshake_tries_ == JobControlRecord::ConnectionHandshakeTries::kTryTlsFirst) {
+          /* authentication failed due to
+           * - tls mismatch or
+           * - if an old client cannot do tls- before md5-handshake
+           * */
+          switch(jcr->connection_handshake_try_) {
+          case JobControlRecord::ConnectionHandshakeMode::kTlsFirst:
             if (jcr->file_bsock) {
                jcr->file_bsock->close();
                delete jcr->file_bsock;
                jcr->file_bsock = NULL;
             }
             jcr->resetJobStatus(JS_Created);
-            jcr->connection_handshake_tries_ = JobControlRecord::ConnectionHandshakeTries::kTryCleartextFirst;
-          } else if (jcr->connection_handshake_tries_ == JobControlRecord::ConnectionHandshakeTries::kTryCleartextFirst) {
-            jcr->connection_handshake_tries_ = JobControlRecord::ConnectionHandshakeTries::kFailed;
-          } else {
+            jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kCleartextFirst;
+            break;
+          case JobControlRecord::ConnectionHandshakeMode::kCleartextFirst:
+            jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kFailed;
+            break;
+          case JobControlRecord::ConnectionHandshakeMode::kFailed:
+          default: /* should bei one of class ConnectionHandshakeMode */
             ASSERT(false);
+            break;
           }
         }
      } else {
         Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
      }
-   } while (!success && jcr->connection_handshake_tries_ != JobControlRecord::ConnectionHandshakeTries::kFailed);
+   } while (!success && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed);
 
    if (!success) {
      jcr->setJobStatus(JS_ErrorTerminated);
