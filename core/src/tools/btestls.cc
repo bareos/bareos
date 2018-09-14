@@ -51,7 +51,7 @@ static void usage()
 {
    fprintf(stderr, _(
 "\n"
-"Usage: testls [-d debug_level] [-] [pattern1 ...]\n"
+"Usage: btestls [-d debug_level] [-] [pattern1 ...]\n"
 "       -a          print extended attributes (Win32 debug)\n"
 "       -d <nn>     set debug level to <nn>\n"
 "       -dt         print timestamp in debug output\n"

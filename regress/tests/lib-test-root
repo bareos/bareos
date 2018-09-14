@@ -46,9 +46,9 @@ stop_bareos
 # more cleanup to be done below
 
 cd /
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-lib-test lib >${cwd}/tmp/original
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-lib-test lib >${cwd}/tmp/original
 cd ${cwd}/tmp/bareos-restores
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-lib-test lib >${cwd}/tmp/restored
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-lib-test lib >${cwd}/tmp/restored
 cd ${cwd}/tmp
 sed s%.*lib/kbd/consolefonts$%lib/kbd/consolefonts% original >1
 sort <1 >original

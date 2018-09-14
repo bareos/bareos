@@ -1351,10 +1351,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/bareos-ctl-*
 %{_bindir}/timelimit
 %{_sbindir}/timelimit
-%{_sbindir}/bbatch
-%{_sbindir}/bregtest
-%{_sbindir}/grow
-%{_sbindir}/testls
+%{_sbindir}/btestls
 # must be readable by package build user of bareos-regress.
 %attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-regress.conf
 

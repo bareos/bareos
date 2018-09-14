@@ -18,34 +18,3 @@
 #   02110-1301, USA.
 
 
-add_executable(bregtest bregtest.cc )
-target_link_libraries(bregtest bareos ${JANSSON_LIBRARIES})
-
-add_executable(testls testls.cc)
-target_link_libraries(testls bareosfind bareos ${JANSSON_LIBRARIES})
-
-IF(NOT HAVE_WIN32)
-   add_executable(bbatch bbatch.cc)
-   target_link_libraries(bbatch bareoscats bareossql bareos ${JANSSON_LIBRARIES})
-ENDIF()
-
-#add_executable(bvfs_test bvfs_test.cc)
-#target_link_libraries(bvfs_test bareoscats bareossql)
-
-#add_executable(cats_test cats_test.cc)
-#target_link_libraries(cats_test bareoscats bareossql)
-
-add_executable(gigaslam gigaslam.cc)
-target_link_libraries(gigaslam)
-
-add_executable(grow grow.cc)
-target_link_libraries(grow bareos ${JANSSON_LIBRARIES})
-
-set (TESTS_SBIN
-   bregtest grow testls
-   )
-IF(NOT HAVE_WIN32)
-   LIST(APPEND TESTS_SBIN bbatch)
-ENDIF()
-
-INSTALL(TARGETS ${TESTS_SBIN} DESTINATION "${sbindir}")

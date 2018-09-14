@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Create a big Volume > 5 GB and backup to it to test disk
-#   seeking on big volumes.  We cheat and artifically grow
+#   seeking on big volumes.  We cheat and artificially grow
 #   the volume.
 #
 TestName="big-vol-test"
@@ -44,9 +44,9 @@ check_for_zombie_jobs storage=File
 #
 # make big file
 size=5200000000
-${bin}/grow ${tmp}/TestVolume001 ${size}
+truncate ${tmp}/TestVolume001 --size=${size}
 if [ $? != 0 ]; then
-   echo "Execute of ${bin}/grow failed."
+   echo "Execute of truncate failed."
    exit 1
 fi
 
