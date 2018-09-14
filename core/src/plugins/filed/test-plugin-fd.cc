@@ -28,7 +28,7 @@
  * the bpipe plugin, but used for testing new features.
  */
 #include "include/bareos.h"
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 #include "fd_common.h"
 #include "lib/ini.h"
 #include <wchar.h>
