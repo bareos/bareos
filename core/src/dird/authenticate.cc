@@ -129,21 +129,24 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 {
   if (jcr->authenticated) { return true; }
 
-  std::string qualified_resource_name;
-  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
-                                                                            qualified_resource_name)) {
-    Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
-    return false;
-  }
-
-  ClientResource *client         = jcr->res.client;
-  TlsResource *tls_configuration = dynamic_cast<TlsResource *>(client);
   BareosSocket *fd               = jcr->file_bsock;
+  ClientResource *client         = jcr->res.client;
 
-  if (!fd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), client->password.value,
-                          jcr)) {
-    Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
-    return false;
+  if (jcr->connection_handshake_tries_ == JobControlRecord::ConnectionHandshakeTries::kTryTlsFirst) {
+    std::string qualified_resource_name;
+    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                              qualified_resource_name)) {
+      Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+      return false;
+    }
+
+    TlsResource *tls_configuration = dynamic_cast<TlsResource *>(client);
+
+    if (!fd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), client->password.value,
+                            jcr)) {
+      Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
+      return false;
+    }
   }
 
   char dirname[MAX_NAME_LENGTH];

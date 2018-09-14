@@ -100,7 +100,7 @@ extern DirectorResource *director;
 #define INC_LIST 0
 #define EXC_LIST 1
 
-static inline utime_t get_heartbeat_interval(ClientResource *res)
+static utime_t get_heartbeat_interval(ClientResource *res)
 {
    utime_t heartbeat;
 
@@ -119,7 +119,7 @@ static inline utime_t get_heartbeat_interval(ClientResource *res)
  * Try connecting every retry_interval (default 10 sec), and
  * give up after max_retry_time (default 30 mins).
  */
-static inline bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int retry_interval,
+static bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int retry_interval,
                                                    int max_retry_time, bool verbose)
 {
    bool result = false;
@@ -161,47 +161,54 @@ static inline bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int re
 
 bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose)
 {
-   bool result = false;
+   bool success = false;
 
-   /*
-    * connection already exists.
-    * TODO: when is this the case? Is it really used? Does it than really need authentication?
-    */
-   if (!jcr->file_bsock) {
-      /*
-       * check without waiting, if waiting client connection exists.
-       */
-      if (!UseWaitingClient(jcr, 0)) {
-         /*
-          * open connection to client
-          */
-         if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
-            /*
-             * Check if a waiting client connection exist.
-             * If yes, use it, otherwise jcr->file_bsock will not be set.
-             */
-            UseWaitingClient(jcr, max_retry_time);
-         }
-      }
-   }
+   /* try the connection twice in case of a client that cannot do Tls
+    * immediately without cleartext handshake first */
 
-   /*
-    * connection have been established
-    */
-   if (jcr->file_bsock) {
-      jcr->setJobStatus(JS_Running);
-      if (AuthenticateWithFileDaemon(jcr)) {
-         result = true;
-      }
-   } else {
-      Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
-   }
+   jcr->connection_handshake_tries_ = JobControlRecord::ConnectionHandshakeTries::kTryTlsFirst;
+   do {
+     if (!jcr->file_bsock) {
+        if (!UseWaitingClient(jcr, 0)) {
+           if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
+              /*
+               * Check if a waiting client connection exist.
+               * If yes, use it, otherwise jcr->file_bsock will not be set.
+               */
+              UseWaitingClient(jcr, max_retry_time);
+           }
+        }
+     }
 
-   if (!result) {
+     if (jcr->file_bsock) {
+        jcr->setJobStatus(JS_Running);
+        if (AuthenticateWithFileDaemon(jcr)) {
+           success = true;
+        } else {
+          if (jcr->connection_handshake_tries_ == JobControlRecord::ConnectionHandshakeTries::kTryTlsFirst) {
+            if (jcr->file_bsock) {
+               jcr->file_bsock->close();
+               delete jcr->file_bsock;
+               jcr->file_bsock = NULL;
+            }
+            jcr->resetJobStatus(JS_Created);
+            jcr->connection_handshake_tries_ = JobControlRecord::ConnectionHandshakeTries::kTryCleartextFirst;
+          } else if (jcr->connection_handshake_tries_ == JobControlRecord::ConnectionHandshakeTries::kTryCleartextFirst) {
+            jcr->connection_handshake_tries_ = JobControlRecord::ConnectionHandshakeTries::kFailed;
+          } else {
+            ASSERT(false);
+          }
+        }
+     } else {
+        Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
+     }
+   } while (!success && jcr->connection_handshake_tries_ != JobControlRecord::ConnectionHandshakeTries::kFailed);
+
+   if (!success) {
      jcr->setJobStatus(JS_ErrorTerminated);
    }
 
-   return result;
+   return success;
 }
 
 int SendJobInfo(JobControlRecord *jcr)
@@ -318,7 +325,7 @@ bool SendSecureEraseReqToFd(JobControlRecord *jcr)
    return true;
 }
 
-static inline void SendSinceTime(JobControlRecord *jcr)
+static void SendSinceTime(JobControlRecord *jcr)
 {
    char ed1[50];
    utime_t stime;
@@ -660,7 +667,7 @@ bool SendExcludeList(JobControlRecord *jcr)
 /*
  * This checks to see if there are any non local runscripts for this job.
  */
-static inline bool HaveClientRunscripts(alist *RunScripts)
+static bool HaveClientRunscripts(alist *RunScripts)
 {
    RunScript *cmd;
    bool retval = false;
@@ -861,7 +868,7 @@ bool SendPluginOptions(JobControlRecord *jcr)
    return true;
 }
 
-static inline void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObjectContext *octx)
+static void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObjectContext *octx)
 {
    char ed1[50];
    PoolMem query(PM_MESSAGE);
@@ -886,7 +893,7 @@ static inline void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObject
    jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 }
 
-static inline void SendJobSpecificRestoreObjects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
+static void SendJobSpecificRestoreObjects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
 {
    char ed1[50];
    PoolMem query(PM_MESSAGE);

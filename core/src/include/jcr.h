@@ -357,6 +357,7 @@ public:
    const char *get_OperationName();       /**< in lib/jcr.c */
    const char *get_ActionName(bool past = false); /**< in lib/jcr.c */
    void setJobStatus(int newJobStatus);   /**< in lib/jcr.c */
+   void resetJobStatus(int newJobStatus); /**< in lib/jcr.c */
    bool sendJobStatus();                  /**< in lib/jcr.c */
    bool sendJobStatus(int newJobStatus);  /**< in lib/jcr.c */
    bool JobReads();                       /**< in lib/jcr.c */
@@ -530,6 +531,8 @@ public:
    bool RescheduleIncompleteJobs;         /**< Set if incomplete can be rescheduled */
    bool HasQuota;                         /**< Client has quota limits */
    bool HasSelectedJobs;                  /**< Migration/Copy Job did actually select some JobIds */
+   enum class ConnectionHandshakeTries { kTryTlsFirst, kTryCleartextFirst, kFailed };
+   ConnectionHandshakeTries connection_handshake_tries_;
 #endif /* DIRECTOR_DAEMON */
 
 #ifdef FILE_DAEMON
