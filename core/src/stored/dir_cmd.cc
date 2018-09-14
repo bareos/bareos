@@ -1733,14 +1733,16 @@ static bool PassiveCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to FD.\n");
 
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-           jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
-     goto bail_out;
-   }
+   if (enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+       goto bail_out;
+     }
 
-   tls_resource = dynamic_cast<TlsResource *>(me);
-   if (!fd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
-     goto bail_out;
+     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+            qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+       goto bail_out;
+     }
    }
 
    jcr->file_bsock = fd;

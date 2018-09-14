@@ -567,11 +567,11 @@ bool DoNativeBackup(JobControlRecord *jcr)
       }
    } else {
 
-      /*
-       * TLS Requirement
-       */
-
-      tls_need = GetLocalTlsPolicyFromConfiguration(me);
+      if (jcr->connection_successful_handshake_ != JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
+        tls_need = GetLocalTlsPolicyFromConfiguration(me);
+      } else {
+        tls_need = TlsConfigBase::BNET_TLS_AUTO;
+      }
 
       connection_target_address = ClientAddressToContact(client, store);
 

@@ -360,10 +360,11 @@ bool DoVerify(JobControlRecord *jcr)
          uint32_t tls_need = 0;
          ClientResource *client = jcr->res.client;
 
-         /*
-          * TLS Requirement
-          */
-            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+         if (jcr->connection_successful_handshake_ != JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
+            tls_need = GetLocalTlsPolicyFromConfiguration(me);
+         } else {
+            tls_need = TlsConfigBase::BNET_TLS_AUTO;
+         }
 
          /*
           * Tell the SD to connect to the FD.

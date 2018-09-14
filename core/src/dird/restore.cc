@@ -263,7 +263,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = GetLocalTlsPolicyFromConfiguration(store);
+         tls_need = GetLocalTlsPolicyFromConfiguration(store);
 
          connection_target_address = StorageAddressToContact(client, store);
 
@@ -289,10 +289,11 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
             goto bail_out;
          }
 
-         /*
-          * TLS Requirement
-          */
-            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+         if (jcr->connection_successful_handshake_ != JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
+            tls_need = GetLocalTlsPolicyFromConfiguration(me);
+         } else {
+            tls_need = TlsConfigBase::BNET_TLS_AUTO;
+         }
 
          connection_target_address = ClientAddressToContact(client, store);
          /*
