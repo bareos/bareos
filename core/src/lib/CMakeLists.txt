@@ -110,6 +110,3 @@ ENDIF()
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
 
-IF(NOT HAVE_WIN32 AND GTEST_FOUND)
-   add_subdirectory(unittests)
-ENDIF()
