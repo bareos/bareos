@@ -418,10 +418,10 @@ void BareosSocket::ParameterizeTlsCert(Tls *tls_conn, TlsResource *tls_resource)
     tls_conn->SetCrlfile(tls_resource->tls_cert.crlfile ? *tls_resource->tls_cert.crlfile : empty);
     tls_conn->SetCertfile(tls_resource->tls_cert.certfile ? *tls_resource->tls_cert.certfile : empty);
     tls_conn->SetKeyfile(tls_resource->tls_cert.keyfile ? *tls_resource->tls_cert.keyfile : empty);
-    //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Wo kommt der Callback her??
+    //      tls_conn->SetPemCallback(TlsPemCallback); Ueb: --> Console Callback
     tls_conn->SetPemUserdata(tls_resource->tls_cert.pem_message);
     tls_conn->SetDhFile(tls_resource->tls_cert.dhfile ? *tls_resource->tls_cert.dhfile
-                                                      : empty); /* was never used before */
+                                                      : empty); /* Ueb: was never used before */
     tls_conn->SetCipherList(tls_resource->tls_cert.cipherlist ? *tls_resource->tls_cert.cipherlist : empty);
     tls_conn->SetVerifyPeer(tls_resource->tls_cert.VerifyPeer);
   }
