@@ -19,24 +19,13 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_TLS_CONF_PSK_H
-#define BAREOS_LIB_TLS_CONF_PSK_H
+#ifndef BAREOS_LIB_TLS_CONF_AUTO_H_
+#define BAREOS_LIB_TLS_CONF_AUTO_H_
 
-#include "lib/tls_psk_credentials.h"
-#include "lib/tls_conf_base.h"
-
-#include "include/bareos.h"
-
-class TlsConfigPsk : public TlsConfigBase {
+class TlsConfigAuto : public TlsConfigBase {
  public:
-  char *cipherlist; /* TLS Cipher List */
-
-  TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr)
-  {
-  }
-  ~TlsConfigPsk();
-
-  virtual uint32_t GetPolicy() const override;
+   TlsConfigAuto() : TlsConfigBase() {}
+   virtual uint32_t GetPolicy() const override { return BNET_TLS_AUTO; }
 };
 
-#endif /* BAREOS_LIB_TLS_CONF_PSK_H */
+#endif /* BAREOS_LIB_TLS_CONF_AUTO_H_ */

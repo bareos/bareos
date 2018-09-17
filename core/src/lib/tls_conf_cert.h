@@ -51,9 +51,6 @@ public:
    bool GetVerifyPeer() const override { return VerifyPeer; }
    std::vector<std::string> AllowedCertificateCommonNames() const override;
    bool GetAuthenticate() const override { return authenticate; }
-
-private:
-   static u_int32_t const policy_offset = 0;
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_CERT_H_ */

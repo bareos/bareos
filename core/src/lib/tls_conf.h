@@ -28,6 +28,7 @@
 #include "lib/tls_conf_psk.h"
 #include "lib/tls_conf_none.h"
 #include "lib/tls_conf_deny.h"
+#include "lib/tls_conf_auto.h"
 
 class TlsResource;
 

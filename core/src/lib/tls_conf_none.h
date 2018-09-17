@@ -28,11 +28,4 @@ class TlsConfigNone : public TlsConfigBase {
    virtual uint32_t GetPolicy() const override { return BNET_TLS_NONE; }
 };
 
-class TlsConfigAuto : public TlsConfigBase {
- public:
-   TlsConfigAuto() : TlsConfigBase() {}
-   virtual uint32_t GetPolicy() const override { return BNET_TLS_AUTO; }
-};
-
-
 #endif /* BAREOS_LIB_TLS_CONF_NONE_H_ */
