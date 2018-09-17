@@ -28,7 +28,7 @@
 #include "lib/crypto_openssl.h"
 
 #include "lib/parse_conf.h"
-#include "lib/tls_conf_psk_callback.h"
+#include "lib/get_tls_psk_by_fqname_callback.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>

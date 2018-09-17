@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_TLS_CONF_PSK_CALLBACK_H
-#define BAREOS_LIB_TLS_CONF_PSK_CALLBACK_H 1
+#ifndef BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_
+#define BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_ 1
 
 #include <string>
 
@@ -30,4 +30,4 @@ typedef bool (*GetTlsPskByFullyQualifiedResourceNameCb_t)(ConfigurationParser *c
                                                           const char *fq_name_,
                                                           std::string &psk_return_value);
 
-#endif /* BAREOS_LIB_TLS_CONF_PSK_CALLBACK_H */
+#endif /* BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_ */
