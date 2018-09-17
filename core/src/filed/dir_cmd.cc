@@ -1595,7 +1595,8 @@ static bool StorageCmd(JobControlRecord *jcr)
   }
 
   tls_resource = dynamic_cast<TlsResource *>(me);
-  if (!sd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+  if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_resource, false,
+                          qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
     goto bail_out;
   }
 
@@ -2149,7 +2150,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
 
   TlsResource *tls_configuration = dynamic_cast<TlsResource *>(dir_res);
 
-  if (!dir->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
+  if (!dir->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_configuration, false, qualified_resource_name.c_str(),
                            dir_res->password.value, jcr)) {
     Dmsg0(100, "Could not DoTlsHandshake() with director\n");
     return nullptr;

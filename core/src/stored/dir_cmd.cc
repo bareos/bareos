@@ -1645,7 +1645,8 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    }
 
    tls_resource = dynamic_cast<TlsResource *>(me);
-   if (!sd->DoTlsHandshake(4, tls_resource, false, qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_resource, false, qualified_resource_name.c_str(),
+                           jcr->sd_auth_key, jcr)) {
      goto bail_out;
    }
 

@@ -146,8 +146,8 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
    }
 
    TlsResource *tls_configuration = dynamic_cast<TlsResource *>(store);
-   if (!sd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(),
-                            tls_configuration->password.value, jcr)) {
+   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_configuration, false, qualified_resource_name.c_str(),
+                           tls_configuration->password.value, jcr)) {
      Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
      return false;
    }

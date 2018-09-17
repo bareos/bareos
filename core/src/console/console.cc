@@ -1021,8 +1021,8 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     return nullptr;
   }
 
-  if (!UA_sock->DoTlsHandshake(4, local_tls_resource, false, qualified_resource_name.c_str(), password->value,
-                               &jcr)) {
+  if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
+                               qualified_resource_name.c_str(), password->value, &jcr)) {
     sendit(errmsg);
     TerminateConsole(0);
     return nullptr;

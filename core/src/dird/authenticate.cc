@@ -73,8 +73,8 @@ bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store
   TlsResource *tls_configuration = dynamic_cast<TlsResource *>(store);
   BareosSocket *sd               = jcr->store_bsock;
 
-  if (!sd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), store->password.value,
-                          jcr)) {
+  if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_configuration, false, qualified_resource_name.c_str(),
+                          store->password.value, jcr)) {
     Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
     return false;
   }
@@ -142,8 +142,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 
     TlsResource *tls_configuration = dynamic_cast<TlsResource *>(client);
 
-    if (!fd->DoTlsHandshake(4, tls_configuration, false, qualified_resource_name.c_str(), client->password.value,
-                            jcr)) {
+    if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_configuration, false,
+                            qualified_resource_name.c_str(), client->password.value, jcr)) {
       Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
       return false;
     }
