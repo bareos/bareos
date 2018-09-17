@@ -162,6 +162,8 @@ BuildRequires: git-core
 
 Source0: %{name}-%{version}.tar.gz
 
+BuildRequires: pam-devel
+
 BuildRequires: cmake
 BuildRequires: gcc
 BuildRequires: gcc-c++
