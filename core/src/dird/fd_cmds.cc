@@ -162,18 +162,22 @@ static bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int retry_int
 bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose)
 {
    bool success = false;
+   bool tcp_connect_failed = false;
+   int connect_tries = 3; /* as a finish-hook for the UseWaitingClient mechanism */
 
    /* try the connection mode in case a client that cannot do Tls
     * immediately without cleartext md5-handshake first */
    jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kTlsFirst;
    jcr->connection_successful_handshake_ = JobControlRecord::ConnectionHandshakeMode::kUndefined;
 
-   do { /* while (!success && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed) */
+   do { /* while (tcp_connect_failed ...) */
      /* connect the tcp socket */
      if (!jcr->file_bsock) {
         if (!UseWaitingClient(jcr, 0)) {
            if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
-              UseWaitingClient(jcr, max_retry_time); /* will set jcr->file_bsock accordingly */
+              if (!UseWaitingClient(jcr, max_retry_time)) { /* will set jcr->file_bsock accordingly */
+                tcp_connect_failed = true;
+              }
            }
         }
      }
@@ -211,7 +215,10 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
      } else {
         Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
      }
-   } while (!success && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed);
+     connect_tries--;
+   } while (!tcp_connect_failed && connect_tries
+         && !success
+         && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed);
 
    if (!success) {
      jcr->setJobStatus(JS_ErrorTerminated);
