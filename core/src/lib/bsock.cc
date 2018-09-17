@@ -468,14 +468,15 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
     return false;
   }
   if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
+
     if (!ParameterizeAndInitTlsConnection(tls_resource, identity, password, initiated_by_remote)) {
       return false;
     }
 
     if (initiated_by_remote) {
-      if (!DoTlsHandshakeWithClient(&tls_resource->tls_cert, jcr)) { return false; }
+      if (!DoTlsHandshakeWithClient(selected_local_tls, jcr)) { return false; }
     } else {
-      if (!DoTlsHandshakeWithServer(&tls_resource->tls_cert, identity, password, jcr)) { return false; }
+      if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) { return false; }
     }
 
     if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
@@ -524,14 +525,12 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
   return true;
 }
 
-bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigCert *tls_config_cert, JobControlRecord *jcr)
+bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, JobControlRecord *jcr)
 {
   std::vector<std::string> verify_list;
 
-  if (tls_config_cert) {
-    if (tls_config_cert->GetVerifyPeer()) {
-      verify_list = tls_config_cert->AllowedCertificateCommonNames();
-    }
+  if (selected_local_tls->GetVerifyPeer()) {
+    verify_list = selected_local_tls->AllowedCertificateCommonNames();
   }
   if (BnetTlsServer(this, verify_list)) {
     return true;
@@ -542,16 +541,14 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigCert *tls_config_cert, JobC
   return false;
 }
 
-bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert *tls_config_cert,
+bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                                             const char *identity,
                                             const char *password,
                                             JobControlRecord *jcr)
 {
-  if (tls_config_cert) {
-    if (BnetTlsClient(this, tls_config_cert->GetVerifyPeer(),
-                      tls_config_cert->AllowedCertificateCommonNames())) {
-      return true;
-    }
+  if (BnetTlsClient(this, selected_local_tls->GetVerifyPeer(),
+                    selected_local_tls->AllowedCertificateCommonNames())) {
+    return true;
   }
   tls_conn.reset();
   Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));

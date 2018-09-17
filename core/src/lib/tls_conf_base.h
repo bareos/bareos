@@ -22,28 +22,30 @@
 #ifndef BAREOS_LIB_TLS_CONF_BASE_H_
 #define BAREOS_LIB_TLS_CONF_BASE_H_
 
+struct PskCredentials;
+
 class TlsConfigBase {
- public:
-  bool enabled;  /*!< Enable TLS */
-  bool required; /*!< Require TLS */
+public:
+   bool enabled;  /*!< Enable TLS */
+   bool required; /*!< Require TLS */
 
-  virtual uint32_t GetPolicy() const = 0;
+   virtual uint32_t GetPolicy() const = 0;
 
-  virtual bool GetAuthenticate() const { return false; }
-  virtual bool GetVerifyPeer() const { return false; }
+   virtual bool GetAuthenticate() const { return false; }
+   virtual bool GetVerifyPeer() const { return false; }
+   virtual std::vector<std::string> AllowedCertificateCommonNames() const { return std::vector<std::string>(); }
 
-  typedef enum
-  {
-    BNET_TLS_NONE     = 0,   /*!< No TLS configured */
-    BNET_TLS_ENABLED  = 1,   /*!< TLS with certificates is allowed but not required on my end */
-    BNET_TLS_REQUIRED = 2,   /*!< TLS with certificates is required */
-    BNET_TLS_AUTO     = 4,   /*!< TLS without bareos cleartext negotiation */
-    BNET_TLS_DENY     = 0xFF /*!< TLS connection not allowed */
-  } Policy_e;
+   typedef enum {
+      BNET_TLS_NONE = 0,            /*!< No TLS configured */
+      BNET_TLS_ENABLED = 1,         /*!< TLS with certificates is allowed but not required on my end */
+      BNET_TLS_REQUIRED = 2,        /*!< TLS with certificates is required */
+      BNET_TLS_AUTO = 4,            /*!< TLS with certificates is required */
+      BNET_TLS_DENY = 0xFF          /*!< TLS connection not allowed */
+   } Policy_e;
 
- protected:
-  TlsConfigBase() : enabled(false), required(false) {}
-  virtual ~TlsConfigBase() {}
+protected:
+   TlsConfigBase() : enabled(false), required(false) {}
+   virtual ~TlsConfigBase() {}
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_BASE_H_ */
