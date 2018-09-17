@@ -32,7 +32,7 @@
 
 class TlsResource;
 
-uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration);
-TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_configuration, uint32_t remote_policy);
+uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource);
+TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy);
 
 #endif //BAREOS_LIB_TLS_CONF_H_

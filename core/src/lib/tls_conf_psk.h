@@ -31,9 +31,7 @@ class TlsConfigPsk : public TlsConfigBase {
  public:
   char *cipherlist; /* TLS Cipher List */
 
-  TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr)
-  {
-  }
+  TlsConfigPsk() : TlsConfigBase(), cipherlist(nullptr) {}
   ~TlsConfigPsk();
 
   virtual uint32_t GetPolicy() const override;

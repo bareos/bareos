@@ -115,7 +115,7 @@ class BareosSocket : public SmartAlloc {
                           const char *what,
                           const char *identity,
                           s_password &password,
-                          TlsResource *tls_configuration,
+                          TlsResource *tls_resource,
                           bool initiated_by_remote);
   bool DoTlsHandshakeWithClient(TlsConfigCert *tls_config_cert,
                                 JobControlRecord *jcr);
@@ -123,7 +123,7 @@ class BareosSocket : public SmartAlloc {
                                 const char *identity,
                                 const char *password,
                                 JobControlRecord *jcr);
-  void ParameterizeTlsCert(Tls* tls_conn, TlsResource *tls_configuration);
+  void ParameterizeTlsCert(Tls* tls_conn, TlsResource *tls_resource);
 
  public:
   BareosSocket();
@@ -169,14 +169,14 @@ class BareosSocket : public SmartAlloc {
                                 s_password &password,
                                 char *response,
                                 int response_len,
-                                TlsResource *tls_configuration);
-  bool ParameterizeAndInitTlsConnection(TlsResource *tls_configuration,
+                                TlsResource *tls_resource);
+  bool ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                         const char *identity,
                                         const char *password,
                                         bool initiated_by_remote);
   bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config);
   bool DoTlsHandshake(uint32_t remote_tls_policy,
-                      TlsResource *tls_configuration,
+                      TlsResource *tls_resource,
                       bool initiated_by_remote,
                       const char *identity,
                       const char *password,
@@ -194,13 +194,13 @@ class BareosSocket : public SmartAlloc {
                                       const char *what,
                                       const char *identity,
                                       s_password &password,
-                                      TlsResource *tls_configuration);
+                                      TlsResource *tls_resource);
 
   bool AuthenticateInboundConnection(JobControlRecord *jcr,
                                      const char *what,
                                      const char *name,
                                      s_password &password,
-                                     TlsResource *tls_configuration);
+                                     TlsResource *tls_resource);
 
   void SetJcr(JobControlRecord *jcr) { jcr_ = jcr; }
   void SetWho(char *who) { who_ = who; }

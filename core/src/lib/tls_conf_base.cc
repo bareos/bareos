@@ -21,38 +21,35 @@
 #include "include/bareos.h"
 #include "tls_conf.h"
 
-uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_configuration)
+uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource)
 {
-   uint32_t local_policy = TlsConfigBase::BNET_TLS_NONE;
+  uint32_t local_policy = TlsConfigBase::BNET_TLS_NONE;
 
 #if defined(HAVE_TLS)
-   local_policy = tls_configuration->tls_cert.GetPolicy();
-   Dmsg1(100, "GetLocalTlsPolicyFromConfiguration: %u\n", local_policy);
+  local_policy = tls_resource->tls_cert.GetPolicy();
+  Dmsg1(100, "GetLocalTlsPolicyFromConfiguration: %u\n", local_policy);
 #else
-   Dmsg1(100, "Ignore configuration no tls compiled in: %u\n", local_policy);
+  Dmsg1(100, "Ignore configuration no tls compiled in: %u\n", local_policy);
 #endif
-   return local_policy;
+  return local_policy;
 }
 
-TlsConfigBase *SelectTlsFromPolicy(
-   TlsResource *tls_configuration, uint32_t remote_policy)
+TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy)
 {
   if (remote_policy == TlsConfigBase::BNET_TLS_AUTO) {
     static TlsConfigAuto tls_auto_dummy;
     return &tls_auto_dummy;
   }
-  uint32_t local_policy = GetLocalTlsPolicyFromConfiguration(tls_configuration);
+  uint32_t local_policy = GetLocalTlsPolicyFromConfiguration(tls_resource);
 
-  if( (remote_policy == 0 && local_policy == 0)
-  ||  (remote_policy == 0 && local_policy == 1)
-  ||  (remote_policy == 1 && local_policy == 0)) {
-        static TlsConfigNone tls_none_dummy;
-        return &tls_none_dummy;
+  if ((remote_policy == 0 && local_policy == 0) || (remote_policy == 0 && local_policy == 1) ||
+      (remote_policy == 1 && local_policy == 0)) {
+    static TlsConfigNone tls_none_dummy;
+    return &tls_none_dummy;
   }
-  if( (remote_policy == 0 && local_policy == 2)
-  ||  (remote_policy == 2 && local_policy == 0)) {
-        static TlsConfigDeny tls_deny_dummy;
-        return &tls_deny_dummy;
+  if ((remote_policy == 0 && local_policy == 2) || (remote_policy == 2 && local_policy == 0)) {
+    static TlsConfigDeny tls_deny_dummy;
+    return &tls_deny_dummy;
   }
-  return &tls_configuration->tls_cert;
+  return &tls_resource->tls_cert;
 }
