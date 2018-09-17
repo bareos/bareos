@@ -393,8 +393,6 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
 
 bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobControlRecord *jcr)
 {
-  ASSERT(!tls_conn);
-
   TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
   if (!ParameterizeAndInitTlsConnectionAsAServer(config)) { return false; }
