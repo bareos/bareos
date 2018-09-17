@@ -139,22 +139,23 @@ static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
    return PAM_SUCCESS;
 }
 
-bool PamAuthenticateUseragent(BareosSocket *UA_sock, const std::string &username)
+bool PamAuthenticateUseragent(BareosSocket *UA_sock, const std::string &username_in)
 {
-   std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock, username));
+   std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock, username_in));
    std::unique_ptr<struct pam_conv> pam_conversation_container(new struct pam_conv);
    struct pam_handle *pamh; /* pam session handle */
 
    pam_conversation_container->conv = PamConversionCallback;
    pam_conversation_container->appdata_ptr = pam_callback_data.get();
 
-   int err = pam_start(service_name.c_str(), username.c_str(),
+   const char *username = username_in.empty() ? nullptr : username_in.c_str();
+   int err = pam_start(service_name.c_str(), username,
                       pam_conversation_container.get(), &pamh);
    if (err != PAM_SUCCESS) {
       Dmsg1(debuglevel, "PAM start failed: %s\n", pam_strerror(pamh, err));
    }
 
-   err = pam_set_item(pamh, PAM_RUSER, username.c_str());
+   err = pam_set_item(pamh, PAM_RUSER, username);
    if (err != PAM_SUCCESS) {
       Dmsg1(debuglevel, "PAM set_item failed: %s\n", pam_strerror(pamh, err));
    }
