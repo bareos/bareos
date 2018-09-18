@@ -361,7 +361,7 @@ bool DoVerify(JobControlRecord *jcr)
          ClientResource *client = jcr->res.client;
 
          if (jcr->connection_successful_handshake_ != JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
-            tls_need = GetLocalTlsPolicyFromConfiguration(me);
+            tls_need = GetLocalTlsPolicyFromConfiguration(client);
          } else {
             tls_need = TlsConfigBase::BNET_TLS_AUTO;
          }
@@ -370,6 +370,7 @@ bool DoVerify(JobControlRecord *jcr)
           * Tell the SD to connect to the FD.
           */
          sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+         Bmicrosleep(2,0);
          if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
             goto bail_out;
          }

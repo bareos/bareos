@@ -198,9 +198,9 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
             if (jcr->file_bsock) {
                jcr->file_bsock->close();
                delete jcr->file_bsock;
-               jcr->file_bsock = NULL;
+               jcr->file_bsock = nullptr;
             }
-            jcr->resetJobStatus(JS_Created);
+            jcr->resetJobStatus(JS_Running);
             jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kCleartextFirst;
             break;
           case JobControlRecord::ConnectionHandshakeMode::kCleartextFirst:

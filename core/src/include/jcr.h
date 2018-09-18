@@ -453,6 +453,9 @@ public:
    POOLMEM *comment;                      /**< Comment for this Job */
    int64_t max_bandwidth;                 /**< Bandwidth limit for this Job */
    htable *path_list;                     /**< Directory list (used by findlib) */
+   enum class ConnectionHandshakeMode { kUndefined, kTlsFirst, kCleartextFirst, kFailed };
+   ConnectionHandshakeMode connection_handshake_try_;
+   ConnectionHandshakeMode connection_successful_handshake_;
 
    /*
     * Daemon specific part of JobControlRecord
@@ -531,9 +534,6 @@ public:
    bool RescheduleIncompleteJobs;         /**< Set if incomplete can be rescheduled */
    bool HasQuota;                         /**< Client has quota limits */
    bool HasSelectedJobs;                  /**< Migration/Copy Job did actually select some JobIds */
-   enum class ConnectionHandshakeMode { kUndefined, kTlsFirst, kCleartextFirst, kFailed };
-   ConnectionHandshakeMode connection_handshake_try_;
-   ConnectionHandshakeMode connection_successful_handshake_;
 #endif /* DIRECTOR_DAEMON */
 
 #ifdef FILE_DAEMON

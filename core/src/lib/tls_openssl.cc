@@ -113,8 +113,8 @@ bool TlsOpenSsl::init()
   }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  if (!d_->certfile_.empty()) {
-    if (!SetCertificateRevocationList(d_->certfile_, d_->openssl_ctx_)) {
+  if (!d_->crlfile_.empty()) {
+    if (!SetCertificateRevocationList(d_->crlfile_, d_->openssl_ctx_)) {
       return false;
     }
   }

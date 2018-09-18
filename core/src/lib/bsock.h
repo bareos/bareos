@@ -68,13 +68,14 @@ public:
    int blocking_;                     /* Blocking state (0 = nonblocking, 1 = blocking) */
    volatile int errors;               /* Incremented for each error on socket */
    volatile bool suppress_error_msgs_;/* Set to suppress error messages */
-  int sleep_time_after_authentication_error;
+   int sleep_time_after_authentication_error;
 
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
-  void SetTlsEstablished() { tls_established_ = true; }
-  bool TlsEstablished() const { return tls_established_; }
-  std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
+   void SetTlsEstablished() { tls_established_ = true; }
+   bool TlsEstablished() const { return tls_established_; }
+   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
+  std::unique_ptr<Tls> tls_conn_init; /* during initialization */
 
 protected:
    JobControlRecord *jcr_;                        /* JobControlRecord or NULL for error msgs */
@@ -85,12 +86,12 @@ protected:
    btimer_t *tid_;                   /* Timer id */
    boffset_t data_end_;              /* Offset of last valid data written */
    int32_t FileIndex_;               /* Last valid attr spool FI */
-   bool timed_out_;                  /* Timed out in read/write */
-   bool terminated_;                 /* Set when BNET_TERMINATE arrives */
-   bool cloned_;                     /* Set if cloned BareosSocket */
-   bool spool_;                      /* Set for spooling */
-   bool use_bursting_;               /* Set to use bandwidth bursting */
-   bool use_keepalive_;              /* Set to use keepalive on the socket */
+   bool timed_out_;       /* Timed out in read/write */
+   bool terminated_;      /* Set when BNET_TERMINATE arrives */
+   bool cloned_;          /* Set if cloned BareosSocket */
+   bool spool_;           /* Set for spooling */
+   bool use_bursting_;    /* Set to use bandwidth bursting */
+   bool use_keepalive_;   /* Set to use keepalive on the socket */
    int64_t bwlimit_;                 /* Set to limit bandwidth */
    int64_t nb_bytes_;                /* Bytes sent/recv since the last tick */
    btime_t last_tick_;               /* Last tick used by bwlimit */
@@ -102,12 +103,12 @@ protected:
                      int port, utime_t heart_beat, int *fatal) = 0;
 
 private:
-   bool TwoWayAuthenticate(JobControlRecord *jcr,
-                           const char *what,
-                           const char *identity,
-                           s_password &password,
-                           TlsResource *tls_resource,
-                           bool initiated_by_remote);
+  bool TwoWayAuthenticate(JobControlRecord *jcr,
+                            const char *what,
+                            const char *identity,
+                            s_password &password,
+                            TlsResource *tls_resource,
+                            bool initiated_by_remote);
   bool DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
                                 JobControlRecord *jcr);
   bool DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
@@ -125,15 +126,15 @@ public:
   //  void free_bsock();
    void CloseTlsConnectionAndFreeMemory();
    virtual BareosSocket *clone() = 0;
-   virtual bool connect(JobControlRecord *jcr,
-                        int retry_interval,
-                        utime_t max_retry_time,
-                        utime_t heart_beat,
-                        const char *name,
-                        char *host,
-                        char *service,
-                        int port,
-                        bool verbose)                      = 0;
+  virtual bool connect(JobControlRecord *jcr,
+                       int retry_interval,
+                       utime_t max_retry_time,
+                       utime_t heart_beat,
+                       const char *name,
+                       char *host,
+                       char *service,
+                       int port,
+                       bool verbose)                      = 0;
    virtual int32_t recv() = 0;
    virtual bool send() = 0;
    virtual int32_t read_nbytes(char *ptr, int32_t nbytes) = 0;
@@ -156,11 +157,11 @@ public:
    const char *bstrerror();           /* last error on socket */
    bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
    bool AuthenticateWithDirector(JobControlRecord *jcr,
-                                 const char *name,
-                                 s_password &password,
-                                 char *response,
-                                 int response_len,
-                                 TlsResource *tls_resource);
+                                   const char *name,
+                                   s_password &password,
+                                   char *response,
+                                   int response_len,
+                                TlsResource *tls_resource);
    bool ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                          const char *identity,
                                          const char *password,
@@ -228,6 +229,8 @@ public:
    void SetTerminated() { terminated_ = true; }
    void StartTimer(int sec) { tid_ = StartBsockTimer(this, sec); }
    void StopTimer() { StopBsockTimer(tid_); }
+  void LockMutex();
+  void UnlockMutex();
 };
 
 /**

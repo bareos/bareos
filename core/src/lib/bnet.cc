@@ -122,23 +122,27 @@ bool BnetTlsServer(BareosSocket *bsock, const std::vector<std::string> &verify_l
 {
    JobControlRecord *jcr = bsock->jcr();
 
-   if (!bsock->tls_conn) {
+   if (!bsock->tls_conn_init) {
      Dmsg0(100, "No Tsl Connection: Cannot call TlsBsockAccept\n");
    }
 
-   if (!bsock->tls_conn->TlsBsockAccept(bsock)) {
+   if (!bsock->tls_conn_init->TlsBsockAccept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
    }
 
    if (!verify_list.empty()) {
-      if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
+      if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
          goto err;
       }
    }
+
+   bsock->LockMutex();
+   bsock->tls_conn = std::move(bsock->tls_conn_init);
+   bsock->UnlockMutex();
 
    Dmsg0(50, "TLS server negotiation established.\n");
    return true;
@@ -157,7 +161,7 @@ bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, const std::vector<std::
 {
    JobControlRecord *jcr = bsock->jcr();
 
-   if (!bsock->tls_conn->TlsBsockConnect(bsock)) {
+   if (!bsock->tls_conn_init->TlsBsockConnect(bsock)) {
       goto err;
    }
 
@@ -167,20 +171,24 @@ bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, const std::vector<std::
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
       if (!verify_list.empty()) {
-         if (!bsock->tls_conn->TlsPostconnectVerifyCn(jcr, verify_list)) {
+         if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
             goto err;
          }
       } else {
-         if (!bsock->tls_conn->TlsPostconnectVerifyHost(jcr, bsock->host())) {
+         if (!bsock->tls_conn_init->TlsPostconnectVerifyHost(jcr, bsock->host())) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
                   bsock->host());
             goto err;
          }
       }
    }
+
+   bsock->LockMutex();
+   bsock->tls_conn = std::move(bsock->tls_conn_init);
+   bsock->UnlockMutex();
 
    Dmsg0(50, "TLS client negotiation established.\n");
    return true;

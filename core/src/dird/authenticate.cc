@@ -135,13 +135,13 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                               qualified_resource_name)) {
-      Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+      Dmsg0(100, "Could not generate qualified resource name for a client resource\n");
       return false;
     }
 
     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, client, false,
                             qualified_resource_name.c_str(), client->password.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
+      Dmsg0(100, "Could not DoTlsHandshake() with a file daemon\n");
       return false;
     }
   }

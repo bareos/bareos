@@ -467,9 +467,7 @@ bool BareosSocketTCP::send()
       return false;
    }
 
-   if (mutex_) {
-      mutex_->lock();
-   }
+   LockMutex();
 
    /*
     * Compute total packet length
@@ -506,9 +504,7 @@ bool BareosSocketTCP::send()
       }
    }
 
-   if (mutex_) {
-      mutex_->unlock();
-   }
+   UnlockMutex();
 
    return ok;
 }
@@ -913,7 +909,7 @@ void BareosSocketTCP::close()
    if (!cloned_) {
       ClearLocking();
 
-      if (tls_conn) {
+      if (tls_conn || tls_conn_init) {
          CloseTlsConnectionAndFreeMemory();
       }
    }

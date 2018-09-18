@@ -557,7 +557,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
        * TLS Requirement
        */
 
-      tls_need = GetLocalTlsPolicyFromConfiguration(client);
+      tls_need = GetLocalTlsPolicyFromConfiguration(store);
 
       connection_target_address = StorageAddressToContact(client, store);
 
@@ -568,7 +568,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
    } else {
 
       if (jcr->connection_successful_handshake_ != JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
-        tls_need = GetLocalTlsPolicyFromConfiguration(me);
+        tls_need = GetLocalTlsPolicyFromConfiguration(client);
       } else {
         tls_need = TlsConfigBase::BNET_TLS_AUTO;
       }
@@ -579,6 +579,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
        * Tell the SD to connect to the FD.
        */
       sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_need);
+      Bmicrosleep(2,0);
       if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
          goto bail_out;
       }
