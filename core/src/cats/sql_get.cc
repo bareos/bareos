@@ -1451,7 +1451,7 @@ bool BareosDb::GetVolumeJobids(JobControlRecord *jcr, MediaDbRecord *mr, db_list
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetQuotaJobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention)
+bool BareosDb::get_quota_jobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention)
 {
    SQL_ROW row;
    int num_rows;
@@ -1503,7 +1503,7 @@ bool BareosDb::GetQuotaJobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t 
  * Returns false: on failure
  *         true: on success
  */
-bool BareosDb::GetQuotaJobbytesNofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention)
+bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];

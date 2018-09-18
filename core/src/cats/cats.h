@@ -713,8 +713,8 @@ public:
    bool AccurateGetJobids(JobControlRecord *jcr, JobDbRecord *jr, db_list_ctx *jobids);
    bool GetUsedBaseJobids(JobControlRecord *jcr, POOLMEM *jobids, db_list_ctx *result);
    bool GetQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cr);
-   bool GetQuotaJobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
-   bool GetQuotaJobbytesNofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
+   bool get_quota_jobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
+   bool get_quota_jobbytes_nofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
    int GetNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem);
    bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *ResultHandler, void *ctx);
    bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *ResultHandler, void *ctx);
