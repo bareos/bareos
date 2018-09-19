@@ -2058,9 +2058,9 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
    }
 
    /*
-    * Lookup the CreateFile() function in the python module.
+    * Lookup the create_file() function in the python module.
     */
-   pFunc = PyDict_GetItemString(p_ctx->pDict, "CreateFile"); /* Borrowed reference */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "create_file"); /* Borrowed reference */
    if (pFunc && PyCallable_Check(pFunc)) {
       PyRestorePacket *pRestorePacket;
       PyObject *pRetVal;
@@ -2082,7 +2082,7 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
          Py_DECREF(pRestorePacket);
       }
    } else {
-      Dmsg(ctx, debuglevel, "python-fd: Failed to find function named CreateFile()\n");
+      Dmsg(ctx, debuglevel, "python-fd: Failed to find function named create_file()\n");
    }
 
    return retval;
