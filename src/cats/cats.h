@@ -732,7 +732,7 @@ public:
    /* sql_list.c */
    void list_pool_records(JCR *jcr, POOL_DBR *pr, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char *clientname,
-                            int jobstatus, int joblevel, const char* volumename, utime_t since_time, bool last,
+                            int jobstatus, int joblevel, const char* volumename, const char* poolname, utime_t since_time, bool last,
                             bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_job_totals(JCR *jcr, JOB_DBR *jr, OUTPUT_FORMATTER *sendit);
    void list_files_for_job(JCR *jcr, uint32_t jobid, OUTPUT_FORMATTER *sendit);
