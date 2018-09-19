@@ -1552,6 +1552,16 @@ static int JobidFileindexHandler(void *ctx, int num_fields, char **row)
    AddFindex(rx->bsr, rx->JobId, str_to_int64(row[1]));
    rx->found = true;
    rx->selected_files++;
+   
+   if (bstrcmp(rx->last_jobid, row[0])) {
+      return 0;                       /* duplicate id */
+   }
+   bstrncpy(rx->last_jobid, row[0], sizeof(rx->last_jobid));
+   if (rx->JobIds[0] != 0) {
+      PmStrcat(rx->JobIds, ",");
+   }
+   PmStrcat(rx->JobIds, row[0]);
+   
    return 0;
 }
 
