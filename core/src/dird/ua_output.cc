@@ -559,6 +559,7 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
    time_t schedtime = 0;
    char *clientname = NULL;
    char *volumename = NULL;
+   char *poolname = NULL;
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
    PoolMem query_range(PM_MESSAGE);
@@ -647,6 +648,11 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
          volumename = ua->argv[i];
       }
 
+      i = FindArgWithValue(ua, NT_("pool"));
+      if (i >= 0) {
+          poolname = ua->argv[i];
+      }
+
       switch (llist) {
       case VERT_LIST:
          if (!count) {
@@ -689,7 +695,7 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
       SetQueryRange(query_range, ua, &jr);
 
       ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                               jobstatus, joblevel, volumename, schedtime, last, count, ua->send, llist);
+                               jobstatus, joblevel, volumename, poolname, schedtime, last, count, ua->send, llist);
    } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
@@ -705,6 +711,11 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
          jobid = GetJobidFromCmdline(ua);
          if (jobid > 0) {
             jr.JobId = jobid;
+
+            i = FindArgWithValue(ua, NT_("pool"));
+            if (i >= 0) {
+                poolname = ua->argv[i];
+            }
 
             SetAclFilter(ua, 1, Job_ACL); /* JobName */
             SetAclFilter(ua, 2, Client_ACL); /* ClientName */
@@ -722,7 +733,7 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
             SetQueryRange(query_range, ua, &jr);
 
             ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                                     jobstatus, joblevel, volumename, schedtime, last, count, ua->send, llist);
+                                     jobstatus, joblevel, volumename, poolname, schedtime, last, count, ua->send, llist);
          }
       }
    } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {

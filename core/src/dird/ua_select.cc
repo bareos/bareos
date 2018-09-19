@@ -930,7 +930,7 @@ PoolResource *get_pool_resource(UaContext *ua)
  */
 int SelectJobDbr(UaContext *ua, JobDbRecord *jr)
 {
-   ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
+   ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, NULL, 0, 0, 0, ua->send, HORZ_LIST);
    if (!GetPint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }
