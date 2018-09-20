@@ -31,7 +31,9 @@
 #include "include/bareos.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
+#if defined(HAVE_PAM)
 #include "console/auth_pam.h"
+#endif
 #include "console/console_output.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
@@ -1083,14 +1085,16 @@ int main(int argc, char *argv[])
 
    ConsoleOutput(errmsg);
 
+#if defined(HAVE_PAM)
    if (console_resource) { /* not for root console */
-   if (director_resource && director_resource->use_pam_authentication) {
-      if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-         TerminateConsole(0);
-         return 1;
-        }
+      if (director_resource && director_resource->use_pam_authentication) {
+         if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+            TerminateConsole(0);
+            return 1;
+         }
       }
    }
+#endif /* HAVE_PAM */
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 

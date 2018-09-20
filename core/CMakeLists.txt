@@ -448,6 +448,9 @@ if ("${READLINE_FOUND}")
    set(HAVE_READLINE 1)
 endif()
 
+if ("${PAM_FOUND}")
+   set(HAVE_PAM 1)
+endif()
 
 
 set(have_tls "${HAVE_TLS}" )
@@ -654,6 +657,7 @@ MESSAGE("   TLS support:                  ${have_tls} ")
 MESSAGE("   Encryption support:           ${have_crypto} ")
 MESSAGE("   OpenSSL support:              ${OPENSSL_FOUND} ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES} ")
 MESSAGE("   GNUTLS support:               ${have_gnutls} ")
+MESSAGE("   PAM support:                  ${PAM_FOUND} ${PAM_LIBRARIES} ${PAM_INCLUDE_DIRS} ")
 MESSAGE("   ZLIB support:                 ${ZLIB_FOUND} ${ZLIB_LIBRARIES} ${ZLIB_INCLUDE_DIRS} ")
 MESSAGE("   LZO2 support:                 ${LZO2_FOUND} ${LZO2_LIBRARIES} ${LZO2_INCLUDE_DIRS} ")
 MESSAGE("   FASTLZ support:               ${FASTLZ_FOUND} ${FASTLZ_LIBRARIES} ${FASTLZ_INCLUDE_DIRS} ")

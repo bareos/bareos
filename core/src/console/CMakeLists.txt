@@ -18,19 +18,24 @@
 #   02110-1301, USA.
 
 
-SET (BCONSSRCS auth_pam.cc console_conf.cc console_globals.cc console_output.cc)
+SET (BCONSSRCS console_conf.cc console_globals.cc console_output.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
+ENDIF()
+
+IF(HAVE_PAM)
+   include_directories(${PAM_INCLUDE_DIRS})
+   LIST(APPEND BCONSSRCS auth_pam.cc)
 ENDIF()
 
 add_executable(bconsole console.cc)
 
 add_library(console_objects STATIC ${BCONSSRCS})
 
-set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY})
-
-IF(HAVE_WIN32)
-  LIST(APPEND CONSOLE_LINK_LIBRARIES)
+IF(HAVE_PAM)
+   set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY} ${PAM_LIBRARIES})
+ELSE()
+   set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY})
 ENDIF()
 
 target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES})
