@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_UA_COMMANDSTRUCT_H_
 #define BAREOS_DIRD_UA_COMMANDSTRUCT_H_
 
+namespace directordaemon {
+
 struct ua_cmdstruct {
    const char *key;        /**< Command */
    bool (*func)(UaContext *ua, const char *cmd); /**< Handler */
@@ -31,4 +33,5 @@ struct ua_cmdstruct {
    const bool audit_event; /**< Log an audit event when this Command is executed */
 };
 
+} /* namespace directordaemon */
 #endif /* BAREOS_DIRD_UA_COMMANDSTRUCT_H_ */

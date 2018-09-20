@@ -24,8 +24,8 @@
 #include <cstring>
 #include <security/pam_appl.h>
 
-#include "bareos.h"
-#include "ua.h"
+#include "include/bareos.h"
+#include "dird/ua.h"
 
 static const int debuglevel = 200;
 

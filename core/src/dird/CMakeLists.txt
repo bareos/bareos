@@ -48,7 +48,7 @@ IF(HAVE_WIN32)
       )
 ENDIF()
 
-include_directories(${PAM_INCLUDE_DIRS}
+include_directories(${PAM_INCLUDE_DIRS})
 
 set(DBCHKSRCS dbcheck.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
 IF(HAVE_WIN32)

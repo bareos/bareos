@@ -23,7 +23,7 @@
 
 #include <stdarg.h>
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 static FILE *output_file_ = stdout;
 static bool teeout_enabled_ = false;

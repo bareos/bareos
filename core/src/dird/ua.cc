@@ -23,6 +23,9 @@
 
 #include "include/jcr.h"
 #include "dird/ua_output.h"
+#include "dird/dird_conf.h"
+
+namespace directordaemon {
 
 UaContext::UaContext()
    : UA_sock(nullptr)
@@ -113,3 +116,17 @@ void FreeUaContext(UaContext *ua)
    }
    free(ua);
 }
+
+RunContext::RunContext()
+{
+   memset(this, 0, sizeof(RunContext));
+   store = new UnifiedStorageResource;
+}
+
+RunContext::~RunContext()
+{
+   if (store) {
+     delete store;
+   }
+}
+} /* namespace directordaemon */

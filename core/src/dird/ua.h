@@ -31,19 +31,18 @@
 #ifndef BAREOS_DIRD_UA_H_
 #define BAREOS_DIRD_UA_H_ 1
 
-namespace directordaemon {
+#include "include/bareos.h"
 
-class UaContext;
 class BareosSocket;
 class JobControlRecord;
 class BareosDb;
-class BareosDb;
-class BareosDb;
+class guid_list;
+
+namespace directordaemon {
+
 class CatalogResource;
 class ConsoleResource;
-class guid_list;
 class PoolResource;
-class StorageResource;
 class StorageResource;
 class ClientResource;
 class JobResource;
@@ -51,6 +50,7 @@ class FilesetResource;
 class ScheduleResource;
 class RestoreBootstrapRecord;
 struct ua_cmdstruct;
+class UnifiedStorageResource;
 
 class UaContext {
 public:
@@ -248,9 +248,8 @@ public:
    /*
     * Methods
     */
-   RunContext() { memset(this, 0, sizeof(RunContext));
-               store = new UnifiedStorageResource; }
-   ~RunContext() { delete store; }
+   RunContext();
+   ~RunContext();
 };
 
 } /* namespace directordaemon */

@@ -56,7 +56,7 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    sellist.cc serial.cc sha1.cc signal.cc  smartall.cc tls.cc
    tls_gnutls.cc tls_conf_base.cc tls_conf_psk.cc tls_conf_cert.cc tls_openssl.cc
-   tls_openssl_crl.cc tls_openssl_private.cc tree.cc util.cc var.cc watchdog.cc 
+   tls_openssl_crl.cc tls_openssl_private.cc tree.cc util.cc var.cc watchdog.cc
    workq.cc)
 
 IF(HAVE_WIN32)
@@ -70,12 +70,16 @@ ELSE()
      scsi_tapealert.cc)
 ENDIF()
 
+set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc res.cc parse_conf.cc
+     res.cc qualified_resource_name_type_converter.cc)
+LIST(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
+
 add_library(bareos SHARED ${BAREOS_SRCS})
 
 target_link_libraries(bareos
    ${OPENSSL_LIBRARIES} ${PTHREAD_LIBRARIES} ${FASTLZ_LIBRARIES} ${ZLIB_LIBRARIES}
-   ${ACL_LIBRARIES} ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${WRAP_LIBRARIES} 
-   ${CAM_LIBRARIES} ${WINDOWS_LIBRARIES} ${JANSSON_LIBRARIES}) 
+   ${ACL_LIBRARIES} ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${WRAP_LIBRARIES}
+   ${CAM_LIBRARIES} ${WINDOWS_LIBRARIES} ${JANSSON_LIBRARIES})
 
 INSTALL(TARGETS bareos DESTINATION ${libdir})
 

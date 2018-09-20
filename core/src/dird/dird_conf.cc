@@ -1322,7 +1322,7 @@ bool ValidateResource(int res_type, ResourceItem *items, BareosResource *res)
          if (!BitIsSet(i, res->hdr.item_present)) {
             Jmsg(NULL, M_ERROR, 0,
                  _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
-                 items[i].name, res_to_str(res_type), res->name());
+                 items[i].name, my_config->res_to_str(res_type), res->name());
             return false;
          }
       }
@@ -1331,7 +1331,7 @@ bool ValidateResource(int res_type, ResourceItem *items, BareosResource *res)
        * If this triggers, take a look at lib/parse_conf.h
        */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_to_str(res_type));
+         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), my_config->res_to_str(res_type));
          return false;
       }
    }

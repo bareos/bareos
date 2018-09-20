@@ -24,6 +24,8 @@
 
 namespace directordaemon {
 
+class RunResource;
+
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
 of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple);
 bool printit(void *ctx, const char *msg);

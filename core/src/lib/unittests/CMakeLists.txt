@@ -79,7 +79,7 @@ target_link_libraries(test_bsock
    ${JANSSON_LIBRARIES}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
-   )
+   ${PAM_LIBRARIES})
 
 add_test(NAME test_bsock
    COMMAND test_bsock
