@@ -29,21 +29,23 @@
  */
 
 #include "include/bareos.h"
-#include "console_conf.h"
-#include "console_output.h"
-#include "auth_pam.h"
-#include "jcr.h"
+#include "console/console_conf.h"
+#include "console/console_globals.h"
+#include "console/auth_pam.h"
+#include "console/console_output.h"
+#include "include/jcr.h"
 #include "lib/bnet.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 #define ConInit(x)
 #define ConTerm()
-#define ConSetZedKeys();
+#define ConSetZedKeys()
 #define trapctlc()
 #define clrbrk()
 #define usrbrk() 0
 
 #if defined(HAVE_WIN32)
-#define isatty(fd) (fd==0)
+#define isatty(fd) (fd == 0)
 #endif
 
 using namespace console;
@@ -62,8 +64,6 @@ extern "C" void GotSigtin(int sig);
 
 static char *configfile = NULL;
 static BareosSocket *UA_sock = NULL;
-static DirectorResource *dir = NULL;
-static ConsoleResource *cons = NULL;
 static bool stop = false;
 static int timeout = 0;
 static int argc;
@@ -618,7 +618,7 @@ static char **readline_completion(const char *text, int start, int end)
          matches = rl_completion_matches(text, cpl_generator);
       }
       free(s);
-   } else {                     /* nothing on the line, display all commands */
+   } else { /* nothing on the line, display all commands */
       cpl_item = ".help all";
       cpl_type = ITEM_ARG;
       matches = rl_completion_matches(text, cpl_generator);
@@ -747,55 +747,53 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    int numcon=0, numdir=0;
    int i=0, item=0;
    BareosSocket *UA_sock;
-   DirectorResource *dir = NULL;
-   ConsoleResource *cons = NULL;
+   DirectorResource *director_resource = NULL;
+   ConsoleResource *console_resource = NULL;
 
    *ret_cons = NULL;
    *ret_dir = NULL;
 
-   LockRes();
+  LockRes(my_config);
    numdir = 0;
-   foreach_res(dir, R_DIRECTOR) {
+   foreach_res(director_resource, R_DIRECTOR) {
       numdir++;
    }
    numcon = 0;
-   foreach_res(cons, R_CONSOLE) {
+   foreach_res(console_resource, R_CONSOLE) {
       numcon++;
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
-   if (numdir == 1) {           /* No choose */
-      dir = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+   if (numdir == 1) { /* No choose */
+      director_resource = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
    }
 
-   if (director) {    /* Command line choice overwrite the no choose option */
-      LockRes();
-      foreach_res(dir, R_DIRECTOR) {
-         if (bstrcmp(dir->name(), director)) {
+   if (director) { /* Command line choice overwrite the no choose option */
+      LockRes(my_config);
+      foreach_res(director_resource, R_DIRECTOR) {
+         if (bstrcmp(director_resource->name(), director)) {
             break;
          }
       }
-      UnlockRes();
-      if (!dir) {               /* Can't find Director used as argument */
+      UnlockRes(my_config);
+      if (!director_resource) { /* Can't find Director used as argument */
          ConsoleOutputFormat(_("Can't find %s in Director list\n"), director);
          return 0;
       }
    }
 
-   if (!dir) {                  /* prompt for director */
+   if (!director_resource) { /* prompt for director */
       UA_sock = New(BareosSocketTCP);
 try_again:
       ConsoleOutput(_("Available Directors:\n"));
-      LockRes();
+      LockRes(my_config);
       numdir = 0;
-      foreach_res(dir, R_DIRECTOR) {
-         ConsoleOutputFormat( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->name(), dir->address, dir->DIRport);
+      foreach_res(director_resource, R_DIRECTOR) {
+         ConsoleOutputFormat( _("%2d:  %s at %s:%d\n"), 1+numdir++, director_resource->name(), director_resource->address, director_resource->DIRport);
       }
-      UnlockRes();
-      if (GetCmd(stdin, _("Select Director by entering a number: "),
-                  UA_sock, 600) < 0)
-      {
-         WSACleanup();               /* Cleanup Windows sockets */
+    UnlockRes(my_config);
+    if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600) < 0) {
+         WSACleanup(); /* Cleanup Windows sockets */
          return 0;
       }
       if (!Is_a_number(UA_sock->msg)) {
@@ -810,94 +808,102 @@ try_again:
          goto try_again;
       }
       delete UA_sock;
-      LockRes();
+      LockRes(my_config);
       for (i=0; i<item; i++) {
-         dir = (DirectorResource *)GetNextRes(R_DIRECTOR, (CommonResourceHeader *)dir);
+         director_resource = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader *)director_resource);
       }
-      UnlockRes();
+      UnlockRes(my_config);
    }
 
    /*
     * Look for a console linked to this director
     */
-   LockRes();
+   LockRes(my_config);
    for (i=0; i<numcon; i++) {
-      cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)cons);
-      if (cons->director && bstrcmp(cons->director, dir->name())) {
+      console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+      if (console_resource->director && bstrcmp(console_resource->director, director_resource->name())) {
          break;
       }
-      cons = NULL;
+      console_resource = NULL;
    }
 
    /*
     * Look for the first non-linked console
     */
-   if (cons == NULL) {
+   if (console_resource == NULL) {
       for (i=0; i<numcon; i++) {
-         cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)cons);
-         if (cons->director == NULL)
+         console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
+         if (console_resource->director == NULL)
             break;
-         cons = NULL;
+         console_resource = NULL;
       }
    }
 
    /*
     * If no console, take first one
     */
-   if (!cons) {
-      cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
+   if (!console_resource) {
+      console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
-   *ret_dir = dir;
-   *ret_cons = cons;
+   *ret_dir = director_resource;
+   *ret_cons = console_resource;
 
    return 1;
 }
 
-/**
- * Callback calling director console connection
-*/
-static int dir_psk_client_callback(char *identity,
-                                   unsigned int max_identity_len,
-                                   unsigned char *psk,
-                                   unsigned int max_psk_len) {
+namespace console {
+BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
+{
+  BareosSocketTCP *UA_sock = New(BareosSocketTCP);
+  if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
+                        director_resource->DIRport, false)) {
+    delete UA_sock;
+    TerminateConsole(0);
+    return nullptr;
+  }
+  jcr.dir_bsock = UA_sock;
 
-   Dmsg0(100, "dir_psk_client_callback");
+  const char *name;
+  s_password *password = NULL;
 
-   int result = 0;
+  TlsResource *local_tls_resource;
+  if (console_resource) {
+    name = console_resource->name();
+    ASSERT(console_resource->password.encoding == p_encoding_md5);
+    password          = &console_resource->password;
+    local_tls_resource = console_resource;
+  } else { /* default console */
+    name = "*UserAgent*";
+    ASSERT(director_resource->password.encoding == p_encoding_md5);
+    password          = &director_resource->password;
+    local_tls_resource = director_resource;
+  }
 
-   if (NULL != dir && NULL != dir->password.value) {
-      if (p_encoding_clear == dir->password.encoding) {
-         /* plain password */
-      } else if (p_encoding_md5 == dir->password.encoding) {
-         /* md5 string */
-         /* convert the PSK key to binary */
-         result = hex2bin(dir->password.value, psk, max_psk_len);
-      } else {
-         /* hex password encoding? */
-      }
-   } else {
-      Dmsg0(100, "Passowrd not set in Director Config\n");
-      result = 0;
-   }
+  std::string qualified_resource_name;
+  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
+                                                                            qualified_resource_name)) {
+    ConsoleOutput("Could not generate qualified resource name\n");
+    TerminateConsole(0);
+    return nullptr;
+  }
 
-   if (result == 0 || result > (int)max_psk_len) {
-      Dmsg1(100, "Error, Could not convert PSK key '%s' to binary key\n", dir->password.value);
-      result = 0;
-   } else {
-      static char *psk_identity = (char *)"Nasenbaer";
+  if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
+                               qualified_resource_name.c_str(), password->value, &jcr)) {
+    ConsoleOutput(errmsg);
+    TerminateConsole(0);
+    return nullptr;
+  }
 
-      int ret = Bsnprintf(identity, max_identity_len, "%s", psk_identity);
-      if (ret < 0 || (unsigned int)ret > max_identity_len) {
-         Dmsg0(100, "Error, psk_identify too long\n");
-         result = 0;
-      }
-   }
-
-   return result;
+  if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
+    ConsoleOutput(errmsg);
+    TerminateConsole(0);
+    return nullptr;
+  }
+  return UA_sock;
 }
-
+} /* namespace console */
 /*
  * Main Bareos Console -- User Interface Program
  */
@@ -906,8 +912,6 @@ int main(int argc, char *argv[])
    int ch;
    int errmsg_len;
    char *director = NULL;
-   const char *name;
-   s_password *password = NULL;
    char errmsg[1024];
    bool list_directors = false;
    bool no_signals = false;
@@ -960,10 +964,6 @@ int main(int argc, char *argv[])
                debug_level = 1;
             }
          }
-         break;
-
-      case 'n':                    /* no conio */
-         no_conio = true;
          break;
 
       case 's':                    /* turn off signals */
@@ -1043,16 +1043,14 @@ int main(int argc, char *argv[])
       Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path().c_str());
    }
 
-   if (!no_conio) {
-      ConInit(stdin);
-   }
+   ConInit(stdin);
 
    if (list_directors) {
-      LockRes();
-      foreach_res(dir, R_DIRECTOR) {
-         ConsoleOutputFormat("%s\n", dir->name());
+      LockRes(my_config);
+      foreach_res(director_resource, R_DIRECTOR) {
+         ConsoleOutputFormat("%s\n", director_resource->name());
       }
-      UnlockRes();
+      UnlockRes(my_config);
    }
 
    if (test_config) {
@@ -1062,57 +1060,35 @@ int main(int argc, char *argv[])
 
    memset(&jcr, 0, sizeof(jcr));
 
-   (void)WSA_Init();                        /* Initialize Windows sockets */
+   (void)WSA_Init(); /* Initialize Windows sockets */
 
-   StartWatchdog();                        /* Start socket watchdog */
+   StartWatchdog(); /* Start socket watchdog */
 
-   if (!SelectDirector(director, &dir, &cons)) {
+   if (!SelectDirector(director, &director_resource, &console_resource)) {
       return 1;
    }
 
-   ConsoleOutputFormat(_("Connecting to Director %s:%d\n"), dir->address,dir->DIRport);
+   ConsoleOutputFormat(_("Connecting to Director %s:%d\n"), director_resource->address,director_resource->DIRport);
 
-   if (dir->heartbeat_interval) {
-      heart_beat = dir->heartbeat_interval;
-   } else if (cons) {
-      heart_beat = cons->heartbeat_interval;
+   if (director_resource->heartbeat_interval) {
+      heart_beat = director_resource->heartbeat_interval;
+   } else if (console_resource) {
+      heart_beat = console_resource->heartbeat_interval;
    } else {
       heart_beat = 0;
    }
 
-   UA_sock = New(BareosSocketTCP);
-   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
-      delete UA_sock;
-      TerminateConsole(0);
-      return 1;
-   }
-   jcr.dir_bsock = UA_sock;
-
-   /*
-    * If cons == NULL, default console will be used
-    */
-   if (cons) {
-      name = cons->name();
-      ASSERT(cons->password.encoding == p_encoding_md5);
-      password = &cons->password;
-   } else {
-      name = "*UserAgent*";
-      ASSERT(dir->password.encoding == p_encoding_md5);
-      password = &dir->password;
-   }
-
-   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, dir)) {
-      ConsoleOutput(errmsg);
-      TerminateConsole(0);
-      return 1;
-   }
+   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
+   if (!UA_sock) { return 1; }
 
    ConsoleOutput(errmsg);
 
-   if (dir && dir->use_pam_authentication) {
+   if (console_resource) { /* not for root console */
+   if (director_resource && director_resource->use_pam_authentication) {
       if (!ConsolePamAuthenticate(stdin, UA_sock)) {
          TerminateConsole(0);
          return 1;
+        }
       }
    }
 
@@ -1121,14 +1097,8 @@ int main(int argc, char *argv[])
    ConsoleOutput(_("\nEnter a period to cancel a command.\n"));
 
 #if defined(HAVE_WIN32)
-   /*
-    * Read/Update history file if USERPROFILE exists
-    */
    char *env = getenv("USERPROFILE");
 #else
-   /*
-    * Read/Update history file if HOME exists
-    */
    char *env = getenv("HOME");
 #endif
 
@@ -1147,12 +1117,9 @@ int main(int argc, char *argv[])
       }
    }
 
-   /*
-    * See if there is an explicit setting of a history file to use.
-    */
    if (me && me->history_file) {
       PmStrcpy(history_file, me->history_file);
-      ConsoleInitHistory(history_file.c_str());
+         ConsoleInitHistory(history_file.c_str());
    } else {
       if (env) {
          PmStrcpy(history_file, env);
@@ -1178,13 +1145,11 @@ int main(int argc, char *argv[])
    return 0;
 }
 
-/* Cleanup and then exit */
 static void TerminateConsole(int sig)
 {
-
    static bool already_here = false;
 
-   if (already_here) {                /* avoid recursive temination problems */
+   if (already_here) { /* avoid recursive temination problems */
       exit(1);
    }
    already_here = true;
@@ -1193,10 +1158,8 @@ static void TerminateConsole(int sig)
    my_config = NULL;
    CleanupCrypto();
    FreePoolMemory(args);
-   if (!no_conio) {
-      ConTerm();
-   }
-   WSACleanup();               /* Cleanup Windows sockets */
+   ConTerm();
+   WSACleanup(); /* Cleanup Windows sockets */
    LmgrCleanupMain();
 
    if (sig != 0) {
@@ -1205,15 +1168,12 @@ static void TerminateConsole(int sig)
    return;
 }
 
-/**
- * Make a quick check to see that we have all the resources needed.
- */
 static int CheckResources()
 {
    bool OK = true;
    DirectorResource *director;
 
-   LockRes();
+   LockRes(my_config);
 
    numdir = 0;
    foreach_res(director, R_DIRECTOR) {
@@ -1227,9 +1187,9 @@ static int CheckResources()
       OK = false;
    }
 
-   me = (ConsoleResource *)GetNextRes(R_CONSOLE, NULL);
+   me = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, NULL);
 
-   UnlockRes();
+   UnlockRes(my_config);
 
    return OK;
 }
