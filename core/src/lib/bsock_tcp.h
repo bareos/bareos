@@ -60,7 +60,6 @@ public:
    int32_t recv();
    bool send();
    bool fsend(const char*, ...);
-   bool send(const char*, int32_t nbytes);
    int32_t read_nbytes(char *ptr, int32_t nbytes);
    int32_t write_nbytes(char *ptr, int32_t nbytes);
    bool signal(int signal);
