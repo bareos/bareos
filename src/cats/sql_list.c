@@ -467,7 +467,7 @@ bail_out:
  * List Job record(s) that match JOB_DBR
  */
 void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
-                         const char *clientname, int jobstatus, const char *volumename,
+                         const char *clientname, int jobstatus, const char *volumename, const char *poolname,
                          utime_t since_time, bool last, bool count,
                          OUTPUT_FORMATTER *sendit, e_list_type type)
 {
@@ -501,6 +501,11 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
 
    if (volumename) {
       temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
+      pm_strcat(selection, temp.c_str());
+   }
+
+   if (poolname) {
+      temp.bsprintf("AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ", poolname);
       pm_strcat(selection, temp.c_str());
    }
 

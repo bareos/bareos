@@ -923,7 +923,7 @@ POOLRES *get_pool_resource(UAContext *ua)
  */
 int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
-   db_list_job_records(ua->jcr, ua->db, jr, "", NULL, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
+   db_list_job_records(ua->jcr, ua->db, jr, "", NULL, 0, NULL, NULL, 0, 0, 0, ua->send, HORZ_LIST);
    if (!get_pint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }

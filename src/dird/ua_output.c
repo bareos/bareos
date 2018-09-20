@@ -541,6 +541,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    time_t schedtime = 0;
    char *clientname = NULL;
    char *volumename = NULL;
+   char *poolname = NULL;
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
    POOL_MEM query_range(PM_MESSAGE);
@@ -621,6 +622,11 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          volumename = ua->argv[i];
       }
 
+      i = find_arg_with_value(ua, NT_("pool"));
+      if (i >= 0) {
+         poolname = ua->argv[i];
+      }
+
       switch (llist) {
       case VERT_LIST:
          if (!count) {
@@ -663,7 +669,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       set_query_range(query_range, ua, &jr);
 
       db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                          jobstatus, volumename, schedtime, last, count,
+                          jobstatus, volumename, poolname, schedtime, last, count,
                           ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
@@ -681,6 +687,11 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          if (jobid > 0) {
             jr.JobId = jobid;
 
+            i = find_arg_with_value(ua, NT_("pool"));
+            if (i >= 0) {
+                poolname = ua->argv[i];
+            }
+
             set_acl_filter(ua, 1, Job_ACL); /* JobName */
             set_acl_filter(ua, 2, Client_ACL); /* ClientName */
             if (current) {
@@ -697,7 +708,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             set_query_range(query_range, ua, &jr);
 
             db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                                jobstatus, volumename, schedtime, last, count, ua->send, llist);
+                                jobstatus, volumename, poolname, schedtime, last, count, ua->send, llist);
          }
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
