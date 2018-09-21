@@ -724,7 +724,7 @@ public:
    /* sql_list.c */
    void ListPoolRecords(JobControlRecord *jcr, PoolDbRecord *pr, OutputFormatter *sendit, e_list_type type);
    void ListJobRecords(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname,
-                            int jobstatus, int joblevel, const char* volumename, const char* volname, utime_t since_time, bool last,
+                            int jobstatus, int joblevel, const char* volumename, const char* poolname, utime_t since_time, bool last,
                             bool count, OutputFormatter *sendit, e_list_type type);
    void ListJobTotals(JobControlRecord *jcr, JobDbRecord *jr, OutputFormatter *sendit);
    void ListFilesForJob(JobControlRecord *jcr, uint32_t jobid, OutputFormatter *sendit);
