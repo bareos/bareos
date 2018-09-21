@@ -36,6 +36,8 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 static pthread_mutex_t mount_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum {
@@ -968,3 +970,5 @@ bool MountNextReadVolume(DeviceControlRecord *dcr)
    Dmsg0(90, "End of Device reached.\n");
    return false;
 }
+
+} /* namespace storagedaemon */

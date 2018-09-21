@@ -30,9 +30,12 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+
+namespace directordaemon {
 
 extern DirectorResource *director;
 
@@ -289,3 +292,4 @@ bool SqlqueryCmd(UaContext *ua, const char *cmd)
    ua->SendMsg(_("End query mode.\n"));
    return true;
 }
+} /* namespace directordaemon */

@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_BACKUP_H_
 #define BAREOS_DIRD_BACKUP_H_
 
+namespace directordaemon {
+
 int WaitForJobTermination(JobControlRecord *jcr, int timeout = 0);
 bool DoNativeBackupInit(JobControlRecord *jcr);
 bool DoNativeBackup(JobControlRecord *jcr);
@@ -35,4 +37,5 @@ char* StorageAddressToContact(ClientResource *client, StorageResource *store);
 char* ClientAddressToContact(ClientResource *client, StorageResource *store);
 char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_BACKUP_H_

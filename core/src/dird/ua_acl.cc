@@ -30,7 +30,10 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /**
  * Check if access is permitted to item in acl
@@ -391,7 +394,7 @@ CommonResourceHeader *UaContext::GetResWithName(int rcode, const char *name, boo
       }
    }
 
-   return ::GetResWithName(rcode, name, lock);
+   return my_config->GetResWithName(rcode, name, lock);
 
 bail_out:
    return NULL;
@@ -443,3 +446,5 @@ ScheduleResource *UaContext::GetScheduleResWithName(const char *name, bool audit
 {
    return (ScheduleResource *)GetResWithName(R_SCHEDULE, name, audit_event, lock);
 }
+
+} /* namespace directordaemon */

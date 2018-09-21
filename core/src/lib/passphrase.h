@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_PASSPHRASE_H_
 #define BAREOS_LIB_PASSPHRASE_H_
 
-DLL_IMP_EXP char *generate_crypto_passphrase(uint16_t length);
+char *generate_crypto_passphrase(uint16_t length);
 
 #endif // BAREOS_LIB_PASSPHRASE_H_

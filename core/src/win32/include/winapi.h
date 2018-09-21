@@ -62,17 +62,17 @@ typedef char POOLMEM;
 // "\\?\" to the path. For more information, see Naming a File.
 #define MAX_PATH_W 32767
 
-DLL_IMP_EXP int wchar_2_UTF8(POOLMEM *&pszUTF, const wchar_t *pszUCS);
-DLL_IMP_EXP int UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF);
-DLL_IMP_EXP int wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar);
-DLL_IMP_EXP BSTR str_2_BSTR(const char *pSrc);
-DLL_IMP_EXP char *BSTR_2_str(const BSTR pSrc);
-DLL_IMP_EXP DLL_IMP_EXP int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
+int wchar_2_UTF8(POOLMEM *&pszUTF, const wchar_t *pszUCS);
+int UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF);
+int wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar);
+BSTR str_2_BSTR(const char *pSrc);
+char *BSTR_2_str(const BSTR pSrc);
+int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
 
 // init with win9x, but maybe set to NT in InitWinAPI
-extern DWORD DLL_IMP_EXP g_platform_id;
-extern DWORD DLL_IMP_EXP g_MinorVersion;
-extern DWORD DLL_IMP_EXP g_MajorVersion;
+extern DWORD g_platform_id;
+extern DWORD g_MinorVersion;
+extern DWORD g_MajorVersion;
 
 /* In ADVAPI32.DLL */
 typedef BOOL (WINAPI * t_OpenProcessToken)(HANDLE, DWORD, PHANDLE);
@@ -80,17 +80,17 @@ typedef BOOL (WINAPI * t_AdjustTokenPrivileges)(HANDLE, BOOL,
           PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
 typedef BOOL (WINAPI * t_LookupPrivilegeValue)(LPCTSTR, LPCTSTR, PLUID);
 
-extern t_OpenProcessToken      DLL_IMP_EXP p_OpenProcessToken;
-extern t_AdjustTokenPrivileges DLL_IMP_EXP p_AdjustTokenPrivileges;
-extern t_LookupPrivilegeValue  DLL_IMP_EXP p_LookupPrivilegeValue;
+extern t_OpenProcessToken      p_OpenProcessToken;
+extern t_AdjustTokenPrivileges p_AdjustTokenPrivileges;
+extern t_LookupPrivilegeValue  p_LookupPrivilegeValue;
 
 /* In MSVCRT.DLL */
 typedef int (__cdecl * t_wunlink) (const wchar_t *);
 typedef int (__cdecl * t_wmkdir) (const wchar_t *);
 typedef int (__cdecl * t_wopen)  (const wchar_t *, int, ...);
 
-extern t_wunlink DLL_IMP_EXP p_wunlink;
-extern t_wmkdir DLL_IMP_EXP p_wmkdir;
+extern t_wunlink p_wunlink;
+extern t_wmkdir p_wmkdir;
 
 /* In KERNEL32.DLL */
 typedef BOOL (WINAPI * t_GetFileAttributesExA)(LPCSTR, GET_FILEEX_INFO_LEVELS, LPVOID);
@@ -152,78 +152,78 @@ typedef BOOL (WINAPI *t_CreateProcessA) (LPCSTR, LPSTR, LPSECURITY_ATTRIBUTES, L
 typedef BOOL (WINAPI *t_CreateProcessW) (LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES,
                                          BOOL, DWORD, PVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
 
-extern t_CreateProcessA DLL_IMP_EXP p_CreateProcessA;
-extern t_CreateProcessW DLL_IMP_EXP p_CreateProcessW;
+extern t_CreateProcessA p_CreateProcessA;
+extern t_CreateProcessW p_CreateProcessW;
 
 #if (_WIN32_WINNT >= 0x0600)
-extern t_GetFileInformationByHandleEx DLL_IMP_EXP p_GetFileInformationByHandleEx;
+extern t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx;
 #endif
 
-extern t_GetFileAttributesA DLL_IMP_EXP p_GetFileAttributesA;
-extern t_GetFileAttributesW DLL_IMP_EXP p_GetFileAttributesW;
+extern t_GetFileAttributesA p_GetFileAttributesA;
+extern t_GetFileAttributesW p_GetFileAttributesW;
 
-extern t_GetFileAttributesExA DLL_IMP_EXP p_GetFileAttributesExA;
-extern t_GetFileAttributesExW DLL_IMP_EXP p_GetFileAttributesExW;
+extern t_GetFileAttributesExA p_GetFileAttributesExA;
+extern t_GetFileAttributesExW p_GetFileAttributesExW;
 
-extern t_SetFileAttributesA DLL_IMP_EXP p_SetFileAttributesA;
-extern t_SetFileAttributesW DLL_IMP_EXP p_SetFileAttributesW;
+extern t_SetFileAttributesA p_SetFileAttributesA;
+extern t_SetFileAttributesW p_SetFileAttributesW;
 
-extern t_CreateFileA DLL_IMP_EXP p_CreateFileA;
-extern t_CreateFileW DLL_IMP_EXP p_CreateFileW;
+extern t_CreateFileA p_CreateFileA;
+extern t_CreateFileW p_CreateFileW;
 
-extern t_CreateDirectoryA DLL_IMP_EXP p_CreateDirectoryA;
-extern t_CreateDirectoryW DLL_IMP_EXP p_CreateDirectoryW;
+extern t_CreateDirectoryA p_CreateDirectoryA;
+extern t_CreateDirectoryW p_CreateDirectoryW;
 
-extern t_CreateSymbolicLinkA DLL_IMP_EXP p_CreateSymbolicLinkA;
-extern t_CreateSymbolicLinkW DLL_IMP_EXP p_CreateSymbolicLinkW;
+extern t_CreateSymbolicLinkA p_CreateSymbolicLinkA;
+extern t_CreateSymbolicLinkW p_CreateSymbolicLinkW;
 
-extern t_OpenEncryptedFileRawA DLL_IMP_EXP p_OpenEncryptedFileRawA;
-extern t_OpenEncryptedFileRawW DLL_IMP_EXP p_OpenEncryptedFileRawW;
-extern t_ReadEncryptedFileRaw DLL_IMP_EXP p_ReadEncryptedFileRaw;
-extern t_WriteEncryptedFileRaw DLL_IMP_EXP p_WriteEncryptedFileRaw;
-extern t_CloseEncryptedFileRaw DLL_IMP_EXP p_CloseEncryptedFileRaw;
+extern t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA;
+extern t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW;
+extern t_ReadEncryptedFileRaw p_ReadEncryptedFileRaw;
+extern t_WriteEncryptedFileRaw p_WriteEncryptedFileRaw;
+extern t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
 
-extern t_BackupRead DLL_IMP_EXP p_BackupRead;
-extern t_BackupWrite DLL_IMP_EXP p_BackupWrite;
+extern t_BackupRead p_BackupRead;
+extern t_BackupWrite p_BackupWrite;
 
-extern t_SetProcessShutdownParameters DLL_IMP_EXP p_SetProcessShutdownParameters;
+extern t_SetProcessShutdownParameters p_SetProcessShutdownParameters;
 
-extern t_WideCharToMultiByte DLL_IMP_EXP p_WideCharToMultiByte;
-extern t_MultiByteToWideChar DLL_IMP_EXP p_MultiByteToWideChar;
+extern t_WideCharToMultiByte p_WideCharToMultiByte;
+extern t_MultiByteToWideChar p_MultiByteToWideChar;
 
-extern t_FindFirstFileA DLL_IMP_EXP p_FindFirstFileA;
-extern t_FindFirstFileW DLL_IMP_EXP p_FindFirstFileW;
+extern t_FindFirstFileA p_FindFirstFileA;
+extern t_FindFirstFileW p_FindFirstFileW;
 
-extern t_FindNextFileA DLL_IMP_EXP p_FindNextFileA;
-extern t_FindNextFileW DLL_IMP_EXP p_FindNextFileW;
+extern t_FindNextFileA p_FindNextFileA;
+extern t_FindNextFileW p_FindNextFileW;
 
-extern t_SetCurrentDirectoryA DLL_IMP_EXP p_SetCurrentDirectoryA;
-extern t_SetCurrentDirectoryW DLL_IMP_EXP p_SetCurrentDirectoryW;
+extern t_SetCurrentDirectoryA p_SetCurrentDirectoryA;
+extern t_SetCurrentDirectoryW p_SetCurrentDirectoryW;
 
-extern t_GetCurrentDirectoryA DLL_IMP_EXP p_GetCurrentDirectoryA;
-extern t_GetCurrentDirectoryW DLL_IMP_EXP p_GetCurrentDirectoryW;
+extern t_GetCurrentDirectoryA p_GetCurrentDirectoryA;
+extern t_GetCurrentDirectoryW p_GetCurrentDirectoryW;
 
-extern t_GetVolumePathNameW DLL_IMP_EXP p_GetVolumePathNameW;
-extern t_GetVolumeNameForVolumeMountPointW DLL_IMP_EXP p_GetVolumeNameForVolumeMountPointW;
+extern t_GetVolumePathNameW p_GetVolumePathNameW;
+extern t_GetVolumeNameForVolumeMountPointW p_GetVolumeNameForVolumeMountPointW;
 
-extern t_GetLogicalDriveStringsA DLL_IMP_EXP p_GetLogicalDriveStringsA;
-extern t_GetLogicalDriveStringsW DLL_IMP_EXP p_GetLogicalDriveStringsW;
+extern t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA;
+extern t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW;
 
-extern t_AttachConsole DLL_IMP_EXP p_AttachConsole;
+extern t_AttachConsole p_AttachConsole;
 
-DLL_IMP_EXP void InitWinAPIWrapper();
+void InitWinAPIWrapper();
 
 /*
  * In SHFOLDER.DLL on older systems, and now SHELL32.DLL
  */
 typedef BOOL (WINAPI * t_SHGetFolderPath)(HWND, int, HANDLE, DWORD, LPTSTR);
-extern t_SHGetFolderPath DLL_IMP_EXP p_SHGetFolderPath;
+extern t_SHGetFolderPath p_SHGetFolderPath;
 
 /*
  * In WS2_32.DLL
  */
 typedef INT (WSAAPI * t_InetPton)(INT Family, PCTSTR pszAddrString, PVOID pAddrBuf);
-extern t_InetPton DLL_IMP_EXP p_InetPton;
+extern t_InetPton p_InetPton;
 
 #endif
 #endif /* __WINAPI_H */

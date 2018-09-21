@@ -38,6 +38,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
 #include "stored/device.h"
 #include "stored/job.h"
 #include "stored/label.h"
@@ -45,38 +46,36 @@
 #include "stored/sd_backends.h"
 #include "stored/sd_stats.h"
 #include "stored/socket_server.h"
+#include "stored/stored_globals.h"
 #include "stored/wait.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
 #include "include/jcr.h"
 
+
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
+
 /* Imported functions */
-extern bool ParseSdConfig(const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
-#if !defined(HAVE_WIN32)
-static
-#endif
-void TerminateStored(int sig);
+namespace storagedaemon {
+   #if !defined(HAVE_WIN32)
+   static
+   #endif
+   void TerminateStored(int sig);
+}
 static int CheckResources();
 static void CleanUpOldFiles();
 
 extern "C" void *device_initialization(void *arg);
 
-/* Global variables exported */
-char OK_msg[]   = "3000 OK\n";
-char TERM_msg[] = "3999 Terminate\n";
-
-void *start_heap;
-
-static uint32_t VolSessionId = 0;
-uint32_t VolSessionTime;
-bool init_done = false;
-
 /* Global static variables */
 static bool foreground = 0;
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void usage()
 {
@@ -265,7 +264,8 @@ int main (int argc, char *argv[])
    }
 
    if (!CheckResources()) {
-      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"),
+                                         my_config->get_base_config_path().c_str());
    }
 
    InitReservationsLock();
@@ -298,8 +298,8 @@ int main (int argc, char *argv[])
    /* Ensure that Volume Session Time and Id are both
     * set and are both non-zero.
     */
-   VolSessionTime = (uint32_t)daemon_start_time;
-   if (VolSessionTime == 0) { /* paranoid */
+   vol_session_time = (uint32_t)daemon_start_time;
+   if (vol_session_time == 0) { /* paranoid */
       Jmsg0(NULL, M_ABORT, 0, _("Volume Session Time is ZERO!\n"));
    }
 
@@ -340,18 +340,6 @@ bail_out:
    return 0;
 }
 
-/* Return a new Session Id */
-uint32_t newVolSessionId()
-{
-   uint32_t Id;
-
-   P(mutex);
-   VolSessionId++;
-   Id = VolSessionId;
-   V(mutex);
-   return Id;
-}
-
 /* Check Configuration file for necessary info */
 static int CheckResources()
 {
@@ -359,19 +347,19 @@ static int CheckResources()
    bool tls_needed;
    const std::string &configfile = my_config->get_base_config_path();
 
-   if (GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
+   if (my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
          configfile.c_str());
       OK = false;
    }
 
-   if (GetNextRes(R_DIRECTOR, NULL) == NULL) {
+   if (my_config->GetNextRes(R_DIRECTOR, NULL) == NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("No Director resource defined in %s. Cannot continue.\n"),
          configfile.c_str());
       OK = false;
    }
 
-   if (GetNextRes(R_DEVICE, NULL) == NULL){
+   if (my_config->GetNextRes(R_DEVICE, NULL) == NULL){
       Jmsg1(NULL, M_ERROR, 0, _("No Device resource defined in %s. Cannot continue.\n"),
            configfile.c_str());
       OK = false;
@@ -385,7 +373,7 @@ static int CheckResources()
    }
 
    if (!me->messages) {
-      me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
+      me->messages = (MessagesResource *)my_config->GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
          Jmsg1(NULL, M_ERROR, 0, _("No Messages resource defined in %s. Cannot continue.\n"),
             configfile.c_str());
@@ -610,7 +598,7 @@ void *device_initialization(void *arg)
    Device *dev;
    int errstat;
 
-   LockRes();
+   LockRes(my_config);
 
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JobControlRecord), StoredFreeJcr);
@@ -661,7 +649,7 @@ void *device_initialization(void *arg)
          if (!FirstOpenDevice(dcr)) {
             Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"), dev->print_name());
             Dmsg1(20, "Could not open device %s\n", dev->print_name());
-            FreeDcr(dcr);
+            FreeDeviceControlRecord(dcr);
             jcr->dcr = NULL;
             continue;
          }
@@ -678,25 +666,27 @@ void *device_initialization(void *arg)
             break;
          }
       }
-      FreeDcr(dcr);
+      FreeDeviceControlRecord(dcr);
       jcr->dcr = NULL;
    }
 #ifdef xxx
    if (jcr->dcr) {
-      Dmsg1(000, "FreeDcr=%p\n", jcr->dcr);
-      FreeDcr(jcr->dcr);
+      Dmsg1(000, "FreeDeviceControlRecord=%p\n", jcr->dcr);
+      FreeDeviceControlRecord(jcr->dcr);
       jcr->dcr = NULL;
    }
 #endif
    FreeJcr(jcr);
    init_done = true;
-   UnlockRes();
+   UnlockRes(my_config);
    return NULL;
 }
 
 /**
  * Clean up and then exit
  */
+namespace storagedaemon {
+
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -804,3 +794,6 @@ void TerminateStored(int sig)
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }
+
+} /* namespace storagedaemon */
+

@@ -43,7 +43,7 @@
 #include "stored/match_bsr.h"
 #include "include/jcr.h"
 
-/* Forward referenced functions */
+namespace storagedaemon {
 
 static const int debuglevel = 500;
 
@@ -238,7 +238,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
             }
 
             FreeRecord(trec);
-            position_device_to_first_file(jcr, dcr);
+            PositionDeviceToFirstFile(jcr, dcr);
 
             /*
              * After reading label, we must read first data block
@@ -391,7 +391,7 @@ bool ReadRecords(DeviceControlRecord *dcr,
    bool done = false;
 
    rctx = new_read_context();
-   position_device_to_first_file(jcr, dcr);
+   PositionDeviceToFirstFile(jcr, dcr);
    jcr->mount_next_volume = false;
 
    while (ok && !done) {
@@ -520,3 +520,5 @@ bool ReadRecords(DeviceControlRecord *dcr,
 
    return ok;
 }
+
+} /* namespace storagedaemon */

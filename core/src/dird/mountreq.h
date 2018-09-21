@@ -22,6 +22,9 @@
 #ifndef BAREOS_DIRD_MOUNTREQ_H_
 #define BAREOS_DIRD_MOUNTREQ_H_
 
+namespace directordaemon {
+
 void MountRequest(JobControlRecord *jcr, BareosSocket *bs, char *buf);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_MOUNTREQ_H_

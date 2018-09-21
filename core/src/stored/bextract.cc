@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
@@ -43,9 +44,14 @@
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
-extern bool ParseSdConfig(const char *configfile, int exit_code);
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
 
 static void DoExtract(char *devname);
 static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
@@ -122,7 +128,7 @@ int main (int argc, char *argv[])
    while ((ch = getopt(argc, argv, "b:c:D:d:e:i:pvV:?")) != -1) {
       switch (ch) {
       case 'b':                    /* bootstrap file */
-         bsr = parse_bsr(NULL, optarg);
+         bsr = libbareos::parse_bsr(NULL, optarg);
 //       DumpBsr(bsr, true);
          break;
 
@@ -236,7 +242,7 @@ int main (int argc, char *argv[])
    DoExtract(argv[0]);
 
    if (bsr) {
-      FreeBsr(bsr);
+      libbareos::FreeBsr(bsr);
    }
    if (prog_name_msg) {
       Pmsg1(000, _("%d Program Name and/or Program Data Stream records ignored.\n"),
@@ -393,7 +399,7 @@ static void DoExtract(char *devname)
    EnableBackupPrivileges(NULL, 1);
 
    dcr = New(DeviceControlRecord);
-   jcr = setup_jcr("bextract", devname, bsr, director, dcr, VolumeName, true); /* read device */
+   jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName, true); /* read device */
    if (!jcr) {
       exit(1);
    }
@@ -453,7 +459,7 @@ static void DoExtract(char *devname)
 
    CleanDevice(jcr->dcr);
    dev->term();
-   FreeDcr(dcr);
+   FreeDeviceControlRecord(dcr);
    FreeJcr(jcr);
 
    printf(_("%u files restored.\n"), num_files);

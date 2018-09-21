@@ -32,6 +32,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_input.h"
 #include "cats/sql.h"
 #include "dird/ua_db.h"
@@ -40,9 +41,7 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 
-/* Imported variables */
-
-/* Imported functions */
+namespace directordaemon {
 
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext *ua, ClientResource *client);
@@ -635,21 +634,21 @@ static int JobSelectHandler(void *ctx, int num_fields, char **row)
    /*
     * If this job doesn't exist anymore in the configuration, delete it.
     */
-   if (GetResWithName(R_JOB, row[0], false) == NULL) {
+   if (my_config->GetResWithName(R_JOB, row[0], false) == NULL) {
       return 0;
    }
 
    /*
     * If this fileset doesn't exist anymore in the configuration, delete it.
     */
-   if (GetResWithName(R_FILESET, row[1], false) == NULL) {
+   if (my_config->GetResWithName(R_FILESET, row[1], false) == NULL) {
       return 0;
    }
 
    /*
     * If this client doesn't exist anymore in the configuration, delete it.
     */
-   if (GetResWithName(R_CLIENT, row[2], false) == NULL) {
+   if (my_config->GetResWithName(R_CLIENT, row[2], false) == NULL) {
       return 0;
    }
 
@@ -979,3 +978,4 @@ int ExcludeRunningJobsFromList(del_ctx *prune_list)
    }
    return count;
 }
+} /* namespace directordaemon */

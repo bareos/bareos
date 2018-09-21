@@ -32,13 +32,17 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/job.h"
+#include "dird/ua_cmdstruct.h"
 #include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Imported subroutines */
 
@@ -246,7 +250,7 @@ bool show_cmd(UaContext *ua, const char *cmd)
       verbose = true;
    }
 
-   LockRes();
+   LockRes(my_config);
    for (i = 1; i < ua->argc; i++) {
       /*
        * skip verbose keyword, already handled earlier.
@@ -322,7 +326,7 @@ bool show_cmd(UaContext *ua, const char *cmd)
                continue;
             default:
                if (my_config->res_head_[j - my_config->r_first_]) {
-                  DumpResource(j, my_config->res_head_[j - my_config->r_first_],
+                  my_config->DumpResourceCb_(j, my_config->res_head_[j - my_config->r_first_],
                                 bsendmsg, ua, hide_sensitive_data, verbose);
                }
                break;
@@ -342,13 +346,13 @@ bool show_cmd(UaContext *ua, const char *cmd)
          ua->ErrorMsg(_("Resource %s not found\n"), res_name);
          goto bail_out;
       default:
-         DumpResource(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data, verbose);
+         my_config->DumpResourceCb_(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data, verbose);
          break;
       }
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    return true;
 }
 
@@ -1207,7 +1211,7 @@ static inline bool parse_fileset_selection_param(PoolMem &selection,
       FilesetResource *fs;
       PoolMem temp(PM_MESSAGE);
 
-      LockRes();
+      LockRes(my_config);
       foreach_res(fs, R_FILESET) {
          if (!ua->AclAccessOk(FileSet_ACL, fs->name(), false)) {
             continue;
@@ -1220,7 +1224,7 @@ static inline bool parse_fileset_selection_param(PoolMem &selection,
          PmStrcat(selection, temp.c_str());
       }
       PmStrcat(selection, ") ");
-      UnlockRes();
+      UnlockRes(my_config);
    } else if (fileset >= 0) {
       if (!ua->AclAccessOk(FileSet_ACL, ua->argv[fileset], true)) {
          ua->ErrorMsg(_("Access to specified FileSet not allowed.\n"));
@@ -1605,7 +1609,7 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
           strlen(row[tuple->u.res_filter.column]) == 0) {
          retval = OF_FILTER_STATE_UNKNOWN;
       } else {
-         if (!GetResWithName(tuple->u.res_filter.restype,
+         if (!my_config->GetResWithName(tuple->u.res_filter.restype,
                              row[tuple->u.res_filter.column], false)) {
             Dmsg2(200, "filterit: Filter on resource_type %d value %s, suppress output\n",
                   tuple->u.res_filter.restype, row[tuple->u.res_filter.column]);
@@ -1898,3 +1902,4 @@ void UaContext::SendCmdUsage(const char *fmt, ...)
 
    send->message(NULL, message);
 }
+} /* namespace directordaemon */

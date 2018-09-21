@@ -50,13 +50,14 @@
  */
 
 #include "include/bareos.h"                   /* pull in global headers */
+#include "stored/bsr.h"
 #include "stored/stored.h"                   /* pull in Storage Daemon headers */
 #include "stored/device.h"
 #include "stored/match_bsr.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-/* Forward referenced functions */
+namespace storagedaemon {
 
 /**
  * This is the dreaded moment. We either have an end of
@@ -302,35 +303,9 @@ bail_out:
 }
 
 /**
- * Make sure device is open, if not do so
- */
-bool OpenDevice(DeviceControlRecord *dcr)
-{
-   Device *dev = dcr->dev;
-   /* Open device */
-   int mode;
-   if (dev->HasCap(CAP_STREAM)) {
-      mode = OPEN_WRITE_ONLY;
-   } else {
-      mode = OPEN_READ_WRITE;
-   }
-   if (!dev->open(dcr, mode)) {
-      /* If polling, ignore the error */
-      if (!dev->poll && !dev->IsRemovable()) {
-         Jmsg2(dcr->jcr, M_FATAL, 0, _("Unable to open device %s: ERR=%s\n"),
-            dev->print_name(), dev->bstrerror());
-         Pmsg2(000, _("Unable to open archive %s: ERR=%s\n"),
-            dev->print_name(), dev->bstrerror());
-      }
-      return false;
-   }
-   return true;
-}
-
-/**
  * Position to the first file on this volume
  */
-BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceControlRecord *dcr)
+BootStrapRecord *PositionDeviceToFirstFile(JobControlRecord *jcr, DeviceControlRecord *dcr)
 {
    BootStrapRecord *bsr = NULL;
    Device *dev = dcr->dev;
@@ -397,3 +372,5 @@ bool TryDeviceRepositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceCont
    }
    return false;
 }
+
+} /* namespace storagedaemon */

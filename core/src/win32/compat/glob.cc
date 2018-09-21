@@ -1037,7 +1037,7 @@ static glob_t *glob_registry( int request, glob_t *gl_data )
   return gl_data;
 }
 
-DLL_IMP_EXP int
+int
 __mingw_glob( const char *pattern, int flags, int (*errfn)(const char *, int), glob_t *gl_data )
 {
   /* Module entry point for the glob() function.
@@ -1065,7 +1065,7 @@ __mingw_glob( const char *pattern, int flags, int (*errfn)(const char *, int), g
   return status;
 }
 
-DLL_IMP_EXP void
+void
 __mingw_globfree( glob_t *gl_data )
 {
   /* Module entry point for globfree() function; the activity is

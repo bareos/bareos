@@ -28,6 +28,8 @@
 #ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
 #define BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
 
+namespace storagedaemon {
+
 class win32_fifo_device: public Device {
 public:
    win32_fifo_device();
@@ -48,4 +50,6 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+
+} /* namespace storagedaemon */
 #endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_ */

@@ -28,7 +28,10 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_select.h"
+
+namespace directordaemon {
 
 static void ConfigureLexErrorHandler(const char *file, int line, LEX *lc, PoolMem &msg)
 {
@@ -235,7 +238,7 @@ static inline bool ConfigureCreateFdResource(UaContext *ua, const char *clientna
     * Get the path where the resource should get stored.
     */
    basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
-   dirname = GetNextRes(R_DIRECTOR, NULL)->name;
+   dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->name;
    if (!my_config->GetPathOfNewResource(filename, temp, basedir.c_str(), "director",
                                             dirname, error_if_exists, create_directories)) {
       ua->ErrorMsg("%s", temp.c_str());
@@ -289,7 +292,7 @@ static inline bool ConfigureAddResource(UaContext *ua, int first_parameter, Reso
       return false;
    }
 
-   if (GetResWithName(res_table->rcode, name.c_str())) {
+   if (my_config->GetResWithName(res_table->rcode, name.c_str())) {
       ua->ErrorMsg("Resource \"%s\" with name \"%s\" already exists.\n", res_table->name, name.c_str());
       return false;
    }
@@ -321,7 +324,7 @@ static inline bool ConfigureAddResource(UaContext *ua, int first_parameter, Reso
     * therefore we explicitly check the new resource here.
     */
    if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
-      res = (JobResource *)GetResWithName(res_table->rcode, name.c_str());
+      res = (JobResource *)my_config->GetResWithName(res_table->rcode, name.c_str());
       PropagateJobdefs(res_table->rcode, res);
       if (!ValidateResource(res_table->rcode, res_table->items, (BareosResource *)res)) {
          ua->ErrorMsg("failed to create config resource \"%s\"\n", name.c_str());
@@ -440,3 +443,4 @@ bool ConfigureCmd(UaContext *ua, const char *cmd)
 
    return result;
 }
+} /* namespace directordaemon */

@@ -22,8 +22,11 @@
 #ifndef BAREOS_DIRD_AUTOPRUNE_H_
 #define BAREOS_DIRD_AUTOPRUNE_H_
 
+namespace directordaemon {
+
 void DoAutoprune(JobControlRecord *jcr);
 void PruneVolumes(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
                    StorageResource *store);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_AUTOPRUNE_H_

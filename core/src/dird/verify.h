@@ -24,8 +24,11 @@
 
 #include "include/jcr.h"
 
+namespace directordaemon {
+
 bool DoVerify(JobControlRecord *jcr);
 bool DoVerifyInit(JobControlRecord *jcr);
 void VerifyCleanup(JobControlRecord *jcr, int TermCode);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_VERIFY_H_

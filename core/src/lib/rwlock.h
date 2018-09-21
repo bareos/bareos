@@ -64,16 +64,16 @@ typedef struct s_rwlock_tag {
 /**
  * read/write lock prototypes
  */
-DLL_IMP_EXP extern int RwlInit(brwlock_t *rwl, int priority = 0);
-DLL_IMP_EXP extern int RwlDestroy(brwlock_t *rwl);
-DLL_IMP_EXP extern bool RwlIsInit(brwlock_t *rwl);
-DLL_IMP_EXP extern int RwlReadlock(brwlock_t *rwl);
-DLL_IMP_EXP extern int RwlReadtrylock(brwlock_t *rwl);
-DLL_IMP_EXP extern int RwlReadunlock(brwlock_t *rwl);
-DLL_IMP_EXP extern int RwlWritelock_p(brwlock_t *rwl,
+extern int RwlInit(brwlock_t *rwl, int priority = 0);
+extern int RwlDestroy(brwlock_t *rwl);
+extern bool RwlIsInit(brwlock_t *rwl);
+extern int RwlReadlock(brwlock_t *rwl);
+extern int RwlReadtrylock(brwlock_t *rwl);
+extern int RwlReadunlock(brwlock_t *rwl);
+extern int RwlWritelock_p(brwlock_t *rwl,
                            const char *file = "*unknown*",
                            int line = 0);
-DLL_IMP_EXP extern int RwlWritetrylock(brwlock_t *rwl);
-DLL_IMP_EXP extern int RwlWriteunlock(brwlock_t *rwl);
+extern int RwlWritetrylock(brwlock_t *rwl);
+extern int RwlWriteunlock(brwlock_t *rwl);
 
 #endif /* BAREOS_LIB_RWLOCK_H_ */

@@ -19,6 +19,11 @@
    02110-1301, USA.
 */
 
+#ifndef BAREOS_FILED_FILESET_H_
+#define BAREOS_FILED_FILESET_H_ 1
+
+namespace filedaemon {
+
 bool InitFileset(JobControlRecord *jcr);
 void AddFileToFileset(JobControlRecord *jcr, const char *fname, bool IsFile);
 findIncludeExcludeItem *get_incexe(JobControlRecord *jcr);
@@ -29,3 +34,6 @@ int AddOptionsToFileset(JobControlRecord *jcr, const char *item);
 void AddFileset(JobControlRecord *jcr, const char *item);
 bool TermFileset(JobControlRecord *jcr);
 
+} /* namespace filedaemon */
+
+#endif /* BAREOS_FILED_FILESET_H_ */

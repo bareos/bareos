@@ -19,6 +19,14 @@
    02110-1301, USA.
 */
 
+#ifndef BAREOS_FILED_CRYPTO_H_
+#define BAREOS_FILED_CRYPTO_H_
+
+namespace filedaemon {
+
+struct r_ctx;
+class RestoreCipherContext;
+
 bool CryptoSessionStart(JobControlRecord *jcr, crypto_cipher_t cipher);
 void CryptoSessionEnd(JobControlRecord *jcr);
 bool CryptoSessionSend(JobControlRecord *jcr, BareosSocket *sd);
@@ -32,3 +40,6 @@ bool SetupDecryptionContext(r_ctx &rctx, RestoreCipherContext &rcctx);
 bool EncryptData(b_ctx *bctx, bool *need_more_data);
 bool DecryptData(JobControlRecord *jcr, char **data, uint32_t *length, RestoreCipherContext *cipher_ctx);
 
+} /* namespace filedaemon */
+
+#endif /* BAREOS_FILED_CRYPTO_H_ */

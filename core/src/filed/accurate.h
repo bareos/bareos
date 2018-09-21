@@ -47,6 +47,8 @@
 #pragma pack(push,4)
 #endif
 
+namespace filedaemon {
+
 struct accurate_payload {
    int64_t filenr;
    int32_t delta_seq;
@@ -202,4 +204,5 @@ bool accurate_unMarkAllFilesAsSeen(JobControlRecord *jcr);
 void AccurateFree(JobControlRecord *jcr);
 
 
+} /* namespace filedaemon */
 #endif /* BAREOS_FILED_ACCURATE_H_ */

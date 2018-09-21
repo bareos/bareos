@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_PYTHONLIB_H_
 #define BAREOS_LIB_PYTHONLIB_H_
 
-DLL_IMP_EXP int GenerateDaemonEvent(JobControlRecord *jcr, const char *event);
+int GenerateDaemonEvent(JobControlRecord *jcr, const char *event);
 
 #endif // BAREOS_LIB_PYTHONLIB_H_

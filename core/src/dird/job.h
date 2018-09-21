@@ -22,6 +22,12 @@
 #ifndef BAREOS_DIRD_JOB_H_
 #define BAREOS_DIRD_JOB_H_
 
+class JobControlRecord;
+
+namespace directordaemon {
+
+class UaContext;
+
 bool AllowDuplicateJob(JobControlRecord *jcr);
 void SetJcrDefaults(JobControlRecord *jcr, JobResource *job);
 void CreateUniqueJobName(JobControlRecord *jcr, const char *base_name);
@@ -44,5 +50,8 @@ void DirdFreeJcrPointers(JobControlRecord *jcr);
 void CancelStorageDaemonJob(JobControlRecord *jcr);
 bool RunConsoleCommand(JobControlRecord *jcr, const char *cmd);
 void SdMsgThreadSendSignal(JobControlRecord *jcr, int sig);
+void InitJobServer(int max_workers);
+void TermJobServer();
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_JOB_H_

@@ -813,7 +813,7 @@ bool BareosDbMysql::SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar
  * never have errors, or it is really fatal.
  */
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" BareosDb CATS_IMP_EXP *backend_instantiate(JobControlRecord *jcr,
+extern "C" BareosDb *backend_instantiate(JobControlRecord *jcr,
                                                   const char *db_driver,
                                                   const char *db_name,
                                                   const char *db_user,
@@ -888,7 +888,7 @@ bail_out:
 }
 
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" void CATS_IMP_EXP flush_backend(void)
+extern "C" void flush_backend(void)
 #else
 void DbFlushBackends(void)
 #endif

@@ -102,7 +102,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
 {
    QStringList tabRefs;
 
-   LockRes();
+   LockRes(my_config);
 
    int monitorItems = 0;
    MonitorResource *monitorRes;
@@ -118,7 +118,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
             monitorItems, configfile.c_str());
    }
 
-   monitor = reinterpret_cast<MonitorResource*>(GetNextRes(R_MONITOR, (CommonResourceHeader *)NULL));
+   monitor = reinterpret_cast<MonitorResource*>(my_config->GetNextRes(R_MONITOR, (CommonResourceHeader *)NULL));
 
    int nitems = 0;
 
@@ -158,7 +158,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       nitems++;
    }
 
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (nitems == 0) {
       Emsg1(M_ERROR_TERM, 0, "No Client, Storage or Director resource defined in %s\n"

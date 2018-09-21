@@ -30,6 +30,9 @@
 #ifndef BAREOS_STORED_LOCK_H_
 #define BAREOS_STORED_LOCK_H_ 1
 
+#include "stored/dev.h"
+
+namespace storagedaemon {
 
 #ifdef SD_DEBUG_LOCK
 #define r_dlock()   _r_dlock(__FILE__, __LINE__);    /* in lock.c */
@@ -72,7 +75,7 @@ enum {
    DEV_UNLOCKED = false
 };
 
-#include "stored/dev.h"
+class Device;
 
 void _lockDevice(const char *file, int line, Device *dev);
 void _unlockDevice(const char *file, int line, Device *dev);
@@ -80,5 +83,7 @@ void _blockDevice(const char *file, int line, Device *dev, int state);
 void _unBlockDevice(const char *file, int line, Device *dev);
 void _stealDeviceLock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state);
 void _giveBackDeviceLock(const char *file, int line, Device *dev, bsteal_lock_t *hold);
+
+} /* namespace storagedaemon */
 
 #endif

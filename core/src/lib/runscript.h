@@ -65,7 +65,7 @@ enum {
 /**
  * Structure for RunScript ressource
  */
-class DLL_IMP_EXP RunScript {
+class RunScript {
 public:
    POOLMEM *command;            /* Command string */
    POOLMEM *target;             /* Host target */
@@ -92,21 +92,21 @@ public:
 };
 
 /* create new RunScript (set all value to 0) */
-DLL_IMP_EXP RunScript *NewRunscript();
+RunScript *NewRunscript();
 
 /* create new RunScript from another */
-DLL_IMP_EXP RunScript *copy_runscript(RunScript *src);
+RunScript *copy_runscript(RunScript *src);
 
 /* launch each script from runscripts*/
-DLL_IMP_EXP int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *name,
+int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *name,
                 alist *allowed_script_dirs = NULL);
 
 /* free RunScript (and all POOLMEM) */
-DLL_IMP_EXP void FreeRunscript(RunScript *script);
+void FreeRunscript(RunScript *script);
 
 /* foreach_alist free RunScript */
-DLL_IMP_EXP void FreeRunscripts(alist *runscripts); /* you have to free alist */
+void FreeRunscripts(alist *runscripts); /* you have to free alist */
 
-extern DLL_IMP_EXP bool (*console_command)(JobControlRecord *jcr, const char *cmd);
+extern bool (*console_command)(JobControlRecord *jcr, const char *cmd);
 
 #endif /* BAREOS_LIB_RUNSCRIPT_H_ */

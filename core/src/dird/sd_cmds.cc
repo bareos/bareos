@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/authenticate.h"
 #include "dird/getmsg.h"
 #include "dird/job.h"
@@ -40,6 +41,9 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/qualified_resource_name_type_converter.h"
+
+namespace directordaemon {
 
 /* Commands sent to Storage daemon */
 static char readlabelcmd[] =
@@ -133,6 +137,19 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
       return false;
    }
    jcr->store_bsock = sd;
+
+   std::string qualified_resource_name;
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                             qualified_resource_name)) {
+     Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+     return false;
+   }
+
+   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
+                           store->password.value, jcr)) {
+     Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
+     return false;
+   }
 
    if (!AuthenticateWithStorageDaemon(jcr, store)) {
       sd->close();
@@ -982,3 +999,4 @@ bool DoStoragePluginOptions(JobControlRecord *jcr)
 
    return true;
 }
+} /* namespace directordaemon */

@@ -29,6 +29,8 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
+namespace filedaemon {
+
 static const int debuglevel = 0;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -131,7 +133,7 @@ extern "C" {
 /**
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
+bRC loadPlugin(bInfo *lbinfo,
                            bFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pFuncs **pfuncs)
@@ -152,7 +154,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
 // Dmsg(NULL, debuglevel, "delta-test-fd: Unloaded\n");
    return bRC_OK;
@@ -463,3 +465,4 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 // Dmsg(ctx, debuglevel, "delta-test-fd: setFileAttributes\n");
    return bRC_OK;
 }
+} /* namespace filedaemon */

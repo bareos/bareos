@@ -33,6 +33,8 @@
 #include "dird/autorecycle.h"
 #include "dird/next_vol.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 
 bool FindRecycledVolume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
@@ -91,3 +93,4 @@ bool RecycleVolume(JobControlRecord *jcr, MediaDbRecord *mr)
 
    return jcr->db->UpdateMediaRecord(jcr, mr);
 }
+} /* namespace directordaemon */

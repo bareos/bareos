@@ -21,8 +21,11 @@
 #ifndef BAREOS_DIRD_VBACKUP_H_
 #define BAREOS_DIRD_VBACKUP_H_
 
+namespace directordaemon {
+
 bool DoNativeVbackupInit(JobControlRecord *jcr);
 bool DoNativeVbackup(JobControlRecord *jcr);
 void NativeVbackupCleanup(JobControlRecord *jcr, int TermCode, int JobLevel = L_FULL);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_VBACKUP_H_

@@ -30,11 +30,14 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
 #include "lib/bsignal.h"
+
+using namespace filedaemon;
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
@@ -43,16 +46,6 @@ extern void PrintMessage(void *sock, const char *fmt, ...);
 /* Forward referenced functions */
 static bool CheckResources();
 
-/* Exported variables */
-ClientResource *me = NULL;                 /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
-
-bool no_signals = false;
-bool backup_only_mode = false;
-bool restore_only_mode = false;
-void *start_heap;
-
-char *configfile = NULL;
 static bool foreground = false;
 
 static void usage()
@@ -302,6 +295,8 @@ bail_out:
    exit(0);
 }
 
+namespace filedaemon {
+
 void TerminateFiled(int sig)
 {
    static bool already_here = false;
@@ -340,6 +335,7 @@ void TerminateFiled(int sig)
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }
+} /* namespace filedaemon */
 
 /**
 * Make a quick check to see that we have all the
@@ -351,9 +347,9 @@ static bool CheckResources()
    DirectorResource *director;
    const std::string &configfile = my_config->get_base_config_path();
 
-   LockRes();
+   LockRes(my_config);
 
-   me = (ClientResource *)GetNextRes(R_CLIENT, NULL);
+   me = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
    if (!me) {
       Emsg1(M_FATAL, 0, _("No File daemon resource defined in %s\n"
             "Without that I don't know who I am :-(\n"), configfile.c_str());
@@ -366,14 +362,14 @@ static bool CheckResources()
          me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
       }
 
-      if (GetNextRes(R_CLIENT, (CommonResourceHeader *) me) != NULL) {
+      if (my_config->GetNextRes(R_CLIENT, (CommonResourceHeader *) me) != NULL) {
          Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
               configfile.c_str());
          OK = false;
       }
       MyNameIs(0, NULL, me->name());
       if (!me->messages) {
-         me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MessagesResource *)my_config->GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
              Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile.c_str());
              OK = false;
@@ -494,16 +490,16 @@ static bool CheckResources()
 
 
    /* Verify that a director record exists */
-   LockRes();
-   director = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   director = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
+   UnlockRes(my_config);
    if (!director) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
             configfile.c_str());
       OK = false;
    }
 
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (OK) {
       CloseMsg(NULL);                /* close temp message handler */

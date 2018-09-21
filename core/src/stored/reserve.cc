@@ -30,11 +30,14 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/wait.h"
 #include "lib/util.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 const int debuglevel = 150;
 
@@ -925,7 +928,7 @@ bail_out:
 /**
  * We reserve the device for appending by incrementing
  * NumReserved(). We do virtually all the same work that
- * is done in acquire_device_for_append(), but we do
+ * is done in AcquireDeviceForAppend(), but we do
  * not attempt to mount the device. This routine allows
  * the DIR to reserve multiple devices before *really*
  * starting the job. It also permits the SD to refuse
@@ -1306,3 +1309,5 @@ void ReleaseReserveMessages(JobControlRecord *jcr)
 bail_out:
    jcr->unlock();
 }
+
+} /* namespace storagedaemon */

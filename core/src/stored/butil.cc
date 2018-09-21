@@ -35,11 +35,17 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/device.h"
-#include "stored/parse_bsr.h"
+#include "stored/bsr.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
+
+ConfigurationParser *my_config = NULL;  /* Our Global config */
+
+namespace storagedaemon {
 
 /* Forward referenced functions */
 static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *jcr, char *dev_name,
@@ -47,15 +53,10 @@ static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *j
 static DeviceResource *find_device_res(char *device_name, bool readonly);
 static void MyFreeJcr(JobControlRecord *jcr);
 
-/* Global variables */
-char SD_IMP_EXP *configfile;
-StorageResource SD_IMP_EXP *me = NULL;         /* Our Global resource */
-ConfigurationParser SD_IMP_EXP *my_config = NULL;  /* Our Global config */
-
 /**
  * Setup a "daemon" JobControlRecord for the various standalone tools (e.g. bls, bextract, bscan, ...)
  */
-JobControlRecord *setup_jcr(const char *name, char *dev_name,
+JobControlRecord *SetupJcr(const char *name, char *dev_name,
                BootStrapRecord *bsr, DirectorResource *director, DeviceControlRecord *dcr,
                const char *VolumeName, bool readonly)
 {
@@ -219,7 +220,7 @@ static void MyFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->dcr) {
-      FreeDcr(jcr->dcr);
+      FreeDeviceControlRecord(jcr->dcr);
       jcr->dcr = NULL;
    }
 
@@ -239,7 +240,7 @@ static DeviceResource *find_device_res(char *device_name, bool readonly)
    DeviceResource *device;
 
    Dmsg0(900, "Enter find_device_res\n");
-   LockRes();
+   LockRes(my_config);
    foreach_res(device, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device->device_name, device_name);
       if (bstrcmp(device->device_name, device_name)) {
@@ -266,7 +267,7 @@ static DeviceResource *find_device_res(char *device_name, bool readonly)
          }
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (!found) {
       Pmsg2(0, _("Could not find device \"%s\" in config file %s.\n"), device_name,
@@ -306,3 +307,5 @@ void DisplayTapeErrorStatus(JobControlRecord *jcr, Device *dev)
 
    free(status);
 }
+
+} /* namespace storagedaemon */

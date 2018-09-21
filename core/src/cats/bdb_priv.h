@@ -27,7 +27,7 @@
 #error "Illegal inclusion of catalog private interface"
 #endif
 
-class CATS_IMP_EXP BareosDbPrivateInterface: public BareosDb {
+class BareosDbPrivateInterface: public BareosDb {
 protected:
    /*
     * Members

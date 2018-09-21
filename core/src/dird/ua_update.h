@@ -22,8 +22,11 @@
 #ifndef BAREOS_DIRD_UA_UPDATE_H_
 #define BAREOS_DIRD_UA_UPDATE_H_
 
+namespace directordaemon {
+
 void UpdateVolPool(UaContext *ua, char *val, MediaDbRecord *mr, PoolDbRecord *opr);
 void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list);
 void UpdateInchangerForExport(UaContext *ua, StorageResource *store, changer_vol_list_t *vol_list, char *slot_list);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_UA_UPDATE_H_

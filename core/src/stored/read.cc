@@ -31,10 +31,13 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
+#include "stored/bsr.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/bnet.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 /* Forward referenced subroutines */
 static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec);
@@ -166,3 +169,5 @@ static bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec)
 
    return ok;
 }
+
+} /* namespace storagedaemon */

@@ -8,34 +8,46 @@ Bareos source changes.
 .. uml::
    :caption: This is an example UML diagram
 
-   :Standard User: as User
-   :Root User: as Root
-   (uses PAM password) as (usePamPassword)
-   (root uses Configfile password) as (rootUseConfigPassword)
-   (std uses Configfile password) as (stdUseConfigPassword)
-   (Uses Root Console) as (RootConsole)
-   (Uses Named Console) as (NamedConsole)
-   (Use TLS Transport Encryption) as (TLS)
-   (Use MD5 Cram authentication) as (MD5)
-   (Use TLS Authentication) as (TLSAUTH)
+   Title: OpenSSL - GNUTls Classes (planned)\n\n\n
 
-   title BConsole connection Modes\n\n
+   class BareosSocket {
+   + Tls tls_conn
+   }
 
-   User --> (NamedConsole)
-   (NamedConsole) --> (usePamPassword)
-   (NamedConsole) --> (stdUseConfigPassword)
+   class "TlsOpenSsl" as OpenSsl {
+    - const char *default_ciphers
+    - SSL_CTX *openssl_
+    - SSL *openssl_
+    - CRYPTO_PEM_PASSWD_CB *pem_callback
+    - const void *pem_userdata
+    + new_tls_psk_client_context()
+    + new_tls_psk_server_context()
+    + TlsCipherGetName()
+    + TlsLogConninfo()
+    + TlsPolicyHandshake()
+   }
 
-   note right of (NamedConsole): Named Console\nhas       UserAccessControlList (ACL)
+   class "TlsGnuTls" as GnuTls {
+    - const char *default_ciphers
+   }
 
-   (stdUseConfigPassword) --> (TLSAUTH)
-   (usePamPassword) --> (TLSAUTH)
-   (TLSAUTH) --> (TLS)
+   abstract class Tls {
+    + new_tls_context()
+    + FreeTlsContext()
+    + TlsPostconnectVerifyHost()
+    + TlsPostconnectVerifyCn()
+    + TlsBsockAccept()
+    + TlsBsockWriten()
+    + TlsBsockReadn()
+    + TlsBsockConnect()
+    + TlsBsockShutdown()
+    + FreeTlsConnection()
+   }
 
-   Root --> (RootConsole)
-   (RootConsole) --> (rootUseConfigPassword)
-   note left of (RootConsole): Root Console\nhas all rights
-   (rootUseConfigPassword) --> (MD5)
-   (MD5) --> (TLS)
+   OpenSsl ..|> Tls
+   GnuTls ..|> Tls
+
+   BareosSocket -> Tls : tls_conn
 
 
 History

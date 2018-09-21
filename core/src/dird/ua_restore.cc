@@ -35,12 +35,16 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_tree.h"
 #include "dird/ua_run.h"
+#include "dird/bsr.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Imported functions */
 extern void PrintBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
@@ -170,7 +174,7 @@ bool RestoreCmd(UaContext *ua, const char *cmd)
    }
 
    /* Ensure there is at least one Restore Job */
-   LockRes();
+   LockRes(my_config);
    foreach_res(job, R_JOB) {
       if (job->JobType == JT_RESTORE) {
          if (!rx.restore_job) {
@@ -179,7 +183,7 @@ bool RestoreCmd(UaContext *ua, const char *cmd)
          rx.restore_jobs++;
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
    if (!rx.restore_jobs) {
       ua->ErrorMsg(_(
          "No Restore Job Resource found in %s.\n"
@@ -378,7 +382,7 @@ static void GetAndDisplayBasejobs(UaContext *ua, RestoreContext *rx)
 
 static void free_rx(RestoreContext *rx)
 {
-   FreeBsr(rx->bsr);
+   directordaemon::FreeBsr(rx->bsr);
    rx->bsr = NULL;
 
    if (rx->ClientName) {
@@ -1622,7 +1626,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
    /*
     * Try looking up Storage by name
     */
-   LockRes();
+   LockRes(my_config);
    foreach_res(store, R_STORAGE) {
       if (bstrcmp(Storage, store->name())) {
          if (ua->AclAccessOk(Storage_ACL, store->name())) {
@@ -1631,7 +1635,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
          break;
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (rx.store) {
       int i;
@@ -1656,7 +1660,7 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
     * If no storage resource, try to find one from MediaType
     */
    if (!rx.store) {
-      LockRes();
+      LockRes(my_config);
       foreach_res(store, R_STORAGE) {
          if (bstrcmp(MediaType, store->media_type)) {
             if (ua->AclAccessOk(Storage_ACL, store->name())) {
@@ -1670,11 +1674,11 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
                                   Storage, store->name(), MediaType);
                }
             }
-            UnlockRes();
+            UnlockRes(my_config);
             return;
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
       ua->WarningMsg(_("\nUnable to find Storage resource for\n"
                         "MediaType \"%s\", needed by the Jobs you selected.\n"), MediaType);
    }
@@ -1687,3 +1691,4 @@ void FindStorageResource(UaContext *ua, RestoreContext &rx, char *Storage, char 
       Dmsg1(200, "Set store=%s\n", rx.store->name());
    }
 }
+} /* namespace directordaemon */

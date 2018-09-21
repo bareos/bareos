@@ -22,12 +22,12 @@
 #define BAREOS_LIB_CRYPTO_OPENSSL_H_
 
 #ifdef HAVE_OPENSSL
-DLL_IMP_EXP void OpensslPostErrors(int code, const char *errstring);
-DLL_IMP_EXP void OpensslPostErrors(JobControlRecord *jcr, int code, const char *errstring);
-DLL_IMP_EXP int OpensslInitThreads(void);
-DLL_IMP_EXP void OpensslCleanupThreads(void);
-DLL_IMP_EXP int OpensslSeedPrng(void);
-DLL_IMP_EXP int OpensslSavePrng(void);
+void OpensslPostErrors(int code, const char *errstring);
+void OpensslPostErrors(JobControlRecord *jcr, int code, const char *errstring);
+int OpensslInitThreads(void);
+void OpensslCleanupThreads(void);
+int OpensslSeedPrng(void);
+int OpensslSavePrng(void);
 #endif /* HAVE_OPENSSL */
 
 #endif // BAREOS_LIB_CRYPTO_OPENSSL_H_

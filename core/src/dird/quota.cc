@@ -31,6 +31,8 @@
 #include "include/bareos.h"
 #include "dird.h"
 
+namespace directordaemon {
+
 #define debuglevel 100
 /**
  * This function returns the total number of bytes difference remaining before going over quota.
@@ -279,3 +281,5 @@ bool CheckSoftquotas(JobControlRecord *jcr)
 bail_out:
    return retval;
 }
+
+} /* namespace directordaemon */

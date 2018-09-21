@@ -50,13 +50,7 @@ IF(HAVE_WIN32)
    LIST(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
 ENDIF()
 
-set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos bareoscfg)
-
-IF(HAVE_WIN32)
-   LIST(APPEND TRAYMON_LIBRARIES
-      bareosstatic
-      )
-ENDIF()
+set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos)
 
 IF(HAVE_WIN32)
    add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)

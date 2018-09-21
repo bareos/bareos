@@ -1,0 +1,73 @@
+@startuml
+
+Title: Bareos TLS config internal class relations\n\n\n
+
+package "Bareos Config as defined in lib/parse_conf.h" #EEEEEE {
+class TLS_COMMON_CONFIG << (B, #FF7700) >> {
+  + CFG_TYPE_BOOL TlsAuthenticate <tls_cert.authenticate>
+  + CFG_TYPE_BOOL TlsEnable <tls_cert.enable>
+  + CFG_TYPE_BOOL TlsRequire <tls_cert.require>
+  + CFG_TYPE_STR TlsCipherList <tls_cert.cipherlist> 
+  + CFG_TYPE_STDSTRDIR TlsDhFile <tls_cert.dhfile> 
+}
+
+class TLS_CERT_CONFIG << (B, #FF7700) >> {
+  + CFG_TYPE_BOOL VerifyPeer <tls_cert.VerifyPeer>
+  + CFG_TYPE_STDSTRDIR TlsCaCertificateFilec <tls_cert.CaCertfile>
+  + CFG_TYPE_STDSTRDIR TlsCaCertificateDir <tls_cert.CaCertfile>
+  + CFG_TYPE_STDSTRDIR TlsCertificateRevocationList <tls_cert.crlfile>
+  + CFG_TYPE_STDSTRDIR TlsCertificate <tls_cert.certfile>
+  + CFG_TYPE_STDSTRDIR TlsKey <tls_cert.keyfile>
+  + CFG_TYPE_ALIST_STR TlsAllowedCn <tls_cert.AllowedCns>
+}
+
+class TLS_PSK_CONFIG << (B, #FF7700) >> {
+  + CFG_TYPE_BOOL TlsPskEnable <tls_psk.enable>
+  + CFG_TYPE_BOOL TlsPskEnable <tls_psk.enable>
+}
+}
+
+class PskCredentials {
+  - std::string identity_;
+  - std::string psk_;
+}
+
+class TlsConfigPsk {
+  - std::shared_ptr<PskCredentials> psk_credentials_
+  + char *cipherlist
+}    
+
+TlsConfigPsk --|> PskCredentials : psk_credentials_
+
+class TlsConfigCert {
+   + bool authenticate
+   + bool VerifyPeer
+   + std::string *CaCertfile
+   + std::string *CaCertdir
+   + std::string *crlfile
+   + std::string *certfile
+   + std::string *keyfile
+   + std::string *cipherlist
+   + std::string *dhfile
+   + alist *AllowedCns
+   + std::string *pem_message;
+}
+
+abstract class TlsConfigBase {
+  + bool enable;
+  + bool require;
+  + virtual std::shared_ptr<TLS_IMPLEMENTATION> CreateClientContext() const = 0;
+  + virtual std::shared_ptr<TLS_IMPLEMENTATION> CreateServerContext() const = 0;
+  + uint32_t GetPolicy() const = 0;
+}
+
+TlsConfigCert ..|> TlsConfigBase
+TlsConfigPsk ..|> TlsConfigBase 
+
+
+TLS_COMMON_CONFIG --> TlsConfigCert : initializes\n during config load
+TLS_CERT_CONFIG --> TlsConfigCert : initializes\n during config load
+TLS_PSK_CONFIG --> TlsConfigPsk : initializes\n during config load
+
+
+@enduml

@@ -18,41 +18,32 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "include/bareos.h"
-#include "tls_conf.h"
 
-TlsCert::~TlsCert() {
-   if (AllowedCns) {
-      delete AllowedCns;
-      AllowedCns = nullptr;
-   }
+#include "lib/tls.h"
+#include "lib/tls_openssl.h"
+#include "lib/tls_gnutls.h"
+
+Tls::Tls()
+{
+   return;
 }
 
-uint32_t TlsCert::GetPolicy() const {
-   uint32_t result = TlsBase::BNET_TLS_NONE;
-   if (enable) {
-      result = TlsBase::BNET_TLS_ENABLED;
-   }
-   if (require) {
-      result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
-   }
-   return result << TlsCert::policy_offset;
+Tls::~Tls()
+{
+   return;
 }
 
-TlsPsk::~TlsPsk() {
-   if (cipherlist != nullptr) {
-      free(cipherlist);
-   }
-}
+Tls *Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
+{
+   switch (type) {
+      case Tls::TlsImplementationType::kTlsOpenSsl:
+         return new TlsOpenSsl();
 
-uint32_t TlsPsk::GetPolicy() const {
-   uint32_t result = TlsBase::BNET_TLS_NONE;
-   if (enable) {
-      result = TlsBase::BNET_TLS_ENABLED;
-   }
-   if (require) {
-      result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
-   }
+      case Tls::TlsImplementationType::kTlsGnuTls:
+         return new TlsGnuTls();
 
-   return result << TlsPsk::policy_offset;
+      case Tls::TlsImplementationType::kTlsUnknown:
+      default:
+         return nullptr;
+   }
 }

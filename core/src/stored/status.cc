@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "lib/status.h"
 #include "stored/spool.h"
 #include "lib/edit.h"
@@ -37,6 +38,8 @@
 
 /* Imported functions */
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
+
+namespace storagedaemon {
 
 /* Imported variables */
 extern void *start_heap;
@@ -1231,3 +1234,5 @@ done:
    return buf;
 }
 #endif /* HAVE_WIN32 */
+
+} /* namespace storagedaemon */

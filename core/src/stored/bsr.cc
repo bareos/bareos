@@ -39,8 +39,11 @@
  */
 
 #include "include/bareos.h"
+#include "stored/bsr.h"
 #include "stored/stored.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 const int dbglevel = 500;
 
@@ -917,3 +920,5 @@ void FreeRestoreVolumeList(JobControlRecord *jcr)
    }
    jcr->VolList = NULL;
 }
+
+} /* namespace storagedaemon */

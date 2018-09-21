@@ -33,12 +33,14 @@
 #include "lib/edit.h"
 
 #if HAVE_NDMP
-
 #define NDMP_NEED_ENV_KEYWORDS 1
-
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
 
+namespace directordaemon {
+
+#if HAVE_NDMP
 /*
  * Fill the NDMP backup environment table with the data for the data agent to act on.
  */
@@ -368,3 +370,5 @@ void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode)
 }
 
 #endif /* HAVE_NDMP */
+
+} /* namespace directordaemon */

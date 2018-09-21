@@ -21,6 +21,8 @@
 #ifndef BAREOS_STORED_MATCH_BSR_H_
 #define BAREOS_STORED_MATCH_BSR_H_
 
+namespace storagedaemon {
+
 int MatchBsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec,
               SESSION_LABEL *sesrec, JobControlRecord *jcr);
 int MatchBsrBlock(BootStrapRecord *bsr, DeviceBlock *block);
@@ -30,5 +32,7 @@ bool IsThisBsrDone(BootStrapRecord *bsr, DeviceRecord *rec);
 uint64_t GetBsrStartAddr(BootStrapRecord *bsr,
                             uint32_t *file = NULL,
                             uint32_t *block = NULL);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_MATCH_BSR_H_

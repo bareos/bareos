@@ -49,6 +49,8 @@
 #include "include/bc_types.h"
 #include "lib/plugins.h"
 
+namespace directordaemon {
+
 /*
  *  Bareos definitions
  */
@@ -187,4 +189,5 @@ typedef struct s_dirpluginFuncs {
 }
 #endif
 
+} /* namespace directordaemon */
 #endif /* BAREOS_FILED_FD_PLUGINS_H_ */

@@ -58,6 +58,8 @@ BareosFindLibraryAndHeaders("cap" "sys/capability.h")
 BareosFindLibraryAndHeaders("gfapi" "glusterfs/api/glfs.h")
 BareosFindLibraryAndHeaders("droplet" "droplet.h")
 
+BareosFindLibraryAndHeaders("pam" "security/pam_appl.h")
+
 BareosFindLibraryAndHeaders("lzo2" "lzo/lzoconf.h")
 if (${LZO2_FOUND})
    SET(HAVE_LZO 1)

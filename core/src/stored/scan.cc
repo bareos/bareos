@@ -30,6 +30,8 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 
+namespace storagedaemon {
+
 /* Forward referenced functions */
 static bool IsVolumeNameLegal(char *name);
 
@@ -174,3 +176,5 @@ static bool IsVolumeNameLegal(char *name)
    }
    return true;
 }
+
+} /* namespace storagedaemon */

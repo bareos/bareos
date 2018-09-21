@@ -22,6 +22,11 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
 #define BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
 
+struct ndm_job_param;
+struct ndmlog;
+
+namespace directordaemon {
+
 bool FillBackupEnvironment(JobControlRecord *jcr,
                              IncludeExcludeItem *ie,
                              char *filesystem,
@@ -32,4 +37,5 @@ void UnregisterCallbackHooks(struct ndmlog *ixlog);
 void ProcessFhdb(struct ndmlog *ixlog);
 void NdmpBackupCleanup(JobControlRecord *jcr, int TermCode);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_

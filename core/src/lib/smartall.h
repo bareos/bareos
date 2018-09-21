@@ -28,27 +28,27 @@
 #ifndef BAREOS_LIB_SMARTALL_H_
 #define BAREOS_LIB_SMARTALL_H_
 
-extern uint64_t DLL_IMP_EXP sm_max_bytes;
-extern uint64_t DLL_IMP_EXP sm_bytes;
-extern uint32_t DLL_IMP_EXP sm_max_buffers;
-extern uint32_t DLL_IMP_EXP sm_buffers;
+extern uint64_t sm_max_bytes;
+extern uint64_t sm_bytes;
+extern uint32_t sm_max_buffers;
+extern uint32_t sm_buffers;
 
 #ifdef  SMARTALLOC
 #undef  SMARTALLOC
 #define SMARTALLOC SMARTALLOC
 
 
-DLL_IMP_EXP extern void *sm_malloc(const char *fname, int lineno, unsigned int nbytes),
+extern void *sm_malloc(const char *fname, int lineno, unsigned int nbytes),
             *sm_calloc(const char *fname, int lineno,
                 unsigned int nelem, unsigned int elsize),
             *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size),
             *actuallymalloc(unsigned int size),
             *actuallycalloc(unsigned int nelem, unsigned int elsize),
             *actuallyrealloc(void *ptr, unsigned int size);
-DLL_IMP_EXP extern void sm_free(const char *fname, int lineno, void *fp);
-DLL_IMP_EXP extern void Actuallyfree(void *cp),
+extern void sm_free(const char *fname, int lineno, void *fp);
+extern void Actuallyfree(void *cp),
             sm_dump(bool bufdump, bool in_use=false), SmStatic(int mode);
-DLL_IMP_EXP extern void SmNewOwner(const char *fname, int lineno, char *buf);
+extern void SmNewOwner(const char *fname, int lineno, char *buf);
 
 #ifdef SMCHECK
 #define Dsm_check(lvl) if ((lvl)<=debug_level) sm_check(__FILE__, __LINE__, true)

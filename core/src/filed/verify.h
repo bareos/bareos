@@ -19,9 +19,17 @@
    02110-1301, USA.
 */
 
+#ifndef BAREOS_FILED_VERIFY_H_
+#define BAREOS_FILED_VERIFY_H_ 1
+
+namespace filedaemon {
+
 int DigestFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest);
 void DoVerify(JobControlRecord *jcr);
 void DoVerifyVolume(JobControlRecord *jcr);
 bool CalculateAndCompareFileChksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
                                        const char *fname, const char *chksum);
 
+} /* namespace filedaemon */
+
+#endif /* BAREOS_FILED_VERIFY_H_ */

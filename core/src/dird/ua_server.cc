@@ -30,7 +30,11 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/authenticate.h"
+#if defined(HAVE_PAM)
+#include "dird/auth_pam.h"
+#endif
 #include "dird/job.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
@@ -39,9 +43,7 @@
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
 
-/* Imported variables */
-
-/* Forward referenced functions */
+namespace directordaemon {
 
 /**
  * Create a Job Control Record for a control "job", filling in all the appropriate fields.
@@ -56,10 +58,10 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
     * The job and defaults are not really used, but we set them up to ensure that
     * everything is correctly initialized.
     */
-   LockRes();
-   jcr->res.job = (JobResource *)GetNextRes(R_JOB, NULL);
+   LockRes(my_config);
+   jcr->res.job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
    SetJcrDefaults(jcr, jcr->res.job);
-   UnlockRes();
+   UnlockRes(my_config);
 
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
    CreateUniqueJobName(jcr, base_name);
@@ -77,20 +79,28 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
  */
 void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
 {
-   int status;
-   UaContext *ua;
-   JobControlRecord *jcr;
-
    pthread_detach(pthread_self());
 
-   jcr = new_control_jcr("-Console-", JT_CONSOLE);
+   JobControlRecord *jcr = new_control_jcr("-Console-", JT_CONSOLE);
 
-   ua = new_ua_context(jcr);
+   UaContext *ua = new_ua_context(jcr);
    ua->UA_sock = user_agent_socket;
    SetJcrInTsd(INVALID_JCR);
 
-   if (!AuthenticateUserAgent(ua)) {
-      goto getout;
+   bool success = AuthenticateUserAgent(ua);
+
+#if defined(HAVE_PAM)
+   if (success && me->UsePamAuthentication_) {
+      std::string username;
+      if (ua->cons) {
+         username = ua->cons->name();
+         success = PamAuthenticateUseragent(ua->UA_sock, username);
+      }
+   }
+#endif /* HAVE_PAM */
+
+   if (!success) {
+      ua->quit = true;
    }
 
    while (!ua->quit) {
@@ -98,7 +108,7 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
          user_agent_socket->signal(BNET_MAIN_PROMPT);
       }
 
-      status = user_agent_socket->recv();
+      int status = user_agent_socket->recv();
       if (status >= 0) {
          PmStrcpy(ua->cmd, ua->UA_sock->msg);
          ParseUaArgs(ua);
@@ -130,9 +140,8 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
       } else { /* signal */
          user_agent_socket->signal(BNET_POLL);
       }
-   }
+   } /* while (!ua->quit) */
 
-getout:
    CloseDb(ua);
    FreeUaContext(ua);
    FreeJcr(jcr);
@@ -141,55 +150,4 @@ getout:
 
    return NULL;
 }
-
-/**
- * Create a UaContext for a Job that is running so that
- *   it can the User Agent routines and
- *   to ensure that the Job gets the proper output.
- *   This is a sort of mini-kludge, and should be
- *   unified at some point.
- */
-UaContext *new_ua_context(JobControlRecord *jcr)
-{
-   UaContext *ua;
-
-   ua = (UaContext *)malloc(sizeof(UaContext));
-   memset(ua, 0, sizeof(UaContext));
-   ua->jcr = jcr;
-   ua->db = jcr->db;
-   ua->cmd = GetPoolMemory(PM_FNAME);
-   ua->args = GetPoolMemory(PM_FNAME);
-   ua->errmsg = GetPoolMemory(PM_FNAME);
-   ua->verbose = true;
-   ua->automount = true;
-   ua->send = New(OutputFormatter(printit, ua, filterit, ua));
-
-   return ua;
-}
-
-void FreeUaContext(UaContext *ua)
-{
-   if (ua->guid) {
-      FreeGuidList(ua->guid);
-   }
-   if (ua->cmd) {
-      FreePoolMemory(ua->cmd);
-   }
-   if (ua->args) {
-      FreePoolMemory(ua->args);
-   }
-   if (ua->errmsg) {
-      FreePoolMemory(ua->errmsg);
-   }
-   if (ua->prompt) {
-      free(ua->prompt);
-   }
-   if (ua->send) {
-      delete ua->send;
-   }
-   if (ua->UA_sock) {
-      ua->UA_sock->close();
-      ua->UA_sock = NULL;
-   }
-   free(ua);
-}
+} /* namespace directordaemon */

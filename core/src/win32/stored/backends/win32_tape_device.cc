@@ -54,6 +54,8 @@
 #endif
 #include <ntddscsi.h>
 
+namespace storagedaemon {
+
 /**
  * SCSI bus status codes.
  */
@@ -1084,3 +1086,5 @@ win32_tape_device::win32_tape_device()
 {
    SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
+
+} /* namespace storagedaemon */

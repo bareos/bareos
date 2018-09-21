@@ -23,21 +23,21 @@
 #define BAREOS_LIB_BTIME_H_
 
 /* New btime definition -- use this */
-DLL_IMP_EXP btime_t GetCurrentBtime(void);
-DLL_IMP_EXP time_t BtimeToUnix(btime_t bt);   /* bareos time to epoch time */
-DLL_IMP_EXP utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
+btime_t GetCurrentBtime(void);
+time_t BtimeToUnix(btime_t bt);   /* bareos time to epoch time */
+utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 
-DLL_IMP_EXP int tm_wom(int mday, int wday);
-DLL_IMP_EXP int TmWoy(time_t stime);
+int tm_wom(int mday, int wday);
+int TmWoy(time_t stime);
 
-DLL_IMP_EXP void Blocaltime(const time_t *time, struct tm *tm);
-DLL_IMP_EXP char *bstrutime(char *dt, int maxlen, utime_t tim);
-DLL_IMP_EXP char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
-DLL_IMP_EXP char *bstrftimes(char *dt, int maxlen, utime_t tim);
-DLL_IMP_EXP char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
-DLL_IMP_EXP char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
-DLL_IMP_EXP char *bstrftime_wd(char *dt, int maxlen, utime_t tim);
-DLL_IMP_EXP utime_t StrToUtime(const char *str);
+void Blocaltime(const time_t *time, struct tm *tm);
+char *bstrutime(char *dt, int maxlen, utime_t tim);
+char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
+char *bstrftimes(char *dt, int maxlen, utime_t tim);
+char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
+char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
+char *bstrftime_wd(char *dt, int maxlen, utime_t tim);
+utime_t StrToUtime(const char *str);
 
 
 /* =========================================================== */
@@ -86,8 +86,8 @@ extern void date_time_decode(struct date_time *dt,
 extern int DateTimeCompare(struct date_time *dt1, struct date_time *dt2);
 
 extern void TmEncode(struct date_time *dt, struct tm *tm);
-DLL_IMP_EXP extern void TmDecode(struct date_time *dt, struct tm *tm);
-DLL_IMP_EXP extern void get_current_time(struct date_time *dt);
+extern void TmDecode(struct date_time *dt, struct tm *tm);
+extern void get_current_time(struct date_time *dt);
 
 
 #endif /* BAREOS_LIB_BTIME_H_ */

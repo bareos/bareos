@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2004-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,20 +21,23 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_CONSOLE_CONIO_H_
-#define BAREOS_CONSOLE_CONIO_H_
-extern int  InputLine(char *line, int len);
-extern void ConInit(FILE *input);
+#ifndef BAREOS_STORED_STORED_GLOBALS_H_
+#define BAREOS_STORED_STORED_GLOBALS_H_
 
-extern "C" {
-extern void ConTerm();
-}
+#include "include/bareos.h"
 
-extern void ConSetZedKeys();
-extern void t_sendl(char *buf, int len);
-extern void t_send(char *buf);
-extern void t_char(char c);
-extern int  usrbrk(void);
-extern void clrbrk(void);
-extern void trapctlc(void);
-#endif
+namespace storagedaemon {
+
+class StorageResource;
+extern StorageResource *me;
+
+extern char *configfile;
+
+extern void *start_heap;
+extern bool init_done;
+extern uint32_t vol_session_time;
+extern uint32_t NewVolSessionId();
+
+} /* namespace storagedaemon */
+
+#endif /* BAREOS_STORED_STORED_GLOBALS_H_ */

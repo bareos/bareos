@@ -72,10 +72,10 @@ struct backend_shared_library_t {
 #endif
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-DLL_IMP_EXP void DbSetBackendDirs(alist *new_backend_dirs);
+void DbSetBackendDirs(alist *new_backend_dirs);
 #endif
-DLL_IMP_EXP void DbFlushBackends(void);
-DLL_IMP_EXP BareosDb *db_init_database(JobControlRecord *jcr,
+void DbFlushBackends(void);
+BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,

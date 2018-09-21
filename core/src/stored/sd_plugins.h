@@ -48,6 +48,8 @@
 #include "include/bc_types.h"
 #include "lib/plugins.h"
 
+namespace storagedaemon {
+
 /*
  * Bareos definitions
  */
@@ -205,5 +207,7 @@ typedef struct s_sdpluginFuncs {
 #endif
 
 char *edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd);
+
+} /* namespace storagedaemon */
 
 #endif /* BAREOS_STORED_SD_PLUGINS_H_ */

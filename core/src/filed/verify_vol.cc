@@ -30,8 +30,11 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
+
+namespace filedaemon {
 
 /* Data received from Storage Daemon */
 static char rec_header[] =
@@ -65,9 +68,9 @@ void DoVerifyVolume(JobControlRecord *jcr)
    dir = jcr->dir_bsock;
    jcr->setJobStatus(JS_Running);
 
-   LockRes();
-   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
+   UnlockRes(my_config);
    uint32_t buf_size;
    if (client) {
       buf_size = client->max_network_buffer_size;
@@ -268,3 +271,4 @@ ok_out:
    FreePoolMemory(lname);
    Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%" lld "\n", jcr->JobFiles, jcr->JobBytes);
 }
+} /* namespace filedaemon */

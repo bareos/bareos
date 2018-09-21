@@ -22,7 +22,10 @@
 #ifndef BAREOS_DIRD_SOCKET_SERVER_H_
 #define BAREOS_DIRD_SOCKET_SERVER_H_
 
+namespace directordaemon {
+
 void StartSocketServer(dlist *addrs);
 void StopSocketServer();
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_SOCKET_SERVER_H_

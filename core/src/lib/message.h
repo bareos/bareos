@@ -164,48 +164,48 @@ extern "C" {
    typedef char *(*job_code_callback_t)(JobControlRecord *, const char *);
 }
 
-DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
-DLL_IMP_EXP void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
-DLL_IMP_EXP bool GetTrace(void);
-DLL_IMP_EXP const char *get_basename(const char *pathname);
-DLL_IMP_EXP void SetLogTimestampFormat(const char *format);
+void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
+void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
+bool GetTrace(void);
+const char *get_basename(const char *pathname);
+void SetLogTimestampFormat(const char *format);
 
 typedef bool (*db_log_insert_func)(JobControlRecord *jcr, utime_t mtime, char *msg);
-extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;
+extern db_log_insert_func p_db_log_insert;
 
 
 class MessagesResource;
 
-extern DLL_IMP_EXP int debug_level;
-extern DLL_IMP_EXP bool dbg_timestamp; /* print timestamp in debug output */
-extern DLL_IMP_EXP bool prt_kaboom;    /* Print kaboom output */
-extern DLL_IMP_EXP int verbose;
-extern DLL_IMP_EXP char my_name[];
-extern DLL_IMP_EXP const char *assert_msg; /* Assert error message */
-extern DLL_IMP_EXP const char *working_directory;
-extern DLL_IMP_EXP utime_t daemon_start_time;
+extern int debug_level;
+extern bool dbg_timestamp; /* print timestamp in debug output */
+extern bool prt_kaboom;    /* Print kaboom output */
+extern int verbose;
+extern char my_name[];
+extern const char *assert_msg; /* Assert error message */
+extern const char *working_directory;
+extern utime_t daemon_start_time;
 
-extern DLL_IMP_EXP int console_msg_pending;
-extern DLL_IMP_EXP FILE *con_fd;       /* Console file descriptor */
-extern DLL_IMP_EXP brwlock_t con_lock; /* Console lock structure */
+extern int console_msg_pending;
+extern FILE *con_fd;       /* Console file descriptor */
+extern brwlock_t con_lock; /* Console lock structure */
 
-DLL_IMP_EXP void MyNameIs(int argc, char *argv[], const char *name);
-DLL_IMP_EXP void InitMsg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback = NULL);
-DLL_IMP_EXP void TermMsg(void);
-DLL_IMP_EXP void CloseMsg(JobControlRecord *jcr);
-DLL_IMP_EXP void AddMsgDest(MessagesResource *msg, int dest, int type,
+void MyNameIs(int argc, char *argv[], const char *name);
+void InitMsg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback = NULL);
+void TermMsg(void);
+void CloseMsg(JobControlRecord *jcr);
+void AddMsgDest(MessagesResource *msg, int dest, int type,
                   char *where, char *mail_cmd, char *timestamp_format);
-DLL_IMP_EXP void RemMsgDest(MessagesResource *msg, int dest, int type, char *where);
-DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *buf);
-DLL_IMP_EXP void InitConsoleMsg(const char *wd);
-DLL_IMP_EXP void FreeMsgsRes(MessagesResource *msgs);
-DLL_IMP_EXP void DequeueMessages(JobControlRecord *jcr);
-DLL_IMP_EXP void SetTrace(int trace_flag);
-DLL_IMP_EXP bool GetTrace(void);
-DLL_IMP_EXP void SetHangup(int hangup_value);
-DLL_IMP_EXP bool GetHangup(void);
-DLL_IMP_EXP void SetTimestamp(int timestamp_flag);
-DLL_IMP_EXP bool GetTimestamp(void);
-DLL_IMP_EXP void SetDbType(const char *name);
-DLL_IMP_EXP void RegisterMessageCallback(void msg_callback(int type, char *msg));
+void RemMsgDest(MessagesResource *msg, int dest, int type, char *where);
+void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *buf);
+void InitConsoleMsg(const char *wd);
+void FreeMsgsRes(MessagesResource *msgs);
+void DequeueMessages(JobControlRecord *jcr);
+void SetTrace(int trace_flag);
+bool GetTrace(void);
+void SetHangup(int hangup_value);
+bool GetHangup(void);
+void SetTimestamp(int timestamp_flag);
+bool GetTimestamp(void);
+void SetDbType(const char *name);
+void RegisterMessageCallback(void msg_callback(int type, char *msg));

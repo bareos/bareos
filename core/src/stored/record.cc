@@ -34,6 +34,8 @@
 #include "lib/util.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 /**
  * Convert a FileIndex into a printable
  * ASCII string.  Not reentrant.
@@ -1046,3 +1048,5 @@ bool ReadRecordFromBlock(DeviceControlRecord *dcr, DeviceRecord *rec)
 
    return true;                       /* transferred full record */
 }
+
+} /* namespace storagedaemon */

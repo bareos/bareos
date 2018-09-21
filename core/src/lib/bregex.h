@@ -186,12 +186,12 @@ void ReCompileFastmap(regex_t *compiled);
  * to an array of 256 characters. */
 
 
-DLL_IMP_EXP int regcomp(regex_t *preg, const char *regex, int cflags);
-DLL_IMP_EXP int regexec(regex_t *preg, const char *string, size_t nmatch,
+int regcomp(regex_t *preg, const char *regex, int cflags);
+int regexec(regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags);
-DLL_IMP_EXP size_t regerror(int errcode, regex_t *preg, char *errbuf,
+size_t regerror(int errcode, regex_t *preg, char *errbuf,
                 size_t errbuf_size);
-DLL_IMP_EXP void regfree(regex_t *preg);
+void regfree(regex_t *preg);
 
 #endif /* REGEXPR_H */
 

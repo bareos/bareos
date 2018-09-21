@@ -28,25 +28,25 @@
  */
 
 
-DLL_IMP_EXP extern void serial_int16(uint8_t * * const ptr, const int16_t v);
-DLL_IMP_EXP extern void serial_uint16(uint8_t * * const ptr, const uint16_t v);
-DLL_IMP_EXP extern void serial_int32(uint8_t * * const ptr, const int32_t v);
-DLL_IMP_EXP extern void serial_uint32(uint8_t * * const ptr, const uint32_t v);
-DLL_IMP_EXP extern void serial_int64(uint8_t * * ptr, int64_t v);
-DLL_IMP_EXP extern void serial_uint64(uint8_t * * const ptr, const uint64_t v);
-DLL_IMP_EXP extern void SerialBtime(uint8_t * * const ptr, const btime_t v);
-DLL_IMP_EXP extern void serial_float64(uint8_t * * const ptr, const float64_t v);
-DLL_IMP_EXP extern void SerialString(uint8_t * * const ptr, const char * const str);
+extern void serial_int16(uint8_t * * const ptr, const int16_t v);
+extern void serial_uint16(uint8_t * * const ptr, const uint16_t v);
+extern void serial_int32(uint8_t * * const ptr, const int32_t v);
+extern void serial_uint32(uint8_t * * const ptr, const uint32_t v);
+extern void serial_int64(uint8_t * * ptr, int64_t v);
+extern void serial_uint64(uint8_t * * const ptr, const uint64_t v);
+extern void SerialBtime(uint8_t * * const ptr, const btime_t v);
+extern void serial_float64(uint8_t * * const ptr, const float64_t v);
+extern void SerialString(uint8_t * * const ptr, const char * const str);
 
-DLL_IMP_EXP extern int16_t unserial_int16(uint8_t * * const ptr);
-DLL_IMP_EXP extern uint16_t unserial_uint16(uint8_t * * const ptr);
-DLL_IMP_EXP extern int32_t unserial_int32(uint8_t * * const ptr);
-DLL_IMP_EXP extern uint32_t unserial_uint32(uint8_t * * const ptr);
-DLL_IMP_EXP extern int64_t unserial_int64(uint8_t * * const ptr);
-DLL_IMP_EXP extern uint64_t unserial_uint64(uint8_t * * const ptr);
-DLL_IMP_EXP extern btime_t UnserialBtime(uint8_t * * const ptr);
-DLL_IMP_EXP extern float64_t unserial_float64(uint8_t * * const ptr);
-DLL_IMP_EXP extern void UnserialString(uint8_t * * const ptr, char * const str, int max);
+extern int16_t unserial_int16(uint8_t * * const ptr);
+extern uint16_t unserial_uint16(uint8_t * * const ptr);
+extern int32_t unserial_int32(uint8_t * * const ptr);
+extern uint32_t unserial_uint32(uint8_t * * const ptr);
+extern int64_t unserial_int64(uint8_t * * const ptr);
+extern uint64_t unserial_uint64(uint8_t * * const ptr);
+extern btime_t UnserialBtime(uint8_t * * const ptr);
+extern float64_t unserial_float64(uint8_t * * const ptr);
+extern void UnserialString(uint8_t * * const ptr, char * const str, int max);
 
 /**
 

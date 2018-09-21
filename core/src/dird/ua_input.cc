@@ -35,6 +35,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Imported variables */
 
 /* Exported functions */
@@ -265,3 +267,4 @@ bool IsCommentLegal(UaContext *ua, const char *name)
    }
    return 1;
 }
+} /* namespace directordaemon */

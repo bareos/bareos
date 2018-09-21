@@ -34,7 +34,7 @@ public:
    FILE *wfd;
 };
 
-DLL_IMP_EXP Bpipe *OpenBpipe(char *prog, int wait, const char *mode,
+Bpipe *OpenBpipe(char *prog, int wait, const char *mode,
                   bool dup_stderr = true);
-DLL_IMP_EXP int CloseWpipe(Bpipe *bpipe);
-DLL_IMP_EXP int CloseBpipe(Bpipe *bpipe);
+int CloseWpipe(Bpipe *bpipe);
+int CloseBpipe(Bpipe *bpipe);

@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_UA_DB_H_
 #define BAREOS_DIRD_UA_DB_H_
 
+namespace directordaemon {
+
 bool OpenClientDb(UaContext *ua, bool use_private = false);
 bool OpenDb(UaContext *ua, bool use_private = false);
 void CloseDb(UaContext *ua);
@@ -31,4 +33,5 @@ bool SetPooldbrReferences(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr,
 void SetPooldbrFromPoolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op);
 int UpdatePoolReferences(JobControlRecord *jcr, BareosDb *db, PoolResource *pool);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_UA_DB_H_

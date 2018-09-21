@@ -30,9 +30,12 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
-#include "lib/bnet_sever_tcp.h"
+#include "lib/bnet_server_tcp.h"
+
+namespace filedaemon {
 
 /* Global variables */
 static workq_t socket_workq;
@@ -51,10 +54,11 @@ static alist *sock_fds = NULL;
  *  - If it was a connection from an SD, call handle_stored_connection()
  *  - Otherwise it was a connection from the DIR, call handle_director_connection()
  */
-static void *HandleConnectionRequest(void *arg)
+static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
-   char tbuf[100];
+
+   if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config); }
 
    if (bs->recv() <= 0) {
       Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
@@ -69,6 +73,7 @@ static void *HandleConnectionRequest(void *arg)
    /*
     * See if its a director making a connection.
     */
+   char tbuf[100];
    if (bstrncmp(bs->msg, "Hello Director", 14)) {
       Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
       return handle_director_connection(bs);
@@ -109,7 +114,8 @@ void StartSocketServer(dlist *addrs)
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,
-                          HandleConnectionRequest);
+                          HandleConnectionRequest,
+                          my_config);
 }
 
 void StopSocketServer(bool wait)
@@ -128,3 +134,4 @@ void StopSocketServer(bool wait)
       }
    }
 }
+} /* namespace filedaemon */

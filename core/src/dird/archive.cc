@@ -34,6 +34,8 @@
 #include "dird/job.h"
 #include "dird/storage.h"
 
+namespace directordaemon {
+
 static const int debuglevel = 100;
 
 bool DoArchiveInit(JobControlRecord *jcr)
@@ -126,3 +128,4 @@ void ArchiveCleanup(JobControlRecord *jcr, int TermCode)
 
    Dmsg0(debuglevel, "Leave ArchiveCleanup()\n");
 }
+} /* namespace directordaemon */

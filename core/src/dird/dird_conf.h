@@ -31,7 +31,9 @@
 #define BAREOS_DIRD_DIRD_CONF_H_
 /* NOTE:  #includes at the end of this file */
 
-#define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
+namespace directordaemon {
+
+static std::string default_config_filename("bareos-dir.conf");
 
 /**
  * Resource codes -- they must be sequential for indexing
@@ -139,6 +141,7 @@ public:
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    s_password keyencrkey;             /* Key Encryption Key */
+   bool UsePamAuthentication_;        /* Optimize daemon for minimum memory size */
 
    DirectorResource() : TlsResource() {}
 };
@@ -662,4 +665,5 @@ const char *get_configure_usage_string();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_DIRD_CONF_H_

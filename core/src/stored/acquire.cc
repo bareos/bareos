@@ -32,6 +32,7 @@
 #include "stored/stored.h"                   /* pull in Storage Daemon headers */
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
 #include "stored/job.h"
 #include "stored/label.h"
 #include "stored/sd_plugins.h"
@@ -39,7 +40,31 @@
 #include "stored/wait.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "stored/block.h"
 
+namespace storagedaemon {
+
+DeviceControlRecord::DeviceControlRecord()
+{
+   PoolMem errmsg(PM_MESSAGE);
+   int errstat;
+
+   tid = pthread_self();
+   spool_fd = -1;
+   if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
+      BErrNo be;
+
+      Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
+   }
+
+   if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
+      BErrNo be;
+
+      Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
+   }
+}
 
 static int const rdebuglevel = 100;
 
@@ -399,7 +424,7 @@ get_out:
  *   Note, normally ReserveDeviceForAppend() is called
  *   before this routine.
  */
-DeviceControlRecord *acquire_device_for_append(DeviceControlRecord *dcr)
+DeviceControlRecord *AcquireDeviceForAppend(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
    JobControlRecord *jcr = dcr->jcr;
@@ -658,7 +683,7 @@ bool ReleaseDevice(DeviceControlRecord *dcr)
    if (dcr->keep_dcr) {
       DetachDcrFromDev(dcr);
    } else {
-      FreeDcr(dcr);
+      FreeDeviceControlRecord(dcr);
    }
 
    Dmsg2(100, "Device %s released by JobId=%u\n", dev->print_name(), (uint32_t)jcr->JobId);
@@ -678,31 +703,6 @@ bool CleanDevice(DeviceControlRecord *dcr)
    dcr->keep_dcr = false;
 
    return retval;
-}
-
-/**
- * DeviceControlRecord Constructor.
- */
-DeviceControlRecord::DeviceControlRecord()
-{
-   PoolMem errmsg(PM_MESSAGE);
-   int errstat;
-
-   tid = pthread_self();
-   spool_fd = -1;
-   if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
-      BErrNo be;
-
-      Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
-   }
-
-   if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
-      BErrNo be;
-
-      Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
-   }
 }
 
 /**
@@ -850,7 +850,7 @@ static void DetachDcrFromDev(DeviceControlRecord *dcr)
  * Free up all aspects of the given dcr -- i.e. dechain it,
  *  release allocated memory, zap pointers, ...
  */
-void FreeDcr(DeviceControlRecord *dcr)
+void FreeDeviceControlRecord(DeviceControlRecord *dcr)
 {
    JobControlRecord *jcr;
 
@@ -895,3 +895,5 @@ static void SetDcrFromVol(DeviceControlRecord *dcr, VolumeList *vol)
    dcr->VolCatInfo.Slot = vol->Slot;
    dcr->VolCatInfo.InChanger = vol->Slot > 0;
 }
+
+} /* namespace storagedaemon */

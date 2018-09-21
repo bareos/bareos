@@ -109,14 +109,14 @@ struct xattr_data_t {
  */
 #define XATTR_BUFSIZ	1024
 
-DLL_IMP_EXP bxattr_exit_code SendXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, int stream);
-DLL_IMP_EXP void XattrDropInternalTable(alist *xattr_value_list);
-DLL_IMP_EXP uint32_t SerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data,
+bxattr_exit_code SendXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, int stream);
+void XattrDropInternalTable(alist *xattr_value_list);
+uint32_t SerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data,
                                 uint32_t expected_serialize_len, alist *xattr_value_list);
-DLL_IMP_EXP bxattr_exit_code UnSerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, char *content,
+bxattr_exit_code UnSerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, char *content,
                                           uint32_t content_length, alist *xattr_value_list);
-DLL_IMP_EXP bxattr_exit_code BuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data, FindFilesPacket *ff_pkt);
-DLL_IMP_EXP bxattr_exit_code ParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+bxattr_exit_code BuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data, FindFilesPacket *ff_pkt);
+bxattr_exit_code ParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                      int stream, char *content, uint32_t content_length);
 
 

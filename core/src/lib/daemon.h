@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_DAEMON_H_
 #define BAREOS_LIB_DAEMON_H_
 
-DLL_IMP_EXP void daemon_start();
+void daemon_start();
 
 #endif // BAREOS_LIB_DAEMON_H_

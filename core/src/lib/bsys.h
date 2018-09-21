@@ -21,58 +21,58 @@
 #ifndef BAREOS_LIB_BSYS_H_
 #define BAREOS_LIB_BSYS_H_
 
-DLL_IMP_EXP char *bstrinlinecpy(char *dest, const char *src);
-DLL_IMP_EXP char *bstrncpy(char *dest, const char *src, int maxlen);
-DLL_IMP_EXP char *bstrncpy(char *dest, PoolMem &src, int maxlen);
-DLL_IMP_EXP char *bstrncat(char *dest, const char *src, int maxlen);
-DLL_IMP_EXP char *bstrncat(char *dest, PoolMem &src, int maxlen);
-DLL_IMP_EXP bool bstrcmp(const char *s1, const char *s2);
-DLL_IMP_EXP bool bstrncmp(const char *s1, const char *s2, int n);
-DLL_IMP_EXP bool Bstrcasecmp(const char *s1, const char *s2);
-DLL_IMP_EXP bool bstrncasecmp(const char *s1, const char *s2, int n);
-DLL_IMP_EXP int cstrlen(const char *str);
-DLL_IMP_EXP void *b_malloc(const char *file, int line, size_t size);
+char *bstrinlinecpy(char *dest, const char *src);
+char *bstrncpy(char *dest, const char *src, int maxlen);
+char *bstrncpy(char *dest, PoolMem &src, int maxlen);
+char *bstrncat(char *dest, const char *src, int maxlen);
+char *bstrncat(char *dest, PoolMem &src, int maxlen);
+bool bstrcmp(const char *s1, const char *s2);
+bool bstrncmp(const char *s1, const char *s2, int n);
+bool Bstrcasecmp(const char *s1, const char *s2);
+bool bstrncasecmp(const char *s1, const char *s2, int n);
+int cstrlen(const char *str);
+void *b_malloc(const char *file, int line, size_t size);
 #ifndef bmalloc
-DLL_IMP_EXP void *bmalloc(size_t size);
+void *bmalloc(size_t size);
 #endif
-DLL_IMP_EXP void bfree(void *buf);
-DLL_IMP_EXP void *brealloc(void *buf, size_t size);
-DLL_IMP_EXP void *bcalloc(size_t size1, size_t size2);
-DLL_IMP_EXP int Bsnprintf(char *str, int32_t size, const char *format, ...);
-DLL_IMP_EXP int Bvsnprintf(char *str, int32_t size, const char *format, va_list ap);
-DLL_IMP_EXP int PoolSprintf(char *pool_buf, const char *fmt, ...);
-DLL_IMP_EXP void CreatePidFile(char *dir, const char *progname, int port);
-DLL_IMP_EXP int DeletePidFile(char *dir, const char *progname, int port);
-DLL_IMP_EXP void drop(char *uid, char *gid, bool keep_readall_caps);
-DLL_IMP_EXP int Bmicrosleep(int32_t sec, int32_t usec);
-DLL_IMP_EXP char *bfgets(char *s, int size, FILE *fd);
-DLL_IMP_EXP char *bfgets(POOLMEM *&s, FILE *fd);
-DLL_IMP_EXP void MakeUniqueFilename(POOLMEM *&name, int Id, char *what);
+void bfree(void *buf);
+void *brealloc(void *buf, size_t size);
+void *bcalloc(size_t size1, size_t size2);
+int Bsnprintf(char *str, int32_t size, const char *format, ...);
+int Bvsnprintf(char *str, int32_t size, const char *format, va_list ap);
+int PoolSprintf(char *pool_buf, const char *fmt, ...);
+void CreatePidFile(char *dir, const char *progname, int port);
+int DeletePidFile(char *dir, const char *progname, int port);
+void drop(char *uid, char *gid, bool keep_readall_caps);
+int Bmicrosleep(int32_t sec, int32_t usec);
+char *bfgets(char *s, int size, FILE *fd);
+char *bfgets(POOLMEM *&s, FILE *fd);
+void MakeUniqueFilename(POOLMEM *&name, int Id, char *what);
 #ifndef HAVE_STRTOLL
-DLL_IMP_EXP long long int strtoll(const char *ptr, char **endptr, int base);
+long long int strtoll(const char *ptr, char **endptr, int base);
 #endif
-DLL_IMP_EXP void ReadStateFile(char *dir, const char *progname, int port);
-DLL_IMP_EXP int b_strerror(int errnum, char *buf, size_t bufsiz);
-DLL_IMP_EXP char *escape_filename(const char *file_path);
-DLL_IMP_EXP int Zdeflate(char *in, int in_len, char *out, int &out_len);
-DLL_IMP_EXP int Zinflate(char *in, int in_len, char *out, int &out_len);
-DLL_IMP_EXP void stack_trace();
-DLL_IMP_EXP int SaferUnlink(const char *pathname, const char *regex);
-DLL_IMP_EXP int SecureErase(JobControlRecord *jcr, const char *pathname);
-DLL_IMP_EXP void SetSecureEraseCmdline(const char *cmdline);
-DLL_IMP_EXP bool PathExists(const char *path);
-DLL_IMP_EXP bool PathExists(PoolMem &path);
-DLL_IMP_EXP bool PathIsDirectory(const char *path);
-DLL_IMP_EXP bool PathIsDirectory(PoolMem &path);
-DLL_IMP_EXP bool PathContainsDirectory(const char *path);
-DLL_IMP_EXP bool PathContainsDirectory(PoolMem &path);
-DLL_IMP_EXP bool PathIsAbsolute(const char *path);
-DLL_IMP_EXP bool PathIsAbsolute(PoolMem &path);
-DLL_IMP_EXP bool PathGetDirectory(PoolMem &directory, PoolMem &path);
-DLL_IMP_EXP bool PathAppend(char *path, const char *extra, unsigned int max_path);
-DLL_IMP_EXP bool PathAppend(PoolMem &path, const char *extra);
-DLL_IMP_EXP bool PathAppend(PoolMem &path, PoolMem &extra);
-DLL_IMP_EXP bool PathCreate(const char *path, mode_t mode = 0750);
-DLL_IMP_EXP bool PathCreate(PoolMem &path, mode_t mode = 0750);
+void ReadStateFile(char *dir, const char *progname, int port);
+int b_strerror(int errnum, char *buf, size_t bufsiz);
+char *escape_filename(const char *file_path);
+int Zdeflate(char *in, int in_len, char *out, int &out_len);
+int Zinflate(char *in, int in_len, char *out, int &out_len);
+void stack_trace();
+int SaferUnlink(const char *pathname, const char *regex);
+int SecureErase(JobControlRecord *jcr, const char *pathname);
+void SetSecureEraseCmdline(const char *cmdline);
+bool PathExists(const char *path);
+bool PathExists(PoolMem &path);
+bool PathIsDirectory(const char *path);
+bool PathIsDirectory(PoolMem &path);
+bool PathContainsDirectory(const char *path);
+bool PathContainsDirectory(PoolMem &path);
+bool PathIsAbsolute(const char *path);
+bool PathIsAbsolute(PoolMem &path);
+bool PathGetDirectory(PoolMem &directory, PoolMem &path);
+bool PathAppend(char *path, const char *extra, unsigned int max_path);
+bool PathAppend(PoolMem &path, const char *extra);
+bool PathAppend(PoolMem &path, PoolMem &extra);
+bool PathCreate(const char *path, mode_t mode = 0750);
+bool PathCreate(PoolMem &path, mode_t mode = 0750);
 
 #endif // BAREOS_LIB_BSYS_H_

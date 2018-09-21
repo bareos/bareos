@@ -21,6 +21,10 @@
 #ifndef BAREOS_STORED_READ_H_
 #define BAREOS_STORED_READ_H_
 
-DLL_IMP_EXP bool DoReadData(JobControlRecord *jcr);
+namespace storagedaemon {
+
+bool DoReadData(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_READ_H_

@@ -56,7 +56,6 @@
      copyright.  See:
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
  */
-
 #include "include/bareos.h"
 #include "include/jcr.h"
 #define MY_NAME "bsmtp"
@@ -68,6 +67,7 @@
 #ifndef MAXSTRING
 #define MAXSTRING 254
 #endif
+
 
 enum resolv_type {
    RESOLV_PROTO_ANY,

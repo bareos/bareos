@@ -31,6 +31,8 @@
 #include <elasto/data.h>
 #include <elasto/file.h>
 
+namespace storagedaemon {
+
 class elasto_device: public Device {
 private:
    char *elasto_configstring_;
@@ -56,4 +58,5 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+} /* namespace storagedaemon */
 #endif /* BAREOS_STORED_BACKENDS_ELASTO_DEVICE_H_ */

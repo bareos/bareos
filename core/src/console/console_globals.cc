@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,16 +20,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_LIB_BNET_SEVER_TCP_H_
-#define BAREOS_LIB_BNET_SEVER_TCP_H_
+#include "console_globals.h"
 
-DLL_IMP_EXP void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq);
-DLL_IMP_EXP void BnetThreadServerTcp(dlist *addr_list,
-                            int max_clients,
-                            alist *sockfds,
-                            workq_t *client_wq,
-                            bool nokeepalive,
-                            void *handle_client_request(void *bsock));
-DLL_IMP_EXP void BnetStopThreadServerTcp(pthread_t tid);
+namespace console {
 
-#endif // BAREOS_LIB_BNET_SEVER_TCP_H_
+   ConsoleResource *me = nullptr;
+   DirectorResource *director_resource = nullptr;
+   ConsoleResource *console_resource = nullptr;
+
+} /* namespace console */

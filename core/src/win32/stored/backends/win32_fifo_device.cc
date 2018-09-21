@@ -35,6 +35,7 @@
 #include "win32_fifo_device.h"
 #include "stored/autochanger.h"
 
+namespace storagedaemon {
 
 /**
  * Open a fifo device
@@ -351,3 +352,4 @@ win32_fifo_device::~win32_fifo_device()
 win32_fifo_device::win32_fifo_device()
 {
 }
+} /* namespace storagedaemon */

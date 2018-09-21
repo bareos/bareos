@@ -21,8 +21,13 @@
 
 #ifndef BAREOS_DIRD_ARCHIVE_H_
 #define BAREOS_DIRD_ARCHIVE_H_
+
+namespace directordaemon {
+
 bool DoArchiveInit(JobControlRecord *jcr);
 bool DoArchive(JobControlRecord *jcr);
 void ArchiveCleanup(JobControlRecord *jcr, int TermCode);
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_ARCHIVE_H_

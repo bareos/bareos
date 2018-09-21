@@ -21,25 +21,25 @@
 #ifndef BAREOS_LIB_EDIT_H_
 #define BAREOS_LIB_EDIT_H_
 
-DLL_IMP_EXP uint64_t str_to_uint64(const char *str);
-DLL_IMP_EXP int64_t str_to_int64(const char *str);
+uint64_t str_to_uint64(const char *str);
+int64_t str_to_int64(const char *str);
 #define str_to_int16(str)((int16_t)str_to_int64(str))
 #define str_to_int32(str)((int32_t)str_to_int64(str))
-DLL_IMP_EXP char *edit_uint64_with_commas(uint64_t val, char *buf);
-DLL_IMP_EXP char *edit_uint64_with_suffix(uint64_t val, char *buf);
-DLL_IMP_EXP char *add_commas(char *val, char *buf);
-DLL_IMP_EXP char *edit_uint64(uint64_t val, char *buf);
-DLL_IMP_EXP char *edit_int64(int64_t val, char *buf);
-DLL_IMP_EXP char *edit_int64_with_commas(int64_t val, char *buf);
-DLL_IMP_EXP bool DurationToUtime(char *str, utime_t *value);
-DLL_IMP_EXP bool size_to_uint64(char *str, uint64_t *value);
-DLL_IMP_EXP bool speed_to_uint64(char *str, uint64_t *value);
-DLL_IMP_EXP char *edit_utime(utime_t val, char *buf, int buf_len);
-DLL_IMP_EXP char *edit_pthread(pthread_t val, char *buf, int buf_len);
-DLL_IMP_EXP bool Is_a_number(const char *num);
-DLL_IMP_EXP bool Is_a_number_list(const char *n);
-DLL_IMP_EXP bool IsAnInteger(const char *n);
-DLL_IMP_EXP bool IsNameValid(const char *name, POOLMEM *&msg);
-DLL_IMP_EXP bool IsNameValid(const char *name);
+char *edit_uint64_with_commas(uint64_t val, char *buf);
+char *edit_uint64_with_suffix(uint64_t val, char *buf);
+char *add_commas(char *val, char *buf);
+char *edit_uint64(uint64_t val, char *buf);
+char *edit_int64(int64_t val, char *buf);
+char *edit_int64_with_commas(int64_t val, char *buf);
+bool DurationToUtime(char *str, utime_t *value);
+bool size_to_uint64(char *str, uint64_t *value);
+bool speed_to_uint64(char *str, uint64_t *value);
+char *edit_utime(utime_t val, char *buf, int buf_len);
+char *edit_pthread(pthread_t val, char *buf, int buf_len);
+bool Is_a_number(const char *num);
+bool Is_a_number_list(const char *n);
+bool IsAnInteger(const char *n);
+bool IsNameValid(const char *name, POOLMEM *&msg);
+bool IsNameValid(const char *name);
 
 #endif // BAREOS_LIB_EDIT_H_

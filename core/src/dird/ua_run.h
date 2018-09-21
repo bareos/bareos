@@ -24,8 +24,11 @@
 
 #include "dird/ua.h"
 
+namespace directordaemon {
+
 bool reRunCmd(UaContext *ua, const char *cmd);
 bool RunCmd(UaContext *ua, const char *cmd);
 int DoRunCmd(UaContext *ua, const char *cmd);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_UA_RUN_H_

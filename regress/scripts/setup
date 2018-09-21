@@ -82,6 +82,10 @@ echo "Running database creation scripts"
 ./drop_bareos_tables ${DBTYPE}
 ./make_bareos_tables ${DBTYPE}
 ./grant_bareos_privileges ${DBTYPE}
+
+echo "initializing database driver"
+./bareos-config initialize_database_driver
+
 cd ${cwd}
 
 rm_if_exists() {

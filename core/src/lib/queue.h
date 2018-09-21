@@ -37,7 +37,7 @@ typedef struct b_queue BQUEUE;
 /**
  * Queue functions
  */
-DLL_IMP_EXP void qinsert(BQUEUE *qhead, BQUEUE *object);
-DLL_IMP_EXP BQUEUE *qnext(BQUEUE *qhead, BQUEUE *qitem);
-DLL_IMP_EXP BQUEUE *qdchain(BQUEUE *qitem);
-DLL_IMP_EXP BQUEUE *qremove(BQUEUE *qhead);
+void qinsert(BQUEUE *qhead, BQUEUE *object);
+BQUEUE *qnext(BQUEUE *qhead, BQUEUE *qitem);
+BQUEUE *qdchain(BQUEUE *qitem);
+BQUEUE *qremove(BQUEUE *qhead);

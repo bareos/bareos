@@ -30,11 +30,14 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/storage.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Imported variables */
 extern struct s_jt jobtypes[];
@@ -167,7 +170,7 @@ StorageResource *select_storage_resource(UaContext *ua, bool autochanger_only)
       StartPrompt(ua, _("The defined Storage resources are:\n"));
    }
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(store, R_STORAGE) {
       if (ua->AclAccessOk(Storage_ACL, store->name())) {
          if (autochanger_only && !store->autochanger) {
@@ -177,7 +180,7 @@ StorageResource *select_storage_resource(UaContext *ua, bool autochanger_only)
          }
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Storage"),  _("Select Storage resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -197,13 +200,13 @@ FilesetResource *select_fileset_resource(UaContext *ua)
 
    StartPrompt(ua, _("The defined FileSet resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(fs, R_FILESET) {
       if (ua->AclAccessOk(FileSet_ACL, fs->name())) {
          AddPrompt(ua, fs->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -232,9 +235,9 @@ CatalogResource *get_catalog_resource(UaContext *ua)
    }
 
    if (ua->gui && !catalog) {
-      LockRes();
-      catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
-      UnlockRes();
+      LockRes(my_config);
+      catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
+      UnlockRes(my_config);
 
       if (!catalog) {
          ua->ErrorMsg(_("Could not find a Catalog resource\n"));
@@ -250,13 +253,13 @@ CatalogResource *get_catalog_resource(UaContext *ua)
    if (!catalog) {
       StartPrompt(ua, _("The defined Catalog resources are:\n"));
 
-      LockRes();
+      LockRes(my_config);
       foreach_res(catalog, R_CATALOG) {
          if (ua->AclAccessOk(Catalog_ACL, catalog->name())) {
             AddPrompt(ua, catalog->name());
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
 
       if (DoPrompt(ua, _("Catalog"),  _("Select Catalog resource"), name, sizeof(name)) < 0) {
          return NULL;
@@ -278,7 +281,7 @@ JobResource *select_enable_disable_job_resource(UaContext *ua, bool enable)
 
    StartPrompt(ua, _("The defined Job resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(job, R_JOB) {
       if (!ua->AclAccessOk(Job_ACL, job->name())) {
          continue;
@@ -288,7 +291,7 @@ JobResource *select_enable_disable_job_resource(UaContext *ua, bool enable)
       }
       AddPrompt(ua, job->name());
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -309,13 +312,13 @@ JobResource *select_job_resource(UaContext *ua)
 
    StartPrompt(ua, _("The defined Job resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(job, R_JOB) {
       if (ua->AclAccessOk(Job_ACL, job->name())) {
          AddPrompt(ua, job->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -356,13 +359,13 @@ JobResource *select_restore_job_resource(UaContext *ua)
 
    StartPrompt(ua, _("The defined Restore Job resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(job, R_JOB) {
       if (job->JobType == JT_RESTORE && ua->AclAccessOk(Job_ACL, job->name())) {
          AddPrompt(ua, job->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Job"), _("Select Restore Job"), name, sizeof(name)) < 0) {
       return NULL;
@@ -383,13 +386,13 @@ ClientResource *select_client_resource(UaContext *ua)
 
    StartPrompt(ua, _("The defined Client resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(client, R_CLIENT) {
       if (ua->AclAccessOk(Client_ACL, client->name())) {
          AddPrompt(ua, client->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Client"),  _("Select Client (File daemon) resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -410,7 +413,7 @@ ClientResource *select_enable_disable_client_resource(UaContext *ua, bool enable
 
    StartPrompt(ua, _("The defined Client resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(client, R_CLIENT) {
       if (!ua->AclAccessOk(Client_ACL, client->name())) {
          continue;
@@ -420,7 +423,7 @@ ClientResource *select_enable_disable_client_resource(UaContext *ua, bool enable
       }
       AddPrompt(ua, client->name());
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Client"), _("Select Client resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -467,7 +470,7 @@ ScheduleResource *select_enable_disable_schedule_resource(UaContext *ua, bool en
 
    StartPrompt(ua, _("The defined Schedule resources are:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(sched, R_SCHEDULE) {
       if (!ua->AclAccessOk(Schedule_ACL, sched->name())) {
          continue;
@@ -477,7 +480,7 @@ ScheduleResource *select_enable_disable_schedule_resource(UaContext *ua, bool en
       }
       AddPrompt(ua, sched->name());
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Schedule"), _("Select Schedule resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -886,13 +889,13 @@ PoolResource *select_pool_resource(UaContext *ua)
    char name[MAX_NAME_LENGTH];
 
    StartPrompt(ua, _("The defined Pool resources are:\n"));
-   LockRes();
+   LockRes(my_config);
    foreach_res(pool, R_POOL) {
       if (ua->AclAccessOk(Pool_ACL, pool->name())) {
          AddPrompt(ua, pool->name());
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    if (DoPrompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name)) < 0) {
       return NULL;
@@ -1373,13 +1376,13 @@ int GetMediaType(UaContext *ua, char *MediaType, int max_media)
 
    StartPrompt(ua, _("Media Types defined in conf file:\n"));
 
-   LockRes();
+   LockRes(my_config);
    foreach_res(store, R_STORAGE) {
       if (ua->AclAccessOk(Storage_ACL, store->name())) {
          AddPrompt(ua, store->media_type);
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    return (DoPrompt(ua, _("Media Type"), _("Select the Media Type"), MediaType, max_media) < 0) ? 0 : 1;
 }
@@ -1907,3 +1910,4 @@ bool GetUserJobLevelSelection(UaContext *ua, int *joblevel)
    }
    return true;
 }
+} /* namespace directordaemon */

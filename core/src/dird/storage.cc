@@ -31,9 +31,12 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
 #include "dird/ndmp_dma_storage.h"
 #include "dird/storage.h"
+
+namespace directordaemon {
 
 /* Forward referenced functions */
 
@@ -260,13 +263,13 @@ void SetPairedStorage(JobControlRecord *jcr)
           */
          jcr->res.pstorage = New(alist(10, not_owned_by_alist));
          foreach_alist(pstore, jcr->res.rstorage) {
-            store = (StorageResource *)GetNextRes(R_STORAGE, NULL);
+            store = (StorageResource *)my_config->GetNextRes(R_STORAGE, NULL);
             while (store) {
                if (store->paired_storage == pstore) {
                   break;
                }
 
-               store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
+               store = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
             }
 
             /*
@@ -457,7 +460,7 @@ bool SelectNextRstore(JobControlRecord *jcr, bootstrap_info &info)
       return true;                 /* Same SD nothing to change */
    }
 
-   if (!(ustore.store = (StorageResource *)GetResWithName(R_STORAGE,info.storage))) {
+   if (!(ustore.store = (StorageResource *)my_config->GetResWithName(R_STORAGE,info.storage))) {
       Jmsg(jcr, M_FATAL, 0,
            _("Could not get storage resource '%s'.\n"), info.storage);
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -927,3 +930,4 @@ slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
 
    return retval;
 }
+} /* namespace directordaemon */

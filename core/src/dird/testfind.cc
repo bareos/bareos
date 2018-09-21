@@ -37,6 +37,8 @@
 #define isatty(fd) (fd==0)
 #endif
 
+using namespace directordaemon;
+
 /* Dummy functions */
 void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
 extern bool ParseDirConfig(const char *configfile, int exit_code);
@@ -48,9 +50,6 @@ static int max_path_len = 0;
 static int trunc_fname = 0;
 static int trunc_path = 0;
 static int attrs = 0;
-
-DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 static JobControlRecord *jcr;
 
@@ -144,7 +143,7 @@ main (int argc, char *const *argv)
    }
 
    jcr = new_jcr(sizeof(JobControlRecord), NULL);
-   jcr->res.fileset = (FilesetResource *)GetResWithName(R_FILESET, fileset_name);
+   jcr->res.fileset = (FilesetResource *)my_config->GetResWithName(R_FILESET, fileset_name);
 
    if (jcr->res.fileset == NULL) {
       fprintf(stderr, "%s: Fileset not found\n", fileset_name);

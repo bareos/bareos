@@ -35,6 +35,11 @@
 #error "Need at least Python version 2.6 or newer"
 #endif
 
+#include "python-dir.h"
+#include "lib/edit.h"
+
+namespace directordaemon {
+
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
@@ -106,9 +111,6 @@ struct plugin_ctx {
    PyObject *bpContext;               /* Python representation of plugin context */
 };
 
-#include "python-dir.h"
-#include "lib/edit.h"
-
 /**
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
@@ -127,7 +129,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bDirInfo *lbinfo,
+bRC loadPlugin(bDirInfo *lbinfo,
                            bDirFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pDirFuncs **pfuncs)
@@ -151,7 +153,7 @@ bRC DLL_IMP_EXP loadPlugin(bDirInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    /*
     * Terminate Python
@@ -1149,3 +1151,4 @@ static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args)
 
    return pRetVal;
 }
+} /* namespace directordaemon */

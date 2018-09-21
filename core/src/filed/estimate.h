@@ -19,5 +19,13 @@
    02110-1301, USA.
 */
 
+#ifndef BAREOS_FILED_ESTIMATE_H_
+#define BAREOS_FILED_ESTIMATE_H_ 1
+
+namespace filedaemon {
+
 int MakeEstimate(JobControlRecord *jcr);
 
+} /* namespace filedaemon */
+
+#endif /* BAREOS_FILED_ESTIMATE_H_ */

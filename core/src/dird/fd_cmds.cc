@@ -36,6 +36,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
@@ -44,6 +45,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+
+namespace directordaemon {
 
 const int debuglevel = 400;
 
@@ -97,7 +100,7 @@ extern DirectorResource *director;
 #define INC_LIST 0
 #define EXC_LIST 1
 
-static inline utime_t get_heartbeat_interval(ClientResource *res)
+static utime_t get_heartbeat_interval(ClientResource *res)
 {
    utime_t heartbeat;
 
@@ -116,7 +119,7 @@ static inline utime_t get_heartbeat_interval(ClientResource *res)
  * Try connecting every retry_interval (default 10 sec), and
  * give up after max_retry_time (default 30 mins).
  */
-static inline bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int retry_interval,
+static bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int retry_interval,
                                                    int max_retry_time, bool verbose)
 {
    bool result = false;
@@ -158,47 +161,70 @@ static inline bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int re
 
 bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose)
 {
-   bool result = false;
+   bool success = false;
+   bool tcp_connect_failed = false;
+   int connect_tries = 3; /* as a finish-hook for the UseWaitingClient mechanism */
 
-   /*
-    * connection already exists.
-    * TODO: when is this the case? Is it really used? Does it than really need authentication?
-    */
-   if (!jcr->file_bsock) {
-      /*
-       * check without waiting, if waiting client connection exists.
-       */
-      if (!UseWaitingClient(jcr, 0)) {
-         /*
-          * open connection to client
-          */
-         if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
-            /*
-             * Check if a waiting client connection exist.
-             * If yes, use it, otherwise jcr->file_bsock will not be set.
-             */
-            UseWaitingClient(jcr, max_retry_time);
-         }
-      }
-   }
+   /* try the connection mode in case a client that cannot do Tls
+    * immediately without cleartext md5-handshake first */
+   jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kTlsFirst;
+   jcr->connection_successful_handshake_ = JobControlRecord::ConnectionHandshakeMode::kUndefined;
 
-   /*
-    * connection have been established
-    */
-   if (jcr->file_bsock) {
-      jcr->setJobStatus(JS_Running);
-      if (AuthenticateWithFileDaemon(jcr)) {
-         result = true;
-      }
-   } else {
-      Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
-   }
+   do { /* while (tcp_connect_failed ...) */
+     /* connect the tcp socket */
+     if (!jcr->file_bsock) {
+        if (!UseWaitingClient(jcr, 0)) {
+           if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
+              if (!UseWaitingClient(jcr, max_retry_time)) { /* will set jcr->file_bsock accordingly */
+                tcp_connect_failed = true;
+              }
+           }
+        }
+     }
 
-   if (!result) {
+     /* try to establish tls and authenticate the daemon */
+     if (jcr->file_bsock) {
+        jcr->setJobStatus(JS_Running);
+        if (AuthenticateWithFileDaemon(jcr)) {
+           success = true;
+           jcr->connection_successful_handshake_ = jcr->connection_handshake_try_;
+        } else {
+          /* authentication failed due to
+           * - tls mismatch or
+           * - if an old client cannot do tls- before md5-handshake
+           * */
+          switch(jcr->connection_handshake_try_) {
+          case JobControlRecord::ConnectionHandshakeMode::kTlsFirst:
+            if (jcr->file_bsock) {
+               jcr->file_bsock->close();
+               delete jcr->file_bsock;
+               jcr->file_bsock = nullptr;
+            }
+            jcr->resetJobStatus(JS_Running);
+            jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kCleartextFirst;
+            break;
+          case JobControlRecord::ConnectionHandshakeMode::kCleartextFirst:
+            jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kFailed;
+            break;
+          case JobControlRecord::ConnectionHandshakeMode::kFailed:
+          default: /* should bei one of class ConnectionHandshakeMode */
+            ASSERT(false);
+            break;
+          }
+        }
+     } else {
+        Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
+     }
+     connect_tries--;
+   } while (!tcp_connect_failed && connect_tries
+         && !success
+         && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed);
+
+   if (!success) {
      jcr->setJobStatus(JS_ErrorTerminated);
    }
 
-   return result;
+   return success;
 }
 
 int SendJobInfo(JobControlRecord *jcr)
@@ -315,7 +341,7 @@ bool SendSecureEraseReqToFd(JobControlRecord *jcr)
    return true;
 }
 
-static inline void SendSinceTime(JobControlRecord *jcr)
+static void SendSinceTime(JobControlRecord *jcr)
 {
    char ed1[50];
    utime_t stime;
@@ -657,7 +683,7 @@ bool SendExcludeList(JobControlRecord *jcr)
 /*
  * This checks to see if there are any non local runscripts for this job.
  */
-static inline bool HaveClientRunscripts(alist *RunScripts)
+static bool HaveClientRunscripts(alist *RunScripts)
 {
    RunScript *cmd;
    bool retval = false;
@@ -858,7 +884,7 @@ bool SendPluginOptions(JobControlRecord *jcr)
    return true;
 }
 
-static inline void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObjectContext *octx)
+static void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObjectContext *octx)
 {
    char ed1[50];
    PoolMem query(PM_MESSAGE);
@@ -883,7 +909,7 @@ static inline void SendGlobalRestoreObjects(JobControlRecord *jcr, RestoreObject
    jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void *)octx);
 }
 
-static inline void SendJobSpecificRestoreObjects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
+static void SendJobSpecificRestoreObjects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
 {
    char ed1[50];
    PoolMem query(PM_MESSAGE);
@@ -1202,7 +1228,7 @@ void *HandleFiledConnection(ConnectionPool *connections, BareosSocket *fd,
    ClientResource *client_resource;
    Connection *connection = NULL;
 
-   client_resource = (ClientResource *)GetResWithName(R_CLIENT, client_name);
+   client_resource = (ClientResource *)my_config->GetResWithName(R_CLIENT, client_name);
    if (!client_resource) {
       Emsg1(M_WARNING, 0, "Client \"%s\" tries to connect, "
                           "but no matching resource is defined.\n", client_name);
@@ -1238,3 +1264,4 @@ getout:
    delete(fd);
    return NULL;
 }
+} /* namespace directordaemon */

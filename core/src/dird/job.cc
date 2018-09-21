@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/admin.h"
 #include "dird/archive.h"
 #include "dird/autoprune.h"
@@ -60,8 +61,10 @@
 #include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
 #include "lib/edit.h"
+#include "lib/parse_bsr.h"
 
 
+namespace directordaemon {
 
 /* Forward referenced subroutines */
 static void *job_thread(void *arg);
@@ -1589,7 +1592,7 @@ void DirdFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->bsr) {
-      FreeBsr(jcr->bsr);
+      libbareos::FreeBsr(jcr->bsr);
       jcr->bsr = NULL;
    }
 
@@ -1727,7 +1730,7 @@ void SetJcrDefaults(JobControlRecord *jcr, JobResource *job)
             jcr->res.catalog = job->client->catalog;
             PmStrcpy(jcr->res.catalog_source, _("Client resource"));
          } else {
-            jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
+            jcr->res.catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
             PmStrcpy(jcr->res.catalog_source, _("Default catalog"));
          }
       }
@@ -1843,13 +1846,13 @@ int CreateRestoreBootstrapFile(JobControlRecord *jcr)
       goto bail_out;
    }
    FreeUaContext(ua);
-   FreeBsr(rx.bsr);
+   directordaemon::FreeBsr(rx.bsr);
    jcr->needs_sd = true;
    return jcr->ExpectedFiles;
 
 bail_out:
    FreeUaContext(ua);
-   FreeBsr(rx.bsr);
+   directordaemon::FreeBsr(rx.bsr);
    return files;
 }
 
@@ -1870,3 +1873,4 @@ bool RunConsoleCommand(JobControlRecord *jcr, const char *cmd)
    FreeJcr(ljcr);
    return ok;
 }
+} /* namespace directordaemon */

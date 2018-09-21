@@ -30,11 +30,14 @@
  */
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 #include "stored/sd_stats.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 const int debuglevel = 250;
 #ifdef HAVE_WIN32
@@ -96,11 +99,11 @@ static bsdFuncs bfuncs = {
  * Bareos private context
  */
 struct b_plugin_ctx {
-   JobControlRecord *jcr;                                       /* jcr for plugin */
-   bRC  rc;                                        /* last return code */
-   bool disabled;                                  /* set if plugin disabled */
+   JobControlRecord *jcr;                        /* jcr for plugin */
+   bRC  rc;                                      /* last return code */
+   bool disabled;                                /* set if plugin disabled */
    char events[NbytesForBits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
-   Plugin *plugin;                                 /* pointer to plugin of which this is an instance off */
+   Plugin *plugin;                               /* pointer to plugin of which this is an instance off */
 };
 
 static inline bool IsEventEnabled(bpContext *ctx, bsdEventType eventType)
@@ -1034,3 +1037,5 @@ int main(int argc, char *argv[])
 }
 
 #endif /* TEST_PROGRAM */
+
+} /* namespace storagedaemon */

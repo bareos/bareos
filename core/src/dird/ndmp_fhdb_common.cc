@@ -33,6 +33,8 @@
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
 
+namespace directordaemon {
+
 extern "C" int BndmpFhdbAddFile(struct ndmlog *ixlog, int tagc, char *raw_name,
                                         ndmp9_file_stat *fstat)
 {
@@ -104,4 +106,6 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog *ixlog, int tagc, char *raw_name,
 
    return 0;
 }
-#endif
+
+} /* namespace directordaemon */
+#endif /* #if defined(HAVE_NDMP) */

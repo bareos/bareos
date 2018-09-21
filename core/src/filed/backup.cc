@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/accurate.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
@@ -40,6 +41,8 @@
 #include "findlib/hardlink.h"
 #include "findlib/find_one.h"
 #include "lib/btimers.h"
+
+namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
@@ -92,9 +95,9 @@ bool BlastDataToStorageDaemon(JobControlRecord *jcr, char *addr, crypto_cipher_t
 
    Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
 
-   LockRes();
-   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
+   UnlockRes(my_config);
    uint32_t buf_size;
    if (client) {
       buf_size = client->max_network_buffer_size;
@@ -1623,3 +1626,4 @@ static void CloseVssBackupSession(JobControlRecord *jcr)
    }
 #endif
 }
+} /* namespace filedaemon */

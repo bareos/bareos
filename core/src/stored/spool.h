@@ -21,6 +21,8 @@
 #ifndef BAREOS_STORED_SPOOL_H_
 #define BAREOS_STORED_SPOOL_H_
 
+namespace storagedaemon {
+
 bool BeginDataSpool (DeviceControlRecord *dcr);
 bool DiscardDataSpool (DeviceControlRecord *dcr);
 bool CommitDataSpool (DeviceControlRecord *dcr);
@@ -30,5 +32,7 @@ bool DiscardAttributeSpool (JobControlRecord *jcr);
 bool CommitAttributeSpool (JobControlRecord *jcr);
 bool WriteBlockToSpoolFile (DeviceControlRecord *dcr);
 void ListSpoolStats (void sendit(const char *msg, int len, void *sarg), void *arg);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_SPOOL_H_

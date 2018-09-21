@@ -32,6 +32,8 @@
 #include "stored/stored.h"
 #include "win32_file_device.h"
 
+namespace storagedaemon {
+
 /**
  * (Un)mount the device (For a FILE device)
  */
@@ -298,3 +300,5 @@ win32_file_device::~win32_file_device()
 win32_file_device::win32_file_device()
 {
 }
+
+} /* namespace storagedaemon */

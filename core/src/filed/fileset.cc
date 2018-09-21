@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "findlib/match.h"
 #include "lib/edit.h"
 #include "include/ch.h"
@@ -38,6 +39,8 @@
 #ifdef HAVE_WIN32
 #include "win32/findlib/win32.h"
 #endif
+
+namespace filedaemon {
 
 /* Forward referenced functions */
 static int SetOptions(findFOPTS *fo, const char *opts);
@@ -800,3 +803,4 @@ static int SetOptions(findFOPTS *fo, const char *opts)
 
    return state_options;
 }
+} /* namespace filedaemon */

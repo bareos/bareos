@@ -40,6 +40,8 @@
 #define RTLD_NOW 2
 #endif
 
+namespace storagedaemon {
+
 /**
  * Known backend to interface mappings.
  */
@@ -229,4 +231,7 @@ void DevFlushBackends()
       loaded_backends = NULL;
    }
 }
+
+} /* namespace storagedaemon */
+
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */

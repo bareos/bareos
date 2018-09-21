@@ -51,7 +51,7 @@
  * If bit 29 in berrno_ is not set, then it is a Unix errno.
  *
  */
-class DLL_IMP_EXP BErrNo : public SmartAlloc {
+class BErrNo : public SmartAlloc {
    POOLMEM *buf_;
    int berrno_;
    void FormatWin32Message();

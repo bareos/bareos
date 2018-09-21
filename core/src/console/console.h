@@ -1,7 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,13 +20,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_PARSE_BSR_H_
-#define BAREOS_STORED_PARSE_BSR_H_
+#ifndef BAREOS_CONSOLE_CONSOLE_H_
+#define BAREOS_CONSOLE_CONSOLE_H_
 
-BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
-void DumpBsr(BootStrapRecord *bsr, bool recurse);
-DLL_IMP_EXP void FreeBsr(BootStrapRecord *bsr);
-void FreeRestoreVolumeList(JobControlRecord *jcr);
-void CreateRestoreVolumeList(JobControlRecord *jcr);
+#include "include/bareos.h"
 
-#endif // BAREOS_STORED_PARSE_BSR_H_
+class JobControlRecord;
+
+namespace console {
+
+BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len);
+
+}
+#endif /* BAREOS_CONSOLE_CONSOLE_H_ */

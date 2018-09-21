@@ -35,7 +35,7 @@
 
 /* Dummy functions */
 int GenerateJobEvent(JobControlRecord *jcr, const char *event) { return 1; }
-void GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value) { }
+void GeneratePluginEvent(JobControlRecord *jcr, filedaemon::bEventType eventType, void *value) { }
 
 /* Global variables */
 int attrs = 0;

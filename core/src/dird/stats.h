@@ -21,8 +21,11 @@
 #ifndef BAREOS_DIRD_STATS_H_
 #define BAREOS_DIRD_STATS_H_
 
+namespace directordaemon {
+
 int StartStatisticsThread(void);
 void StopStatisticsThread();
 void stats_job_started();
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_STATS_H_

@@ -20,7 +20,7 @@
 */
 #ifndef BAREOS_CATS_SQL_POOLING_H_
 #define BAREOS_CATS_SQL_POOLING_H_
-DLL_IMP_EXP bool db_sql_pool_initialize(const char *db_drivername,
+bool db_sql_pool_initialize(const char *db_drivername,
                             const char *db_name,
                             const char *db_user,
                             const char *db_password,
@@ -35,9 +35,9 @@ DLL_IMP_EXP bool db_sql_pool_initialize(const char *db_drivername,
                             int increment_connections,
                             int idle_timeout,
                             int validate_timeout);
-DLL_IMP_EXP void DbSqlPoolDestroy(void);
-DLL_IMP_EXP void DbSqlPoolFlush(void);
-DLL_IMP_EXP BareosDb *DbSqlGetNonPooledConnection(JobControlRecord *jcr,
+void DbSqlPoolDestroy(void);
+void DbSqlPoolFlush(void);
+BareosDb *DbSqlGetNonPooledConnection(JobControlRecord *jcr,
                                        const char *db_drivername,
                                        const char *db_name,
                                        const char *db_user,
@@ -50,7 +50,7 @@ DLL_IMP_EXP BareosDb *DbSqlGetNonPooledConnection(JobControlRecord *jcr,
                                        bool try_reconnect,
                                        bool exit_on_fatal,
                                        bool need_private = false);
-DLL_IMP_EXP BareosDb *DbSqlGetPooledConnection(JobControlRecord *jcr,
+BareosDb *DbSqlGetPooledConnection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -63,6 +63,6 @@ DLL_IMP_EXP BareosDb *DbSqlGetPooledConnection(JobControlRecord *jcr,
                                    bool try_reconnect,
                                    bool exit_on_fatal,
                                    bool need_private = false);
-DLL_IMP_EXP void DbSqlClosePooledConnection(JobControlRecord *jcr, BareosDb *mdb, bool abort = false);
+void DbSqlClosePooledConnection(JobControlRecord *jcr, BareosDb *mdb, bool abort = false);
 
 #endif // BAREOS_CATS_SQL_POOLING_H_

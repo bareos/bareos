@@ -30,6 +30,8 @@
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_ 1
 
+namespace storagedaemon {
+
 extern "C" {
 typedef Device *(*t_backend_instantiate)(JobControlRecord *jcr, int device_type);
 typedef void (*t_flush_backend)(void);
@@ -64,5 +66,7 @@ void SdSetBackendDirs(alist *new_backend_dirs);
 Device *init_backend_dev(JobControlRecord *jcr, int device_type);
 void DevFlushBackends();
 #endif
+
+} /* namespace storagedaemon */
 
 #endif /* __SD_DYNAMIC_H_ */

@@ -34,6 +34,8 @@
 #include "cats/sql_pooling.h"
 #include "dird/ua_select.h"
 
+namespace directordaemon {
+
 /* Imported subroutines */
 
 /**
@@ -387,3 +389,4 @@ int UpdatePoolReferences(JobControlRecord *jcr, BareosDb *db, PoolResource *pool
    }
    return true;
 }
+} /* namespace directordaemon */
