@@ -87,7 +87,7 @@ struct chunk_descriptor {
    bool opened;            /* An open call was done */
 };
 
-#include "lib/ordered_cbuf.h"
+#include "ordered_cbuf.h"
 
 class chunked_device: public Device {
 private:

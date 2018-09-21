@@ -41,7 +41,7 @@ target_link_libraries(bareossd-gfapi ${GFAPI_LIBRARIES})
 endif()
 
 if(${HAVE_DROPLET})
-add_library(bareossd-chunked SHARED chunked_device.cc)
+add_library(bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc)
 target_link_libraries(bareossd-chunked ${DROPLET_LIBRARIES})
 INSTALL(TARGETS bareossd-chunked DESTINATION ${backenddir})
 

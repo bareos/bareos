@@ -26,6 +26,7 @@
  * Ordered Circular buffer used for producer/consumer problem with pthreads.
  */
 #include "include/bareos.h"
+namespace storagedaemon {
 #include "ordered_cbuf.h"
 
 /*
@@ -417,3 +418,4 @@ int ordered_circbuf::flush()
 
    return 0;
 }
+} /* namespace storagedaemon */
