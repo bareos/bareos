@@ -156,6 +156,7 @@ static ResourceItem dir_items[] = {
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
+   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_dir.UsePamAuthentication_), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
    TLS_PSK_CONFIG(res_dir),

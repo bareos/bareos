@@ -90,7 +90,7 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
    bool success = AuthenticateUserAgent(ua);
 
 #if defined(HAVE_PAM)
-   if (success) {
+   if (success && me->UsePamAuthentication_) {
       std::string username;
       if (ua->cons) {
          username = ua->cons->name();
