@@ -27,8 +27,8 @@ Source0:        bareos-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 Provides:       %name = %version
-Provides:       %name-postvista = %version
-Provides:       %name-postvista-debug = %version
+Provides:       %name-release = %version
+Provides:       %name-debug = %version
 #Provides:       %name-prevista = %version
 #Provides:       %name-prevista-debug = %version
 

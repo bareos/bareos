@@ -47,8 +47,8 @@ VERSION32C=$(sed -r -e 's/(.{1,32}).*/\1/' -e 's/\.*$//' <<< %{version})
 sed -i -e "s/^version: \$PackageVersion/version: %{release}/i" \
        -e "s/^version: \$ProductVersion/version: $VERSION32C/i" opsi/OPSI/control
 
-WINBAREOS32=`ls -1 /winbareos*-postvista-32-bit-*.exe`
-WINBAREOS64=`ls -1 /winbareos*-postvista-64-bit-*.exe`
+WINBAREOS32=`ls -1 /winbareos*-release-32-bit-*.exe`
+WINBAREOS64=`ls -1 /winbareos*-release-64-bit-*.exe`
 if [ -r "$WINBAREOS32" ] && [ -r "$WINBAREOS64" ]; then
     mkdir -p opsi/CLIENT_DATA/data
     cp -a $WINBAREOS32 $WINBAREOS64 opsi/CLIENT_DATA/data

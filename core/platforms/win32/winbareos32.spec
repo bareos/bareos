@@ -15,7 +15,7 @@
 # flavors:
 #   If name contains debug, enable debug during build.
 #   If name contains prevista, build for windows < vista.
-%define flavors postvista postvista-debug
+%define flavors release debug
 %define dirs_with_unittests lib findlib
 %define bareos_configs bareos-dir.d/ bareos-fd.d/ bareos-sd.d/ tray-monitor.d/ bconsole.conf
 
@@ -82,14 +82,14 @@ BuildRequires:  cmake
 %description
 Base package for Bareos Windows build.
 
-%package postvista
+%package release
 Summary:        bareos
-%description postvista
+%description release
 Bareos for Windows versions >= Windows Vista
 
-%package postvista-debug
+%package debug
 Summary:        bareos
-%description postvista-debug
+%description debug
 Bareos Debug for Windows versions >= Windows Vista
 
 
@@ -111,7 +111,7 @@ done
 for flavor in %flavors; do
 
    WINDOWS_BITS=$(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
-   WINDOWS_VERSION=$(echo $flavor | grep postvista >/dev/null && echo 0x600 || echo 0x500)
+   WINDOWS_VERSION=$(echo $flavor | grep release >/dev/null && echo 0x600 || echo 0x500)
    pushd $flavor
    %{_mingw32_cmake_qt4} \
       -DCMAKE_INSTALL_BINDIR:PATH=%{_mingw64_bindir} \
@@ -152,11 +152,11 @@ rm -rf $RPM_BUILD_ROOT
 %files
 
 
-%files postvista
+%files release
 %defattr(-,root,root)
-/postvista-%WINDOWS_BITS
+/release-%WINDOWS_BITS
 
-%files postvista-debug
-/postvista-debug-%WINDOWS_BITS
+%files debug
+/debug-%WINDOWS_BITS
 
 %changelog

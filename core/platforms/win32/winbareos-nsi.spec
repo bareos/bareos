@@ -11,7 +11,7 @@
 # flavors:
 #   If name contains debug, enable debug during build.
 #   If name contains prevista, build for windows < vista.
-%define flavors postvista postvista-debug
+%define flavors release debug
 
 %define SIGNCERT %{_builddir}/ia.p12
 %define SIGNPWFILE %{_builddir}/signpassword
@@ -88,11 +88,11 @@ BuildRequires:  mingw64-libsqlite
 BuildRequires:  mingw32-libjansson
 BuildRequires:  mingw64-libjansson
 
-BuildRequires:  mingw32-winbareos-postvista = %{version}
-BuildRequires:  mingw64-winbareos-postvista = %{version}
+BuildRequires:  mingw32-winbareos-release = %{version}
+BuildRequires:  mingw64-winbareos-release = %{version}
 
-BuildRequires:  mingw32-winbareos-postvista-debug = %{version}
-BuildRequires:  mingw64-winbareos-postvista-debug = %{version}
+BuildRequires:  mingw32-winbareos-debug = %{version}
+BuildRequires:  mingw64-winbareos-debug = %{version}
 
 BuildRequires:  osslsigncode
 BuildRequires:  obs-name-resolution-settings
