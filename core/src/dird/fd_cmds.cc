@@ -165,10 +165,16 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    bool tcp_connect_failed = false;
    int connect_tries = 3; /* as a finish-hook for the UseWaitingClient mechanism */
 
-   /* try the connection mode in case a client that cannot do Tls
-    * immediately without cleartext md5-handshake first */
-   jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
-   jcr->res.client->connection_successful_handshake_ = ClientConnectionHandshakeMode::kUndefined;
+   /* try the connection modes starting with tls directly,
+    * in case there is a client that cannot do Tls immediately then
+    * fall back to cleartext md5-handshake */
+   if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
+    || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
+      jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+   } else {
+      /* if there is a stored mode from a previous connection then use this */
+      jcr->connection_handshake_try_ = jcr->res.client->connection_successful_handshake_;
+   }
 
    do { /* while (tcp_connect_failed ...) */
      /* connect the tcp socket */

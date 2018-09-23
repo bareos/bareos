@@ -3794,6 +3794,18 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
    }
 }
 
+static void ResetAllClientConnectionHandshakeModes(ConfigurationParser &my_config)
+{
+  CommonResourceHeader *header = nullptr;
+  do {
+    header = my_config.GetNextRes(R_CLIENT, header);
+    ClientResource *client = reinterpret_cast<ClientResource*>(header);
+    if (client) {
+      client->connection_successful_handshake_ = ClientConnectionHandshakeMode::kUndefined;
+    }
+  } while (header);
+}
+
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
   CreateAndAddUserAgentConsoleResource(my_config);
@@ -3805,6 +3817,8 @@ static void ConfigReadyCallback(ConfigurationParser &my_config)
       {R_MSGS, "R_MSGS"},         {R_COUNTER, "R_COUNTER"}, {R_PROFILE, "R_PROFILE"},
       {R_CONSOLE, "R_CONSOLE"},   {R_DEVICE, "R_DEVICE"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
+
+  ResetAllClientConnectionHandshakeModes(my_config);
 }
 
 static bool AddResourceCopyToEndOfChain(UnionOfResources *res_to_add, int type)
