@@ -567,7 +567,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
       }
    } else {
 
-      if (jcr->connection_successful_handshake_ != JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
+      if (jcr->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
         tls_need = GetLocalTlsPolicyFromConfiguration(client);
       } else {
         tls_need = TlsConfigBase::BNET_TLS_AUTO;

@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/fd_cmds.h"
+#include "dird/client_connection_handshake_mode.h"
 #include "dird/dird_globals.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
@@ -131,7 +132,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   BareosSocket *fd               = jcr->file_bsock;
   ClientResource *client         = jcr->res.client;
 
-  if (jcr->connection_handshake_try_ == JobControlRecord::ConnectionHandshakeMode::kTlsFirst) {
+  if (jcr->connection_handshake_try_ == ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                               qualified_resource_name)) {

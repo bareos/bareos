@@ -279,6 +279,7 @@ public:
    bool ndmp_use_lmdb;                /* NDMP Protocol specific use LMDB for the FHDB or not */
    int64_t max_bandwidth;             /* Limit speed on this client */
    runtime_client_status_t *rcs;      /* Runtime Client Status */
+
    ClientResource() : TlsResource() {}
 };
 

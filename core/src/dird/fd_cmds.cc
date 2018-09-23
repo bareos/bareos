@@ -167,8 +167,8 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
 
    /* try the connection mode in case a client that cannot do Tls
     * immediately without cleartext md5-handshake first */
-   jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kTlsFirst;
-   jcr->connection_successful_handshake_ = JobControlRecord::ConnectionHandshakeMode::kUndefined;
+   jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+   jcr->connection_successful_handshake_ = ClientConnectionHandshakeMode::kUndefined;
 
    do { /* while (tcp_connect_failed ...) */
      /* connect the tcp socket */
@@ -194,20 +194,20 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
            * - if an old client cannot do tls- before md5-handshake
            * */
           switch(jcr->connection_handshake_try_) {
-          case JobControlRecord::ConnectionHandshakeMode::kTlsFirst:
+          case ClientConnectionHandshakeMode::kTlsFirst:
             if (jcr->file_bsock) {
                jcr->file_bsock->close();
                delete jcr->file_bsock;
                jcr->file_bsock = nullptr;
             }
             jcr->resetJobStatus(JS_Running);
-            jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kCleartextFirst;
+            jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;
             break;
-          case JobControlRecord::ConnectionHandshakeMode::kCleartextFirst:
-            jcr->connection_handshake_try_ = JobControlRecord::ConnectionHandshakeMode::kFailed;
+          case ClientConnectionHandshakeMode::kCleartextFirst:
+            jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kFailed;
             break;
-          case JobControlRecord::ConnectionHandshakeMode::kFailed:
-          default: /* should bei one of class ConnectionHandshakeMode */
+          case ClientConnectionHandshakeMode::kFailed:
+          default: /* should bei one of class ClientConnectionHandshakeMode */
             ASSERT(false);
             break;
           }
@@ -218,7 +218,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
      connect_tries--;
    } while (!tcp_connect_failed && connect_tries
          && !success
-         && jcr->connection_handshake_try_ != JobControlRecord::ConnectionHandshakeMode::kFailed);
+         && jcr->connection_handshake_try_ != ClientConnectionHandshakeMode::kFailed);
 
    if (!success) {
      jcr->setJobStatus(JS_ErrorTerminated);
