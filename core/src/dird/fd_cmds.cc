@@ -168,7 +168,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    /* try the connection mode in case a client that cannot do Tls
     * immediately without cleartext md5-handshake first */
    jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
-   jcr->connection_successful_handshake_ = ClientConnectionHandshakeMode::kUndefined;
+   jcr->res.client->connection_successful_handshake_ = ClientConnectionHandshakeMode::kUndefined;
 
    do { /* while (tcp_connect_failed ...) */
      /* connect the tcp socket */
@@ -187,7 +187,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
         jcr->setJobStatus(JS_Running);
         if (AuthenticateWithFileDaemon(jcr)) {
            success = true;
-           jcr->connection_successful_handshake_ = jcr->connection_handshake_try_;
+           jcr->res.client->connection_successful_handshake_ = jcr->connection_handshake_try_;
         } else {
           /* authentication failed due to
            * - tls mismatch or

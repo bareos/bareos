@@ -533,7 +533,6 @@ public:
    bool HasQuota;                         /**< Client has quota limits */
    bool HasSelectedJobs;                  /**< Migration/Copy Job did actually select some JobIds */
    directordaemon::ClientConnectionHandshakeMode connection_handshake_try_;
-   directordaemon::ClientConnectionHandshakeMode connection_successful_handshake_;
 #endif /* DIRECTOR_DAEMON */
 
 #ifdef FILE_DAEMON
