@@ -1,7 +1,7 @@
 #undef  VERSION
-#define VERSION "18.2.3"
-#define BDATE   "01 Jun 2018"
-#define LSMDATE "01Jun18"
+#define VERSION "18.3.4"
+#define BDATE   "24 Sep 2018"
+#define LSMDATE "24Sep18"
 
 #define PROG_COPYRIGHT "Copyright (C) 2013-2018 Bareos GmbH & Co. KG\n" \
                        "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
@@ -30,17 +30,6 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
-/* Shared object library versions */
-
-/* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "17.4.2" */
-/* #define LIBBAREOSCFG_LT_RELEASE "17.4.2" */
-/* #define LIBBAREOSSQL_LT_RELEASE "17.4.2" */
-/* #define LIBBAREOSCATS_LT_RELEASE "17.4.2" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "17.4.2" */
-/* #define LIBBAREOSLMDB_LT_RELEASE "17.4.2" */
-/* #define LIBBAREOSSD_LT_RELEASE "17.4.2" */
 
 /* Debug flags */
 #undef  DEBUG
