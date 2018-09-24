@@ -34,22 +34,24 @@ uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource)
   return local_policy;
 }
 
-TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy)
+int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy)
 {
   if (remote_policy == TlsConfigBase::BNET_TLS_AUTO) {
-    static TlsConfigAuto tls_auto_dummy;
-    return &tls_auto_dummy;
+    return TlsConfigBase::BNET_TLS_AUTO;
   }
   uint32_t local_policy = GetLocalTlsPolicyFromConfiguration(tls_resource);
 
   if ((remote_policy == 0 && local_policy == 0) || (remote_policy == 0 && local_policy == 1) ||
       (remote_policy == 1 && local_policy == 0)) {
-    static TlsConfigNone tls_none_dummy;
-    return &tls_none_dummy;
+    return TlsConfigBase::BNET_TLS_NONE;
   }
   if ((remote_policy == 0 && local_policy == 2) || (remote_policy == 2 && local_policy == 0)) {
-    static TlsConfigDeny tls_deny_dummy;
-    return &tls_deny_dummy;
+    return TlsConfigBase::BNET_TLS_DENY;
   }
+  return TlsConfigBase::BNET_TLS_ENABLED;
+}
+
+TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy)
+{
   return &tls_resource->tls_cert;
 }

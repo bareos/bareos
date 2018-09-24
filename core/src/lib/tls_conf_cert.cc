@@ -25,10 +25,10 @@
 uint32_t TlsConfigCert::GetPolicy() const
 {
    uint32_t result = TlsConfigBase::BNET_TLS_NONE;
-   if (enable) {
+   if (enable_) {
       result = TlsConfigBase::BNET_TLS_ENABLED;
    }
-   if (require) {
+   if (require_) {
       result = TlsConfigBase::BNET_TLS_REQUIRED;
    }
    return result;
