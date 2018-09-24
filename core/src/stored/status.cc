@@ -259,7 +259,7 @@ static void get_device_specific_status(DeviceResource *device,
    dst.status = GetPoolMemory(PM_MESSAGE);
    dst.status_length = 0;
 
-   if (device->dev->DeviceStatus(&dst)) {
+   if (device && device->dev && device->dev->DeviceStatus(&dst)) {
       if (dst.status_length > 0) {
          sendit(dst.status, dst.status_length, sp);
       }
