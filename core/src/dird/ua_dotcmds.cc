@@ -775,7 +775,7 @@ static void DoClientCmd(UaContext *ua, ClientResource *client, const char *cmd)
    /* Try to connect for 15 seconds */
    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"),
       client->name(), client->address, client->FDport);
-   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
       ua->ErrorMsg(_("Failed to connect to Client.\n"));
       return;
    }

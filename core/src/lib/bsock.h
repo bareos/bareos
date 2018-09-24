@@ -182,6 +182,8 @@ class BareosSocket : public SmartAlloc {
   void SetSourceAddress(dlist *src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
   bool IsCleartextBareosHello();
+  void OutputCipherMessageString(std::function<void(const char *)>);
+  void GetCipherMessageString(std::string &str);
 
   bool AuthenticateOutboundConnection(JobControlRecord *jcr,
                                       const char *what,

@@ -909,19 +909,6 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
   return UA_sock;
 }
 
-void OutputCipherString(BareosSocket *UA_sock)
-{
-   if (UA_sock->tls_conn) {
-     std::string m;
-     m = "Secure connection cipher: ";
-     m += UA_sock->tls_conn->TlsCipherGetName();
-     m += "\n";
-     ConsoleOutput(m.c_str());
-   } else {
-     ConsoleOutput("Cleartext connection\n");
-   }
-}
-
 } /* namespace console */
 /*
  * Main Bareos Console -- User Interface Program
@@ -1102,7 +1089,7 @@ int main(int argc, char *argv[])
 
    ConsoleOutput(errmsg);
 
-   OutputCipherString(UA_sock);
+   UA_sock->OutputCipherMessageString(ConsoleOutput);
 
 #if defined(HAVE_PAM)
    if (console_resource) { /* not for root console */

@@ -24,7 +24,8 @@
 
 namespace directordaemon {
 
-bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose);
+bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose,
+                         UaContext *ua = nullptr);
 int  SendJobInfo(JobControlRecord *jcr);
 bool SendIncludeList(JobControlRecord *jcr);
 bool SendExcludeList(JobControlRecord *jcr);

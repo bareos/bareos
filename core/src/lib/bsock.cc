@@ -627,6 +627,26 @@ bool BareosSocket::IsCleartextBareosHello()
   return false;
 }
 
+void BareosSocket::GetCipherMessageString(std::string &str)
+{
+   if (tls_conn) {
+     std::string m;
+     m = "Secure connection with cipher ";
+     m += tls_conn->TlsCipherGetName();
+     m += "\n";
+     str = m;
+   } else {
+     str = "Cleartext connection\n";
+   }
+}
+
+void BareosSocket::OutputCipherMessageString(std::function<void(const char *)> output_cb)
+{
+   std::string str;
+   GetCipherMessageString(str);
+   output_cb(str.c_str());
+}
+
 /**
  * Try to limit the bandwidth of a network connection
  */
