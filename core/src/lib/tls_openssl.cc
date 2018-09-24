@@ -98,7 +98,7 @@ bool TlsOpenSsl::init()
   SSL_CTX_set_default_passwd_cb_userdata(d_->openssl_ctx_, reinterpret_cast<void *>(d_.get()));
 
   const char *ca_certfile = d_->ca_certfile_.empty() ? nullptr : d_->ca_certfile_.c_str();
-  const char *ca_certdir  = d_->ca_certdir_.empty() ? nullptr : d_->ca_certfile_.c_str();
+  const char *ca_certdir  = d_->ca_certdir_.empty() ? nullptr : d_->ca_certdir_.c_str();
 
   if (ca_certfile || ca_certdir) { /* at least one should be set */
     if (!SSL_CTX_load_verify_locations(d_->openssl_ctx_, ca_certfile, ca_certdir)) {

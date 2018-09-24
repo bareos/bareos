@@ -22,8 +22,6 @@
 #ifndef BAREOS_LIB_TLS_CONF_BASE_H_
 #define BAREOS_LIB_TLS_CONF_BASE_H_
 
-struct PskCredentials;
-
 class TlsConfigBase {
 public:
    bool enable_;  /*!< Enable TLS */
