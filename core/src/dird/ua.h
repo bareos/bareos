@@ -130,6 +130,7 @@ public:
    /*
     * The below are in ua_output.c
     */
+   void SendRawMsg(const char *msg);
    void SendMsg(const char *fmt, ...);
    void ErrorMsg(const char *fmt, ...);
    void WarningMsg(const char *fmt, ...);

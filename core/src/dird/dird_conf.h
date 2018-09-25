@@ -31,6 +31,8 @@
 #define BAREOS_DIRD_DIRD_CONF_H_
 /* NOTE:  #includes at the end of this file */
 
+#include "dird/client_connection_handshake_mode.h"
+
 namespace directordaemon {
 
 static std::string default_config_filename("bareos-dir.conf");
@@ -279,6 +281,8 @@ public:
    bool ndmp_use_lmdb;                /* NDMP Protocol specific use LMDB for the FHDB or not */
    int64_t max_bandwidth;             /* Limit speed on this client */
    runtime_client_status_t *rcs;      /* Runtime Client Status */
+   ClientConnectionHandshakeMode connection_successful_handshake_;
+
    ClientResource() : TlsResource() {}
 };
 

@@ -18,14 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#ifndef BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_
+#define BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_
 
-#ifndef BAREOS_LIB_TLS_CONF_AUTO_H_
-#define BAREOS_LIB_TLS_CONF_AUTO_H_
+namespace directordaemon {
 
-class TlsConfigAuto : public TlsConfigBase {
- public:
-   TlsConfigAuto() : TlsConfigBase() {}
-   virtual uint32_t GetPolicy() const override { return BNET_TLS_AUTO; }
-};
+enum class ClientConnectionHandshakeMode { kUndefined, kTlsFirst, kCleartextFirst, kFailed };
 
-#endif /* BAREOS_LIB_TLS_CONF_AUTO_H_ */
+} /* namespace directordaemon */
+#endif /* BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_ */

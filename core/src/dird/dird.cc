@@ -742,17 +742,15 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (me->tls_cert.require || me->tls_psk.require) {
-         if (have_tls) {
-            // me->tls.enable = true;
-         } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled in in BAREOS.\n"));
+      if (me->tls_cert.IsActivated() || me->tls_psk.IsActivated()) {
+         if (!have_tls) {
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled into BAREOS.\n"));
             OK = false;
             goto bail_out;
          }
       }
 
-      need_tls = me->tls_cert.enable || me->tls_cert.authenticate;
+      need_tls = me->tls_cert.IsActivated() || me->tls_cert.authenticate;
 
       if ((me->tls_cert.certfile == nullptr || me->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(),configfile.c_str());
@@ -819,17 +817,15 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (cons->tls_cert.require) {
-         if (have_tls) {
-            // cons->tls_cert.enable = true;
-         } else {
+      if (cons->tls_cert.IsActivated()) {
+         if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
             goto bail_out;
          }
       }
 
-      need_tls = cons->tls_cert.enable || cons->tls_cert.authenticate;
+      need_tls = cons->tls_cert.IsActivated() || cons->tls_cert.authenticate;
 
       if ((cons->tls_cert.certfile == nullptr || cons->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
@@ -874,16 +870,14 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (client->tls_cert.require) {
-         if (have_tls) {
-            // client->tls_cert.enable = true;
-         } else {
+      if (client->tls_cert.IsActivated()) {
+         if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
             OK = false;
             goto bail_out;
          }
       }
-      need_tls = client->tls_cert.enable || client->tls_cert.authenticate;
+      need_tls = client->tls_cert.IsActivated() || client->tls_cert.authenticate;
       if ((client->tls_cert.CaCertfile == nullptr || client->tls_cert.CaCertfile->empty()) &&
           (client->tls_cert.CaCertdir == nullptr || client->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
@@ -902,7 +896,7 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (store->tls_cert.require) {
+      if (store->tls_cert.IsActivated()) {
          if (have_tls) {
             // store->tls.enable = true;
          } else {
@@ -912,7 +906,7 @@ static bool CheckResources()
          }
       }
 
-      need_tls = store->tls_cert.enable || store->tls_cert.authenticate;
+      need_tls = store->tls_cert.IsActivated() || store->tls_cert.authenticate;
 
       if ((store->tls_cert.CaCertfile == nullptr || store->tls_cert.CaCertfile->empty()) &&
           (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty()) && need_tls) {

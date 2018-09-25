@@ -28,11 +28,11 @@
 #include "lib/tls_conf_psk.h"
 #include "lib/tls_conf_none.h"
 #include "lib/tls_conf_deny.h"
-#include "lib/tls_conf_auto.h"
 
 class TlsResource;
 
 uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource);
 TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy);
+int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy);
 
 #endif //BAREOS_LIB_TLS_CONF_H_

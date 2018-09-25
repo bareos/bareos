@@ -889,22 +889,26 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     ConsoleOutput("Could not generate qualified resource name\n");
     TerminateConsole(0);
     return nullptr;
-      }
+  }
 
-  if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
+  int tls_policy = local_tls_resource->tls_psk.IsActivated() || local_tls_resource->tls_cert.IsActivated()
+                 ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
+
+  if (!UA_sock->DoTlsHandshake(tls_policy, local_tls_resource, false,
                                qualified_resource_name.c_str(), password->value, &jcr)) {
     ConsoleOutput(errmsg);
     TerminateConsole(0);
     return nullptr;
-   }
+  }
 
   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
     ConsoleOutput(errmsg);
     TerminateConsole(0);
     return nullptr;
-      }
+  }
   return UA_sock;
-   }
+}
+
 } /* namespace console */
 /*
  * Main Bareos Console -- User Interface Program
@@ -1085,13 +1089,15 @@ int main(int argc, char *argv[])
 
    ConsoleOutput(errmsg);
 
+   UA_sock->OutputCipherMessageString(ConsoleOutput);
+
 #if defined(HAVE_PAM)
    if (console_resource) { /* not for root console */
       if (director_resource && director_resource->UsePamAuthentication_) {
          if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-      TerminateConsole(0);
-      return 1;
-   }
+            TerminateConsole(0);
+            return 1;
+         }
       }
    }
 #endif /* HAVE_PAM */

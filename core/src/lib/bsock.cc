@@ -447,7 +447,7 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
 
 void BareosSocket::ParameterizeTlsCert(Tls *tls_conn_init, TlsResource *tls_resource)
 {
-  if (tls_resource->tls_cert.enable) {
+  if (tls_resource->tls_cert.IsActivated()) {
     const std::string empty;
     tls_conn_init->SetCaCertfile(tls_resource->tls_cert.CaCertfile ? *tls_resource->tls_cert.CaCertfile : empty);
     tls_conn_init->SetCaCertdir(tls_resource->tls_cert.CaCertdir ? *tls_resource->tls_cert.CaCertdir : empty);
@@ -467,7 +467,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
 {
   TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
 
-  if (!tls_resource->tls_cert.enable && !tls_resource->tls_psk.enable) {
+  if (!tls_resource->tls_cert.IsActivated() && !tls_resource->tls_psk.IsActivated()) {
     return true; /* cleartext connection */
   }
   tls_conn_init.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
@@ -480,7 +480,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  if (tls_resource->tls_psk.enable) {
+  if (tls_resource->tls_psk.IsActivated()) {
     tls_conn_init->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
   }
 
@@ -500,17 +500,19 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
 {
   if (tls_conn) { return true; }
 
-  TlsConfigBase *selected_local_tls;
-  selected_local_tls = SelectTlsFromPolicy(tls_resource, remote_tls_policy);
-  if (selected_local_tls->GetPolicy() == TlsConfigBase::BNET_TLS_DENY) { /* tls required but not configured */
+  int tls_policy = SelectTlsPolicy(tls_resource, remote_tls_policy);
+
+  if (tls_policy == TlsConfigBase::BNET_TLS_DENY) { /* tls required but not configured */
     return false;
   }
-  if (selected_local_tls->GetPolicy() != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
+  if (tls_policy != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
 
     if (!ParameterizeAndInitTlsConnection(tls_resource, identity, password, initiated_by_remote)) {
       return false;
     }
 
+    TlsConfigBase *selected_local_tls;
+    selected_local_tls = SelectTlsFromPolicy(tls_resource, remote_tls_policy);
     if (initiated_by_remote) {
       if (!DoTlsHandshakeWithClient(selected_local_tls, jcr)) { return false; }
     } else {
@@ -523,8 +525,8 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
     }
   }
   if (!initiated_by_remote) {
-    if (tls_conn_init) {
-      tls_conn_init->TlsLogConninfo(jcr, host(), port(), who());
+    if (tls_conn) {
+      tls_conn->TlsLogConninfo(jcr, host(), port(), who());
     } else {
       Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who(), host(), port());
     }
@@ -537,7 +539,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                                     const char *password,
                                                     bool initiated_by_remote)
 {
-  if (!tls_resource->tls_cert.enable && !tls_resource->tls_psk.enable) { return true; }
+  if (!tls_resource->tls_cert.IsActivated() && !tls_resource->tls_psk.IsActivated()) { return true; }
 
   tls_conn_init.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {
@@ -549,7 +551,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  if (tls_resource->tls_psk.enable) {
+  if (tls_resource->tls_psk.IsActivated()) {
     if (!initiated_by_remote) {
       const PskCredentials psk_cred(identity, password);
       tls_conn_init->SetTlsPskClientContext(psk_cred);
@@ -623,6 +625,26 @@ bool BareosSocket::IsCleartextBareosHello()
     if (hello == received) { return true; }
   }
   return false;
+}
+
+void BareosSocket::GetCipherMessageString(std::string &str)
+{
+   if (tls_conn) {
+     std::string m;
+     m = "Secure connection with cipher ";
+     m += tls_conn->TlsCipherGetName();
+     m += "\n";
+     str = m;
+   } else {
+     str = "Cleartext connection\n";
+   }
+}
+
+void BareosSocket::OutputCipherMessageString(std::function<void(const char *)> output_cb)
+{
+   std::string str;
+   GetCipherMessageString(str);
+   output_cb(str.c_str());
 }
 
 /**

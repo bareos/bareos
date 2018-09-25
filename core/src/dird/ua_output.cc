@@ -1818,6 +1818,12 @@ void UaContext::SendMsg(const char *fmt, ...)
    send->message(NULL, message);
 }
 
+void UaContext::SendRawMsg(const char *msg)
+{
+   SendMsg(msg);
+}
+
+
 /**
  * This is an error condition with a command. The gui should put
  *  up an error or critical dialog box.  The command is aborted.

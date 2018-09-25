@@ -85,9 +85,9 @@ struct s_password {
 #define TLS_COMMON_CONFIG(res) \
    { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls_cert.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
          "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
    { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls_cert.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
@@ -121,9 +121,9 @@ struct s_password {
   * TLS Settings for PSK only
   */
  #define TLS_PSK_CONFIG(res) \
-   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable), 0, CFG_ITEM_DEFAULT, "true", NULL, \
+   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
          "Enable TLS-PSK support." }, \
-   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
          "Enabling this implicitly sets \"TLS-PSK Enable = yes\"." }
 

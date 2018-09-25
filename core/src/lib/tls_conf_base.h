@@ -22,13 +22,12 @@
 #ifndef BAREOS_LIB_TLS_CONF_BASE_H_
 #define BAREOS_LIB_TLS_CONF_BASE_H_
 
-struct PskCredentials;
-
 class TlsConfigBase {
 public:
-   bool enable;  /*!< Enable TLS */
-   bool require; /*!< Require TLS */
+   bool enable_;  /*!< Enable TLS */
+   bool require_; /*!< Require TLS */
 
+   bool IsActivated() const { return (enable_ || require_); }
    virtual uint32_t GetPolicy() const = 0;
 
    virtual bool GetAuthenticate() const { return false; }
@@ -44,7 +43,7 @@ public:
    } Policy_e;
 
 protected:
-   TlsConfigBase() : enable(false), require(false) {}
+   TlsConfigBase() : enable_(false), require_(false) {}
    virtual ~TlsConfigBase() {}
 };
 
