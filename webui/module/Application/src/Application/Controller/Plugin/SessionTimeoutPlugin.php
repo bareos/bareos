@@ -12,9 +12,14 @@ class SessionTimeoutPlugin extends AbstractPlugin
       $configuration = $this->getController()->getServiceLocator()->get('config');
       $timeout = $configuration['configuration']['session']['timeout'];
 
+      if($_SESSION['bareos']['rememberme']){
+            return true;
+      }
+
       if($timeout === 0) {
          return true;
       }
+
       else {
          if($_SESSION['bareos']['idletime'] + $timeout > time()) {
             $_SESSION['bareos']['idletime'] = time();
