@@ -145,6 +145,13 @@ $this->headTitle($title);
    </div>
    </div>
 
+  <?php
+     echo '<div>';
+     echo $this->formCheckbox($form->get('remember_me'));
+     echo '<p class="text-muted"> Remember me </p>';
+    echo '</div>';
+  ?>
+
    <?php
       echo $this->form()->closeTag();
    ?>
