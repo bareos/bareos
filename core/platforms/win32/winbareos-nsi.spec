@@ -70,6 +70,10 @@ BuildRequires:  mingw64-libwinpthread1
 BuildRequires:  mingw32-libqt5-qtbase
 BuildRequires:  mingw64-libqt5-qtbase
 
+BuildRequires:  mingw32-icu
+BuildRequires:  mingw64-icu
+
+
 BuildRequires:  mingw32-lzo
 BuildRequires:  mingw64-lzo
 
@@ -168,6 +172,7 @@ for flavor in %{flavors}; do
       libwinpthread-1.dll \
       Qt5Core.dll \
       Qt5Gui.dll \
+      icui18n56.dll \
       sed.exe \
       sqlite3.exe \
       zlib1.dll \

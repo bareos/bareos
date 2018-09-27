@@ -940,6 +940,7 @@ SectionIn 1 2 3
   File "libpng*.dll"
   File "Qt5Core.dll"
   File "Qt5Gui.dll"
+  FIle "icui18n56.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
@@ -2152,6 +2153,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\zlib1.dll"
   Delete "$INSTDIR\Qt5Core.dll"
   Delete "$INSTDIR\Qt5Gui.dll"
+  Delete "$INSTDIR\icui18n56.dll"
   Delete "$INSTDIR\liblzo2-2.dll"
   Delete "$INSTDIR\libfastlz.dll"
   Delete "$INSTDIR\libjansson-4.dll"
