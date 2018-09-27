@@ -166,8 +166,8 @@ for flavor in %{flavors}; do
       libtermcap-0.dll \
       openssl.exe \
       libwinpthread-1.dll \
-      QtCore4.dll \
-      QtGui4.dll \
+      Qt5Core.dll \
+      Qt5Gui.dll \
       sed.exe \
       sqlite3.exe \
       zlib1.dll \

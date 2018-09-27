@@ -938,8 +938,8 @@ SectionIn 1 2 3
 
   File "bareos-tray-monitor.exe"
   File "libpng*.dll"
-  File "QtCore4.dll"
-  File "QtGui4.dll"
+  File "Qt5Core.dll"
+  File "Qt5Gui.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
@@ -2150,8 +2150,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libtermcap-0.dll"
   Delete "$INSTDIR\libwinpthread-1.dll"
   Delete "$INSTDIR\zlib1.dll"
-  Delete "$INSTDIR\QtCore4.dll"
-  Delete "$INSTDIR\QtGui4.dll"
+  Delete "$INSTDIR\Qt5Core.dll"
+  Delete "$INSTDIR\Qt5Gui.dll"
   Delete "$INSTDIR\liblzo2-2.dll"
   Delete "$INSTDIR\libfastlz.dll"
   Delete "$INSTDIR\libjansson-4.dll"
