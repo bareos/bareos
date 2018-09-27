@@ -41,7 +41,6 @@ BuildRequires:  %{mingw}-cross-binutils
 BuildRequires:  %{mingw}-cross-pkg-config
 BuildRequires:  %{mingw}-libqt5-qtbase
 BuildRequires:  %{mingw}-libqt5-qtbase-devel
-BuildRequires:  %{mingw}-libqt5-qtbase-filesystem
 BuildRequires:  %{mingw}-libwinpthread1
 BuildRequires:  %{mingw}-winpthreads-devel
 BuildRequires:  %{mingw}-libopenssl-devel
