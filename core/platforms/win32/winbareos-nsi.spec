@@ -190,8 +190,8 @@ for flavor in %{flavors}; do
       cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
    done
 
-   cp %{_mingw32_libdir}/qt5/plugins/platforms/qwindows.dll file $RPM_BUILD_ROOT/$flavor/release32
-   cp %{_mingw64_libdir}/qt5/plugins/platforms/qwindows.dll file $RPM_BUILD_ROOT/$flavor/release64
+   cp %{_mingw32_libdir}/qt5/plugins/platforms/qwindows.dll  $RPM_BUILD_ROOT/$flavor/release32
+   cp %{_mingw64_libdir}/qt5/plugins/platforms/qwindows.dll  $RPM_BUILD_ROOT/$flavor/release64
 
 
    for BITS in 32 64; do
