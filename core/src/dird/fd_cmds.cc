@@ -182,7 +182,9 @@ static void OutputMessageForConnectionTry(JobControlRecord *jcr, UaContext *ua)
          break;
    }
 
-   Jmsg(jcr, M_INFO, 0, m.c_str());
+   if (jcr->JobId != 0) {
+      Jmsg(jcr, M_INFO, 0, m.c_str());
+   }
    if (ua) {
       ua->SendMsg(m.c_str());
    }
@@ -192,7 +194,9 @@ static void SendInfoChosenCipher(JobControlRecord *jcr, UaContext *ua)
 {
    std::string str;
    jcr->file_bsock->GetCipherMessageString(str);
-   Jmsg(jcr, M_INFO, 0, str.c_str());
+   if (jcr->JobId != 0) {
+      Jmsg(jcr, M_INFO, 0, str.c_str());
+   }
    if (ua) { /* only whith console connection */
       ua->SendRawMsg(str.c_str());
    }
@@ -200,7 +204,9 @@ static void SendInfoChosenCipher(JobControlRecord *jcr, UaContext *ua)
 
 static void SendInfoFailed(JobControlRecord *jcr, UaContext *ua)
 {
-   Jmsg(jcr, M_INFO, 0, "Failed");
+   if (jcr->JobId != 0) {
+     Jmsg(jcr, M_INFO, 0, "Failed");
+   }
    if (ua) { /* only whith console connection */
       ua->SendRawMsg("Failed");
    }

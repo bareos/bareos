@@ -51,6 +51,9 @@
 
 TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate)
 {
+  /* the openssl_ctx object is the factory that creates
+   * openssl objects, so initialize this first */
+
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
   d_->openssl_ctx_ = SSL_CTX_new(TLS_method());
 #else
@@ -70,10 +73,6 @@ TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate)
 TlsOpenSsl::~TlsOpenSsl()
 {
   Dmsg0(100, "Destruct TLsOpenSsl Implementation Object\n");
-  if (d_->openssl_) {
-    SSL_shutdown(d_->openssl_);
-    SSL_shutdown(d_->openssl_);
-  }
 }
 
 bool TlsOpenSsl::init()
@@ -413,24 +412,31 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket *bsock)
    * completed or an error has occurred. By setting the socket blocking
    * we can avoid the ugly for()/switch()/select() loop.
    */
-  int err;
 
-  btimer_t *tid;
+  if (!d_->openssl_) { return; }
 
   /* Set socket blocking for shutdown */
   bsock->SetBlocking();
 
-  tid = StartBsockTimer(bsock, 60 * 2);
-  err = SSL_shutdown(d_->openssl_);
+  btimer_t *tid = StartBsockTimer(bsock, 60 * 2);
+
+  int err_shutdown = SSL_shutdown(d_->openssl_);
+
   StopBsockTimer(tid);
-  if (err == 0) {
-    /* Complete shutdown */
+
+  if (err_shutdown == 0) {
+    /* Complete the shutdown with the second call */
     tid = StartBsockTimer(bsock, 60 * 2);
-    err = SSL_shutdown(d_->openssl_);
+    err_shutdown = SSL_shutdown(d_->openssl_);
     StopBsockTimer(tid);
   }
 
-  switch (SSL_get_error(d_->openssl_, err)) {
+  int ssl_error = SSL_get_error(d_->openssl_, err_shutdown);
+
+  SSL_free(d_->openssl_);
+  d_->openssl_ = nullptr;
+
+  switch (ssl_error) {
     case SSL_ERROR_NONE:
       break;
     case SSL_ERROR_ZERO_RETURN:
