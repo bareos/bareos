@@ -182,7 +182,6 @@ for flavor in %{flavors}; do
       libGLESv2.dll \
       libharfbuzz-0.dll \
       libpcre16-0.dll \
-      qwindows.dll \
       sed.exe \
       sqlite3.exe \
       zlib1.dll \
@@ -190,6 +189,9 @@ for flavor in %{flavors}; do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
       cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
    done
+
+   cp %{_mingw32_libdir}/qt5/plugins/platforms/qwindows.dll file $RPM_BUILD_ROOT/$flavor/release32
+   cp %{_mingw64_libdir}/qt5/plugins/platforms/qwindows.dll file $RPM_BUILD_ROOT/$flavor/release64
 
 
    for BITS in 32 64; do
