@@ -37,20 +37,34 @@
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials;
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
-    : openssl_(nullptr), openssl_ctx_(nullptr), pem_callback_(nullptr), pem_userdata_(nullptr)
+    : openssl_(nullptr)
+    , openssl_ctx_(nullptr)
+    , tcp_file_descriptor_(0)
+    , pem_callback_(nullptr)
+    , pem_userdata_(nullptr)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 }
 
-TlsOpenSslPrivate::~TlsOpenSslPrivate()  // FreeTlsContext
+TlsOpenSslPrivate::~TlsOpenSslPrivate()
 {
   Dmsg0(100, "Destruct TlsOpenSslPrivate\n");
+
+  /* Free in this order:
+   * 1. openssl object
+   * 2. openssl_ctx object */
+
+  if (openssl_) {
+    SSL_free(openssl_);
+    openssl_ = nullptr;
+  }
+
+  /* the openssl_ctx object is the factory that creates
+   * openssl objects, so delete this at the end */
   if (openssl_ctx_) {
     psk_client_credentials.erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
-  }
-  if (openssl_) {
-    SSL_free(openssl_);
+    openssl_ctx_ = nullptr;
   }
 };
 
@@ -80,34 +94,29 @@ int TlsOpenSslPrivate::OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
 
 int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
-  int flags;
-  int nleft    = 0;
-  int nwritten = 0;
-
   if (!openssl_) {
     Dmsg0(100, "Attempt to write on a non initialized tls connection\n");
     return 0;
   }
 
-  /* Ensure that socket is non-blocking */
-  flags = bsock->SetNonblocking();
+  int flags = bsock->SetNonblocking();
 
-  /* start timer */
   bsock->timer_start = watchdog_time;
   bsock->ClearTimedOut();
   bsock->SetKillable(false);
 
-  nleft = nbytes;
+  int nleft = nbytes;
 
   while (nleft > 0) {
+    int nwritten = 0;
     if (write) {
       nwritten = SSL_write(openssl_, ptr, nleft);
     } else {
       nwritten = SSL_read(openssl_, ptr, nleft);
     }
 
-    /* Handle errors */
-    switch (SSL_get_error(openssl_, nwritten)) {
+    int ssl_error = SSL_get_error(openssl_, nwritten);
+    switch (ssl_error) {
       case SSL_ERROR_NONE:
         nleft -= nwritten;
         if (nleft) {
@@ -165,27 +174,24 @@ cleanup:
 
 bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket *bsock, bool server)
 {
-  int err;
-  int flags;
   bool status = true;
 
-  /* Ensure that socket is non-blocking */
-  flags = bsock->SetNonblocking();
+  int flags = bsock->SetNonblocking();
 
-  /* start timer */
   bsock->timer_start = watchdog_time;
   bsock->ClearTimedOut();
   bsock->SetKillable(false);
 
   for (;;) {
+    int err_accept;
     if (server) {
-      err = SSL_accept(openssl_);
+      err_accept = SSL_accept(openssl_);
     } else {
-      err = SSL_connect(openssl_);
+      err_accept = SSL_connect(openssl_);
     }
 
-    /* Handle errors */
-    switch (SSL_get_error(openssl_, err)) {
+    int ssl_error = SSL_get_error(openssl_, err_accept);
+    switch (ssl_error) {
       case SSL_ERROR_NONE:
         bsock->SetTlsEstablished();
         status = true;

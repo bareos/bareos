@@ -438,7 +438,6 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
   if (!DoTlsHandshakeWithClient(&tls_resource->tls_cert, jcr)) { return false; }
 
   if (tls_resource->tls_cert.GetAuthenticate()) { /* tls authentication only? */
-    tls_conn_init->TlsBsockShutdown(this);
     CloseTlsConnectionAndFreeMemory(); /* yes, shutdown tls */
   }
 
@@ -519,9 +518,8 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
       if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) { return false; }
     }
 
-    if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
-      tls_conn_init->TlsBsockShutdown(this);
-      CloseTlsConnectionAndFreeMemory(); /* yes, shutdown tls */
+    if (selected_local_tls->GetAuthenticate()) { /* tls authentication only */
+      CloseTlsConnectionAndFreeMemory();
     }
   }
   if (!initiated_by_remote) {
@@ -575,8 +573,9 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, J
   if (BnetTlsServer(this, verify_list)) {
     return true;
   }
-  tls_conn_init.reset();
-  Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+  if (jcr->JobId != 0) {
+    Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+  }
   Dmsg0(debuglevel, "TLS negotiation failed.\n");
   return false;
 }
@@ -590,8 +589,9 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                     selected_local_tls->AllowedCertificateCommonNames())) {
     return true;
   }
-  tls_conn_init.reset();
-  Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+  if (jcr->JobId != 0) {
+    Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+  }
   Dmsg0(debuglevel, "TLS negotiation failed.\n");
   return false;
 }
