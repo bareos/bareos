@@ -86,7 +86,8 @@ int32_t res_all_size = sizeof(res_all);
 static ResourceItem mon_items[] = {
     {"Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
     {"Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL},
-    {"RequireSsl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_monitor.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_monitor.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL,
      NULL},
