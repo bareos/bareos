@@ -195,7 +195,7 @@ BuildRequires: libcap-devel
 BuildRequires: mtx
 
 %if 0%{?build_qt_monitor}
-BuildRequires: libqt5-devel
+BuildRequires: qt5-qtbase-devel
 %endif
 
 
