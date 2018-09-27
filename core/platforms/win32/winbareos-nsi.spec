@@ -67,8 +67,8 @@ BuildRequires:  mingw64-libstdc++
 BuildRequires:  mingw32-libwinpthread1
 BuildRequires:  mingw64-libwinpthread1
 
-BuildRequires:  mingw32-libqt5
-BuildRequires:  mingw64-libqt5
+BuildRequires:  mingw32-libqt5-qtbase
+BuildRequires:  mingw64-libqt5-qtbase
 
 BuildRequires:  mingw32-lzo
 BuildRequires:  mingw64-lzo
