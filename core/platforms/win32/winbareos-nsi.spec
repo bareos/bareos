@@ -174,6 +174,15 @@ for flavor in %{flavors}; do
       Qt5Gui.dll \
       Qt5Widgets.dll \
       icui18n56.dll \
+      icudata56.dll \
+      icuuc56.dll \
+      libfreetype-6.dll \
+      libglib-2.0-0.dll \
+      libintl-8.dll \
+      libGLESv2.dll \
+      libharfbuzz-0.dll \
+      libpcre16-0.dll \
+      qwindows.dll \
       sed.exe \
       sqlite3.exe \
       zlib1.dll \

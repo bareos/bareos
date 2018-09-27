@@ -941,7 +941,20 @@ SectionIn 1 2 3
   File "Qt5Core.dll"
   File "Qt5Gui.dll"
   File "Qt5Widgets.dll"
-  FIle "icui18n56.dll"
+  File "icui18n56.dll"
+  File "icudata56.dll"
+  File "icuuc56.dll"
+  File "libfreetype-6.dll"
+  File "libglib-2.0-0.dll"
+  File "libintl-8.dll"
+  File "libbareoscfg.dll"
+  File "libGLESv2.dll"
+  File "libharfbuzz-0.dll"
+  File "libpcre16-0.dll"
+
+  SetOutPath "$INSTDIR\platforms"
+  File "qwindows.dll"
+
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
@@ -2156,6 +2169,18 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Qt5Gui.dll"
   Delete "$INSTDIR\Qt5Widgets.dll"
   Delete "$INSTDIR\icui18n56.dll"
+  Delete "$INSTDIR\icudata56.dll"
+  Delete "$INSTDIR\icuuc56.dll"
+  Delete "$INSTDIR\libfreetype-6.dll"
+  Delete "$INSTDIR\libglib-2.0-0.dll"
+  Delete "$INSTDIR\libintl-8.dll"
+  Delete "$INSTDIR\libbareoscfg.dll"
+  Delete "$INSTDIR\libGLESv2.dll"
+  Delete "$INSTDIR\libharfbuzz-0.dll"
+  Delete "$INSTDIR\libpcre16-0.dll"
+
+  Delete "$INSTDIR\platforms\qwindows.dll"
+
   Delete "$INSTDIR\liblzo2-2.dll"
   Delete "$INSTDIR\libfastlz.dll"
   Delete "$INSTDIR\libjansson-4.dll"
