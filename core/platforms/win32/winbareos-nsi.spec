@@ -172,6 +172,7 @@ for flavor in %{flavors}; do
       libwinpthread-1.dll \
       Qt5Core.dll \
       Qt5Gui.dll \
+      Qt5Widgets.dll \
       icui18n56.dll \
       sed.exe \
       sqlite3.exe \
