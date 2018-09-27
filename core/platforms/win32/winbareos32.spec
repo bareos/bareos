@@ -41,6 +41,7 @@ BuildRequires:  %{mingw}-cross-binutils
 BuildRequires:  %{mingw}-cross-pkg-config
 BuildRequires:  %{mingw}-libqt5-qtbase
 BuildRequires:  %{mingw}-libqt5-qtbase-devel
+BuildRequires:  %{mingw}-cross-libqt5-qmake
 BuildRequires:  %{mingw}-libwinpthread1
 BuildRequires:  %{mingw}-winpthreads-devel
 BuildRequires:  %{mingw}-libopenssl-devel
@@ -69,7 +70,6 @@ BuildRequires:  %{mingw}-gtest-devel
 BuildRequires:  %{mingw}-libgtest0
 BuildRequires:  %{mingw}-libjansson
 BuildRequires:  %{mingw}-libjansson-devel
-#BuildRequires:  %%{mingw}-qt5-debug
 
 BuildRequires:  bc
 BuildRequires:  less
@@ -112,7 +112,7 @@ for flavor in %flavors; do
    WINDOWS_BITS=$(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
    WINDOWS_VERSION=$(echo $flavor | grep release >/dev/null && echo 0x600 || echo 0x500)
    pushd $flavor
-   %{_mingw32_cmake_qt5} \
+   %{_mingw32_cmake} \
       -DCMAKE_INSTALL_BINDIR:PATH=%{_mingw64_bindir} \
       -Dsqlite3=yes \
       -Dpostgresql=yes \
