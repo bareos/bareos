@@ -33,7 +33,7 @@ import BareosFdWrapper
 # sent to the audit log:
 APPLICATION_NAME = 'BareOS Ovirt plugin'
 
-# Find the disks section:
+# OVF Namespaces
 OVF_NAMESPACES = {
     'ovf': 'http://schemas.dmtf.org/ovf/envelope/1/',
     'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
@@ -484,6 +484,18 @@ class BareosOvirtWrapper(object):
 
             return bRCs['bRC_Error']
         else: 
+            # Locate the service that manages the virtual machine:
+            self.vm_service = self.vms_service.vm_service(self.vm.id)
+
+            # check if vm have snapshosts
+            snaps_service = self.vm_service.snapshots_service()
+            if len(snaps_service.list()) > 1:
+                bareosfd.JobMessage(
+                    context, bJobMessageType['M_FATAL'],
+                    "Error '%s' already have snapshosts. This is not supported\n" %
+                    (self.vm.name))
+                return bRCs['bRC_Error']
+ 
             bareosfd.DebugMessage(
                 context, 100, "Start the backup of VM %s\n" %
                 (self.vm.name))
@@ -507,9 +519,6 @@ class BareosOvirtWrapper(object):
                     }
                 })
 
-            # Locate the service that manages the virtual machine:
-            self.vm_service = self.vms_service.vm_service(self.vm.id)
-            
             # create vm snapshots
             self.create_vm_snapshot(context)
 
