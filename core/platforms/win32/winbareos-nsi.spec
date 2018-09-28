@@ -156,6 +156,12 @@ for flavor in %{flavors}; do
    done
    done
 
+
+# needs to be added to following files if qt is built with icu support
+#      icui18n56.dll \
+#      icudata56.dll \
+#      icuuc56.dll \
+
    for file in \
       libcrypto-*.dll \
       libfastlz.dll \
@@ -174,12 +180,6 @@ for flavor in %{flavors}; do
       Qt5Core.dll \
       Qt5Gui.dll \
       Qt5Widgets.dll \
-
-# needs to be added if qt is built with icu support
-#      icui18n56.dll \
-#      icudata56.dll \
-#      icuuc56.dll \
-
       libfreetype-6.dll \
       libglib-2.0-0.dll \
       libintl-8.dll \
@@ -193,6 +193,7 @@ for flavor in %{flavors}; do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
       cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
    done
+
 
    cp %{_mingw32_libdir}/qt5/plugins/platforms/qwindows.dll  $RPM_BUILD_ROOT/$flavor/release32
    cp %{_mingw64_libdir}/qt5/plugins/platforms/qwindows.dll  $RPM_BUILD_ROOT/$flavor/release64
