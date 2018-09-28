@@ -182,14 +182,24 @@ bool MonitorItem::doconnect()
      return false;
   }
 
-  if (!AuthenticateWithDaemon(this, &jcr)) {
+  AuthenticationResult auth_result = AuthenticateWithDaemon(this, &jcr);
+
+  bool authentication_ok = ((auth_result == AuthenticationResult::kAlreadyAuthenticated)
+                         || (auth_result == AuthenticationResult::kNoError));
+
+  if (!authentication_ok) {
 
      d->state = MonitorItem::Error;
      emit statusChanged(name, d->state);
-     message = QString("Authentication error : %1").arg(d->DSock->msg);
+     std::string err_buffer;
+     if (GetAuthenticationResultString(auth_result, err_buffer)) {
+       message = QString("Authentication error : %1").arg(err_buffer.c_str());
+     } else {
+       message = QString("Authentication error : %1").arg("Unknown");
+     }
      emit showStatusbarMessage(message);
      emit clearText(name);
-     emit appendText(name, QString("Authentication error : %1").arg(d->DSock->msg));
+     emit appendText(name, message);
      d->DSock->signal(BNET_TERMINATE); /* send EOF */
      d->DSock->close();
      delete d->DSock;
