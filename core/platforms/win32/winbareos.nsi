@@ -941,9 +941,12 @@ SectionIn 1 2 3
   File "Qt5Core.dll"
   File "Qt5Gui.dll"
   File "Qt5Widgets.dll"
-  File "icui18n56.dll"
-  File "icudata56.dll"
-  File "icuuc56.dll"
+
+# needs to be added if qt is built with icu support
+#  File "icui18n56.dll"
+#  File "icudata56.dll"
+#  File "icuuc56.dll"
+
   File "libfreetype-6.dll"
   File "libglib-2.0-0.dll"
   File "libintl-8.dll"
@@ -2167,9 +2170,12 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Qt5Core.dll"
   Delete "$INSTDIR\Qt5Gui.dll"
   Delete "$INSTDIR\Qt5Widgets.dll"
-  Delete "$INSTDIR\icui18n56.dll"
-  Delete "$INSTDIR\icudata56.dll"
-  Delete "$INSTDIR\icuuc56.dll"
+
+# needs to be added if qt is built with icu support
+#  Delete "$INSTDIR\icui18n56.dll"
+#  Delete "$INSTDIR\icudata56.dll"
+#  Delete "$INSTDIR\icuuc56.dll"
+
   Delete "$INSTDIR\libfreetype-6.dll"
   Delete "$INSTDIR\libglib-2.0-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
