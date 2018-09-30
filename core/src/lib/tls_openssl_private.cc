@@ -76,6 +76,11 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()
 
 bool TlsOpenSslPrivate::init()
 {
+  if (!openssl_ctx_) {
+    OpensslPostErrors(M_FATAL, _("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
+    return false;
+  }
+
   if (cipherlist_.empty()) {
     cipherlist_ = tls_default_ciphers_;
   }
@@ -358,7 +363,7 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(const PskCredentials &cre
   if (!openssl_ctx_) { /* do not register nullptr */
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
   } else {
-  TlsOpenSslPrivate::psk_client_credentials.insert(
+  TlsOpenSslPrivate::psk_client_credentials_.insert(
       std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
 }
 
@@ -420,10 +425,10 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
       return 0;
   }
 
-  if (psk_client_credentials.find(openssl_ctx) == psk_client_credentials.end()) {
+  if (psk_client_credentials_.find(openssl_ctx) == psk_client_credentials_.end()) {
     Dmsg0(100, "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
   } else {
-    const PskCredentials &credentials = TlsOpenSslPrivate::psk_client_credentials.at(openssl_ctx);
+    const PskCredentials &credentials = TlsOpenSslPrivate::psk_client_credentials_.at(openssl_ctx);
       int ret = Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
 
       if (ret < 0 || (unsigned int)ret > max_identity_len) {
