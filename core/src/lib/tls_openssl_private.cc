@@ -71,9 +71,9 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()
 /*
  * report any errors that occured
  */
-int TlsOpenSslPrivate::OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
+int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok, X509_STORE_CTX *store)
 { /* static */
-  if (!ok) {
+  if (!preverify_ok) {
     X509 *cert = X509_STORE_CTX_get_current_cert(store);
     int depth  = X509_STORE_CTX_get_error_depth(store);
     int err    = X509_STORE_CTX_get_error(store);
@@ -89,7 +89,7 @@ int TlsOpenSslPrivate::OpensslVerifyPeer(int ok, X509_STORE_CTX *store)
           depth, issuer, subject, err, X509_verify_cert_error_string(err));
   }
 
-  return ok;
+  return preverify_ok;
 }
 
 int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
@@ -237,8 +237,12 @@ int TlsOpenSslPrivate::tls_pem_callback_dispatch(char *buf, int size, int rwflag
 
 void TlsOpenSslPrivate::ClientContextInsertCredentials(const PskCredentials &credentials)
 {
-  TlsOpenSslPrivate::psk_client_credentials.insert(
-      std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
+  if (!openssl_ctx_) { /* do not register nullptr */
+    Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
+  } else {
+    TlsOpenSslPrivate::psk_client_credentials.insert(
+        std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
+  }
 }
 
 unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
@@ -250,28 +254,37 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
 
   SSL_CTX *openssl_ctx = SSL_get_SSL_CTX(ssl);
 
+  if (!openssl_ctx) {
+      Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
+      return result;
+  }
+
   Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
 
-  if (openssl_ctx) {
-    std::string configured_psk;
-    GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
-        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
-            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
+  std::string configured_psk;
+  GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
+      reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
+          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
 
-    ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
-            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
+  if (!GetTlsPskByFullyQualifiedResourceNameCb) {
+    Dmsg0(100, "Callback not set: kGetTlsPskByFullyQualifiedResourceNameCb\n");
+    return result;
+  }
 
-    if (!GetTlsPskByFullyQualifiedResourceNameCb || !config) {
-      Dmsg0(100, "GetTlsPskByFullyQualifiedResourceNameCb not set for psk server callback\n");
-      return result;
-    }
-    if (GetTlsPskByFullyQualifiedResourceNameCb(config, identity, configured_psk)) {
-      int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
-      Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
-      result = (psklen < 0) ? 0 : psklen;
-    } else {
-      Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
-    }
+  ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
+          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
+
+  if (!config) {
+    Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
+    return result;
+  }
+
+  if (!GetTlsPskByFullyQualifiedResourceNameCb(config, identity, configured_psk)) {
+    Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
+  } else {
+    int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
+    Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
+    result = (psklen < 0) ? 0 : psklen;
   }
   return result;
 }
@@ -285,32 +298,32 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
 {
   const SSL_CTX *openssl_ctx = SSL_get_SSL_CTX(ssl);
 
-  if (openssl_ctx) {
-    if (psk_client_credentials.find(openssl_ctx) != psk_client_credentials.end()) {
-      const PskCredentials &credentials = TlsOpenSslPrivate::psk_client_credentials.at(openssl_ctx);
-      int ret = Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
-
-      if (ret < 0 || (unsigned int)ret > max_identity_len) {
-        Dmsg0(100, "Error, identify too long\n");
-        return 0;
-      }
-      Dmsg1(100, "psk_client_cb. identity: %s.\n", identity);
-
-      ret = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
-      if (ret < 0 || (unsigned int)ret > max_psk_len) {
-        Dmsg0(100, "Error, psk too long\n");
-        return 0;
-      }
-      Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
-
-      return ret;
-    } else {
-      Dmsg0(100, "Error, TLS-PSK CALLBACK not set.\n");
+  if (!openssl_ctx) {
+      Dmsg0(100, "Psk Client Callback: No SSL_CTX\n");
       return 0;
-    }
   }
 
-  Dmsg0(100, "Error, SSL_CTX not set.\n");
+  if (psk_client_credentials.find(openssl_ctx) == psk_client_credentials.end()) {
+    Dmsg0(100, "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
+  } else {
+    const PskCredentials &credentials = TlsOpenSslPrivate::psk_client_credentials.at(openssl_ctx);
+    int ret = Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
+
+    if (ret < 0 || (unsigned int)ret > max_identity_len) {
+      Dmsg0(100, "Error, identify too long\n");
+      return 0;
+    }
+    Dmsg1(100, "psk_client_cb. identity: %s.\n", identity);
+
+    ret = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
+    if (ret < 0 || (unsigned int)ret > max_psk_len) {
+      Dmsg0(100, "Error, psk too long\n");
+      return 0;
+    }
+    Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
+
+    return ret;
+  }
   return 0;
 }
 

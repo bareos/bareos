@@ -77,12 +77,17 @@ TlsOpenSsl::~TlsOpenSsl()
 
 bool TlsOpenSsl::init()
 {
+  if (!d_->openssl_ctx_) {
+    OpensslPostErrors(M_FATAL, _("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
+    return false;
+  }
+
   if (d_->cipherlist_.empty()) {
     d_->cipherlist_ = TLS_DEFAULT_CIPHERS;
   }
 
   if (SSL_CTX_set_cipher_list(d_->openssl_ctx_, d_->cipherlist_.c_str()) != 1) {
-    Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
+    OpensslPostErrors(M_FATAL, _("Error setting cipher list, no valid ciphers available\n"));
     return false;
   }
 
@@ -106,7 +111,7 @@ bool TlsOpenSsl::init()
     }
   } else if (d_->verify_peer_) {
     /* At least one CA is required for peer verification */
-    Dmsg0(100, _("Either a certificate file or a directory must be"
+    OpensslPostErrors(M_WARNING, _("Either a certificate file or a directory must be"
                  " specified as a verification store\n"));
     //      return false; Ueb: do not return compatibility ?
   }
@@ -189,9 +194,10 @@ bool TlsOpenSsl::init()
 
 void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
 {
-  Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", credentials.get_identity().c_str());
-
-  if (d_->openssl_ctx_) {
+  if (!d_->openssl_ctx_) {
+    Dmsg0(50, "Could not set TLS_PSK CLIENT context (no SSL_CTX)\n");
+  } else {
+    Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", credentials.get_identity().c_str());
     d_->ClientContextInsertCredentials(credentials);
     SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_client_cb);
   }
@@ -199,16 +205,21 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
 
 void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser *config, GetTlsPskByFullyQualifiedResourceNameCb_t cb)
 {
-  Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
+  if (!d_->openssl_ctx_) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
+  } else if (!config) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
+  } else if (!cb) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no callback)\n");
+  } else {
+    Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
+    SSL_CTX_set_ex_data(d_->openssl_ctx_,
+                        TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb,
+                        (void *)cb);
+    SSL_CTX_set_ex_data(d_->openssl_ctx_,
+                        TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,
+                        (void *)config);
 
-  SSL_CTX_set_ex_data(d_->openssl_ctx_,
-                      TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb,
-                      (void *)cb);
-  SSL_CTX_set_ex_data(d_->openssl_ctx_,
-                      TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,
-                      (void *)config);
-
-  if (d_->openssl_ctx_) {
     SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_server_cb);
   }
 }
