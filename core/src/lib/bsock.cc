@@ -573,7 +573,7 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, J
   if (BnetTlsServer(this, verify_list)) {
     return true;
   }
-  if (jcr->JobId != 0) {
+  if (jcr && jcr->JobId != 0) {
     Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
   }
   Dmsg0(debuglevel, "TLS negotiation failed.\n");
@@ -589,7 +589,7 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
                     selected_local_tls->AllowedCertificateCommonNames())) {
     return true;
   }
-  if (jcr->JobId != 0) {
+  if (jcr && jcr->JobId != 0) {
     Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
   }
   Dmsg0(debuglevel, "TLS negotiation failed.\n");

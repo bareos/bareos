@@ -182,7 +182,7 @@ static void OutputMessageForConnectionTry(JobControlRecord *jcr, UaContext *ua)
          break;
    }
 
-   if (jcr->JobId != 0) {
+   if (jcr && jcr->JobId != 0) {
       Jmsg(jcr, M_INFO, 0, m.c_str());
    }
    if (ua) {
@@ -204,7 +204,7 @@ static void SendInfoChosenCipher(JobControlRecord *jcr, UaContext *ua)
 
 static void SendInfoFailed(JobControlRecord *jcr, UaContext *ua)
 {
-   if (jcr->JobId != 0) {
+   if (jcr && jcr->JobId != 0) {
      Jmsg(jcr, M_INFO, 0, "Failed");
    }
    if (ua) { /* only whith console connection */
