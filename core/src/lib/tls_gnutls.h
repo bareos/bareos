@@ -29,6 +29,7 @@ class TlsGnuTls : public Tls
 public:
    TlsGnuTls();
    virtual ~TlsGnuTls();
+   TlsGnuTls(TlsGnuTls &other) = delete;
 
    bool init() override;
 

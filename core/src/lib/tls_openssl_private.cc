@@ -34,7 +34,12 @@
 #include <openssl/ssl.h>
 
 /* static private */
-std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials;
+std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials_;
+
+/* static private */
+/* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers */
+const std::string TlsOpenSslPrivate::tls_default_ciphers_ {"ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
+
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
     : openssl_(nullptr)
@@ -62,11 +67,123 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()
   /* the openssl_ctx object is the factory that creates
    * openssl objects, so delete this at the end */
   if (openssl_ctx_) {
-    psk_client_credentials.erase(openssl_ctx_);
+    psk_client_credentials_.erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
     openssl_ctx_ = nullptr;
   }
 };
+
+bool TlsOpenSslPrivate::init()
+{
+  if (cipherlist_.empty()) {
+    cipherlist_ = tls_default_ciphers_;
+  }
+
+  if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
+    Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
+    return false;
+  }
+
+  if (pem_callback_) {
+    pem_userdata_ = pem_userdata_;
+  } else {
+    pem_callback_ = CryptoDefaultPemCallback;
+    pem_userdata_ = NULL;
+  }
+
+  SSL_CTX_set_default_passwd_cb(openssl_ctx_, TlsOpenSslPrivate::tls_pem_callback_dispatch);
+  SSL_CTX_set_default_passwd_cb_userdata(openssl_ctx_, reinterpret_cast<void *>(this));
+
+  const char *ca_certfile = ca_certfile_.empty() ? nullptr : ca_certfile_.c_str();
+  const char *ca_certdir  = ca_certdir_.empty() ? nullptr : ca_certdir_.c_str();
+
+  if (ca_certfile || ca_certdir) { /* at least one should be set */
+    if (!SSL_CTX_load_verify_locations(openssl_ctx_, ca_certfile, ca_certdir)) {
+      OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
+      return false;
+    }
+  } else if (verify_peer_) {
+    /* At least one CA is required for peer verification */
+    Dmsg0(100, _("Either a certificate file or a directory must be"
+                 " specified as a verification store\n"));
+    //      return false; Ueb: do not return compatibility ?
+  }
+
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+  if (!crlfile_.empty()) {
+    if (!SetCertificateRevocationList(crlfile_, openssl_ctx_)) {
+      return false;
+    }
+  }
+#endif
+
+  if (!certfile_.empty()) {
+    if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
+      OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
+      return false;
+    }
+  }
+
+  if (!keyfile_.empty()) {
+    if (!SSL_CTX_use_PrivateKey_file(openssl_ctx_, keyfile_.c_str(), SSL_FILETYPE_PEM)) {
+      OpensslPostErrors(M_FATAL, _("Error loading private key"));
+      return false;
+    }
+  }
+
+  if (!dhfile_.empty()) { /* Diffie-Hellman parameters */
+    BIO *bio;
+    if (!(bio = BIO_new_file(dhfile_.c_str(), "r"))) {
+      OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
+      return false;
+    }
+    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);  // Ueb: bio richtig initialisieren
+    BIO_free(bio);
+    if (!dh) {
+      OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
+      return false;
+    }
+    if (!SSL_CTX_set_tmp_dh(openssl_ctx_, dh)) {
+      OpensslPostErrors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
+      DH_free(dh);
+      return false;
+    }
+
+    SSL_CTX_set_options(openssl_ctx_, SSL_OP_SINGLE_DH_USE);
+  }
+
+  if (verify_peer_) {
+    /*
+     * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
+     */
+    SSL_CTX_set_verify(openssl_ctx_, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                       TlsOpenSslPrivate::OpensslVerifyPeer);
+  } else {
+    SSL_CTX_set_verify(openssl_ctx_, SSL_VERIFY_NONE, NULL);
+  }
+
+  openssl_ = SSL_new(openssl_ctx_);
+  if (!openssl_) {
+    OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
+    return false;
+  }
+
+  /* Non-blocking partial writes */
+  SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+  BIO *bio = BIO_new(BIO_s_socket());
+  if (!bio) {
+    OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
+    return false;
+  }
+
+  ASSERT(tcp_file_descriptor_);
+  BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
+
+  SSL_set_bio(openssl_, bio, bio);
+
+  return true;
+}
 
 /*
  * report any errors that occured
@@ -240,9 +357,8 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(const PskCredentials &cre
   if (!openssl_ctx_) { /* do not register nullptr */
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
   } else {
-    TlsOpenSslPrivate::psk_client_credentials.insert(
-        std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
-  }
+  TlsOpenSslPrivate::psk_client_credentials.insert(
+      std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
 }
 
 unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
@@ -261,30 +377,30 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
 
   Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
 
-  std::string configured_psk;
-  GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
-      reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
-          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
+    std::string configured_psk;
+    GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
+        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
+            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
 
   if (!GetTlsPskByFullyQualifiedResourceNameCb) {
     Dmsg0(100, "Callback not set: kGetTlsPskByFullyQualifiedResourceNameCb\n");
     return result;
   }
 
-  ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
-          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
+    ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
+            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
 
   if (!config) {
     Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
-    return result;
-  }
+      return result;
+    }
 
   if (!GetTlsPskByFullyQualifiedResourceNameCb(config, identity, configured_psk)) {
     Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
   } else {
-    int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
-    Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
-    result = (psklen < 0) ? 0 : psklen;
+      int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
+      Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
+      result = (psklen < 0) ? 0 : psklen;
   }
   return result;
 }
@@ -307,23 +423,23 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
     Dmsg0(100, "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
   } else {
     const PskCredentials &credentials = TlsOpenSslPrivate::psk_client_credentials.at(openssl_ctx);
-    int ret = Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
+      int ret = Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
 
-    if (ret < 0 || (unsigned int)ret > max_identity_len) {
-      Dmsg0(100, "Error, identify too long\n");
-      return 0;
+      if (ret < 0 || (unsigned int)ret > max_identity_len) {
+        Dmsg0(100, "Error, identify too long\n");
+        return 0;
+      }
+      Dmsg1(100, "psk_client_cb. identity: %s.\n", identity);
+
+      ret = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
+      if (ret < 0 || (unsigned int)ret > max_psk_len) {
+        Dmsg0(100, "Error, psk too long\n");
+        return 0;
+      }
+      Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
+
+      return ret;
     }
-    Dmsg1(100, "psk_client_cb. identity: %s.\n", identity);
-
-    ret = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
-    if (ret < 0 || (unsigned int)ret > max_psk_len) {
-      Dmsg0(100, "Error, psk too long\n");
-      return 0;
-    }
-    Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
-
-    return ret;
-  }
   return 0;
 }
 

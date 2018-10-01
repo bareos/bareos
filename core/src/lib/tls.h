@@ -39,6 +39,7 @@ class Tls {
  public:
   Tls();
   virtual ~Tls();
+  Tls(Tls &other) = delete;
 
   virtual bool init() = 0;
 
