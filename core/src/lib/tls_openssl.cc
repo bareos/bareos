@@ -39,7 +39,6 @@
 #include <openssl/x509v3.h>
 
 #include "lib/tls_openssl.h"
-#include "lib/tls_openssl_crl.h"
 #include "lib/tls_openssl_private.h"
 
 #include "parse_conf.h"

@@ -26,6 +26,7 @@
 
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
+#include "lib/tls_openssl_crl.h"
 
 #include "lib/parse_conf.h"
 #include "lib/get_tls_psk_by_fqname_callback.h"
