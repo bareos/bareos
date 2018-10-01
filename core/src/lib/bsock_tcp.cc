@@ -906,13 +906,9 @@ int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 
 void BareosSocketTCP::close()
 {
-   if (!cloned_) {
-      ClearLocking();
-
-      if (tls_conn || tls_conn_init) {
-         CloseTlsConnectionAndFreeMemory();
-      }
-   }
+   /* if not cloned */
+   ClearLocking();
+   CloseTlsConnectionAndFreeMemory();
 
    if (fd_ >= 0) {
       if (!cloned_) {

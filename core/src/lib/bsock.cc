@@ -125,15 +125,17 @@ BareosSocket::~BareosSocket() { Dmsg0(100, "Destruct BareosSocket\n"); }
 
 void BareosSocket::CloseTlsConnectionAndFreeMemory()
 {
-  LockMutex();
-  if (tls_conn && !tls_conn_init) {
-    tls_conn->TlsBsockShutdown(this);
-    tls_conn.reset();
-  } else if (tls_conn_init) {
-    tls_conn_init->TlsBsockShutdown(this);
-    tls_conn_init.reset();
+  if (!cloned_) {
+    LockMutex();
+    if (tls_conn && !tls_conn_init) {
+      tls_conn->TlsBsockShutdown(this);
+      tls_conn.reset();
+    } else if (tls_conn_init) {
+      tls_conn_init->TlsBsockShutdown(this);
+      tls_conn_init.reset();
+    }
+    UnlockMutex();
   }
-  UnlockMutex();
 }
 
 /**
@@ -169,7 +171,11 @@ bool BareosSocket::SetLocking()
 
 void BareosSocket::ClearLocking()
 {
-  if (mutex_) { mutex_.reset(); }
+  if (!cloned_) {
+    if (mutex_) {
+      mutex_.reset();
+    }
+  }
 }
 
 void BareosSocket::LockMutex()
