@@ -364,6 +364,7 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(const PskCredentials &cre
   } else {
   TlsOpenSslPrivate::psk_client_credentials_.insert(
       std::pair<const SSL_CTX *, PskCredentials>(openssl_ctx_, credentials));
+  }
 }
 
 unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
