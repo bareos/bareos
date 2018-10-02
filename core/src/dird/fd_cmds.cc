@@ -33,7 +33,7 @@
  * These functions are used by both backup and verify.
  */
 
-
+#include <algorithm>
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
@@ -165,25 +165,14 @@ static void OutputMessageForConnectionTry(JobControlRecord *jcr, UaContext *ua)
 
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      m = "\nTry to establish a secure connection by ";
+      m = "Probing... (result will be saved until config reload)";
    } else {
-      m = "\nUsing previously recognized ";
-   }
-
-   switch (jcr->connection_handshake_try_) {
-      case ClientConnectionHandshakeMode::kTlsFirst:
-         m += "immediate TLS handshake: ";
-         break;
-      case ClientConnectionHandshakeMode::kCleartextFirst:
-         m += "cleartext handshake: ";
-         break;
-      default:
-         m += "unknown mode\n";
-         break;
+     return;
    }
 
    if (jcr && jcr->JobId != 0) {
-      Jmsg(jcr, M_INFO, 0, m.c_str());
+      std::string m1 = m + "\n";
+      Jmsg(jcr, M_INFO, 0, m1.c_str());
    }
    if (ua) {
       ua->SendMsg(m.c_str());
@@ -202,13 +191,32 @@ static void SendInfoChosenCipher(JobControlRecord *jcr, UaContext *ua)
    }
 }
 
-static void SendInfoFailed(JobControlRecord *jcr, UaContext *ua)
+static void SendInfoSuccess(JobControlRecord *jcr, UaContext *ua)
 {
+   std::string m;
+   if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined) {
+     m += "\r\v";
+   }
+   switch (jcr->connection_handshake_try_) {
+    case ClientConnectionHandshakeMode::kTlsFirst:
+       m += " Handshake: Immediate TLS,";
+       break;
+    case ClientConnectionHandshakeMode::kCleartextFirst:
+       m += " Handshake: Cleartext,";
+       break;
+    default:
+       m += " unknown mode\n";
+       break;
+   }
+
    if (jcr && jcr->JobId != 0) {
-     Jmsg(jcr, M_INFO, 0, "Failed");
+     std::string m1 = m;
+     std::replace(m1.begin(), m1.end(), '\r', ' ');
+     std::replace(m1.begin(), m1.end(), '\v', ' ');
+     Jmsg(jcr, M_INFO, 0, m1.c_str());
    }
    if (ua) { /* only whith console connection */
-      ua->SendRawMsg("Failed");
+      ua->SendRawMsg(m.c_str());
    }
 }
 
@@ -222,6 +230,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    /* try the connection modes starting with tls directly,
     * in case there is a client that cannot do Tls immediately then
     * fall back to cleartext md5-handshake */
+   OutputMessageForConnectionTry(jcr, ua);
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
       jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
@@ -242,12 +251,11 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
         }
      }
 
-     OutputMessageForConnectionTry(jcr, ua);
-
      if (jcr->file_bsock) {
         jcr->setJobStatus(JS_Running);
         if (AuthenticateWithFileDaemon(jcr)) {
            success = true;
+           SendInfoSuccess(jcr, ua);
            SendInfoChosenCipher(jcr, ua);
            jcr->res.client->connection_successful_handshake_ = jcr->connection_handshake_try_;
         } else {
@@ -262,7 +270,6 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
                delete jcr->file_bsock;
                jcr->file_bsock = nullptr;
             }
-            SendInfoFailed(jcr, ua);
             jcr->resetJobStatus(JS_Running);
             jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;
             break;

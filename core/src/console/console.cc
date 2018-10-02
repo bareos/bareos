@@ -1089,9 +1089,9 @@ int main(int argc, char *argv[])
    UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
    if (!UA_sock) { return 1; }
 
-   ConsoleOutput(errmsg);
-
    UA_sock->OutputCipherMessageString(ConsoleOutput);
+
+   ConsoleOutput(errmsg);
 
 #if defined(HAVE_PAM)
    if (console_resource) { /* not for root console */

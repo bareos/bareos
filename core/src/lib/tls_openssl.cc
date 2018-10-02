@@ -127,13 +127,8 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord *jcr, const char *host, int por
     Qmsg(jcr, M_INFO, 0, _("No openssl to %s at %s:%d established\n"), who, host, port);
   } else {
     std::string cipher_name = TlsCipherGetName();
-    if (!cipher_name.empty()) {
-      Qmsg(jcr, M_INFO, 0, _("Secure connection to %s at %s:%d with cipher %s established\n"), who, host, port,
-           cipher_name.c_str());
-    } else {
-      Qmsg(jcr, M_WARNING, 0, _("Secure connection to %s at %s:%d with UNKNOWN cipher established\n"), who,
-           host, port);
-    }
+    Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: %s\n"), who, host, port,
+         cipher_name.empty() ? "Unknown" : cipher_name.c_str());
   }
 }
 

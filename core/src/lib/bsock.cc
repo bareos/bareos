@@ -531,7 +531,7 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
     if (tls_conn) {
       tls_conn->TlsLogConninfo(jcr, host(), port(), who());
     } else {
-      Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who(), host(), port());
+      Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: None\n"), who(), host(), port());
     }
   }
   return true;
@@ -636,12 +636,12 @@ void BareosSocket::GetCipherMessageString(std::string &str)
 {
    if (tls_conn) {
      std::string m;
-     m = "Secure connection with cipher ";
+     m = " Encryption: ";
      m += tls_conn->TlsCipherGetName();
      m += "\n";
      str = m;
    } else {
-     str = "Cleartext connection\n";
+     str = " Encryption: None\n";
    }
 }
 
