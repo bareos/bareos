@@ -423,6 +423,8 @@ class BareosOvirtWrapper(object):
         self.backup_objects = None
         self.restore_objects = None
 
+	self.old_new_ids = {}
+
     def connect_api(self, context, options):
 
         # ca certificate
@@ -663,17 +665,12 @@ class BareosOvirtWrapper(object):
                 has_disks = True
         return has_disks
 
-    def get_transfer_service(self, disk_id, direction=types.ImageTransferDirection.DOWNLOAD):
+    def get_transfer_service(self, image_transfer):
         # Get a reference to the service that manages the image transfer:
         transfers_service = self.system_service.image_transfers_service()
 
         # Add a new image transfer:
-        transfer = transfers_service.add(
-            types.ImageTransfer(
-                snapshot=types.DiskSnapshot(id=disk_id),
-                direction=direction
-            )
-        )
+        transfer = transfers_service.add( image_transfer )
 
         # Get reference to the created transfer service:
         transfer_service = transfers_service.image_transfer_service(transfer.id)
@@ -706,7 +703,10 @@ class BareosOvirtWrapper(object):
             context, bJobMessageType['M_INFO'],
                 "Downloading snapshot '%s' of disk '%s'('%s')\n" % (snapshot.id,disk.alias,disk.id))
 
-        self.transfer_service = self.get_transfer_service(snapshot.id)
+        self.transfer_service = self.get_transfer_service( types.ImageTransfer(
+                                                                snapshot=types.DiskSnapshot(id=snapshot.id),
+                                                                direction=types.ImageTransferDirection.DOWNLOAD
+                                                            ))
         transfer = self.transfer_service.get()
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
@@ -792,55 +792,106 @@ class BareosOvirtWrapper(object):
                     "No storage domain specified.\n" )
                 return bRCs['bRC_Error']
 
+            storage_domain = options['storage_domain']
+
             # Parse the OVF as XML document:
             self.ovf = lxml.etree.fromstring(self.ovf_data)
 
             bareosfd.DebugMessage(context, 200, "prepare_vm_restore(): %s\n" % (self.ovf))
 
-            # Find the file references:
-            file_references = self.ovf.xpath(
-                '/ovf:Envelope/References/File',
-                namespaces=OVF_NAMESPACES
-            )
+            # Find the name of the virtual machine within the OVF:
+            vm_name = None
+	    if 'vm_name' in options:
+                vm_name = options['vm_name']
 
-            def get_file_reference(fileref):
-                found = None
-                i = 0
-                while i<len(file_references) and found is None:
-                    obj = file_references[i]
-                    khref = '{%s}href' % OVF_NAMESPACES['ovf']
-                    if obj.get(khref) == fileref:
-                        found = {}
-                        for key, value in obj.items():
-                            key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
-                            found[key] = value
-                    i += 1
-                return found
+            if vm_name is None:
+		vm_name = self.ovf.xpath(
+		    '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
+		    namespaces=OVF_NAMESPACES
+		)[0].text
 
-            # Find the disks section:
-            disk_elements = self.ovf.xpath(
-                '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
-                namespaces=OVF_NAMESPACES
-            )
+            # Find the cluster name of the virtual machine within the OVF:
+	    cluster_name = None
+            if 'cluster_name' in options:
+		cluster_name = options['cluster_name']
+	
+	    if cluster_name is None:
+		# Find the cluster name of the virtual machine within the OVF:
+		cluster_name = ovf.xpath(
+		    '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
+		    namespaces=OVF_NAMESPACES
+		)[0].text
 
-            if self.restore_objects is None:
-                self.restore_objects = []
+	    # check if VM exists
+	    res = self.vms_service.list(search="name=%s and cluster=%s" % (str(vm_name),str(cluster_name)))
+	    if len(res) > 0:
+                bareosfd.JobMessage(
+                    context, bJobMessageType['M_FATAL'],
+                    "VM '%s' exists. Unable to restore.\n" % str(vm_name) )
+                return bRCs['bRC_Error']
+	    else:
 
-            for disk_element in disk_elements:
-                # Get disk properties:
-                props = {}
-                for key, value in disk_element.items():
-                    key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
-                    props[key] = value
+		vm_template = 'Blank'
+		if 'vm_template' in options:
+		    vm_template = options['vm_template']
 
-                self.restore_objects.append(
-                    {
-                        'disk': props,
-                        'disk-id': os.path.dirname(props['fileRef']),
-                        'storage_domain': options['storage_domain'],
-                        'file': get_file_reference(props['fileRef'])
-                    })
+		# Add the virtual machine, the transfered disks will be
+		# attached to this virtual machine:
+		bareosfd.JobMessage(
+		    context, bJobMessageType['M_INFO'],
+			'Adding virtual machine %s\n' % vm_name)
+
+		self.vm = self.vms_service.add(
+		    types.Vm(
+			name = vm_name,
+			template=types.Template(
+			    name=vm_template
+			    ),
+			cluster=types.Cluster(
+			    name=cluster_name,
+			    ),
+		    ),
+		)
+
+		# Find the file references:
+		file_references = self.ovf.xpath(
+		    '/ovf:Envelope/References/File',
+		    namespaces=OVF_NAMESPACES
+		)
+
+		# Find the disks section:
+		disk_elements = self.ovf.xpath(
+		    '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
+		    namespaces=OVF_NAMESPACES
+		)
+
+		if self.restore_objects is None:
+		    self.restore_objects = []
+
+		for disk_element in disk_elements:
+		    # Get disk properties:
+		    props = {}
+		    for key, value in disk_element.items():
+			key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
+			props[key] = value
+
+		    self.restore_objects.append(props)
+
         return bRCs['bRC_OK']
+
+    def get_file_reference(file_references, fileref):
+	found = None
+	i = 0
+	while i<len(file_references) and found is None:
+	    obj = file_references[i]
+	    khref = '{%s}href' % OVF_NAMESPACES['ovf']
+	    if obj.get(khref) == fileref:
+		found = {}
+		for key, value in obj.items():
+		    key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
+		    found[key] = value
+	    i += 1
+	return found
 
     def get_vm_disk_by_basename(self, context, fname):
 
@@ -855,63 +906,35 @@ class BareosOvirtWrapper(object):
             i = 0
             while i<len(self.restore_objects) and found is None:
                 obj = self.restore_objects[i]
-                key = "%s-%s" % (obj['disk']['disk-alias'],obj['disk']['fileRef'])
+                key = "%s-%s" % (obj['disk-alias'],obj['fileRef'])
                 bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): lookup %s == %s\n" % (basename,key))
-                if relname == key and basename == obj['disk']['diskId']:
-                    disk = self.get_or_add_vm_disk(context, obj)
-                    if disk is not None:
-                        snapshot = self.create_disk_snapshot(obj)
-                        if snapshot is not None:
-                            found = obj
+                if relname == key and basename == obj['diskId']:
+                    old_disk_id = os.path.dirname(obj['fileRef'])
+
+		    new_disk_id = None
+		    if old_disk_id in self.old_new_ids:
+			new_disk_id = self.old_new_ids[old_disk_id]
+
+		    # get base disks
+		    if not obj['parentRef']:
+			disk = self.get_or_add_vm_disk(context, obj, new_disk_id)
+
+			if disk is not None:
+			    new_disk_id = disk.id
+			    self.old_new_ids[old_disk_id] = new_disk_id
+			    found = disk
+		    else:
+			bareosfd.JobMessage(
+			    context, bJobMessageType['M_INFO'],
+				"The backup have snapshots and only base will be restored\n")
+			
                 i += 1
         bareosfd.DebugMessage(context, 200, "get_vm_disk_by_basename(): found disk %s\n" % (found))
         return found 
 
-    def create_disk_snapshot(self, context, obj):
-
-        # Get a reference to the storage domains service:
-        storage_domains_service = self.system_service.storage_domains_service()
-
-        # Get a reference to the storage domain service in which the disk snapshots reside:
-        storage_domain_service = storage_domains_service.storage_domain_service(obj['storage_domain'])
-
-        # Get a reference to the disk snapshots service:
-        snapshots_service = storage_domain_service.disk_snapshots_service()
-
-        # Add the new snapshot:
-        snapshot = snapshots_service.add(
-            types.Snapshot(
-                description=obj['file']['description'],
-                disk_attachments=[
-                    types.DiskAttachment(
-                        disk=types.Disk(
-                            id=obj['disk-id'],
-                            image_id=obj['disk']['diskId']
-                        )
-                    )
-                ]
-            ),
-        )
-
-        # 'Waiting for Snapshot creation to finish'
-        snapshot_service = snapshots_service.snapshot_service(snapshot.id)
-        while True:
-            time.sleep(5)
-            snapshot = snapshot_service.get()
-            if snapshot.snapshot_status == types.SnapshotStatus.OK:
-                break
-
-        return snapshot
-
-    def get_or_add_vm_disk(self,context, obj):
+    def get_or_add_vm_disk(self,context, obj, disk_id = None):
         # Create the disks:
         disks_service = self.system_service.disks_service()
-
-                # Determine the volume format
-        if obj['disk']['volume-format'] == 'COW':
-            disk_format = types.DiskFormat.COW
-        else:
-            disk_format = types.DiskFormat.RAW
 
         disk = None
         if 'storage_domain' not in obj:
@@ -919,37 +942,94 @@ class BareosOvirtWrapper(object):
                 context, bJobMessageType['M_FATAL'],
                 "No storage domain specified.\n" )
         else:
+            storage_domain = obj['storage_domain']
 
             # Find the disk we want to download by the id:
-            disk_service = disks_service.disk_service(obj['disk-id'])
-            if disk_service:
-                disk = disk_service.get()
-            else:
-                disk = disks_service.add(
-                    disk=types.Disk(
-                        id=obj['disk-id'],
-                        name=obj['disk']['disk-alias'],
-                        description=obj['file']['description'],
-                        format=disk_format,
-                        provisioned_size=int(obj['disk']['size']) * 2**30,
-                        initial_size=int(obj['disk']['actual_size']),
-                        storage_domains=[
-                            types.StorageDomain(
-                                name=obj['storage_domain']
-                            )
-                        ]
-                    )
-                )
+            if disk_id:
+                disk_service = disks_service.disk_service(disk_id)
+                if disk_service:
+                    disk = disk_service.get()
+
+            if not disk:
+                # Locate the service that manages the disk attachments of the virtual
+                # machine:
+                disk_attachments_service = self.vms_service.vm_service(self.vm.id).disk_attachments_service()
+
+                # Determine the volume format
+                disk_format = types.DiskFormat.RAW
+		if 'volume-format' in obj and obj['volume-format'] == 'COW':
+		    disk_format = types.DiskFormat.COW
+
+                disk_alias = None
+		if 'disk-alias' in obj:
+		    disk_alias = obj['disk-alias']
+
+                description = None
+		if 'description' in obj:
+		    description = obj['description']
+
+                size = 0
+		if 'size' in obj:
+		    size = int(obj['size']) * 2**30
+
+                actual_size = 0
+		if 'actual-size' in obj:
+		    actual_size = int(obj['actual-size']) * 2**30
+
+                disk_interface = types.DiskInterface.VIRTIO
+		if 'disk-interface' in obj:
+		    if obj['disk-interface'] == 'VirtIO_SCSI':
+			disk_interface = types.DiskInterface.VIRTIO_SCSI
+		    elif obj['disk-interface'] == 'ide':
+			disk_interface = types.DiskInterface.IDE
+
+                #####
+		# Use the "add" method of the disk attachments service to add the disk.
+		# Note that the size of the disk, the `provisioned_size` attribute, is
+		# specified in bytes, so to create a disk of 10 GiB the value should
+		# be 10 * 2^30.
+		disk_attachment = disk_attachments_service.add(
+		    types.DiskAttachment(
+			disk=types.Disk(
+			    id=disk_id,
+			    name=disk_alias,
+			    description=description,
+			    format=disk_format,
+			    provisioned_size=size,
+			    initial_size=actual_size,
+			    sparse=disk_format == types.DiskFormat.COW,
+			    storage_domains=[
+				types.StorageDomain(
+				    name=storage_domain
+				)
+			    ]
+			),
+			interface=disk_interface,
+			bootable=False,
+			active=True,
+		    ),
+		)
+
+		# 'Waiting for Disk creation to finish'
+		disk_service = disks_service.disk_service(disk_attachment.disk.id)
+		while True:
+		    time.sleep(5)
+		    disk = disk_service.get()
+		    if disk.status == types.DiskStatus.OK:
+			time.sleep(5)
+			break
+
         return disk
 
 
-    def start_upload(self, context, obj):
+    def start_upload(self, context, disk):
 
         bareosfd.JobMessage(
             context, bJobMessageType['M_INFO'],
-                "Uploading disk '%s'('%s')\n" % (obj['disk']['disk-alias'],obj['file']['id']))
+                "Uploading disk '%s'('%s')\n" % (disk.alias,disk.id))
 
-        self.transfer_service = self.get_transfer_service(obj['file']['id'], types.ImageTransferDirection.UPLOAD)
+        self.transfer_service = self.get_transfer_service( types.ImageTransfer( image = types.Image( id = disk.id ),
+										direction = types.ImageTransferDirection.UPLOAD )
         transfer = self.transfer_service.get()
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
@@ -958,7 +1038,7 @@ class BareosOvirtWrapper(object):
         self.proxy_connection.putrequest("PUT", proxy_url.path)
         self.proxy_connection.putheader('Authorization', transfer.signed_ticket)
 
-        self.bytes_to_transf = obj['file']['size']
+        self.bytes_to_transf = int(disk.actual_size) * 2**30
 
         content_range = "bytes %d-%d/%d" % (0, self.bytes_to_transf - 1, self.bytes_to_transf)
         self.proxy_connection.putheader('Content-Range', content_range)
@@ -1036,60 +1116,24 @@ class BareosOvirtWrapper(object):
             self.connection.close()
 
     def end_vm_restore(self, context):
-        if self.ovf_data is None:
-            bareosfd.JobMessage(
-                context, bJobMessageType['M_FATAL'],
-                "Unable to restore VM. No OVF data. \n" )
-        else:
 
-            # Find the name of the virtual machine within the OVF:
-            vm_name = self.ovf.xpath(
-                '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
-                namespaces=OVF_NAMESPACES
-            )[0].text
-
-            # Find the cluster name of the virtual machine within the OVF:
-            cluster_name = self.ovf.xpath(
-                '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
-                namespaces=OVF_NAMESPACES
-            )[0].text
-
-            # Add the virtual machine, the transfered disks will be
-            # attached to this virtual machine:
-            bareosfd.JobMessage(
-                context, bJobMessageType['M_INFO'],
-                    'Adding virtual machine %s\n' % vm_name)
-            self.vm = self.vms_service.add(
-                types.Vm(
-                    cluster=types.Cluster(
-                        name=cluster_name,
-                    ),
-                    initialization=types.Initialization(
-                        configuration=types.Configuration(
-                            type=types.ConfigurationType.OVA,
-                            data=self.ovf_data
-                        )
-                    ),
-                ),
-            )
-
-            # Send an external event to indicate to the administrator that the
-            # restore of the virtual machine is completed:
-            self.events_service.add(
-                event=types.Event(
-                    vm=types.Vm(
-                      id=self.vm.id,
-                    ),
-                    origin=APPLICATION_NAME,
-                    severity=types.LogSeverity.NORMAL,
-                    custom_id=self.event_id,
-                    description=(
-                        'Restore of virtual machine \'%s\' is '
-                        'completed.' % (self.vm.name)
-                    ),
-                ),
-            )
-            self.event_id += 1
+	# Send an external event to indicate to the administrator that the
+	# restore of the virtual machine is completed:
+	self.events_service.add(
+	    event=types.Event(
+		vm=types.Vm(
+		  id=self.vm.id,
+		),
+		origin=APPLICATION_NAME,
+		severity=types.LogSeverity.NORMAL,
+		custom_id=self.event_id,
+		description=(
+		    'Restore of virtual machine \'%s\' is '
+		    'completed.' % (self.vm.name)
+		),
+	    ),
+	)
+	self.event_id += 1
 
         if self.connection:
             # Close the connection to the server:
