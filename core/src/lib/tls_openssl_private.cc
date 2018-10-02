@@ -112,7 +112,6 @@ bool TlsOpenSslPrivate::init()
     /* At least one CA is required for peer verification */
     Dmsg0(100, _("Either a certificate file or a directory must be"
                  " specified as a verification store\n"));
-    //      return false; Ueb: do not return compatibility ?
   }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
@@ -143,7 +142,7 @@ bool TlsOpenSslPrivate::init()
       OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
       return false;
     }
-    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);  // Ueb: bio richtig initialisieren
+    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);  // Ueb: Init BIO correctly?
     BIO_free(bio);
     if (!dh) {
       OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));

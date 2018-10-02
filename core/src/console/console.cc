@@ -749,49 +749,50 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    int numcon=0, numdir=0;
    int i=0, item=0;
    BareosSocket *UA_sock;
-   DirectorResource *director_resource = NULL;
-   ConsoleResource *console_resource = NULL;
+   DirectorResource *director_resource_tmp = NULL;
+   ConsoleResource *console_resource_tmp = NULL;
 
    *ret_cons = NULL;
    *ret_dir = NULL;
 
   LockRes(my_config);
    numdir = 0;
-   foreach_res(director_resource, R_DIRECTOR) {
+   foreach_res(director_resource_tmp, R_DIRECTOR) {
       numdir++;
    }
    numcon = 0;
-   foreach_res(console_resource, R_CONSOLE) {
+   foreach_res(console_resource_tmp, R_CONSOLE) {
       numcon++;
    }
    UnlockRes(my_config);
 
    if (numdir == 1) {           /* No choose */
-      director_resource = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
+      director_resource_tmp = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
    }
 
    if (director) {    /* Command line choice overwrite the no choose option */
       LockRes(my_config);
-      foreach_res(director_resource, R_DIRECTOR) {
-         if (bstrcmp(director_resource->name(), director)) {
+      foreach_res(director_resource_tmp, R_DIRECTOR) {
+         if (bstrcmp(director_resource_tmp->name(), director)) {
             break;
          }
       }
       UnlockRes(my_config);
-      if (!director_resource) { /* Can't find Director used as argument */
+      if (!director_resource_tmp) { /* Can't find Director used as argument */
          ConsoleOutputFormat(_("Can't find %s in Director list\n"), director);
          return 0;
       }
    }
 
-   if (!director_resource) { /* prompt for director */
+   if (!director_resource_tmp) { /* prompt for director */
       UA_sock = New(BareosSocketTCP);
 try_again:
       ConsoleOutput(_("Available Directors:\n"));
       LockRes(my_config);
       numdir = 0;
-      foreach_res(director_resource, R_DIRECTOR) {
-         ConsoleOutputFormat( _("%2d:  %s at %s:%d\n"), 1+numdir++, director_resource->name(), director_resource->address, director_resource->DIRport);
+      foreach_res(director_resource_tmp, R_DIRECTOR) {
+         ConsoleOutputFormat( _("%2d:  %s at %s:%d\n"), 1+numdir++, director_resource_tmp->name(),
+                             director_resource_tmp->address, director_resource_tmp->DIRport);
       }
     UnlockRes(my_config);
     if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600) < 0) {
@@ -812,7 +813,8 @@ try_again:
       delete UA_sock;
       LockRes(my_config);
       for (i=0; i<item; i++) {
-         director_resource = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader *)director_resource);
+         director_resource_tmp = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR,
+                                 (CommonResourceHeader *)director_resource_tmp);
       }
       UnlockRes(my_config);
    }
@@ -822,35 +824,35 @@ try_again:
     */
    LockRes(my_config);
    for (i=0; i<numcon; i++) {
-      console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
-      if (console_resource->director && bstrcmp(console_resource->director, director_resource->name())) {
+      console_resource_tmp = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource_tmp);
+      if (console_resource_tmp->director && bstrcmp(console_resource_tmp->director, director_resource_tmp->name())) {
          break;
       }
-      console_resource = NULL;
+      console_resource_tmp = NULL;
    }
 
    /*
     * Look for the first non-linked console
     */
-   if (console_resource == NULL) {
+   if (console_resource_tmp == NULL) {
       for (i=0; i<numcon; i++) {
-         console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource);
-         if (console_resource->director == NULL)
+         console_resource_tmp = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)console_resource_tmp);
+         if (console_resource_tmp->director == NULL)
             break;
-         console_resource = NULL;
+         console_resource_tmp = NULL;
       }
    }
 
    /*
     * If no console, take first one
     */
-   if (!console_resource) {
-      console_resource = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
+   if (!console_resource_tmp) {
+      console_resource_tmp = (ConsoleResource *)my_config->GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
    }
    UnlockRes(my_config);
 
-   *ret_dir = director_resource;
-   *ret_cons = console_resource;
+   *ret_dir = director_resource_tmp;
+   *ret_cons = console_resource_tmp;
 
    return 1;
 }
