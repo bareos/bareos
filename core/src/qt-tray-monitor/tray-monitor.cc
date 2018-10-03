@@ -209,6 +209,10 @@ int main(int argc, char *argv[])
       exit(0);
    }
 
+   if (InitCrypto() != 0) {
+      Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+   }
+
    // this is the Qt core application
    // with its message handler
    app = new QApplication(argc, argv);

@@ -5,6 +5,19 @@ class MonitorResource;
 class MonitorItem;
 class JobControlRecord;
 
-bool AuthenticateWithDaemon(MonitorItem *item, JobControlRecord *jcr);
+enum class AuthenticationResult {
+  kNoError,
+  kAlreadyAuthenticated,
+  kQualifiedResourceNameFailed,
+  kTlsHandshakeFailed,
+  kSendHelloMessageFailed,
+  kCramMd5HandshakeFailed,
+  kDaemonResponseFailed,
+  kRejectedByDaemon,
+  kUnknownDaemon
+};
+
+AuthenticationResult AuthenticateWithDaemon(MonitorItem *item, JobControlRecord *jcr);
+bool GetAuthenticationResultString(AuthenticationResult err, std::string &buffer);
 
 #endif // AUTHENTICATE_H_INCLUDED

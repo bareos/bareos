@@ -32,6 +32,7 @@ class TlsOpenSsl : public Tls {
  public:
   TlsOpenSsl();
   virtual ~TlsOpenSsl();
+  TlsOpenSsl(TlsOpenSsl &other) = delete;
 
   bool init() override;
 

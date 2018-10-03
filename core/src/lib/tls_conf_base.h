@@ -38,7 +38,7 @@ public:
       BNET_TLS_NONE = 0,            /*!< No TLS configured */
       BNET_TLS_ENABLED = 1,         /*!< TLS with certificates is allowed but not required on my end */
       BNET_TLS_REQUIRED = 2,        /*!< TLS with certificates is required */
-      BNET_TLS_AUTO = 4,            /*!< TLS with certificates is required */
+      BNET_TLS_AUTO = 4,            /*!< TLS mode will be negotiated by ssl handshake */
       BNET_TLS_DENY = 0xFF          /*!< TLS connection not allowed */
    } Policy_e;
 

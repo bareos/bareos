@@ -86,7 +86,8 @@ int32_t res_all_size = sizeof(res_all);
 static ResourceItem mon_items[] = {
     {"Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
     {"Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL},
-    {"RequireSsl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_monitor.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_monitor.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL,
      NULL},
@@ -111,7 +112,8 @@ static ResourceItem dir_items[] = {
     {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
     {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
     {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"EnableSsl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
     TLS_PSK_CONFIG(res_dir),
@@ -128,7 +130,8 @@ static ResourceItem cli_items[] = {
     {"Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"EnableSsl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_client.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_client.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
     TLS_PSK_CONFIG(res_client),
@@ -147,7 +150,8 @@ static ResourceItem store_items[] = {
     {"SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL},
-    {"EnableSsl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_store.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_store.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
     TLS_PSK_CONFIG(res_store),
@@ -391,16 +395,19 @@ static void ConfigReadyCallback(ConfigurationParser &my_config)
                                  {R_DIRECTOR, "R_DIRECTOR"},
                                  {R_CLIENT, "R_CLIENT"},
                                  {R_STORAGE, "R_STORAGE"},
+                                 {R_CONSOLE, "R_CONSOLE"},
                                  {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
 ConfigurationParser *InitTmonConfig(const char *configfile, int exit_code)
 {
-  return new ConfigurationParser(configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
+  ConfigurationParser *config = new ConfigurationParser(configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
                                  (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
                                  default_config_filename.c_str(), "tray-monitor.d", ConfigReadyCallback,
                                  SaveResource, DumpResource, FreeResource);
+  if (config) { config->r_own_ = R_MONITOR; }
+  return config;
 }
 
 /*

@@ -28,10 +28,14 @@
 #ifndef BAREOS_LIB_TLS_OPENSSL_CRL_H_
 #define BAREOS_LIB_TLS_OPENSSL_CRL_H_
 
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+
 #include <openssl/ssl.h>
 #include <string>
 
 bool SetCertificateRevocationList(const std::string &crlfile, SSL_CTX *openssl_ctx);
 
+
+#endif /* (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L) */
 
 #endif /* BAREOS_LIB_TLS_OPENSSL_CRL_H_ */

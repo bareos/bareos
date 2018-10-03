@@ -39,19 +39,13 @@
 #include <openssl/x509v3.h>
 
 #include "lib/tls_openssl.h"
-#include "lib/tls_openssl_crl.h"
 #include "lib/tls_openssl_private.h"
 
 #include "parse_conf.h"
 
-/*
- * No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
- */
-#define TLS_DEFAULT_CIPHERS "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
-
 TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate)
 {
-  /* the openssl_ctx object is the factory that creates
+  /* the SSL_CTX object is the factory that creates
    * openssl objects, so initialize this first */
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
@@ -77,121 +71,15 @@ TlsOpenSsl::~TlsOpenSsl()
 
 bool TlsOpenSsl::init()
 {
-  if (d_->cipherlist_.empty()) {
-    d_->cipherlist_ = TLS_DEFAULT_CIPHERS;
-  }
-
-  if (SSL_CTX_set_cipher_list(d_->openssl_ctx_, d_->cipherlist_.c_str()) != 1) {
-    Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
-    return false;
-  }
-
-  if (d_->pem_callback_) {
-    d_->pem_userdata_ = d_->pem_userdata_;
-  } else {
-    d_->pem_callback_ = CryptoDefaultPemCallback;
-    d_->pem_userdata_ = NULL;
-  }
-
-  SSL_CTX_set_default_passwd_cb(d_->openssl_ctx_, TlsOpenSslPrivate::tls_pem_callback_dispatch);
-  SSL_CTX_set_default_passwd_cb_userdata(d_->openssl_ctx_, reinterpret_cast<void *>(d_.get()));
-
-  const char *ca_certfile = d_->ca_certfile_.empty() ? nullptr : d_->ca_certfile_.c_str();
-  const char *ca_certdir  = d_->ca_certdir_.empty() ? nullptr : d_->ca_certdir_.c_str();
-
-  if (ca_certfile || ca_certdir) { /* at least one should be set */
-    if (!SSL_CTX_load_verify_locations(d_->openssl_ctx_, ca_certfile, ca_certdir)) {
-      OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
-      return false;
-    }
-  } else if (d_->verify_peer_) {
-    /* At least one CA is required for peer verification */
-    Dmsg0(100, _("Either a certificate file or a directory must be"
-                 " specified as a verification store\n"));
-    //      return false; Ueb: do not return compatibility ?
-  }
-
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  if (!d_->crlfile_.empty()) {
-    if (!SetCertificateRevocationList(d_->crlfile_, d_->openssl_ctx_)) {
-      return false;
-    }
-  }
-#endif
-
-  if (!d_->certfile_.empty()) {
-    if (!SSL_CTX_use_certificate_chain_file(d_->openssl_ctx_, d_->certfile_.c_str())) {
-      OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
-      return false;
-    }
-  }
-
-  if (!d_->keyfile_.empty()) {
-    if (!SSL_CTX_use_PrivateKey_file(d_->openssl_ctx_, d_->keyfile_.c_str(), SSL_FILETYPE_PEM)) {
-      OpensslPostErrors(M_FATAL, _("Error loading private key"));
-      return false;
-    }
-  }
-
-  if (!d_->dhfile_.empty()) { /* Diffie-Hellman parameters */
-    BIO *bio;
-    if (!(bio = BIO_new_file(d_->dhfile_.c_str(), "r"))) {
-      OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
-      return false;
-    }
-    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);  // Ueb: bio richtig initialisieren
-    BIO_free(bio);
-    if (!dh) {
-      OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
-      return false;
-    }
-    if (!SSL_CTX_set_tmp_dh(d_->openssl_ctx_, dh)) {
-      OpensslPostErrors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
-      DH_free(dh);
-      return false;
-    }
-
-    SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_SINGLE_DH_USE);
-  }
-
-  if (d_->verify_peer_) {
-    /*
-     * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
-     */
-    SSL_CTX_set_verify(d_->openssl_ctx_, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                       TlsOpenSslPrivate::OpensslVerifyPeer);
-  } else {
-    SSL_CTX_set_verify(d_->openssl_ctx_, SSL_VERIFY_NONE, NULL);
-  }
-
-  d_->openssl_ = SSL_new(d_->openssl_ctx_);
-  if (!d_->openssl_) {
-    OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
-    return false;
-  }
-
-  /* Non-blocking partial writes */
-  SSL_set_mode(d_->openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-
-  BIO *bio = BIO_new(BIO_s_socket());
-  if (!bio) {
-    OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
-    return false;
-  }
-
-  ASSERT(d_->tcp_file_descriptor_);
-  BIO_set_fd(bio, d_->tcp_file_descriptor_, BIO_NOCLOSE);
-
-  SSL_set_bio(d_->openssl_, bio, bio);
-
-  return true;
+  return d_->init();
 }
 
 void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
 {
+  if (!d_->openssl_ctx_) {
+    Dmsg0(50, "Could not set TLS_PSK CLIENT context (no SSL_CTX)\n");
+  } else {
   Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", credentials.get_identity().c_str());
-
-  if (d_->openssl_ctx_) {
     d_->ClientContextInsertCredentials(credentials);
     SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_client_cb);
   }
@@ -199,8 +87,14 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
 
 void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser *config, GetTlsPskByFullyQualifiedResourceNameCb_t cb)
 {
+  if (!d_->openssl_ctx_) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
+  } else if (!config) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
+  } else if (!cb) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no callback)\n");
+  } else {
   Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
-
   SSL_CTX_set_ex_data(d_->openssl_ctx_,
                       TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb,
                       (void *)cb);
@@ -208,7 +102,6 @@ void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser *config, GetTlsPskBy
                       TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,
                       (void *)config);
 
-  if (d_->openssl_ctx_) {
     SSL_CTX_set_psk_server_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_server_cb);
   }
 }
@@ -234,13 +127,8 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord *jcr, const char *host, int por
     Qmsg(jcr, M_INFO, 0, _("No openssl to %s at %s:%d established\n"), who, host, port);
   } else {
     std::string cipher_name = TlsCipherGetName();
-    if (!cipher_name.empty()) {
-      Qmsg(jcr, M_INFO, 0, _("Secure connection to %s at %s:%d with cipher %s established\n"), who, host, port,
-           cipher_name.c_str());
-    } else {
-      Qmsg(jcr, M_WARNING, 0, _("Secure connection to %s at %s:%d with UNKNOWN cipher established\n"), who,
-           host, port);
-    }
+    Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: %s\n"), who, host, port,
+         cipher_name.empty() ? "Unknown" : cipher_name.c_str());
   }
 }
 

@@ -125,15 +125,17 @@ BareosSocket::~BareosSocket() { Dmsg0(100, "Destruct BareosSocket\n"); }
 
 void BareosSocket::CloseTlsConnectionAndFreeMemory()
 {
-  LockMutex();
-  if (tls_conn && !tls_conn_init) {
-    tls_conn->TlsBsockShutdown(this);
-    tls_conn.reset();
-  } else if (tls_conn_init) {
-    tls_conn_init->TlsBsockShutdown(this);
-    tls_conn_init.reset();
+  if (!cloned_) {
+    LockMutex();
+    if (tls_conn && !tls_conn_init) {
+      tls_conn->TlsBsockShutdown(this);
+      tls_conn.reset();
+    } else if (tls_conn_init) {
+      tls_conn_init->TlsBsockShutdown(this);
+      tls_conn_init.reset();
+    }
+    UnlockMutex();
   }
-  UnlockMutex();
 }
 
 /**
@@ -169,7 +171,11 @@ bool BareosSocket::SetLocking()
 
 void BareosSocket::ClearLocking()
 {
-  if (mutex_) { mutex_.reset(); }
+  if (!cloned_) {
+    if (mutex_) {
+      mutex_.reset();
+    }
+  }
 }
 
 void BareosSocket::LockMutex()
@@ -453,10 +459,9 @@ void BareosSocket::ParameterizeTlsCert(Tls *tls_conn_init, TlsResource *tls_reso
     tls_conn_init->SetCrlfile(tls_resource->tls_cert.crlfile ? *tls_resource->tls_cert.crlfile : empty);
     tls_conn_init->SetCertfile(tls_resource->tls_cert.certfile ? *tls_resource->tls_cert.certfile : empty);
     tls_conn_init->SetKeyfile(tls_resource->tls_cert.keyfile ? *tls_resource->tls_cert.keyfile : empty);
-    //      tls_conn_init->SetPemCallback(TlsPemCallback); Ueb: --> Console Callback
+    //      tls_conn_init->SetPemCallback(TlsPemCallback); Ueb: --> Feature not implemented: Console Callback
     tls_conn_init->SetPemUserdata(tls_resource->tls_cert.pem_message);
-    tls_conn_init->SetDhFile(tls_resource->tls_cert.dhfile ? *tls_resource->tls_cert.dhfile
-                                                      : empty); /* Ueb: was never used before */
+    tls_conn_init->SetDhFile(tls_resource->tls_cert.dhfile ? *tls_resource->tls_cert.dhfile : empty);
     tls_conn_init->SetCipherList(tls_resource->tls_cert.cipherlist ? *tls_resource->tls_cert.cipherlist : empty);
     tls_conn_init->SetVerifyPeer(tls_resource->tls_cert.VerifyPeer);
   }
@@ -526,7 +531,7 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
     if (tls_conn) {
       tls_conn->TlsLogConninfo(jcr, host(), port(), who());
     } else {
-      Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who(), host(), port());
+      Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: None\n"), who(), host(), port());
     }
   }
   return true;
@@ -631,12 +636,12 @@ void BareosSocket::GetCipherMessageString(std::string &str)
 {
    if (tls_conn) {
      std::string m;
-     m = "Secure connection with cipher ";
+     m = " Encryption: ";
      m += tls_conn->TlsCipherGetName();
      m += "\n";
      str = m;
    } else {
-     str = "Cleartext connection\n";
+     str = " Encryption: None\n";
    }
 }
 

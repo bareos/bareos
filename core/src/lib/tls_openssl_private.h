@@ -33,6 +33,8 @@ class TlsOpenSslPrivate {
   TlsOpenSslPrivate();
   ~TlsOpenSslPrivate();
 
+  bool init();
+
   enum SslCtxExDataIndex: int { kGetTlsPskByFullyQualifiedResourceNameCb = 0, kConfigurationParserPtr = 1 };
 
   int OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write);
@@ -54,14 +56,16 @@ class TlsOpenSslPrivate {
                                     unsigned int max_identity_len,
                                     unsigned char *psk,
                                     unsigned int max_psk_len);
-  /* *************** */
 
+  /* each TCP connection has its own SSL_CTX object and SSL object */
   SSL *openssl_;
   SSL_CTX *openssl_ctx_;
 
-  /* psk attributes list for all connections */
-  static std::map<const SSL_CTX *, PskCredentials> psk_client_credentials;
-  /* *************** */
+  /* PskCredentials lookup map for all connections */
+  static std::map<const SSL_CTX *, PskCredentials> psk_client_credentials_;
+
+  /* tls_default_ciphers_ if no user ciphers given  */
+  static const std::string tls_default_ciphers_;
 
   /* cert attributes */
   int tcp_file_descriptor_;

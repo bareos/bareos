@@ -67,11 +67,13 @@ BuildRequires:  mingw64-libstdc++
 BuildRequires:  mingw32-libwinpthread1
 BuildRequires:  mingw64-libwinpthread1
 
-BuildRequires:  mingw32-libqt4
-BuildRequires:  mingw64-libqt4
+BuildRequires:  mingw32-libqt5-qtbase
+BuildRequires:  mingw64-libqt5-qtbase
 
-#BuildRequires:  mingw32-qt4-debug
-#BuildRequires:  mingw64-qt4-debug
+# needs to be added if qt is built with icu support
+#BuildRequires:  mingw32-icu
+#BuildRequires:  mingw64-icu
+
 
 BuildRequires:  mingw32-lzo
 BuildRequires:  mingw64-lzo
@@ -154,6 +156,12 @@ for flavor in %{flavors}; do
    done
    done
 
+
+# needs to be added to following files if qt is built with icu support
+#      icui18n56.dll \
+#      icudata56.dll \
+#      icuuc56.dll \
+
    for file in \
       libcrypto-*.dll \
       libfastlz.dll \
@@ -169,8 +177,15 @@ for flavor in %{flavors}; do
       libtermcap-0.dll \
       openssl.exe \
       libwinpthread-1.dll \
-      QtCore4.dll \
-      QtGui4.dll \
+      Qt5Core.dll \
+      Qt5Gui.dll \
+      Qt5Widgets.dll \
+      libfreetype-6.dll \
+      libglib-2.0-0.dll \
+      libintl-8.dll \
+      libGLESv2.dll \
+      libharfbuzz-0.dll \
+      libpcre16-0.dll \
       sed.exe \
       sqlite3.exe \
       zlib1.dll \
@@ -178,6 +193,10 @@ for flavor in %{flavors}; do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
       cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
    done
+
+
+   cp %{_mingw32_libdir}/qt5/plugins/platforms/qwindows.dll  $RPM_BUILD_ROOT/$flavor/release32
+   cp %{_mingw64_libdir}/qt5/plugins/platforms/qwindows.dll  $RPM_BUILD_ROOT/$flavor/release64
 
 
    for BITS in 32 64; do

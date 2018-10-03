@@ -81,7 +81,7 @@ for /D %%c in (*) do (
         )
         if defined ACL_CMD (
             if "%%c" == "tray-monitor.d" (
-               rem The bareos-tray-monitor should be accessable and its configuration adaptable
+               rem The bareos-tray-monitor should be accessible and its configuration adaptable
                rem for all users.
                rem Therefore grant Full Access to the group "Users".
                "%ACL_CMD%" "%DST%\%%c" /grant *S-1-5-32-545:"(OI)(CI)F"
@@ -104,7 +104,7 @@ popd
 
 if defined ACL_CMD (
    rem configure.sed also contains passwords.
-   rem So make it only accessable for Administrators.
+   rem So make it only accessible for Administrators.
 
    rem Stop ACL inheritance and copy the current ACLs
    "%ACL_CMD%" "%DST%\configure.sed" /inheritance:d

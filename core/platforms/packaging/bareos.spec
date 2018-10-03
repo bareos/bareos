@@ -195,7 +195,11 @@ BuildRequires: libcap-devel
 BuildRequires: mtx
 
 %if 0%{?build_qt_monitor}
-BuildRequires: libqt4-devel
+%if 0%{?suse_version}
+BuildRequires: libqt5-qtbase-devel
+%else
+BuildRequires: qt5-qtbase-devel
+%endif
 %endif
 
 
@@ -707,7 +711,7 @@ if [ "%{?buildroot}" -a "%{?buildroot}" != "/" ]; then
     rm -rf "%{?buildroot}"
 fi
 %if !0%{?suse_version}
-export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
+export PATH=$PATH:/usr/lib64/qt5/bin:/usr/lib/qt5/bin
 %endif
 export MTX=/usr/sbin/mtx
 
