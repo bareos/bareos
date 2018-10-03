@@ -29,7 +29,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+find_package(Qt4)
+
+find_package(Qt5 COMPONENTS Core Widgets)
 
 IF(HAVE_WIN32)
    include_directories(
@@ -49,9 +51,11 @@ IF(HAVE_WIN32)
    LIST(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
 ENDIF()
 
-
-set(TRAYMON_LIBRARIES bareos-tray-monitor bareos)
-
+IF(Qt4_FOUND)
+  set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos)
+ELSE()
+  set(TRAYMON_LIBRARIES bareos-tray-monitor bareos)
+ENDIF()
 
 IF(HAVE_WIN32)
    add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)
@@ -59,7 +63,9 @@ ELSE()
    add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
 ENDIF()
 
-qt5_use_modules(bareos-tray-monitor Widgets)
+IF(Qt5Widgets_FOUND)
+  qt5_use_modules(bareos-tray-monitor Widgets)
+ENDIF()
 
 target_link_libraries(${TRAYMON_LIBRARIES})
 
