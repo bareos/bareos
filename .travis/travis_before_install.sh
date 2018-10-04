@@ -1,6 +1,8 @@
 #!/bin/bash
 
 sudo apt-get -qq update
+# qt5 should be used. Remove qt4-dev to avoid confusion.
+sudo apt-get remove libqt4-dev
 cd core
 dpkg-checkbuilddeps 2> /tmp/dpkg-builddeps || true
 cat /tmp/dpkg-builddeps

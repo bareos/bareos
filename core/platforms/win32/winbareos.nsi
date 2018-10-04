@@ -2183,7 +2183,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libharfbuzz-0.dll"
   Delete "$INSTDIR\libpcre16-0.dll"
 
-  Delete "$INSTDIR\platforms\qwindows.dll"
+  RMDir /r "$INSTDIR\platforms"
 
   Delete "$INSTDIR\liblzo2-2.dll"
   Delete "$INSTDIR\libfastlz.dll"
