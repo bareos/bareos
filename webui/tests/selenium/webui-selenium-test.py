@@ -6,9 +6,7 @@
 
 import logging, os, sys, unittest
 from   datetime import datetime
-from   sauceclient import SauceClient
 from   selenium import webdriver
-from   selenium.webdriver.remote.remote_connection import RemoteConnection
 from   selenium.common.exceptions import *
 from   selenium.webdriver.common.by import By
 from   selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -16,7 +14,6 @@ from   selenium.webdriver.common.keys import Keys
 from   selenium.webdriver.support import expected_conditions as EC
 from   selenium.webdriver.support.ui import Select, WebDriverWait
 from   time import sleep
-from   sauceclient import SauceClient
 
 class BadJobException(Exception):
     '''Raise when a started job doesn't result in ID'''
@@ -110,33 +107,35 @@ class SeleniumTest(unittest.TestCase):
         self.logger = logging.getLogger()
 
         if(os.environ.get('TRAVIS') == 'true'):
+            from sauceclient import SauceClient
+            from   selenium.webdriver.remote.remote_connection import RemoteConnection
             self.desired_capabilities = {}
             self.desired_capabilities['name'] = (self.id().split('.'))[2]+": Travis Build Nr. %s" % os.environ['TRAVIS_BUILD_NUMBER']
             jobnumber = os.environ['TRAVIS_JOB_NUMBER']
             if jobnumber:
                 self.desired_capabilities['tunnel-identifier'] = jobnumber
-            self.desired_capabilities['platform'] = "Mac OS X 10.9"
-            self.desired_capabilities['browserName'] = "chrome"
-            self.desired_capabilities['version'] = "31"
             buildnumber = os.environ['TRAVIS_BUILD_NUMBER']
             if buildnumber:
                 self.desired_capabilities['build'] = buildnumber
+            self.desired_capabilities['platform'] = "macOS 10.13"
+            self.desired_capabilities['browserName'] = "chrome"
+            self.desired_capabilities['version'] = "latest"
             sauce_url = "http://%s:%s@localhost:4445/wd/hub"
             self.driver = webdriver.Remote(
                 desired_capabilities=self.desired_capabilities,
                 command_executor=sauce_url % (self.sauce_username, self.access_key)
             )
+        else:
+            if self.browser == 'chrome':
+                chromedriverpath = self.getChromedriverpath()
+                self.driver = webdriver.Chrome(chromedriverpath)
 
-        if self.browser == 'chrome':
-            chromedriverpath = self.getChromedriverpath()
-            self.driver = webdriver.Chrome(chromedriverpath)
-
-        if self.browser == "firefox":
-            d = DesiredCapabilities.FIREFOX
-            d['loggingPrefs'] = { 'browser':'ALL' }
-            fp = webdriver.FirefoxProfile()
-            fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
-            self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
+            if self.browser == "firefox":
+                d = DesiredCapabilities.FIREFOX
+                d['loggingPrefs'] = { 'browser':'ALL' }
+                fp = webdriver.FirefoxProfile()
+                fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
+                self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
 
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
@@ -151,24 +150,38 @@ class SeleniumTest(unittest.TestCase):
         # This test navigates to clients, ensures client is enabled,
         # disables it, closes a possible modal, goes to dashboard and reenables client.
         self.login()
+        # Clicks on client menue tab
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        # Tries to click on client...
         try:
             self.wait_and_click(By.LINK_TEXT, self.client)
+        # Raises exception if client not found
         except ElementTimeoutException:
             raise ClientNotFoundException(self.client)
+        # And goes back to dashboard tab.
         self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
+        # Back to the clients
+        # Disables client 1 and goes back to the dashboard.
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
         self.wait_and_click(By.LINK_TEXT, self.client)
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        # Checks if client is enabled
         if self.client_status(self.client)=='Enabled':
+            # Disables client
             self.wait_and_click(By.XPATH, '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]' % self.client)
+            # Switches to dashboard, if prevented by open modal: close modal
             self.wait_and_click(By.ID, 'menu-topnavbar-dashboard',By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+        # Throw exception if client is already disabled
         else:
             raise ClientStatusException(self.client, 'disabled')
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        # Checks if client is disabled so that it can be enabled
         if self.client_status(self.client)=='Disabled':
+            # Enables client
             self.wait_and_click(By.XPATH, '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]' % self.client)
+            # Switches to dashboard, if prevented by open modal: close modal
             self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+        # Throw exception if client is already enabled
         else:
             raise ClientStatusException(self.client, 'enabled')
         self.logout()
@@ -211,30 +224,38 @@ class SeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_rerun_job(self):
-        # Goes to client list, clicks on client, reruns first backup in list
         self.login()
         self.wait_and_click(By.ID, "menu-topnavbar-client")
         self.wait_and_click(By.LINK_TEXT, self.client)
+        # Select first backup in list
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
+        # Press on rerun button
         self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
         self.wait_and_click(By.ID, "menu-topnavbar-dashboard", By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")
         self.logout()
 
     def test_restore(self):
-        # Logs in, closes possible modal, selects client, navigates through tree to file
-        # submits restore, confirms alert, back to dashboard, logs out
+        # Login
         self.login()
-        self.wait_and_click(By.ID, 'menu-topnavbar-restore')
+        self.wait_for_url_and_click('/restore/')
+        # Click on client dropdown menue and close the possible modal
         self.wait_and_click(By.XPATH, '(//button[@data-id="client"])', By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')
+        # Select correct client
         self.wait_and_click(By.LINK_TEXT, self.client)
+        # Clicks on file and navigates through the tree
+        # by using the arrow-keys.
         pathlist = self.restorefile.split('/')
         for i in pathlist[:-1]:
             self.wait_for_element(By.XPATH, '//a[contains(text(),"%s/")]' % i).send_keys(Keys.ARROW_RIGHT)
-        self.wait_and_click(By.XPATH, '//a[contains(text(),"%s")]' % pathlist[-1])
+        self.wait_for_element(By.XPATH, '//a[contains(text(),"%s")]' % pathlist[-1]).click()
+        # Submit restore
         self.wait_and_click(By.XPATH, '//input[@id="submit"]')
+        # Confirms alert
         self.assertRegexpMatches(self.close_alert_and_get_its_text(), r'^Are you sure[\s\S]$')
-        self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
+        # switch to dashboard to prevent that modals are open before logout
+        self.wait_and_click(By.XPATH, '//a[contains(@href, "/dashboard/")]', By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
         self.close_alert_and_get_its_text()
+        # Logout
         self.logout()
 
     def test_run_configured_job(self):
@@ -243,12 +264,14 @@ class SeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_run_default_job(self):
-        # Opens joblist and start first job
         self.login()
         self.wait_and_click(By.ID, 'menu-topnavbar-job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
+        # Open the job list
         self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
+        # Select the first job
         self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
+        # Start it
         self.wait_and_click(By.ID, 'submit')
         self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
         self.logout()
@@ -304,7 +327,6 @@ class SeleniumTest(unittest.TestCase):
         driver.find_element_by_xpath('(//button[@type="button"])[2]').click()
         driver.find_element_by_link_text('English').click()
         driver.find_element_by_xpath('//input[@id="submit"]').click()
-        element=None
         try:
             driver.find_element_by_xpath('//div[@role="alert"]')
         except:
@@ -445,9 +467,6 @@ def get_env():
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
     if(os.environ.get('TRAVIS') == 'true'):
-            SeleniumTest.browser = 'none'
-            SeleniumTest.username = 'citest'
-            SeleniumTest.password = 'citestpass'
             SeleniumTest.sauce_username = os.environ.get('SAUCE_USERNAME')
             SeleniumTest.access_key = os.environ.get('SAUCE_ACCESS_KEY')
 

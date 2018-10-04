@@ -46,6 +46,9 @@ if [ "${BUILD_WEBUI}" ]
 then
 	service apache2 restart
 	service apache2 status
+	export BAREOS_BROWSER="none"
+	export BAREOS_USERNAME="citest"
+	export BAREOS_PASSWORD="citestpass"
 	export BAREOS_CLIENT_NAME=$HOSTNAME-fd
 	echo "--------- testing webui over selenium -----------"
 	echo "configure add console name=citest password=citestpass profile=webui-admin" | bconsole
