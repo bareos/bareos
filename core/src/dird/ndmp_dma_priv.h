@@ -30,6 +30,8 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_PRIV_H_
 #define BAREOS_DIRD_NDMP_DMA_PRIV_H_ 1
 
+namespace directordaemon {
+
 #ifdef NDMP_NEED_ENV_KEYWORDS
 /**
  * Array used for storing fixed NDMP env keywords.
@@ -119,7 +121,7 @@ bool NdmpBuildStorageJob(JobControlRecord *jcr, StorageResource *store, bool ini
 bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr, StorageResource *store, ClientResource *client,
                            bool init_tape, bool init_robot, int operation, struct ndm_job_param *job);
 
-extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg);
+void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg);
 void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
 
 /*
@@ -150,4 +152,6 @@ void NdmpFhdbMemProcessDb(struct ndmlog *ixlog);
 bool StoreNdmmediaInfoInDatabase(ndmmedia *media, JobControlRecord  *jcr);
 bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *jcr);
 extern "C" int BndmpFhdbAddFile(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
-#endif
+
+} /* namespace directordaemon */
+#endif /* BAREOS_DIRD_NDMP_DMA_PRIV_H_ */

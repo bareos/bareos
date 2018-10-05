@@ -32,7 +32,10 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "lib/bnet.h"
+
+namespace filedaemon {
 
 #define WAIT_INTERVAL 5
 
@@ -233,3 +236,4 @@ void StopDirHeartbeat(JobControlRecord *jcr)
       StopHeartbeatMonitor(jcr);
    }
 }
+} /* namespace filedaemon */

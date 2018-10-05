@@ -46,7 +46,7 @@
 #endif
 
 
-#include "hostconfig.h"
+#include "include/hostconfig.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push,4)
@@ -85,7 +85,7 @@ struct h_mem {
 #pragma pack(pop)
 #endif
 
-class DLL_IMP_EXP htable : public SmartAlloc {
+class htable : public SmartAlloc {
    hlink **table;                     /* Hash table */
    int loffset;                       /* Link offset in item */
    hlink *walkptr;                    /* Table walk pointer */

@@ -25,7 +25,14 @@
  * @file bareos storage daemon configuration definitions
  *
  */
-#define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
+#ifndef BAREOS_STORED_STORED_CONF_H_
+#define BAREOS_STORED_STORED_CONF_H_ 1
+
+#include "stored/dev.h"
+
+namespace storagedaemon {
+
+static const std::string default_config_filename("bareos-sd.conf");
 
 /*
  * Resource codes -- they must be sequential for indexing
@@ -37,8 +44,9 @@ enum {
    R_DEVICE,
    R_MSGS,
    R_AUTOCHANGER,
+   R_JOB, /* needed for Job name conversion */
    R_FIRST = R_DIRECTOR,
-   R_LAST = R_AUTOCHANGER             /* keep this updated */
+   R_LAST = R_JOB             /* keep this updated */
 };
 
 enum {
@@ -196,3 +204,6 @@ union UnionOfResources {
 
 ConfigurationParser *InitSdConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
+
+} /* namespace storagedaemon */
+#endif /* BAREOS_STORED_STORED_CONF_H_ */

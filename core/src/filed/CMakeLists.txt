@@ -22,14 +22,13 @@ IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/generic
       ${CMAKE_SOURCE_DIR}/src/win32/filed
-      ${CMAKE_SOURCE_DIR}/src/win32/vss/include  ../include . .. ../lmdb/)
-ELSE()
-   include_directories(. .. ../include ../lmdb)
+      ${CMAKE_SOURCE_DIR}/src/win32/vss/include
+      )
 ENDIF()
 
 set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmds.cc verify.cc
-    accurate_htable.cc backup.cc dir_cmd.cc filed.cc heartbeat.cc socket_server.cc verify_vol.cc
-    accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)
+    accurate_htable.cc backup.cc dir_cmd.cc filed.cc filed_globals.cc heartbeat.cc socket_server.cc 
+    verify_vol.cc accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND FDSRCS
@@ -51,13 +50,13 @@ ENDIF()
 add_executable(bareos-fd ${FDSRCS})
 
 SET(BAREOS_FD_LIBRARIES
-         bareosfind bareoscfg bareos
+         bareosfind bareos
          pthread
          ${LMDB_LIBS}
          )
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_FD_LIBRARIES
-      comctl32 bareosstatic
+      comctl32
       )
 
    SET (FD_COMPILE_DEFINITIONS -DWIN32_VSS)

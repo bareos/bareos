@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/crc32.h"
+#include "stored/dev.h"
 #include "stored/device.h"
 #include "stored/label.h"
 #include "stored/socket_server.h"
@@ -39,17 +40,7 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-#ifdef DEBUG_BLOCK_CHECKSUM
-static const bool debug_block_checksum = true;
-#else
-static const bool debug_block_checksum = false;
-#endif
-
-#ifdef NO_TAPE_WRITE_TEST
-static const bool no_tape_write_test = true;
-#else
-static const bool no_tape_write_test = false;
-#endif
+namespace storagedaemon {
 
 static bool TerminateWritingVolume(DeviceControlRecord *dcr);
 static bool DoNewFileBookkeeping(DeviceControlRecord *dcr);
@@ -353,80 +344,220 @@ static inline bool unSerBlockHeader(JobControlRecord *jcr, Device *dev, DeviceBl
    return true;
 }
 
-/**
- * Write a block to the device, with locking and unlocking
- *
- * Returns: true  on success
- *        : false on failure
- *
- */
-bool DeviceControlRecord::WriteBlockToDevice()
+static void RereadLastBlock(DeviceControlRecord *dcr)
 {
-   bool status = true;
-   DeviceControlRecord *dcr = this;
-
-   if (dcr->spooling) {
-      status = WriteBlockToSpoolFile(dcr);
-      return status;
-   }
-
-   if (!dcr->IsDevLocked()) {        /* device already locked? */
+#define CHECK_LAST_BLOCK
+#ifdef  CHECK_LAST_BLOCK
+   bool ok = true;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
+   /*
+    * If the device is a tape and it supports backspace record,
+    *   we backspace over one or two eof marks depending on
+    *   how many we just wrote, then over the last record,
+    *   then re-read it and verify that the block number is
+    *   correct.
+    */
+   if (dev->IsTape() && dev->HasCap(CAP_BSR)) {
       /*
-       * Note, do not change this to dcr->r_dlock
+       * Now back up over what we wrote and read the last block
        */
-      dev->rLock();                  /* no, lock it */
+      if (!dev->bsf(1)) {
+         BErrNo be;
+         ok = false;
+         Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
+              be.bstrerror(dev->dev_errno));
+      }
+      if (ok && dev->HasCap(CAP_TWOEOF) && !dev->bsf(1)) {
+         BErrNo be;
+         ok = false;
+         Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
+              be.bstrerror(dev->dev_errno));
+      }
+      /*
+       * Backspace over record
+       */
+      if (ok && !dev->bsr(1)) {
+         BErrNo be;
+         ok = false;
+         Jmsg(jcr, M_ERROR, 0, _("Backspace record at EOT failed. ERR=%s\n"),
+              be.bstrerror(dev->dev_errno));
+         /*
+          *  On FreeBSD systems, if the user got here, it is likely that his/her
+          *    tape drive is "frozen".  The correct thing to do is a
+          *    rewind(), but if we do that, higher levels in cleaning up, will
+          *    most likely write the EOS record over the beginning of the
+          *    tape.  The rewind *is* done later in mount.c when another
+          *    tape is requested. Note, the clrerror() call in bsr()
+          *    calls ioctl(MTCERRSTAT), which *should* fix the problem.
+          */
+      }
+      if (ok) {
+         DeviceBlock *lblock = new_block(dev);
+         /*
+          * Note, this can destroy dev->errmsg
+          */
+         dcr->block = lblock;
+         if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+            Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"), dev->errmsg);
+         } else {
+            /*
+             * If we wrote block and the block numbers don't agree
+             *  we have a possible problem.
+             */
+            if (lblock->BlockNumber != dev->LastBlock) {
+                if (dev->LastBlock > (lblock->BlockNumber + 1)) {
+                   Jmsg(jcr, M_FATAL, 0, _(
+                        "Re-read of last block: block numbers differ by more than one.\n"
+                        "Probable tape misconfiguration and data loss. Read block=%u Want block=%u.\n"),
+                        lblock->BlockNumber, dev->LastBlock);
+                 } else {
+                   Jmsg(jcr, M_ERROR, 0, _(
+                        "Re-read of last block OK, but block numbers differ. Read block=%u Want block=%u.\n"),
+                        lblock->BlockNumber, dev->LastBlock);
+                 }
+            } else {
+               Jmsg(jcr, M_INFO, 0, _("Re-read of last block succeeded.\n"));
+            }
+         }
+         FreeBlock(lblock);
+         dcr->block = block;
+      }
    }
+#endif
+}
+
+/**
+ * If this routine is called, we do our bookkeeping and
+ * then assure that the volume will not be written any more.
+ */
+static bool TerminateWritingVolume(DeviceControlRecord *dcr)
+{
+   Device *dev = dcr->dev;
+   bool ok = true;
+
+   /* Create a JobMedia record to indicated end of tape */
+   dev->VolCatInfo.VolCatFiles = dev->file;
+   if (!dcr->DirCreateJobmediaRecord(false)) {
+      Dmsg0(50, "Error from create JobMedia\n");
+      dev->dev_errno = EIO;
+        Mmsg2(dev->errmsg, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
+            dcr->getVolCatName(), dcr->jcr->Job);
+       Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
+       ok = false;
+   }
+   dcr->block->write_failed = true;
+   if (!dev->weof(1)) {         /* end the tape */
+      dev->VolCatInfo.VolCatErrors++;
+      Jmsg(dcr->jcr, M_ERROR, 0, _("Error writing final EOF to tape. This Volume may not be readable.\n"
+           "%s"), dev->errmsg);
+      ok = false;
+      Dmsg0(50, "Error writing final EOF to volume.\n");
+   }
+   if (ok) {
+      ok = WriteAnsiIbmLabels(dcr, ANSI_EOV_LABEL, dev->VolHdr.VolumeName);
+   }
+   bstrncpy(dev->VolCatInfo.VolCatStatus, "Full", sizeof(dev->VolCatInfo.VolCatStatus));
+   dev->VolCatInfo.VolCatFiles = dev->file;   /* set number of files */
+
+   if (!dcr->DirUpdateVolumeInfo(false, true)) {
+      Mmsg(dev->errmsg, _("Error sending Volume info to Director.\n"));
+      ok = false;
+      Dmsg0(50, "Error updating volume info.\n");
+   }
+   Dmsg1(50, "DirUpdateVolumeInfo Terminate writing -- %s\n", ok?"OK":"ERROR");
 
    /*
-    * If a new volume has been mounted since our last write
-    * Create a JobMedia record for the previous volume written,
-    * and set new parameters to write this volume
-    *
-    * The same applies for if we are in a new file.
+    * Walk through all attached dcrs setting flag to call
+    * SetNewFileParameters() when that dcr is next used.
     */
-   if (dcr->NewVol || dcr->NewFile) {
-      if (JobCanceled(jcr)) {
-         status = false;
-         Dmsg0(100, "Canceled\n");
-         goto bail_out;
+   DeviceControlRecord *mdcr;
+   foreach_dlist(mdcr, dev->attached_dcrs) {
+      if (mdcr->jcr->JobId == 0) {
+         continue;
       }
-      /* Create a jobmedia record for this job */
-      if (!dcr->DirCreateJobmediaRecord(false)) {
-         dev->dev_errno = EIO;
-         Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
-            dcr->getVolCatName(), jcr->Job);
-         SetNewVolumeParameters(dcr);
-         status = false;
-         Dmsg0(100, "cannot create media record\n");
-         goto bail_out;
-      }
-      if (dcr->NewVol) {
-         /*
-          * Note, setting a new volume also handles any pending new file
-          */
-         SetNewVolumeParameters(dcr);
-      } else {
-         SetNewFileParameters(dcr);
-      }
+      mdcr->NewFile = true;        /* set reminder to do set_new_file_params */
    }
+   /*
+    * Set new file/block parameters for current dcr
+    */
+   SetNewFileParameters(dcr);
 
-   if (!dcr->WriteBlockToDev()) {
-       if (JobCanceled(jcr) || jcr->is_JobType(JT_SYSTEM)) {
-          status = false;
-       } else {
-          status = FixupDeviceBlockWriteError(dcr);
-       }
-   }
-
-bail_out:
-   if (!dcr->IsDevLocked()) {        /* did we lock dev above? */
+   if (ok && dev->HasCap(CAP_TWOEOF) && !dev->weof(1)) {  /* end the tape */
+      dev->VolCatInfo.VolCatErrors++;
       /*
-       * Note, do not change this to dcr->dunlock
+       * This may not be fatal since we already wrote an EOF
        */
-      dev->Unlock();                   /* unlock it now */
+      Jmsg(dcr->jcr, M_ERROR, 0, "%s", dev->errmsg);
+      Dmsg0(50, "Writing second EOF failed.\n");
    }
-   return status;
+
+   dev->SetAteot();                  /* no more writing this tape */
+   Dmsg1(50, "*** Leave TerminateWritingVolume -- %s\n", ok?"OK":"ERROR");
+   return ok;
 }
+
+/**
+ * Do bookkeeping when a new file is created on a Volume. This is
+ *  also done for disk files to generate the jobmedia records for
+ *  quick seeking.
+ */
+static bool DoNewFileBookkeeping(DeviceControlRecord *dcr)
+{
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+
+   /*
+    * Create a JobMedia record so restore can seek
+    */
+   if (!dcr->DirCreateJobmediaRecord(false)) {
+      Dmsg0(50, "Error from create_job_media.\n");
+      dev->dev_errno = EIO;
+      Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
+           dcr->getVolCatName(), jcr->Job);
+      TerminateWritingVolume(dcr);
+      dev->dev_errno = EIO;
+      return false;
+   }
+   dev->VolCatInfo.VolCatFiles = dev->file;
+   if (!dcr->DirUpdateVolumeInfo(false, false)) {
+      Dmsg0(50, "Error from update_vol_info.\n");
+      TerminateWritingVolume(dcr);
+      dev->dev_errno = EIO;
+      return false;
+   }
+   Dmsg0(100, "DirUpdateVolumeInfo max file size -- OK\n");
+
+   /*
+    * Walk through all attached dcrs setting flag to call
+    * SetNewFileParameters() when that dcr is next used.
+    */
+   DeviceControlRecord *mdcr;
+   foreach_dlist(mdcr, dev->attached_dcrs) {
+      if (mdcr->jcr->JobId == 0) {
+         continue;
+      }
+      mdcr->NewFile = true;        /* set reminder to do set_new_file_params */
+   }
+   /*
+    * Set new file/block parameters for current dcr
+    */
+   SetNewFileParameters(dcr);
+   return true;
+}
+
+#ifdef DEBUG_BLOCK_CHECKSUM
+static const bool debug_block_checksum = true;
+#else
+static const bool debug_block_checksum = false;
+#endif
+
+#ifdef NO_TAPE_WRITE_TEST
+static const bool no_tape_write_test = true;
+#else
+static const bool no_tape_write_test = false;
+#endif
 
 /**
  * Write a block to the device
@@ -724,207 +855,80 @@ bool DeviceControlRecord::WriteBlockToDev()
    return true;
 }
 
-static void RereadLastBlock(DeviceControlRecord *dcr)
-{
-#define CHECK_LAST_BLOCK
-#ifdef  CHECK_LAST_BLOCK
-   bool ok = true;
-   Device *dev = dcr->dev;
-   JobControlRecord *jcr = dcr->jcr;
-   DeviceBlock *block = dcr->block;
-   /*
-    * If the device is a tape and it supports backspace record,
-    *   we backspace over one or two eof marks depending on
-    *   how many we just wrote, then over the last record,
-    *   then re-read it and verify that the block number is
-    *   correct.
-    */
-   if (dev->IsTape() && dev->HasCap(CAP_BSR)) {
-      /*
-       * Now back up over what we wrote and read the last block
-       */
-      if (!dev->bsf(1)) {
-         BErrNo be;
-         ok = false;
-         Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
-              be.bstrerror(dev->dev_errno));
-      }
-      if (ok && dev->HasCap(CAP_TWOEOF) && !dev->bsf(1)) {
-         BErrNo be;
-         ok = false;
-         Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
-              be.bstrerror(dev->dev_errno));
-      }
-      /*
-       * Backspace over record
-       */
-      if (ok && !dev->bsr(1)) {
-         BErrNo be;
-         ok = false;
-         Jmsg(jcr, M_ERROR, 0, _("Backspace record at EOT failed. ERR=%s\n"),
-              be.bstrerror(dev->dev_errno));
-         /*
-          *  On FreeBSD systems, if the user got here, it is likely that his/her
-          *    tape drive is "frozen".  The correct thing to do is a
-          *    rewind(), but if we do that, higher levels in cleaning up, will
-          *    most likely write the EOS record over the beginning of the
-          *    tape.  The rewind *is* done later in mount.c when another
-          *    tape is requested. Note, the clrerror() call in bsr()
-          *    calls ioctl(MTCERRSTAT), which *should* fix the problem.
-          */
-      }
-      if (ok) {
-         DeviceBlock *lblock = new_block(dev);
-         /*
-          * Note, this can destroy dev->errmsg
-          */
-         dcr->block = lblock;
-         if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
-            Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"), dev->errmsg);
-         } else {
-            /*
-             * If we wrote block and the block numbers don't agree
-             *  we have a possible problem.
-             */
-            if (lblock->BlockNumber != dev->LastBlock) {
-                if (dev->LastBlock > (lblock->BlockNumber + 1)) {
-                   Jmsg(jcr, M_FATAL, 0, _(
-                        "Re-read of last block: block numbers differ by more than one.\n"
-                        "Probable tape misconfiguration and data loss. Read block=%u Want block=%u.\n"),
-                        lblock->BlockNumber, dev->LastBlock);
-                 } else {
-                   Jmsg(jcr, M_ERROR, 0, _(
-                        "Re-read of last block OK, but block numbers differ. Read block=%u Want block=%u.\n"),
-                        lblock->BlockNumber, dev->LastBlock);
-                 }
-            } else {
-               Jmsg(jcr, M_INFO, 0, _("Re-read of last block succeeded.\n"));
-            }
-         }
-         FreeBlock(lblock);
-         dcr->block = block;
-      }
-   }
-#endif
-}
 
 /**
- * If this routine is called, we do our bookkeeping and
- * then assure that the volume will not be written any more.
+ * Write a block to the device, with locking and unlocking
+ *
+ * Returns: true  on success
+ *        : false on failure
+ *
  */
-static bool TerminateWritingVolume(DeviceControlRecord *dcr)
+bool DeviceControlRecord::WriteBlockToDevice()
 {
-   Device *dev = dcr->dev;
-   bool ok = true;
+   bool status = true;
+   DeviceControlRecord *dcr = this;
 
-   /* Create a JobMedia record to indicated end of tape */
-   dev->VolCatInfo.VolCatFiles = dev->file;
-   if (!dcr->DirCreateJobmediaRecord(false)) {
-      Dmsg0(50, "Error from create JobMedia\n");
-      dev->dev_errno = EIO;
-        Mmsg2(dev->errmsg, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
-            dcr->getVolCatName(), dcr->jcr->Job);
-       Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
-       ok = false;
+   if (dcr->spooling) {
+      status = WriteBlockToSpoolFile(dcr);
+      return status;
    }
-   dcr->block->write_failed = true;
-   if (!dev->weof(1)) {         /* end the tape */
-      dev->VolCatInfo.VolCatErrors++;
-      Jmsg(dcr->jcr, M_ERROR, 0, _("Error writing final EOF to tape. This Volume may not be readable.\n"
-           "%s"), dev->errmsg);
-      ok = false;
-      Dmsg0(50, "Error writing final EOF to volume.\n");
-   }
-   if (ok) {
-      ok = WriteAnsiIbmLabels(dcr, ANSI_EOV_LABEL, dev->VolHdr.VolumeName);
-   }
-   bstrncpy(dev->VolCatInfo.VolCatStatus, "Full", sizeof(dev->VolCatInfo.VolCatStatus));
-   dev->VolCatInfo.VolCatFiles = dev->file;   /* set number of files */
 
-   if (!dcr->DirUpdateVolumeInfo(false, true)) {
-      Mmsg(dev->errmsg, _("Error sending Volume info to Director.\n"));
-      ok = false;
-      Dmsg0(50, "Error updating volume info.\n");
-   }
-   Dmsg1(50, "DirUpdateVolumeInfo Terminate writing -- %s\n", ok?"OK":"ERROR");
-
-   /*
-    * Walk through all attached dcrs setting flag to call
-    * SetNewFileParameters() when that dcr is next used.
-    */
-   DeviceControlRecord *mdcr;
-   foreach_dlist(mdcr, dev->attached_dcrs) {
-      if (mdcr->jcr->JobId == 0) {
-         continue;
-      }
-      mdcr->NewFile = true;        /* set reminder to do set_new_file_params */
-   }
-   /*
-    * Set new file/block parameters for current dcr
-    */
-   SetNewFileParameters(dcr);
-
-   if (ok && dev->HasCap(CAP_TWOEOF) && !dev->weof(1)) {  /* end the tape */
-      dev->VolCatInfo.VolCatErrors++;
+   if (!dcr->IsDevLocked()) {        /* device already locked? */
       /*
-       * This may not be fatal since we already wrote an EOF
+       * Note, do not change this to dcr->r_dlock
        */
-      Jmsg(dcr->jcr, M_ERROR, 0, "%s", dev->errmsg);
-      Dmsg0(50, "Writing second EOF failed.\n");
+      dev->rLock();                  /* no, lock it */
    }
-
-   dev->SetAteot();                  /* no more writing this tape */
-   Dmsg1(50, "*** Leave TerminateWritingVolume -- %s\n", ok?"OK":"ERROR");
-   return ok;
-}
-
-/**
- * Do bookkeeping when a new file is created on a Volume. This is
- *  also done for disk files to generate the jobmedia records for
- *  quick seeking.
- */
-static bool DoNewFileBookkeeping(DeviceControlRecord *dcr)
-{
-   Device *dev = dcr->dev;
-   JobControlRecord *jcr = dcr->jcr;
 
    /*
-    * Create a JobMedia record so restore can seek
+    * If a new volume has been mounted since our last write
+    * Create a JobMedia record for the previous volume written,
+    * and set new parameters to write this volume
+    *
+    * The same applies for if we are in a new file.
     */
-   if (!dcr->DirCreateJobmediaRecord(false)) {
-      Dmsg0(50, "Error from create_job_media.\n");
-      dev->dev_errno = EIO;
-      Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
-           dcr->getVolCatName(), jcr->Job);
-      TerminateWritingVolume(dcr);
-      dev->dev_errno = EIO;
-      return false;
-   }
-   dev->VolCatInfo.VolCatFiles = dev->file;
-   if (!dcr->DirUpdateVolumeInfo(false, false)) {
-      Dmsg0(50, "Error from update_vol_info.\n");
-      TerminateWritingVolume(dcr);
-      dev->dev_errno = EIO;
-      return false;
-   }
-   Dmsg0(100, "DirUpdateVolumeInfo max file size -- OK\n");
-
-   /*
-    * Walk through all attached dcrs setting flag to call
-    * SetNewFileParameters() when that dcr is next used.
-    */
-   DeviceControlRecord *mdcr;
-   foreach_dlist(mdcr, dev->attached_dcrs) {
-      if (mdcr->jcr->JobId == 0) {
-         continue;
+   if (dcr->NewVol || dcr->NewFile) {
+      if (JobCanceled(jcr)) {
+         status = false;
+         Dmsg0(100, "Canceled\n");
+         goto bail_out;
       }
-      mdcr->NewFile = true;        /* set reminder to do set_new_file_params */
+      /* Create a jobmedia record for this job */
+      if (!dcr->DirCreateJobmediaRecord(false)) {
+         dev->dev_errno = EIO;
+         Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
+            dcr->getVolCatName(), jcr->Job);
+         SetNewVolumeParameters(dcr);
+         status = false;
+         Dmsg0(100, "cannot create media record\n");
+         goto bail_out;
+      }
+      if (dcr->NewVol) {
+         /*
+          * Note, setting a new volume also handles any pending new file
+          */
+         SetNewVolumeParameters(dcr);
+      } else {
+         SetNewFileParameters(dcr);
+      }
    }
-   /*
-    * Set new file/block parameters for current dcr
-    */
-   SetNewFileParameters(dcr);
-   return true;
+
+   if (!dcr->WriteBlockToDev()) {
+       if (JobCanceled(jcr) || jcr->is_JobType(JT_SYSTEM)) {
+          status = false;
+       } else {
+          status = FixupDeviceBlockWriteError(dcr);
+       }
+   }
+
+bail_out:
+   if (!dcr->IsDevLocked()) {        /* did we lock dev above? */
+      /*
+       * Note, do not change this to dcr->dunlock
+       */
+      dev->Unlock();                   /* unlock it now */
+   }
+   return status;
 }
 
 /**
@@ -1186,3 +1190,5 @@ reread:
    block->block_read = true;
    return true;
 }
+
+} /* namespace storagedaemon */

@@ -54,11 +54,11 @@ EOF
 
 
 for db in $DATABASES; do
-    DB=`upper $db`
+    DB=${db^}
     queryincludefile=`get_query_include_filename $db`
     > $queryincludefile
     printf "%s\n\n" "$NOTE" >> $queryincludefile
-    printf "const char *B_DB_%s::query_definitions[] = {\n" "$DB" >> $queryincludefile
+    printf "const char *BareosDb%s::query_definitions[] = {\n" "$DB" >> $queryincludefile
 done
 
 #

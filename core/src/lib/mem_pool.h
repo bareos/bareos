@@ -33,23 +33,23 @@
 #ifdef SMARTALLOC
 
 #define GetPoolMemory(pool) sm_get_pool_memory(__FILE__, __LINE__, pool)
-DLL_IMP_EXP POOLMEM *sm_get_pool_memory(const char *file, int line, int pool);
+POOLMEM *sm_get_pool_memory(const char *file, int line, int pool);
 
 #define GetMemory(size) sm_get_memory(__FILE__, __LINE__, size)
-DLL_IMP_EXP POOLMEM *sm_get_memory(const char *fname, int line, int32_t size);
+POOLMEM *sm_get_memory(const char *fname, int line, int32_t size);
 
 #define SizeofPoolMemory(buf) sm_sizeof_pool_memory(__FILE__, __LINE__, buf)
-DLL_IMP_EXP int32_t sm_sizeof_pool_memory(const char *fname, int line, POOLMEM *buf);
+int32_t sm_sizeof_pool_memory(const char *fname, int line, POOLMEM *buf);
 
 #define ReallocPoolMemory(buf,size) sm_realloc_pool_memory(__FILE__, __LINE__, buf, size)
-DLL_IMP_EXP POOLMEM *sm_realloc_pool_memory(const char *fname, int line, POOLMEM *buf, int32_t size);
+POOLMEM *sm_realloc_pool_memory(const char *fname, int line, POOLMEM *buf, int32_t size);
 
 #define CheckPoolMemorySize(buf,size) sm_check_pool_memory_size(__FILE__, __LINE__, buf, size)
-DLL_IMP_EXP POOLMEM *sm_check_pool_memory_size(const char *fname, int line, POOLMEM *buf, int32_t size);
+POOLMEM *sm_check_pool_memory_size(const char *fname, int line, POOLMEM *buf, int32_t size);
 
 #define FreePoolMemory(x) SmFreePoolMemory(__FILE__, __LINE__, x)
 #define FreeMemory(x) SmFreePoolMemory(__FILE__, __LINE__, x)
-DLL_IMP_EXP void SmFreePoolMemory(const char *fname, int line, POOLMEM *buf);
+void SmFreePoolMemory(const char *fname, int line, POOLMEM *buf);
 
 #else
 
@@ -68,11 +68,11 @@ void FreePoolMemory(POOLMEM *buf);
  */
 #define FreeAndNullPoolMemory(a) do { if (a) { FreePoolMemory(a); (a) = NULL;} } while (0)
 
-DLL_IMP_EXP void GarbageCollectMemoryPool();
-DLL_IMP_EXP void CloseMemoryPool();
-DLL_IMP_EXP void PrintMemoryPoolStats();
+void GarbageCollectMemoryPool();
+void CloseMemoryPool();
+void PrintMemoryPoolStats();
 
-DLL_IMP_EXP void GarbageCollectMemory();
+void GarbageCollectMemory();
 
 enum {
    PM_NOPOOL = 0,                     /* Nonpooled memory */
@@ -86,7 +86,7 @@ enum {
 
 #define PM_MAX PM_RECORD              /* Number of types */
 
-class DLL_IMP_EXP PoolMem {
+class PoolMem {
    char *mem;
 public:
    PoolMem() { mem = GetPoolMemory(PM_NAME); *mem = 0; }
@@ -112,18 +112,18 @@ public:
    int Bvsprintf(const char *fmt, va_list arg_ptr);
 };
 
-DLL_IMP_EXP int PmStrcat(POOLMEM *&pm, const char *str);
-DLL_IMP_EXP int PmStrcat(POOLMEM *&pm, PoolMem &str);
-DLL_IMP_EXP int PmStrcat(PoolMem &pm, const char *str);
-DLL_IMP_EXP int PmStrcat(PoolMem *&pm, const char *str);
+int PmStrcat(POOLMEM *&pm, const char *str);
+int PmStrcat(POOLMEM *&pm, PoolMem &str);
+int PmStrcat(PoolMem &pm, const char *str);
+int PmStrcat(PoolMem *&pm, const char *str);
 
-DLL_IMP_EXP int PmStrcpy(POOLMEM *&pm, const char *str);
-DLL_IMP_EXP int PmStrcpy(POOLMEM *&pm, PoolMem &str);
-DLL_IMP_EXP int PmStrcpy(PoolMem &pm, const char *str);
-DLL_IMP_EXP int PmStrcpy(PoolMem *&pm, const char *str);
+int PmStrcpy(POOLMEM *&pm, const char *str);
+int PmStrcpy(POOLMEM *&pm, PoolMem &str);
+int PmStrcpy(PoolMem &pm, const char *str);
+int PmStrcpy(PoolMem *&pm, const char *str);
 
-DLL_IMP_EXP int PmMemcpy(POOLMEM *&pm, const char *data, int32_t n);
-DLL_IMP_EXP int PmMemcpy(POOLMEM *&pm, PoolMem &data, int32_t n);
-DLL_IMP_EXP int PmMemcpy(PoolMem &pm, const char *data, int32_t n);
-DLL_IMP_EXP int PmMemcpy(PoolMem *&pm, const char *data, int32_t n);
+int PmMemcpy(POOLMEM *&pm, const char *data, int32_t n);
+int PmMemcpy(POOLMEM *&pm, PoolMem &data, int32_t n);
+int PmMemcpy(PoolMem &pm, const char *data, int32_t n);
+int PmMemcpy(PoolMem *&pm, const char *data, int32_t n);
 #endif

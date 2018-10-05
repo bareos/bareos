@@ -36,6 +36,8 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 
+namespace storagedaemon {
+
 /* Forward referenced functions */
 static bool LockChanger(DeviceControlRecord *dcr);
 static bool UnlockChanger(DeviceControlRecord *dcr);
@@ -927,3 +929,5 @@ static char *transfer_edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg
 
    return omsg;
 }
+
+} /* namespace storagedaemon  */

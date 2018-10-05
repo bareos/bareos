@@ -22,9 +22,13 @@
 #ifndef BAREOS_DIRD_AUTHENTICATE_H_
 #define BAREOS_DIRD_AUTHENTICATE_H_
 
+namespace directordaemon {
+
 bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store);
 bool AuthenticateWithFileDaemon(JobControlRecord *jcr);
 bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name);
 bool AuthenticateUserAgent(UaContext *ua);
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_AUTHENTICATE_H_

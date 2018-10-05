@@ -1,7 +1,10 @@
 #!/bin/bash
 
 sudo apt-get -qq update
+# qt5 should be used. Remove qt4-dev to avoid confusion.
+sudo apt-get remove libqt4-dev
 sudo pip install sauceclient selenium
+
 cd core
 dpkg-checkbuilddeps 2> /tmp/dpkg-builddeps || true
 if [ $BUILD_WEBUI ]

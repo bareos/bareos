@@ -45,6 +45,8 @@
 #include "dird/jobq.h"
 #include "dird/storage.h"
 
+namespace directordaemon {
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
@@ -1019,3 +1021,4 @@ static void DecWriteStore(JobControlRecord *jcr)
       V(mutex);
    }
 }
+} /* namespace directordaemon */

@@ -31,7 +31,10 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 extern struct s_jl joblevels[];
 
@@ -245,7 +248,7 @@ void StoreRun(LEX *lc, ResourceItem *item, int index, int pass)
             case 'n':                 /* NextPool */
                token = LexGetToken(lc, BCT_NAME);
                if (pass == 2) {
-                  res = GetResWithName(R_POOL, lc->str);
+                  res = my_config->GetResWithName(R_POOL, lc->str);
                   if (res == NULL) {
                      scan_err1(lc, _("Could not find specified Pool Resource: %s"),
                                 lc->str);
@@ -276,7 +279,7 @@ void StoreRun(LEX *lc, ResourceItem *item, int index, int pass)
             case 'S':                 /* Storage */
                token = LexGetToken(lc, BCT_NAME);
                if (pass == 2) {
-                  res = GetResWithName(R_STORAGE, lc->str);
+                  res = my_config->GetResWithName(R_STORAGE, lc->str);
                   if (res == NULL) {
                      scan_err1(lc, _("Could not find specified Storage Resource: %s"),
                                 lc->str);
@@ -288,7 +291,7 @@ void StoreRun(LEX *lc, ResourceItem *item, int index, int pass)
             case 'M':                 /* Messages */
                token = LexGetToken(lc, BCT_NAME);
                if (pass == 2) {
-                  res = GetResWithName(R_MSGS, lc->str);
+                  res = my_config->GetResWithName(R_MSGS, lc->str);
                   if (res == NULL) {
                      scan_err1(lc, _("Could not find specified Messages Resource: %s"),
                                 lc->str);
@@ -750,3 +753,4 @@ void StoreRun(LEX *lc, ResourceItem *item, int index, int pass)
    SetBit(index, res_all->res_sch.hdr.item_present);
    ClearBit(index, res_all->hdr.inherit_content);
 }
+} /* namespace directordaemon */

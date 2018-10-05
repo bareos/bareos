@@ -35,7 +35,7 @@
  * the top, which can be rather inefficient for long path names.
  */
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "lib/path_list.h"
 
 #define debuglevel 50

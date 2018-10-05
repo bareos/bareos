@@ -28,19 +28,14 @@
 
 #include "monitoritem.h"
 #include "authenticate.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "monitoritemthread.h"
 
-#include "tls_conf.h"
+#include "lib/tls_conf.h"
 #include "lib/bnet.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 const int debuglevel = 50;
-
-/* Commands sent to Director */
-static char DIRhello[]    = "Hello %s calling\n";
-
-/* Response from Director */
-static char DIROKhello[]   = "1000 OK:";
 
 /* Commands sent to Storage daemon and File daemon and received
  *  from the User Agent */
@@ -51,56 +46,95 @@ static char SDOKhello[]   = "3000 OK Hello\n";
 /* Response from FD */
 static char FDOKhello[] = "2000 OK Hello";
 
-/* Forward referenced functions */
+static std::map<AuthenticationResult,std::string> authentication_error_to_string_map {
+  { AuthenticationResult::kNoError, "No Error" },
+  { AuthenticationResult::kAlreadyAuthenticated, "Already authenticated" },
+  { AuthenticationResult::kQualifiedResourceNameFailed, "Could not generate a qualified resource name" },
+  { AuthenticationResult::kTlsHandshakeFailed, "TLS Handshake failed" },
+  { AuthenticationResult::kSendHelloMessageFailed, "Send of hello handshake message failed" },
+  { AuthenticationResult::kCramMd5HandshakeFailed, "Challenge resonse handshake failed" },
+  { AuthenticationResult::kDaemonResponseFailed, "Daemon response could not be read" },
+  { AuthenticationResult::kRejectedByDaemon, "Authentication was rejected by the daemon" },
+  { AuthenticationResult::kUnknownDaemon, "Unkown daemon type" }
+};
 
-/*
- * Authenticate Director
- */
-static bool AuthenticateWithDirector(JobControlRecord *jcr, DirectorResource *dir_res) {
+bool GetAuthenticationResultString(AuthenticationResult err, std::string &buffer)
+{
+  if (authentication_error_to_string_map.find(err) != authentication_error_to_string_map.end() ) {
+    buffer = authentication_error_to_string_map.at(err);
+    return true;
+  }
+  return false;
+}
+
+static AuthenticationResult AuthenticateWithDirector(JobControlRecord *jcr, DirectorResource *dir_res)
+{
+   if (jcr->authenticated) {
+      return AuthenticationResult::kAlreadyAuthenticated;
+   }
+
    MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   std::string qualified_resource_name;
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                  monitor->name(), R_CONSOLE, qualified_resource_name)) {
+     return AuthenticationResult::kQualifiedResourceNameFailed;
+   }
+
+   int tls_policy = dir_res->tls_psk.IsActivated() || dir_res->tls_cert.IsActivated()
+                  ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
 
    BareosSocket *dir = jcr->dir_bsock;
-   char bashed_name[MAX_NAME_LENGTH];
+   if (!dir->DoTlsHandshake(tls_policy, dir_res, false, qualified_resource_name.c_str(), monitor->password.value, jcr)) {
+      return AuthenticationResult::kTlsHandshakeFailed;
+   }
+
    char errmsg[1024];
    int32_t errmsg_len = sizeof(errmsg);
-
-   bstrncpy(bashed_name, monitor->name(), sizeof(bashed_name));
-   BashSpaces(bashed_name);
-
-   if (!dir->AuthenticateWithDirector(jcr, bashed_name,(s_password &) monitor->password, errmsg, errmsg_len, monitor)) {
+   if (!dir->AuthenticateWithDirector(jcr, monitor->name(),(s_password &) monitor->password, errmsg, errmsg_len, dir_res)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
                                  "Most likely the passwords do not agree.\n"
                                  "Please see %s for help.\n"), MANUAL_AUTH_URL);
-      return false;
+      return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 
-   return true;
+   return AuthenticationResult::kNoError;
 }
 
-/*
- * Authenticate Storage daemon connection
- */
-static bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource* store)
+static AuthenticationResult AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource* store)
 {
-   const MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   if (jcr->authenticated) {
+      return AuthenticationResult::kAlreadyAuthenticated;
+   }
+
+   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   std::string qualified_resource_name;
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                  monitor->name(), R_DIRECTOR, qualified_resource_name)) {
+     return AuthenticationResult::kQualifiedResourceNameFailed;
+   }
+
+   int tls_policy = store->tls_psk.IsActivated() || store->tls_cert.IsActivated()
+                  ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
 
    BareosSocket *sd = jcr->store_bsock;
-   char dirname[MAX_NAME_LENGTH];
-   bool auth_success = false;
+   if (!sd->DoTlsHandshake(tls_policy, store, false, qualified_resource_name.c_str(), store->password.value, jcr)) {
+      return AuthenticationResult::kTlsHandshakeFailed;
+   }
 
    /**
     * Send my name to the Storage daemon then do authentication
     */
-   bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
+   char dirname[MAX_NAME_LENGTH];
+   bstrncpy(dirname, monitor->name(), sizeof(dirname));
    BashSpaces(dirname);
 
    if (!sd->fsend(SDFDhello, dirname)) {
       Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), BnetStrerror(sd));
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), BnetStrerror(sd));
-      return false;
+      return AuthenticationResult::kSendHelloMessageFailed;
    }
 
-   auth_success = sd->AuthenticateOutboundConnection(
+   bool auth_success = sd->AuthenticateOutboundConnection(
       jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {
       Dmsg2(debuglevel,
@@ -115,14 +149,14 @@ static bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource
                 "SD networking messed up (restart daemon).\n"
                 "Please see %s for help.\n"),
            sd->host(), sd->port(), MANUAL_AUTH_URL);
-      return false;
+      return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 
    Dmsg1(116, ">stored: %s", sd->msg);
    if (sd->recv() <= 0) {
       Jmsg3(jcr, M_FATAL, 0, _("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
             sd->who(), sd->host(), sd->bstrerror());
-      return false;
+      return AuthenticationResult::kDaemonResponseFailed;
    }
 
    Dmsg1(110, "<stored: %s", sd->msg);
@@ -130,44 +164,48 @@ static bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource
       Dmsg0(debuglevel, _("Storage daemon rejected Hello command\n"));
       Jmsg2(jcr, M_FATAL, 0, _("Storage daemon at \"%s:%d\" rejected Hello command\n"),
             sd->host(), sd->port());
-      return false;
+      return AuthenticationResult::kRejectedByDaemon;
    }
 
-   return true;
+   return AuthenticationResult::kNoError;
 }
 
-/*
- * Authenticate File daemon connection
- */
-static bool AuthenticateWithFileDaemon(JobControlRecord *jcr, ClientResource* client)
+static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord *jcr, ClientResource* client)
 {
-   const MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   if (jcr->authenticated) {
+      return AuthenticationResult::kAlreadyAuthenticated;
+   }
+
+   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   std::string qualified_resource_name;
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                  monitor->name(), R_DIRECTOR, qualified_resource_name)) {
+     return AuthenticationResult::kQualifiedResourceNameFailed;
+   }
+
+   int tls_policy = client->tls_psk.IsActivated() || client->tls_cert.IsActivated()
+                  ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
 
    BareosSocket *fd = jcr->file_bsock;
-   char dirname[MAX_NAME_LENGTH];
-   bool auth_success = false;
-
-   if (jcr->authenticated) {
-      /*
-       * already authenticated
-       */
-      return true;
+   if (!fd->DoTlsHandshake(tls_policy, client, false, qualified_resource_name.c_str(), client->password.value, jcr)) {
+      return AuthenticationResult::kTlsHandshakeFailed;
    }
 
    /**
     * Send my name to the File daemon then do authentication
     */
+   char dirname[MAX_NAME_LENGTH];
    bstrncpy(dirname, monitor->name(), sizeof(dirname));
    BashSpaces(dirname);
 
    if (!fd->fsend(SDFDhello, dirname)) {
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
            fd->host(), fd->port(), fd->bstrerror());
-      return false;
+      return AuthenticationResult::kSendHelloMessageFailed;
    }
    Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
-   auth_success =
+   bool auth_success =
       fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password, client);
 
    if (!auth_success) {
@@ -184,7 +222,7 @@ static bool AuthenticateWithFileDaemon(JobControlRecord *jcr, ClientResource* cl
            fd->host(),
            fd->port(),
            MANUAL_AUTH_URL);
-      return false;
+      return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 
    Dmsg1(116, ">filed: %s", fd->msg);
@@ -193,19 +231,19 @@ static bool AuthenticateWithFileDaemon(JobControlRecord *jcr, ClientResource* cl
             BnetStrerror(fd));
       Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon at \"%s:%d\" to Hello command: ERR=%s\n"),
            fd->host(), fd->port(), fd->bstrerror());
-      return false;
+      return AuthenticationResult::kDaemonResponseFailed;
    }
 
    Dmsg1(110, "<filed: %s", fd->msg);
    if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello)-1) != 0) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon rejected Hello command\n"));
-      return false;
+      return AuthenticationResult::kRejectedByDaemon;
    }
 
-   return true;
+   return AuthenticationResult::kNoError;
 }
 
-bool AuthenticateWithDaemon(MonitorItem* item, JobControlRecord *jcr)
+AuthenticationResult AuthenticateWithDaemon(MonitorItem* item, JobControlRecord *jcr)
 {
    switch (item->type()) {
    case R_DIRECTOR:
@@ -216,8 +254,6 @@ bool AuthenticateWithDaemon(MonitorItem* item, JobControlRecord *jcr)
       return AuthenticateWithStorageDaemon(jcr, (StorageResource*)item->resource());
    default:
       printf(_("Error, currentitem is not a Client or a Storage..\n"));
-      return false;
+      return AuthenticationResult::kUnknownDaemon;
    }
-
-   return false;
 }

@@ -24,9 +24,12 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/accurate.h"
+#include "filed/filed_globals.h"
 #include "filed/verify.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
+
+namespace filedaemon {
 
 static int debuglevel = 100;
 
@@ -414,3 +417,5 @@ bool AccurateCmd(JobControlRecord *jcr)
 
    return true;
 }
+
+} /* namespace filedaemon */

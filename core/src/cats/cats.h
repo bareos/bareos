@@ -554,7 +554,7 @@ typedef struct sql_field {
 } SQL_FIELD;
 #endif
 
-class CATS_IMP_EXP BareosDb: public SmartAlloc, public BareosDbQueryEnum {
+class BareosDb: public SmartAlloc, public BareosDbQueryEnum {
 protected:
    /*
     * Members
@@ -713,8 +713,8 @@ public:
    bool AccurateGetJobids(JobControlRecord *jcr, JobDbRecord *jr, db_list_ctx *jobids);
    bool GetUsedBaseJobids(JobControlRecord *jcr, POOLMEM *jobids, db_list_ctx *result);
    bool GetQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cr);
-   bool GetQuotaJobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
-   bool GetQuotaJobbytesNofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
+   bool get_quota_jobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
+   bool get_quota_jobbytes_nofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention);
    int GetNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem);
    bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *ResultHandler, void *ctx);
    bool GetNdmpEnvironmentString(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *ResultHandler, void *ctx);
@@ -879,7 +879,7 @@ struct SqlPoolDescriptor {
    dlink link;                            /**< list management */
 };
 
-#include "jcr.h"
+#include "include/jcr.h"
 
 /**
  * Object used in db_list_xxx function

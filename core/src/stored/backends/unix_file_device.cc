@@ -31,8 +31,11 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "unix_file_device.h"
 #include "lib/util.h"
+
+namespace storagedaemon {
 
 /**
  * (Un)mount the device (For a FILE device)
@@ -319,3 +322,5 @@ unix_file_device::~unix_file_device()
 unix_file_device::unix_file_device()
 {
 }
+
+} /* namespace storagedaemon  */

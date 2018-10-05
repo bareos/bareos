@@ -34,6 +34,8 @@
 
 #include "ndmp/ndmagents.h"
 
+namespace directordaemon {
+
 /**
  * Store all entries from the FHDB in the Database.
  *
@@ -200,4 +202,6 @@ void NdmpConvertFstat(ndmp9_file_stat *fstat, int32_t FileIndex,
     */
    EncodeStat(attribs.c_str(), &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
 }
-#endif
+
+} /* namespace directordaemon */
+#endif /* #if HAVE_NDMP */

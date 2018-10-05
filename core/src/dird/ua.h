@@ -31,30 +31,37 @@
 #ifndef BAREOS_DIRD_UA_H_
 #define BAREOS_DIRD_UA_H_ 1
 
-#define MAX_ID_LIST_LEN 2000000
+#include "include/bareos.h"
 
-struct ua_cmdstruct {
-   const char *key; /**< Command */
-   bool (*func)(UaContext *ua, const char *cmd); /**< Handler */
-   const char *help; /**< Main purpose */
-   const char *usage; /**< All arguments to build usage */
-   const bool use_in_rs; /**< Can use it in Console RunScript */
-   const bool audit_event; /**< Log an audit event when this Command is executed */
-};
+class BareosSocket;
+class JobControlRecord;
+class BareosDb;
+class guid_list;
+
+namespace directordaemon {
+
+class CatalogResource;
+class ConsoleResource;
+class PoolResource;
+class StorageResource;
+class ClientResource;
+class JobResource;
+class FilesetResource;
+class ScheduleResource;
+class RestoreBootstrapRecord;
+struct ua_cmdstruct;
+class UnifiedStorageResource;
 
 class UaContext {
 public:
-   /*
-    * Members
-    */
    BareosSocket *UA_sock;
    BareosSocket *sd;
    JobControlRecord *jcr;
    BareosDb *db;
-   BareosDb *shared_db;                   /**< Shared database connection used by multiple ua's */
-   BareosDb *private_db;                  /**< Private database connection only used by this ua */
+   BareosDb *shared_db;               /**< Shared database connection used by multiple ua's */
+   BareosDb *private_db;              /**< Private database connection only used by this ua */
    CatalogResource *catalog;
-   ConsoleResource *cons;                      /**< Console resource */
+   ConsoleResource *cons;             /**< Console resource */
    POOLMEM *cmd;                      /**< Return command/name buffer */
    POOLMEM *args;                     /**< Command line arguments */
    POOLMEM *errmsg;                   /**< Store error message */
@@ -77,17 +84,11 @@ public:
    uint32_t pint32_val;               /**< Positive integer */
    int32_t int32_val;                 /**< Positive/negative */
    int64_t int64_val;                 /**< Big int */
-   OutputFormatter *send;            /**< object instance to handle output */
+   OutputFormatter *send;             /**< object instance to handle output */
 
 private:
-   /*
-    * Members
-    */
    ua_cmdstruct *cmddef;              /**< Definition of the currently executed command */
 
-   /*
-    * Methods
-    */
    bool AclAccessOk(int acl, const char *item, int len, bool audit_event = false);
    int RcodeToAcltype(int rcode);
    void LogAuditEventAclFailure(int acl, const char *item);
@@ -95,9 +96,7 @@ private:
    void SetCommandDefinition(ua_cmdstruct *cmdstruct) { cmddef = cmdstruct; }
 
 public:
-   /*
-    * Methods
-    */
+   UaContext();
    void signal(int sig) { UA_sock->signal(sig); }
    bool execute(ua_cmdstruct *cmd);
 
@@ -131,6 +130,7 @@ public:
    /*
     * The below are in ua_output.c
     */
+   void SendRawMsg(const char *msg);
    void SendMsg(const char *fmt, ...);
    void ErrorMsg(const char *fmt, ...);
    void WarningMsg(const char *fmt, ...);
@@ -249,8 +249,9 @@ public:
    /*
     * Methods
     */
-   RunContext() { memset(this, 0, sizeof(RunContext));
-               store = new UnifiedStorageResource; }
-   ~RunContext() { delete store; }
+   RunContext();
+   ~RunContext();
 };
-#endif
+
+} /* namespace directordaemon */
+#endif /* BAREOS_DIRD_UA_H_ */

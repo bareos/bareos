@@ -46,23 +46,31 @@
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"
+#include "stored/bsr.h"
 #include "stored/fd_cmds.h"
 #include "stored/job.h"
 #include "stored/label.h"
 #include "stored/ndmp_tape.h"
-#include "stored/parse_bsr.h"
+#include "stored/reserve.h"
 #include "stored/sd_cmds.h"
+#include "stored/status.h"
 #include "stored/sd_stats.h"
+#include "stored/stored_globals.h"
 #include "stored/wait.h"
+#include "stored/job.h"
+#include "stored/mac.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/parse_bsr.h"
+#include "lib/qualified_resource_name_type_converter.h"
 #include "include/jcr.h"
-
-/* Exported variables */
 
 /* Imported variables */
 extern struct s_last_job last_job;
-extern bool init_done;
+
+extern void terminate_child();
+
+namespace storagedaemon {
 
 /* Commands received from director that need scanning */
 static char setbandwidth[] =
@@ -94,7 +102,7 @@ static char releasecmd[] =
 static char readlabelcmd[] =
    "readlabel %127s Slot=%hd drive=%hd";
 static char replicatecmd[] =
-   "replicate Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
+   "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d Authorization=%100s";
 static char passiveclientcmd[] =
    "passive client address=%s port=%d ssl=%d";
 static char resolvecmd[] =
@@ -127,20 +135,6 @@ static char OKpluginoptions[] =
    "2000 OK plugin options\n";
 static char OKsecureerase[] =
    "2000 OK SDSecureEraseCmd %s \n";
-
-/* Imported functions */
-extern bool FinishCmd(JobControlRecord *jcr);
-extern bool job_cmd(JobControlRecord *jcr);
-extern bool nextRunCmd(JobControlRecord *jcr);
-extern bool DotstatusCmd(JobControlRecord *jcr);
-//extern bool QueryCmd(JobControlRecord *jcr);
-extern bool StatusCmd(JobControlRecord *sjcr);
-extern bool use_cmd(JobControlRecord *jcr);
-extern bool StatsCmd(JobControlRecord *jcr);
-
-extern bool DoJobRun(JobControlRecord *jcr);
-extern bool DoMacRun(JobControlRecord *jcr);
-extern void terminate_child();
 
 /* Forward referenced functions */
 //static bool ActionOnPurgeCmd(JobControlRecord *jcr);
@@ -198,7 +192,6 @@ static struct s_cmds cmds[] = {
    { "nextrun", nextRunCmd, false },       /**< Prepare for next backup/restore part of same Job */
    { "passive", PassiveCmd, false },
    { "pluginoptions", PluginoptionsCmd, false },
-// { "query", QueryCmd, false },
    { "readlabel", ReadlabelCmd, false },
    { "relabel", RelabelCmd, false },       /**< Relabel a tape */
    { "release", ReleaseCmd, false },
@@ -216,10 +209,7 @@ static struct s_cmds cmds[] = {
    { NULL, NULL, false } /**< list terminator */
 };
 
- /*
-  * Count the number of running jobs.
-  */
-static inline bool count_running_jobs()
+static inline bool AreMaxConcurrentJobsExceeded()
 {
    JobControlRecord *jcr;
    unsigned int cnt = 0;
@@ -229,7 +219,7 @@ static inline bool count_running_jobs()
    }
    endeach_jcr(jcr);
 
-   return (cnt >= me->MaxConcurrentJobs) ? false : true;
+   return (cnt >= me->MaxConcurrentJobs) ? true : false;
 }
 
 /**
@@ -242,14 +232,14 @@ static inline bool count_running_jobs()
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-void *handle_director_connection(BareosSocket *dir)
+void *HandleDirectorConnection(BareosSocket *dir)
 {
    JobControlRecord *jcr;
    int i, errstat;
    int bnet_stat = 0;
    bool found, quit;
 
-   if (!count_running_jobs()) {
+   if (AreMaxConcurrentJobsExceeded()) {
       Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
       dir->signal(BNET_TERMINATE);
       return NULL;
@@ -385,9 +375,11 @@ static bool die_cmd(JobControlRecord *jcr)
 static bool SecureerasereqCmd(JobControlRecord *jcr) {
    BareosSocket *dir = jcr->dir_bsock;
 
-   Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
+   Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline
+                                              ? me->secure_erase_cmdline : "*None*"));
 
-   return dir->fsend(OKsecureerase, (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
+   return dir->fsend(OKsecureerase, (me->secure_erase_cmdline
+                                   ? me->secure_erase_cmdline : "*None*"));
 }
 
 /**
@@ -672,7 +664,7 @@ static bool do_label(JobControlRecord *jcr, bool relabel)
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
       }
@@ -1072,7 +1064,7 @@ static bool MountCmd(JobControlRecord *jcr)
             break;
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device %s not found or could not be opened.\n"), devname.c_str());
       }
@@ -1159,7 +1151,7 @@ static bool UnmountCmd(JobControlRecord *jcr)
             }
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1268,7 +1260,7 @@ static bool ReleaseCmd(JobControlRecord *jcr)
                dev->print_name());
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1296,7 +1288,8 @@ static inline bool GetBootstrapFile(JobControlRecord *jcr, BareosSocket *sock)
    }
    P(bsr_mutex);
    bsr_uniq++;
-   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
+   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
+      me->name(),
       jcr->Job, bsr_uniq);
    V(bsr_mutex);
    Dmsg1(400, "bootstrap=%s\n", fname);
@@ -1315,13 +1308,13 @@ static inline bool GetBootstrapFile(JobControlRecord *jcr, BareosSocket *sock)
    }
    fclose(bs);
    Dmsg0(10, "=== end bootstrap file ===\n");
-   jcr->bsr = parse_bsr(jcr, jcr->RestoreBootstrap);
+   jcr->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
    if (!jcr->bsr) {
       Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
       goto bail_out;
    }
    if (debug_level >= 10) {
-      DumpBsr(jcr->bsr, true);
+      libbareos::DumpBsr(jcr->bsr, true);
    }
    /* If we got a bootstrap, we are reading, so create read volume list */
    CreateRestoreVolumeList(jcr);
@@ -1404,7 +1397,7 @@ static bool ChangerCmd(JobControlRecord *jcr)
             }
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1445,7 +1438,7 @@ static bool ReadlabelCmd(JobControlRecord *jcr)
             ReadVolumeLabel(jcr, dcr, dev, slot);
          }
          dev->Unlock();
-         FreeDcr(dcr);
+         FreeDeviceControlRecord(dcr);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), devname.c_str());
       }
@@ -1589,9 +1582,12 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    int enable_ssl;                 /* enable ssl to sd */
    char JobName[MAX_NAME_LENGTH];
    char stored_addr[MAX_NAME_LENGTH];
+   uint32_t JobId = 0;
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *sd;                      /* storage daemon bsock */
+   std::string qualified_resource_name;
+   TlsResource *tls_resource;
 
    sd = New(BareosSocketTCP);
    if (me->nokeepalive) {
@@ -1600,8 +1596,8 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->message_length);
 
-   if (sscanf(dir->msg, replicatecmd, JobName, stored_addr, &stored_port,
-              &enable_ssl, sd_auth_key.c_str()) != 5) {
+   if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
+              &enable_ssl, sd_auth_key.c_str()) != 6) {
       dir->fsend(BADcmd, "replicate", dir->msg);
       goto bail_out;
    }
@@ -1642,6 +1638,17 @@ static bool ReplicateCmd(JobControlRecord *jcr)
       goto bail_out;
    }
    Dmsg0(110, "Connection OK to SD.\n");
+
+   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+           JobName, R_JOB, JobId, qualified_resource_name)) {
+     goto bail_out;
+   }
+
+   tls_resource = dynamic_cast<TlsResource *>(me);
+   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_resource, false, qualified_resource_name.c_str(),
+                           jcr->sd_auth_key, jcr)) {
+     goto bail_out;
+   }
 
    jcr->store_bsock = sd;
 
@@ -1689,6 +1696,8 @@ static bool PassiveCmd(JobControlRecord *jcr)
    char filed_addr[MAX_NAME_LENGTH];
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *fd;                      /* file daemon bsock */
+   std::string qualified_resource_name;
+   TlsResource *tls_resource;
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
@@ -1724,6 +1733,18 @@ static bool PassiveCmd(JobControlRecord *jcr)
       goto bail_out;
    }
    Dmsg0(110, "Connection OK to FD.\n");
+
+   if (enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+       goto bail_out;
+     }
+
+     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+            qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+       goto bail_out;
+     }
+   }
 
    jcr->file_bsock = fd;
    fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
@@ -1781,3 +1802,5 @@ bail_out:
    dir->fsend(BADcmd, "plugin options");
    return false;
 }
+
+} /* namespace storagedaemon */

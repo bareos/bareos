@@ -46,6 +46,8 @@
 #ifndef BAREOS_STORED_VOL_MGR_H_
 #define BAREOS_STORED_VOL_MGR_H_ 1
 
+namespace storagedaemon {
+
 class VolumeReservationItem;
 VolumeReservationItem *vol_walk_start();
 VolumeReservationItem *VolWalkNext(VolumeReservationItem *prev_vol);
@@ -117,5 +119,7 @@ void FreeVolumeLists();
 bool IsVolumeInUse(DeviceControlRecord *dcr);
 void AddReadVolume(JobControlRecord *jcr, const char *VolumeName);
 void RemoveReadVolume(JobControlRecord *jcr, const char *VolumeName);
+
+} /* namespace storagedaemon */
 
 #endif

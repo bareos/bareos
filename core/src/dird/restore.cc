@@ -40,6 +40,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
@@ -49,6 +50,8 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Commands sent to File daemon */
 static char restorecmd[] =
@@ -220,13 +223,16 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
       /*
        * Send the bootstrap file -- what Volumes/files to restore
        */
-      if (!SendBootstrapFile(jcr, sd, info) ||
-          !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
+      bool success = false;
+      if (SendBootstrapFile(jcr, sd, info)) {
+         Bmicrosleep(2,0);
+         if (response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
+            success = true;
+         }
+      }
+      if (!success) {
          goto bail_out;
       }
-
-
-
 
       if (!jcr->passive_client) {
          uint32_t tls_need = 0;
@@ -260,7 +266,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = GetNeedFromConfiguration(store);
+         tls_need = GetLocalTlsPolicyFromConfiguration(store);
 
          connection_target_address = StorageAddressToContact(client, store);
 
@@ -286,16 +292,18 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
             goto bail_out;
          }
 
-         /*
-          * TLS Requirement
-          */
-            tls_need = GetNeedFromConfiguration(client);
+         if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
+            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+         } else {
+            tls_need = TlsConfigBase::BNET_TLS_AUTO;
+         }
 
          connection_target_address = ClientAddressToContact(client, store);
          /*
           * Tell the SD to connect to the FD.
           */
          sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_need);
+         Bmicrosleep(2,0);
          if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
             goto bail_out;
          }
@@ -633,3 +641,4 @@ void GenerateRestoreSummary(JobControlRecord *jcr, int msg_type, const char *Ter
       break;
    }
 }
+} /* namespace directordaemon */

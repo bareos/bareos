@@ -39,7 +39,7 @@
 #include "lib/bsys.h"
 
 #include <netdb.h>
-#include "lib/tls_openssl.h"
+#include "lib/tls.h"
 
 #ifndef INADDR_NONE
 #define INADDR_NONE    -1
@@ -118,29 +118,21 @@ bool BnetSend(BareosSocket *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, alist *verify_list)
+bool BnetTlsServer(BareosSocket *bsock, const std::vector<std::string> &verify_list)
 {
-   TLS_CONNECTION *tls_conn = nullptr;
    JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn = new_tls_connection(tls_ctx, bsock->fd_, true);
-   if (!tls_conn) {
-      Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
-      return false;
+   if (!bsock->tls_conn_init) {
+     Dmsg0(100, "No Tsl Connection: Cannot call TlsBsockAccept\n");
    }
 
-   bsock->SetTlsConnection(tls_conn);
-
-   /*
-    * Initiate TLS Negotiation
-    */
-   if (!TlsBsockAccept(bsock)) {
+   if (!bsock->tls_conn_init->TlsBsockAccept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
    }
 
-   if (verify_list) {
-      if (!TlsPostconnectVerifyCn(jcr, tls_conn, verify_list)) {
+   if (!verify_list.empty()) {
+      if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
@@ -148,11 +140,15 @@ bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, ali
       }
    }
 
+   bsock->LockMutex();
+   bsock->tls_conn = std::move(bsock->tls_conn_init);
+   bsock->UnlockMutex();
+
    Dmsg0(50, "TLS server negotiation established.\n");
    return true;
 
 err:
-   bsock->FreeTls();
+   bsock->CloseTlsConnectionAndFreeMemory();
    return false;
 }
 
@@ -161,24 +157,11 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, const std::vector<std::string> &verify_list)
 {
-   TLS_CONNECTION *tls_conn;
    JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn  = new_tls_connection(tls_ctx, bsock->fd_, false);
-   if (!tls_conn) {
-      Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
-      return false;
-   }
-
-   bsock->SetTlsConnection(tls_conn);
-
-   /*
-    * Initiate TLS Negotiation
-    */
-
-    if (!TlsBsockConnect(bsock)) {
+   if (!bsock->tls_conn_init->TlsBsockConnect(bsock)) {
       goto err;
    }
 
@@ -187,15 +170,15 @@ bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bo
        * If there's an Allowed CN verify list, use that to validate the remote
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
-      if (verify_list) {
-         if (!TlsPostconnectVerifyCn(jcr, tls_conn, verify_list)) {
+      if (!verify_list.empty()) {
+         if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
             goto err;
          }
       } else {
-         if (!TlsPostconnectVerifyHost(jcr, tls_conn, bsock->host())) {
+         if (!bsock->tls_conn_init->TlsPostconnectVerifyHost(jcr, bsock->host())) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
                   bsock->host());
             goto err;
@@ -203,21 +186,30 @@ bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bo
       }
    }
 
+   bsock->LockMutex();
+   bsock->tls_conn = std::move(bsock->tls_conn_init);
+   bsock->UnlockMutex();
+
    Dmsg0(50, "TLS client negotiation established.\n");
    return true;
 
 err:
-   bsock->FreeTls();
+   bsock->CloseTlsConnectionAndFreeMemory();
    return false;
 }
 #else
-bool BnetTlsServer(std::shared_ptr<TlsContext> tls_ctx, BareosSocket * bsock, alist *verify_list)
+bool BnetTlsServer(std::shared_ptr<TlsImplementation> tls_implementation,
+                   BareosSocket *bsock,
+                   const std::vector<std::string> &verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool BnetTlsClient(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool VerifyPeer, alist *verify_list)
+bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation,
+                   BareosSocket *bsock,
+                   bool VerifyPeer,
+                   const std::vector<std::string> &verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;

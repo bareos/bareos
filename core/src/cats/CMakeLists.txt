@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-include_directories(. .. ../include ${MYSQL_INCLUDE_DIR} ${PostgreSQL_INCLUDE_DIR})
+include_directories(${MYSQL_INCLUDE_DIR} ${PostgreSQL_INCLUDE_DIR})
 
 
 add_definitions( -D_BDB_PRIV_INTERFACE_)
@@ -31,11 +31,11 @@ set(LIBBAREOSCATS_SRCS
     cats_backends.cc
     )
 
-set(SQLITE_SRCS sqlite.cc)
+  set(SQLITE_SRCS sqlite.cc ${LIBBAREOSCATS_SRCS})
 
-set(MYSQL_SRCS mysql.cc)
+set(MYSQL_SRCS mysql.cc ${LIBBAREOSCATS_SRCS})
 
-set(POSTGRESQL_SRCS postgresql.cc)
+set(POSTGRESQL_SRCS postgresql.cc ${LIBBAREOSCATS_SRCS})
 
 
 add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})

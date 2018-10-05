@@ -21,15 +21,15 @@
 #ifndef BAREOS_FINDLIB_MATCH_H_
 #define BAREOS_FINDLIB_MATCH_H_
 
-DLL_IMP_EXP void InitIncludeExcludeFiles(FindFilesPacket *ff);
-DLL_IMP_EXP void TermIncludeExcludeFiles(FindFilesPacket *ff);
-DLL_IMP_EXP void AddFnameToIncludeList(FindFilesPacket *ff, int prefixed, const char *fname);
-DLL_IMP_EXP void AddFnameToExcludeList(FindFilesPacket *ff, const char *fname);
-DLL_IMP_EXP bool FileIsExcluded(FindFilesPacket *ff, const char *file);
-DLL_IMP_EXP bool FileIsIncluded(FindFilesPacket *ff, const char *file);
-DLL_IMP_EXP struct s_included_file *get_next_included_file(FindFilesPacket *ff,
+void InitIncludeExcludeFiles(FindFilesPacket *ff);
+void TermIncludeExcludeFiles(FindFilesPacket *ff);
+void AddFnameToIncludeList(FindFilesPacket *ff, int prefixed, const char *fname);
+void AddFnameToExcludeList(FindFilesPacket *ff, const char *fname);
+bool FileIsExcluded(FindFilesPacket *ff, const char *file);
+bool FileIsIncluded(FindFilesPacket *ff, const char *file);
+struct s_included_file *get_next_included_file(FindFilesPacket *ff,
                                                struct s_included_file *inc);
-DLL_IMP_EXP bool ParseSizeMatch(const char *size_match_pattern,
+bool ParseSizeMatch(const char *size_match_pattern,
                       struct s_sz_matching *size_matching);
 
 #endif // BAREOS_FINDLIB_MATCH_H_

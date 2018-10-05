@@ -39,6 +39,8 @@
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 static bool UpdateVolume(UaContext *ua);
 static bool UpdatePool(UaContext *ua);
@@ -1434,3 +1436,4 @@ void UpdateInchangerForExport(UaContext *ua, StorageResource *store, changer_vol
    }
    return;
 }
+} /* namespace directordaemon */

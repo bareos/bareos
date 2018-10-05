@@ -50,6 +50,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 static char *find_msg_start(char *msg);
 
@@ -323,7 +325,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
             Emsg1(M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          } else {
             UnbashSpaces(dev_name);
-            dev = (Device *)GetResWithName(R_DEVICE, dev_name.c_str());
+            dev = (Device *)my_config->GetResWithName(R_DEVICE, dev_name.c_str());
             if (!dev) {
                continue;
             }
@@ -401,3 +403,4 @@ bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *c
          cmd, BnetStrerror(bs));
    return false;
 }
+} /* namespace directordaemon */

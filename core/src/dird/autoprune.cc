@@ -36,7 +36,7 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 
-/* Forward referenced functions */
+namespace directordaemon {
 
 /**
  * Auto Prune Jobs and Files. This is called at the end of every
@@ -237,3 +237,4 @@ bail_out:
    }
    return;
 }
+} /* namespace directordaemon */

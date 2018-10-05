@@ -31,7 +31,7 @@
 #ifndef BAREOS_FINDLIB_FIND_H_
 #define BAREOS_FINDLIB_FIND_H_
 
-#include "fileopts.h"
+#include "include/fileopts.h"
 #include "bfile.h"
 
 #ifdef HAVE_DIRENT_H
@@ -66,7 +66,7 @@ struct utimbuf {
 #endif
 #ifdef USE_READDIR_R
 #ifndef HAVE_READDIR_R
-DLL_IMP_EXP int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 #endif
 /**
@@ -271,22 +271,22 @@ struct FindFilesPacket {
    struct HfsPlusInfo hfsinfo;       /**< Finder Info and resource fork size */
 };
 
-DLL_IMP_EXP FindFilesPacket *init_find_files();
-DLL_IMP_EXP void SetFindOptions(FindFilesPacket *ff, bool incremental, time_t mtime);
-DLL_IMP_EXP void SetFindChangedFunction(FindFilesPacket *ff, bool CheckFct(JobControlRecord *jcr, FindFilesPacket *ff));
-DLL_IMP_EXP int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff, int file_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool),
+FindFilesPacket *init_find_files();
+void SetFindOptions(FindFilesPacket *ff, bool incremental, time_t mtime);
+void SetFindChangedFunction(FindFilesPacket *ff, bool CheckFct(JobControlRecord *jcr, FindFilesPacket *ff));
+int FindFiles(JobControlRecord *jcr, FindFilesPacket *ff, int file_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool),
                int PluginSub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
-DLL_IMP_EXP bool MatchFiles(JobControlRecord *jcr, FindFilesPacket *ff, int sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
-DLL_IMP_EXP int TermFindFiles(FindFilesPacket *ff);
-DLL_IMP_EXP bool IsInFileset(FindFilesPacket *ff);
-DLL_IMP_EXP bool AcceptFile(FindFilesPacket *ff);
-DLL_IMP_EXP findIncludeExcludeItem *allocate_new_incexe(void);
-DLL_IMP_EXP findIncludeExcludeItem *new_exclude(findFILESET *fileset);
-DLL_IMP_EXP findIncludeExcludeItem *new_include(findFILESET *fileset);
-DLL_IMP_EXP findIncludeExcludeItem *new_preinclude(findFILESET *fileset);
-DLL_IMP_EXP findIncludeExcludeItem *new_preexclude(findFILESET *fileset);
-DLL_IMP_EXP findFOPTS *start_options(FindFilesPacket *ff);
-DLL_IMP_EXP void NewOptions(FindFilesPacket *ff, findIncludeExcludeItem *incexe);
+bool MatchFiles(JobControlRecord *jcr, FindFilesPacket *ff, int sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
+int TermFindFiles(FindFilesPacket *ff);
+bool IsInFileset(FindFilesPacket *ff);
+bool AcceptFile(FindFilesPacket *ff);
+findIncludeExcludeItem *allocate_new_incexe(void);
+findIncludeExcludeItem *new_exclude(findFILESET *fileset);
+findIncludeExcludeItem *new_include(findFILESET *fileset);
+findIncludeExcludeItem *new_preinclude(findFILESET *fileset);
+findIncludeExcludeItem *new_preexclude(findFILESET *fileset);
+findFOPTS *start_options(FindFilesPacket *ff);
+void NewOptions(FindFilesPacket *ff, findIncludeExcludeItem *incexe);
 
 
 #include "acl.h"

@@ -22,9 +22,14 @@
 #ifndef BAREOS_DIRD_ADMIN_H_
 #define BAREOS_DIRD_ADMIN_H_
 
-#include "include/jcr.h"
+class JobControlRecord;
+
+namespace directordaemon {
+
 bool DoAdminInit(JobControlRecord *jcr);
 bool do_admin(JobControlRecord *jcr);
 void AdminCleanup(JobControlRecord *jcr, int TermCode);
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_ADMIN_H_

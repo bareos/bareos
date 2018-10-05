@@ -31,9 +31,9 @@
 #define BASE64_SIZE(len) ((4 * len + 2) / 3 + 1)
 
 // #define BASE64_SIZE(len) (((len + 3 - (len % 3)) / 3) * 4)
-DLL_IMP_EXP void Base64Init(void);
-DLL_IMP_EXP int ToBase64(int64_t value, char *where);
-DLL_IMP_EXP int FromBase64(int64_t *value, char *where);
-DLL_IMP_EXP int BinToBase64(char *buf, int buflen, char *bin, int binlen, bool compatible);
-DLL_IMP_EXP int Base64ToBin(char *dest, int destlen, char *src, int srclen);
+void Base64Init(void);
+int ToBase64(int64_t value, char *where);
+int FromBase64(int64_t *value, char *where);
+int BinToBase64(char *buf, int buflen, char *bin, int binlen, bool compatible);
+int Base64ToBin(char *dest, int destlen, char *src, int srclen);
 

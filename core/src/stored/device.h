@@ -22,13 +22,16 @@
 #ifndef BAREOS_STORED_DEVICE_H_
 #define BAREOS_STORED_DEVICE_H_
 
-bool OpenDevice(DeviceControlRecord *dcr);
+namespace storagedaemon {
+
 bool FirstOpenDevice(DeviceControlRecord *dcr);
 bool FixupDeviceBlockWriteError(DeviceControlRecord *dcr, int retries = 4);
 void SetStartVolPosition(DeviceControlRecord *dcr);
 void SetNewVolumeParameters(DeviceControlRecord *dcr);
 void SetNewFileParameters(DeviceControlRecord *dcr);
-BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceControlRecord *dcr);
+BootStrapRecord *PositionDeviceToFirstFile(JobControlRecord *jcr, DeviceControlRecord *dcr);
 bool TryDeviceRepositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_DEVICE_H_

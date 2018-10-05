@@ -18,65 +18,51 @@
 #   02110-1301, USA.
 
 
-include_directories(../.. . ../../include ../../stored)
 
 LIST(APPEND CMAKE_INSTALL_RPATH ${backenddir})
 
 if(${HAVE_CEPHFS})
-add_library(libbareossd-cephfs MODULE cephfs_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-cephfs PROPERTIES PREFIX "")
-INSTALL(TARGETS libbareossd-cephfs DESTINATION ${backenddir})
-target_link_libraries(libbareossd-cephfs ${CEPHFS_LIBRARIES})
+add_library(bareossd-cephfs MODULE cephfs_device.cc)
+INSTALL(TARGETS bareossd-cephfs DESTINATION ${backenddir})
+target_link_libraries(bareossd-cephfs ${CEPHFS_LIBRARIES})
 endif()
 
 if(${HAVE_CEPH_RADOS})
-add_library(libbareossd-rados MODULE rados_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-rados PROPERTIES PREFIX "")
-INSTALL(TARGETS libbareossd-rados DESTINATION ${backenddir})
-target_link_libraries(libbareossd-rados ${RADOS_LIBRARIES})
+add_library(bareossd-rados MODULE rados_device.cc)
+INSTALL(TARGETS bareossd-rados DESTINATION ${backenddir})
+target_link_libraries(bareossd-rados ${RADOS_LIBRARIES})
 endif()
 
 
 if(${HAVE_GLUSTERFS})
-add_library(libbareossd-gfapi MODULE gfapi_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-gfapi PROPERTIES PREFIX "")
-INSTALL(TARGETS libbareossd-gfapi DESTINATION ${backenddir})
-target_link_libraries(libbareossd-gfapi ${GFAPI_LIBRARIES})
+add_library(bareossd-gfapi MODULE gfapi_device.cc)
+INSTALL(TARGETS bareossd-gfapi DESTINATION ${backenddir})
+target_link_libraries(bareossd-gfapi ${GFAPI_LIBRARIES})
 endif()
 
 if(${HAVE_DROPLET})
-add_library(libbareossd-chunked SHARED chunked_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-chunked PROPERTIES PREFIX "")
-target_link_libraries(libbareossd-chunked ${DROPLET_LIBRARIES})
-INSTALL(TARGETS libbareossd-chunked DESTINATION ${backenddir})
+add_library(bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc)
+target_link_libraries(bareossd-chunked ${DROPLET_LIBRARIES})
+INSTALL(TARGETS bareossd-chunked DESTINATION ${backenddir})
 
-add_library(libbareossd-droplet MODULE droplet_device.cc)
-# do not prefix with "lib" (only if you reference to other targets).
-set_target_properties(libbareossd-droplet PROPERTIES PREFIX "")
-target_link_libraries(libbareossd-droplet libbareossd-chunked ${DROPLET_LIBRARIES})
-INSTALL(TARGETS libbareossd-droplet DESTINATION ${backenddir})
+add_library(bareossd-droplet MODULE droplet_device.cc)
+target_link_libraries(bareossd-droplet bareossd-chunked ${DROPLET_LIBRARIES})
+INSTALL(TARGETS bareossd-droplet DESTINATION ${backenddir})
 endif()
 
-add_library(libbareossd-elasto MODULE elasto_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-elasto PROPERTIES PREFIX "")
-#INSTALL(TARGETS libbareossd-elasto DESTINATION ${backenddir})
+add_library(bareossd-elasto MODULE elasto_device.cc)
+#INSTALL(TARGETS bareossd-elasto DESTINATION ${backenddir})
 
-add_library(libbareossd-fifo MODULE unix_fifo_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-fifo PROPERTIES PREFIX "")
-INSTALL(TARGETS libbareossd-fifo DESTINATION ${backenddir})
+add_library(bareossd-fifo MODULE unix_fifo_device.cc)
+INSTALL(TARGETS bareossd-fifo DESTINATION ${backenddir})
 
-add_library(libbareossd-gentape MODULE generic_tape_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-gentape PROPERTIES PREFIX "")
-INSTALL(TARGETS libbareossd-gentape DESTINATION ${backenddir})
 
-add_library(libbareossd-tape MODULE unix_tape_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-tape PROPERTIES PREFIX "")
-INSTALL(TARGETS libbareossd-tape DESTINATION ${backenddir})
+
+add_library(bareossd-gentape SHARED generic_tape_device.cc)
+INSTALL(TARGETS bareossd-gentape DESTINATION ${backenddir})
+
+add_library(bareossd-tape MODULE unix_tape_device.cc)
+INSTALL(TARGETS bareossd-tape DESTINATION ${backenddir})
+
+target_link_libraries(bareossd-tape bareossd-gentape)
+

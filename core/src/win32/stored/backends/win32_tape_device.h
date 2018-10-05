@@ -28,6 +28,8 @@
 #ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
 #define BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
 
+namespace storagedaemon {
+
 class win32_tape_device: public generic_tape_device {
 public:
    win32_tape_device();
@@ -42,4 +44,6 @@ public:
    int TapeGet(struct mtget *mt_com);
    int TapePos(struct mtpos *mt_com);
 };
+
+} /* namespace storagedaemon */
 #endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_ */

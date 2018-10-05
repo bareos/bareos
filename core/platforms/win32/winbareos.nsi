@@ -578,7 +578,6 @@ SectionIn 1 2 3 4
   File "libbareosfind.dll"
   File "libbareoslmdb.dll"
   File "libbareossql.dll"
-  File "libbareoscfg.dll"
   File "libcrypto-*.dll"
   File "libgcc_s_*-1.dll"
   File "libssl-*.dll"
@@ -939,8 +938,25 @@ SectionIn 1 2 3
 
   File "bareos-tray-monitor.exe"
   File "libpng*.dll"
-  File "QtCore4.dll"
-  File "QtGui4.dll"
+  File "Qt5Core.dll"
+  File "Qt5Gui.dll"
+  File "Qt5Widgets.dll"
+
+# needs to be added if qt is built with icu support
+#  File "icui18n56.dll"
+#  File "icudata56.dll"
+#  File "icuuc56.dll"
+
+  File "libfreetype-6.dll"
+  File "libglib-2.0-0.dll"
+  File "libintl-8.dll"
+  File "libGLESv2.dll"
+  File "libharfbuzz-0.dll"
+  File "libpcre16-0.dll"
+
+  SetOutPath "$INSTDIR\platforms"
+  File "qwindows.dll"
+
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
@@ -2134,7 +2150,6 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareossd.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
-  Delete "$INSTDIR\libbareoscfg.dll"
   Delete "$INSTDIR\libbareossql.dll"
   Delete "$INSTDIR\libbareoscats.dll"
   Delete "$INSTDIR\libbareoscats-postgresql.dll"
@@ -2152,8 +2167,24 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libtermcap-0.dll"
   Delete "$INSTDIR\libwinpthread-1.dll"
   Delete "$INSTDIR\zlib1.dll"
-  Delete "$INSTDIR\QtCore4.dll"
-  Delete "$INSTDIR\QtGui4.dll"
+  Delete "$INSTDIR\Qt5Core.dll"
+  Delete "$INSTDIR\Qt5Gui.dll"
+  Delete "$INSTDIR\Qt5Widgets.dll"
+
+# needs to be added if qt is built with icu support
+#  Delete "$INSTDIR\icui18n56.dll"
+#  Delete "$INSTDIR\icudata56.dll"
+#  Delete "$INSTDIR\icuuc56.dll"
+
+  Delete "$INSTDIR\libfreetype-6.dll"
+  Delete "$INSTDIR\libglib-2.0-0.dll"
+  Delete "$INSTDIR\libintl-8.dll"
+  Delete "$INSTDIR\libGLESv2.dll"
+  Delete "$INSTDIR\libharfbuzz-0.dll"
+  Delete "$INSTDIR\libpcre16-0.dll"
+
+  RMDir /r "$INSTDIR\platforms"
+
   Delete "$INSTDIR\liblzo2-2.dll"
   Delete "$INSTDIR\libfastlz.dll"
   Delete "$INSTDIR\libjansson-4.dll"

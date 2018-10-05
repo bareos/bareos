@@ -26,6 +26,8 @@
 #ifndef BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_
 #define BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ 1
 
+namespace directordaemon {
+
 /**
  * This defines the arguments that the plugin parser understands.
  */
@@ -69,4 +71,5 @@ static PyMethodDef BareosDIRMethods[] = {
    { NULL, NULL, 0, NULL }
 };
 
+} /* namespace directordaemon */
 #endif /* BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ */

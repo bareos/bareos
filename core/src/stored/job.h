@@ -22,6 +22,14 @@
 #ifndef BAREOS_STORED_JOB_H_
 #define BAREOS_STORED_JOB_H_
 
+namespace storagedaemon {
+
 void StoredFreeJcr(JobControlRecord *jcr);
+bool DoJobRun(JobControlRecord *jcr);
+bool FinishCmd(JobControlRecord *jcr);
+bool job_cmd(JobControlRecord *jcr);
+bool nextRunCmd(JobControlRecord *jcr);
+
+} /* namespace storagedaemon  */
 
 #endif // BAREOS_STORED_JOB_H_

@@ -34,11 +34,10 @@
  * - API version
  * - Enabled functions, etc.
  */
-
 #include "include/bareos.h"
-#include "fd_plugins.h"
-#include "dir_plugins.h"
-#include "sd_plugins.h"
+#include "filed/fd_plugins.h"
+#include "dird/dir_plugins.h"
+#include "stored/sd_plugins.h"
 #include "assert_macro.h"
 #ifndef __WIN32__
 #include <dlfcn.h>
@@ -68,9 +67,9 @@ enum plugintype {
  */
 typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
-   pDirFuncs pdirfuncs;
-   pFuncs pfdfuncs;
-   psdFuncs psdfuncs;
+   directordaemon::pDirFuncs pdirfuncs;
+   filedaemon::pFuncs pfdfuncs;
+   storagedaemon::psdFuncs psdfuncs;
 };
 
 /*
@@ -100,9 +99,9 @@ struct _bareosfuncs {
  */
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
-   bDirInfo bdirinfo;
-   bInfo bfdinfo;
-   bsdInfo bsdinfo;
+   directordaemon::bDirInfo bdirinfo;
+   filedaemon::bInfo bfdinfo;
+   storagedaemon::bsdInfo bsdinfo;
 };
 
 typedef struct _progdata progdata;

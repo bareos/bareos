@@ -32,7 +32,7 @@
 #include "lib/connection_pool.h"
 #include "lib/runscript.h"
 #include "lib/breg.h"
-#include "lib/bsr.h"
+#include "stored/bsr.h"
 #include "dird_conf.h"
 
 #define DIRECTOR_DAEMON 1
@@ -40,14 +40,12 @@
 #include "dir_plugins.h"
 #include "cats/cats.h"
 
-#include "jcr.h"
-#include "bsr.h"
+#include "include/jcr.h"
+#include "dird/bsr.h"
 #include "ua.h"
 #include "jobq.h"
 
-/* Globals that dird.c exports */
-extern DirectorResource *me;                   /**< Our Global resource */
-extern ConfigurationParser *my_config;            /**< Our Global config */
+namespace directordaemon {
 
 /* Used in ua_prune.c and ua_purge.c */
 
@@ -190,5 +188,8 @@ struct runtime_job_status_t {
 #define FD_VERSION_53 53
 #define FD_VERSION_54 54
 
+bool DoReloadConfig();
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_DIRD_H_

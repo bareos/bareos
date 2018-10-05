@@ -42,6 +42,8 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 static int const debuglevel = 50;   /* debug level */
 
 /**
@@ -494,3 +496,4 @@ bail_out:
    V(mutex);
    return ok;
 }
+} /* namespace directordaemon */

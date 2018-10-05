@@ -43,9 +43,9 @@ stop_bareos
 # more cleanup needed below
 
 cd /
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-etc-test etc >${cwd}/tmp/1
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-etc-test etc >${cwd}/tmp/1
 cd ${cwd}/tmp/bareos-restores
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-etc-test etc >${cwd}/tmp/2
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-etc-test etc >${cwd}/tmp/2
 sort <${cwd}/tmp/1 >${cwd}/tmp/original
 sort <${cwd}/tmp/2 >${cwd}/tmp/restored
 rm -f ${cwd}/tmp/1 ${cwd}/tmp/2

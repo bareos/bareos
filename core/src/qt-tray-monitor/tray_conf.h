@@ -43,6 +43,7 @@ enum Rescode {
    R_DIRECTOR,
    R_CLIENT,
    R_STORAGE,
+   R_CONSOLE,
    R_CONSOLE_FONT,
    R_FIRST = R_MONITOR,
    R_LAST = R_CONSOLE_FONT                 /* keep this updated */
@@ -77,7 +78,7 @@ public:
 class MonitorResource : public TlsResource {
 public:
    bool require_ssl;                  /* Require SSL for all connections */
-   MessagesResource *messages;                 /* Daemon message handler */
+   MessagesResource *messages;        /* Daemon message handler */
    s_password password;               /* UA server password */
    utime_t RefreshInterval;           /* Status refresh interval */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */

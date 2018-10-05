@@ -35,11 +35,11 @@
 
 const int debuglevel = 200;
 
-DLL_IMP_EXP int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode) = NULL;
-DLL_IMP_EXP int (*plugin_bclose)(BareosWinFilePacket *bfd) = NULL;
-DLL_IMP_EXP ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count) = NULL;
-DLL_IMP_EXP ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count) = NULL;
-DLL_IMP_EXP boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence) = NULL;
+int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode) = NULL;
+int (*plugin_bclose)(BareosWinFilePacket *bfd) = NULL;
+ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count) = NULL;
+ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count) = NULL;
+boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence) = NULL;
 
 #ifdef HAVE_DARWIN_OS
 #include <sys/paths.h>

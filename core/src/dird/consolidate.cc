@@ -38,7 +38,10 @@
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
 #include "dird/ua_run.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 static const int debuglevel = 100;
 
@@ -358,3 +361,4 @@ void ConsolidateCleanup(JobControlRecord *jcr, int TermCode)
 
    Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");
 }
+} /* namespace directordaemon */

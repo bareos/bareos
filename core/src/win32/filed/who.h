@@ -27,5 +27,7 @@
 #define APP_DESC "Bareos File Backup Service"
 #define SERVICE_DESC "Provides file backup and restore services (bareos client)."
 
-#define TerminateApp(x) TerminateFiled(x)
+#define TerminateApp(x) filedaemon::TerminateFiled(x)
+namespace filedaemon {
 void TerminateFiled(int sig);
+} /* namespace filedaemon */

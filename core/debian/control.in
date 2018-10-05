@@ -22,7 +22,7 @@ Build-Depends: acl-dev,
  libacl1-dev,
  libcap-dev [linux-any],
  liblzo2-dev,
- libqt4-dev,
+ qtbase5-dev,
  libreadline-dev,
  libssl-dev,
  libwrap0-dev,
@@ -52,7 +52,7 @@ Build-Depends: acl-dev,
 #   Debian >= 8, Ubuntu >= 15.04
 # univention:
 #   ucslint, univention-config-dev
-Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
+Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master
 Vcs-Browser: https://github.com/bareos/bareos/tree/master

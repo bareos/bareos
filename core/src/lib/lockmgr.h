@@ -27,12 +27,13 @@
 #endif
 
 #include "mutex_list.h"     /* Manage mutex with priority in a central place */
+#include <mutex>
 
 /*
  * P and V op that don't use the lock manager (for memory allocation or on win32)
  */
-DLL_IMP_EXP void Lmgr_p(pthread_mutex_t *m);
-DLL_IMP_EXP void Lmgr_v(pthread_mutex_t *m);
+void Lmgr_p(pthread_mutex_t *m);
+void Lmgr_v(pthread_mutex_t *m);
 
 #ifdef BAREOS_INCLUDE_VERSION_H_
 

@@ -37,9 +37,9 @@ END_OF_DATA
 run_bareos
 stop_bareos
 cd /
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-usr-test lib >${cwd}/tmp/original
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-usr-test lib >${cwd}/tmp/original
 cd ${cwd}/tmp/bareos-restores
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-usr-test lib >${cwd}/tmp/restored
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-usr-test lib >${cwd}/tmp/restored
 cd ${cwd}/tmp
 sed s%.*lib/kbd/consolefonts$%lib/kbd/consolefonts% original >1
 sort <1 >original

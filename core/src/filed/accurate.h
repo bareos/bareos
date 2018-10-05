@@ -41,11 +41,13 @@
  * also cost some bytes.
  */
 
-#include "hostconfig.h"
+#include "include/hostconfig.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(push,4)
 #endif
+
+namespace filedaemon {
 
 struct accurate_payload {
    int64_t filenr;
@@ -153,7 +155,7 @@ public:
 
 #ifdef HAVE_LMDB
 
-#include "lmdb.h"
+#include "lmdb/lmdb.h"
 
 /*
  * Lightning Memory DataBase (LMDB) specific storage abstraction class using the Symas LMDB.
@@ -202,4 +204,5 @@ bool accurate_unMarkAllFilesAsSeen(JobControlRecord *jcr);
 void AccurateFree(JobControlRecord *jcr);
 
 
+} /* namespace filedaemon */
 #endif /* BAREOS_FILED_ACCURATE_H_ */

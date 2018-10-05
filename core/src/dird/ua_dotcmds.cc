@@ -36,6 +36,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
+#include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
 #include "dird/fd_cmds.h"
 #include "cats/bvfs.h"
@@ -44,6 +45,8 @@
 #include "dird/ua_select.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Imported variables */
 extern struct s_jl joblevels[];
@@ -772,7 +775,7 @@ static void DoClientCmd(UaContext *ua, ClientResource *client, const char *cmd)
    /* Try to connect for 15 seconds */
    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"),
       client->name(), client->address, client->FDport);
-   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
       ua->ErrorMsg(_("Failed to connect to Client.\n"));
       return;
    }
@@ -940,7 +943,7 @@ bool DotJobdefsCmd(UaContext *ua, const char *cmd)
 {
    JobResource *jobdefs;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("jobdefs");
    foreach_res(jobdefs, R_JOBDEFS) {
       if (ua->AclAccessOk(Job_ACL, jobdefs->name())) {
@@ -950,7 +953,7 @@ bool DotJobdefsCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("jobdefs");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -974,7 +977,7 @@ bool DotJobsCmd(UaContext *ua, const char *cmd)
    enabled = FindArg(ua, NT_("enabled")) >= 0;
    disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("jobs");
    foreach_res(job, R_JOB) {
       if (!type || type == job->JobType) {
@@ -994,7 +997,7 @@ bool DotJobsCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("jobs");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1031,7 +1034,7 @@ bool DotFilesetsCmd(UaContext *ua, const char *cmd)
 {
    FilesetResource *fs;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("filesets");
    foreach_res(fs, R_FILESET) {
       if (ua->AclAccessOk(FileSet_ACL, fs->name())) {
@@ -1041,7 +1044,7 @@ bool DotFilesetsCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("filesets");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1050,7 +1053,7 @@ bool DotCatalogsCmd(UaContext *ua, const char *cmd)
 {
    CatalogResource *cat;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("catalogs");
    foreach_res(cat, R_CATALOG) {
       if (ua->AclAccessOk(Catalog_ACL, cat->name())) {
@@ -1060,7 +1063,7 @@ bool DotCatalogsCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("catalogs");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1074,7 +1077,7 @@ bool DotClientsCmd(UaContext *ua, const char *cmd)
    enabled = FindArg(ua, NT_("enabled")) >= 0;
    disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("clients");
    foreach_res(client, R_CLIENT) {
       if (ua->AclAccessOk(Client_ACL, client->name())) {
@@ -1092,7 +1095,7 @@ bool DotClientsCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("clients");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1101,7 +1104,7 @@ bool DotConsolesCmd(UaContext *ua, const char *cmd)
 {
    ConsoleResource *console;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("consoles");
    foreach_res(console, R_CONSOLE) {
       ua->send->ObjectStart();
@@ -1109,7 +1112,7 @@ bool DotConsolesCmd(UaContext *ua, const char *cmd)
       ua->send->ObjectEnd();
    }
    ua->send->ArrayEnd("consoles");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1118,7 +1121,7 @@ bool DotMsgsCmd(UaContext *ua, const char *cmd)
 {
    MessagesResource *msgs = NULL;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("messages");
    foreach_res(msgs, R_MSGS) {
       ua->send->ObjectStart();
@@ -1126,7 +1129,7 @@ bool DotMsgsCmd(UaContext *ua, const char *cmd)
       ua->send->ObjectEnd();
    }
    ua->send->ArrayEnd("messages");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1143,7 +1146,7 @@ bool DotPoolsCmd(UaContext *ua, const char *cmd)
       length = 0;
    }
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("pools");
    foreach_res(pool, R_POOL) {
       if (ua->AclAccessOk(Pool_ACL, pool->name())) {
@@ -1155,7 +1158,7 @@ bool DotPoolsCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("pools");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1169,7 +1172,7 @@ bool DotStorageCmd(UaContext *ua, const char *cmd)
    enabled = FindArg(ua, NT_("enabled")) >= 0;
    disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("storages");
    foreach_res(store, R_STORAGE) {
       if (ua->AclAccessOk(Storage_ACL, store->name())) {
@@ -1187,7 +1190,7 @@ bool DotStorageCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("storages");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1196,7 +1199,7 @@ bool DotProfilesCmd(UaContext *ua, const char *cmd)
 {
    ProfileResource *profile;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("profiles");
    foreach_res(profile, R_PROFILE) {
       ua->send->ObjectStart();
@@ -1204,7 +1207,7 @@ bool DotProfilesCmd(UaContext *ua, const char *cmd)
       ua->send->ObjectEnd();
    }
    ua->send->ArrayEnd("profiles");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1390,7 +1393,7 @@ bool DotScheduleCmd(UaContext *ua, const char *cmd)
    enabled = FindArg(ua, NT_("enabled")) >= 0;
    disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-   LockRes();
+   LockRes(my_config);
    ua->send->ArrayStart("schedules");
    foreach_res(sched, R_SCHEDULE) {
       if (ua->AclAccessOk(Schedule_ACL, sched->name())) {
@@ -1408,7 +1411,7 @@ bool DotScheduleCmd(UaContext *ua, const char *cmd)
       }
    }
    ua->send->ArrayEnd("schedules");
-   UnlockRes();
+   UnlockRes(my_config);
 
    return true;
 }
@@ -1612,3 +1615,4 @@ bool DotDefaultsCmd(UaContext *ua, const char *cmd)
 
    return true;
 }
+} /* namespace directordaemon */

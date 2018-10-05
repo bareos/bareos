@@ -28,6 +28,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/job.h"
 #include "dird/next_vol.h"
 #include "dird/quota.h"
@@ -44,8 +45,11 @@
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
 
+namespace directordaemon {
 
+#if HAVE_NDMP
 /* Forward referenced functions */
 static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
                                              char *filesystem,
@@ -653,3 +657,4 @@ bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
 }
 
 #endif /* HAVE_NDMP */
+} /* namespace directordaemon */

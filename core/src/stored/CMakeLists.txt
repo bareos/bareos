@@ -18,9 +18,7 @@
 #   02110-1301, USA.
 
 IF(HAVE_WIN32)
-   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends ../include .. .)
-ELSE()
-   include_directories(. .. ../lib ../include ../lmdb ../ndmp)
+   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends)
 ENDIF()
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
@@ -77,19 +75,20 @@ ENDIF()
 
 set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
          block.cc bsr.cc
-		   butil.cc crc32.cc dev.cc device.cc ebcdic.cc label.cc lock.cc
-		   mount.cc read_record.cc record.cc reserve.cc scan.cc
-		   sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc
-		   stored_conf.cc vol_mgr.cc wait.cc
+         butil.cc crc32.cc dev.cc device.cc ebcdic.cc label.cc lock.cc
+         mount.cc read_record.cc record.cc reserve.cc scan.cc
+         sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc
+         stored_globals.cc stored_conf.cc vol_mgr.cc wait.cc
          ${AVAILABLE_DEVICE_API_SRCS}
     )
 
 set(SDSRCS append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
-         socket_server.cc status.cc stored.cc
-)
+         socket_server.cc status.cc )
+
 IF(HAVE_WIN32)
    LIST(APPEND SDSRCS
+      stored.cc
       ../win32/generic/main.cc
       ../win32/generic/service.cc
       ../win32/stored/storedres.rc
@@ -167,21 +166,16 @@ ENDIF()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 
-
-IF(HAVE_WIN32)
-   LIST(APPEND LIBBAREOSSD_LIBRARIES
-      bareosstatic
-      )
-ENDIF()
-
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
 endif()
 
-add_executable(bareos-sd ${SDSRCS})
+add_library(stored_objects STATIC ${SDSRCS})
+
+add_executable(bareos-sd stored.cc)
 
 SET(BAREOS_SD_LIBRARIES
-   bareos bareossd bareosfind bareoscfg
+   bareos bareossd bareosfind 
    ${NDMP_LIBS}
    )
 
@@ -192,34 +186,35 @@ IF(HAVE_WIN32)
 ENDIF()
 
 target_link_libraries(bareos-sd
+   stored_objects
    ${BAREOS_SD_LIBRARIES}
    )
 
 add_executable(bls ${BLSSRCS})
 target_link_libraries(bls
-   bareos bareossd bareosfind bareoscfg
+   bareos bareossd bareosfind 
    )
 
 add_executable(bextract ${BEXTRACTSRS})
 target_link_libraries(bextract
-   bareossd bareosfind bareos bareoscfg
+   bareossd bareosfind bareos 
     )
 
 add_executable(bscan ${BSCANSRCS})
 target_link_libraries(bscan
-   bareos bareossd bareosfind bareoscfg bareossql bareoscats
+   bareos bareossd bareosfind bareossql bareoscats
     )
 
 add_executable(btape ${BTAPESRCS})
 target_link_libraries(btape
-   bareossd bareos bareoscfg
+   bareossd bareos 
     )
 
 add_executable(bcopy ${BCOPYSRCS})
 
 
 target_link_libraries(bcopy
-   bareossd bareos bareoscfg
+   bareossd bareos 
     )
 
 INSTALL(TARGETS bareossd DESTINATION ${libdir})

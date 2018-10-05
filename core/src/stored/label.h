@@ -22,6 +22,8 @@
 #ifndef BAREOS_STORED_LABEL_H_
 #define BAREOS_STORED_LABEL_H_
 
+namespace storagedaemon {
+
 int ReadDevVolumeLabel(DeviceControlRecord *dcr);
 void CreateVolumeLabel(Device *dev, const char *VolName, const char *PoolName);
 
@@ -38,5 +40,7 @@ bool UnserVolumeLabel(Device *dev, DeviceRecord *rec);
 bool UnserSessionLabel(SESSION_LABEL *label, DeviceRecord *rec);
 bool WriteNewVolumeLabelToDev(DeviceControlRecord *dcr, const char *VolName,
                                    const char *PoolName, bool relabel);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_LABEL_H_

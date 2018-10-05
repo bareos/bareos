@@ -24,6 +24,8 @@
 
 #include "dird/ua.h"
 
+namespace directordaemon {
+
 bool PruneFiles(UaContext *ua, ClientResource *client, PoolResource *pool);
 bool PruneJobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType);
 bool PruneVolume(UaContext *ua, MediaDbRecord *mr);
@@ -33,4 +35,5 @@ int FileDeleteHandler(void *ctx, int num_fields, char **row);
 int GetPruneListForVolume(UaContext *ua, MediaDbRecord *mr, del_ctx *del);
 int ExcludeRunningJobsFromList(del_ctx *prune_list);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_UA_PRUNE_H_

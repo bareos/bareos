@@ -83,7 +83,7 @@ enum {
  * Array list -- much like a simplified STL vector
  *               array of pointers to inserted items
  */
-class DLL_IMP_EXP alist : public SmartAlloc {
+class alist : public SmartAlloc {
    void **items;
    int num_items;
    int max_items;
@@ -139,11 +139,12 @@ inline bool alist::empty() const
  */
 inline void alist::init(int num, bool own)
 {
-   items = NULL;
+   items = nullptr;
    num_items = 0;
    max_items = 0;
    num_grow = num;
    own_items = own;
+   cur_item = 0;
 }
 
 /* Constructor */

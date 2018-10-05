@@ -27,5 +27,7 @@
 #define APP_DESC "Bareos Director Service"
 #define SERVICE_DESC "Provides bareos director services."
 
-#define TerminateApp(x) TerminateDird(x)
+#define TerminateApp(x) directordaemon::TerminateDird(x)
+namespace directordaemon {
 extern void TerminateDird(int sig);
+} /* namespace directordaemon  */

@@ -41,9 +41,9 @@ stop_bareos
 # More cleanup needed below
 
 cd /
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-etc-test dev >${cwd}/tmp/original
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-etc-test dev >${cwd}/tmp/original
 cd ${cwd}/tmp/bareos-restores
-${cwd}/bin/testls -e ${cwd}/scripts/exclude-etc-test dev >${cwd}/tmp/restored
+${cwd}/bin/btestls -e ${cwd}/scripts/exclude-etc-test dev >${cwd}/tmp/restored
 cd ${cwd}/tmp
 #
 # Use sed to cut out parts that *always* change

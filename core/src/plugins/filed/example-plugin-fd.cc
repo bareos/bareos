@@ -14,13 +14,15 @@
 #define BUILDING_DLL            /* required for Windows plugin */
 
 #include "include/bareos.h"
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Your name"
 #define PLUGIN_DATE         "January 2010"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Test File Daemon Plugin"
+
+namespace filedaemon {
 
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
@@ -88,7 +90,7 @@ extern "C" {
 /*
  * Plugin called here when it is first loaded
  */
-bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
+bRC loadPlugin(bInfo *lbinfo,
                            bFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pFuncs **pfuncs)
@@ -332,3 +334,5 @@ static bRC checkFile(bpContext *ctx, char *fname)
 {
    return bRC_OK;
 }
+
+} /* namespace filedaemon */

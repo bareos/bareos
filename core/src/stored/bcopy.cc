@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
@@ -37,10 +38,14 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/bsignal.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
-/* Dummy functions */
-extern bool ParseSdConfig(const char *configfile, int exit_code);
+namespace storagedaemon {
+   extern bool ParseSdConfig(const char *configfile, int exit_code);
+}
+
+using namespace storagedaemon;
 
 /* Forward referenced functions */
 static void GetSessionRecord(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
@@ -104,7 +109,7 @@ int main (int argc, char *argv[])
    while ((ch = getopt(argc, argv, "b:c:D:d:i:o:pvw:?")) != -1) {
       switch (ch) {
       case 'b':
-         bsr = parse_bsr(NULL, optarg);
+         bsr = libbareos::parse_bsr(NULL, optarg);
          break;
 
       case 'c':                    /* specify config file */
@@ -197,7 +202,7 @@ int main (int argc, char *argv[])
    Dmsg0(100, "About to setup input jcr\n");
 
    in_dcr = New(DeviceControlRecord);
-   in_jcr = setup_jcr("bcopy", argv[0], bsr, director, in_dcr, iVolumeName, true); /* read device */
+   in_jcr = SetupJcr("bcopy", argv[0], bsr, director, in_dcr, iVolumeName, true); /* read device */
    if (!in_jcr) {
       exit(1);
    }
@@ -215,7 +220,7 @@ int main (int argc, char *argv[])
    Dmsg0(100, "About to setup output jcr\n");
 
    out_dcr = New(DeviceControlRecord);
-   out_jcr = setup_jcr("bcopy", argv[1], bsr, director, out_dcr, oVolumeName, false); /* write device */
+   out_jcr = SetupJcr("bcopy", argv[1], bsr, director, out_dcr, oVolumeName, false); /* write device */
    if (!out_jcr) {
       exit(1);
    }
@@ -237,7 +242,7 @@ int main (int argc, char *argv[])
       exit(1);
    }
    out_dev->Unlock();
-   if (!acquire_device_for_append(out_jcr->dcr)) {
+   if (!AcquireDeviceForAppend(out_jcr->dcr)) {
       FreeJcr(in_jcr);
       exit(1);
    }

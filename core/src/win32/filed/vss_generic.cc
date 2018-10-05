@@ -32,10 +32,10 @@
 #ifdef WIN32_VSS
 
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "findlib/find.h"
 #define FILE_DAEMON 1
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 
 #undef setlocale
 
@@ -108,6 +108,8 @@ class IXMLDOMDocument;
 #define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
 
 #include "vss.h"
+
+using namespace filedaemon;
 
 static void JmsgVssApiStatus(JobControlRecord *jcr, int msg_status, HRESULT hr, const char *apiName)
 {
@@ -1138,4 +1140,5 @@ bool VSSClientGeneric::CheckWriterStatus()
 
    return true;
 }
+
 #endif /* WIN32_VSS */

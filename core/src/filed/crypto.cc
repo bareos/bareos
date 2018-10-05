@@ -31,8 +31,11 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/restore.h"
 #include "findlib/find_one.h"
 #include "lib/edit.h"
+
+namespace filedaemon {
 
 #ifdef HAVE_SHA2
 const bool have_sha2 = true;
@@ -606,3 +609,4 @@ bool DecryptData(JobControlRecord *jcr, char **data, uint32_t *length, RestoreCi
 bail_out:
    return false;
 }
+} /* namespace filedaemon */

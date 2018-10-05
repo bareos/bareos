@@ -34,10 +34,13 @@
 #include "dird/restore.h"
 
 #if HAVE_NDMP
-
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
 
+namespace directordaemon {
+
+#if HAVE_NDMP
 /*
  * Add a filename to the files we want to restore.
  *
@@ -248,3 +251,4 @@ void NdmpRestoreCleanup(JobControlRecord *jcr, int TermCode)
 }
 
 #endif /* HAVE_NDMP */
+} /* namespace directordaemon */

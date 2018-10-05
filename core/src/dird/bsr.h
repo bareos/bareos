@@ -33,6 +33,10 @@
 #ifndef BAREOS_DIRD_BSR_H_
 #define BAREOS_DIRD_BSR_H_
 
+#include "dird/ua.h"
+
+namespace directordaemon {
+
 /**
  * FileIndex entry in restore bootstrap record
  */
@@ -73,10 +77,10 @@ struct bootstrap_info
    char storage[MAX_NAME_LENGTH + 1];
 };
 
-#include "dird/ua.h"
-
 RestoreBootstrapRecord *new_bsr();
-DLL_IMP_EXP void FreeBsr(RestoreBootstrapRecord *bsr);
+namespace directordaemon {
+   void FreeBsr(RestoreBootstrapRecord *bsr);
+} /* namespace director */
 bool CompleteBsr(UaContext *ua, RestoreBootstrapRecord *bsr);
 uint32_t WriteBsrFile(UaContext *ua, RestoreContext &rx);
 void DisplayBsrInfo(UaContext *ua, RestoreContext &rx);
@@ -90,4 +94,5 @@ bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info);
 bool SendBootstrapFile(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info &info);
 void CloseBootstrapFile(bootstrap_info &info);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_BSR_H_

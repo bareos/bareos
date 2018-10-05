@@ -52,6 +52,8 @@
 
 #include "include/bareos.h"
 #include "lib/edit.h"
+#include "lib/parse_conf.h"
+#include "lib/qualified_resource_name_type_converter.h"
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
@@ -93,9 +95,14 @@ ConfigurationParser::ConfigurationParser()
    , omit_defaults_ (false)
    , r_first_ (0)
    , r_last_ (0)
+   , r_own_ (0)
    , resources_ (0)
    , res_head_(nullptr)
-   , use_config_include_dir_ (false) {
+   , use_config_include_dir_ (false)
+   , ParseConfigReadyCb_(nullptr)
+   , SaveResourceCb_(nullptr)
+   , DumpResourceCb_(nullptr)
+   , FreeResourceCb_(nullptr) {
    return;
 }
 
@@ -114,7 +121,11 @@ ConfigurationParser::ConfigurationParser(
                   ResourceTable *resources,
                   CommonResourceHeader **res_head,
                   const char* config_default_filename,
-                  const char* config_include_dir)
+                  const char* config_include_dir,
+                  void (*ParseConfigReadyCb)(ConfigurationParser&),
+                  SaveResourceCb_t SaveResourceCb,
+                  DumpResourceCb_t DumpResourceCb,
+                  FreeResourceCb_t FreeResourceCb)
    : ConfigurationParser()
 {
    cf_ = cf == nullptr ? "" : cf;
@@ -134,13 +145,25 @@ ConfigurationParser::ConfigurationParser(
    res_head_ = res_head;
    config_default_filename_ = config_default_filename == nullptr ? "" : config_default_filename;
    config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
+   ParseConfigReadyCb_ = ParseConfigReadyCb;
+   ASSERT(SaveResourceCb);
+   ASSERT(DumpResourceCb);
+   ASSERT(FreeResourceCb);
+   SaveResourceCb_ = SaveResourceCb;
+   DumpResourceCb_ = DumpResourceCb;
+   FreeResourceCb_ = FreeResourceCb;
 }
 
 ConfigurationParser::~ConfigurationParser() {
    for (int i = r_first_; i<= r_last_; i++) {
-      FreeResource(res_head_[i-r_first_], i);
+      FreeResourceCb_(res_head_[i-r_first_], i);
       res_head_[i-r_first_] = NULL;
    }
+}
+
+void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(const std::map<int,std::string> &map)
+{
+  qualified_resource_name_type_converter_.reset(new QualifiedResourceNameTypeConverter(map));
 }
 
 bool ConfigurationParser::ParseConfig()
@@ -161,7 +184,11 @@ bool ConfigurationParser::ParseConfig()
    }
    used_config_path_ = config_path.c_str();
    Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-   return ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
+   bool success = ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
+   if (ParseConfigReadyCb_) {
+     ParseConfigReadyCb_(*this);
+   }
+   return success;
 }
 
 bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError,
@@ -315,7 +342,7 @@ bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_
                   goto bail_out;
                }
                /* save resource */
-               if (!SaveResource(res_type, items, pass)) {
+               if (!SaveResourceCb_(res_type, items, pass)) {
                   scan_err0(lc, _("SaveResource failed"));
                   goto bail_out;
                }
@@ -342,7 +369,7 @@ bool ConfigurationParser::ParseConfigFile(const char *cf, void *caller_ctx, LEX_
       if (debug_level >= 900 && pass == 2) {
          int i;
          for (i = r_first_; i <= r_last_; i++) {
-            DumpResource(i, res_head_[i-r_first_], PrintMessage, NULL, false);
+            DumpResourceCb_(i, res_head_[i-r_first_], PrintMessage, NULL, false, false);
          }
       }
 
@@ -638,6 +665,7 @@ void ConfigurationParser::InitResource(int type,
    }
    res_all->hdr.rcode  = type;
    res_all->hdr.refcnt = 1;
+   res_all->hdr.my_config_ = this;
 
    /*
     * See what pass of the config parsing this is.
@@ -874,7 +902,7 @@ bool ConfigurationParser::RemoveResource(int type, const char *name)
             last->next = res->next;
         }
         res->next = NULL;
-        FreeResource(res, type);
+        FreeResourceCb_(res, type);
         return true;
       }
       last = res;
@@ -891,7 +919,7 @@ void ConfigurationParser::DumpResources(void sendit(void *sock, const char *fmt,
 {
    for (int i = r_first_; i <= r_last_; i++) {
       if (res_head_[i - r_first_]) {
-         DumpResource(i,res_head_[i - r_first_],sendit, sock, hide_sensitive_data);
+         DumpResourceCb_(i,res_head_[i - r_first_],sendit, sock, hide_sensitive_data, false);
       }
    }
 }

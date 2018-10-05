@@ -28,6 +28,8 @@
 #ifndef BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
 
+namespace storagedaemon {
+
 class unix_file_device: public Device {
 public:
    unix_file_device();
@@ -46,4 +48,7 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+
+} /* namespace storagedaemon */
+
 #endif /* BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_ */

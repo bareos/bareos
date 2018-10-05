@@ -22,7 +22,10 @@
 #ifndef BAREOS_DIRD_FD_CMDS_H_
 #define BAREOS_DIRD_FD_CMDS_H_
 
-bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose);
+namespace directordaemon {
+
+bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose,
+                         UaContext *ua = nullptr);
 int  SendJobInfo(JobControlRecord *jcr);
 bool SendIncludeList(JobControlRecord *jcr);
 bool SendExcludeList(JobControlRecord *jcr);
@@ -50,4 +53,5 @@ bool IsConnectFromClientAllowed(ClientResource *res);
 bool IsConnectFromClientAllowed(JobControlRecord *jcr);
 bool UseWaitingClient(JobControlRecord *jcr_job, int timeout);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_FD_CMDS_H_

@@ -34,6 +34,8 @@
 #include <radosstriper/libradosstriper.h>
 #endif
 
+namespace storagedaemon {
+
 /*
  * Use for versions lower then 0.68.0 of the API the old format and otherwise the new one.
  */
@@ -105,4 +107,5 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+} /* namespace storagedaemon */
 #endif /* BAREOS_STORED_BACKENDS_RADOS_DEVICE_H_ */

@@ -39,8 +39,8 @@ extern char win_os[];
 
 #else
 
-extern DLL_IMP_EXP char WIN_VERSION_LONG[];
-extern DLL_IMP_EXP char WIN_VERSION[];
+extern char WIN_VERSION_LONG[];
+extern char WIN_VERSION[];
 
 #define HOST_OS  WIN_VERSION_LONG
 #define DISTNAME "MVS"

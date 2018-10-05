@@ -33,6 +33,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #ifdef BAREOS_LIB_LIB_H_
 #include <fnmatch.h>
 #else
@@ -42,6 +43,8 @@
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Forward referenced commands */
 static int markcmd(UaContext *ua, TreeContext *tree);
@@ -1189,3 +1192,4 @@ static int QuitCmd(UaContext *ua, TreeContext *tree)
    ua->quit = true;
    return 0;
 }
+} /* namespace directordaemon */

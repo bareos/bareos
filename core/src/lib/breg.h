@@ -79,29 +79,29 @@ public:
 BareosRegex *NewBregexp(const char *motif);
 
 /* launch each bregexp on filename */
-DLL_IMP_EXP int RunBregexp(alist *bregexps, const char *fname);
+int RunBregexp(alist *bregexps, const char *fname);
 
 /* free BareosRegex (and all POOLMEM) */
-DLL_IMP_EXP void FreeBregexp(BareosRegex *script);
+void FreeBregexp(BareosRegex *script);
 
 /* fill an alist with BareosRegex from where */
-DLL_IMP_EXP alist *get_bregexps(const char *where);
+alist *get_bregexps(const char *where);
 
 /* apply every regexps from the alist */
-DLL_IMP_EXP bool ApplyBregexps(const char *fname, alist *bregexps, char **result);
+bool ApplyBregexps(const char *fname, alist *bregexps, char **result);
 
 /* foreach_alist free RunScript */
-DLL_IMP_EXP void FreeBregexps(alist *bregexps); /* you have to free alist */
+void FreeBregexps(alist *bregexps); /* you have to free alist */
 
 /* get regexp size */
-DLL_IMP_EXP int BregexpGetBuildWhereSize(char *strip_prefix,
+int BregexpGetBuildWhereSize(char *strip_prefix,
                                  char *add_prefix,
                                  char *add_suffix);
 
 /* get a bregexp string from user arguments
  * you must allocate it with BregexpGetBuildWhereSize();
  */
-DLL_IMP_EXP char *bregexp_build_where(char *dest, int str_size,
+char *bregexp_build_where(char *dest, int str_size,
                           char *strip_prefix,
                           char *add_prefix,
                           char *add_suffix);
@@ -109,6 +109,6 @@ DLL_IMP_EXP char *bregexp_build_where(char *dest, int str_size,
 /* escape a string to regexp format (sep and \)
  * dest must be long enough (dest = 2*src + 1)
  */
-DLL_IMP_EXP char *bregexp_escape_string(char *dest, const char *src, const char sep);
+char *bregexp_escape_string(char *dest, const char *src, const char sep);
 
 #endif /* BAREOS_LIB_BREG_H_ */

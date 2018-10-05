@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/job.h"
 #include "dird/msgchan.h"
 #include "dird/quota.h"
@@ -44,6 +45,11 @@
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
+
+namespace directordaemon {
+
+#if HAVE_NDMP
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -554,3 +560,4 @@ bool DoNdmpBackup(JobControlRecord *jcr)
 }
 
 #endif /* HAVE_NDMP */
+} /* namespace directordaemon */

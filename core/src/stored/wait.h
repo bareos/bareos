@@ -22,8 +22,12 @@
 #ifndef BAREOS_STORED_WAIT_H_
 #define BAREOS_STORED_WAIT_H_
 
+namespace storagedaemon {
+
 int WaitForSysop(DeviceControlRecord *dcr);
 bool WaitForDevice(JobControlRecord *jcr, int &retries);
 void ReleaseDeviceCond();
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_WAIT_H_

@@ -31,8 +31,8 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
-#include "ch.h"
-#include "streams.h"
+#include "include/ch.h"
+#include "include/streams.h"
 #include "lib/edit.h"
 
 #if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)

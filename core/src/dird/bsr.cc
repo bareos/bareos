@@ -30,11 +30,14 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/ua_input.h"
 #include "dird/ua_restore.h"
 #include "dird/ua_server.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 #define UA_CMD_SIZE 1000
 
@@ -71,7 +74,7 @@ static bool GetStorageDevice(char *device, char *storage)
    if (storage[0] == 0) {
       return false;
    }
-   store = (StorageResource *)GetResWithName(R_STORAGE, storage);
+   store = (StorageResource *)my_config->GetResWithName(R_STORAGE, storage);
    if (!store) {
       return false;
    }
@@ -175,6 +178,8 @@ RestoreBootstrapRecord *new_bsr()
    return bsr;
 }
 
+namespace directordaemon {
+
 /**
  * Free the entire BootStrapRecord
  */
@@ -198,6 +203,8 @@ void FreeBsr(RestoreBootstrapRecord *bsr)
       bsr = next;
    }
 }
+
+} /* namespace director */
 
 /**
  * Complete the BootStrapRecord by filling in the VolumeName and
@@ -785,7 +792,7 @@ static inline bool IsOnSameStorage(JobControlRecord *jcr, char *new_one)
       return true;
    }
 
-   new_store = (StorageResource *)GetResWithName(R_STORAGE, new_one);
+   new_store = (StorageResource *)my_config->GetResWithName(R_STORAGE, new_one);
    if (!new_store) {
       Jmsg(jcr, M_WARNING, 0,
            _("Could not get storage resource '%s'.\n"), new_one);
@@ -888,3 +895,4 @@ void CloseBootstrapFile(bootstrap_info &info)
       FreeUaContext(info.ua);
    }
 }
+} /* namespace directordaemon */

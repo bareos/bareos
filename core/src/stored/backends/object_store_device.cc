@@ -33,6 +33,8 @@
 #include "stored/stored.h"
 #include "object_store_device.h"
 
+namespace storagedaemon {
+
 /**
  * Options that can be specified for this device type.
  */
@@ -550,7 +552,7 @@ object_store_device::object_store_device()
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
+extern "C" Device *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
    Device *dev = NULL;
 
@@ -566,8 +568,9 @@ extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int dev
    return dev;
 }
 
-extern "C" void SD_IMP_EXP flush_backend(void)
+extern "C" void flush_backend(void)
 {
 }
 #endif
+} /* namespace storagedaemon */
 #endif /* HAVE_DROPLET */

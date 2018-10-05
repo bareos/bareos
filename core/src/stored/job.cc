@@ -30,21 +30,19 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/bsr.h"
 #include "stored/acquire.h"
 #include "stored/fd_cmds.h"
 #include "stored/ndmp_tape.h"
-#include "stored/parse_bsr.h"
 #include "stored/read_record.h"
+#include "stored/stored_globals.h"
 #include "lib/edit.h"
+#include "lib/parse_bsr.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/* Imported variables */
-extern uint32_t VolSessionTime;
-
-/* Imported functions */
-extern uint32_t newVolSessionId();
 
 /* Requests from the Director daemon */
 static char jobcmd[] =
@@ -130,8 +128,8 @@ bool job_cmd(JobControlRecord *jcr)
     * are given to us (same as restarted job).
     */
    if (!jcr->rerunning) {
-      jcr->VolSessionId = newVolSessionId();
-      jcr->VolSessionTime = VolSessionTime;
+      jcr->VolSessionId = NewVolSessionId();
+      jcr->VolSessionTime = vol_session_time;
    }
    bstrncpy(jcr->Job, job, sizeof(jcr->Job));
    UnbashSpaces(job_name);
@@ -505,7 +503,7 @@ void StoredFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->bsr) {
-      FreeBsr(jcr->bsr);
+      libbareos::FreeBsr(jcr->bsr);
       jcr->bsr = NULL;
    }
 
@@ -548,12 +546,12 @@ void StoredFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->dcr) {
-      FreeDcr(jcr->dcr);
+      FreeDeviceControlRecord(jcr->dcr);
       jcr->dcr = NULL;
    }
 
    if (jcr->read_dcr) {
-      FreeDcr(jcr->read_dcr);
+      FreeDeviceControlRecord(jcr->read_dcr);
       jcr->read_dcr = NULL;
    }
 
@@ -593,3 +591,5 @@ void StoredFreeJcr(JobControlRecord *jcr)
 
    return;
 }
+
+} /* namespace storagedaemon */

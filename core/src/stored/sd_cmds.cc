@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "stored/append.h"
 #include "stored/authenticate.h"
 #include "stored/sd_stats.h"
@@ -42,6 +43,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -371,3 +374,5 @@ static bool EndReplicationSession(JobControlRecord *jcr)
    }
    return sd->fsend(OK_end_replicate);
 }
+
+} /* namespace storagedaemon */

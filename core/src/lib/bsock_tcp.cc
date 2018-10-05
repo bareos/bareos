@@ -65,34 +65,33 @@ BareosSocketTCP::~BareosSocketTCP()
 
 BareosSocket *BareosSocketTCP::clone()
 {
-   BareosSocketTCP *clone;
-   POOLMEM *o_msg, *o_errmsg;
+   BareosSocketTCP *clone = New(BareosSocketTCP(*this));
 
-   clone = New(BareosSocketTCP);
+   /* do not use memory buffer from copied socket */
+   clone->msg = GetPoolMemory(PM_BSOCK);
+   clone->errmsg = GetPoolMemory(PM_MESSAGE);
 
-   /*
-    * Copy the data from the original BareosSocket but preserve the msg and errmsg buffers.
-    */
-   o_msg = clone->msg;
-   o_errmsg = clone->errmsg;
-   memcpy((void *)clone, (void *)this, sizeof(BareosSocketTCP));
-   clone->msg = o_msg;
-   clone->errmsg = o_errmsg;
-
-   clone->SetTlsConnection(BareosSocket::GetTlsConnection());
-
+   if (src_addr) {
+      src_addr = New(IPADDR(*(src_addr)));
+   }
    if (who_) {
-      clone->SetWho(bstrdup(who_));
+      who_ = bstrdup(who_);
    }
    if (host_) {
-      clone->SetHost(bstrdup(host_));
+      host_ = bstrdup(host_);
    }
-   if (src_addr) {
-      clone->src_addr = New(IPADDR(*(src_addr)));
+
+   /* duplicate file descriptors */
+   if (fd_ >= 0) {
+      clone->fd_ = dup(fd_);
    }
+   if (spool_fd_ >= 0) {
+      clone->spool_fd_ = dup(spool_fd_);
+   }
+
    clone->cloned_ = true;
 
-   return (BareosSocket *)clone;
+   return clone;
 }
 
 /*
@@ -468,9 +467,7 @@ bool BareosSocketTCP::send()
       return false;
    }
 
-   if (use_locking_) {
-      P(mutex_);
-   }
+   LockMutex();
 
    /*
     * Compute total packet length
@@ -507,9 +504,7 @@ bool BareosSocketTCP::send()
       }
    }
 
-   if (use_locking_) {
-      V(mutex_);
-   }
+   UnlockMutex();
 
    return ok;
 }
@@ -542,8 +537,8 @@ int32_t BareosSocketTCP::recv()
       return BNET_HARDEOF;
    }
 
-   if (use_locking_) {
-      P(mutex_);
+   if (mutex_) {
+      mutex_->lock();
    }
 
    read_seqno++;            /* bump sequence number */
@@ -658,8 +653,8 @@ int32_t BareosSocketTCP::recv()
    Dsm_check(300);
 
 get_out:
-   if (use_locking_) {
-      V(mutex_);
+   if (mutex_) {
+      mutex_->unlock();
    }
 
    return nbytes;                  /* return actual length of message */
@@ -911,51 +906,54 @@ int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 
 void BareosSocketTCP::close()
 {
-   if (!cloned_) {
-      ClearLocking();
-   }
+   /* if not cloned */
+   ClearLocking();
+   CloseTlsConnectionAndFreeMemory();
 
-   if (!cloned_) {
-      /*
-       * Shutdown tls cleanly.
-       */
-      if (GetTlsConnection()) {
-         TlsBsockShutdown(this);
-         FreeTls();
+   if (fd_ >= 0) {
+      if (!cloned_) {
+         if (IsTimedOut()) {
+            shutdown(fd_, SHUT_RDWR);
+         }
       }
-      if (IsTimedOut()) {
-         shutdown(fd_, SHUT_RDWR);   /* discard any pending I/O */
-      }
-      socketClose(fd_);      /* normal close */
+      socketClose(fd_);
       fd_ = -1;
    }
-
-   return;
 }
 
 void BareosSocketTCP::destroy()
 {
-   if (msg) {
+   /* if this object is cloned
+    * some memory or file descriptors
+    * are duplicated not just copied */
+
+   if (msg) { /* duplicated */
       FreePoolMemory(msg);
-      msg = NULL;
-   } else {
-      ASSERT(1 == 0);              /* double close */
+      msg = nullptr;
    }
-   if (errmsg) {
+   if (errmsg) { /* duplicated */
       FreePoolMemory(errmsg);
-      errmsg = NULL;
+      errmsg = nullptr;
    }
-   if (who_) {
+   if (who_) { /* duplicated */
       free(who_);
-      who_ = NULL;
+      who_ = nullptr;
    }
-   if (host_) {
+   if (host_) { /* duplicated */
       free(host_);
-      host_ = NULL;
+      host_ = nullptr;
    }
-   if (src_addr) {
+   if (src_addr) { /* duplicated */
       free(src_addr);
-      src_addr = NULL;
+      src_addr = nullptr;
+   }
+   if (fd_ >= 0) { /* duplicated */
+      socketClose(fd_);
+      fd_ = -1;
+   }
+   if(spool_fd_ >= 0) { /* duplicated */
+      socketClose(spool_fd_);
+      spool_fd_ = -1;
    }
 }
 
@@ -969,11 +967,8 @@ int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
    int32_t nleft, nread;
 
 #ifdef HAVE_TLS
-   if (GetTlsConnection()) {
-      /*
-       * TLS enabled
-       */
-      return (TlsBsockReadn(this, ptr, nbytes));
+   if (tls_conn) {
+      return (tls_conn->TlsBsockReadn(this, ptr, nbytes));
    }
 #endif /* HAVE_TLS */
 
@@ -1048,9 +1043,8 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
    }
 
 #ifdef HAVE_TLS
-   if (GetTlsConnection()) {
-      /* TLS enabled */
-      return (TlsBsockWriten(this, ptr, nbytes));
+   if (tls_conn) {
+      return (tls_conn->TlsBsockWriten(this, ptr, nbytes));
    }
 #endif /* HAVE_TLS */
 

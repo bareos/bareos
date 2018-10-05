@@ -28,7 +28,15 @@
  * Bareos User Agent specific configuration and defines
  */
 
-#define CONFIG_FILE "bconsole.conf"   /* default configuration file */
+#ifndef BAREOS_CONSOLE_CONSOLE_CONF_H_
+#define BAREOS_CONSOLE_CONSOLE_CONF_H_ 1
+
+class ConfigurationParser;
+extern ConfigurationParser *my_config;             /* Our Global config */
+
+namespace console {
+
+static const std::string default_config_filename("bconsole.conf");
 
 /**
  * Resource codes -- they must be sequential for indexing
@@ -72,6 +80,7 @@ class DirectorResource : public TlsResource {
       uint32_t DIRport;                  /**< UA server port */
       char *address;                     /**< UA server address */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
+      bool UsePamAuthentication_;        /**< Use Pam authentication instead of password */
       DirectorResource() : TlsResource() {}
 };
 
@@ -88,7 +97,9 @@ union UnionOfResources {
 };
 
 extern ConsoleResource *me;                    /* "Global" Client resource */
-extern ConfigurationParser *my_config;             /* Our Global config */
 
 ConfigurationParser *InitConsConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
+
+} /* namespace console */
+#endif /* BAREOS_CONSOLE_CONSOLE_CONF_H_ */

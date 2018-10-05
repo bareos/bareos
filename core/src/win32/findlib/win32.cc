@@ -27,8 +27,8 @@
 
 #if defined(HAVE_WIN32)
 
-#include "jcr.h"
-#include "find.h"
+#include "include/jcr.h"
+#include "findlib/find.h"
 #include "lib/cbuf.h"
 #include "findlib/drivetype.h"
 #include "findlib/fstype.h"

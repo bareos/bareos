@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "findlib/find.h"
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"
@@ -46,6 +47,8 @@
 #include "dird/verify.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 /* Commands sent to File daemon */
 static char verifycmd[] =
@@ -347,7 +350,7 @@ bool DoVerify(JobControlRecord *jcr)
           * TLS Requirement
           */
 
-         tls_need = GetNeedFromConfiguration(store);
+         tls_need = GetLocalTlsPolicyFromConfiguration(store);
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
@@ -357,15 +360,17 @@ bool DoVerify(JobControlRecord *jcr)
          uint32_t tls_need = 0;
          ClientResource *client = jcr->res.client;
 
-         /*
-          * TLS Requirement
-          */
-            tls_need = GetNeedFromConfiguration(client);
+         if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
+            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+         } else {
+            tls_need = TlsConfigBase::BNET_TLS_AUTO;
+         }
 
          /*
           * Tell the SD to connect to the FD.
           */
          sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+         Bmicrosleep(2,0);
          if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
             goto bail_out;
          }
@@ -919,3 +924,4 @@ static void PrtFname(JobControlRecord *jcr)
       jcr->fn_printed = true;
    }
 }
+} /* namespace directordaemon */

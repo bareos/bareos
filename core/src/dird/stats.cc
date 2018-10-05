@@ -29,10 +29,13 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
+
+namespace directordaemon {
 
 /*
  * Commands received from storage daemon that need scanning
@@ -122,7 +125,7 @@ void *statistics_thread(void *arg)
 
    jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
-   jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
+   jcr->res.catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
    jcr->db = DbSqlGetPooledConnection(jcr,
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
@@ -163,23 +166,23 @@ void *statistics_thread(void *arg)
          StorageResource *store;
          int64_t StorageId;
 
-         LockRes();
+         LockRes(my_config);
          if ((current_store.c_str())[0]) {
-            store = (StorageResource *)GetResWithName(R_STORAGE, current_store.c_str());
+            store = (StorageResource *)my_config->GetResWithName(R_STORAGE, current_store.c_str());
          } else {
             store = NULL;
          }
 
-         store = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
+         store = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
          if (!store) {
             PmStrcpy(current_store, "");
-            UnlockRes();
+            UnlockRes(my_config);
             break;
          }
 
          PmStrcpy(current_store, store->name());
          if (!store->collectstats) {
-            UnlockRes();
+            UnlockRes(my_config);
             continue;
          }
 
@@ -187,20 +190,20 @@ void *statistics_thread(void *arg)
          case APT_NATIVE:
             break;
          default:
-            UnlockRes();
+            UnlockRes(my_config);
             continue;
          }
 
          jcr->res.rstore = store;
          if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
-            UnlockRes();
+            UnlockRes(my_config);
             continue;
          }
 
          StorageId = store->StorageId;
          sd = jcr->store_bsock;
 
-         UnlockRes();
+         UnlockRes(my_config);
 
          /*
           * Do our work retrieving the statistics from the remote SD.
@@ -337,3 +340,4 @@ void stats_job_started()
       need_flush = true;
    }
 }
+} /* namespace directordaemon */

@@ -37,6 +37,8 @@
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 
 /**
@@ -1337,3 +1339,4 @@ bool move_cmd(UaContext *ua, const char *cmd)
 {
    return PerformMoveOperation(ua, VOLUME_MOVE);
 }
+} /* namespace directordaemon */

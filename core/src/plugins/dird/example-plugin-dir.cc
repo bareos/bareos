@@ -35,6 +35,8 @@
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Test Director Daemon Plugin"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 static bRC newPlugin(bpContext *ctx);
 static bRC freePlugin(bpContext *ctx);
@@ -81,7 +83,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bDirInfo *lbinfo,
+bRC loadPlugin(bDirInfo *lbinfo,
                            bDirFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pDirFuncs **pfuncs)
@@ -99,7 +101,7 @@ bRC DLL_IMP_EXP loadPlugin(bDirInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    printf("plugin: Unloaded\n");
    return bRC_OK;
@@ -181,3 +183,4 @@ static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
    bfuncs->DebugMessage(ctx, __FILE__, __LINE__, 1, "DebugMesssage message");
    return bRC_OK;
 }
+} /* namespace directordaemon */

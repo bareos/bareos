@@ -105,28 +105,9 @@ void InitWinAPIWrapper();
 
 #define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
-#if defined(BUILDING_DLL)
-#define DLL_IMP_EXP _declspec(dllexport)
-#define CATS_IMP_EXP _declspec(dllexport)
-#define SD_IMP_EXP _declspec(dllexport)
-#elif defined(USING_DLL)
-#define DLL_IMP_EXP _declspec(dllimport)
-#define CATS_IMP_EXP _declspec(dllimport)
-#define SD_IMP_EXP _declspec(dllimport)
-#else
-#define DLL_IMP_EXP
-#define CATS_IMP_EXP
-#define SD_IMP_EXP
-#endif
-
 #else  /* HAVE_WIN32 */
 
 #define ClearThreadId(x) x = 0
-
-#define DLL_IMP_EXP
-#define CATS_IMP_EXP
-#define SD_IMP_EXP
-
 #define  OSDependentInit()
 
 #endif /* HAVE_WIN32 */
@@ -331,8 +312,8 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
         strerror(errstat)); \
 } while(0)
 
-#define LockRes()   b_LockRes(__FILE__, __LINE__)
-#define UnlockRes() b_UnlockRes(__FILE__, __LINE__)
+#define LockRes(x)   (x)->b_LockRes(__FILE__, __LINE__)
+#define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
 #ifdef DEBUG_MEMSET
 #define memset(a, v, n) b_memset(__FILE__, __LINE__, a, v, n)
@@ -562,18 +543,18 @@ msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
 class PoolMem;
 
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-DLL_IMP_EXP int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
-DLL_IMP_EXP int Mmsg(PoolMem &msgbuf, const char *fmt, ...);
-DLL_IMP_EXP int Mmsg(PoolMem *&msgbuf, const char *fmt, ...);
+int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
+int Mmsg(PoolMem &msgbuf, const char *fmt, ...);
+int Mmsg(PoolMem *&msgbuf, const char *fmt, ...);
 
 class JobControlRecord;
-DLL_IMP_EXP void d_msg(const char *file, int line, int level, const char *fmt, ...);
-DLL_IMP_EXP void p_msg(const char *file, int line, int level, const char *fmt, ...);
-DLL_IMP_EXP void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
-DLL_IMP_EXP void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
-DLL_IMP_EXP void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+void d_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
+void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
+void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 
 #include "lib/bsys.h"
 #include "lib/scan.h"
@@ -594,6 +575,8 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 #else
 #define bstrdup(str) strcpy((char *)bmalloc(strlen((str))+1),(str))
 #endif
+
+#define actuallystrdup(str) strcpy((char *)actuallymalloc(strlen((str))+1), (str))
 
 #ifdef DEBUG
 #define bmalloc(size) b_malloc(__FILE__, __LINE__, (size))

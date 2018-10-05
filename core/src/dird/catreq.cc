@@ -41,6 +41,8 @@
 #include "findlib/find.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /*
  * Handle catalog request
  *  For now, we simply return next Volume to be used
@@ -756,3 +758,4 @@ bail_out:
    Dmsg1(100, "End DespoolAttributesFromFile retval=%i\n", retval);
    return retval;
 }
+} /* namespace directordaemon */

@@ -31,6 +31,8 @@
 #include <droplet.h>
 #include <droplet/vfs.h>
 
+namespace storagedaemon {
+
 class droplet_device: public chunked_device {
 private:
    /*
@@ -76,4 +78,5 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
+} /* namespace storagedaemon */
 #endif /* OBJECTSTORE_DEVICE_H */

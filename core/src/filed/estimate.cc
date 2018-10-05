@@ -32,6 +32,8 @@
 #include "filed/filed.h"
 #include "filed/accurate.h"
 
+namespace filedaemon {
+
 static int TallyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
 
 /**
@@ -117,3 +119,4 @@ static int TallyFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_le
    }
    return 1;
 }
+} /* namespace filedaemon */

@@ -1,7 +1,7 @@
 SourceDirectory: @srcdir@
 BuildDirectory: @regressdir@
 Site: @sitename@
-BuildName: @bversion@-@bareos_gitrev@-@bdate@-@db_type@-@os@
+BuildName: @bversion@-@bdate@-@db_type@-@os@
 DropMethod: http
 DropSite: my.cdash.org
 DropLocation: /submit.php?project=Bareos

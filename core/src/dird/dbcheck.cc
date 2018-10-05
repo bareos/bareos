@@ -32,7 +32,10 @@
 #include "cats/cats_backends.h"
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
+#include "dird/dird_globals.h"
 #include "lib/edit.h"
+
+using namespace directordaemon;
 
 extern bool ParseDirConfig(const char *configfile, int exit_code);
 
@@ -66,9 +69,6 @@ static const char *idx_tmp_name;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 #endif
-
-DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
 
 #define MAX_ID_LIST_LEN 10000000
 
@@ -1238,7 +1238,7 @@ int main (int argc, char *argv[])
       }
       my_config = InitDirConfig(configfile, M_ERROR_TERM);
       my_config->ParseConfig();
-      LockRes();
+      LockRes(my_config);
       foreach_res(catalog, R_CATALOG) {
          if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
             ++found;
@@ -1248,7 +1248,7 @@ int main (int argc, char *argv[])
            break;
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
       if (!found) {
          if (catalogname) {
             Pmsg2(0, _("Error can not find the Catalog name[%s] in the given config file [%s]\n"), catalogname, configfile);
@@ -1257,9 +1257,9 @@ int main (int argc, char *argv[])
          }
          exit(1);
       } else {
-         LockRes();
-         me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
-         UnlockRes();
+         LockRes(my_config);
+         me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
+         UnlockRes(my_config);
          if (!me) {
             Pmsg0(0, _("Error no Director resource defined.\n"));
             exit(1);

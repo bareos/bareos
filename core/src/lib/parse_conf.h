@@ -23,28 +23,28 @@
 /*
  * Kern Sibbald, January MM
  */
-#pragma once
+#ifndef BAREOS_CORE_SRC_LIB_PARSE_CONF_H_
+#define BAREOS_CORE_SRC_LIB_PARSE_CONF_H_
+
 
 #include "include/bareos.h"
-#include "bc_types.h"
+#include "include/bc_types.h"
+#include "lib/parse_conf_callbacks.h"
 
 #include <functional>
 
-struct ResourceItem;                        /* Declare forward referenced structure */
-class CommonResourceHeader;                              /* Declare forward referenced structure */
+struct ResourceItem;
+class CommonResourceHeader;
+class ConfigurationParser;
 
-/*
- * Parser state
- */
-enum parse_state {
+enum parse_state
+{
    p_none,
    p_resource
 };
 
-/*
- * Password encodings.
- */
-enum password_encoding {
+enum password_encoding
+{
    p_encoding_clear,
    p_encoding_md5
 };
@@ -74,9 +74,6 @@ struct s_kw {
    uint32_t token;
 };
 
-/*
- * Used to store passwords with their encoding.
- */
 struct s_password {
    enum password_encoding encoding;
    char *value;
@@ -88,9 +85,9 @@ struct s_password {
 #define TLS_COMMON_CONFIG(res) \
    { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls_cert.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
          "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
    { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls_cert.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
@@ -117,16 +114,16 @@ struct s_password {
          "Path of a PEM encoded TLS certificate." }, \
    { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
          "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.AllowedCns), 0, 0, NULL, NULL, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_certificate_common_names_), 0, 0, NULL, NULL, \
          "\"Common Name\"s (CNs) of the allowed peer certificates."  }
 
  /*
   * TLS Settings for PSK only
   */
  #define TLS_PSK_CONFIG(res) \
-   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable), 0, CFG_ITEM_DEFAULT, "true", NULL, \
+   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
          "Enable TLS-PSK support." }, \
-   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
          "Enabling this implicitly sets \"TLS-PSK Enable = yes\"." }
 
@@ -186,6 +183,7 @@ public:
    char *desc;                          /* Resource description */
    uint32_t rcode;                      /* Resource id or type */
    int32_t refcnt;                      /* Reference count for releasing */
+  ConfigurationParser *my_config_;     /* Pointer to config parser that created this resource */
    char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
    char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
 };
@@ -223,7 +221,8 @@ public:
  */
 #define CFG_ITEM_PLATFORM_SPECIFIC 0x20
 
-enum {
+enum
+{
    /*
     * Standard resource types. handlers in res.c
     */
@@ -319,7 +318,6 @@ struct DatatypeName {
    const char *description;
 };
 
-
 /*
  * Base Class for all Resource Classes
  */
@@ -340,8 +338,8 @@ public:
 class TlsResource : public BareosResource {
  public:
    s_password password; /* UA server password */
-   TlsCert tls_cert; /* TLS structure */
-   TlsPsk tls_psk;   /* TLS-PSK structure */
+  TlsConfigCert tls_cert; /* TLS structure */
+  TlsConfigPsk tls_psk;   /* TLS-PSK structure */
 };
 
 /*
@@ -366,12 +364,33 @@ public:
    /*
     * Methods
     */
-   void ClearInUse() { lock(); in_use_=false; unlock(); }
-   void SetInUse() { WaitNotInUse(); in_use_=true; unlock(); }
+  void ClearInUse()
+  {
+    lock();
+    in_use_ = false;
+    unlock();
+  }
+  void SetInUse()
+  {
+    WaitNotInUse();
+    in_use_ = true;
+    unlock();
+  }
    void SetClosing() { closing_=true; }
    bool GetClosing() { return closing_; }
-   void ClearClosing() { lock(); closing_=false; unlock(); }
-   bool IsClosing() { lock(); bool rtn=closing_; unlock(); return rtn; }
+  void ClearClosing()
+  {
+    lock();
+    closing_ = false;
+    unlock();
+  }
+  bool IsClosing()
+  {
+    lock();
+    bool rtn = closing_;
+    unlock();
+    return rtn;
+  }
 
    void WaitNotInUse();            /* in message.c */
    void lock();                       /* in message.c */
@@ -381,16 +400,16 @@ public:
 
 typedef void (INIT_RES_HANDLER)(ResourceItem *item, int pass);
 typedef void (STORE_RES_HANDLER)(LEX *lc, ResourceItem *item, int index, int pass);
-typedef void (PRINT_RES_HANDLER)(ResourceItem *items, int i, PoolMem &cfg_str, bool hide_sensitive_data, bool inherited);
+typedef void(
+    PRINT_RES_HANDLER)(ResourceItem *items, int i, PoolMem &cfg_str, bool hide_sensitive_data, bool inherited);
+
+class QualifiedResourceNameTypeConverter;
 
 /*
  * New C++ configuration routines
  */
-class DLL_IMP_EXP ConfigurationParser {
+class ConfigurationParser {
 public:
-   /*
-    * Members
-    */
    std::string cf_;                    /* Config file parameter */
    LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */
    LEX_WARNING_HANDLER *scan_warning_; /* Warning handler if non-null */
@@ -405,17 +424,17 @@ public:
 
    int32_t r_first_;                   /* First daemon resource type */
    int32_t r_last_;                    /* Last daemon resource type */
+  int32_t r_own_;                   /* own resource type */
    ResourceTable *resources_;          /* Pointer to table of permitted resources */
    CommonResourceHeader **res_head_;   /* Pointer to defined resources */
    brwlock_t res_lock_;                /* Resource lock */
 
-   /*
-    * Methods
-    */
+  SaveResourceCb_t SaveResourceCb_;
+  DumpResourceCb_t DumpResourceCb_;
+  FreeResourceCb_t FreeResourceCb_;
 
    ConfigurationParser();
-   ConfigurationParser (
-                  const char *cf,
+  ConfigurationParser(const char *cf,
                   LEX_ERROR_HANDLER *ScanError,
                   LEX_WARNING_HANDLER *scan_warning,
                   INIT_RES_HANDLER *init_res,
@@ -429,13 +448,19 @@ public:
                   ResourceTable *resources,
                   CommonResourceHeader **res_head,
                   const char* config_default_filename,
-                  const char* config_include_dir);
+                      const char *config_include_dir,
+                      void (*ParseConfigReadyCb)(ConfigurationParser &),
+                      SaveResourceCb_t SaveResourceCb,
+                      DumpResourceCb_t DumpResourceCb,
+                      FreeResourceCb_t FreeResourceCb);
 
    ~ConfigurationParser();
 
    bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
    bool ParseConfig();
-   bool ParseConfigFile(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *ScanError = NULL,
+  bool ParseConfigFile(const char *cf,
+                       void *caller_ctx,
+                       LEX_ERROR_HANDLER *ScanError      = NULL,
                           LEX_WARNING_HANDLER *scan_warning = NULL);
    const std::string &get_base_config_path() const { return used_config_path_; }
    void FreeResources();
@@ -444,23 +469,51 @@ public:
    void InitResource(int type, ResourceItem *items, int pass, std::function<void *(void *res)> initres);
    bool RemoveResource(int type, const char *name);
    void DumpResources(void sendit(void *sock, const char *fmt, ...),
-                       void *sock, bool hide_sensitive_data = false);
+                     void *sock,
+                     bool hide_sensitive_data = false);
    const char *get_resource_type_name(int code);
    int GetResourceCode(const char *resource_type);
    ResourceTable *get_resource_table(int resource_type);
    ResourceTable *get_resource_table(const char *resource_type_name);
    int GetResourceItemIndex(ResourceItem *res_table, const char *item);
    ResourceItem *get_resource_item(ResourceItem *res_table, const char *item);
-   bool GetPathOfResource(PoolMem &path, const char *component, const char *resourcetype,
-                             const char *name, bool set_wildcards = false);
-   bool GetPathOfNewResource(PoolMem &path, PoolMem &extramsg, const char *component,
-                                 const char *resourcetype, const char *name,
-                                 bool error_if_exits = false, bool create_directories = false);
+  bool GetPathOfResource(PoolMem &path,
+                         const char *component,
+                         const char *resourcetype,
+                         const char *name,
+                         bool set_wildcards = false);
+  bool GetPathOfNewResource(PoolMem &path,
+                            PoolMem &extramsg,
+                            const char *component,
+                            const char *resourcetype,
+                            const char *name,
+                            bool error_if_exits     = false,
+                            bool create_directories = false);
+  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
+  CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
+  void b_LockRes(const char *file, int line);
+  void b_UnlockRes(const char *file, int line);
+  const char *res_to_str(int rcode) const;
+  bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
+  void InitializeQualifiedResourceNameTypeConverter(const std::map<int,std::string> &);
+  QualifiedResourceNameTypeConverter *GetQualifiedResourceNameTypeConverter() const {
+    return qualified_resource_name_type_converter_.get();
+  }
+  static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
+                                                    const char *fully_qualified_name,
+                                                    std::string &psk);
+
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;
    ConfigurationParser operator=(const ConfigurationParser&) = delete;
 
 private:
+  enum unit_type
+  {
+    STORE_SIZE,
+    STORE_SPEED
+  };
+
    std::string config_default_filename_;         /* default config filename, that is used, if no filename is given */
    std::string config_dir_;                      /* base directory of configuration files */
    std::string config_include_dir_;              /* rel. path to the config include directory
@@ -468,47 +521,78 @@ private:
    bool use_config_include_dir_;                 /* Use the config include directory */
    std::string config_include_naming_format_;    /* Format string for file paths of resources */
    std::string used_config_path_;                /* Config file that is used. */
+  std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
+  ParseConfigReadyCb_t ParseConfigReadyCb_;
 
    const char *get_default_configdir();
    bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);
    bool GetConfigIncludePath(PoolMem &full_path, const char *config_dir);
    bool FindConfigPath(PoolMem &full_path);
    int GetResourceTableIndex(int resource_type);
+  void StoreMsgs(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreName(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreStrname(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreStr(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreStdstr(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreDir(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreStdstrdir(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_md5password(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreClearpassword(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreRes(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreAlistRes(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreAlistStr(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreAlistDir(LEX *lc, ResourceItem *item, int index, int pass);
+  void StorePluginNames(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreDefs(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_int16(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_int32(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_pint16(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_pint32(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_int64(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_int_unit(LEX *lc, ResourceItem *item, int index, int pass, bool size32, enum unit_type type);
+  void store_size32(LEX *lc, ResourceItem *item, int index, int pass);
+  void store_size64(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreSpeed(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreTime(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreBit(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreBool(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreLabel(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreAddresses(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreAddressesAddress(LEX *lc, ResourceItem *item, int index, int pass);
+  void StoreAddressesPort(LEX *lc, ResourceItem *item, int index, int pass);
+  void scan_types(LEX *lc,
+                  MessagesResource *msg,
+                  int dest_code,
+                  char *where,
+                  char *cmd,
+                  char *timestamp_format);
 };
 
-DLL_IMP_EXP void PrintMessage(void *sock, const char *fmt, ...);
+void PrintMessage(void *sock, const char *fmt, ...);
 
 /*
  * Data type routines
  */
-DLL_IMP_EXP DatatypeName *get_datatype(int number);
-DLL_IMP_EXP const char *datatype_to_str(int type);
-DLL_IMP_EXP const char *datatype_to_description(int type);
+DatatypeName *get_datatype(int number);
+const char *datatype_to_str(int type);
+const char *datatype_to_description(int type);
 
 /*
  * Resource routines
  */
-DLL_IMP_EXP CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
-DLL_IMP_EXP CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
-DLL_IMP_EXP void b_LockRes(const char *file, int line);
-DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
-DLL_IMP_EXP void DumpResource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),
-                   void *sock, bool hide_sensitive_data = false, bool verbose = false);
-DLL_IMP_EXP void IndentConfigItem(PoolMem &cfg_str, int level, const char *config_item, bool inherited = false);
-DLL_IMP_EXP void FreeResource(CommonResourceHeader *res, int type);
-DLL_IMP_EXP void InitResource(int type, ResourceItem *item);
-DLL_IMP_EXP bool SaveResource(int type, ResourceItem *item, int pass);
-DLL_IMP_EXP bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
-DLL_IMP_EXP const char *res_to_str(int rcode);
-
+void IndentConfigItem(PoolMem &cfg_str,
+                                  int level,
+                                  const char *config_item,
+                                  bool inherited = false);
+void InitResource(int type, ResourceItem *item);
 
 #ifdef HAVE_JANSSON
 /*
  * JSON output helper functions
  */
-DLL_IMP_EXP json_t *json_item(s_kw *item);
-DLL_IMP_EXP json_t *json_item(ResourceItem *item);
-DLL_IMP_EXP json_t *json_items(ResourceItem items[]);
+json_t *json_item(s_kw *item);
+json_t *json_item(ResourceItem *item);
+json_t *json_items(ResourceItem items[]);
 #endif
 
 /*
@@ -516,8 +600,10 @@ DLL_IMP_EXP json_t *json_items(ResourceItem items[]);
  */
 #ifdef HAVE_TYPEOF
 #define foreach_res(var, type) \
-        for((var)=NULL; ((var)=(typeof(var))GetNextRes((type), (CommonResourceHeader *)var));)
+  for ((var) = NULL; ((var) = (typeof(var))my_config->GetNextRes((type), (CommonResourceHeader *)var));)
 #else
 #define foreach_res(var, type) \
-    for(var=NULL; (*((void **)&(var))=(void *)GetNextRes((type), (CommonResourceHeader *)var));)
+  for (var = NULL; (*((void **)&(var)) = (void *)my_config->GetNextRes((type), (CommonResourceHeader *)var));)
 #endif
+
+#endif // BAREOS_CORE_SRC_LIB_PARSE_CONF_H_

@@ -30,6 +30,8 @@
 #include "stored/stored.h"
 #include "lib/scsi_tapealert.h"
 
+using namespace storagedaemon;
+
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "November 2013"
@@ -92,7 +94,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
+bRC loadPlugin(bsdInfo *lbinfo,
                            bsdFuncs *lbfuncs,
                            genpInfo **pinfo,
                            psdFuncs **pfuncs)
@@ -109,7 +111,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    return bRC_OK;
 }

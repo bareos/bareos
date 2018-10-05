@@ -31,9 +31,13 @@
 #include "dird.h"
 
 #if HAVE_NDMP
-
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#endif /* HAVE_NDMP */
+
+namespace directordaemon {
+
+#if HAVE_NDMP
 
 #define B_PAGE_SIZE 4096
 #define MIN_PAGES 128
@@ -843,4 +847,6 @@ void NdmpFhdbMemProcessDb(struct ndmlog *ixlog)
       fhdb_state->fhdb_root = NULL;
    }
 }
-#endif
+
+#endif /* #if HAVE_NDMP */
+} /* namespace directordaemon */

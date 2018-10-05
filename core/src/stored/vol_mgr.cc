@@ -30,8 +30,11 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "stored/autochanger.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 const int debuglevel = 150;
 
@@ -1002,3 +1005,5 @@ void FreeTempVolList(dlist *temp_vol_list)
    FreeVolumeList("temp_vol_list", temp_vol_list);
    delete temp_vol_list;
 }
+
+} /* namespace storagedaemon */

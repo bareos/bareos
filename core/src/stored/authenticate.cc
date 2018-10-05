@@ -29,7 +29,10 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 #include "include/jcr.h"
+
+namespace storagedaemon {
 
 const int debuglevel = 50;
 
@@ -82,7 +85,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
    }
 
    UnbashSpaces(dirname);
-   director = (DirectorResource *)GetResWithName(R_DIRECTOR, dirname);
+   director = (DirectorResource *)my_config->GetResWithName(R_DIRECTOR, dirname);
    jcr->director = director;
 
    if (!director) {
@@ -218,3 +221,5 @@ bool AuthenticateWithFiledaemon(JobControlRecord *jcr)
 
    return true;
 }
+
+} /* namespace storagedaemon */

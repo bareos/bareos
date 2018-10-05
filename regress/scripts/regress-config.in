@@ -67,7 +67,10 @@ else
     ${WHICHDB} \
     -Dbaseport=${BASEPORT}\
     ${DEVELOPER}\
-    ${COVERAGE}
+    ${COVERAGE} \
+    -Ddynamic-cats-backends=yes \
+    -Ddynamic-storage-backends=yes \
+    ${TRAYMON}
 
 fi
 

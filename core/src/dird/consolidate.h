@@ -22,8 +22,12 @@
 #ifndef BAREOS_DIRD_CONSOLIDATE_H_
 #define BAREOS_DIRD_CONSOLIDATE_H_
 
+namespace directordaemon {
+
 bool DoConsolidateInit(JobControlRecord *jcr);
 bool DoConsolidate(JobControlRecord *jcr);
 void ConsolidateCleanup(JobControlRecord *jcr, int TermCode);
+
+} /* namespace directordaemon */
 
 #endif // BAREOS_DIRD_CONSOLIDATE_H_

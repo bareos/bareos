@@ -31,6 +31,8 @@
 #include "include/bareos.h"
 #include "dird.h"
 
+namespace directordaemon {
+
 #define debuglevel 100
 /**
  * This function returns the total number of bytes difference remaining before going over quota.
@@ -115,12 +117,12 @@ bool CheckHardquotas(JobControlRecord *jcr)
    Dmsg1(debuglevel, "Checking hard quotas for JobId %d\n", jcr->JobId);
    if (!jcr->HasQuota) {
       if (jcr->res.client->QuotaIncludeFailedJobs) {
-         if (!jcr->db->GetQuotaJobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->get_quota_jobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
       } else {
-         if (!jcr->db->GetQuotaJobbytesNofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->get_quota_jobbytes_nofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
@@ -168,13 +170,13 @@ bool CheckSoftquotas(JobControlRecord *jcr)
    Dmsg1(debuglevel, "Checking soft quotas for JobId %d\n", jcr->JobId);
    if (!jcr->HasQuota) {
       if (jcr->res.client->QuotaIncludeFailedJobs) {
-         if (!jcr->db->GetQuotaJobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->get_quota_jobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
          Dmsg0(debuglevel, "Quota Includes Failed Jobs\n");
       } else {
-         if (!jcr->db->GetQuotaJobbytesNofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+         if (!jcr->db->get_quota_jobbytes_nofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
@@ -279,3 +281,5 @@ bool CheckSoftquotas(JobControlRecord *jcr)
 bail_out:
    return retval;
 }
+
+} /* namespace directordaemon */

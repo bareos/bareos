@@ -28,11 +28,15 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 
 #ifdef HAVE_LMDB
-
 #include "accurate.h"
+#endif
 
+namespace filedaemon {
+
+#ifdef HAVE_LMDB
 static int debuglevel = 100;
 
 #define AVG_NR_BYTES_PER_ENTRY 256
@@ -572,3 +576,4 @@ void BareosAccurateFilelistLmdb::destroy()
    filenr_ = 0;
 }
 #endif /* HAVE_LMDB */
+} /* namespace filedaemon */

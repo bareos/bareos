@@ -44,6 +44,8 @@
 #include "dird/ua_purge.h"
 #include "lib/edit.h"
 
+namespace directordaemon {
+
 /* Forward referenced functions */
 static bool PurgeFilesFromClient(UaContext *ua, ClientResource *client);
 static bool PurgeJobsFromClient(UaContext *ua, ClientResource *client);
@@ -969,3 +971,4 @@ bool MarkMediaPurged(UaContext *ua, MediaDbRecord *mr)
 
    return bstrcmp(mr->VolStatus, "Purged");
 }
+} /* namespace directordaemon */

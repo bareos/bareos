@@ -36,6 +36,12 @@
  *      the media and pool info in the JobControlRecord.  This class is used
  *      only temporarily in this file.
  */
+
+#ifndef BAREOS_STORED_RESERVE_H_
+#define BAREOS_STORED_RESERVE_H_ 1
+
+namespace storagedaemon {
+
 class DirectorStorage {
 public:
    alist *device;
@@ -68,23 +74,23 @@ public:
 };
 
 
-DLL_IMP_EXP void InitReservationsLock();
-DLL_IMP_EXP void TermReservationsLock();
-DLL_IMP_EXP void _lockReservations(const char *file = "**Unknown**", int line = 0);
-DLL_IMP_EXP void _unLockReservations();
-DLL_IMP_EXP void _lockVolumes(const char *file = "**Unknown**", int line = 0);
-DLL_IMP_EXP void _unLockVolumes();
-DLL_IMP_EXP void _lockReadVolumes(const char *file = "**Unknown**", int line = 0);
-DLL_IMP_EXP void _unLockReadVolumes();
-DLL_IMP_EXP void UnreserveDevice(DeviceControlRecord *dcr);
-DLL_IMP_EXP bool FindSuitableDeviceForJob(JobControlRecord *jcr, ReserveContext &rctx);
-DLL_IMP_EXP int SearchResForDevice(ReserveContext &rctx);
-DLL_IMP_EXP void ReleaseReserveMessages(JobControlRecord *jcr);
+void InitReservationsLock();
+void TermReservationsLock();
+void _lockReservations(const char *file = "**Unknown**", int line = 0);
+void _unLockReservations();
+void _lockVolumes(const char *file = "**Unknown**", int line = 0);
+void _unLockVolumes();
+void _lockReadVolumes(const char *file = "**Unknown**", int line = 0);
+void _unLockReadVolumes();
+void UnreserveDevice(DeviceControlRecord *dcr);
+bool FindSuitableDeviceForJob(JobControlRecord *jcr, ReserveContext &rctx);
+int SearchResForDevice(ReserveContext &rctx);
+void ReleaseReserveMessages(JobControlRecord *jcr);
 
 #ifdef SD_DEBUG_LOCK
-DLL_IMP_EXP extern int reservations_lock_count;
-DLL_IMP_EXP extern int vol_list_lock_count;
-DLL_IMP_EXP extern int read_vol_list_lock_count;
+extern int reservations_lock_count;
+extern int vol_list_lock_count;
+extern int read_vol_list_lock_count;
 
 #define LockReservations() \
          do { Dmsg3(sd_debuglevel, "LockReservations at %s:%d precnt=%d\n", \
@@ -131,3 +137,8 @@ DLL_IMP_EXP extern int read_vol_list_lock_count;
 #define UnlockReadVolumes() _unLockReadVolumes()
 #endif
 
+bool use_cmd(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
+
+#endif /* BAREOS_STORED_RESERVE_H_ */

@@ -53,14 +53,14 @@ const int sd_debuglevel = 300;
 #endif
 #endif
 #endif
-#include "lib/bsr.h"
-#include "ch.h"
+#include "stored/bsr.h"
+#include "include/ch.h"
 #include "lock.h"
 #include "block.h"
 #include "record.h"
 #include "dev.h"
 #include "stored_conf.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "vol_mgr.h"
 #include "reserve.h"
 
@@ -79,10 +79,13 @@ int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 #include "sd_plugins.h"
 
-extern char SD_IMP_EXP *configfile;
-extern bool SD_IMP_EXP forge_on;      /* Proceed inspite of I/O errors */
-extern StorageResource SD_IMP_EXP *me;         /* "Global" daemon resource */
-extern ConfigurationParser SD_IMP_EXP *my_config;  /* Our Global config */
+extern ConfigurationParser *my_config;  /* Our Global config */
+
+namespace storagedaemon {
+
+extern bool forge_on;      /* Proceed inspite of I/O errors */
 uint32_t new_VolSessionId();
+
+} /* namespace storagedaemon */
 
 #endif /* BAREOS_STORED_STORED_H_ */

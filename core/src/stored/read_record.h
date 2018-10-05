@@ -21,20 +21,25 @@
 #ifndef BAREOS_STORED_READ_RECORD_H_
 #define BAREOS_STORED_READ_RECORD_H_
 
-DLL_IMP_EXP READ_CTX *new_read_context(void);
-DLL_IMP_EXP void FreeReadContext(READ_CTX *rctx);
-DLL_IMP_EXP void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
-DLL_IMP_EXP bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
+#include "stored/read_ctx.h"
+
+namespace storagedaemon {
+
+READ_CTX *new_read_context(void);
+void FreeReadContext(READ_CTX *rctx);
+void ReadContextSetRecord(DeviceControlRecord *dcr, READ_CTX *rctx);
+bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
                                  SESSION_LABEL *sessrec,
                                  bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                                  bool mount_cb(DeviceControlRecord *dcr),
                                  bool *status);
-DLL_IMP_EXP bool ReadNextRecordFromBlock(DeviceControlRecord *dcr,
+bool ReadNextRecordFromBlock(DeviceControlRecord *dcr,
                                  READ_CTX *rctx,
                                  bool *done);
-DLL_IMP_EXP bool ReadRecords(DeviceControlRecord *dcr,
+bool ReadRecords(DeviceControlRecord *dcr,
                   bool RecordCb(DeviceControlRecord *dcr, DeviceRecord *rec),
                   bool mount_cb(DeviceControlRecord *dcr));
 
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_READ_RECORD_H_

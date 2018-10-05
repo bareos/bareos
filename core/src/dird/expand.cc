@@ -31,6 +31,9 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
+
+namespace directordaemon {
 
 static int date_item(JobControlRecord *jcr,
                      int code,
@@ -227,8 +230,8 @@ static var_rc_t lookup_counter_var(var_t *ctx,
    PmMemcpy(buf, var_ptr, var_len);
    (buf.c_str())[var_len] = 0;
 
-   LockRes();
-   for (counter = NULL; (counter = (CounterResource *)GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
+   LockRes(my_config);
+   for (counter = NULL; (counter = (CounterResource *)my_config->GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
       if (bstrcmp(counter->name(), buf.c_str())) {
          Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
          /*
@@ -276,7 +279,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
          break;
       }
    }
-   UnlockRes();
+   UnlockRes(my_config);
 
    return status;
 }
@@ -434,14 +437,14 @@ static var_rc_t operate_var(var_t *var,
       (buf.c_str())[val_len] = 0;
       Dmsg1(100, "Val=%s\n", buf.c_str());
 
-      LockRes();
-      for (counter = NULL; (counter = (CounterResource *)GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
+      LockRes(my_config);
+      for (counter = NULL; (counter = (CounterResource *)my_config->GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
          if (bstrcmp(counter->name(), buf.c_str())) {
             Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf.c_str());
             break;
          }
       }
-      UnlockRes();
+      UnlockRes(my_config);
       return status;
    }
    *out_size = 0;
@@ -535,3 +538,4 @@ bail_out:
 
    return rtn_stat;
 }
+} /* namespace directordaemon */

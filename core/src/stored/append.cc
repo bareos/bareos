@@ -38,6 +38,8 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
+namespace storagedaemon {
+
 /* Responses sent to the daemon */
 static char OK_data[] =
    "3000 OK data\n";
@@ -82,7 +84,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
       goto bail_out;
    }
 
-   if (!acquire_device_for_append(dcr)) {
+   if (!AcquireDeviceForAppend(dcr)) {
       goto bail_out;
    }
 
@@ -106,7 +108,7 @@ bool DoAppendData(JobControlRecord *jcr, BareosSocket *bs, const char *what)
       goto bail_out;
    }
 
-   Dmsg0(100, "Just after acquire_device_for_append\n");
+   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
    if (dev->VolCatInfo.VolCatName[0] == 0) {
       Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
    }
@@ -383,3 +385,5 @@ bool SendAttrsToDir(JobControlRecord *jcr, DeviceRecord *rec)
    }
    return true;
 }
+
+} /* namespace storagedaemon */

@@ -45,7 +45,7 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-/* Imported variables */
+namespace storagedaemon {
 
 /* Static variables */
 static char ferrmsg[] =
@@ -444,3 +444,5 @@ static bool ReadCloseSession(JobControlRecord *jcr)
    jcr->session_opened = false;
    return true;
 }
+
+} /* namespace storagedaemon */

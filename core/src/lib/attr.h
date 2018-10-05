@@ -54,11 +54,11 @@ struct Attributes {
    JobControlRecord *jcr;                          /**< jcr pointer */
 };
 
-DLL_IMP_EXP Attributes *new_attr(JobControlRecord *jcr);
-DLL_IMP_EXP void FreeAttr(Attributes *attr);
-DLL_IMP_EXP int UnpackAttributesRecord(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr);
-DLL_IMP_EXP void BuildAttrOutputFnames(JobControlRecord *jcr, Attributes *attr);
-DLL_IMP_EXP const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
-DLL_IMP_EXP void PrintLsOutput(JobControlRecord *jcr, Attributes *attr);
+Attributes *new_attr(JobControlRecord *jcr);
+void FreeAttr(Attributes *attr);
+int UnpackAttributesRecord(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr);
+void BuildAttrOutputFnames(JobControlRecord *jcr, Attributes *attr);
+const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
+void PrintLsOutput(JobControlRecord *jcr, Attributes *attr);
 
 #endif /* BAREOS_LIB_ATTR_H_ */

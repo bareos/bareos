@@ -43,6 +43,9 @@
 /* Define to 1 if you want Normal acl support */
 #cmakedefine HAVE_ACL @HAVE_ACL@
 
+/* Define to 1 if you want PAM support */
+#cmakedefine HAVE_PAM @HAVE_PAM@
+
 /* Defines if your system have the ACL_TYPE_DEFAULT_DIR acl type */
 #cmakedefine HAVE_ACL_TYPE_DEFAULT_DIR @HAVE_ACL_TYPE_DEFAULT_DIR@
 

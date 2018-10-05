@@ -28,8 +28,11 @@
  */
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dir_plugins.h"
 #include "lib/edit.h"
+
+namespace directordaemon {
 
 const int debuglevel = 150;
 #ifdef HAVE_WIN32
@@ -935,3 +938,5 @@ int main(int argc, char *argv[])
 }
 
 #endif /* TEST_PROGRAM */
+
+} /* namespace directordaemon */

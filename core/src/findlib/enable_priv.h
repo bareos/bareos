@@ -21,6 +21,6 @@
 #ifndef BAREOS_FINDLIB_ENABLE_PRIV_H_
 #define BAREOS_FINDLIB_ENABLE_PRIV_H_
 
-DLL_IMP_EXP int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors);
+int EnableBackupPrivileges(JobControlRecord *jcr, int ignore_errors);
 
 #endif // BAREOS_FINDLIB_ENABLE_PRIV_H_

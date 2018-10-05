@@ -42,24 +42,24 @@ db_log_insert_func p_db_log_insert = NULL;
 /*
  * This is where we define "Globals" because all the daemons include this file.
  */
-DLL_IMP_EXP const char *working_directory = NULL; /* working directory path stored here */
-DLL_IMP_EXP const char *assert_msg = (char *)NULL; /* ASSERT2 error message */
-DLL_IMP_EXP int verbose = 0;                      /* increase User messages */
-DLL_IMP_EXP int debug_level = 0;                  /* debug level */
-DLL_IMP_EXP bool dbg_timestamp = false;           /* print timestamp in debug output */
-DLL_IMP_EXP bool prt_kaboom = false;              /* Print kaboom output */
-DLL_IMP_EXP utime_t daemon_start_time = 0;        /* Daemon start time */
-DLL_IMP_EXP const char *version = VERSION " (" BDATE ")";
-DLL_IMP_EXP const char *dist_name = DISTNAME " " DISTVER;
-DLL_IMP_EXP char my_name[128] = {0};              /* daemon name is stored here */
-DLL_IMP_EXP char host_name[256] = {0};            /* host machine name */
-DLL_IMP_EXP char *exepath = (char *)NULL;
-DLL_IMP_EXP char *exename = (char *)NULL;
-DLL_IMP_EXP int console_msg_pending = false;
-DLL_IMP_EXP char con_fname[500];                  /* Console filename */
-DLL_IMP_EXP FILE *con_fd = NULL;                  /* Console file descriptor */
-DLL_IMP_EXP brwlock_t con_lock;                   /* Console lock structure */
-DLL_IMP_EXP job_code_callback_t message_job_code_callback = NULL; /* Job code callback. Only used by director. */
+const char *working_directory = NULL; /* working directory path stored here */
+const char *assert_msg = (char *)NULL; /* ASSERT2 error message */
+int verbose = 0;                      /* increase User messages */
+int debug_level = 0;                  /* debug level */
+bool dbg_timestamp = false;           /* print timestamp in debug output */
+bool prt_kaboom = false;              /* Print kaboom output */
+utime_t daemon_start_time = 0;        /* Daemon start time */
+const char *version = VERSION " (" BDATE ")";
+const char *dist_name = DISTNAME " " DISTVER;
+char my_name[128] = {0};              /* daemon name is stored here */
+char host_name[256] = {0};            /* host machine name */
+char *exepath = (char *)NULL;
+char *exename = (char *)NULL;
+int console_msg_pending = false;
+char con_fname[500];                  /* Console filename */
+FILE *con_fd = NULL;                  /* Console file descriptor */
+brwlock_t con_lock;                   /* Console lock structure */
+job_code_callback_t message_job_code_callback = NULL; /* Job code callback. Only used by director. */
 
 /* Forward referenced functions */
 

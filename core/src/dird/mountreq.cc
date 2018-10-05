@@ -34,6 +34,8 @@
 #include "include/bareos.h"
 #include "dird.h"
 
+namespace directordaemon {
+
 /*
  * Handle mount request
  *  For now, we put the bsock in the UA's queue
@@ -71,3 +73,4 @@ void MountRequest(JobControlRecord *jcr, BareosSocket *bs, char *buf)
    V(mutex);
    return;
 }
+} /* namespace directordaemon */

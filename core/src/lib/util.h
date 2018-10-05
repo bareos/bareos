@@ -21,32 +21,32 @@
 #ifndef BAREOS_LIB_UTIL_H_
 #define BAREOS_LIB_UTIL_H_
 
-DLL_IMP_EXP void EscapeString(PoolMem &snew, char *old, int len);
-DLL_IMP_EXP bool IsBufZero(char *buf, int len);
-DLL_IMP_EXP void lcase(char *str);
-DLL_IMP_EXP void BashSpaces(char *str);
-DLL_IMP_EXP void BashSpaces(PoolMem &pm);
-DLL_IMP_EXP void UnbashSpaces(char *str);
-DLL_IMP_EXP void UnbashSpaces(PoolMem &pm);
-DLL_IMP_EXP const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
-DLL_IMP_EXP char *encode_time(utime_t time, char *buf);
-DLL_IMP_EXP bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);
-DLL_IMP_EXP char *encode_mode(mode_t mode, char *buf);
-DLL_IMP_EXP int DoShellExpansion(char *name, int name_len);
-DLL_IMP_EXP void JobstatusToAscii(int JobStatus, char *msg, int maxlen);
-DLL_IMP_EXP void JobstatusToAsciiGui(int JobStatus, char *msg, int maxlen);
-DLL_IMP_EXP int RunProgram(char *prog, int wait, POOLMEM *&results);
-DLL_IMP_EXP int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results);
-DLL_IMP_EXP char *action_on_purge_to_string(int aop, PoolMem &ret);
-DLL_IMP_EXP const char *job_type_to_str(int type);
-DLL_IMP_EXP const char *job_status_to_str(int stat);
-DLL_IMP_EXP const char *job_level_to_str(int level);
-DLL_IMP_EXP const char *volume_status_to_str(const char *status);
-DLL_IMP_EXP void MakeSessionKey(char *key, char *seed, int mode);
-DLL_IMP_EXP void EncodeSessionKey(char *encode, char *session, char *key, int maxlen);
-DLL_IMP_EXP void DecodeSessionKey(char *decode, char *session, char *key, int maxlen);
-DLL_IMP_EXP POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
-DLL_IMP_EXP void SetWorkingDirectory(char *wd);
-DLL_IMP_EXP const char *last_path_separator(const char *str);
+void EscapeString(PoolMem &snew, char *old, int len);
+bool IsBufZero(char *buf, int len);
+void lcase(char *str);
+void BashSpaces(char *str);
+void BashSpaces(PoolMem &pm);
+void UnbashSpaces(char *str);
+void UnbashSpaces(PoolMem &pm);
+const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
+char *encode_time(utime_t time, char *buf);
+bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);
+char *encode_mode(mode_t mode, char *buf);
+int DoShellExpansion(char *name, int name_len);
+void JobstatusToAscii(int JobStatus, char *msg, int maxlen);
+void JobstatusToAsciiGui(int JobStatus, char *msg, int maxlen);
+int RunProgram(char *prog, int wait, POOLMEM *&results);
+int RunProgramFullOutput(char *prog, int wait, POOLMEM *&results);
+char *action_on_purge_to_string(int aop, PoolMem &ret);
+const char *job_type_to_str(int type);
+const char *job_status_to_str(int stat);
+const char *job_level_to_str(int level);
+const char *volume_status_to_str(const char *status);
+void MakeSessionKey(char *key, char *seed, int mode);
+void EncodeSessionKey(char *encode, char *session, char *key, int maxlen);
+void DecodeSessionKey(char *decode, char *session, char *key, int maxlen);
+POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
+void SetWorkingDirectory(char *wd);
+const char *last_path_separator(const char *str);
 
 #endif // BAREOS_LIB_UTIL_H_

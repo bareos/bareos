@@ -166,11 +166,11 @@ typedef struct {
    uint8_t addSenseData[109];
 } SCSI_PAGE_SENSE;
 
-DLL_IMP_EXP bool RecvScsiCmdPage(int fd, const char *device_name,
+bool RecvScsiCmdPage(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len);
-DLL_IMP_EXP bool send_scsi_cmd_page(int fd, const char *device_name,
+bool send_scsi_cmd_page(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len);
-DLL_IMP_EXP bool CheckScsiAtEod(int fd);
+bool CheckScsiAtEod(int fd);
 #endif /* BAREOS_LIB_SCSI_LLI_H_ */

@@ -13,7 +13,6 @@ Storage {                             # definition of myself
   SDPort = @sdport@                  # Director's port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  Tls Psk Enable = No
 }
 
 #

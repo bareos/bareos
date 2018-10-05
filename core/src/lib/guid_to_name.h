@@ -28,7 +28,7 @@
  * for performance reasons.
  */
 
-class DLL_IMP_EXP guid_list {
+class guid_list {
 public:
    dlist *uid_list;
    dlist *gid_list;
@@ -37,5 +37,5 @@ public:
    char *gid_to_name(gid_t gid, char *name, int maxlen);
 };
 
-DLL_IMP_EXP guid_list *new_guid_list();
-DLL_IMP_EXP void FreeGuidList(guid_list *list);
+guid_list *new_guid_list();
+void FreeGuidList(guid_list *list);

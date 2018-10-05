@@ -32,7 +32,7 @@
  * compatibilty layer to make bareos-fd run natively under windows
  */
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "dlfcn.h"
 #include "findlib/find.h"
 #include "lib/btimers.h"
@@ -415,7 +415,7 @@ static inline void conv_unix_to_vss_win32_path(const char *name, char *win32_nam
 /**
  * Conversion of a Unix filename to a Win32 filename
  */
-DLL_IMP_EXP void unix_name_to_win32(POOLMEM *&win32_name, const char *name)
+void unix_name_to_win32(POOLMEM *&win32_name, const char *name)
 {
    DWORD dwSize;
 

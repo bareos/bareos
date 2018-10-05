@@ -28,6 +28,8 @@
 
 #include "structmember.h"
 
+namespace filedaemon {
+
 /**
  * This defines the arguments that the plugin parser understands.
  */
@@ -677,4 +679,6 @@ static PyMethodDef BareosFDMethods[] = {
    { "ClearSeenBitmap", PyBareosClearSeenBitmap, METH_VARARGS, "Clear bit in the Accurate Seen bitmap" },
    { NULL, NULL, 0, NULL }
 };
+
+} /* namespace filedaemon */
 #endif /* BAREOS_PLUGINS_FILED_PYTHON_FD_H_ */

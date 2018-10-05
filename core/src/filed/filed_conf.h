@@ -26,7 +26,12 @@
  * Kern Sibbald, Sep MM
  */
 
-#define CONFIG_FILE "bareos-fd.conf"  /* default config file */
+#ifndef BAREOS_FILED_FILED_CONF_H_
+#define BAREOS_FILED_FILED_CONF_H_ 1
+
+namespace filedaemon {
+
+static const std::string default_config_filename("bareos-fd.conf");
 
 /*
  * Resource codes -- they must be sequential for indexing
@@ -35,8 +40,10 @@ enum {
    R_DIRECTOR = 1001,
    R_CLIENT,
    R_MSGS,
+   R_STORAGE,
+   R_JOB,
    R_FIRST = R_DIRECTOR,
-   R_LAST = R_MSGS                    /* keep this updated */
+   R_LAST = R_JOB                    /* keep this updated */
 };
 
 /*
@@ -120,3 +127,6 @@ union UnionOfResources {
 
 ConfigurationParser *InitFdConfig(const char *configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem &buffer);
+
+} /* namespace filedaemon */
+#endif /* BAREOS_FILED_FILED_CONF_H_ */

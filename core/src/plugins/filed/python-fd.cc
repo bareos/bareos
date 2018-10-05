@@ -32,7 +32,9 @@
 #include <Python.h>
 #include "filed/fd_plugins.h"
 #include "plugins/filed/fd_common.h"
+#include "python-fd.h"
 
+namespace filedaemon {
 
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
@@ -154,8 +156,6 @@ struct plugin_ctx {
    PyObject *bpContext;               /* Python representation of plugin context */
 };
 
-#include "python-fd.h"
-
 /**
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
@@ -170,7 +170,7 @@ extern "C" {
 /**
  * Plugin called here when it is first loaded
  */
-bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
+bRC loadPlugin(bInfo *lbinfo,
                            bFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pFuncs **pfuncs)
@@ -194,7 +194,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
 /**
  * Plugin called here when it is unloaded, normally when Bareos is going to exit.
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    /*
     * Terminate Python
@@ -2058,9 +2058,9 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
    }
 
    /*
-    * Lookup the CreateFile() function in the python module.
+    * Lookup the create_file() function in the python module.
     */
-   pFunc = PyDict_GetItemString(p_ctx->pDict, "CreateFile"); /* Borrowed reference */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "create_file"); /* Borrowed reference */
    if (pFunc && PyCallable_Check(pFunc)) {
       PyRestorePacket *pRestorePacket;
       PyObject *pRetVal;
@@ -2082,7 +2082,7 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
          Py_DECREF(pRestorePacket);
       }
    } else {
-      Dmsg(ctx, debuglevel, "python-fd: Failed to find function named CreateFile()\n");
+      Dmsg(ctx, debuglevel, "python-fd: Failed to find function named create_file()\n");
    }
 
    return retval;
@@ -3855,3 +3855,4 @@ static void PyXattrPacket_dealloc(PyXattrPacket *self)
    }
    PyObject_Del(self);
 }
+} /* namespace filedaemon */

@@ -29,14 +29,18 @@
  * Reqests/commands from the Director are handled in dircmd.c
  */
 
-#include "include/bareos.h"                   /* pull in global headers */
-#include "stored/stored.h"                   /* pull in Storage Daemon headers */
+#include "include/bareos.h"
+#include "stored/stored.h"
+#include "stored/stored_globals.h"
 
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"
 #include "stored/wait.h"
+#include "stored/dev.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+
+namespace storagedaemon {
 
 static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -749,3 +753,5 @@ DeviceControlRecord *DeviceControlRecord::get_new_spooling_dcr()
 
    return dcr;
 }
+
+} /* namespace storagedaemon */

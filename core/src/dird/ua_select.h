@@ -24,6 +24,8 @@
 
 #include "dird/ua.h"
 
+namespace directordaemon {
+
 StorageResource *select_storage_resource(UaContext *ua, bool autochanger_only = false);
 JobResource *select_job_resource(UaContext *ua);
 JobResource *select_enable_disable_job_resource(UaContext *ua, bool enable);
@@ -69,4 +71,5 @@ bool ConfirmRetention(UaContext *ua, utime_t *ret, const char *msg);
 bool GetLevelFromName(JobControlRecord *jcr, const char *level_name);
 
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_UA_SELECT_H_

@@ -27,6 +27,8 @@
 #ifndef BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 
+namespace storagedaemon {
+
 /*
  * Let io-threads check for work every 300 seconds.
  */
@@ -85,7 +87,7 @@ struct chunk_descriptor {
    bool opened;            /* An open call was done */
 };
 
-#include "lib/ordered_cbuf.h"
+#include "ordered_cbuf.h"
 
 class chunked_device: public Device {
 private:
@@ -168,4 +170,7 @@ public:
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
    virtual bool d_truncate(DeviceControlRecord *dcr) = 0;
 };
+
+} /* namespace storagedaemon */
+
 #endif /* BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_ */

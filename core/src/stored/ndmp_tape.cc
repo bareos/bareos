@@ -40,9 +40,11 @@
 #if HAVE_NDMP
 
 #include "stored/stored.h"
+#include "stored/stored_globals.h"
 
 #include "ndmp/ndmagents.h"
 #include "stored/acquire.h"
+#include "stored/bsr.h"
 #include "stored/device.h"
 #include "stored/label.h"
 #include "stored/mount.h"
@@ -70,7 +72,10 @@
 #elif HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
+#endif /* #if HAVE_NDMP */
 
+namespace storagedaemon {
+#if HAVE_NDMP
 
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread
@@ -157,7 +162,7 @@ static inline int NativeToNdmpLoglevel(int debuglevel, NIS *nis)
 /**
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
-extern "C" void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
+void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
    int internal_level;
    NIS *nis;
@@ -663,7 +668,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
          /*
           * Actually acquire the device which we reserved.
           */
-         if (!acquire_device_for_append(dcr)) {
+         if (!AcquireDeviceForAppend(dcr)) {
             goto bail_out;
          }
 
@@ -776,7 +781,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
 
          Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
 
-         position_device_to_first_file(jcr, dcr);
+         PositionDeviceToFirstFile(jcr, dcr);
          jcr->mount_next_volume = false;
 
          /*
@@ -1151,7 +1156,7 @@ void EndOfNdmpRestore(JobControlRecord *jcr)
    }
 }
 
-extern "C" void *handle_ndmp_client_request(void *arg)
+extern "C" void *HandleNdmpConnectionRequest(ConfigurationParser *config, void *arg)
 {
    int status;
    struct ndmconn *conn;
@@ -1162,7 +1167,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    handle = (struct ndmp_session_handle *)arg;
    if (!handle) {
       Emsg0(M_ABORT, 0,
-            _("Illegal call to handle_ndmp_client_request with NULL session handle\n"));
+            _("Illegal call to HandleNdmpConnectionRequest with NULL session handle\n"));
       return NULL;
    }
 
@@ -1174,7 +1179,7 @@ extern "C" void *handle_ndmp_client_request(void *arg)
 
    sess->param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(sess->param, 0, sizeof(struct ndm_session_param));
-   sess->param->log.deliver = NdmpLoghandler;
+   sess->param->log.deliver = storagedaemon::NdmpLoghandler;
    nis = (NIS *)malloc(sizeof(NIS));
    sess->param->log.ctx = nis;
    sess->param->log_level = NativeToNdmpLoglevel(debug_level, nis);
@@ -1389,7 +1394,7 @@ extern "C" void *ndmp_thread_server(void *arg)
    /*
     * Start work queue thread
     */
-   if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, handle_ndmp_client_request)) != 0) {
+   if ((status = WorkqInit(ntsa->client_wq, ntsa->max_clients, HandleNdmpConnectionRequest)) != 0) {
       BErrNo be;
       be.SetErrno(status);
       Emsg1(M_ABORT, 0,
@@ -1510,7 +1515,7 @@ extern "C" void *ndmp_thread_server(void *arg)
             /*
              * Queue client to be served
              */
-            if ((status = WorkqAdd(ntsa->client_wq, (void *)new_handle, NULL, 0)) != 0) {
+            if ((status = WorkqAdd(ntsa->client_wq, my_config, (void *)new_handle, NULL)) != 0) {
                BErrNo be;
                be.SetErrno(status);
                Jmsg1(NULL, M_ABORT, 0, _("Could not add job to ndmp client queue: ERR=%s\n"),
@@ -1581,3 +1586,5 @@ void EndOfNdmpRestore(JobControlRecord *jcr)
 {
 }
 #endif /* HAVE_NDMP */
+} /* namespace storagedaemon */
+

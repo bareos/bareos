@@ -21,7 +21,11 @@
 #ifndef BAREOS_STORED_SD_CMDS_H_
 #define BAREOS_STORED_SD_CMDS_H_
 
+namespace storagedaemon {
+
 void *handle_stored_connection(BareosSocket *sd, char *job_name);
 bool DoListenRun(JobControlRecord *jcr);
+
+} /* namespace storagedaemon */
 
 #endif // BAREOS_STORED_SD_CMDS_H_

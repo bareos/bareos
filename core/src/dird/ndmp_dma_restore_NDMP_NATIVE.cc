@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/storage.h"
 #include "lib/edit.h"
 
@@ -41,6 +42,8 @@
 #include "ndmp_dma_priv.h"
 #include "dird/ndmp_dma_restore_common.h"
 #include "dird/ndmp_dma_generic.h"
+
+namespace directordaemon {
 
 /*
  * Fill the NDMP restore environment table with the data for the data agent to act on.
@@ -258,7 +261,7 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
 {
    int cnt;
    BareosSocket *sd;
-   BootStrapRecord *bsr;
+   storagedaemon::BootStrapRecord *bsr;
    NIS *nis = NULL;
    int32_t current_fi = 0;
    struct ndm_session ndmp_sess;
@@ -522,4 +525,5 @@ bail_out:
    return false;
 }
 
+} /* namespace directordaemon */
 #endif /* HAVE_NDMP */

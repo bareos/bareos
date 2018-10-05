@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird_globals.h"
 #include "dird/job.h"
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
@@ -57,25 +58,26 @@
 int Readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
+using namespace directordaemon;
+
 /* Forward referenced subroutines */
-#if !defined(HAVE_WIN32)
-static
-#endif
-void TerminateDird(int sig);
+namespace directordaemon {
+   #if !defined(HAVE_WIN32)
+   static
+   #endif
+   void TerminateDird(int sig);
+}
+
 static bool CheckResources();
 static bool InitializeSqlPooling(void);
 static void CleanUpOldFiles();
 static bool InitSighandlerSighup();
 
 /* Exported subroutines */
-extern bool DoReloadConfig();
-extern void InvalidateSchedules();
 extern bool ParseDirConfig(const char *configfile, int exit_code);
 extern void PrintMessage(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
-void InitJobServer(int max_workers);
-void TermJobServer();
 void StoreJobtype(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreProtocoltype(LEX *lc, ResourceItem *item, int index, int pass);
 void StoreLevel(LEX *lc, ResourceItem *item, int index, int pass);
@@ -87,12 +89,6 @@ static char *runjob = NULL;
 static bool background = true;
 static bool test_config = false;
 static alist *reload_table = NULL;
-
-/* Globals Exported */
-DirectorResource *me = NULL;                    /* Our Global resource */
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
-char *configfile = NULL;
-void *start_heap;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
@@ -119,7 +115,7 @@ static void FreeSavedResources(resource_table_reference *table)
    }
 
    for (int j = 0; j < num; j++) {
-      FreeResource(table->res_table[j], my_config->r_first_ + j);
+      my_config->FreeResourceCb_(table->res_table[j], my_config->r_first_ + j);
    }
    free(table->res_table);
 }
@@ -134,7 +130,7 @@ static void ReloadJobEndCb(JobControlRecord *jcr, void *ctx)
    resource_table_reference *table;
 
    LockJobs();
-   LockRes();
+   LockRes(my_config);
 
    foreach_alist_index(i, table, reload_table) {
       if (table == (resource_table_reference *)ctx) {
@@ -151,7 +147,7 @@ static void ReloadJobEndCb(JobControlRecord *jcr, void *ctx)
       }
    }
 
-   UnlockRes();
+   UnlockRes(my_config);
    UnlockJobs();
 }
 
@@ -466,6 +462,8 @@ bail_out:
  * Cleanup and then exit
  *
  */
+namespace directordaemon {
+
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -517,6 +515,7 @@ void TerminateDird(int sig)
 
    exit(sig);
 }
+} /* namespace directordaemon */
 
 /**
  * If we get here, we have received a SIGHUP, which means to reread our configuration file.
@@ -566,6 +565,7 @@ static bool InitSighandlerSighup()
    return retval;
 }
 
+namespace directordaemon {
 bool DoReloadConfig()
 {
    static bool is_reloading = false;
@@ -585,7 +585,7 @@ bool DoReloadConfig()
    StopStatisticsThread();
 
    LockJobs();
-   LockRes();
+   LockRes(my_config);
 
    DbSqlPoolFlush();
 
@@ -612,7 +612,7 @@ bool DoReloadConfig()
       }
 
       // me is changed above by CheckResources()
-      me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+      me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
 
       FreeSavedResources(&temp_config);
       goto bail_out;
@@ -653,11 +653,12 @@ bool DoReloadConfig()
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    UnlockJobs();
    is_reloading = false;
    return reloaded;
 }
+} /* namespace directordaemon */
 
 /*
  * See if two storage definitions point to the same Storage Daemon.
@@ -688,10 +689,10 @@ static bool CheckResources()
    bool need_tls;
    const std::string &configfile = my_config->get_base_config_path();
 
-   LockRes();
+   LockRes(my_config);
 
-   job = (JobResource *)GetNextRes(R_JOB, NULL);
-   me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
+   job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
+   me = (DirectorResource *)my_config->GetNextRes(R_DIRECTOR, NULL);
    if (!me) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
                                "Without that I don't know who I am :-(\n"), configfile.c_str());
@@ -712,7 +713,7 @@ static bool CheckResources()
        * See if message resource is specified.
        */
       if (!me->messages) {
-         me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MessagesResource *)my_config->GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile.c_str());
             OK = false;
@@ -731,7 +732,7 @@ static bool CheckResources()
          goto bail_out;
       }
 
-      if (GetNextRes(R_DIRECTOR, (CommonResourceHeader *)me) != NULL) {
+      if (my_config->GetNextRes(R_DIRECTOR, (CommonResourceHeader *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile.c_str());
          OK = false;
@@ -741,17 +742,15 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (me->tls_cert.require || me->tls_psk.require) {
-         if (have_tls) {
-            // me->tls.enable = true;
-         } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled in in BAREOS.\n"));
+      if (me->tls_cert.IsActivated() || me->tls_psk.IsActivated()) {
+         if (!have_tls) {
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled into BAREOS.\n"));
             OK = false;
             goto bail_out;
          }
       }
 
-      need_tls = me->tls_cert.enable || me->tls_cert.authenticate;
+      need_tls = me->tls_cert.IsActivated() || me->tls_cert.authenticate;
 
       if ((me->tls_cert.certfile == nullptr || me->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(),configfile.c_str());
@@ -818,17 +817,15 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (cons->tls_cert.require) {
-         if (have_tls) {
-            // cons->tls_cert.enable = true;
-         } else {
+      if (cons->tls_cert.IsActivated()) {
+         if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
             goto bail_out;
          }
       }
 
-      need_tls = cons->tls_cert.enable || cons->tls_cert.authenticate;
+      need_tls = cons->tls_cert.IsActivated() || cons->tls_cert.authenticate;
 
       if ((cons->tls_cert.certfile == nullptr || cons->tls_cert.certfile->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
@@ -873,16 +870,14 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (client->tls_cert.require) {
-         if (have_tls) {
-            // client->tls_cert.enable = true;
-         } else {
+      if (client->tls_cert.IsActivated()) {
+         if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
             OK = false;
             goto bail_out;
          }
       }
-      need_tls = client->tls_cert.enable || client->tls_cert.authenticate;
+      need_tls = client->tls_cert.IsActivated() || client->tls_cert.authenticate;
       if ((client->tls_cert.CaCertfile == nullptr || client->tls_cert.CaCertfile->empty()) &&
           (client->tls_cert.CaCertdir == nullptr || client->tls_cert.CaCertdir->empty()) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
@@ -901,7 +896,7 @@ static bool CheckResources()
       /*
        * tls_require implies tls_enable
        */
-      if (store->tls_cert.require) {
+      if (store->tls_cert.IsActivated()) {
          if (have_tls) {
             // store->tls.enable = true;
          } else {
@@ -911,7 +906,7 @@ static bool CheckResources()
          }
       }
 
-      need_tls = store->tls_cert.enable || store->tls_cert.authenticate;
+      need_tls = store->tls_cert.IsActivated() || store->tls_cert.authenticate;
 
       if ((store->tls_cert.CaCertfile == nullptr || store->tls_cert.CaCertfile->empty()) &&
           (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty()) && need_tls) {
@@ -929,7 +924,7 @@ static bool CheckResources()
        */
       if (store->collectstats) {
          nstore = store;
-         while ((nstore = (StorageResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
+         while ((nstore = (StorageResource *)my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)nstore))) {
             if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
                nstore->collectstats = false;
                Dmsg1(200, _("Disabling collectstats for storage \"%s\""
@@ -951,7 +946,7 @@ static bool CheckResources()
    }
 
 bail_out:
-   UnlockRes();
+   UnlockRes(my_config);
    return OK;
 }
 

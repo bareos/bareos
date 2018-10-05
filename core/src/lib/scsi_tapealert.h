@@ -91,7 +91,7 @@ typedef struct {
    uint8_t parameter_value;                    /* Parameter Value, n bytes */
 } TAPEALERT_PARAMETER;
 
-DLL_IMP_EXP bool GetTapealertFlags(int fd, const char *device_name, uint64_t *flags);
+bool GetTapealertFlags(int fd, const char *device_name, uint64_t *flags);
 
 
 #endif /* BAREOS_LIB_SCSI_TAPEALERT_H_ */

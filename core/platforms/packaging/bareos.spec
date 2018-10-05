@@ -162,6 +162,8 @@ BuildRequires: git-core
 
 Source0: %{name}-%{version}.tar.gz
 
+BuildRequires: pam-devel
+
 BuildRequires: cmake
 BuildRequires: gcc
 BuildRequires: gcc-c++
@@ -193,7 +195,17 @@ BuildRequires: libcap-devel
 BuildRequires: mtx
 
 %if 0%{?build_qt_monitor}
+%if 0%{?suse_version}
+BuildRequires: libqt5-qtbase-devel
+%else
+
+%if 0%{?centos_version} == 600 || 0%{?rhel_version} <= 700
 BuildRequires: libqt4-devel
+%else
+BuildRequires: qt5-qtbase-devel
+%endif
+
+%endif
 %endif
 
 
@@ -705,7 +717,7 @@ if [ "%{?buildroot}" -a "%{?buildroot}" != "/" ]; then
     rm -rf "%{?buildroot}"
 fi
 %if !0%{?suse_version}
-export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
+export PATH=$PATH:/usr/lib64/qt5/bin:/usr/lib/qt5/bin
 %endif
 export MTX=/usr/sbin/mtx
 
@@ -1166,7 +1178,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 %dir %{backend_dir}
 %{library_dir}/libbareos.so*
-%{library_dir}/libbareoscfg.so*
 %{library_dir}/libbareosfind.so*
 %{library_dir}/libbareoslmdb.so*
 %if !0%{?client_only}
@@ -1351,10 +1362,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/bareos-ctl-*
 %{_bindir}/timelimit
 %{_sbindir}/timelimit
-%{_sbindir}/bbatch
-%{_sbindir}/bregtest
-%{_sbindir}/grow
-%{_sbindir}/testls
+%{_sbindir}/btestls
 # must be readable by package build user of bareos-regress.
 %attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-regress.conf
 

@@ -21,30 +21,53 @@
 #ifndef BAREOS_LIB_TLS_OPENSSL_H_
 #define BAREOS_LIB_TLS_OPENSSL_H_
 
-typedef std::shared_ptr<PskCredentials> sharedPskCredentials;
+#include "lib/tls.h"
 
-DLL_IMP_EXP int hex2bin(char *str, unsigned char *out, unsigned int max_out_len);
-DLL_IMP_EXP void FreeTlsContext(std::shared_ptr<TLS_CONTEXT> &ctx);
+#include "include/bareos.h"
+#include <memory>
 
-#ifdef HAVE_TLS
-DLL_IMP_EXP bool TlsPostconnectVerifyHost(JobControlRecord *jcr, TLS_CONNECTION *tls_conn,
-                                 const char *host);
-DLL_IMP_EXP bool TlsPostconnectVerifyCn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn,
-                               alist *verify_list);
-DLL_IMP_EXP TLS_CONNECTION *new_tls_connection(std::shared_ptr<TlsContext> ctx, int fd, bool server);
-DLL_IMP_EXP bool TlsBsockAccept(BareosSocket *bsock);
-DLL_IMP_EXP int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);
-DLL_IMP_EXP int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes);
-#endif /* HAVE_TLS */
-DLL_IMP_EXP void TlsLogConninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
-DLL_IMP_EXP bool TlsBsockConnect(BareosSocket *bsock);
-DLL_IMP_EXP void TlsBsockShutdown(BareosSocket *bsock);
-DLL_IMP_EXP void FreeTlsConnection(TLS_CONNECTION *tls_conn);
-DLL_IMP_EXP bool GetTlsRequire(TLS_CONTEXT *ctx);
-DLL_IMP_EXP void SetTlsRequire(TLS_CONTEXT *ctx, bool value);
-DLL_IMP_EXP bool GetTlsEnable(TLS_CONTEXT *ctx);
-DLL_IMP_EXP void SetTlsEnable(TLS_CONTEXT *ctx, bool value);
-DLL_IMP_EXP bool GetTlsVerifyPeer(TLS_CONTEXT *ctx);
+class TlsOpenSslPrivate;
 
+class TlsOpenSsl : public Tls {
+ public:
+  TlsOpenSsl();
+  virtual ~TlsOpenSsl();
+  TlsOpenSsl(TlsOpenSsl &other) = delete;
 
-#endif // BAREOS_LIB_TLS_OPENSSL_H_
+  bool init() override;
+
+  bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
+  bool TlsPostconnectVerifyCn(JobControlRecord *jcr,
+                                          const std::vector<std::string> &verify_list) override;
+
+  bool TlsBsockAccept(BareosSocket *bsock) override;
+  int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) override;
+  int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes) override;
+  bool TlsBsockConnect(BareosSocket *bsock) override;
+  void TlsBsockShutdown(BareosSocket *bsock) override;
+
+  std::string TlsCipherGetName() const;
+  void SetCipherList(const std::string &cipherlist) override;
+  void TlsLogConninfo(JobControlRecord *jcr,
+                                  const char *host,
+                                  int port,
+                                  const char *who) const override;
+  void SetTlsPskClientContext(const PskCredentials &credentials) override;
+  void SetTlsPskServerContext(ConfigurationParser *config,
+                                          GetTlsPskByFullyQualifiedResourceNameCb_t cb) override;
+
+  void SetCaCertfile(const std::string &ca_certfile) override;
+  void SetCaCertdir(const std::string &ca_certdir) override;
+  void SetCrlfile(const std::string &crlfile) override;
+  void SetCertfile(const std::string &certfile) override;
+  void SetKeyfile(const std::string &keyfile) override;
+  void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override;
+  void SetPemUserdata(void *pem_userdata) override;
+  void SetDhFile(const std::string &dhfile) override;
+  void SetVerifyPeer(const bool &verify_peer) override;
+  void SetTcpFileDescriptor(const int &fd) override;
+
+ private:
+  std::unique_ptr<TlsOpenSslPrivate> d_; /* private data */
+};
+#endif  // BAREOS_LIB_TLS_OPENSSL_H_

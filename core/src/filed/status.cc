@@ -30,12 +30,14 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "lib/status.h"
 #include "lib/edit.h"
 #include "findlib/enable_priv.h"
 
-extern void *start_heap;
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
+
+namespace filedaemon {
 
 /* Forward referenced functions */
 static void ListTerminatedJobs(StatusPacket *sp);
@@ -635,3 +637,4 @@ done:
 }
 
 #endif /* HAVE_WIN32 */
+} /* namespace filedaemon */

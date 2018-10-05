@@ -28,6 +28,8 @@
 #ifndef BAREOS_STORED_BACKENDS_UNIX_TAPE_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_UNIX_TAPE_DEVICE_H_
 
+namespace storagedaemon {
+
 class unix_tape_device: public generic_tape_device {
 public:
    unix_tape_device();
@@ -35,4 +37,7 @@ public:
 
    int d_ioctl(int fd, ioctl_req_t request, char *op);
 };
+
+} /* namespace storagedaemon */
+
 #endif /* BAREOS_STORED_BACKENDS_UNIX_TAPE_DEVICE_H_ */

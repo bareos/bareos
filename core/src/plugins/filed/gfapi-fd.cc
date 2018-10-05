@@ -24,14 +24,16 @@
  * GlusterFS GFAPI plugin for the Bareos File Daemon
  */
 #include "include/bareos.h"
-#include "fd_plugins.h"
+#include "filed/fd_plugins.h"
 #include "fd_common.h"
-#include "fileopts.h"
+#include "include/fileopts.h"
 #include "lib/path_list.h"
 #include "lib/edit.h"
 
 #include <api/glfs.h>
 #include <compat-errno.h>
+
+namespace filedaemon {
 
 static const int debuglevel = 150;
 
@@ -315,7 +317,7 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
+bRC loadPlugin(bInfo *lbinfo,
                            bFuncs *lbfuncs,
                            genpInfo **pinfo,
                            pFuncs **pfuncs)
@@ -331,7 +333,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
 /**
  * External entry point to unload the plugin
  */
-bRC DLL_IMP_EXP unloadPlugin()
+bRC unloadPlugin()
 {
    return bRC_OK;
 }
@@ -2466,3 +2468,4 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
 
    return bRC_OK;
 }
+} /* namespace filedaemon */

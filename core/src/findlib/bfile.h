@@ -118,23 +118,23 @@ struct BareosWinFilePacket {
 
 #endif
 
-DLL_IMP_EXP void binit(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool IsBopen(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool set_win32_backup(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool SetPortableBackup(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool SetCmdPlugin(BareosWinFilePacket *bfd, JobControlRecord *jcr);
-DLL_IMP_EXP bool have_win32_api();
-DLL_IMP_EXP bool IsPortableBackup(BareosWinFilePacket *bfd);
-DLL_IMP_EXP bool IsRestoreStreamSupported(int stream);
-DLL_IMP_EXP bool is_win32_stream(int stream);
-DLL_IMP_EXP int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
-DLL_IMP_EXP int BopenRsrc(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
-DLL_IMP_EXP int bclose(BareosWinFilePacket *bfd);
-DLL_IMP_EXP ssize_t bread(BareosWinFilePacket *bfd, void *buf, size_t count);
-DLL_IMP_EXP ssize_t bwrite(BareosWinFilePacket *bfd, void *buf, size_t count);
-DLL_IMP_EXP boffset_t blseek(BareosWinFilePacket *bfd, boffset_t offset, int whence);
-DLL_IMP_EXP const char *stream_to_ascii(int stream);
+void binit(BareosWinFilePacket *bfd);
+bool IsBopen(BareosWinFilePacket *bfd);
+bool set_win32_backup(BareosWinFilePacket *bfd);
+bool SetPortableBackup(BareosWinFilePacket *bfd);
+bool SetCmdPlugin(BareosWinFilePacket *bfd, JobControlRecord *jcr);
+bool have_win32_api();
+bool IsPortableBackup(BareosWinFilePacket *bfd);
+bool IsRestoreStreamSupported(int stream);
+bool is_win32_stream(int stream);
+int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
+int BopenRsrc(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+int bclose(BareosWinFilePacket *bfd);
+ssize_t bread(BareosWinFilePacket *bfd, void *buf, size_t count);
+ssize_t bwrite(BareosWinFilePacket *bfd, void *buf, size_t count);
+boffset_t blseek(BareosWinFilePacket *bfd, boffset_t offset, int whence);
+const char *stream_to_ascii(int stream);
 
-DLL_IMP_EXP bool processWin32BackupAPIBlock (BareosWinFilePacket *bfd, void *pBuffer, ssize_t dwSize);
+bool processWin32BackupAPIBlock (BareosWinFilePacket *bfd, void *pBuffer, ssize_t dwSize);
 
 #endif /* BAREOS_FINDLIB_BFILE_H_ */

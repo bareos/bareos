@@ -29,9 +29,9 @@
  */
 
 #include "include/bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "find.h"
-#include "ch.h"
+#include "include/ch.h"
 #include "findlib/attribs.h"
 #include "lib/edit.h"
 

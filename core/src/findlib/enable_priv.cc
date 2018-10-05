@@ -29,7 +29,7 @@
 
 #include "include/bareos.h"
 #include "find.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "findlib/enable_priv.h"
 
 /*=============================================================*/

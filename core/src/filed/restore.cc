@@ -30,10 +30,12 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
+#include "filed/filed_globals.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
+#include "filed/restore.h"
 #include "filed/verify.h"
-#include "ch.h"
+#include "include/ch.h"
 #include "findlib/create_file.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
@@ -47,6 +49,11 @@
 
 #if defined(HAVE_DARWIN_OS)
 #include <sys/attr.h>
+#endif
+
+namespace filedaemon {
+
+#if defined(HAVE_DARWIN_OS)
 const bool have_darwin_os = true;
 #else
 const bool have_darwin_os = false;
@@ -418,9 +425,9 @@ void DoRestore(JobControlRecord *jcr)
    sd = jcr->store_bsock;
    jcr->setJobStatus(JS_Running);
 
-   LockRes();
-   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
-   UnlockRes();
+   LockRes(my_config);
+   ClientResource *client = (ClientResource *)my_config->GetNextRes(R_CLIENT, NULL);
+   UnlockRes(my_config);
    if (client) {
       buf_size = client->max_network_buffer_size;
    } else {
@@ -1407,3 +1414,5 @@ void FreeSession(r_ctx &rctx)
       rctx.cs = NULL;
    }
 }
+
+} /* namespace filedaemon */

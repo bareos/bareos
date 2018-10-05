@@ -22,9 +22,12 @@
 #ifndef BAREOS_DIRD_RESTORE_H_
 #define BAREOS_DIRD_RESTORE_H_
 
+namespace directordaemon {
+
 bool DoNativeRestore(JobControlRecord *jcr);
 bool DoNativeRestoreInit(JobControlRecord *jcr);
 void NativeRestoreCleanup(JobControlRecord *jcr, int TermCode);
 void GenerateRestoreSummary(JobControlRecord *jcr, int msg_type, const char *TermMsg);
 
+} /* namespace directordaemon */
 #endif // BAREOS_DIRD_RESTORE_H_

@@ -69,6 +69,9 @@ INCLUDE(BareosExtractVersionInfo)
 
 INCLUDE(BareosFindAllLibraries)
 
+
+
+
 IF (coverage)
    set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage -fprofile-arcs -ftest-coverage" CACHE INTERNAL "")
    MESSAGE(STATUS "coverage requested, adding COVERAGE_COMPILER_FLAGS : ${COVERAGE_COMPILER_FLAGS}")
@@ -124,9 +127,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/compat/include
-      #${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include
-      #${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
       )
+   
    set(HAVE_WIN32 1)
 
    set(WINDOWS_LIBRARIES ws2_32)
@@ -254,6 +256,7 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 
 include_directories(${PYTHON_INCLUDE_PATH})
 
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # trick for socklen_t
 set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
@@ -445,6 +448,9 @@ if ("${READLINE_FOUND}")
    set(HAVE_READLINE 1)
 endif()
 
+if ("${PAM_FOUND}")
+   set(HAVE_PAM 1)
+endif()
 
 
 set(have_tls "${HAVE_TLS}" )
@@ -651,6 +657,7 @@ MESSAGE("   TLS support:                  ${have_tls} ")
 MESSAGE("   Encryption support:           ${have_crypto} ")
 MESSAGE("   OpenSSL support:              ${OPENSSL_FOUND} ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES} ")
 MESSAGE("   GNUTLS support:               ${have_gnutls} ")
+MESSAGE("   PAM support:                  ${PAM_FOUND} ${PAM_LIBRARIES} ${PAM_INCLUDE_DIRS} ")
 MESSAGE("   ZLIB support:                 ${ZLIB_FOUND} ${ZLIB_LIBRARIES} ${ZLIB_INCLUDE_DIRS} ")
 MESSAGE("   LZO2 support:                 ${LZO2_FOUND} ${LZO2_LIBRARIES} ${LZO2_INCLUDE_DIRS} ")
 MESSAGE("   FASTLZ support:               ${FASTLZ_FOUND} ${FASTLZ_LIBRARIES} ${FASTLZ_INCLUDE_DIRS} ")
