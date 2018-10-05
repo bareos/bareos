@@ -2169,7 +2169,7 @@ bool FilesetResource::PrintConfig(PoolMem &buff, bool hide_sensitive_data, bool 
                      }
                      break;
                   case 'X':
-                     IndentConfigItem(cfg_str, 3, "Xattr = Yes\n");
+                     IndentConfigItem(cfg_str, 3, "XattrSupport = Yes\n");
                      break;
                   case 'x':
                      IndentConfigItem(cfg_str, 3, "AutoExclude = No\n");

@@ -275,7 +275,7 @@ static inline bool do_restore_xattr(JobControlRecord *jcr,
        * print the error message set by the lower level routine in jcr->errmsg.
        */
       if (jcr->xattr_data->u.parse->nr_errors < XATTR_REPORT_ERR_MAX_PER_JOB) {
-         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+         Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       }
       jcr->xattr_data->u.parse->nr_errors++;
       break;
