@@ -1617,6 +1617,30 @@ bail_out:
    return false;
 }
 
+static void LogFlagStatus(JobControlRecord *jcr, int flag, const char *flag_text)
+{
+   findFILESET *fileset = jcr->ff->fileset;
+   bool found = false;
+   if (fileset) {
+      for (int i = 0; i < fileset->include_list.size() && !found; i++) {
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
+
+         for (int j = 0; j < incexe->opts_list.size() && !found; j++) {
+            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+
+            if (BitIsSet(flag, fo->flags)) {
+               found = true;
+            }
+         }
+      }
+   }
+
+   std::string m = flag_text;
+   m += found ? "is enabled\n" : "is disabled\n";
+   Jmsg(jcr, M_INFO, 0, m.c_str());
+}
+
+
 /**
  * Clear a flag in the find options.
  *
@@ -1840,6 +1864,9 @@ static bool BackupCmd(JobControlRecord *jcr)
    }
 
    ClearCompressionFlagInFileset(jcr);
+
+   LogFlagStatus(jcr, FO_XATTR, "Extended attribute support ");
+   LogFlagStatus(jcr, FO_ACL,   "ACL support ");
 
    if (!GetWantedCryptoCipher(jcr, &cipher)) {
       dir->fsend(BADcmd, "backup");
