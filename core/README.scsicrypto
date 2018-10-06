@@ -88,7 +88,7 @@ How does it all work:
   events for loading and clearing the key. It checks the drive if it
   needs to clear it by either using a internal state if it loaded
   a key before or when enabled via a special option which first issues
-  an encrytion status query. When there is a connection to the director
+  an encryption status query. When there is a connection to the director
   and the volume information is not available it will ask the director
   for the data on the currently loaded volume. When no connection is
   available a cache is used which should contain the most recently mounted
@@ -107,7 +107,7 @@ How does it all work:
   key wrapping and then base64 encoded. By using key wrapping
   the keys in the database are save against people sniffing
   the info as the data is still encrypted using the Key
-  Encryption Key (which in essense is just an extra passphrase
+  Encryption Key (which in essence is just an extra passphrase
   of the same length as the volume passphrases used)
 
   When the storage daemon needs to mount the volume it
@@ -276,7 +276,7 @@ For Disaster Recovery (DR) you need the following information:
   of the volumes.
 - The actual keys used for encryption of the volumes.
 
-  This data needs to be availabe as a so called crypto cache
+  This data needs to be available as a so called crypto cache
   file which is used by the plugin when no connection to the
   director can be made to do a lookup (most likely on DR).
 
