@@ -209,7 +209,7 @@ bool BareosDb::FindFailedJobSince(JobControlRecord *jcr, JobDbRecord *jr, POOLME
 
    /* Differential is since last Full backup */
    Mmsg(cmd,
-"SELECT Level FROM Job WHERE JobStatus NOT IN ('T','W') AND "
+"SELECT Level FROM Job WHERE JobStatus NOT IN ('T','W','A','R') AND "
 "Type='%c' AND Level IN ('%c','%c') AND Name='%s' AND ClientId=%s "
 "AND FileSetId=%s AND StartTime>'%s' "
 "ORDER BY StartTime DESC LIMIT 1",
