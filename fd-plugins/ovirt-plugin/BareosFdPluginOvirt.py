@@ -67,7 +67,17 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         bareosfd.DebugMessage(
             context, 100,
-            "BareosFdPluginOvirt:parse_plugin_definition() called\n")
+            "BareosFdPluginOvirt:parse_plugin_definition() called with options '%s' \n" % str(self.options))
+        return bRCs['bRC_OK']
+
+    def check_options(self, context, mandatory_options=None):
+        '''
+        Check Plugin options
+        Note: this is called by parent class parse_plugin_definition(),
+        to handle plugin options entered at restore, the real check
+        here is done by check_plugin_options() which is called from
+        start_backup_job() and start_restore_job()
+        '''
         return bRCs['bRC_OK']
 
     def start_backup_job(self, context):
@@ -539,7 +549,7 @@ class BareosOvirtWrapper(object):
         if 'uuid' in options:
             search = "uuid=%s" % str(options['uuid'])
         elif 'vmname' in options:
-            search = "name=%s" % str(options['vmname'])
+            search = "name=%s" % str(options['vm_name'])
     
         if search is not None:
             bareosfd.DebugMessage(
@@ -874,6 +884,8 @@ class BareosOvirtWrapper(object):
 			key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
 			props[key] = value
 
+                    # set storage domain
+                    props['storage_domain'] = storage_domain
 		    self.restore_objects.append(props)
 
         return bRCs['bRC_OK']
@@ -1037,7 +1049,8 @@ class BareosOvirtWrapper(object):
         self.proxy_connection.putrequest("PUT", proxy_url.path)
         self.proxy_connection.putheader('Authorization', transfer.signed_ticket)
 
-        self.bytes_to_transf = int(disk.actual_size) * 2**30
+        #self.bytes_to_transf = int(disk.actual_size) * 2**30
+        self.bytes_to_transf = int(disk.actual_size)
 
         content_range = "bytes %d-%d/%d" % (0, self.bytes_to_transf - 1, self.bytes_to_transf)
         self.proxy_connection.putheader('Content-Range', content_range)
