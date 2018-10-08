@@ -1010,7 +1010,7 @@ replace()
     for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf 2>/dev/null`; do
         if [ -f "$file" ]; then
             echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
-            if [ "$os_type" = "Darwin" ]; then
+            if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
                  sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
             else
 		 sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
@@ -1044,7 +1044,7 @@ replace_password()
 
     for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf ${DIR_CFG}/tray-monitor.d/*/*.conf 2>/dev/null`; do
         echo "replacing '${SEARCH}' in $file"
-        if [ "$os_type" = "Darwin" ]; then
+        if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
            sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
         else
            sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
