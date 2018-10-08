@@ -705,8 +705,7 @@ class BareosOvirtWrapper(object):
 
         self.transfer_service = self.get_transfer_service( types.ImageTransfer(
                                                                 snapshot=types.DiskSnapshot(id=snapshot.id),
-                                                                direction=types.ImageTransferDirection.DOWNLOAD
-                                                            ))
+                                                                direction=types.ImageTransferDirection.DOWNLOAD ))
         transfer = self.transfer_service.get()
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
@@ -817,7 +816,7 @@ class BareosOvirtWrapper(object):
 	
 	    if cluster_name is None:
 		# Find the cluster name of the virtual machine within the OVF:
-		cluster_name = ovf.xpath(
+		cluster_name = self.ovf.xpath(
 		    '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
 		    namespaces=OVF_NAMESPACES
 		)[0].text
@@ -1029,7 +1028,7 @@ class BareosOvirtWrapper(object):
                 "Uploading disk '%s'('%s')\n" % (disk.alias,disk.id))
 
         self.transfer_service = self.get_transfer_service( types.ImageTransfer( image = types.Image( id = disk.id ),
-										direction = types.ImageTransferDirection.UPLOAD )
+										direction = types.ImageTransferDirection.UPLOAD ))
         transfer = self.transfer_service.get()
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
