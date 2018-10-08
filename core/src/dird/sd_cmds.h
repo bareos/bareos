@@ -48,7 +48,7 @@ bool NativeAutochangerVolumeOperation(UaContext *ua, StorageResource *store, con
 bool SendBwlimitToSd(JobControlRecord *jcr, const char *Job);
 bool SendSecureEraseReqToSd(JobControlRecord *jcr);
 bool DoStorageResolve(UaContext *ua, StorageResource *store);
-bool DoStoragePluginOptions(JobControlRecord *jcr);
+bool SendStoragePluginOptions(JobControlRecord *jcr);
 
 } /* namespace directordaemon */
 #endif // BAREOS_DIRD_SD_CMDS_H_

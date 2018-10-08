@@ -24,7 +24,7 @@
 
 namespace directordaemon {
 
-bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store);
+bool AuthenticateWithStorageDaemon(BareosSocket *sd, JobControlRecord *jcr, StorageResource *store);
 bool AuthenticateWithFileDaemon(JobControlRecord *jcr);
 bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name);
 bool AuthenticateUserAgent(UaContext *ua);

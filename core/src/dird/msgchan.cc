@@ -166,7 +166,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
    /*
     * Before actually starting a new Job on the SD make sure we send any specific plugin options for this Job.
     */
-   if (!DoStoragePluginOptions(jcr)) {
+   if (!SendStoragePluginOptions(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Plugin Options command: %s\n"), sd->msg);
       return false;
    }

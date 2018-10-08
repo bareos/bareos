@@ -32,6 +32,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
+#include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/dird_globals.h"
@@ -62,7 +63,7 @@ static char Dir_sorry[] = "1999 You are not authorized.\n";
 /**
  * Authenticate with a remote Storage daemon
  */
-bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store)
+bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, StorageResource *store)
 {
   std::string qualified_resource_name;
   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
@@ -70,8 +71,6 @@ bool AuthenticateWithStorageDaemon(JobControlRecord *jcr, StorageResource *store
     Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
     return false;
   }
-
-  BareosSocket *sd               = jcr->store_bsock;
 
   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
                           store->password.value, jcr)) {
