@@ -91,122 +91,117 @@ static char changerslotsresponse[] =
 static char changerdrivesresponse[] =
    "drives=%hd\n";
 
-/**
- * Establish a connection with the Storage daemon and perform authentication.
- */
+static void TerminateAndCloseJcrStoreSocket(JobControlRecord *jcr)
+{
+   if (jcr && jcr->store_bsock) {
+      jcr->store_bsock->signal(BNET_TERMINATE);
+      jcr->store_bsock->close();
+      delete jcr->store_bsock;
+      jcr->store_bsock = nullptr;
+   }
+}
+
 bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
                                int max_retry_time, bool verbose)
 {
-   BareosSocket *sd;
-   StorageResource *store;
-   utime_t heart_beat;
-
    if (jcr->store_bsock) {
       return true;                    /* already connected */
    }
 
-   sd = New(BareosSocketTCP);
-
-   /*
-    * If there is a write storage use it
-    */
+   StorageResource *store;
    if (jcr->res.wstore) {
       store = jcr->res.wstore;
    } else {
       store = jcr->res.rstore;
    }
 
+   if (!store) {
+      Dmsg0(200, "ConnectToStorageDaemon: Storage resource pointer is invalid\n");
+      return false;
+   }
+
+   utime_t heart_beat;
    if (store->heartbeat_interval) {
       heart_beat = store->heartbeat_interval;
    } else {
       heart_beat = me->heartbeat_interval;
    }
 
-   /*
-    * Open message channel with the Storage daemon
-    */
    Dmsg2(100, "bNetConnect to Storage daemon %s:%d\n", store->address, store->SDport);
-   sd->SetSourceAddress(me->DIRsrc_addr);
-   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
-                    store->address, NULL, store->SDport, verbose)) {
-      delete sd;
-      sd = NULL;
-   }
-
-   if (sd == NULL) {
+   std::unique_ptr<BareosSocket> sd(New(BareosSocketTCP));
+   if (!sd) {
       return false;
    }
-   jcr->store_bsock = sd;
+   sd->SetSourceAddress(me->DIRsrc_addr);
+   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
+                    store->address, nullptr, store->SDport, verbose)) {
+      return false;
+   }
 
    std::string qualified_resource_name;
    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                              qualified_resource_name)) {
-     Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
-     return false;
+      Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+      sd->close();
+      return false;
    }
 
    if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
                            store->password.value, jcr)) {
-     Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
-     return false;
-   }
-
-   if (!AuthenticateWithStorageDaemon(jcr, store)) {
+      Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
       sd->close();
-      delete jcr->store_bsock;
-      jcr->store_bsock = NULL;
       return false;
    }
 
+   if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
+      sd->close();
+      return false;
+   }
+
+   jcr->store_bsock = sd.release();
    return true;
 }
 
-/**
- * Open a connection to a SD.
- */
 BareosSocket *open_sd_bsock(UaContext *ua)
 {
    StorageResource *store = ua->jcr->res.wstore;
 
+   if (!store) {
+      Dmsg0(200, "open_sd_bsock: No storage resource pointer set\n");
+      return nullptr;
+   }
+
    if (!ua->jcr->store_bsock) {
       ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
                    store->name(), store->address, store->SDport);
+      /* the next call will set ua->jcr->store_bsock */
       if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
          ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
-         return NULL;
+         return nullptr;
       }
    }
    return ua->jcr->store_bsock;
 }
 
-/**
- * Close a connection to a SD.
- */
 void CloseSdBsock(UaContext *ua)
 {
-   if (ua->jcr->store_bsock) {
-      ua->jcr->store_bsock->signal(BNET_TERMINATE);
-      ua->jcr->store_bsock->close();
-      delete ua->jcr->store_bsock;
-      ua->jcr->store_bsock = NULL;
+   if (ua) {
+      TerminateAndCloseJcrStoreSocket(ua->jcr);
    }
 }
 
-/**
- * We get the volume name from the SD
- */
 char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t drive)
 {
    BareosSocket *sd;
    StorageResource *store = ua->jcr->res.wstore;
    char dev_name[MAX_NAME_LENGTH];
-   char *VolName = NULL;
+   char *VolName = nullptr;
    int rtn_slot;
 
    ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       ua->ErrorMsg(_("Could not open SD socket.\n"));
-      return NULL;
+      return nullptr;
    }
    bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
    BashSpaces(dev_name);
@@ -231,7 +226,7 @@ char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t 
             break;
          }
          free(VolName);
-         VolName = NULL;
+         VolName = nullptr;
       }
    }
    CloseSdBsock(ua);
@@ -275,13 +270,13 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
    char *bp;
    char dev_name[MAX_NAME_LENGTH];
    char *field1, *field2, *field3, *field4, *field5;
-   vol_list_t *vl = NULL;
+   vol_list_t *vl = nullptr;
    dlist *vol_list;
-   BareosSocket *sd = NULL;
+   BareosSocket *sd = nullptr;
 
    ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
-      return NULL;
+      return nullptr;
    }
 
    bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -317,7 +312,7 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
       /*
        * Parse the message. list gives max 2 fields listall max 5.
        * We always make sure all fields are initialized to either
-       * a value or NULL.
+       * a value or nullptr.
        *
        * For autochanger list the following mapping is used:
        * - field1 == slotnr
@@ -351,24 +346,24 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
                   }
                } else {
                   nr_fields = 3;
-                  field5 = NULL;
+                  field5 = nullptr;
                }
             } else {
                nr_fields = 2;
-               field4 = NULL;
-               field5 = NULL;
+               field4 = nullptr;
+               field5 = nullptr;
             }
          } else {
             nr_fields = 2;
-            field3 = NULL;
-            field4 = NULL;
-            field5 = NULL;
+            field3 = nullptr;
+            field4 = nullptr;
+            field5 = nullptr;
          }
       } else {
          nr_fields = 1;
-         field3 = NULL;
-         field4 = NULL;
-         field5 = NULL;
+         field3 = nullptr;
+         field4 = nullptr;
+         field5 = nullptr;
       }
 
       /*
@@ -527,7 +522,7 @@ parse_error:
        * we done of ':' with '\0' by looking at the nr_fields
        * variable and undo those. Number of undo's are nr_fields - 1
        */
-      while (nr_fields > 1 && (bp = strchr(sd->msg, '\0')) != NULL) {
+      while (nr_fields > 1 && (bp = strchr(sd->msg, '\0')) != nullptr) {
          *bp = ':';
          nr_fields--;
       }
@@ -541,7 +536,7 @@ parse_error:
 
    if (vol_list->size() == 0) {
       delete vol_list;
-      vol_list = NULL;
+      vol_list = nullptr;
    }
 
    return vol_list;
@@ -622,27 +617,24 @@ drive_number_t NativeGetNumDrives(UaContext *ua, StorageResource *store)
  */
 bool CancelStorageDaemonJob(UaContext *ua, StorageResource *store, char *JobId)
 {
-   BareosSocket *sd;
    JobControlRecord *control_jcr;
 
    control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
    control_jcr->res.wstore = store;
+
+   /* the next call will set control_jcr->store_bsock */
    if (!ConnectToStorageDaemon(control_jcr, 10, me->SDConnectTimeout, true)) {
       ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+      return false;
    }
 
    Dmsg0(200, "Connected to storage daemon\n");
-   sd = control_jcr->store_bsock;
-   sd->fsend("cancel Job=%s\n", JobId);
-   while (sd->recv() >= 0) {
-      ua->SendMsg("%s", sd->msg);
+   control_jcr->store_bsock->fsend("cancel Job=%s\n", JobId);
+   while (control_jcr->store_bsock->recv() >= 0) {
+      ua->SendMsg("%s", control_jcr->store_bsock->msg);
    }
-   sd->signal(BNET_TERMINATE);
-   sd->close();
-   delete control_jcr->store_bsock;
-   control_jcr->store_bsock = NULL;
-
+   TerminateAndCloseJcrStoreSocket(control_jcr);
    FreeJcr(control_jcr);
 
    return true;
@@ -655,9 +647,6 @@ bool CancelStorageDaemonJob(UaContext *ua, StorageResource *store, char *JobId)
  */
 bool CancelStorageDaemonJob(UaContext *ua, JobControlRecord *jcr, bool interactive)
 {
-   BareosSocket *sd;
-   UnifiedStorageResource store;
-
    if (!ua->jcr->res.wstorage) {
       if (jcr->res.rstorage) {
          CopyWstorage(ua->jcr, jcr->res.rstorage, _("Job resource"));
@@ -665,14 +654,20 @@ bool CancelStorageDaemonJob(UaContext *ua, JobControlRecord *jcr, bool interacti
          CopyWstorage(ua->jcr, jcr->res.wstorage, _("Job resource"));
       }
    } else {
+      UnifiedStorageResource store;
       if (jcr->res.rstorage) {
          store.store = jcr->res.rstore;
       } else {
          store.store = jcr->res.wstore;
       }
+      if (!store.store) {
+         Dmsg0(200, "CancelStorageDaemonJob: No storage resource pointer set\n");
+         return false;
+      }
       SetWstorage(ua->jcr, &store);
    }
 
+   /* the next call will set ua->jcr->store_bsock */
    if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
       if (interactive) {
          ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
@@ -680,28 +675,26 @@ bool CancelStorageDaemonJob(UaContext *ua, JobControlRecord *jcr, bool interacti
       return false;
    }
    Dmsg0(200, "Connected to storage daemon\n");
-   sd = ua->jcr->store_bsock;
-   sd->fsend(canceljobcmd, jcr->Job);
-   while (sd->recv() >= 0) {
+   ua->jcr->store_bsock->fsend(canceljobcmd, jcr->Job);
+   while (ua->jcr->store_bsock->recv() >= 0) {
       if (interactive) {
-         ua->SendMsg("%s", sd->msg);
+         ua->SendMsg("%s", ua->jcr->store_bsock->msg);
       }
    }
-   sd->signal(BNET_TERMINATE);
-   sd->close();
-   delete ua->jcr->store_bsock;
-   ua->jcr->store_bsock = NULL;
+
+   if (jcr->store_bsock) {
+     jcr->store_bsock->SetTimedOut();
+     jcr->store_bsock->SetTerminated();
+   }
+
+   TerminateAndCloseJcrStoreSocket(ua->jcr);
+
    if (!interactive) {
       jcr->sd_canceled = true;
    }
-   jcr->store_bsock->SetTimedOut();
-   jcr->store_bsock->SetTerminated();
+
    SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
 
-   /*
-    * An interactive cancel means we need to send a signal to the actual
-    * controlling JobControlRecord of the Job to let it know it got canceled.
-    */
    if (interactive) {
       jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
    }
@@ -709,22 +702,14 @@ bool CancelStorageDaemonJob(UaContext *ua, JobControlRecord *jcr, bool interacti
    return true;
 }
 
-/**
- * Cancel a running job on a storage daemon. System invoked
- * non interactive version this builds a ua context and calls
- * the interactive one with the interactive flag set to false.
- */
 void CancelStorageDaemonJob(JobControlRecord *jcr)
 {
-   UaContext *ua;
-   JobControlRecord *control_jcr;
-
    if (jcr->sd_canceled) {
       return;                   /* cancel only once */
    }
 
-   ua = new_ua_context(jcr);
-   control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
+   UaContext *ua = new_ua_context(jcr);
+   JobControlRecord *control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
    ua->jcr = control_jcr;
    if (jcr->store_bsock) {
@@ -738,41 +723,30 @@ bail_out:
    FreeUaContext(ua);
 }
 
-/**
- * Get the status of a remote storage daemon.
- */
 void DoNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 {
-   BareosSocket *sd;
    UnifiedStorageResource lstore;
 
    lstore.store = store;
    PmStrcpy(lstore.store_source, _("unknown source"));
    SetWstorage(ua->jcr, &lstore);
 
-   /*
-    * Try connecting for up to 15 seconds
-    */
    if (!ua->api) {
       ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
                    store->name(), store->address, store->SDport);
    }
 
+   /* the next call will set ua->jcr->store_bsock */
    if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
       ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
                    store->name());
-      if (ua->jcr->store_bsock) {
-         ua->jcr->store_bsock->close();
-         delete ua->jcr->store_bsock;
-         ua->jcr->store_bsock = NULL;
-      }
       return;
    }
 
    Dmsg0(20, _("Connected to storage daemon\n"));
-   sd = ua->jcr->store_bsock;
+
    if (cmd) {
-      sd->fsend(dotstatuscmd, cmd);
+      ua->jcr->store_bsock->fsend(dotstatuscmd, cmd);
 
    } else {
       int cnt = 0;
@@ -793,17 +767,14 @@ void DoNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
       }
 
       BashSpaces(devicenames);
-      sd->fsend(statuscmd, devicenames.c_str());
+      ua->jcr->store_bsock->fsend(statuscmd, devicenames.c_str());
    }
 
-   while (sd->recv() >= 0) {
-      ua->SendMsg("%s", sd->msg);
+   while (ua->jcr->store_bsock->recv() >= 0) {
+      ua->SendMsg("%s", ua->jcr->store_bsock->msg);
    }
 
-   sd->signal(BNET_TERMINATE);
-   sd->close();
-   delete ua->jcr->store_bsock;
-   ua->jcr->store_bsock = NULL;
+   TerminateAndCloseJcrStoreSocket(ua->jcr);
 
    return;
 }
@@ -815,7 +786,7 @@ void DoNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 bool NativeTransferVolume(UaContext *ua, StorageResource *store,
                             slot_number_t src_slot, slot_number_t dst_slot)
 {
-   BareosSocket *sd = NULL;
+   BareosSocket *sd = nullptr;
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
 
@@ -863,7 +834,7 @@ bool NativeTransferVolume(UaContext *ua, StorageResource *store,
 bool NativeAutochangerVolumeOperation(UaContext *ua, StorageResource *store,
                                          const char *operation, drive_number_t drive, slot_number_t slot)
 {
-   BareosSocket *sd = NULL;
+   BareosSocket *sd = nullptr;
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
 
@@ -940,9 +911,6 @@ bool SendBwlimitToSd(JobControlRecord *jcr, const char *Job)
    return true;
 }
 
-/**
- * resolve a host on a storage daemon
- */
 bool DoStorageResolve(UaContext *ua, StorageResource *store)
 {
    BareosSocket *sd;
@@ -973,10 +941,7 @@ bool DoStorageResolve(UaContext *ua, StorageResource *store)
    return true;
 }
 
-/**
- * send Job specific plugin options to a storage daemon
- */
-bool DoStoragePluginOptions(JobControlRecord *jcr)
+bool SendStoragePluginOptions(JobControlRecord *jcr)
 {
    int i;
    PoolMem cur_plugin_options(PM_MESSAGE);
