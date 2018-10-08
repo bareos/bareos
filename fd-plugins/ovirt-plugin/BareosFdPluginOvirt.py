@@ -188,18 +188,18 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # if it's a directory
             if restorepkt.type == bFileType['FT_REG']:
                 open(FNAME, 'wb').close()
+        else:
+            if not restorepkt.ofname.endswith('.ovf'):
+                FNAME = restorepkt.ofname
 
-        if not restorepkt.ofname.endswith('.ovf'):
-            FNAME = restorepkt.ofname
-
-            disk = self.ovirt.get_vm_disk_by_basename(context, FNAME)
-            if disk is None:
-                bareosfd.JobMessage(
-                    context, bJobMessageType['M_ERROR'],
-                    "BareosFdPluginOvirt:create_file() Unable to restore disk %s.\n" % (FNAME))
-                return bRCs['bRC_Error']
-            else:
-                self.ovirt.start_upload(context, disk)
+                disk = self.ovirt.get_vm_disk_by_basename(context, FNAME)
+                if disk is None:
+                    bareosfd.JobMessage(
+                        context, bJobMessageType['M_ERROR'],
+                        "BareosFdPluginOvirt:create_file() Unable to restore disk %s.\n" % (FNAME))
+                    return bRCs['bRC_Error']
+                else:
+                    self.ovirt.start_upload(context, disk)
 
         if restorepkt.type == bFileType['FT_REG']:
             restorepkt.create_status = bCFs['CF_EXTRACT']
@@ -548,7 +548,7 @@ class BareosOvirtWrapper(object):
         search = None
         if 'uuid' in options:
             search = "uuid=%s" % str(options['uuid'])
-        elif 'vmname' in options:
+        elif 'vm_name' in options:
             search = "name=%s" % str(options['vm_name'])
     
         if search is not None:
