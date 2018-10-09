@@ -3916,40 +3916,40 @@ static void DumpResource(int type,
 
   switch (type) {
     case R_DIRECTOR:
-      res->res_dir.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_dir.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_PROFILE:
-      res->res_profile.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_profile.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_CONSOLE:
-      res->res_con.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_con.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_COUNTER:
-      res->res_counter.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_counter.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_CLIENT:
-      res->res_client.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_client.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_DEVICE:
-      res->res_dev.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_dev.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_STORAGE:
-      res->res_store.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_store.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_CATALOG:
-      res->res_cat.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_cat.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_JOBDEFS:
     case R_JOB:
-      res->res_job.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_job.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_FILESET:
@@ -3957,11 +3957,11 @@ static void DumpResource(int type,
       sendit(sock, "%s", buf.c_str());
       break;
     case R_SCHEDULE:
-      res->res_sch.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_sch.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_POOL:
-      res->res_pool.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_pool.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_MSGS:

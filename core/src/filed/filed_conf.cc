@@ -361,7 +361,7 @@ static void DumpResource(int type,
     }
     default:
       resclass = (BareosResource *)reshdr;
-      resclass->PrintConfig(buf);
+      resclass->PrintConfig(buf, *my_config);
       break;
   }
   sendit(sock, "%s", buf.c_str());
