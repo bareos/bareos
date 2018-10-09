@@ -3848,6 +3848,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources *res_to_add, int type)
       }
     }
     last->next = (CommonResourceHeader *)res;
+    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), my_config->res_to_str(type), res->res_dir.name(),rindex);
   }
   return true;
 }
@@ -4216,7 +4217,6 @@ static void FreeResource(CommonResourceHeader *sres, int type)
  */
 static bool SaveResource(int type, ResourceItem *items, int pass)
 {
-  UnionOfResources *res;
   int rindex = type - R_FIRST;
 
   switch (type) {
@@ -4251,8 +4251,6 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
   if (pass == 2) { return UpdateResourcePointer(type, items); }
 
   if (!AddResourceCopyToEndOfChain(&res_all, type)) { return false; }
-  Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), my_config->res_to_str(type), res->res_dir.name(),
-        rindex, pass);
   return true;
 }
 
