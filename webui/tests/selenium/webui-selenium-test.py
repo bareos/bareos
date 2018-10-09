@@ -106,7 +106,7 @@ class SeleniumTest(unittest.TestCase):
         )
         self.logger = logging.getLogger()
 
-        if(os.environ.get('TRAVIS') == 'true'):
+        if(os.environ.get('BUILD_WEBUI') == 'true'):
             from sauceclient import SauceClient
             from   selenium.webdriver.remote.remote_connection import RemoteConnection
             self.desired_capabilities = {}
@@ -125,17 +125,17 @@ class SeleniumTest(unittest.TestCase):
                 desired_capabilities=self.desired_capabilities,
                 command_executor=sauce_url % (self.sauce_username, self.access_key)
             )
-        else:
-            if self.browser == 'chrome':
+        elif(self.browser == 'chrome'):
                 chromedriverpath = self.getChromedriverpath()
                 self.driver = webdriver.Chrome(chromedriverpath)
-
-            if self.browser == "firefox":
+        elif(self.browser == 'firefox'):
                 d = DesiredCapabilities.FIREFOX
                 d['loggingPrefs'] = { 'browser':'ALL' }
                 fp = webdriver.FirefoxProfile()
                 fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
                 self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
+        else:
+            raise ValueError('No driver was set, testing aborted.')
 
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
@@ -466,9 +466,14 @@ def get_env():
     sleeptime = os.environ.get('BAREOS_DELAY')
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
-    if(os.environ.get('TRAVIS') == 'true'):
-            SeleniumTest.sauce_username = os.environ.get('SAUCE_USERNAME')
-            SeleniumTest.access_key = os.environ.get('SAUCE_ACCESS_KEY')
+    if(os.environ.get('BUILD_WEBUI') == 'true'):
+            sauce_username = os.environ.get('SAUCE_USERNAME')
+            access_key = os.environ.get('SAUCE_ACCESS_KEY')
+            if sauce_username and access_key:
+                SeleniumTest.sauce_username = sauce_username
+                SeleniumTest.access_key = access_key
+            else:
+                raise ValueError("SAUCE_USERNAME and SAUCE_ACCESS_KEY environment variables not set.")
 
 if __name__ == '__main__':
     get_env()
