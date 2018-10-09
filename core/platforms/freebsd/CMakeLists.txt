@@ -19,7 +19,7 @@
 
 
 
-set (DESTSTARTDIR "${sysconfdir}/rc.d/init.d/")
+set (DESTSTARTDIR "${sysconfdir}/rc.d/")
 
 MESSAGE(STATUS  "installing startfiles to ${DESTSTARTDIR}")
 
