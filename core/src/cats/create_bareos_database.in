@@ -127,7 +127,7 @@ ALTER DATABASE ${db_name} SET datestyle TO 'ISO, YMD';
 END-OF-DATA
       retval=$?
 
-      if psql -l ${dbname} | grep " ${db_name}.*SQL_ASCII" >/dev/null; then
+      if psql -l ${dbname} $* | grep " ${db_name}.*SQL_ASCII" >/dev/null; then
          echo "Database encoding OK"
       else
          echo " "

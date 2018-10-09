@@ -20,7 +20,7 @@ What database will be used, can be configured in the \bareosDir configuration, s
 
 The database often runs on the same server as the \bareosDir.
 However, it is also possible to run it on a different system.
-This might require some more manual configuration.
+This might require some more manual configuration, a PostgreSQL example can be found in \nameref{catalog-maintenance-remote-psql}.
 
 
 
@@ -51,7 +51,8 @@ Often, the default values are suitable.
 The \package{dbconfig-common} configuration (and credentials) is done by the \package{bareos-database-common} package.
 Settings are stored in the file \file{/etc/dbconfig-common/bareos-database-common.conf}.
 
-The Bareos database backend will get automatically configured in \file{/etc/bareos/bareos-dir.conf}.
+The Bareos database backend will get automatically configured in \file{/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf}.
+If the Server is not running locally you need to specify \linkResourceDirective{Dir}{Catalog}{DB Address} in the catalog ressource.
 A later reconfiguration might require manual adapt changes.
 
 \warning{When using the PostgreSQL backend and updating to Bareos $<$ 14.2.3, it is necessary to manually grant database permissions (\command{grant_bareos_privileges}), normally by}
@@ -184,7 +185,7 @@ su - postgres
 psql
 \end{commands}
 
-If your database is configured to to require a password, this must be definied in the file
+If your database is configured to require a password, this must be definied in the file
 \elink{\file{~/.pgpass}}{http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html}
 in the following syntax: \parameter{HOST:PORT:DATABASE:USER:PASSWORD}, e.g.
 \begin{config}{PostgreSQL access credentials}
@@ -335,6 +336,49 @@ bareos=> <input>\dp</input>
 bareos=>
 \end{commands}
 
+\subsubsection{Remote PostgreSQL Database}
+\label{catalog-maintenance-remote-psql}
+
+When configuring bareos with a remote database, your first step is to check the connection from the \bareosDir host into the database.
+A functional connection can be verified by
+\begin{commands}{Access the remote PostgreSQL database}
+su - postgres
+psql --host bareos-database.example.com
+\end{commands}
+With a correct configuration you can access the database, if it fails you need to correct the PostgreSQL servers configuration files.
+
+One way to manually create the database would be calling the bareos database preparation scripts with the \parameter{--host} option, explained later.
+How ever, it is advised to use the \package{dbconfig-common}.
+Both methods require you to add the database hostname/address as \linkResourceDirective{Dir}{Catalog}{DB Address}.
+
+If you're using \package{dbconfig-common} you should choose \parameter{New Host}, enter the hostname or the local address followed by the password.
+As \package{dbconfig-common} uses the \parameter{ident} authentication by default the first try to connect will fail. Don't be bothered by that. Choose \parameter{Retry} when prompted. From there, read carefully and configure the database to your needs.
+The authentication should be set to password, as the ident method will not work with a remote server.
+Set the user and administrator according to your PostgreSQL servers settings.
+
+Set the PostgreSQL server IP as \linkResourceDirective{Dir}{Catalog}{DB Address} in \nameref{DirectorResourceCatalog}.
+You can also customize other parameters or use the defaults. A quick check should display your recent changes:
+\begin{commands}{Show current database configuration}
+<command> </command><parameter>/usr/sbin/bareos-dbcheck -B</parameter>
+catalog=MyCatalog
+db_name=bareos
+db_driver=postgresql
+db_user=bareos
+db_password=secret
+db_address=bareos-database.example.com
+db_port=0
+db_socket=
+db_type=PostgreSQL
+working_dir=/var/lib/bareos
+\end{commands}
+
+If \package{dbconfig-common} did not succeed or you choosed not to use it, run the Bareos database preparation scripts with:
+\begin{commands}{Setup Bareos catalog database}
+su - postgres
+/usr/lib/bareos/scripts/create_bareos_database --host=bareos-database.example.com
+/usr/lib/bareos/scripts/make_bareos_tables --host=bareos-database.example.com
+/usr/lib/bareos/scripts/grant_bareos_privileges --host=bareos-database.example.com
+\end{commands}
 
 \subsubsection{MySQL}
     \label{catalog-maintenance-mysql}
