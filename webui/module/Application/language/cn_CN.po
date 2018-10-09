@@ -1,22 +1,11 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-07-04 16:00+0200\n"
-"PO-Revision-Date: 2016-11-22 11:22+0800\n"
-"Last-Translator: \n"
-"Language-Team: \n"
-"Language: zh\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.11\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: zh-CN\n"
 
 #: ../../../module/Application/config/module.config.php:125
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
@@ -46,13 +35,7 @@ msgstr "概述"
 msgid "Run"
 msgstr "运行"
 
-#: ../../../module/Application/config/module.config.php:147
-#: ../../../module/Client/view/client/client/details.phtml:142
-#: ../../../module/Client/view/client/client/index.phtml:217
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
-#: ../../../module/Restore/view/restore/restore/index.phtml:26
+#: ../../js/custom-functions.js:110
 msgid "Restore"
 msgstr "还原"
 
@@ -111,25 +94,12 @@ msgid "Director"
 msgstr "主控端"
 
 #: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
-msgid ""
-"Sorry, it seems you are not authorized to run this module. If you think this "
-"is an error, please contact your local administrator."
-msgstr ""
-"很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
 
 #: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid ""
-"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-"documentation</a> for any additional information on how to configure the "
-"Command ACL directive of your Console/Profile resources. Following is a list "
-"of required commands which need to be in your Command ACL to run this module "
-"properly:"
-msgstr ""
-"请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
-"reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配"
-"置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令"
-"ACL中正确运行此模块的必需命令的列表："
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确运行此模块的必需命令的列表："
 
 #: ../../../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
@@ -140,8 +110,7 @@ msgid "The requested controller was unable to dispatch the request."
 msgstr "请求的控制器无法分派请求。"
 
 #: ../../../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
+msgid "The requested controller could not be mapped to an existing controller class."
 msgstr "请求的控制器无法映射到现有的控制器类。"
 
 #: ../../../module/Application/view/error/404.phtml:18
@@ -161,7 +130,6 @@ msgid "Controller"
 msgstr "控制器"
 
 #: ../../../module/Application/view/error/404.phtml:43
-#, php-format
 msgid "resolves to %s"
 msgstr "解析为%s"
 
@@ -211,30 +179,14 @@ msgstr "发生错误"
 msgid "Documentation"
 msgstr "卷保留"
 
-#: ../../../module/Application/view/layout/layout.phtml:98
-msgid "Mailinglists"
-msgstr ""
-
-#: ../../../module/Application/view/layout/layout.phtml:99
-msgid "Bugtracker"
-msgstr ""
-
 #: ../../../module/Application/view/layout/layout.phtml:100
 #, fuzzy
 msgid "Support"
 msgstr "导出"
 
-#: ../../../module/Application/view/layout/layout.phtml:101
-msgid "Subscription"
-msgstr ""
-
 #: ../../../module/Application/view/layout/layout.phtml:103
 msgid "Logout"
 msgstr "登出"
-
-#: ../../../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "客户端详情"
 
 #: ../../../module/Client/view/client/client/details.phtml:32
 #: ../../../module/Client/view/client/client/index.phtml:32
@@ -249,6 +201,14 @@ msgstr "客户端详情"
 #: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
 msgid "Show"
 msgstr "显示"
+
+#: ../../../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "客户端状态"
+
+#: ../../../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "客户端详情"
 
 #: ../../../module/Client/view/client/client/details.phtml:43
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
@@ -402,21 +362,6 @@ msgstr "字节"
 msgid "Status"
 msgstr "状态"
 
-#: ../../../module/Client/view/client/client/details.phtml:172
-#: ../../../module/Client/view/client/client/details.phtml:221
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:184
-#: ../../../module/Job/view/job/job/index.phtml:201
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
-#: ../../../module/Job/view/job/job/index.phtml:272
-#: ../../../module/Job/view/job/job/index.phtml:293
-#: ../../../module/Job/view/job/job/index.phtml:295
-#: ../../../module/Job/view/job/job/index.phtml:299
-#: ../../../module/Job/view/job/job/index.phtml:301
-#, fuzzy
-msgid "View Job Details"
-msgstr "作业列表"
-
 #: ../../../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr "显示文件"
@@ -461,18 +406,13 @@ msgstr "禁用"
 msgid "Enable"
 msgstr "使能"
 
-#: ../../../module/Client/view/client/client/status.phtml:20
-msgid "Client Status"
-msgstr "客户端状态"
-
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:255
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
+msgid "Not enough data to estimate progress or statistics collection is disabled."
+msgstr "数据不足或数据收集被禁用"
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:263
 msgid "There are no jobs running."
-msgstr ""
+msgstr "无正在运行作业"
 
 #: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
 #, fuzzy
@@ -499,26 +439,25 @@ msgstr "结束"
 msgid "Jobs started during the past 24 hours"
 msgstr "工作开始在过去24小时"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:46
+#: ../../js/custom-functions.js:348 ../../js/custom-functions.js:349
 msgid "Running"
 msgstr "运行"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:57
+#: ../../js/custom-functions.js:374 ../../js/custom-functions.js:379
+#: ../../js/custom-functions.js:384 ../../js/custom-functions.js:389
+#: ../../js/custom-functions.js:394 ../../js/custom-functions.js:399
+#: ../../js/custom-functions.js:404 ../../js/custom-functions.js:409
+#: ../../js/custom-functions.js:414 ../../js/custom-functions.js:419
 msgid "Waiting"
 msgstr "等待"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:68
 msgid "Successful"
-msgstr ""
-
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#, fuzzy
-msgid "Warning"
-msgstr "运行"
+msgstr "成功"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:90
 msgid "Failed"
-msgstr ""
+msgstr "失败"
 
 #: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
@@ -566,6 +505,10 @@ msgstr "刷新"
 msgid "Director messages"
 msgstr "主控端信息"
 
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "文件集"
+
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
 msgstr "文件详情"
@@ -581,10 +524,6 @@ msgstr "MD5校验和"
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
 msgid "Creation time"
 msgstr "创建时间"
-
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "文件集"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
@@ -643,11 +582,6 @@ msgstr "终止失败"
 msgid "terminated successfully"
 msgstr "已成功终止"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
-msgid "warning"
-msgstr "运行"
-
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../../../module/Job/view/job/job/details.phtml:49
@@ -664,7 +598,21 @@ msgstr "存储"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:266
 msgid "Priority"
-msgstr ""
+msgstr "优先级"
+
+#: ../../../module/Job/src/Job/Form/RunJobForm.php:330
+#, fuzzy
+msgid "When"
+msgstr "作业执行时间"
+
+#: ../../../module/Job/src/Job/Form/RunJobForm.php:345
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr "提交"
+
+#: ../../../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "作业操作"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:281
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:297
@@ -678,19 +626,6 @@ msgstr ""
 #: ../../../module/Pool/view/pool/pool/index.phtml:56
 msgid "Type"
 msgstr "类型"
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:330
-msgid "When"
-msgstr ""
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:345
-#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
-msgid "Submit"
-msgstr "提交"
-
-#: ../../../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "作业操作"
 
 #: ../../../module/Job/view/job/job/details.phtml:64
 #: ../../../module/Job/view/job/job/index.phtml:81
@@ -742,11 +677,11 @@ msgstr "计划"
 
 #: ../../../module/Job/view/job/job/details.phtml:180
 msgid "First Index"
-msgstr ""
+msgstr "首个索引"
 
 #: ../../../module/Job/view/job/job/details.phtml:184
 msgid "Last Index"
-msgstr ""
+msgstr "最后索引"
 
 #: ../../../module/Job/view/job/job/details.phtml:188
 #, fuzzy
@@ -776,8 +711,7 @@ msgid "Job list"
 msgstr "作业列表"
 
 #: ../../../module/Job/view/job/job/index.phtml:110
-msgid ""
-"Please try to reduce the amount of data to display, e.g. reduce time period."
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
 msgstr "请尝试减少要显示的数据量，例如 减少时间。"
 
 #: ../../../module/Media/view/media/media/details.phtml:26
@@ -1022,19 +956,11 @@ msgstr "还原作业"
 msgid "Merge all client filesets"
 msgstr "合并所有客户端文件集"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:323
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:342
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
-#: ../../../module/Storage/view/storage/storage/index.phtml:107
+#: ../../js/custom-functions.js:315
 msgid "Yes"
 msgstr "是"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:324
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:343
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
-#: ../../../module/Storage/view/storage/storage/index.phtml:105
+#: ../../js/custom-functions.js:318
 msgid "No"
 msgstr "否"
 
@@ -1054,7 +980,7 @@ msgstr "替换客户端上的文件"
 msgid "always"
 msgstr "总是"
 
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:403
+#: ../../js/custom-functions.js:253
 msgid "never"
 msgstr "从不"
 
@@ -1077,17 +1003,17 @@ msgstr "例如. / 或者/tmp/bareos-restores/"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:439
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:456
 msgid "Path"
-msgstr ""
+msgstr "路径"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:475
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:492
 msgid "Limit"
-msgstr ""
+msgstr "限制"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:511
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:528
 msgid "Offset"
-msgstr ""
+msgstr "偏移"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:557
 msgid "Related jobs for a most recent full restore"
@@ -1115,27 +1041,14 @@ msgstr "大小"
 msgid "Date"
 msgstr "日期"
 
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "时间调度详细信息"
-
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "调度程序状态"
-
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "时间调度状态"
-
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
 #: ../../../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "驱动"
+
+#: ../../../module/Storage/view/storage/storage/status.phtml:24
+msgid "Storage Status"
+msgstr "存储状态"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1214,15 +1127,307 @@ msgstr "自动转换"
 msgid "Manage autochanger"
 msgstr "管理自动转换"
 
-#: ../../../module/Storage/view/storage/storage/status.phtml:24
-msgid "Storage Status"
-msgstr "存储状态"
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "时间调度详细信息"
 
-#~ msgid "Terminated successfully"
-#~ msgstr "已成功终止"
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "调度程序状态"
 
-#~ msgid "Terminated unsuccessfully"
-#~ msgstr "终止失败"
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "时间调度状态"
 
-#~ msgid "Help"
-#~ msgstr "帮助"
+#: ../../js/custom-functions.js:101
+msgid "Backup"
+msgstr "备份"
+
+#: ../../js/custom-functions.js:104
+msgid "Migrated"
+msgstr "迁移"
+
+#: ../../js/custom-functions.js:107
+msgid "Verify"
+msgstr "验证"
+
+#: ../../js/custom-functions.js:113
+msgid "Console program"
+msgstr "控制台程序"
+
+#: ../../js/custom-functions.js:116
+msgid "Internal system job"
+msgstr "内部系统作业"
+
+#: ../../js/custom-functions.js:119
+msgid "Admin"
+msgstr "管理"
+
+#: ../../js/custom-functions.js:122
+msgid "Archive"
+msgstr "未归档"
+
+#: ../../js/custom-functions.js:125
+msgid "Copy of a job"
+msgstr "复制一份作业"
+
+#: ../../js/custom-functions.js:128
+msgid "Copy job"
+msgstr "复制作业"
+
+#: ../../js/custom-functions.js:131
+msgid "Migration job"
+msgstr "迁移作业"
+
+#: ../../js/custom-functions.js:134
+msgid "Scan"
+msgstr "扫描"
+
+#: ../../js/custom-functions.js:137
+#, fuzzy
+msgid "Consolidate"
+msgstr "合并"
+
+#: ../../js/custom-functions.js:149 ../../js/custom-functions.js:197
+#: ../../js/custom-functions.js:227
+msgid "Full"
+msgstr "完全"
+
+#: ../../js/custom-functions.js:151
+msgid "Differential"
+msgstr "差异"
+
+#: ../../js/custom-functions.js:153
+msgid "Incremental"
+msgstr "增量"
+
+#: ../../js/custom-functions.js:155
+msgid "VirtualFull"
+msgstr "虚拟完全"
+
+#: ../../js/custom-functions.js:157
+msgid "Base"
+msgstr "基础"
+
+#: ../../js/custom-functions.js:159
+msgid "Catalog"
+msgstr "目录"
+
+#: ../../js/custom-functions.js:161
+msgid "InitCatalog"
+msgstr "初始目录"
+
+#: ../../js/custom-functions.js:163
+msgid "VolumeToCatalog"
+msgstr "卷到目录"
+
+#: ../../js/custom-functions.js:165
+msgid "DiskToCatalog"
+msgstr "磁盘到目录"
+
+#: ../../js/custom-functions.js:167
+msgid "Data"
+msgstr "数据"
+
+#: ../../js/custom-functions.js:169
+msgid "None"
+msgstr "无"
+
+#: ../../js/custom-functions.js:177
+#, fuzzy
+msgid "year(s)"
+msgstr "年"
+
+#: ../../js/custom-functions.js:180
+#, fuzzy
+msgid "month(s)"
+msgstr "月"
+
+#: ../../js/custom-functions.js:183
+msgid "day(s)"
+msgstr "天"
+
+#: ../../js/custom-functions.js:186
+msgid "hour(s)"
+msgstr "小时"
+
+#: ../../js/custom-functions.js:189
+msgid "second(s)"
+msgstr "秒"
+
+#: ../../js/custom-functions.js:197 ../../js/custom-functions.js:227
+msgid "Used"
+msgstr "已使用"
+
+#: ../../js/custom-functions.js:209
+msgid "expired"
+msgstr "已过期"
+
+#: ../../js/custom-functions.js:213
+msgid "expires in 1 day"
+msgstr "将在1天后到期"
+
+#: ../../js/custom-functions.js:217
+msgid "expires in"
+msgstr "过期日期在"
+
+#: ../../js/custom-functions.js:217
+msgid "days"
+msgstr "天数"
+
+#: ../../js/custom-functions.js:262
+msgid "today"
+msgstr "今天"
+
+#: ../../js/custom-functions.js:265
+msgid "day(s) ago"
+msgstr "天前"
+
+#: ../../js/custom-functions.js:268
+msgid "month(s) ago"
+msgstr "月前"
+
+#: ../../js/custom-functions.js:271
+msgid "year(s) ago"
+msgstr "年前"
+
+#: ../../js/custom-functions.js:304
+msgid "enabled"
+msgstr "已启用"
+
+#: ../../js/custom-functions.js:307
+msgid "disabled"
+msgstr "已禁用"
+
+#: ../../js/custom-functions.js:329 ../../js/custom-functions.js:334
+#: ../../js/custom-functions.js:339
+msgid "Failure"
+msgstr "失败"
+
+#: ../../js/custom-functions.js:344
+msgid "Success"
+msgstr "成功"
+
+#: ../../js/custom-functions.js:354
+msgid "Queued"
+msgstr "排队"
+
+#: ../../js/custom-functions.js:358 ../../js/custom-functions.js:359
+msgid "Blocked"
+msgstr "已阻止"
+
+#: ../../js/custom-functions.js:364
+msgid "Verify found differences"
+msgstr "验证发现的差异"
+
+#: ../../js/custom-functions.js:369
+msgid "Canceled"
+msgstr "已取消"
+
+#: ../../js/custom-functions.js:423 ../../js/custom-functions.js:424
+msgid "SD despooling attributes"
+msgstr "SD去除连接属性"
+
+#: ../../js/custom-functions.js:428 ../../js/custom-functions.js:429
+msgid "Doing batch insert file records"
+msgstr "执行批处理插入文件记录"
+
+#: ../../js/custom-functions.js:434
+msgid "Incomplete"
+msgstr "不完整"
+
+#: ../../js/custom-functions.js:439
+msgid "Committing data"
+msgstr "提交数据"
+
+#: ../../js/custom-functions.js:444
+msgid "Warning"
+msgstr "警告"
+
+#: ../../js/custom-functions.js:448 ../../js/custom-functions.js:449
+msgid "Doing data despooling"
+msgstr "执行数据去除连接"
+
+#: ../../js/custom-functions.js:453 ../../js/custom-functions.js:454
+msgid "Queued waiting for device"
+msgstr "排队等待设备"
+
+#: ../../../module/Client/view/client/client/details.phtml:172
+#: ../../../module/Client/view/client/client/details.phtml:221
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:184
+#: ../../../module/Job/view/job/job/index.phtml:201
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:264
+#: ../../../module/Job/view/job/job/index.phtml:272
+#: ../../../module/Job/view/job/job/index.phtml:293
+#: ../../../module/Job/view/job/job/index.phtml:295
+#: ../../../module/Job/view/job/job/index.phtml:299
+#: ../../../module/Job/view/job/job/index.phtml:301
+msgid "View Job Details"
+msgstr "查看作业细节"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:102
+msgid "warning"
+msgstr "警告"
+
+#: ../../js/custom-functions.js:328
+msgid "Non-fatal error"
+msgstr "无致命错误"
+
+#: ../../js/custom-functions.js:333
+msgid "Job terminated in error"
+msgstr "作业因错误终止"
+
+#: ../../js/custom-functions.js:338
+msgid "Fatal error"
+msgstr "致命错误"
+
+#: ../../js/custom-functions.js:343
+msgid "Terminated normally"
+msgstr "正常终止"
+
+#: ../../js/custom-functions.js:353
+msgid "Created but not yet running"
+msgstr "新建尚未执行"
+
+#: ../../js/custom-functions.js:363
+msgid "Verify differences"
+msgstr "验证差异"
+
+#: ../../js/custom-functions.js:368
+msgid "Canceled by user"
+msgstr "用户取消"
+
+#: ../../js/custom-functions.js:373
+msgid "Waiting on File daemon"
+msgstr "正在等待FD"
+
+#: ../../js/custom-functions.js:378
+msgid "Waiting on the Storage daemon"
+msgstr "正在等待SD"
+
+#: ../../js/custom-functions.js:383
+msgid "Waiting for new media"
+msgstr "正在等待存储媒介"
+
+#: ../../js/custom-functions.js:388
+msgid "Waiting for Mount"
+msgstr "正在等待挂载"
+
+#: ../../js/custom-functions.js:393
+msgid "Waiting for storage resource"
+msgstr "正在等待储存资源"
+
+#: ../../js/custom-functions.js:398
+msgid "Waiting for job resource"
+msgstr "正在等待作业资源"
+
+#: ../../js/custom-functions.js:403
+msgid "Waiting for Client resource"
+msgstr "正在等待客户资源"
+
