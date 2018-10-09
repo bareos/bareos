@@ -3848,6 +3848,7 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources *res_to_add, int type)
       }
     }
     last->next = (CommonResourceHeader *)res;
+    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), my_config->res_to_str(type), res->res_dir.name(),rindex);
   }
   return true;
 }
@@ -3916,40 +3917,40 @@ static void DumpResource(int type,
 
   switch (type) {
     case R_DIRECTOR:
-      res->res_dir.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_dir.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_PROFILE:
-      res->res_profile.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_profile.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_CONSOLE:
-      res->res_con.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_con.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_COUNTER:
-      res->res_counter.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_counter.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_CLIENT:
-      res->res_client.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_client.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_DEVICE:
-      res->res_dev.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_dev.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_STORAGE:
-      res->res_store.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_store.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_CATALOG:
-      res->res_cat.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_cat.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_JOBDEFS:
     case R_JOB:
-      res->res_job.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_job.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_FILESET:
@@ -3957,11 +3958,11 @@ static void DumpResource(int type,
       sendit(sock, "%s", buf.c_str());
       break;
     case R_SCHEDULE:
-      res->res_sch.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_sch.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_POOL:
-      res->res_pool.PrintConfig(buf, hide_sensitive_data, verbose);
+      res->res_pool.PrintConfig(buf, *my_config, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
     case R_MSGS:
@@ -4216,7 +4217,6 @@ static void FreeResource(CommonResourceHeader *sres, int type)
  */
 static bool SaveResource(int type, ResourceItem *items, int pass)
 {
-  UnionOfResources *res;
   int rindex = type - R_FIRST;
 
   switch (type) {
@@ -4251,8 +4251,6 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
   if (pass == 2) { return UpdateResourcePointer(type, items); }
 
   if (!AddResourceCopyToEndOfChain(&res_all, type)) { return false; }
-  Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), my_config->res_to_str(type), res->res_dir.name(),
-        rindex, pass);
   return true;
 }
 

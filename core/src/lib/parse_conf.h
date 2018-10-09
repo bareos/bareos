@@ -178,12 +178,11 @@ struct ResourceItem {
  */
 class CommonResourceHeader {
 public:
-   CommonResourceHeader *next;                           /* Pointer to next resource of this type */
+   CommonResourceHeader *next;          /* Pointer to next resource of this type */
    char *name;                          /* Resource name */
    char *desc;                          /* Resource description */
    uint32_t rcode;                      /* Resource id or type */
    int32_t refcnt;                      /* Reference count for releasing */
-  ConfigurationParser *my_config_;     /* Pointer to config parser that created this resource */
    char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
    char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
 };
@@ -327,7 +326,8 @@ public:
 
    /* Methods */
    inline char *name() const { return this->hdr.name; }
-   bool PrintConfig(PoolMem &buf, bool hide_sensitive_data = false, bool verbose = false);
+   bool PrintConfig(PoolMem &buf, const ConfigurationParser &my_config,
+                    bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
     * when special rules for this resource type must be checked.
