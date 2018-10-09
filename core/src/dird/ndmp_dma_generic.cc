@@ -134,7 +134,7 @@ static inline bool NdmpValidateStorage(JobControlRecord *jcr, StorageResource *s
 
 bool NdmpValidateStorage(JobControlRecord *jcr)
 {
-   StorageResource *store;
+   StorageResource *store = nullptr;
 
    if (jcr->res.wstorage) {
       foreach_alist(store, jcr->res.wstorage) {

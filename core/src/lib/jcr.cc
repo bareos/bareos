@@ -827,7 +827,7 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
   if (!unified_job_name) { return nullptr; }
 
   JobControlRecord *jcr;
-  const char *auth_key;
+  const char *auth_key = nullptr;
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
       auth_key = jcr->sd_auth_key;

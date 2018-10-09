@@ -360,12 +360,13 @@ int main (int argc, char *argv[])
          InitStackDump();              /* grab new pid */
       }
    }
-
+   char* backend_dir;
    if (InitCrypto() != 0) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
       goto bail_out;
    }
 
+   backend_dir = nullptr;
    if (!CheckResources()) {
       Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path().c_str());
       goto bail_out;
@@ -385,7 +386,7 @@ int main (int argc, char *argv[])
    LmgrInitThread(); /* initialize the lockmanager stack */
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-   char *backend_dir;
+   backend_dir = nullptr;
 
    foreach_alist(backend_dir, me->backend_directories) {
       Dmsg1(100, "backend path: %s\n", backend_dir);

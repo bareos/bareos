@@ -46,7 +46,7 @@ class TlsOpenSsl : public Tls {
   bool TlsBsockConnect(BareosSocket *bsock) override;
   void TlsBsockShutdown(BareosSocket *bsock) override;
 
-  std::string TlsCipherGetName() const;
+  std::string TlsCipherGetName() const override;
   void SetCipherList(const std::string &cipherlist) override;
   void TlsLogConninfo(JobControlRecord *jcr,
                                   const char *host,

@@ -331,7 +331,7 @@ bRC GeneratePluginEvent(JobControlRecord *jcr, bEventType eventType, void *value
    int len = 0;
    bool call_if_canceled = false;
    restore_object_pkt *rop;
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
    alist *plugin_ctx_list;
    bRC rc = bRC_OK;
 
@@ -452,7 +452,7 @@ bail_out:
  */
 bool PluginCheckFile(JobControlRecord *jcr, char *fname)
 {
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
    alist *plugin_ctx_list;
    int retval = bRC_OK;
 
@@ -574,7 +574,7 @@ bRC PluginOptionHandleFile(JobControlRecord *jcr, FindFilesPacket *ff_pkt, struc
    bRC retval = bRC_Core;
    bEvent event;
    bEventType eventType;
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
    alist *plugin_ctx_list;
 
    cmd = ff_pkt->plugin;
@@ -652,7 +652,7 @@ int PluginSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
    bRC retval;
    char *cmd;
    bEvent event;
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
    struct save_pkt sp;
    bEventType eventType;
    PoolMem fname(PM_FNAME);
@@ -883,7 +883,7 @@ int PluginEstimate(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_leve
    bEventType eventType;
    PoolMem fname(PM_FNAME);
    PoolMem link(PM_FNAME);
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
    alist *plugin_ctx_list;
    Attributes attr;
 
@@ -1091,7 +1091,7 @@ bool PluginNameStream(JobControlRecord *jcr, char *name)
    char *cmd;
    char *p = name;
    bool start;
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
    alist *plugin_ctx_list;
 
    Dmsg1(debuglevel, "Read plugin stream string=%s\n", name);
@@ -1832,7 +1832,7 @@ void NewPlugins(JobControlRecord *jcr)
  */
 void FreePlugins(JobControlRecord *jcr)
 {
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
 
    if (!fd_plugin_list || !jcr->plugin_ctx_list) {
       return;

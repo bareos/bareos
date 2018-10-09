@@ -58,7 +58,7 @@ bool InitAutochangers()
     * Ensure that the media_type for each device is the same
     */
    foreach_res(changer, R_AUTOCHANGER) {
-      DeviceResource *device;
+      DeviceResource *device = nullptr;
 
       logical_drive_number = 0;
       foreach_alist(device, changer->device) {
@@ -521,7 +521,7 @@ static bool UnloadOtherDrive(DeviceControlRecord *dcr, slot_number_t slot, bool 
    Device *dev_save;
    bool found = false;
    AutochangerResource *changer = dcr->dev->device->changer_res;
-   DeviceResource *device;
+   DeviceResource *device = nullptr;
    int retries = 0;                /* wait for device retries */
 
    if (!changer) {

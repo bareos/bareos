@@ -992,7 +992,7 @@ void CryptoSignFree(SIGNATURE *sig)
 CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
 {
    CRYPTO_SESSION *cs;
-   X509_KEYPAIR *keypair;
+   X509_KEYPAIR *keypair = nullptr;
    const EVP_CIPHER *ec;
    unsigned char *iv;
    int iv_len;
@@ -1219,7 +1219,7 @@ bool CryptoSessionEncode(CRYPTO_SESSION *cs, uint8_t *dest, uint32_t *length)
 crypto_error_t CryptoSessionDecode(const uint8_t *data, uint32_t length, alist *keypairs, CRYPTO_SESSION **session)
 {
    CRYPTO_SESSION *cs;
-   X509_KEYPAIR *keypair;
+   X509_KEYPAIR *keypair = nullptr;
    STACK_OF(RecipientInfo) *recipients;
    crypto_error_t retval = CRYPTO_ERROR_NONE;
 #if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)

@@ -71,7 +71,7 @@ void FreeBregexps(alist *bregexps)
 {
    Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
-   BareosRegex *elt;
+   BareosRegex *elt = nullptr;
    foreach_alist(elt, bregexps) {
       FreeBregexp(elt);
    }
@@ -81,7 +81,7 @@ void FreeBregexps(alist *bregexps)
  */
 bool ApplyBregexps(const char *fname, alist *bregexps, char **result)
 {
-   BareosRegex *elt;
+   BareosRegex *elt = nullptr;
    bool ok=false;
 
    char *ret = (char *) fname;

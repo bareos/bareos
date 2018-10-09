@@ -22,7 +22,7 @@
 #ifndef BAREOS_LIB_PARSE_CONF_CALLBACKS_H_
 #define BAREOS_LIB_PARSE_CONF_CALLBACKS_H_ 1
 
-class ResourceItem;
+struct ResourceItem;
 class CommonResourceHeader;
 class ConfigurationParser;
 

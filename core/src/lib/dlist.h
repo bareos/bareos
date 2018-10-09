@@ -192,7 +192,14 @@ public:
    char *c_str() { return str_; }
 
 private:
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
    dlink link_;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
    char str_[1];
    /* !!! Don't put anything after this as this space is used
     *     to hold the string in inline

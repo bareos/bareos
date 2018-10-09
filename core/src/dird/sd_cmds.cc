@@ -750,7 +750,7 @@ void DoNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
 
    } else {
       int cnt = 0;
-      DeviceResource *device;
+      DeviceResource *device = nullptr;
       PoolMem devicenames;
 
       /*

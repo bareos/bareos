@@ -1781,7 +1781,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, const ConfigurationParser &my_co
         /*
          * One line for each member of the list
          */
-        char *value;
+        char *value = nullptr;
         alist *list;
         list = *(items[i].alistvalue);
 
@@ -1804,7 +1804,7 @@ bool BareosResource::PrintConfig(PoolMem &buff, const ConfigurationParser &my_co
          * Each member of the list is comma-separated
          */
         int cnt = 0;
-        CommonResourceHeader *res;
+        CommonResourceHeader *res = nullptr;
         alist *list;
         PoolMem res_names;
 

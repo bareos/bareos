@@ -113,12 +113,12 @@ BareosDb *db_init_database(JobControlRecord *jcr,
                        bool need_private)
 {
    struct stat st;
-   char *backend_dir;
+   char *backend_dir = nullptr;
    void *dl_handle = NULL;
    PoolMem shared_library_name(PM_FNAME);
    PoolMem error(PM_FNAME);
    backend_interface_mapping_t *backend_interface_mapping;
-   backend_shared_library_t *backend_shared_library;
+   backend_shared_library_t *backend_shared_library = nullptr;
    t_backend_instantiate backend_instantiate;
    t_flush_backend flush_backend;
 
@@ -275,7 +275,7 @@ BareosDb *db_init_database(JobControlRecord *jcr,
 
 void DbFlushBackends(void)
 {
-   backend_shared_library_t *backend_shared_library;
+   backend_shared_library_t *backend_shared_library = nullptr;
 
    if (loaded_backends) {
       foreach_alist(backend_shared_library, loaded_backends) {

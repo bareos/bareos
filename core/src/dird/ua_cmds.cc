@@ -743,7 +743,7 @@ static inline bool CancelStorageDaemonJob(UaContext *ua, const char *cmd)
 static inline bool CancelJobs(UaContext *ua, const char *cmd)
 {
    JobControlRecord *jcr;
-   JobId_t *JobId;
+   JobId_t *JobId = nullptr;
    alist *selection;
 
    selection = select_jobs(ua, "cancel");
@@ -937,7 +937,7 @@ static bool SetbwlimitCmd(UaContext *ua, const char *cmd)
 
    if (FindArgKeyword(ua, lst) > 0) {
       JobControlRecord *jcr;
-      JobId_t *JobId;
+      JobId_t *JobId = nullptr;
       alist *selection;
 
       selection = select_jobs(ua, "limit");

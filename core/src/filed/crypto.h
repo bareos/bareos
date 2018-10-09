@@ -25,7 +25,7 @@
 namespace filedaemon {
 
 struct r_ctx;
-class RestoreCipherContext;
+struct RestoreCipherContext;
 
 bool CryptoSessionStart(JobControlRecord *jcr, crypto_cipher_t cipher);
 void CryptoSessionEnd(JobControlRecord *jcr);

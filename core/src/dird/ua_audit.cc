@@ -44,7 +44,7 @@ bool UaContext::AuditEventWanted(bool audit_event_enabled)
    }
 
    if (audit_event_enabled) {
-      const char *event;
+      const char *event = nullptr;
 
       foreach_alist(event, me->audit_events) {
          if (Bstrcasecmp(event, argk[0])) {

@@ -688,7 +688,7 @@ static bool PruneBackupJobs(UaContext *ua, ClientResource *client, PoolResource 
    utime_t period;
    char ed1[50];
    alist *jobids_check=NULL;
-   struct accurate_check_ctx *elt;
+   struct accurate_check_ctx *elt = nullptr;
    db_list_ctx jobids, tempids;
    JobDbRecord jr;
    struct del_ctx del;

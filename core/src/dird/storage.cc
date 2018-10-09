@@ -79,7 +79,7 @@ void FreeRwstorage(JobControlRecord *jcr)
 void CopyRstorage(JobControlRecord *jcr, alist *storage, const char *where)
 {
    if (storage) {
-      StorageResource *store;
+      StorageResource *store = nullptr;
       if (jcr->res.rstorage) {
          delete jcr->res.rstorage;
       }
@@ -103,7 +103,7 @@ void CopyRstorage(JobControlRecord *jcr, alist *storage, const char *where)
  */
 void SetRstorage(JobControlRecord *jcr, UnifiedStorageResource *store)
 {
-   StorageResource *storage;
+   StorageResource *storage = nullptr;
 
    if (!store->store) {
       return;
@@ -143,7 +143,7 @@ void FreeRstorage(JobControlRecord *jcr)
 void CopyWstorage(JobControlRecord *jcr, alist *storage, const char *where)
 {
    if (storage) {
-      StorageResource *st;
+      StorageResource *st = nullptr;
       if (jcr->res.wstorage) {
          delete jcr->res.wstorage;
       }
@@ -169,7 +169,7 @@ void CopyWstorage(JobControlRecord *jcr, alist *storage, const char *where)
  */
 void SetWstorage(JobControlRecord *jcr, UnifiedStorageResource *store)
 {
-   StorageResource *storage;
+   StorageResource *storage = nullptr;
 
    if (!store->store) {
       return;
@@ -215,7 +215,7 @@ void FreeWstorage(JobControlRecord *jcr)
  */
 void SetPairedStorage(JobControlRecord *jcr)
 {
-   StorageResource *store, *pstore;
+   StorageResource *store = nullptr, *pstore = nullptr;
 
    switch (jcr->getJobType()) {
    case JT_BACKUP:
@@ -403,7 +403,7 @@ void FreePairedStorage(JobControlRecord *jcr)
  */
 bool HasPairedStorage(JobControlRecord *jcr)
 {
-   StorageResource *store;
+   StorageResource *store = nullptr;
 
    switch (jcr->getJobType()) {
    case JT_BACKUP:

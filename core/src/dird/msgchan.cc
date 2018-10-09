@@ -152,7 +152,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord *jcr, BareosSocket *sd
 bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, bool send_bsr)
 {
    bool ok = true;
-   StorageResource *storage;
+   StorageResource *storage = nullptr;
    char auth_key[100];
    const char *fileset_md5;
    PoolMem StoreName, device_name, pool_name, pool_type, media_type, backup_format;
@@ -294,7 +294,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
          sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
          Dmsg1(100, "rstore >stored: %s", sd->msg);
-         DeviceResource *dev;
+         DeviceResource *dev = nullptr;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
             PmStrcpy(device_name, dev->name());
@@ -332,7 +332,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
          Dmsg1(100, "wstore >stored: %s", sd->msg);
-         DeviceResource *dev;
+         DeviceResource *dev = nullptr;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
             PmStrcpy(device_name, dev->name());

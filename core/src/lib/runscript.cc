@@ -96,7 +96,7 @@ void FreeRunscript(RunScript *script)
 
 static inline bool ScriptDirAllowed(JobControlRecord *jcr, RunScript *script, alist *allowed_script_dirs)
 {
-   char *bp, *allowed_script_dir;
+   char *bp, *allowed_script_dir = nullptr;
    bool allowed = false;
    PoolMem script_dir(PM_FNAME);
 
@@ -143,7 +143,7 @@ static inline bool ScriptDirAllowed(JobControlRecord *jcr, RunScript *script, al
 
 int RunScripts(JobControlRecord *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
 {
-   RunScript *script;
+   RunScript *script = nullptr;
    bool runit;
    int when;
 
@@ -324,7 +324,7 @@ void FreeRunscripts(alist *runscripts)
 {
    Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
-   RunScript *elt;
+   RunScript *elt = nullptr;
    foreach_alist(elt, runscripts) {
       FreeRunscript(elt);
    }
