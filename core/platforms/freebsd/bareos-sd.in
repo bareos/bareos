@@ -8,30 +8,13 @@
 #
 #  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
+. /etc/rc.subr
 
-case "$1" in
-    start)
-       echo "Starting the Bareos Storage daemon: "
-       @sbindir@/bareos-sd $2 -c @confdir@/bareos-sd.conf
-       RETVAL=$?
-       echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-sd
-       ;;
-    stop)
-       echo "Stopping the Bareos Storage daemon: "
-#      killproc @sbindir@/bareos-sd
-       RETVAL=$?
-       echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-sd
-       ;;
-    restart)
-       $0 stop
-       sleep 5
-       $0 start
-       ;;
-    *)
-       echo "Usage: $0 {start|stop|restart}"
-       exit 1
-       ;;
-esac
-exit 0
+name=bareossd
+rcvar=bareossd_enable
+
+command="@sbindir@/bareos-sd"
+
+load_rc_config $name
+run_rc_command "$1"
+
