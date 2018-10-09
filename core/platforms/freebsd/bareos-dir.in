@@ -8,31 +8,13 @@
 #
 #  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
+. /etc/rc.subr
 
-RETVAL=0
-case "$1" in
-    start)
-       echo "Starting the Bareos Director: "
-       @sbindir@/bareos-dir $2 -c @confdir@/bareos-dir.conf
-       RETVAL=$?
-       echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-dir
-       ;;
-    stop)
-       echo "Stopping the Director daemon: "
-#      killproc @sbindir@/bareos-dir
-       RETVAL=$?
-       echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-dir
-       ;;
-    restart)
-       $0 stop
-       sleep 5
-       $0 start
-       ;;
-    *)
-       echo "Usage: $0 {start|stop|restart}"
-       exit 1
-       ;;
-esac
-exit 0
+name=bareosdir
+rcvar=bareosdir_enable
+
+command="@sbindir@/bareos-dir"
+
+load_rc_config $name
+run_rc_command "$1"
+
