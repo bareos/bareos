@@ -3,12 +3,12 @@
 sudo apt-get -qq update
 # qt5 should be used. Remove qt4-dev to avoid confusion.
 sudo apt-get remove libqt4-dev
-sudo pip install sauceclient selenium
-
 cd core
 dpkg-checkbuilddeps 2> /tmp/dpkg-builddeps || true
 if [ $BUILD_WEBUI ]
 then
+	sudo -H pip install --upgrade pip urllib3==1.22
+	sudo -H pip install sauceclient selenium
 	cd ../webui
 	dpkg-checkbuilddeps 2>> /tmp/dpkg-builddeps || true
 fi
