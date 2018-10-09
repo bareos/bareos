@@ -687,7 +687,7 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
    * record.
    */
   if (pass == 2) {
-    DeviceResource *dev;
+    DeviceResource *dev = nullptr;
     int errstat;
 
     switch (type) {

@@ -166,7 +166,7 @@ static inline bool RestoreFinderinfo(JobControlRecord *jcr, POOLMEM *buf, int32_
  */
 static inline void DropDelayedDataStreams(r_ctx &rctx, bool reuse)
 {
-   DelayedDataStream *dds;
+   DelayedDataStream *dds = nullptr;
 
    if (!rctx.delayed_streams ||
        rctx.delayed_streams->empty()) {
@@ -295,7 +295,7 @@ static inline bool do_restore_xattr(JobControlRecord *jcr,
  */
 static inline bool PopDelayedDataStreams(JobControlRecord *jcr, r_ctx &rctx)
 {
-   DelayedDataStream *dds;
+   DelayedDataStream *dds = nullptr;
 
    /*
     * See if there is anything todo.

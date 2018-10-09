@@ -560,7 +560,7 @@ void StoredFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->read_store) {
-      DirectorStorage *store;
+      DirectorStorage *store = nullptr;
       foreach_alist(store, jcr->read_store) {
          delete store->device;
          delete store;
@@ -570,7 +570,7 @@ void StoredFreeJcr(JobControlRecord *jcr)
    }
 
    if (jcr->write_store) {
-      DirectorStorage *store;
+      DirectorStorage *store = nullptr;
       foreach_alist(store, jcr->write_store) {
          delete store->device;
          delete store;

@@ -55,7 +55,7 @@ namespace directordaemon {
 }
 
 namespace storagedaemon {
-   class VolumeList;
+   struct VolumeList;
    class DeviceControlRecord;
    class DirectorResource;
    struct BootStrapRecord;

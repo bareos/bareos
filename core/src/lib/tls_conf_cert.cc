@@ -39,7 +39,7 @@ std::vector<std::string> TlsConfigCert::AllowedCertificateCommonNames() const
    std::vector<std::string> list;
 
    if (allowed_certificate_common_names_) {
-      const char *s;
+      const char *s = nullptr;
       foreach_alist(s, allowed_certificate_common_names_) {
          list.push_back(std::string(s));
       }

@@ -262,7 +262,7 @@ int main (int argc, char *argv[])
  */
 static inline void DropDelayedDataStreams()
 {
-   DelayedDataStream *dds;
+   DelayedDataStream *dds = nullptr;
 
    if (!delayed_streams ||
        delayed_streams->empty()) {
@@ -305,7 +305,7 @@ static inline void PushDelayedDataStream(int stream, char *content, uint32_t con
  */
 static inline void PopDelayedDataStreams()
 {
-   DelayedDataStream *dds;
+   DelayedDataStream *dds = nullptr;
 
    /*
     * See if there is anything todo.

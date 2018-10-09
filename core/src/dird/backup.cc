@@ -126,7 +126,7 @@ char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore)
 
 static inline bool ValidateStorage(JobControlRecord *jcr)
 {
-   StorageResource *store;
+   StorageResource *store = nullptr;
 
    foreach_alist(store, jcr->res.wstorage) {
       switch (store->Protocol) {
@@ -185,7 +185,7 @@ bool DoNativeBackupInit(JobControlRecord *jcr)
 static bool GetBaseJobids(JobControlRecord *jcr, db_list_ctx *jobids)
 {
    JobDbRecord jr;
-   JobResource *job;
+   JobResource *job = nullptr;
    JobId_t id;
    char str_jobid[50];
 

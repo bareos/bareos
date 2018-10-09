@@ -518,7 +518,7 @@ void OutputFormatter::ClearFilters()
 
 bool OutputFormatter::has_acl_filters()
 {
-   of_filter_tuple *tuple;
+   of_filter_tuple *tuple = nullptr;
 
    if (filters) {
       foreach_alist(tuple, filters) {
@@ -534,7 +534,7 @@ bool OutputFormatter::has_acl_filters()
 bool OutputFormatter::FilterData(void *data)
 {
    of_filter_state state;
-   of_filter_tuple *tuple;
+   of_filter_tuple *tuple = nullptr;
    int acl_filter_show = 0,
        acl_filter_unknown = 0;
 
@@ -841,7 +841,7 @@ void OutputFormatter::JsonFinalizeResult(bool result)
 
          range_obj = json_object();
 
-         of_filter_tuple *tuple;
+         of_filter_tuple *tuple = nullptr;
          foreach_alist(tuple, filters) {
             if (tuple->type == OF_FILTER_LIMIT) {
                json_object_set_new(range_obj, "limit", json_integer(tuple->u.limit_filter.limit));

@@ -266,7 +266,7 @@ struct DelayedDataStream {
 
 
 class DeviceControlRecord; /* Forward Reference */
-class DeviceBlock;         /* Forward Reference */
+struct DeviceBlock;         /* Forward Reference */
 
 const char *FI_to_ascii(char *buf, int fi);
 const char *stream_to_ascii(char *buf, int stream, int fi);

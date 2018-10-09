@@ -1791,7 +1791,7 @@ void CreateClones(JobControlRecord *jcr)
     */
    Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->cloned, jcr->res.job->run_cmds);
    if (!jcr->cloned && jcr->res.job->run_cmds) {
-      char *runcmd;
+      char *runcmd = nullptr;
       JobId_t jobid;
       JobResource *job = jcr->res.job;
       POOLMEM *cmd = GetPoolMemory(PM_FNAME);

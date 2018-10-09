@@ -230,7 +230,7 @@ bool LoadPlugins(void *binfo,
     * See if we are loading certain plugins only or all plugins of a certain type.
     */
    if (plugin_names && plugin_names->size()) {
-      char *name;
+      char *name = nullptr;
       PoolMem plugin_name(PM_FNAME);
 
       foreach_alist(name, plugin_names) {

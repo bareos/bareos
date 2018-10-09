@@ -1411,7 +1411,7 @@ bool GetLevelFromName(JobControlRecord *jcr, const char *level_name)
 static inline bool InsertSelectedJobid(alist *selected_jobids, JobId_t JobId)
 {
    bool found;
-   JobId_t *selected_jobid;
+   JobId_t *selected_jobid = nullptr;
 
    found = false;
    foreach_alist(selected_jobid, selected_jobids) {

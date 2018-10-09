@@ -43,12 +43,12 @@ public:
    virtual bool TlsPostconnectVerifyHost(JobControlRecord *jcr, const char *host) override;
    virtual bool TlsPostconnectVerifyCn(JobControlRecord *jcr, const std::vector<std::string> &verify_list) override;
 
-   virtual bool TlsBsockAccept(BareosSocket *bsock);
-   virtual int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes);
-   virtual int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes);
-   virtual bool TlsBsockConnect(BareosSocket *bsock);
-   virtual void TlsBsockShutdown(BareosSocket *bsock);
-   virtual void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const ;
+   virtual bool TlsBsockAccept(BareosSocket *bsock) override;
+   virtual int TlsBsockWriten(BareosSocket *bsock, char *ptr, int32_t nbytes) override;
+   virtual int TlsBsockReadn(BareosSocket *bsock, char *ptr, int32_t nbytes) override;
+   virtual bool TlsBsockConnect(BareosSocket *bsock) override;
+   virtual void TlsBsockShutdown(BareosSocket *bsock) override;
+   virtual void TlsLogConninfo(JobControlRecord *jcr, const char *host, int port, const char *who) const override;
 
    virtual void SetCipherList(const std::string &cipherlist) override {};
 

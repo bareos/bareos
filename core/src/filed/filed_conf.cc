@@ -423,7 +423,7 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_client.pki_keypair) { CryptoKeypairFree(res->res_client.pki_keypair); }
       if (res->res_client.pki_signing_key_files) { delete res->res_client.pki_signing_key_files; }
       if (res->res_client.pki_signers) {
-        X509_KEYPAIR *keypair;
+        X509_KEYPAIR *keypair = nullptr;
         foreach_alist (keypair, res->res_client.pki_signers) {
           CryptoKeypairFree(keypair);
         }
@@ -431,7 +431,7 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       }
       if (res->res_client.pki_master_key_files) { delete res->res_client.pki_master_key_files; }
       if (res->res_client.pki_recipients) {
-        X509_KEYPAIR *keypair;
+        X509_KEYPAIR *keypair = nullptr;
         foreach_alist (keypair, res->res_client.pki_recipients) {
           CryptoKeypairFree(keypair);
         }

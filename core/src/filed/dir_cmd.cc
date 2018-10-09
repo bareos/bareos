@@ -275,7 +275,7 @@ static char read_close[]   = "read close session %d\n";
  */
 static bool ValidateCommand(JobControlRecord *jcr, const char *cmd, alist *allowed_job_cmds)
 {
-   char *allowed_job_cmd;
+   char *allowed_job_cmd = nullptr;
    bool allowed = false;
 
    /*

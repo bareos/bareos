@@ -21,7 +21,7 @@
 #ifndef BAREOS_STORED_SOCKET_SERVER_H_
 #define BAREOS_STORED_SOCKET_SERVER_H_
 
-struct dlist;
+class dlist;
 class ConfigurationParser;
 
 namespace storagedaemon {

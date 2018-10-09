@@ -245,7 +245,7 @@ bool UaContext::AclAccessOk(int acl, const char *item, int len, bool audit_event
     * If we didn't find a matching ACL try to use the profiles this console is connected to.
     */
    if (!retval && cons->profiles && cons->profiles->size()) {
-      ProfileResource *profile;
+      ProfileResource *profile = nullptr;
 
       foreach_alist(profile, cons->profiles) {
          retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);

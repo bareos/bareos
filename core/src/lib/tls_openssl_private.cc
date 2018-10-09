@@ -90,9 +90,7 @@ bool TlsOpenSslPrivate::init()
     return false;
   }
 
-  if (pem_callback_) {
-    pem_userdata_ = pem_userdata_;
-  } else {
+  if (pem_callback_ == nullptr) {
     pem_callback_ = CryptoDefaultPemCallback;
     pem_userdata_ = NULL;
   }

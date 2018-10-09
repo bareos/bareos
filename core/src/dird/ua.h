@@ -48,7 +48,7 @@ class ClientResource;
 class JobResource;
 class FilesetResource;
 class ScheduleResource;
-class RestoreBootstrapRecord;
+struct RestoreBootstrapRecord;
 struct ua_cmdstruct;
 class UnifiedStorageResource;
 

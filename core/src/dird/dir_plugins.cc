@@ -551,7 +551,7 @@ void NewPlugins(JobControlRecord *jcr)
  */
 void FreePlugins(JobControlRecord *jcr)
 {
-   bpContext *ctx;
+   bpContext *ctx = nullptr;
 
    if (!dird_plugin_list || !jcr->plugin_ctx_list) {
       return;

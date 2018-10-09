@@ -1144,7 +1144,7 @@ static void PropagateResource(ResourceItem *items, BareosResource *source, Bareo
             break;
          }
          case CFG_TYPE_ALIST_STR: {
-            const char *str;
+            const char *str = nullptr;
             alist *orig_list, **new_list;
 
             /*
@@ -1172,7 +1172,7 @@ static void PropagateResource(ResourceItem *items, BareosResource *source, Bareo
             break;
          }
          case CFG_TYPE_ALIST_RES: {
-            CommonResourceHeader *res;
+            CommonResourceHeader *res = nullptr;
             alist *orig_list, **new_list;
 
             /*
@@ -1200,7 +1200,7 @@ static void PropagateResource(ResourceItem *items, BareosResource *source, Bareo
             break;
          }
          case CFG_TYPE_ACL: {
-            const char *str;
+            const char *str = nullptr;
             alist *orig_list, **new_list;
 
             /*
@@ -1393,7 +1393,7 @@ char *CatalogResource::display(POOLMEM *dst)
 static inline void PrintConfigRunscript(ResourceItem *item, PoolMem &cfg_str)
 {
    PoolMem temp;
-   RunScript *runscript;
+   RunScript *runscript = nullptr;
    alist *list;
 
    list = *item->alistvalue;
@@ -2639,7 +2639,7 @@ bool PropagateJobdefs(int res_type, JobResource *res)
        * Handle RunScripts alists specifically
        */
       if (jobdefs->RunScripts) {
-         RunScript *rs, *elt;
+         RunScript *rs = nullptr, *elt;
 
          if (!res->RunScripts) {
             res->RunScripts = New(alist(10, not_owned_by_alist));
@@ -3562,7 +3562,7 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
        * Each member of the list is comma-separated
        */
       int cnt = 0;
-      CommonResourceHeader *res;
+      CommonResourceHeader *res = nullptr;
       alist *list;
       PoolMem res_names;
 
@@ -3598,7 +3598,7 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
       break;
    case CFG_TYPE_ACL: {
       int cnt = 0;
-      char *value;
+      char *value = nullptr;
       alist *list;
       PoolMem acl;
 
@@ -3759,7 +3759,7 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
        * Each member of the list is comma-separated
        */
       int cnt = 0;
-      char *audit_event;
+      char *audit_event = nullptr;
       alist *list;
       PoolMem audit_events;
 
