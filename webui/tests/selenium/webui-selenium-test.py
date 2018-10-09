@@ -4,8 +4,8 @@
 
 # selenium.common.exceptions.ElementNotInteractableException: requires >= selenium-3.4.0
 
-import logging, os, re, sys, unittest
-from   datetime import datetime, timedelta
+import logging, os, sys, unittest
+from   datetime import datetime
 from   selenium import webdriver
 from   selenium.common.exceptions import *
 from   selenium.webdriver.common.by import By
@@ -87,7 +87,6 @@ class SeleniumTest(unittest.TestCase):
     password = 'secret'
     client = 'bareos-fd'
     restorefile = '/usr/sbin/bconsole'
-    chromedriverpath = '/usr/lib/chromium-browser/chromedriver'
     # path to store logging files
     logpath = os.getcwd()
     # slow down test for debugging
@@ -97,10 +96,7 @@ class SeleniumTest(unittest.TestCase):
     # time to wait before trying again
     waittime = 0.1
 
-# Setup functions
-
     def setUp(self):
-        # print base_url, username, password, client, restorefile
         # Configure the logger, for information about the timings set it to INFO
         # Selenium driver itself will write additional debug messages when set to DEBUG
         logging.basicConfig(
@@ -109,31 +105,51 @@ class SeleniumTest(unittest.TestCase):
                 level=logging.INFO
         )
         self.logger = logging.getLogger()
-        self.logger.info("===================== TESTING =====================")
-        if self.browser == 'chrome':
-            # On OS X: Chromedriver path is 'usr/local/lib/chromium-browser/chromedriver'
-            try:
-                os.path.isfile(self.chromedriverpath)
-            except FileNotFoundError:
-                raise DriverNotFoundException
-            else:
-                self.driver = webdriver.Chrome(self.chromedriverpath)
-        if self.browser == "firefox":
-            d = DesiredCapabilities.FIREFOX
-            d['loggingPrefs'] = { 'browser':'ALL' }
-            fp = webdriver.FirefoxProfile()
-            fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
-            self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
+
+        if(os.environ.get('TRAVIS') == 'true'):
+            from sauceclient import SauceClient
+            from   selenium.webdriver.remote.remote_connection import RemoteConnection
+            self.desired_capabilities = {}
+            self.desired_capabilities['name'] = (self.id().split('.'))[2]+": Travis Build Nr. %s" % os.environ['TRAVIS_BUILD_NUMBER']
+            jobnumber = os.environ['TRAVIS_JOB_NUMBER']
+            if jobnumber:
+                self.desired_capabilities['tunnel-identifier'] = jobnumber
+            buildnumber = os.environ['TRAVIS_BUILD_NUMBER']
+            if buildnumber:
+                self.desired_capabilities['build'] = buildnumber
+            self.desired_capabilities['platform'] = "macOS 10.13"
+            self.desired_capabilities['browserName'] = "chrome"
+            self.desired_capabilities['version'] = "latest"
+            sauce_url = "http://%s:%s@localhost:4445/wd/hub"
+            self.driver = webdriver.Remote(
+                desired_capabilities=self.desired_capabilities,
+                command_executor=sauce_url % (self.sauce_username, self.access_key)
+            )
+        else:
+            if self.browser == 'chrome':
+                chromedriverpath = self.getChromedriverpath()
+                self.driver = webdriver.Chrome(chromedriverpath)
+
+            if self.browser == "firefox":
+                d = DesiredCapabilities.FIREFOX
+                d['loggingPrefs'] = { 'browser':'ALL' }
+                fp = webdriver.FirefoxProfile()
+                fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
+                self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
+
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
+
         # take base url, but remove last /
         self.base_url = self.base_url.rstrip('/')
         self.verificationErrors = []
-# Tests
+        self.logger.info("===================== TESTING =====================")
 
+# Tests
     def test_client_disabling(self):
+        # This test navigates to clients, ensures client is enabled,
+        # disables it, closes a possible modal, goes to dashboard and reenables client.
         self.login()
-        logger = logging.getLogger()
         # Clicks on client menue tab
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
         # Tries to click on client...
@@ -182,6 +198,7 @@ class SeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_languages(self):
+        # Goes to login page, matches found languages against predefined list, throws exception if no match
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
         self.wait_and_click(By.XPATH, '//button[@data-id="locale"]')
@@ -196,13 +213,13 @@ class SeleniumTest(unittest.TestCase):
 
     def test_menue(self):
         self.login()
-        self.wait_for_url_and_click('/director/')
-        self.wait_for_url_and_click('/schedule/')
-        self.wait_for_url_and_click('/schedule/status/')
-        self.wait_for_url_and_click('/storage/')
-        self.wait_for_url_and_click('/client/')
-        self.wait_for_url_and_click('/restore/')
-        self.wait_and_click(By.XPATH, '//a[contains(@href, "/dashboard/")]', By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')
+        self.wait_and_click(By.ID, 'menu-topnavbar-director')
+        self.wait_and_click(By.ID, 'menu-topnavbar-schedule')
+        self.wait_and_click(By.XPATH, '//a[contains(@href, "/schedule/status/")]')
+        self.wait_and_click(By.ID, 'menu-topnavbar-storage')
+        self.wait_and_click(By.ID, 'menu-topnavbar-client')
+        self.wait_and_click(By.ID, 'menu-topnavbar-restore')
+        self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')
         self.close_alert_and_get_its_text()
         self.logout()
 
@@ -242,9 +259,8 @@ class SeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_run_configured_job(self):
-        driver = self.driver
         self.login()
-        job_id = self.job_start_configured()
+        self.job_start_configured()
         self.logout()
 
     def test_run_default_job(self):
@@ -263,9 +279,8 @@ class SeleniumTest(unittest.TestCase):
 # Methods used for testing
 
     def client_status(self, client):
-        # Wait until the site and the status element are loaded.
+        # Wait until site and status element are loaded, check client, if not found raise exception
         self.wait.until(EC.presence_of_element_located((By.XPATH, '//tr[contains(td[1], "%s")]/td[4]/span' % self.client)))
-        # Checks the clients status on /bareos-webui/clients, if client not found raise exception
         try:
             status = self.driver.find_element(By.XPATH, '//tr[contains(td[1], "%s")]/td[4]/span' % self.client).text
         except NoSuchElementException:
@@ -273,9 +288,8 @@ class SeleniumTest(unittest.TestCase):
         return status
 
     def job_cancel(self, id):
-        # Wait for the cancel button
+        # Wait and click cancel button
         self.wait_for_element(By.ID, "//a[@id='btn-1'][@title='Cancel']")
-        # Click the cancel button
         self.wait_and_click(By.ID, "//a[@id='btn-1'][@title='Cancel']")
 
     def job_start_configured(self):
@@ -313,11 +327,8 @@ class SeleniumTest(unittest.TestCase):
         driver.find_element_by_xpath('(//button[@type="button"])[2]').click()
         driver.find_element_by_link_text('English').click()
         driver.find_element_by_xpath('//input[@id="submit"]').click()
-        # while ('/dashboard/' not in self.driver.current_url):
-        #     sleep(self.waittime)
-        element=None
         try:
-            element = driver.find_element_by_xpath('//div[@role="alert"]')
+            driver.find_element_by_xpath('//div[@role="alert"]')
         except:
             self.wait_for_spinner_absence()
         else:
@@ -329,6 +340,16 @@ class SeleniumTest(unittest.TestCase):
         sleep(self.sleeptime)
 
 # Methods used for waiting and clicking
+
+    def getChromedriverpath(self):
+        # On OS X: Chromedriver path is 'usr/local/lib/chromium-browser/chromedriver'
+        for chromedriverpath in {'/usr/lib/chromium-browser/chromedriver', '/usr/local/lib/chromium-browser/chromedriver'}:
+            try:
+                os.path.isfile(chromedriverpath)
+            except FileNotFoundError:
+                pass
+            else:
+                return chromedriverpath
 
     def wait_and_click(self, by, value, modal_by=None, modal_value=None):
         logger = logging.getLogger()
@@ -351,10 +372,6 @@ class SeleniumTest(unittest.TestCase):
             except WebDriverException as e:
                 logger.info('WebDriverException: %s', e)
                 sleep(self.waittime)
-            # The case where the element doesn't exist is handled in wait_for_element
-            # except NoSuchElementException as e:
-            #     logger.info("NoSuchElementException while clicking: %s", e)
-            #     sleep(self.waittime)
             else:
                 return element
             seconds = (datetime.now() - starttime).total_seconds()
@@ -382,7 +399,6 @@ class SeleniumTest(unittest.TestCase):
         return element
 
     def wait_for_spinner_absence(self):
-        logger = logging.getLogger()
         element = None
         try:
             element = WebDriverWait(self.driver, self.maxwait).until(EC.invisibility_of_element_located((By.ID, 'spinner')))
@@ -390,13 +406,8 @@ class SeleniumTest(unittest.TestCase):
             raise ElementTimeoutException("spinner")
         return element
 
-    def wait_for_url_and_click(self, url):
-        value='//a[contains(@href, "%s")]' % url
-        self.wait_and_click(By.XPATH, value)
-
     def close_alert_and_get_its_text(self, accept=True):
         logger = logging.getLogger()
-
         try:
             alert = self.driver.switch_to_alert()
             alert_text = alert.text
@@ -410,8 +421,20 @@ class SeleniumTest(unittest.TestCase):
         return alert_text
 
     def tearDown(self):
-        self.driver.quit()
-        self.assertEqual([], self.verificationErrors)
+        if(os.environ.get('TRAVIS') == 'true'):
+            print("Link to job : https://saucelabs.com/jobs/%s" % self.driver.session_id)
+            sauce_client = SauceClient(self.sauce_username, self.access_key)
+            try:
+                if sys.exc_info() == (None, None, None):
+                    sauce_client.jobs.update_job(self.driver.session_id, passed=True)
+                else:
+                    sauce_client.jobs.update_job(self.driver.session_id, passed=False)
+            finally:
+                self.driver.quit()
+                self.assertEqual([], self.verificationErrors)
+        else:
+            self.driver.quit()
+            self.assertEqual([], self.verificationErrors)
 
 def get_env():
     # Get attributes as environment variables,
@@ -443,6 +466,9 @@ def get_env():
     sleeptime = os.environ.get('BAREOS_DELAY')
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
+    if(os.environ.get('TRAVIS') == 'true'):
+            SeleniumTest.sauce_username = os.environ.get('SAUCE_USERNAME')
+            SeleniumTest.access_key = os.environ.get('SAUCE_ACCESS_KEY')
 
 if __name__ == '__main__':
     get_env()
