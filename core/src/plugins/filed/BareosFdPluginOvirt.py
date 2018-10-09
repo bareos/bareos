@@ -250,7 +250,13 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             (self.jobType))
 
         if IOP.func == bIOPS['IO_OPEN']:
+
             self.FNAME = IOP.fname
+            bareosfd.DebugMessage(
+                context, 100,
+                "self.FNAME was set to %s from IOP.fname\n" %
+                (self.FNAME))
+
             if self.options.get('local') == 'yes':
                 try:
                     if IOP.flags & (os.O_CREAT | os.O_WRONLY):
@@ -311,8 +317,13 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     context, 100,
                     "plugin_io: read from file %s\n" % (self.backup_obj['file']['filename']) )
             elif 'disk' in self.backup_obj:
+                bareosfd.DebugMessage(
+                    context, 100,
+                    "plugin_io: read from disk %s\n" % (self.backup_obj['disk'].alias) )
                 try:
-                    IOP.buf = self.ovirt.process_download(context, IOP.count)
+                    IOP.buf = bytearray(IOP.count)
+                    chunk = self.ovirt.process_download(context, IOP.count)
+                    IOP.buf[:] = chunk
                     IOP.status = len(IOP.buf)
                     IOP.io_errno = 0
                 except Exception as e:
@@ -340,6 +351,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 except IOError as msg:
                     IOP.io_errno = -1
                     bareosfd.DebugMessage(context, 100, "Error writing data: " + msg + "\n");
+                    return bRCs['bRC_Error']
             elif self.FNAME.endswith('.ovf'):
                 self.ovirt.process_ovf(context,IOP.buf)
                 IOP.status = IOP.count
@@ -747,6 +759,7 @@ class BareosOvirtWrapper(object):
                 "   Transfer disk snapshot of %s bytes\n" % (str(self.bytes_to_transf)))
 
     def process_download(self,context, chunk_size):
+
         chunk = ""
 
         bareosfd.DebugMessage(
