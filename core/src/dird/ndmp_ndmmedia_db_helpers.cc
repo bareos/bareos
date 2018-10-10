@@ -183,7 +183,6 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *
     * Find restore JobId
     */
    JobId_t  restoreJobId;
-   int status = 0;
    char *p = jcr->JobIds;
 
   /*

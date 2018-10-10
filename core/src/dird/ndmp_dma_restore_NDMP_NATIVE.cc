@@ -52,12 +52,8 @@ static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
                                             int32_t current_fi,
                                             struct ndm_job_param *job)
 {
-   int i;
-   char *bp;
    ndmp9_pval pv;
-   FilesetResource *fileset;
-   char *restore_pathname,
-        *ndmp_filesystem,
+   char *ndmp_filesystem,
         *restore_prefix;
    PoolMem tape_device;
    PoolMem destination_path;
@@ -259,9 +255,6 @@ int SetFilesToRestoreNdmpNative(JobControlRecord *jcr, struct ndm_job_param *job
  */
 static bool DoNdmpNativeRestore(JobControlRecord *jcr)
 {
-   int cnt;
-   BareosSocket *sd;
-   storagedaemon::BootStrapRecord *bsr;
    NIS *nis = NULL;
    int32_t current_fi = 0;
    struct ndm_session ndmp_sess;
@@ -270,7 +263,6 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    bool retval = false;
    int NdmpLoglevel;
    char mediabuf[100];
-   ndmmedia *media;
    slot_number_t ndmp_slot;
 
    if (jcr->res.client->ndmp_loglevel > me->ndmp_loglevel) {

@@ -33,12 +33,6 @@
 
 namespace storagedaemon {
 
-#ifdef SD_DEBUG_LOCK
-const int debuglevel = 0;
-#else
-const int debuglevel = 500;
-#endif
-
 /**
  * The Storage daemon has three locking concepts that must be understood:
  *

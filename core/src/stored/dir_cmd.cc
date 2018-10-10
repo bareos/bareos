@@ -1697,7 +1697,6 @@ static bool PassiveCmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *fd;                      /* file daemon bsock */
    std::string qualified_resource_name;
-   TlsResource *tls_resource;
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
