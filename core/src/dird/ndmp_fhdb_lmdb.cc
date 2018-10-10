@@ -533,7 +533,6 @@ static inline void CalculatePath(uint64_t node, fhdb_state *fhdb_state)
 {
    PoolMem temp;
    int result = 0;
-   MDB_cursor *cursor;
    MDB_val rkey, rdata;
    struct fhdb_payload *payload;
    bool root_node_reached = false;
@@ -578,7 +577,6 @@ static inline void ProcessLmdb(NIS *nis, struct fhdb_state *fhdb_state)
 {
    int result;
    uint64_t node;
-   char *filename;
    MDB_cursor *cursor;
    int8_t FileType = 0;
    MDB_val rkey, rdata;
