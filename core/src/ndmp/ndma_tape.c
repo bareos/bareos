@@ -541,7 +541,8 @@ ndmta_write_quantum (struct ndm_session *sess)
 	want_blockno = ta->mover_window_first_blockno + want_window_off / block_size;
 
 	if (ta->tb_blockno != want_blockno) {
-		uint32_t	xsr_count, xsr_resid;
+    uint32_t	xsr_count = 0;
+    uint32_t  xsr_resid = 0;
 
 		ndmos_tape_sync_state(sess);
 		cur_blockno = ta->tape_state.blockno.value;
