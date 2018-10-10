@@ -100,8 +100,8 @@ ConfigurationParser::ConfigurationParser()
    , res_head_(nullptr)
    , use_config_include_dir_ (false)
    , SaveResourceCb_(nullptr)
-   , ParseConfigReadyCb_(nullptr)
    , DumpResourceCb_(nullptr)
+   , ParseConfigReadyCb_(nullptr)
    , FreeResourceCb_(nullptr) {
    return;
 }
