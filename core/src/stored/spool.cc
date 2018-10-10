@@ -274,7 +274,7 @@ static bool DespoolData(DeviceControlRecord *dcr, bool commit)
     * in rdev and rdcr.
     */
    rdev = (Device *)malloc(sizeof(Device));
-   memset(rdev, 0, sizeof(Device));
+   memset((void *)rdev, 0, sizeof(Device));
    rdev->dev_name = GetMemory(strlen(spool_name)+1);
    bstrncpy(rdev->dev_name, spool_name, SizeofPoolMemory(rdev->dev_name));
    rdev->errmsg = GetPoolMemory(PM_EMSG);
