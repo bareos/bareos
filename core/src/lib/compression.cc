@@ -107,11 +107,13 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord *jcr, uint32_t c
         cmprs_algo_to_text(compression_algorithm));
 }
 
+#ifdef HAVE_FASTLZ
 static inline void NonCompatibleCompressionAlgorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
 {
    Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm %s for compatible mode\n"),
         cmprs_algo_to_text(compression_algorithm));
 }
+#endif
 
 bool SetupCompressionBuffers(JobControlRecord *jcr,
                                bool compatible,

@@ -291,52 +291,6 @@ typedef struct s_idx_list {
    int  CountCol; /* how many times meets the desired column name */
 } IDX_LIST;
 
-static IDX_LIST idx_list[MAXIDX];
-
-/**
- * Called here with each table index to be added to the list
- */
-static int CheckIdxHandler(void *ctx, int num_fields, char **row)
-{
-   /*
-    * Table | Non_unique | Key_name | Seq_in_index | Column_name |...
-    * File  |          0 | PRIMARY  |            1 | FileId      |...
-    */
-   char *name, *key_name, *col_name;
-   int i, len;
-   int found = false;
-
-   name = (char *)ctx;
-   key_name = row[2];
-   col_name = row[4];
-   for(i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)); i++) {
-      if (Bstrcasecmp(idx_list[i].key_name, key_name)) {
-         idx_list[i].count_key++;
-         found = true;
-         if (Bstrcasecmp(col_name, name)) {
-            idx_list[i].CountCol++;
-         }
-         break;
-      }
-   }
-   /*
-    * If the new Key_name, add it to the list
-    */
-   if (!found) {
-      len = strlen(key_name) + 1;
-      idx_list[i].key_name = (char *)malloc(len);
-      bstrncpy(idx_list[i].key_name, key_name, len);
-      idx_list[i].count_key = 1;
-      if (Bstrcasecmp(col_name, name)) {
-         idx_list[i].CountCol = 1;
-      } else {
-         idx_list[i].CountCol = 0;
-      }
-   }
-   return 0;
-}
-
-
 /**
  * Drop temporary index
  */
