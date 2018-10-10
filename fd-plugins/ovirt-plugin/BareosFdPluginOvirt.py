@@ -430,6 +430,7 @@ class BareosOvirtWrapper(object):
         self.vms_service = None
         self.storage_domains_service = None
         self.events_service = None
+        self.network_profiles = None
 
         self.vm = None
         self.ovf_data = None
@@ -476,6 +477,10 @@ class BareosOvirtWrapper(object):
 
         if not self.vms_service:
             return False
+
+        # get network profiles
+        profiles_service = self.system_service.vnic_profiles_service()
+        self.network_profiles = { profile.name : profile.id for profile in profiles_service.list() }
 
         # Get the reference to the service that we will use to send events to
         # the audit log:
@@ -863,23 +868,60 @@ class BareosOvirtWrapper(object):
 		    context, bJobMessageType['M_INFO'],
 			'Adding virtual machine %s\n' % vm_name)
 
+                vm_type = 'server'
+		if 'vm_type' in options:
+		    vm_type = options['vm_type']
+
 		self.vm = self.vms_service.add(
 		    types.Vm(
 			name = vm_name,
+                        type = types.VmType( vm_type ),
 			template=types.Template(
 			    name=vm_template
 			    ),
 			cluster=types.Cluster(
-			    name=cluster_name,
+			    name=cluster_name
 			    ),
 		    ),
 		)
 
-		# Find the file references:
-		file_references = self.ovf.xpath(
-		    '/ovf:Envelope/References/File',
-		    namespaces=OVF_NAMESPACES
-		)
+                # Find the network section
+                network_elements = ovf.xpath(
+                        '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]',
+                    namespaces=OVF_NAMESPACES
+                )
+                for nic in network_elements:
+                    # Get nic properties:
+                    props = {}
+                    for e in nic:
+                        key = e.tag
+                        value = e.text
+                        key = key.replace('{%s}' % OVF_NAMESPACES['rasd'], '')
+                        props[key] = value
+
+                    network = props['Connection']
+                    if network not in network_profiles:
+			bareosfd.JobMessage(
+			    context, bJobMessageType['M_INFO'],
+				"No network profile found for '%s'\n" % (network) )
+                    else:
+                        profile_id = network_profiles[network]
+
+                        # Locate the service that manages the network interface cards of the
+                        # virtual machine:
+                        nics_service = bOvirt.vms_service.vm_service(vm.id).nics_service()
+
+                        # Use the "add" method of the network interface cards service to add the
+                        # new network interface card:
+                        nics_service.add(
+                            types.Nic(
+                                name=props['Name'],
+                                description=props['Caption'],
+                                vnic_profile=types.VnicProfile(
+                                    id=profile_id,
+                                ),
+                            ),
+                        )
 
 		# Find the disks section:
 		disk_elements = self.ovf.xpath(
@@ -902,20 +944,6 @@ class BareosOvirtWrapper(object):
 		    self.restore_objects.append(props)
 
         return bRCs['bRC_OK']
-
-    def get_file_reference(file_references, fileref):
-	found = None
-	i = 0
-	while i<len(file_references) and found is None:
-	    obj = file_references[i]
-	    khref = '{%s}href' % OVF_NAMESPACES['ovf']
-	    if obj.get(khref) == fileref:
-		found = {}
-		for key, value in obj.items():
-		    key = key.replace('{%s}' % OVF_NAMESPACES['ovf'], '')
-		    found[key] = value
-	    i += 1
-	return found
 
     def get_vm_disk_by_basename(self, context, fname):
 
@@ -1004,8 +1032,13 @@ class BareosOvirtWrapper(object):
 		if 'disk-interface' in obj:
 		    if obj['disk-interface'] == 'VirtIO_SCSI':
 			disk_interface = types.DiskInterface.VIRTIO_SCSI
-		    elif obj['disk-interface'] == 'ide':
+		    elif obj['disk-interface'] == 'IDE':
 			disk_interface = types.DiskInterface.IDE
+
+                disk_bootable = False
+                if 'boot' in obj:
+                    if obj['boot'] == "true":
+                        disk_bootable = True
 
                 #####
 		# Use the "add" method of the disk attachments service to add the disk.
@@ -1029,7 +1062,7 @@ class BareosOvirtWrapper(object):
 			    ]
 			),
 			interface=disk_interface,
-			bootable=False,
+			bootable=disk_bootable,
 			active=True,
 		    ),
 		)
