@@ -408,8 +408,6 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.tls_cert.keyfile) { delete res->res_dir.tls_cert.keyfile; }
       if (res->res_dir.tls_cert.cipherlist) { delete res->res_dir.tls_cert.cipherlist; }
       if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
-      if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
-      if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
       if (res->res_dir.tls_cert.pem_message) { delete res->res_dir.tls_cert.pem_message; }
       break;
     case R_CLIENT:
@@ -454,8 +452,6 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_client.tls_cert.certfile) { delete res->res_client.tls_cert.certfile; }
       if (res->res_client.tls_cert.keyfile) { delete res->res_client.tls_cert.keyfile; }
       if (res->res_client.tls_cert.cipherlist) { delete res->res_client.tls_cert.cipherlist; }
-      if (res->res_client.tls_cert.dhfile) { delete res->res_client.tls_cert.dhfile; }
-      if (res->res_client.tls_cert.dhfile) { delete res->res_client.tls_cert.dhfile; }
       if (res->res_client.tls_cert.dhfile) { delete res->res_client.tls_cert.dhfile; }
       if (res->res_client.tls_cert.pem_message) { delete res->res_client.tls_cert.pem_message; }
       break;
