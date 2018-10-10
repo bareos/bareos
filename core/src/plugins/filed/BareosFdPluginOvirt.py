@@ -869,14 +869,81 @@ class BareosOvirtWrapper(object):
 		    context, bJobMessageType['M_INFO'],
 			'Adding virtual machine %s\n' % vm_name)
 
+                # vm type (server/desktop)
                 vm_type = 'server'
 		if 'vm_type' in options:
 		    vm_type = options['vm_type']
+
+                # vm memory and cpu
+                vm_memory = None
+		if 'vm_memory' in options:
+		    vm_memory = int(options['vm_memory']) * 2**20
+                vm_cpu = None
+		if 'vm_cpu' in options:
+		    vm_cpu_arr = options['vm_cpu'].split(',')
+                    if len(vm_cpu_arr) > 0:
+                        if len(vm_cpu_arr) < 2:
+                            vm_cpu_arr.append(1)
+                            vm_cpu_arr.append(1)
+                        elif len(vm_cpu_arr) < 3:
+                            vm_cpu_arr.append(1)
+
+                        vm_cpu = types.Cpu(
+                                    topology=types.CpuTopology(
+                                                        cores   = int(vm_cpu_arr[0]),
+                                                        sockets = int(vm_cpu_arr[1]),
+                                                        threads = int(vm_cpu_arr[2])
+                                                        )
+                                    )
+
+                if vm_memory is None or vm_cpu is None:
+                    # Find the resources section
+                    resources_elements = self.ovf.xpath(
+                            '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType=3 or rasd:ResourceType=4]',
+                        namespaces=OVF_NAMESPACES
+                    )
+                    for resource in resources_elements:
+                        # Get resource properties:
+                        props = {}
+                        for e in resource:
+                            key = e.tag
+                            value = e.text
+                            key = key.replace('{%s}' % OVF_NAMESPACES['rasd'], '')
+                            props[key] = value
+
+                        if vm_cpu is None:
+                            # for ResourceType = 3 (CPU)
+                            if int(props['ResourceType']) == 3:
+                                vm_cpu = types.Cpu(
+                                            topology=types.CpuTopology(
+                                                                cores   = int(props['cpu_per_socket']),
+                                                                sockets = int(props['num_of_sockets']),
+                                                                threads = int(props['threads_per_cpu'])
+                                                                )
+                                            )
+                        if vm_memory is None:
+                            # for ResourceType = 4 (Memory)
+                            if int(props['ResourceType']) == 4:
+                                vm_memory = int(props['VirtualQuantity'])
+                                if props['AllocationUnits'] == "GigaBytes":
+                                    vm_memory = vm_memory * 2**30
+                                elif props['AllocationUnits'] == "MegaBytes":
+                                    vm_memory = vm_memory * 2**20
+                                elif props['AllocationUnits'] == "KiloBytes":
+                                    vm_memory = vm_memory * 2**10
+
+                vm_memory_policy = None
+                if vm_memory is not None:
+                    vm_maxmemory = 4 * vm_memory    # 4x memory
+                    vm_memory_policy = types.MemoryPolicy( guaranteed=vm_memory, max=vm_maxmemory )
 
 		self.vm = self.vms_service.add(
 		    types.Vm(
 			name = vm_name,
                         type = types.VmType( vm_type ),
+                        memory = vm_memory,
+                        memory_policy = vm_memory_policy,
+                        cpu = vm_cpu,
 			template=types.Template(
 			    name=vm_template
                         ),
@@ -887,7 +954,7 @@ class BareosOvirtWrapper(object):
 		)
 
                 # Find the network section
-                network_elements = ovf.xpath(
+                network_elements = self.ovf.xpath(
                         '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]',
                     namespaces=OVF_NAMESPACES
                 )
@@ -901,16 +968,16 @@ class BareosOvirtWrapper(object):
                         props[key] = value
 
                     network = props['Connection']
-                    if network not in network_profiles:
+                    if network not in self.network_profiles:
 			bareosfd.JobMessage(
 			    context, bJobMessageType['M_INFO'],
 				"No network profile found for '%s'\n" % (network) )
                     else:
-                        profile_id = network_profiles[network]
+                        profile_id = self.network_profiles[network]
 
                         # Locate the service that manages the network interface cards of the
                         # virtual machine:
-                        nics_service = bOvirt.vms_service.vm_service(vm.id).nics_service()
+                        nics_service = self.vms_service.vm_service(self.vm.id).nics_service()
 
                         # Use the "add" method of the network interface cards service to add the
                         # new network interface card:
