@@ -36,7 +36,8 @@ APPLICATION_NAME = 'BareOS Ovirt plugin'
 # OVF Namespaces
 OVF_NAMESPACES = {
     'ovf': 'http://schemas.dmtf.org/ovf/envelope/1/',
-    'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
+    'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+    'rasd': 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData'
 }
 
 class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
@@ -878,10 +879,10 @@ class BareosOvirtWrapper(object):
                         type = types.VmType( vm_type ),
 			template=types.Template(
 			    name=vm_template
-			    ),
+                        ),
 			cluster=types.Cluster(
 			    name=cluster_name
-			    ),
+                        ),
 		    ),
 		)
 
