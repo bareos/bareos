@@ -436,7 +436,6 @@ ndmca_robot_verify_media (struct ndm_session *sess)
 	int			rc;
 	struct ndmmedia *	me;
 	struct smc_element_descriptor *edp;
-	unsigned int		i;
 	int			errcnt = 0;
 
 	rc = ndmca_robot_obtain_info (sess);
@@ -486,7 +485,6 @@ ndmca_robot_synthesize_media (struct ndm_session *sess)
 	struct ndm_media_table *mtab = &sess->control_acb->job.media_tab;
 	int			rc;
 	struct smc_element_descriptor *edp;
-	unsigned int		i;
 
 	rc = ndmca_robot_obtain_info (sess);
 	if (rc) return rc;
