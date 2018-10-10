@@ -8,9 +8,12 @@ License:	GPL
 URL:		http://eurotux.com
 Source:	    bareos-ovirt-plugin.tar.gz
 
-#BuildRequires:	
 Requires:	bareos-filedaemon-python-plugin
 Requires:   python-ovirt-engine-sdk4
+Requires:   openssl
+Requires:   python-pycurl
+Requires:   python-lxml
+
 
 %description
 Ovirt backup plugin for Bareos uses the Ovirt API to take a snapshot of running VMs and

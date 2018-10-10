@@ -878,6 +878,7 @@ class BareosOvirtWrapper(object):
                 vm_memory = None
 		if 'vm_memory' in options:
 		    vm_memory = int(options['vm_memory']) * 2**20
+
                 vm_cpu = None
 		if 'vm_cpu' in options:
 		    vm_cpu_arr = options['vm_cpu'].split(',')
@@ -970,7 +971,7 @@ class BareosOvirtWrapper(object):
                     network = props['Connection']
                     if network not in self.network_profiles:
 			bareosfd.JobMessage(
-			    context, bJobMessageType['M_INFO'],
+			    context, bJobMessageType['M_WARNING'],
 				"No network profile found for '%s'\n" % (network) )
                     else:
                         profile_id = self.network_profiles[network]
@@ -1045,7 +1046,7 @@ class BareosOvirtWrapper(object):
 			    found = disk
 		    else:
 			bareosfd.JobMessage(
-			    context, bJobMessageType['M_INFO'],
+			    context, bJobMessageType['M_WARNING'],
 				"The backup have snapshots and only base will be restored\n")
 			
                 i += 1
@@ -1163,8 +1164,7 @@ class BareosOvirtWrapper(object):
         self.proxy_connection.putrequest("PUT", proxy_url.path)
         self.proxy_connection.putheader('Authorization', transfer.signed_ticket)
 
-        #self.bytes_to_transf = int(disk.actual_size) * 2**30
-        self.bytes_to_transf = int(disk.actual_size)
+        self.init_bytes_to_transf = self.bytes_to_transf = int(disk.actual_size)
 
         content_range = "bytes %d-%d/%d" % (0, self.bytes_to_transf - 1, self.bytes_to_transf)
         self.proxy_connection.putheader('Content-Range', content_range)
@@ -1185,18 +1185,18 @@ class BareosOvirtWrapper(object):
 
         bareosfd.DebugMessage(
             context, 100,
-            "process_upload(): transfer %s of %s \n" % 
-            (self.bytes_to_transf,len(chunk)) )
+            "process_upload(): transfer %s of %s (%s) \n" % 
+            (self.bytes_to_transf,self.init_bytes_to_transf,len(chunk)) )
 
         self.proxy_connection.send(chunk)
 
         self.bytes_to_transf -= len(chunk)
 
-        #completed = 1 - (self.bytes_to_transf / float(self.response.getheader('Content-Length')))
+        completed = 1 - (self.bytes_to_transf / float(self.init_bytes_to_transf))
 
-        #bareosfd.DebugMessage(
-        #    context, 100,
-        #    "process_upload(): Completed {:.0%}\n" . format(completed))
+        bareosfd.DebugMessage(
+            context, 100,
+            "process_upload(): Completed {:.0%}\n" . format(completed))
    
     def end_transfer(self,context):
 
