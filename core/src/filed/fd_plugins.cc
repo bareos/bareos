@@ -1593,7 +1593,7 @@ bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr,
 #if defined(HAVE_XATTR)
    plugin = (Plugin *)jcr->plugin_ctx->plugin;
    if (PlugFunc(plugin)->setXattr != NULL) {
-      xattr_t *current_xattr;
+      xattr_t *current_xattr = nullptr;
       struct xattr_pkt xp;
 
       xattr_value_list = New(alist(10, not_owned_by_alist));
