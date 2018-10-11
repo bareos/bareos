@@ -201,7 +201,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       printf("plugin: BackupEnd\n");
       break;
    case bEventLevel:
-      printf("plugin: JobLevel=%c %ld\n", (int64_t)value, (int64_t)value);
+      printf("plugin: JobLevel=%c %ld\n",(int)(int64_t)value, (int64_t)value);
       break;
    case bEventSince:
       printf("plugin: since=%ld\n", (int64_t)value);
