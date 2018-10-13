@@ -156,7 +156,6 @@ static ResourceItem dir_items[] = {
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
-   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_dir.UsePamAuthentication_), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
    TLS_PSK_CONFIG(res_dir),
@@ -219,6 +218,7 @@ static ResourceItem con_items[] = {
    { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL, "14.2.3-",
      "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
      "First the console ACL is checked then any profile the console is linked to." },
+   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con.use_pam_authentication_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
    TLS_PSK_CONFIG(res_con),

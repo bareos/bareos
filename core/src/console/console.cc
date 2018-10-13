@@ -1094,13 +1094,11 @@ int main(int argc, char *argv[])
    ConsoleOutput(errmsg);
 
 #if defined(HAVE_PAM)
-   if (console_resource) { /* not for root console */
-      if (director_resource && director_resource->UsePamAuthentication_) {
-         if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-            TerminateConsole(0);
-            return 1;
-         }
-      }
+   if (console_resource && console_resource->use_pam_authentication_) {
+     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+       TerminateConsole(0);
+       return 1;
+     }
    }
 #endif /* HAVE_PAM */
 

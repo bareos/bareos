@@ -71,6 +71,7 @@ class ConsoleResource : public TlsResource {
       uint32_t history_length;           /**< readline history length */
       char *director;                    /**< bind to director */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
+      bool use_pam_authentication_;      /**< Use this console as a PAM console */
       ConsoleResource() : TlsResource() {}
 };
 
@@ -80,7 +81,6 @@ class DirectorResource : public TlsResource {
       uint32_t DIRport;                  /**< UA server port */
       char *address;                     /**< UA server address */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      bool UsePamAuthentication_;        /**< Use Pam authentication instead of password */
       DirectorResource() : TlsResource() {}
 };
 
