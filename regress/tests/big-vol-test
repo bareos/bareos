@@ -40,11 +40,11 @@ run_bareos
 check_for_zombie_jobs storage=File
 
 #
-# Now increase the size of the Volume using gigaslam
+# Now increase the size of the Volume
 #
 # make big file
 size=5200000000
-truncate ${tmp}/TestVolume001 --size=${size}
+truncate -s ${size} ${tmp}/TestVolume001
 if [ $? != 0 ]; then
    echo "Execute of truncate failed."
    exit 1
