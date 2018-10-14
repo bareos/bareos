@@ -137,7 +137,7 @@ static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
    return PAM_SUCCESS;
 }
 
-bool PamAuthenticateUseragent(BareosSocket *UA_sock,
+bool PamAuthenticateUser(BareosSocket *UA_sock,
                               const std::string &username_in,
                               const std::string &password_in,
                               std::string& authenticated_username)

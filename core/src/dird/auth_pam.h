@@ -25,7 +25,7 @@
 #include <string>
 
 class BareosSocket;
-bool PamAuthenticateUseragent(BareosSocket *UA_sock,
+bool PamAuthenticateUser(BareosSocket *UA_sock,
                               const std::string &username,
                               const std::string &passwd,
                               std::string& authenticated_username);

@@ -593,6 +593,7 @@ static ResourceTable resources[] = {
    { "Counter", counter_items, R_COUNTER, sizeof(CounterResource)   },
    { "Profile", profile_items, R_PROFILE, sizeof(ProfileResource)   },
    { "Console", con_items, R_CONSOLE, sizeof(ConsoleResource), [] (void *res){ return new((ConsoleResource *) res) ConsoleResource(); }   },
+   { "User", con_items, R_CONSOLE, sizeof(ConsoleResource), [] (void *res){ return new((ConsoleResource *) res) ConsoleResource(); }   },
    { "Device", NULL, R_DEVICE, sizeof(DeviceResource)   }, /* info obtained from SD */
    { NULL, NULL, 0, 0, nullptr }
 };

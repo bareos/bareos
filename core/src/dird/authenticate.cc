@@ -58,7 +58,7 @@ static char OKhello[]      = "3000 OK Hello\n";
 static char FDOKhello[]    = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
 
-static char Dir_sorry[] = "1999 You are not authorized.\n";
+static char dir_not_authorized_message[] = "1999 You are not authorized.\n";
 
 bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, StorageResource *store)
 {
@@ -205,7 +205,7 @@ bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
    * Authorization Completed
    */
   if (!auth_success) {
-    fd->fsend("%s", _(Dir_sorry));
+    fd->fsend("%s", _(dir_not_authorized_message));
     Emsg4(M_ERROR, 0, _("Unable to authenticate client \"%s\" at %s:%s:%d.\n"), client_name, fd->who(),
           fd->host(), fd->port());
     sleep(5);
@@ -244,10 +244,10 @@ static bool GetConsoleName(BareosSocket *ua_sock, std::string &name)
   return true;
 }
 
-static void SendErrorMessage(std::string name_console, UaContext *ua)
+static void SendErrorMessage(std::string console_name, UaContext *ua)
 {
-  ua->UA_sock->fsend("%s", _(Dir_sorry));
-  Emsg4(M_ERROR, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"), name_console.c_str(),
+  ua->UA_sock->fsend("%s", _(dir_not_authorized_message));
+  Emsg4(M_ERROR, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"), console_name.c_str(),
                       ua->UA_sock->who(), ua->UA_sock->host(), ua->UA_sock->port());
   sleep(5);
 }
@@ -257,47 +257,48 @@ static void SendOkMessage(UaContext *ua)
   ua->UA_sock->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
 }
 
-static bool TryAuthenticateRootConsole(std::string name_console, UaContext *ua, bool &auth_success)
+static bool OptionalAuthenticateRootConsole(std::string console_name, UaContext *ua, bool &auth_success)
 {
-   const std::string name_root_console { "*UserAgent*" };
-   if (name_console == name_root_console) {
-    auth_success = ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", name_root_console.c_str(), me->password, me);
-    return true;
+   const std::string root_console_name { "*UserAgent*" };
+   if (console_name != root_console_name) {
+     return false; /* no need to evaluate auth_success */
    }
-   return false;
+   auth_success = ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", root_console_name.c_str(), me->password, me);
+   return true;
 }
 
-static bool TryAuthenticateNamedConsole(std::string name_console, UaContext *ua, bool &auth_success)
+static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bool &auth_success)
 {
   ConsoleResource *cons;
-  cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, name_console.c_str());
-  if (cons) {
-    if (!ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", name_console.c_str(), cons->password, cons)) {
-      ua->cons = nullptr;
-      auth_success = false;
-    } else {
-      ua->cons = cons;
-      auth_success = true;
-    }
-    return true;
+  cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, console_name.c_str());
+  if (!cons) { /* if console resource cannot be obtained is treated as an error */
+    auth_success = false;
+    return;
   }
-  return false;
+  if (!ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", console_name.c_str(), cons->password, cons)) {
+    ua->cons = nullptr;
+    auth_success = false;
+  } else {
+    ua->cons = cons;
+    auth_success = true;
+  }
 }
 
-static bool TryAuthenticatePamConsole(std::string name_console, UaContext *ua, bool &auth_success)
+static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua, bool &auth_success)
 {
-  ConsoleResource *cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, name_console.c_str());
+  ConsoleResource *cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, console_name.c_str());
 
-  if (!cons) {
+  if (!cons) { /* if console resource cannot be obtained is treated as an error */
     auth_success = false;
     return true;
   }
 
+  /* no need to evaluate auth_success if no pam is required */
   if (!cons->use_pam_authentication_) { return false; }
 
 #if defined(HAVE_PAM)
   std::string authenticated_username;
-  if (!PamAuthenticateUseragent(ua->UA_sock, std::string(), std::string(), authenticated_username)) {
+  if (!PamAuthenticateUser(ua->UA_sock, std::string(), std::string(), authenticated_username)) {
     ua->cons = nullptr;
     auth_success = false;
   } else {
@@ -316,36 +317,37 @@ static bool TryAuthenticatePamConsole(std::string name_console, UaContext *ua, b
 
 bool AuthenticateUserAgent(UaContext *ua)
 {
-  std::string name_console;
-  if (!GetConsoleName(ua->UA_sock, name_console)) {
+  std::string console_name;
+  if (!GetConsoleName(ua->UA_sock, console_name)) {
     return false;
   }
 
   if (NumberOfConsoleConnectionsExceeded()) {
-    ua->UA_sock->fsend("%s", _(Dir_sorry));
+    ua->UA_sock->fsend("%s", _(dir_not_authorized_message));
     Emsg0(M_ERROR, 0, _("Number of console connections exceeded MaximumConsoleConnections\n"));
     return false;
   }
 
   bool auth_success     = false;
 
-  if (TryAuthenticateRootConsole(name_console, ua, auth_success)) {
+  if (OptionalAuthenticateRootConsole(console_name, ua, auth_success)) {
     if (!auth_success) {
-      SendErrorMessage(name_console, ua);
+      SendErrorMessage(console_name, ua);
       return false;
     } else {
       SendOkMessage(ua);
     }
-  } else if (TryAuthenticateNamedConsole(name_console, ua, auth_success)) {
+  } else {
+    AuthenticateNamedConsole(console_name, ua, auth_success);
     if (!auth_success) {
-      SendErrorMessage(name_console, ua);
+      SendErrorMessage(console_name, ua);
       return false;
     } else {
       SendOkMessage(ua);
     }
-    if (TryAuthenticatePamConsole(name_console, ua, auth_success)) {
+    if (OptionalAuthenticatePamUser(console_name, ua, auth_success)) {
       if (!auth_success) {
-        SendErrorMessage(name_console, ua);
+        SendErrorMessage(console_name, ua);
         return false;
       }
     }
