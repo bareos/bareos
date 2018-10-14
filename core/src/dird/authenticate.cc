@@ -285,30 +285,30 @@ static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bo
 }
 
 #if defined(HAVE_PAM)
-static void LookupOptionalPamUser(BareosSocket *ua_sock, std::string pam_username)
+static void LookupTokenFromSocketStream(BareosSocket *ua_sock, const std::string& token, std::string& output)
 {
   char buffer[128];
-  const std::string token {"@@username:"};
   memset(buffer, 0, sizeof(buffer));
+  int flags = ua_sock->SetNonblocking();
   int ret = ::recv(ua_sock->fd_, buffer, token.size(), MSG_PEEK);
   if (ret == (int)token.size()) {
     if (ua_sock->recv() <= 0) { return; }
     std::string temp(ua_sock->msg);
-    pam_username = temp.substr(temp.find(':')+1);
+    output = temp.substr(temp.find(':')+1);
   }
+  ua_sock->RestoreBlocking(flags);
 }
 
-static void LookupOptionalPamPassword(BareosSocket *ua_sock, std::string pam_password)
+static void LookupOptionalPamUser(BareosSocket *ua_sock, std::string& pam_username)
 {
-  char buffer[128];
+  const std::string token {"@@username:"};
+  LookupTokenFromSocketStream(ua_sock, token, pam_username);
+}
+
+static void LookupOptionalPamPassword(BareosSocket *ua_sock, std::string& pam_password)
+{
   const std::string token {"@@password:"};
-  memset(buffer, 0, sizeof(buffer));
-  int ret = ::recv(ua_sock->fd_, buffer, token.size(), MSG_PEEK);
-  if (ret == (int)token.size()) {
-    if (ua_sock->recv() <= 0) { return; }
-    std::string temp(ua_sock->msg);
-    pam_password = temp.substr(temp.find(':')+1);
-  }
+  LookupTokenFromSocketStream(ua_sock, token, pam_password);
 }
 #endif /* HAVE PAM */
 
@@ -329,6 +329,7 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   std::string pam_username;
   std::string pam_password;
 
+  Bmicrosleep(1,0);
   LookupOptionalPamUser(ua->UA_sock, pam_username);
   LookupOptionalPamPassword(ua->UA_sock, pam_password);
 

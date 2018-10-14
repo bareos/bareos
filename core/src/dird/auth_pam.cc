@@ -34,7 +34,7 @@ static const std::string service_name("bareos");
 struct PamData {
    BareosSocket *UA_sock_;
 
-   PamData(BareosSocket *UA_sock, std::string username) {
+   PamData(BareosSocket *UA_sock) {
       UA_sock_ = UA_sock;
    }
 };
@@ -142,7 +142,7 @@ bool PamAuthenticateUser(BareosSocket *UA_sock,
                               const std::string &password_in,
                               std::string& authenticated_username)
 {
-   std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock, username_in));
+   std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock));
    std::unique_ptr<struct pam_conv> pam_conversation_container(new struct pam_conv);
    struct pam_handle *pamh; /* pam session handle */
 

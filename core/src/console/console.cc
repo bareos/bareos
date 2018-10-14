@@ -1095,6 +1095,8 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_PAM)
    if (console_resource && console_resource->use_pam_authentication_) {
+//     UA_sock->fsend("@@username:franku");
+     Bmicrosleep(1,0);
      if (!ConsolePamAuthenticate(stdin, UA_sock)) {
        TerminateConsole(0);
        return 1;
