@@ -52,6 +52,8 @@ bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
    btimer_t *tid = nullptr;
    char *userinput = nullptr;
 
+//   UA_sock->fsend("@@username:franku");
+
    while (!error && !quit) {
       switch(state) {
          case PamAuthState::INIT:

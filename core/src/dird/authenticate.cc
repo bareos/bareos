@@ -284,10 +284,40 @@ static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bo
   }
 }
 
+#if defined(HAVE_PAM)
+static void LookupOptionalPamUser(BareosSocket *ua_sock, std::string pam_username)
+{
+  char buffer[128];
+  const std::string token {"@@username:"};
+  memset(buffer, 0, sizeof(buffer));
+  int ret = ::recv(ua_sock->fd_, buffer, token.size(), MSG_PEEK);
+  if (ret == (int)token.size()) {
+    if (ua_sock->recv() <= 0) { return; }
+    std::string temp(ua_sock->msg);
+    pam_username = temp.substr(temp.find(':')+1);
+  }
+}
+
+static void LookupOptionalPamPassword(BareosSocket *ua_sock, std::string pam_password)
+{
+  char buffer[128];
+  const std::string token {"@@password:"};
+  memset(buffer, 0, sizeof(buffer));
+  int ret = ::recv(ua_sock->fd_, buffer, token.size(), MSG_PEEK);
+  if (ret == (int)token.size()) {
+    if (ua_sock->recv() <= 0) { return; }
+    std::string temp(ua_sock->msg);
+    pam_password = temp.substr(temp.find(':')+1);
+  }
+}
+#endif /* HAVE PAM */
+
 static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua, bool &auth_success)
 {
   ConsoleResource *cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, console_name.c_str());
 
+#if defined(HAVE_PAM)
+{
   if (!cons) { /* if console resource cannot be obtained is treated as an error */
     auth_success = false;
     return true;
@@ -296,9 +326,14 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   /* no need to evaluate auth_success if no pam is required */
   if (!cons->use_pam_authentication_) { return false; }
 
-#if defined(HAVE_PAM)
+  std::string pam_username;
+  std::string pam_password;
+
+  LookupOptionalPamUser(ua->UA_sock, pam_username);
+  LookupOptionalPamPassword(ua->UA_sock, pam_password);
+
   std::string authenticated_username;
-  if (!PamAuthenticateUser(ua->UA_sock, std::string(), std::string(), authenticated_username)) {
+  if (!PamAuthenticateUser(ua->UA_sock, pam_username, pam_password, authenticated_username)) {
     ua->cons = nullptr;
     auth_success = false;
   } else {
@@ -307,12 +342,17 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
     ua->cons = user;
     auth_success = true;
   }
-#else
-  Emsg0(M_ERROR, 0, _("PAM is not available on this director\n"));
-  auth_success = false;
-#endif /* HAVE_PAM */
-
   return true;
+} /* HAVE PAM */
+#else /* !HAVE_PAM */
+  if (cons && cons->use_pam_authentication_) {
+    Emsg0(M_ERROR, 0, _("PAM is not available on this director\n"));
+    auth_success = false;
+    return true;
+  } else {
+    return false;  /* auth_success can be ignored */
+  }
+#endif /* !HAVE_PAM */
 }
 
 bool AuthenticateUserAgent(UaContext *ua)
