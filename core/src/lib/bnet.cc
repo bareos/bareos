@@ -590,43 +590,50 @@ const char *BnetSigToAscii(BareosSocket * bs)
    }
 }
 
-uint32_t ReadoutCommandIdFromString(std::string message)
+bool ReadoutCommandIdFromString(const std::string &message, uint32_t &id_out)
 {
-  size_t pos = message.find(' ');
+  const char delimiter = ' ';
+  size_t pos = message.find(delimiter);
   if (pos == std::string::npos) {
-    return kProtokollError;
+    id_out = kMessageIdProtokollError;
+    return false;
   }
-  std::string id_string;
-  id_string = message.substr(0,pos);
 
   uint32_t id;
+  size_t pos1;
+
   try {
-    id = std::stoul(id_string);
+    id = std::stoul(message, &pos1);
   } catch (const std::exception &e) {
-    id = kProtokollError;
+    id_out = kMessageIdProtokollError;
+    return false;
   }
-  return id;
+  if (pos == pos1) {
+    id_out = id;
+    return true;
+  } else {
+    id_out = kMessageIdProtokollError;
+    return false;
+  }
 }
 
-uint32_t ReceiveAndEvaluateResponse(BareosSocket *bsock, std::string &message_output)
+bool ReceiveAndEvaluateResponse(BareosSocket *bsock, uint32_t &id_out, std::string &message_out)
 {
   int recv_return_value = bsock->recv();
   bsock->StopTimer();
 
   if (recv_return_value <= 0) {
-    return kReceiveError;
+    return false;
   }
 
   Dmsg1(10, "<bsockd: %s", bsock->msg);
 
-  std::string message(bsock->msg);
-  uint32_t id = ReadoutCommandIdFromString(message);
+  const std::string message(bsock->msg);
+  uint32_t id;
+  bool ok = ReadoutCommandIdFromString(message, id);
 
-//  if (!bstrncmp(bsock->msg, OKhello, sizeof(OKhello) - 1)) {
-//    Bsnprintf(response, response_len, _("bsockector at \"%s:%d\" rejected Hello command\n"), bsock->host(),
-//              bsock->port());
-//    return false;
-//  } else {
-//    Bsnprintf(response, response_len, "%s", bsock->msg);
-//  }
+  id_out = id;
+  message_out = message;
+
+  return ok;
 }

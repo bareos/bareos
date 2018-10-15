@@ -71,7 +71,6 @@ class ConsoleResource : public TlsResource {
       uint32_t history_length;           /**< readline history length */
       char *director;                    /**< bind to director */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      bool use_pam_authentication_;      /**< Use this console as a PAM console */
       ConsoleResource() : TlsResource() {}
 };
 

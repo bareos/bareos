@@ -1093,17 +1093,17 @@ int main(int argc, char *argv[])
 
    ConsoleOutput(errmsg);
 
+#if 0 // Ueb
 #if defined(HAVE_PAM)
-   if (console_resource && console_resource->use_pam_authentication_) {
 //     UA_sock->fsend("@@username:bareos-pam");
 //     UA_sock->fsend("@@password:linuxlinux");
-     Bmicrosleep(1,0);
-     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-       TerminateConsole(0);
-       return 1;
-     }
+   Bmicrosleep(1,0);
+   if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+     TerminateConsole(0);
+     return 1;
    }
 #endif /* HAVE_PAM */
+#endif
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 

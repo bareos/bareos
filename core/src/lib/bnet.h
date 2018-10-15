@@ -50,16 +50,16 @@ BareosSocket *BnetBind(int port);
 BareosSocket *BnetAccept(BareosSocket *bsock, char *who);
 
 enum : uint32_t {
-  kUnknown = 0,
-  kProtokollError = 1,
-  kReceiveError = 2,
-  kOk = 1000,
-  kPamRequired = 1001,
-  kPamInteractive = 4001,
-  kPamUserCredentials = 4002
+  kMessageIdUnknown = 0,
+  kMessageIdProtokollError = 1,
+  kMessageIdReceiveError = 2,
+  kMessageIdOk = 1000,
+  kMessageIdPamRequired = 1001,
+  kMessageIdPamInteractive = 4001,
+  kMessageIdPamUserCredentials = 4002
 };
 
-uint32_t ReadoutCommandIdFromString(std::string message);
-uint32_t ReceiveAndEvaluateResponse(BareosSocket *bsock, std::string &message);
+bool ReadoutCommandIdFromString(const std::string &message, uint32_t &id_out);
+bool ReceiveAndEvaluateResponse(BareosSocket *bsock, uint32_t &id_out, std::string &message_out);
 
 #endif // BAREOS_LIB_BNET_H_

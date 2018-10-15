@@ -23,14 +23,25 @@
 #include "include/bareos.h"
 #include "lib/bnet.h"
 
-TEST(ReadoutCommandIdFromStringTest, BNet)
+TEST(BNet, ReadoutCommandIdFromStringTest)
 {
-  int id;
-  std::string message1 {"1000 OK: <director-name> Version: <version>"};
-  id = ReadoutCommandIdFromString(message1);
-  EXPECT_EQ(id, 1000);
+  bool ok;
+  uint32_t id;
 
-  std::string message2 {"1001 OK: <director-name> Version: <version>"};
-  id = ReadoutCommandIdFromString(message2);
-  EXPECT_NE(id, 1000);
+  const std::string message1 {"1000 OK: <director-name> Version: <version>"};
+  ok = ReadoutCommandIdFromString(message1, id);
+  EXPECT_EQ(id, kMessageIdOk);
+  EXPECT_EQ(ok, true);
+
+  const std::string message2 {"1001 OK: <director-name> Version: <version>"};
+  ok = ReadoutCommandIdFromString(message2, id);
+  EXPECT_NE(id, kMessageIdOk);
+  EXPECT_EQ(ok, true);
+
+  const char *m3 {"10A1 OK: <director-name> Version: <version>"};
+  const std::string message3 (m3);
+  ok = ReadoutCommandIdFromString(message3, id);
+  EXPECT_EQ(id, kMessageIdProtokollError);
+  EXPECT_EQ(ok, false);
+  EXPECT_STREQ(message3.c_str(), m3);
 }

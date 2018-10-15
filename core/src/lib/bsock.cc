@@ -323,9 +323,6 @@ static char hello[] = "Hello %s calling\n";
 /** Response from Director */
 static char OKhello[] = "1000 OK:";
 
-/**
- * Authenticate with Director
- */
 bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
                                             const char *identity,
                                             s_password &password,
@@ -350,40 +347,21 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
   dir->StartTimer(60 * 5);
   dir->fsend(hello, bashed_name);
 
-  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) { goto bail_out; }
+  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) {
+    dir->StopTimer();
+    return false;
+  }
 
   Dmsg1(6, ">dird: %s", dir->msg);
-  if (dir->recv() <= 0) {
-    dir->StopTimer();
-    Bsnprintf(response, response_len,
-              _("Bad response to Hello command: ERR=%s\n"
-                "The Director at \"%s:%d\" is probably not running.\n"),
-              dir->bstrerror(), dir->host(), dir->port());
-    return false;
+
+  uint32_t message_id;
+  std::string received_message;
+  if (ReceiveAndEvaluateResponse(dir, message_id, received_message)) {
+    if (message_id == kMessageIdOk) {
+      Bsnprintf(response, response_len, "%s\n", received_message.c_str());
+      return true;
+    }
   }
-
-  dir->StopTimer();
-  Dmsg1(10, "<dird: %s", dir->msg);
-  if (!bstrncmp(dir->msg, OKhello, sizeof(OKhello) - 1)) {
-    Bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"), dir->host(),
-              dir->port());
-    return false;
-  } else {
-    Bsnprintf(response, response_len, "%s", dir->msg);
-  }
-
-  return true;
-
-bail_out:
-  dir->StopTimer();
-  Bsnprintf(response, response_len,
-            _("Authorization problem with Director at \"%s:%d\"\n"
-              "Most likely the passwords do not agree.\n"
-              "If you are using TLS, there may have been a certificate "
-              "validation error during the TLS handshake.\n"
-              "Please see %s for help.\n"),
-            dir->host(), dir->port(), MANUAL_AUTH_URL);
-
   return false;
 }
 

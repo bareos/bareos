@@ -40,10 +40,6 @@ struct PamData {
     , passwd_(passwd) { }
 };
 
-/*
- * PAM-Callback called by Bareos PAM-Handler
- *
- */
 static bool PamConvSendMessage(BareosSocket *UA_sock, const char *msg, int msg_style)
 {
    char buf = msg_style;
