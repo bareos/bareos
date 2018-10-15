@@ -994,7 +994,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    }
 #endif
 
-   Dmsg1(100, "get chunked_remote_volume_size(%s)", getVolCatName());
+   Dmsg1(100, "get chunked_remote_volume_size(%s)\n", getVolCatName());
    if (!walk_chunks(chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
       /* errno is already set in walk_chunks */
       volumesize = -1;
