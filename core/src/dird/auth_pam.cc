@@ -58,7 +58,7 @@ static bool PamConvSendMessage(BareosSocket *UA_sock, const char *msg, int msg_s
    return true;
 }
 
-static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
+static int PamConversationCallback(int num_msg, const struct pam_message **msgm,
                 struct pam_response **response, void *appdata_ptr)
 {
    if (!appdata_ptr) {
@@ -166,7 +166,7 @@ bool PamAuthenticateUser(BareosSocket *UA_sock,
    struct pam_handle *pamh; /* pam session handle */
 
    bool not_interactive = !username_in.empty() && !password_in.empty();
-   pam_conversation_container->conv = not_interactive ? PamLocalCallback : PamConversionCallback;
+   pam_conversation_container->conv = not_interactive ? PamLocalCallback : PamConversationCallback;
    pam_conversation_container->appdata_ptr = pam_callback_data.get();
 
    const char *username = username_in.empty() ? nullptr : username_in.c_str();
