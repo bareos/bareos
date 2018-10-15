@@ -33,10 +33,11 @@ static const std::string service_name("bareos");
 
 struct PamData {
    BareosSocket *UA_sock_;
+   const std::string &passwd_;
 
-   PamData(BareosSocket *UA_sock) {
-      UA_sock_ = UA_sock;
-   }
+   PamData(BareosSocket *UA_sock, const std::string& passwd)
+    : UA_sock_(UA_sock)
+    , passwd_(passwd) { }
 };
 
 /*
@@ -98,6 +99,7 @@ static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
             }
             if (pam_data->UA_sock_->recv()) {
                resp[i].resp = actuallystrdup(pam_data->UA_sock_->msg);
+               resp[i].resp_retcode = 0;
             }
             if (pam_data->UA_sock_->IsStop() || pam_data->UA_sock_->IsError()) {
                error = true;
@@ -119,7 +121,6 @@ static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
       } /* switch (msgm[i]->msg_style) { */
    } /* for( ; i < num_msg ..) */
 
-
    if (error) {
       for (int i = 0; i < num_msg; ++i) {
          if (resp[i].resp) {
@@ -137,16 +138,35 @@ static int PamConversionCallback(int num_msg, const struct pam_message **msgm,
    return PAM_SUCCESS;
 }
 
+static int PamLocalCallback(int num_msg, const struct pam_message **msgm,
+                struct pam_response **response, void *appdata_ptr)
+{
+   struct pam_response *resp =
+         reinterpret_cast<pam_response *> (actuallycalloc(
+               num_msg, sizeof(struct pam_response)));
+
+   PamData *pam_data = reinterpret_cast<PamData *>(appdata_ptr);
+
+   if (num_msg == 1) {
+     resp[0].resp = actuallystrdup(pam_data->passwd_.c_str());
+     resp[0].resp_retcode = 0;
+   }
+
+   *response = resp;
+   return PAM_SUCCESS;
+}
+
 bool PamAuthenticateUser(BareosSocket *UA_sock,
                               const std::string &username_in,
                               const std::string &password_in,
                               std::string& authenticated_username)
 {
-   std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock));
+   std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock, password_in));
    std::unique_ptr<struct pam_conv> pam_conversation_container(new struct pam_conv);
    struct pam_handle *pamh; /* pam session handle */
 
-   pam_conversation_container->conv = PamConversionCallback;
+   bool not_interactive = !username_in.empty() && !password_in.empty();
+   pam_conversation_container->conv = not_interactive ? PamLocalCallback : PamConversionCallback;
    pam_conversation_container->appdata_ptr = pam_callback_data.get();
 
    const char *username = username_in.empty() ? nullptr : username_in.c_str();
@@ -172,7 +192,7 @@ bool PamAuthenticateUser(BareosSocket *UA_sock,
    const void* data;
    err = pam_get_item(pamh, PAM_USER, &data);
    if (err != PAM_SUCCESS) {
-      Dmsg1(debuglevel, "PAM set_item failed: %s\n", pam_strerror(pamh, err));
+      Dmsg1(debuglevel, "PAM get_item failed: %s\n", pam_strerror(pamh, err));
       return false;
    } else {
      if (data) {

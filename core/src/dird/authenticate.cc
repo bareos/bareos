@@ -287,25 +287,35 @@ static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bo
 #if defined(HAVE_PAM)
 static void LookupTokenFromSocketStream(BareosSocket *ua_sock, const std::string& token, std::string& output)
 {
-  char buffer[128];
-  memset(buffer, 0, sizeof(buffer));
+  std::unique_ptr<char> buffer(new char[token.size()]);
+  memset(buffer.get(), 0, token.size());
+
   int flags = ua_sock->SetNonblocking();
-  int ret = ::recv(ua_sock->fd_, buffer, token.size(), MSG_PEEK);
-  if (ret == (int)token.size()) {
-    if (ua_sock->recv() <= 0) { return; }
-    std::string temp(ua_sock->msg);
-    output = temp.substr(temp.find(':')+1);
-  }
+
+  int tries = 3;
+  bool ready = false;
+
+  do {
+    Bmicrosleep(1,0);
+    int ret = ::recv(ua_sock->fd_, buffer.get(), token.size(), MSG_PEEK);
+    if (ret == (int)token.size()) {
+      if (ua_sock->recv() <= 0) { return; }
+      std::string temp(ua_sock->msg);
+      output = temp.substr(temp.find(':')+1);
+      ready = true;
+    }
+  } while (tries-- && !ready);
+
   ua_sock->RestoreBlocking(flags);
 }
 
-static void LookupOptionalPamUser(BareosSocket *ua_sock, std::string& pam_username)
+static void LookupOptionalUsername(BareosSocket *ua_sock, std::string& pam_username)
 {
   const std::string token {"@@username:"};
   LookupTokenFromSocketStream(ua_sock, token, pam_username);
 }
 
-static void LookupOptionalPamPassword(BareosSocket *ua_sock, std::string& pam_password)
+static void LookupOptionalPassword(BareosSocket *ua_sock, std::string& pam_password)
 {
   const std::string token {"@@password:"};
   LookupTokenFromSocketStream(ua_sock, token, pam_password);
@@ -329,9 +339,8 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   std::string pam_username;
   std::string pam_password;
 
-  Bmicrosleep(1,0);
-  LookupOptionalPamUser(ua->UA_sock, pam_username);
-  LookupOptionalPamPassword(ua->UA_sock, pam_password);
+  LookupOptionalUsername(ua->UA_sock, pam_username);
+  LookupOptionalPassword(ua->UA_sock, pam_password);
 
   std::string authenticated_username;
   if (!PamAuthenticateUser(ua->UA_sock, pam_username, pam_password, authenticated_username)) {
@@ -340,8 +349,13 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   } else {
     ConsoleResource *user = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE,
                                                                          authenticated_username.c_str());
-    ua->cons = user;
-    auth_success = true;
+    if (!user) {
+      ua->cons = nullptr;
+      auth_success = false;
+    } else {
+      ua->cons = user;
+      auth_success = true;
+    }
   }
   return true;
 } /* HAVE PAM */
