@@ -26,6 +26,7 @@ set (TEST_SRC
     dlist_test.cc
     htable_test.cc
     qualified_resource_name_type_converter_test.cc
+    lib_tests.cc
    )
 
 

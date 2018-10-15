@@ -589,3 +589,44 @@ const char *BnetSigToAscii(BareosSocket * bs)
       return buf;
    }
 }
+
+uint32_t ReadoutCommandIdFromString(std::string message)
+{
+  size_t pos = message.find(' ');
+  if (pos == std::string::npos) {
+    return kProtokollError;
+  }
+  std::string id_string;
+  id_string = message.substr(0,pos);
+
+  uint32_t id;
+  try {
+    id = std::stoul(id_string);
+  } catch (const std::exception &e) {
+    id = kProtokollError;
+  }
+  return id;
+}
+
+uint32_t ReceiveAndEvaluateResponse(BareosSocket *bsock, std::string &message_output)
+{
+  int recv_return_value = bsock->recv();
+  bsock->StopTimer();
+
+  if (recv_return_value <= 0) {
+    return kReceiveError;
+  }
+
+  Dmsg1(10, "<bsockd: %s", bsock->msg);
+
+  std::string message(bsock->msg);
+  uint32_t id = ReadoutCommandIdFromString(message);
+
+//  if (!bstrncmp(bsock->msg, OKhello, sizeof(OKhello) - 1)) {
+//    Bsnprintf(response, response_len, _("bsockector at \"%s:%d\" rejected Hello command\n"), bsock->host(),
+//              bsock->port());
+//    return false;
+//  } else {
+//    Bsnprintf(response, response_len, "%s", bsock->msg);
+//  }
+}
