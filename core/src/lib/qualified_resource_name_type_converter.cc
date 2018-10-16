@@ -20,6 +20,7 @@
 */
 
 #include "qualified_resource_name_type_converter.h"
+#include "lib/ascii_control_characters.h"
 
 #include <sstream>
 #include <algorithm>
@@ -61,7 +62,7 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
 {
   std::string r_name = ResourceTypeToString(r_type);
   if (r_name.empty()) { return false; }
-  str_out = r_name + record_separator_ + name_of_resource;
+  str_out = r_name + AsciiControlCharacters::RecordSeparator() + name_of_resource;
   return true;
 }
 
@@ -72,7 +73,9 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
 {
   std::string r_name = ResourceTypeToString(r_type);
   if (r_name.empty()) { return false; }
-  str_out = r_name + record_separator_ + name_of_resource + record_separator_ + std::to_string(job_id);
+  str_out = r_name + AsciiControlCharacters::RecordSeparator()
+            + name_of_resource + AsciiControlCharacters::RecordSeparator()
+            + std::to_string(job_id);
   return true;
 }
 
@@ -94,7 +97,7 @@ bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_r
                                                           const std::string &str_in) const
 {
   std::vector<std::string> string_list;
-  SplitStringIntoList(str_in, string_list, record_separator_, 3);
+  SplitStringIntoList(str_in, string_list, AsciiControlCharacters::RecordSeparator(), 3);
   if (string_list.size() < 2) { /* minimum of parameters are name_of_resource and r_type */
     return false;
   }

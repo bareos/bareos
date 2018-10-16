@@ -38,7 +38,6 @@ class QualifiedResourceNameTypeConverter {
   int StringToResourceType(const std::string &) const;
 
  private:
-  static constexpr char record_separator_ = 0x1e;
   const std::map<int, std::string> type_name_relation_map_;
   const std::map<std::string, int> name_type_relation_map_;
 };
