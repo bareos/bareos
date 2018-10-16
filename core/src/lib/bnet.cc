@@ -679,5 +679,5 @@ bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, std::vector<
 bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str)
 {
   std::vector<std::string> vec { str };
-  FormatAndSendResponseMessage(bsock, id, vec);
+  return FormatAndSendResponseMessage(bsock, id, vec);
 }
