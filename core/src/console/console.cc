@@ -858,7 +858,7 @@ try_again:
 }
 
 namespace console {
-BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
+BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len, uint32_t &response)
 {
   BareosSocketTCP *UA_sock = New(BareosSocketTCP);
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
@@ -903,7 +903,8 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     return nullptr;
   }
 
-  if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
+  if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, errmsg,
+                                                errmsg_len, director_resource, response)) {
     ConsoleOutput(errmsg);
     TerminateConsole(0);
     return nullptr;
@@ -1086,24 +1087,27 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
+   uint32_t response;
+   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len, response);
    if (!UA_sock) { return 1; }
 
    UA_sock->OutputCipherMessageString(ConsoleOutput);
 
    ConsoleOutput(errmsg);
 
-#if 0 // Ueb
+   if (response == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)
-//     UA_sock->fsend("@@username:bareos-pam");
-//     UA_sock->fsend("@@password:linuxlinux");
-   Bmicrosleep(1,0);
-   if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+     FormatAndSendResponseMessage(UA_sock, kMessageIdPamInteractive, "OK");
+     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+       TerminateConsole(0);
+       return 1;
+     }
+#else
+     Dmsg0(100, "This Console program does not have the pam feature\n");
      TerminateConsole(0);
      return 1;
-   }
 #endif /* HAVE_PAM */
-#endif
+   }
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 

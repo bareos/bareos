@@ -21,6 +21,7 @@
 
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#define BAREOS_TEST_LIB
 #include "lib/bnet.h"
 
 TEST(BNet, ReadoutCommandIdFromStringTest)
@@ -28,20 +29,55 @@ TEST(BNet, ReadoutCommandIdFromStringTest)
   bool ok;
   uint32_t id;
 
-  const std::string message1 {"1000 OK: <director-name> Version: <version>"};
-  ok = ReadoutCommandIdFromString(message1, id);
+  std::string message1 = "1000";
+  message1 += 0x1e;
+  message1 += "OK: <director-name> Version: <version>";
+  ok = ReadoutCommandIdFromMessage(message1, id);
   EXPECT_EQ(id, kMessageIdOk);
   EXPECT_EQ(ok, true);
 
-  const std::string message2 {"1001 OK: <director-name> Version: <version>"};
-  ok = ReadoutCommandIdFromString(message2, id);
+  std::string message2 = "1001";
+  message2 += 0x1e;
+  message2 += "OK: <director-name> Version: <version>";
+  ok = ReadoutCommandIdFromMessage(message2, id);
   EXPECT_NE(id, kMessageIdOk);
   EXPECT_EQ(ok, true);
+}
 
-  const char *m3 {"10A1 OK: <director-name> Version: <version>"};
-  const std::string message3 (m3);
-  ok = ReadoutCommandIdFromString(message3, id);
+TEST(BNet, EvaluateResponseMessage_Wrong_Id)
+{
+  bool ok;
+  uint32_t id;
+
+  std::string message3 = "10A1";
+  message3 += 0x1e;
+  message3 += "OK: <director-name> Version: <version>";
+
+  std::string human_readable_message;
+  ok = EvaluateResponseMessage(message3, id, human_readable_message);
+
   EXPECT_EQ(id, kMessageIdProtokollError);
   EXPECT_EQ(ok, false);
+
+  const char *m3 {"10A1 OK: <director-name> Version: <version>"};
   EXPECT_STREQ(message3.c_str(), m3);
+}
+
+TEST(BNet, EvaluateResponseMessage_Correct_Id)
+{
+  bool ok;
+  uint32_t id;
+
+  std::string message4 = "1001";
+  message4 += 0x1e;
+  message4 += "OK: <director-name> Version: <version>";
+
+  std::string human_readable_message;
+  ok = EvaluateResponseMessage(message4, id, human_readable_message);
+
+  EXPECT_EQ(id, kMessageIdPamRequired);
+  EXPECT_EQ(ok, true);
+
+  const char *m3 {"1001 OK: <director-name> Version: <version>"};
+  EXPECT_STREQ(message4.c_str(), m3);
 }

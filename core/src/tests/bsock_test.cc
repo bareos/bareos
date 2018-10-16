@@ -264,7 +264,6 @@ bool connect_to_server(std::string console_name, std::string console_password,
     Dmsg0(10, "socket connect failed\n");
   } else {
     Dmsg0(10, "socket connect OK\n");
-
     if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, cons_dir_config.get())) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {

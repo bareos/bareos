@@ -24,9 +24,9 @@
 
 class AsciiControlCharacters {
  public:
-  static char UnitSeparator() { return unit_separator_; }
-  static char RecordSeparator() { return record_separator_; }
-  static char GroupSeparator() { return group_separator_; }
+  static char UnitSeparator() { return unit_separator_; }     /* smallest data item separator           */
+  static char RecordSeparator() { return record_separator_; } /* data record separator within a group   */
+  static char GroupSeparator() { return group_separator_; }   /* group separator to separate datasets   */
 
  private:
   static constexpr char unit_separator_   = 0x1f;

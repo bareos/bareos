@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/edit.h"
+#include "lib/ascii_control_characters.h"
 
 /*
  * Various BAREOS Utility subroutines
@@ -178,6 +179,18 @@ void UnbashSpaces(PoolMem &pm)
    }
 }
 
+void SwapSeparatorsInString(std::string &str,
+                            char separator,
+                            char new_separator)
+{
+  std::string::iterator it = str.begin();
+  while( it != str.end() ) {
+    if (*it == separator) {
+      *it = new_separator;
+    }
+    it++;
+  }
+}
 
 /*
  * Parameter:

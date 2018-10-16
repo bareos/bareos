@@ -254,7 +254,14 @@ static void SendErrorMessage(std::string console_name, UaContext *ua)
 
 static void SendOkMessage(UaContext *ua)
 {
-  ua->UA_sock->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
+  char buffer[100];
+  ::snprintf(buffer, 100, "OK: %s Version: %s (%s)", my_name, VERSION, BDATE);
+
+  if (ua->cons && ua->cons->use_pam_authentication_) {
+    FormatAndSendResponseMessage(ua->UA_sock, kMessageIdPamRequired, std::string(buffer));
+  } else {
+    FormatAndSendResponseMessage(ua->UA_sock, kMessageIdOk, std::string(buffer));
+  }
 }
 
 static bool OptionalAuthenticateRootConsole(std::string console_name, UaContext *ua, bool &auth_success)
@@ -284,49 +291,21 @@ static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bo
   }
 }
 
-#if defined(HAVE_PAM)
-static void LookupTokenFromSocketStream(BareosSocket *ua_sock, const std::string& token, std::string& output)
-{
-  std::unique_ptr<char> buffer(new char[token.size()]);
-  memset(buffer.get(), 0, token.size());
-
-  int flags = ua_sock->SetNonblocking();
-
-  int tries = 3;
-  bool ready = false;
-
-  do {
-    Bmicrosleep(1,0);
-    int ret = ::recv(ua_sock->fd_, buffer.get(), token.size(), MSG_PEEK);
-    if (ret == (int)token.size()) {
-      if (ua_sock->recv() <= 0) { return; }
-      std::string temp(ua_sock->msg);
-      output = temp.substr(temp.find(':')+1);
-      ready = true;
-    }
-  } while (tries-- && !ready);
-
-  ua_sock->RestoreBlocking(flags);
-}
-
-static void LookupOptionalUsername(BareosSocket *ua_sock, std::string& pam_username)
-{
-  const std::string token {"@@username:"};
-  LookupTokenFromSocketStream(ua_sock, token, pam_username);
-}
-
-static void LookupOptionalPassword(BareosSocket *ua_sock, std::string& pam_password)
-{
-  const std::string token {"@@password:"};
-  LookupTokenFromSocketStream(ua_sock, token, pam_password);
-}
-#endif /* HAVE PAM */
-
 static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua, bool &auth_success)
 {
   ConsoleResource *cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, console_name.c_str());
 
-#if defined(HAVE_PAM)
+#if !defined(HAVE_PAM)
+{
+  if (cons && cons->use_pam_authentication_) {
+    Emsg0(M_ERROR, 0, _("PAM is not available on this director\n"));
+    auth_success = false;
+    return true;
+  } else {
+    return false;  /* auth_success can be ignored */
+  }
+}
+#else /* HAVE_PAM */
 {
   if (!cons) { /* if console resource cannot be obtained is treated as an error */
     auth_success = false;
@@ -336,11 +315,24 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   /* no need to evaluate auth_success if no pam is required */
   if (!cons->use_pam_authentication_) { return false; }
 
+  uint32_t response;
+  std::string message;
+
+  if (!ReceiveAndEvaluateResponseMessage(ua->UA_sock, response, message)) {
+    Dmsg2(100, "Could not evaluate response: %d - %d", response, message.c_str());
+    auth_success = false;
+    return true;
+  }
+
   std::string pam_username;
   std::string pam_password;
 
-  LookupOptionalUsername(ua->UA_sock, pam_username);
-  LookupOptionalPassword(ua->UA_sock, pam_password);
+  if (response == kMessageIdPamUserCredentials) {
+    /* Ueb: receive username and password */
+    Dmsg0(200, "Console chooses Pam direct credentials\n");
+  } else if (response == kMessageIdPamInteractive) {
+    Dmsg0(200, "Console chooses Pam interactive\n");
+  }
 
   std::string authenticated_username;
   if (!PamAuthenticateUser(ua->UA_sock, pam_username, pam_password, authenticated_username)) {
@@ -359,14 +351,6 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   }
   return true;
 } /* HAVE PAM */
-#else /* !HAVE_PAM */
-  if (cons && cons->use_pam_authentication_) {
-    Emsg0(M_ERROR, 0, _("PAM is not available on this director\n"));
-    auth_success = false;
-    return true;
-  } else {
-    return false;  /* auth_success can be ignored */
-  }
 #endif /* !HAVE_PAM */
 }
 

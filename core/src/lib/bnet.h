@@ -59,7 +59,15 @@ enum : uint32_t {
   kMessageIdPamUserCredentials = 4002
 };
 
-bool ReadoutCommandIdFromString(const std::string &message, uint32_t &id_out);
-bool ReceiveAndEvaluateResponse(BareosSocket *bsock, uint32_t &id_out, std::string &message_out);
+#ifdef BAREOS_TEST_LIB
+bool ReadoutCommandIdFromMessage(const std::string &message, uint32_t &id_out);
+bool EvaluateResponseMessage(std::string &message, uint32_t &id_out, std::string &human_readable_message_out);
+#endif
+
+bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, std::string &human_readable_message_out);
+bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str);
+bool FormatAndSendResponseMessage(BareosSocket *bsock,
+                                  uint32_t id,
+                                  std::vector<std::string> optional_arguments = std::vector<std::string>());
 
 #endif // BAREOS_LIB_BNET_H_

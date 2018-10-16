@@ -37,6 +37,7 @@
 #include "jcr.h"
 #include "lib/bnet.h"
 #include "lib/bsys.h"
+#include "lib/ascii_control_characters.h"
 
 #include <netdb.h>
 #include "lib/tls.h"
@@ -590,50 +591,93 @@ const char *BnetSigToAscii(BareosSocket * bs)
    }
 }
 
-bool ReadoutCommandIdFromString(const std::string &message, uint32_t &id_out)
+bool ReadoutCommandIdFromMessage(const std::string &message, uint32_t &id_out)
 {
-  const char delimiter = ' ';
-  size_t pos = message.find(delimiter);
-  if (pos == std::string::npos) {
+  const char delimiter = AsciiControlCharacters::RecordSeparator();
+
+  size_t delimiter_position = message.find(delimiter);
+  if (delimiter_position == std::string::npos) {
     id_out = kMessageIdProtokollError;
     return false;
   }
 
   uint32_t id;
-  size_t pos1;
+  size_t position_after_number;
 
-  try {
-    id = std::stoul(message, &pos1);
+  try { /* "1000 OK: <director name> ..." */
+    id = std::stoul(message, &position_after_number);
   } catch (const std::exception &e) {
     id_out = kMessageIdProtokollError;
     return false;
   }
-  if (pos == pos1) {
-    id_out = id;
-    return true;
-  } else {
+
+  if (position_after_number != delimiter_position) {
     id_out = kMessageIdProtokollError;
     return false;
+  } else {
+    id_out = id;
+    return true;
   }
 }
 
-bool ReceiveAndEvaluateResponse(BareosSocket *bsock, uint32_t &id_out, std::string &message_out)
+bool EvaluateResponseMessage(std::string &message, uint32_t &id_out, std::string &human_readable_message_out)
 {
-  int recv_return_value = bsock->recv();
+  uint32_t id = kMessageIdUnknown;
+  bool ok = ReadoutCommandIdFromMessage(message, id);
+
+  id_out = id;
+  SwapSeparatorsInString(message);
+  human_readable_message_out = message;
+
+  return ok;
+
+}
+
+bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, std::string &human_readable_message_out)
+{
+  int ret = bsock->recv();
   bsock->StopTimer();
 
-  if (recv_return_value <= 0) {
+  if (ret <= 0) {
+    Dmsg1(100, "Error while receiving response message: %s", bsock->msg);
     return false;
   }
 
   Dmsg1(10, "<bsockd: %s", bsock->msg);
 
-  const std::string message(bsock->msg);
-  uint32_t id;
-  bool ok = ReadoutCommandIdFromString(message, id);
+  std::string message(bsock->msg);
 
-  id_out = id;
-  message_out = message;
+  if (message.empty()) {
+    Dmsg0(100, "Received message is empty\n");
+    return false;
+  }
 
-  return ok;
+  return EvaluateResponseMessage(message, id_out, human_readable_message_out);
+}
+
+bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, std::vector<std::string> optional_arguments)
+{
+  std::string message;
+  message += std::to_string(id);
+
+  for (auto s : optional_arguments) {
+    message += AsciiControlCharacters::RecordSeparator();
+    message += s;
+  }
+
+  message += '\n';
+
+  const char *m = message.c_str();
+
+  if (bsock->send(m, message.size()) <=0 ) {
+    Dmsg1(100, "Could not send response message: %d\n", message.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str)
+{
+  std::vector<std::string> vec { str };
+  FormatAndSendResponseMessage(bsock, id, vec);
 }

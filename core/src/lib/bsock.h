@@ -163,6 +163,13 @@ class BareosSocket : public SmartAlloc {
                                 char *response,
                                 int response_len,
                                 TlsResource *tls_resource);
+  bool ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
+                                       const char *name,
+                                       s_password &password,
+                                       char *response,
+                                       int response_len,
+                                       TlsResource *tls_resource,
+                                       uint32_t &response_id);
   bool ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                         const char *identity,
                                         const char *password,

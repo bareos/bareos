@@ -320,8 +320,44 @@ void BareosSocket::SetKillable(bool killable)
 /** Commands sent to Director */
 static char hello[] = "Hello %s calling\n";
 
-/** Response from Director */
-static char OKhello[] = "1000 OK:";
+
+bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
+                                                   const char *identity,
+                                                   s_password &password,
+                                                   char *response,
+                                                   int response_len,
+                                                   TlsResource *tls_resource,
+                                                   uint32_t &response_id)
+{
+  char bashed_name[MAX_NAME_LENGTH];
+  BareosSocket *dir = this; /* for readability */
+
+  response[0] = 0;
+
+  bstrncpy(bashed_name, identity, sizeof(bashed_name));
+  BashSpaces(bashed_name);
+
+  dir->StartTimer(60 * 5); /* 5 minutes */
+  dir->fsend(hello, bashed_name);
+
+  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) {
+    Dmsg0(100, "Authenticate outbound connection failed\n");
+    dir->StopTimer();
+    return false;
+  }
+
+  Dmsg1(6, ">dird: %s", dir->msg);
+
+  uint32_t message_id;
+  std::string received_message;
+  if (ReceiveAndEvaluateResponseMessage(dir, message_id, received_message)) {
+    response_id = message_id;
+    Bsnprintf(response, response_len, "%s\n", received_message.c_str());
+    return true;
+  }
+  Dmsg0(100, "Wrong Message Protocol ID\n");
+  return false;
+}
 
 bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
                                             const char *identity,
@@ -330,6 +366,8 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
                                             int response_len,
                                             TlsResource *tls_resource)
 {
+  static char OKAnswerFromDirector[] = "1000 OK:";
+
   char bashed_name[MAX_NAME_LENGTH];
   BareosSocket *dir = this; /* for readability */
 
@@ -341,27 +379,43 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
   bstrncpy(bashed_name, identity, sizeof(bashed_name));
   BashSpaces(bashed_name);
 
-  /*
-   * Timeout Hello after 5 mins
-   */
-  dir->StartTimer(60 * 5);
+  dir->StartTimer(60 * 5); /* 5 minutes */
   dir->fsend(hello, bashed_name);
 
-  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) {
+  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) { goto bail_out; }
+
+  Dmsg1(6, ">dird: %s", dir->msg);
+  if (dir->recv() <= 0) {
     dir->StopTimer();
+    Bsnprintf(response, response_len,
+              _("Bad response to Hello command: ERR=%s\n"
+                "The Director at \"%s:%d\" is probably not running.\n"),
+              dir->bstrerror(), dir->host(), dir->port());
     return false;
   }
 
-  Dmsg1(6, ">dird: %s", dir->msg);
-
-  uint32_t message_id;
-  std::string received_message;
-  if (ReceiveAndEvaluateResponse(dir, message_id, received_message)) {
-    if (message_id == kMessageIdOk) {
-      Bsnprintf(response, response_len, "%s\n", received_message.c_str());
-      return true;
-    }
+  dir->StopTimer();
+  Dmsg1(10, "<dird: %s", dir->msg);
+  if (!bstrncmp(dir->msg, OKAnswerFromDirector, sizeof(OKAnswerFromDirector) - 1)) {
+    Bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"), dir->host(),
+              dir->port());
+    return false;
+  } else {
+    Bsnprintf(response, response_len, "%s", dir->msg);
   }
+
+  return true;
+
+bail_out:
+  dir->StopTimer();
+  Bsnprintf(response, response_len,
+            _("Authorization problem with Director at \"%s:%d\"\n"
+              "Most likely the passwords do not agree.\n"
+              "If you are using TLS, there may have been a certificate "
+              "validation error during the TLS handshake.\n"
+              "Please see %s for help.\n"),
+            dir->host(), dir->port(), MANUAL_AUTH_URL);
+
   return false;
 }
 
