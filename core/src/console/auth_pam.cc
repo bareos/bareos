@@ -70,7 +70,7 @@ bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
                switch (type) {
                   case PAM_PROMPT_ECHO_OFF:
                   case PAM_PROMPT_ECHO_ON:
-                     SetEcho (stdin, type == PAM_PROMPT_ECHO_ON);
+                     SetEcho (std_in, type == PAM_PROMPT_ECHO_ON);
                      state = PamAuthState::RECEIVE_MSG;
                      break;
                   case PAM_SUCCESS:
