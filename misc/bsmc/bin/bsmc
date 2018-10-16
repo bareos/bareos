@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2018 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -54,6 +54,8 @@ def getArguments():
         'query', help='query command is used to query information from director')
     parser_query.add_argument('queryobject', default='status',
                               choices=['sched', 'schedule', 'status', 'lost'], help="Object to query")
+    parser_query.add_argument('-r', '--recursive', action='store_true', default=False,
+                              dest='query_recursive', help="query lost files recursively")
     parser_incremental = subparsers.add_parser(
         'incr', help='run incremental job(s) defined for this client')
     parser_restore = subparsers.add_parser(
@@ -69,8 +71,34 @@ def getArguments():
     args = parser.parse_args()
     return args
 
+def getLostFiles(client, searchpath, recursive=False, printPrefix="./"):
+    '''
+    List all files in searchpath that exist in a backup but not in
+    the filesystem. Use recursive=True to iterate through subdirectories
+    '''
+    lostFiles = []
+    jobids = getClientJobs (client)
+    dirCommand = '.bvfs_lsfiles jobid={}'.format(','.join(jobids))
+    dirCommand += " path=" + searchpath
+    res = jsonDirector.call(dirCommand)
+    if 'files' in res:
+        for file in res['files']:
+            if not 'name' in file:
+                continue
+            if not (os.path.lexists(searchpath + file['name'])):
+                lostFiles.append(printPrefix + file['name'])
+    dirCommand = '.bvfs_lsdirs jobid={}'.format(','.join(jobids))
+    dirCommand += " path=" + searchpath
+    res = jsonDirector.call(dirCommand)
+    if 'directories' in res:
+        for dir in res['directories']:
+            if dir['name'] == '.' or dir['name'] == '..':
+                continue
+            if recursive:
+                lostFiles.extend(getLostFiles(client, searchpath + dir['name'], True, printPrefix + dir['name']))
+    return lostFiles
 
-def query(queryobject, client):
+def query(queryobject, client, query_recursive=False):
     '''
     Query scheduler information for client
     '''
@@ -85,14 +113,10 @@ def query(queryobject, client):
         msg = director.recv_msg()
         sys.stdout.write(msg)
     elif queryobject in ['lost']:
-        jobids = getClientJobs (client)
-        res = jsonDirector.call('.bvfs_lsfiles jobid={} path={}/'.format(','.join(jobids), os.getcwd()))
-        for file in res['files']:
-            if(os.path.isfile(file['name'])):
-                continue
-            if(os.path.isdir(file['name'])):
-                continue
-            print file['name']
+        myPath = os.getcwd()
+        if not myPath == '/':
+            myPath += '/'
+        print ('\n'.join(getLostFiles(client, myPath, query_recursive)))
     else:
         logger.error("Unknown query object " + queryobject)
 
@@ -103,9 +127,8 @@ def getClientJobs(client):
     res = jsonDirector.call('list jobs client={}'.format(client))
     jobids = []
     for job in res['jobs']:
-        if job['jobstatus'] <> 'T': continue
-        if job['type'] != 'B': continue
-        jobids.append(job['jobid'])
+        if job['jobstatus'] in ['T', 'W'] and job['type'] == 'B':
+            jobids.append(job['jobid'])
     return jobids
 
 def waitForJob(jobId):
@@ -351,7 +374,7 @@ if __name__ == '__main__':
     logger.debug("Command: " + args.command + "\n")
 
     if args.command in ["query", 'q']:
-        query(args.queryobject, client_fd)
+        query(args.queryobject, client_fd, args.query_recursive)
     elif args.command in ['Incremental', 'incr']:
         exitCode = incremental(client_joblist)
         sys.exit(exitCode)
