@@ -37,6 +37,10 @@
 void *reallymalloc(const char *fname, int lineno, unsigned int nbytes);
 void Reallyfree(const char *file, int line, void *fp);
 
+#ifdef __clang__
+#undef SMARTALLOC
+#endif
+
 #ifdef SMARTALLOC
 #ifndef bmalloc
 #define bmalloc(s) sm_malloc(__FILE__, __LINE__, (s))
