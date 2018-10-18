@@ -2,6 +2,19 @@
 
 . scripts/functions
 
+
+os=`uname -s`
+if [ "$os" = "FreeBSD" ]; then
+  SED=`which gsed`
+  if [ -z $SED ]; then
+    echo "gsed is required on FreeBSD for this test"
+    exit 1
+  fi
+else
+  SED=sed
+fi
+
+
 # Define the Name of the test as "TestName".
 # Should be the same as the filename, therefore we use the filename as default.
 TestName="`basename $0`"
@@ -120,7 +133,7 @@ LOG=${tmp}/log-bvfs-lsdir-BackupDirectory.out
 # 1 0   19  1   x GoHK EHt C GHH GHH A BAA BAA I BWDNOj BZwlgI BZwlgI A A C .
 # 2   0   0   0   A A A A A A A A A A A A A A ..
 # need to get dirid of "."
-DirId=$(sed -n 's/^\([0-9]\+\)\W.*[a-zA-Z]\+\W\.$/\1/p' $LOG)
+DirId=$(${SED} -n 's/^\([0-9]\+\)\W.*[a-zA-Z]\+\W\.$/\1/p' $LOG)
 if [ -z "$DirId" ]; then
     set_error "failed to find DirId of backup directory (using '.bvfs_lsdir path=${BackupDirectory}/')."
 fi
@@ -232,14 +245,14 @@ fi
 LOG=${tmp}/log-bvfs-lsfiles-BackupDirectory-limit1.out
 check_log ${LOG}
 files=`grep "^[0-9]\+\W" ${LOG} | wc -l`
-if [ "$files" !=  "1" ]; then
+if [ $files -ne 1 ]; then
    set_error "expected 1 file, found ${files}."
 fi
 
 LOG=${tmp}/log-bvfs-versions-extrafile.out
 check_log ${LOG}
 versions=`grep "^[0-9]\+\W" ${LOG} | wc -l`
-if [ "$versions" !=  "2" ]; then
+if [ $versions -ne 2 ]; then
    set_error "expected 2 versions of file ${BackupFileExtra}, found ${versions}."
 fi
 
@@ -270,21 +283,21 @@ check_log ${LOG}
 # +----------+
 #
 # Get the 5. line and remove all "|" and " "
-COUNT=`sed -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
+COUNT=`${SED} -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
 if [ "${COUNT}" -ne "0" ]; then
     set_error "after .bvfs_clear_cache HasCache should be 0, not ${COUNT}."
 fi
 
 LOG=${tmp}/log-bvfs-cleared-cache-PathHierarchy.out
 check_log ${LOG}
-COUNT=`sed -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
+COUNT=`${SED} -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
 if [ "${COUNT}" -ne "0" ]; then
     set_error "after .bvfs_clear_cache PathHierarchy table should be empty (but has ${COUNT} entries)."
 fi
 
 LOG=${tmp}/log-bvfs-cleared-cache-PathVisibility.out
 check_log ${LOG}
-COUNT=`sed -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
+COUNT=`${SED} -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
 if [ "${COUNT}" -ne "0" ]; then
     set_error "after .bvfs_clear_cache PathVisibility table should be empty (but has ${COUNT} entries)."
 fi
