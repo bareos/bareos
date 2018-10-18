@@ -618,7 +618,7 @@ static LDOUBLE pow10(int exp)
    return result;
 }
 
-static int64_t round(LDOUBLE value)
+static int64_t roundtoint(LDOUBLE value)
 {
    int64_t intpart;
 
@@ -685,7 +685,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    /* We "cheat" by converting the fractional part to integer by
     * multiplying by a factor of 10
     */
-   fracpart = round((pow10(max)) * (ufvalue - intpart));
+   fracpart = roundtoint((pow10(max)) * (ufvalue - intpart));
 
    if (fracpart >= pow10(max)) {
       intpart++;
