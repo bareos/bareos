@@ -1,4 +1,8 @@
-#! /bin/sh
+#!/bin/sh
+#
+# PROVIDE: bareosdir
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
 #
 # bareos       This shell script takes care of starting and stopping
 #	       the bareos Director daemon

@@ -1,5 +1,9 @@
 #!/bin/sh
 #
+# PROVIDE: bareosfd
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+#
 # bareos       This shell script takes care of starting and stopping
 #	       the bareos File daemon.
 #

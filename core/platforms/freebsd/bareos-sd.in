@@ -1,4 +1,8 @@
-#! /bin/sh
+#!/bin/sh
+#
+# PROVIDE: bareossd
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
 #
 # bareos       This shell script takes care of starting and stopping
 #	       the bareos Storage daemon.
