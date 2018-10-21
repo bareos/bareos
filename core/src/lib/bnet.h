@@ -60,8 +60,9 @@ enum : uint32_t {
 };
 
 #ifdef BAREOS_TEST_LIB
-bool ReadoutCommandIdFromMessage(const std::string &message, uint32_t &id_out);
-bool EvaluateResponseMessage(std::string &message, uint32_t &id_out, std::string &human_readable_message_out);
+class BStringList;
+bool ReadoutCommandIdFromMessage(const BStringList &list_of_arguments, uint32_t &id_out);
+bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, std::string &human_readable_message_out);
 #endif
 
 bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, std::string &human_readable_message_out);

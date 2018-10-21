@@ -592,46 +592,37 @@ const char *BnetSigToAscii(BareosSocket * bs)
    }
 }
 
-bool ReadoutCommandIdFromMessage(const std::string &message, uint32_t &id_out)
+bool ReadoutCommandIdFromMessage(const BStringList& list_of_arguments, uint32_t &id_out)
 {
-  const char delimiter = AsciiControlCharacters::RecordSeparator();
-
-  size_t delimiter_position = message.find(delimiter);
-  if (delimiter_position == std::string::npos) {
-    id_out = kMessageIdProtokollError;
+  if (list_of_arguments.size() < 1) {
     return false;
   }
 
-  uint32_t id;
-  size_t position_after_number;
+  uint32_t id = kMessageIdUnknown;
 
   try { /* "1000 OK: <director name> ..." */
-    id = std::stoul(message, &position_after_number);
+    const std::string &first_argument = list_of_arguments.front();
+    id = std::stoul(first_argument);
   } catch (const std::exception &e) {
     id_out = kMessageIdProtokollError;
     return false;
   }
 
-  if (position_after_number != delimiter_position) {
-    id_out = kMessageIdProtokollError;
-    return false;
-  } else {
-    id_out = id;
-    return true;
-  }
+  id_out = id;
+  return true;
 }
 
-bool EvaluateResponseMessage(std::string &message, uint32_t &id_out, std::string &human_readable_message_out)
+bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, std::string &human_readable_message_out)
 {
+  BStringList list_of_arguments(message, AsciiControlCharacters::RecordSeparator());
   uint32_t id = kMessageIdUnknown;
-  bool ok = ReadoutCommandIdFromMessage(message, id);
+
+  bool ok = ReadoutCommandIdFromMessage(list_of_arguments, id);
 
   id_out = id;
-  SwapSeparatorsInString(message);
-  human_readable_message_out = message;
+  human_readable_message_out = list_of_arguments.Join(' ');
 
   return ok;
-
 }
 
 bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, std::string &human_readable_message_out)
@@ -653,7 +644,7 @@ bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, st
     return false;
   }
 
-  return EvaluateResponseMessage(message, id_out, human_readable_message_out);
+  return EvaluateResponseMessageId(message, id_out, human_readable_message_out);
 }
 
 bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, std::vector<std::string> optional_arguments)

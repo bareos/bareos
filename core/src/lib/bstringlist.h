@@ -41,7 +41,7 @@ public:
   void Append(const char *str);
 
 private:
-  std::string Join(char *separator) const;
+  std::string Join(const char *separator) const;
 };
 
 #endif /* BAREOS_LIB_BSTRINGLIST_H_ */

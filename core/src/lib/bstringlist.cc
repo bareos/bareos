@@ -21,13 +21,20 @@
 
 #include "bstringlist.h"
 
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 
 BStringList::BStringList() : std::list<std::string>() { return; }
 
 BStringList::BStringList(const std::string &string_to_split, char separator)
   : std::list<std::string>()
 {
-
+  std::stringstream ss(string_to_split);
+  std::string token;
+  while (std::getline(ss, token, separator)) {
+    push_back(token);
+  }
 }
 
 BStringList::BStringList(const BStringList &other)
@@ -91,7 +98,7 @@ std::string BStringList::Join() const
   return Join(nullptr);
 }
 
-std::string BStringList::Join(char *separator) const
+std::string BStringList::Join(const char *separator) const
 {
   std::list<std::string>::const_iterator it = cbegin();
   std::string output;
