@@ -23,6 +23,7 @@
 #include "include/bareos.h"
 #define BAREOS_TEST_LIB
 #include "lib/bnet.h"
+#include "lib/bstringlist.h"
 
 TEST(BNet, ReadoutCommandIdFromStringTest)
 {
@@ -80,4 +81,59 @@ TEST(BNet, EvaluateResponseMessage_Correct_Id)
 
   const char *m3 {"1001 OK: <director-name> Version: <version>"};
   EXPECT_STREQ(message4.c_str(), m3);
+}
+
+TEST(BStringList, ConstructorsTest)
+{
+  BStringList list1;
+  EXPECT_TRUE(list1.empty());
+
+  list1.emplace_front(std::string("Test123"));
+  EXPECT_EQ(0, list1.front().compare(std::string("Test123")));
+
+  BStringList list2(list1);
+  EXPECT_EQ(1, list2.size());
+  EXPECT_EQ(0, list2.front().compare(std::string("Test123")));
+}
+
+TEST(BStringList, AppendTest)
+{
+  BStringList list1;
+  std::vector<std::string> vec {"T", "est", "123"};
+  list1.Append(vec);
+  EXPECT_EQ(0, list1.front().compare(std::string("T")));
+  list1.pop_front();
+  EXPECT_EQ(0, list1.front().compare(std::string("est")));
+  list1.pop_front();
+  EXPECT_EQ(0, list1.front().compare(std::string("123")));
+
+  BStringList list2;
+  list2.Append('T');
+  list2.Append('e');
+  EXPECT_EQ(0, list2.front().compare(std::string("T")));
+  list2.pop_front();
+  EXPECT_EQ(0, list2.front().compare(std::string("e")));
+}
+
+TEST(BStringList, JoinTest)
+{
+  BStringList list1;
+  list1 << "Test";
+  list1 << 1 << 23;
+  EXPECT_EQ(3, list1.size());
+  EXPECT_STREQ(list1.Join().c_str(), "Test123");
+  EXPECT_STREQ(list1.Join(' ').c_str(), "Test 1 23");
+
+  BStringList list2;
+  list2.Append("Test");
+  list2.Append("123");
+
+  std::string s = list2.Join(AsciiControlCharacters::RecordSeparator());
+  EXPECT_EQ(8, s.size());
+
+  std::string test {"Test"};
+  test += AsciiControlCharacters::RecordSeparator(); // 0x1e
+  test += "123";
+
+  EXPECT_STREQ(s.c_str(), test.c_str());
 }

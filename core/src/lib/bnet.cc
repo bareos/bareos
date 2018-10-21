@@ -38,6 +38,7 @@
 #include "lib/bnet.h"
 #include "lib/bsys.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
 
 #include <netdb.h>
 #include "lib/tls.h"
@@ -657,20 +658,16 @@ bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, st
 
 bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, std::vector<std::string> optional_arguments)
 {
-  std::string message;
-  message += std::to_string(id);
+  BStringList message;
 
-  for (auto s : optional_arguments) {
-    message += AsciiControlCharacters::RecordSeparator();
-    message += s;
-  }
+  message << id;
+  message.Append(optional_arguments);
+  message.Append('\n');
 
-  message += '\n';
+  std::string m = message.Join(AsciiControlCharacters::RecordSeparator());
 
-  const char *m = message.c_str();
-
-  if (bsock->send(m, message.size()) <=0 ) {
-    Dmsg1(100, "Could not send response message: %d\n", message.c_str());
+  if (bsock->send(m.c_str(), m.size()) <=0 ) {
+    Dmsg1(100, "Could not send response message: %d\n", m.c_str());
     return false;
   }
   return true;
