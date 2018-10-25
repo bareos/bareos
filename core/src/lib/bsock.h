@@ -99,7 +99,7 @@ class BareosSocket : public SmartAlloc {
 
    virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                        struct sockaddr *lclient_addr) = 0;
-   virtual bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
+   virtual bool open(JobControlRecord *jcr, const char *name, const char *host, char *service,
                      int port, utime_t heart_beat, int *fatal) = 0;
 
  private:
@@ -131,7 +131,7 @@ class BareosSocket : public SmartAlloc {
                        utime_t max_retry_time,
                        utime_t heart_beat,
                        const char *name,
-                       char *host,
+                       const char *host,
                        char *service,
                        int port,
                        bool verbose)                      = 0;
