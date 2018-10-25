@@ -34,9 +34,10 @@ public:
   BStringList &operator << (const std::string &rhs);
   BStringList &operator << (const int &rhs);
   BStringList &operator << (const char *rhs);
+  BStringList &operator << (const std::list<std::string> &vec);
   std::string Join(char separator) const;
   std::string Join() const;
-  void Append(std::vector<std::string> vec);
+  void Append(const std::list<std::string> &vec);
   void Append(char character);
   void Append(const char *str);
 

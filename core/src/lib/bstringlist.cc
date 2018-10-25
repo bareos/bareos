@@ -64,17 +64,22 @@ BStringList& BStringList::operator << (const int &rhs)
   return *this;
 }
 
+BStringList& BStringList::operator << (const std::list<std::string> &rhs)
+{
+  Append(rhs);
+  return *this;
+}
+
 BStringList& BStringList::operator << (const char *rhs)
 {
   emplace_back(rhs);
   return *this;
 }
 
-void BStringList::Append(std::vector<std::string> vec)
+void BStringList::Append(const std::list<std::string> &vec)
 {
-  std::vector<std::string>::const_iterator it = vec.cbegin();
-  while (it != vec.cend()) {
-    push_back(*it++);
+  for (auto str : vec) {
+    push_back(str);
   }
 }
 

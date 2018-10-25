@@ -41,8 +41,8 @@ TEST(BStringList, ConstructorsTest)
 TEST(BStringList, AppendTest)
 {
   BStringList list1;
-  std::vector<std::string> vec {"T", "est", "123"};
-  list1.Append(vec);
+  std::list<std::string> list {"T", "est", "123"};
+  list1.Append(list);
   EXPECT_EQ(0, list1.front().compare(std::string("T")));
   list1.pop_front();
   EXPECT_EQ(0, list1.front().compare(std::string("est")));

@@ -36,6 +36,7 @@
 #include "dird/dird_globals.h"
 
 #include "lib/tls_openssl.h"
+#include "lib/bnet.h"
 
 #include "include/jcr.h"
 
@@ -81,12 +82,10 @@ void InitForTest()
   InitMsg(NULL, NULL);
 }
 
-int create_accepted_server_socket(int port)
+static int create_listening_server_socket(int port)
 {
-  int server_fd, new_socket;
-  struct sockaddr_in address;
+  int server_fd;
   int opt = 1;
-  int addrlen = sizeof(address);
 
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("socket failed");
@@ -97,6 +96,8 @@ int create_accepted_server_socket(int port)
     perror("setsockopt");
     return -1;
   }
+
+  struct sockaddr_in address;
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(port);
@@ -118,14 +119,28 @@ int create_accepted_server_socket(int port)
     perror("listen");
     return -1;
   }
+  return server_fd;
+}
 
-  if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
+static int accept_server_socket(int listening_socket)
+{
+  int new_socket = accept(listening_socket, nullptr, nullptr);
+  if (new_socket < 0) {
     if (errno == EWOULDBLOCK || errno == EAGAIN) {
       perror("Socket accept timeout");
     }
     return -1;
   }
   return new_socket;
+}
+
+int create_accepted_server_socket(int port)
+{
+  int sock = create_listening_server_socket(port);
+  if (sock > 0) {
+    sock = accept_server_socket(sock);
+  }
+  return sock;
 }
 
 BareosSocket *create_new_bareos_socket(int fd)
@@ -138,7 +153,6 @@ BareosSocket *create_new_bareos_socket(int fd)
   memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
   return bs;
 }
-
 
 #if 0
 static bool check_cipher(const TlsResource &tls, const std::string &cipher)
@@ -166,7 +180,6 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port)
 
 {
-  bool success = false;
   int newsockfd = create_accepted_server_socket(server_port);
 
   if (newsockfd < 0) {
@@ -180,6 +193,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   password->encoding = p_encoding_md5;
   password->value = (char *)console_password.c_str();
 
+  bool success = false;
   if (bs->recv() <= 0) {
     Dmsg1(10, _("Connection request from %s failed.\n"), bs->who());
   } else if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
@@ -491,3 +505,63 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   EXPECT_FALSE(future.get());
 }
 #endif
+
+bool create_connected_server_and_client_bareos_socket(BareosSocketTCP **client_socket_out,
+                                               BareosSocket **server_socket_out)
+{
+  int newsockfd = create_listening_server_socket(BSOCK_TEST_PORT_NUMBER);
+
+  if (newsockfd < 0) { return false; }
+
+  std::unique_ptr<BareosSocketTCP> client_socket(New(BareosSocketTCP));
+  client_socket->sleep_time_after_authentication_error = 0;
+
+  std::string hostaddr(HOST);
+
+  bool ok = client_socket->connect(NULL, 1, 1, 0, "Director daemon", hostaddr.c_str(),
+                        NULL, BSOCK_TEST_PORT_NUMBER, false);
+  EXPECT_EQ(ok, true);
+  if (!ok) {
+    Dmsg0(10, "socket connect failed\n");
+    return false;
+  }
+
+  newsockfd = accept_server_socket(newsockfd);
+  EXPECT_GT(newsockfd, 0);
+  if (newsockfd <= 0) { return false; }
+
+  std::unique_ptr<BareosSocket> server_socket(create_new_bareos_socket(newsockfd));
+
+  *server_socket_out = server_socket.release();
+  *client_socket_out = client_socket.release();
+  return true;
+}
+
+TEST(BNet, FormatAndSendResponseMessage)
+{
+  BareosSocket *s;
+  std::unique_ptr<BareosSocket> server_socket;
+  BareosSocketTCP *c;
+  std::unique_ptr<BareosSocketTCP> client_socket;
+
+  bool ok = create_connected_server_and_client_bareos_socket(&c, &s);
+  EXPECT_TRUE(ok);
+  if (!ok) { return; }
+
+  server_socket.reset(s);
+  client_socket.reset(c);
+
+  std::string m("Test123");
+
+  FormatAndSendResponseMessage(client_socket.get(), kMessageIdOk, m);
+
+  uint32_t id = kMessageIdUnknown;
+  std::string m1;
+  ok = ReceiveAndEvaluateResponseMessage(server_socket.get(), id, m1);
+
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(id, kMessageIdOk);
+
+  std::string test("1000 Test123 \n");
+  EXPECT_STREQ(m1.c_str(), test.c_str());
+}

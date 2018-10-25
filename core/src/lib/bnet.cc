@@ -647,15 +647,9 @@ bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, st
   return EvaluateResponseMessageId(message, id_out, human_readable_message_out);
 }
 
-bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, std::vector<std::string> optional_arguments)
+bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, BStringList list_of_agruments)
 {
-  BStringList message;
-
-  message << id;
-  message.Append(optional_arguments);
-  message.Append('\n');
-
-  std::string m = message.Join(AsciiControlCharacters::RecordSeparator());
+  std::string m = list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
 
   if (bsock->send(m.c_str(), m.size()) <=0 ) {
     Dmsg1(100, "Could not send response message: %d\n", m.c_str());
@@ -666,6 +660,10 @@ bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, std::vector<
 
 bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str)
 {
-  std::vector<std::string> vec { str };
-  return FormatAndSendResponseMessage(bsock, id, vec);
+  BStringList message;
+  message << id;
+  message << str;
+  message << "\n";
+
+  return FormatAndSendResponseMessage(bsock, id, message);
 }
