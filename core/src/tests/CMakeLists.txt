@@ -23,6 +23,7 @@ IF(HAVE_WIN32)
 ENDIF()
 set (TEST_SRC
     alist_test.cc
+    bareos_test_sockets.cc
     dlist_test.cc
     htable_test.cc
     qualified_resource_name_type_converter_test.cc
@@ -61,6 +62,7 @@ add_dependencies(check test_lib)
 add_executable(test_bsock
     bsock_test.cc
     bsock_dir_sd_connection_test.cc
+    bareos_test_sockets.cc
     bsock_constructor_test.cc
     bsock_cert_verify_common_names_test.cc
     create_resource.cc

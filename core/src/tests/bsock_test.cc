@@ -20,6 +20,7 @@
 */
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "tests/bareos_test_sockets.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <fstream>
@@ -82,78 +83,6 @@ void InitForTest()
   InitMsg(NULL, NULL);
 }
 
-static int create_listening_server_socket(int port)
-{
-  int server_fd;
-  int opt = 1;
-
-  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-    perror("socket failed");
-    return -1;
-  }
-
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-    perror("setsockopt");
-    return -1;
-  }
-
-  struct sockaddr_in address;
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind failed");
-    return -1;
-  }
-
-  struct timeval timeout;
-  timeout.tv_sec  = 1;  // after 1 seconds connect() will timeout
-  timeout.tv_usec = 0;
-
-  if (setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-    perror("setsockopt");
-    return -1;
-  }
-
-  if (listen(server_fd, 3) < 0) {
-    perror("listen");
-    return -1;
-  }
-  return server_fd;
-}
-
-static int accept_server_socket(int listening_socket)
-{
-  int new_socket = accept(listening_socket, nullptr, nullptr);
-  if (new_socket < 0) {
-    if (errno == EWOULDBLOCK || errno == EAGAIN) {
-      perror("Socket accept timeout");
-    }
-    return -1;
-  }
-  return new_socket;
-}
-
-int create_accepted_server_socket(int port)
-{
-  int sock = create_listening_server_socket(port);
-  if (sock > 0) {
-    sock = accept_server_socket(sock);
-  }
-  return sock;
-}
-
-BareosSocket *create_new_bareos_socket(int fd)
-{
-  BareosSocket *bs;
-  bs = New(BareosSocketTCP);
-  bs->sleep_time_after_authentication_error = 0;
-  bs->fd_ = fd;
-  bs->SetWho(bstrdup("client"));
-  memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
-  return bs;
-}
-
 #if 0
 static bool check_cipher(const TlsResource &tls, const std::string &cipher)
 {
@@ -176,7 +105,7 @@ static void clone_a_server_socket(BareosSocket* bs)
    bs->fsend("bareos-socket-1234567890");
 }
 
-void start_bareos_server(std::promise<bool> *promise, std::string console_name,
+static void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port)
 
 {
@@ -230,7 +159,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   promise->set_value(success);
 }
 
-void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
+static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 {
    std::string received_msg;
    std::string orig_msg2("cloned-bareos-socket-0987654321");
@@ -247,10 +176,10 @@ void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 }
 
 #if CLIENT_AS_A_THREAD
-int connect_to_server(std::string console_name, std::string console_password,
+static int connect_to_server(std::string console_name, std::string console_password,
                       std::string server_address, int server_port)
 #else
-bool connect_to_server(std::string console_name, std::string console_password,
+static bool connect_to_server(std::string console_name, std::string console_password,
                       std::string server_address, int server_port)
 #endif
 {
@@ -506,61 +435,22 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
 }
 #endif
 
-bool create_connected_server_and_client_bareos_socket(BareosSocketTCP **client_socket_out,
-                                               BareosSocket **server_socket_out)
-{
-  int newsockfd = create_listening_server_socket(BSOCK_TEST_PORT_NUMBER);
-
-  if (newsockfd < 0) { return false; }
-
-  std::unique_ptr<BareosSocketTCP> client_socket(New(BareosSocketTCP));
-  client_socket->sleep_time_after_authentication_error = 0;
-
-  std::string hostaddr(HOST);
-
-  bool ok = client_socket->connect(NULL, 1, 1, 0, "Director daemon", hostaddr.c_str(),
-                        NULL, BSOCK_TEST_PORT_NUMBER, false);
-  EXPECT_EQ(ok, true);
-  if (!ok) {
-    Dmsg0(10, "socket connect failed\n");
-    return false;
-  }
-
-  newsockfd = accept_server_socket(newsockfd);
-  EXPECT_GT(newsockfd, 0);
-  if (newsockfd <= 0) { return false; }
-
-  std::unique_ptr<BareosSocket> server_socket(create_new_bareos_socket(newsockfd));
-
-  *server_socket_out = server_socket.release();
-  *client_socket_out = client_socket.release();
-  return true;
-}
-
 TEST(BNet, FormatAndSendResponseMessage)
 {
-  BareosSocket *s;
-  std::unique_ptr<BareosSocket> server_socket;
-  BareosSocketTCP *c;
-  std::unique_ptr<BareosSocketTCP> client_socket;
-
-  bool ok = create_connected_server_and_client_bareos_socket(&c, &s);
-  EXPECT_TRUE(ok);
-  if (!ok) { return; }
-
-  server_socket.reset(s);
-  client_socket.reset(c);
+  std::unique_ptr<TestSockets> test_sockets(create_connected_server_and_client_bareos_socket());
+  EXPECT_NE(test_sockets.get(), nullptr) << "Could not create Bareos test sockets.";
+  if (!test_sockets) { return; }
 
   std::string m("Test123");
 
-  FormatAndSendResponseMessage(client_socket.get(), kMessageIdOk, m);
+  FormatAndSendResponseMessage(test_sockets->client.get(), kMessageIdOk, m);
 
   uint32_t id = kMessageIdUnknown;
   std::string m1;
-  ok = ReceiveAndEvaluateResponseMessage(server_socket.get(), id, m1);
+  bool ok = ReceiveAndEvaluateResponseMessage(test_sockets->server.get(), id, m1);
 
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(id, kMessageIdOk);
+  EXPECT_TRUE(ok) << "ReceiveAndEvaluateResponseMessage errored.";
+  EXPECT_EQ(id, kMessageIdOk) << "Wrong MessageID received.";
 
   std::string test("1000 Test123 \n");
   EXPECT_STREQ(m1.c_str(), test.c_str());
