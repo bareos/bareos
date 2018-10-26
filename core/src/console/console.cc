@@ -37,7 +37,11 @@
 #include "console/console_output.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
+#include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include <stdio.h>
+#include <fstream>
+#include <string>
 
 #define ConInit(x)
 #define ConTerm()
@@ -58,6 +62,8 @@ static void TerminateConsole(int sig);
 static int CheckResources();
 int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec);
 static int DoOutputcmd(FILE *input, BareosSocket *UA_sock);
+static bool ExaminePamAuthentication(bool use_pam_credentials_file,
+                                     const std::string &pam_credentials_filename);
 
 extern "C" void GotSigstop(int sig);
 extern "C" void GotSigcontinue(int sig);
@@ -930,6 +936,8 @@ int main(int argc, char *argv[])
    JobControlRecord jcr;
    PoolMem history_file;
    utime_t heart_beat;
+   std::string pam_credentials_filename;
+   bool use_pam_credentials_file = false;
 
    errmsg_len = sizeof(errmsg);
    setlocale(LC_ALL, "");
@@ -943,7 +951,7 @@ int main(int argc, char *argv[])
    working_directory = "/tmp";
    args = GetPoolMemory(PM_FNAME);
 
-   while ((ch = getopt(argc, argv, "D:lc:d:nstu:x:?")) != -1) {
+   while ((ch = getopt(argc, argv, "D:lc:d:np:stu:x:?")) != -1) {
       switch (ch) {
       case 'D':                    /* Director */
          if (director) {
@@ -971,6 +979,21 @@ int main(int argc, char *argv[])
             debug_level = atoi(optarg);
             if (debug_level <= 0) {
                debug_level = 1;
+            }
+         }
+         break;
+
+      case 'p':
+         pam_credentials_filename = optarg;
+         if (pam_credentials_filename.empty()) {
+           Emsg0(M_ERROR_TERM, 0, _("No filename given for -p.\n"));
+           usage();
+         } else {
+            if (FILE *f = fopen(pam_credentials_filename.c_str(), "r+")) {
+              use_pam_credentials_file = true;
+              fclose(f);
+            } else { /* file does not exist */
+              Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
             }
          }
          break;
@@ -1097,11 +1120,7 @@ int main(int argc, char *argv[])
 
    if (response == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)
-     FormatAndSendResponseMessage(UA_sock, kMessageIdPamInteractive, "OK");
-     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-       TerminateConsole(0);
-       return 1;
-     }
+     ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename);
 #else
      Dmsg0(100, "This Console program does not have the pam feature\n");
      TerminateConsole(0);
@@ -1160,6 +1179,33 @@ int main(int argc, char *argv[])
 
    TerminateConsole(0);
    return 0;
+}
+
+static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
+{
+   if (use_pam_credentials_file) {
+     std::fstream s(pam_credentials_filename, s.in);
+     if (!s.is_open()) {
+        Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
+        return false;
+     } else {
+       std::string user, pw;
+       s >> user >> pw;
+       if (user.empty() || pw.empty()) {
+         Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
+       }
+       BStringList args;
+       args << user << pw;
+       FormatAndSendResponseMessage(UA_sock, kMessageIdPamUserCredentials, args);
+     }
+   } else {
+     FormatAndSendResponseMessage(UA_sock, kMessageIdPamInteractive, "OK");
+     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+       TerminateConsole(0);
+       return false;
+     }
+   }
+   return true;
 }
 
 static void TerminateConsole(int sig)

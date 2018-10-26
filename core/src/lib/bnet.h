@@ -63,13 +63,13 @@ class BStringList;
 
 #ifdef BAREOS_TEST_LIB
 bool ReadoutCommandIdFromMessage(const BStringList &list_of_arguments, uint32_t &id_out);
-bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, std::string &human_readable_message_out);
+bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, BStringList &args_out);
 #endif
 
-bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, std::string &human_readable_message_out);
+bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, BStringList &args_out);
 bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str);
 bool FormatAndSendResponseMessage(BareosSocket *bsock,
                                   uint32_t id,
-                                  BStringList list_of_agruments);
+                                  const BStringList &list_of_agruments);
 
 #endif // BAREOS_LIB_BNET_H_

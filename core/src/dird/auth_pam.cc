@@ -153,13 +153,13 @@ static int PamLocalCallback(int num_msg, const struct pam_message **msgm,
 }
 
 bool PamAuthenticateUser(BareosSocket *UA_sock,
-                              const std::string &username_in,
-                              const std::string &password_in,
-                              std::string& authenticated_username)
+                         const std::string &username_in,
+                         const std::string &password_in,
+                         std::string& authenticated_username)
 {
    std::unique_ptr<PamData> pam_callback_data(new PamData(UA_sock, password_in));
    std::unique_ptr<struct pam_conv> pam_conversation_container(new struct pam_conv);
-   struct pam_handle *pamh; /* pam session handle */
+   struct pam_handle *pamh = nullptr; /* pam session handle */
 
    bool not_interactive = !username_in.empty() && !password_in.empty();
    pam_conversation_container->conv = not_interactive ? PamLocalCallback : PamConversationCallback;

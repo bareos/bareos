@@ -32,6 +32,7 @@
 #include "lib/cram_md5.h"
 #include "lib/tls.h"
 #include "lib/util.h"
+#include "lib/bstringlist.h"
 
 static constexpr int debuglevel = 50;
 
@@ -349,10 +350,10 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
   Dmsg1(6, ">dird: %s", dir->msg);
 
   uint32_t message_id;
-  std::string received_message;
-  if (ReceiveAndEvaluateResponseMessage(dir, message_id, received_message)) {
+  BStringList args;
+  if (ReceiveAndEvaluateResponseMessage(dir, message_id, args)) {
     response_id = message_id;
-    Bsnprintf(response, response_len, "%s\n", received_message.c_str());
+    Bsnprintf(response, response_len, "%s\n", args.JoinReadable().c_str());
     return true;
   }
   Dmsg0(100, "Wrong Message Protocol ID\n");

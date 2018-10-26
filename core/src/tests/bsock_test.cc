@@ -38,6 +38,7 @@
 
 #include "lib/tls_openssl.h"
 #include "lib/bnet.h"
+#include "lib/bstringlist.h"
 
 #include "include/jcr.h"
 
@@ -446,12 +447,12 @@ TEST(BNet, FormatAndSendResponseMessage)
   FormatAndSendResponseMessage(test_sockets->client.get(), kMessageIdOk, m);
 
   uint32_t id = kMessageIdUnknown;
-  std::string m1;
-  bool ok = ReceiveAndEvaluateResponseMessage(test_sockets->server.get(), id, m1);
+  BStringList args;
+  bool ok = ReceiveAndEvaluateResponseMessage(test_sockets->server.get(), id, args);
 
   EXPECT_TRUE(ok) << "ReceiveAndEvaluateResponseMessage errored.";
   EXPECT_EQ(id, kMessageIdOk) << "Wrong MessageID received.";
 
   std::string test("1000 Test123 \n");
-  EXPECT_STREQ(m1.c_str(), test.c_str());
+  EXPECT_STREQ(args.JoinReadable().c_str(), test.c_str());
 }

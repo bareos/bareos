@@ -25,10 +25,10 @@
 #include <algorithm>
 #include <iterator>
 
-BStringList::BStringList() : std::list<std::string>() { return; }
+BStringList::BStringList() : std::vector<std::string>() { return; }
 
 BStringList::BStringList(const std::string &string_to_split, char separator)
-  : std::list<std::string>()
+  : std::vector<std::string>()
 {
   std::stringstream ss(string_to_split);
   std::string token;
@@ -38,14 +38,14 @@ BStringList::BStringList(const std::string &string_to_split, char separator)
 }
 
 BStringList::BStringList(const BStringList &other)
-  : std::list<std::string>()
+  : std::vector<std::string>()
 {
   *this = other;
 }
 
 BStringList& BStringList::operator=(const BStringList &rhs)
 {
-  std::list<std::string>::const_iterator it = rhs.cbegin();
+  std::vector<std::string>::const_iterator it = rhs.cbegin();
   while (it != rhs.cend()) {
     push_back(*it++);
   }
@@ -64,7 +64,7 @@ BStringList& BStringList::operator << (const int &rhs)
   return *this;
 }
 
-BStringList& BStringList::operator << (const std::list<std::string> &rhs)
+BStringList& BStringList::operator << (const std::vector<std::string> &rhs)
 {
   Append(rhs);
   return *this;
@@ -76,7 +76,7 @@ BStringList& BStringList::operator << (const char *rhs)
   return *this;
 }
 
-void BStringList::Append(const std::list<std::string> &vec)
+void BStringList::Append(const std::vector<std::string> &vec)
 {
   for (auto str : vec) {
     push_back(str);
@@ -103,9 +103,14 @@ std::string BStringList::Join() const
   return Join(nullptr);
 }
 
+std::string BStringList::JoinReadable() const
+{
+  return Join(' ');
+}
+
 std::string BStringList::Join(const char *separator) const
 {
-  std::list<std::string>::const_iterator it = cbegin();
+  std::vector<std::string>::const_iterator it = cbegin();
   std::string output;
 
   while (it != cend()) {

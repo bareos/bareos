@@ -30,8 +30,8 @@ TEST(BStringList, ConstructorsTest)
   BStringList list1;
   EXPECT_TRUE(list1.empty());
 
-  list1.emplace_front(std::string("Test123"));
-  EXPECT_EQ(0, list1.front().compare(std::string("Test123")));
+  list1.emplace_back(std::string("Test123"));
+  EXPECT_EQ(0, list1.at(0).compare(std::string("Test123")));
 
   BStringList list2(list1);
   EXPECT_EQ(1, list2.size());
@@ -41,19 +41,19 @@ TEST(BStringList, ConstructorsTest)
 TEST(BStringList, AppendTest)
 {
   BStringList list1;
-  std::list<std::string> list {"T", "est", "123"};
+  std::vector<std::string> list {"T", "est", "123"};
   list1.Append(list);
   EXPECT_EQ(0, list1.front().compare(std::string("T")));
-  list1.pop_front();
+  list1.erase(list1.begin());
   EXPECT_EQ(0, list1.front().compare(std::string("est")));
-  list1.pop_front();
+  list1.erase(list1.begin());
   EXPECT_EQ(0, list1.front().compare(std::string("123")));
 
   BStringList list2;
   list2.Append('T');
   list2.Append('e');
   EXPECT_EQ(0, list2.front().compare(std::string("T")));
-  list2.pop_front();
+  list2.erase(list2.begin());
   EXPECT_EQ(0, list2.front().compare(std::string("e")));
 }
 
@@ -87,9 +87,9 @@ TEST(BStringList, SplitStringTest)
   EXPECT_EQ(3, list1.size());
 
   EXPECT_STREQ("Test", list1.front().c_str());
-  list1.pop_front();
+  list1.erase(list1.begin());
   EXPECT_STREQ("123", list1.front().c_str());
-  list1.pop_front();
+  list1.erase(list1.begin());
   EXPECT_STREQ("String", list1.front().c_str());
 }
 
@@ -118,20 +118,20 @@ TEST(BNet, ReadoutCommandIdFromStringTest)
 TEST(BNet, EvaluateResponseMessage_Wrong_Id)
 {
   bool ok;
-  uint32_t id;
 
   std::string message3 = "A1001";
   message3 += 0x1e;
   message3 += "OK: <director-name> Version: <version>";
 
-  std::string human_readable_message;
-  ok = EvaluateResponseMessageId(message3, id, human_readable_message);
+  uint32_t id = kMessageIdUnknown;
+  BStringList args;
+  ok = EvaluateResponseMessageId(message3, id, args);
 
-  EXPECT_EQ(id, kMessageIdProtokollError);
+  EXPECT_EQ(id, kMessageIdUnknown);
   EXPECT_EQ(ok, false);
 
   const char *m3 {"A1001 OK: <director-name> Version: <version>"};
-  EXPECT_STREQ(human_readable_message.c_str(), m3);
+  EXPECT_STREQ(args.JoinReadable().c_str(), m3);
 }
 
 TEST(BNet, EvaluateResponseMessage_Correct_Id)
@@ -143,12 +143,12 @@ TEST(BNet, EvaluateResponseMessage_Correct_Id)
   message4 += 0x1e;
   message4 += "OK: <director-name> Version: <version>";
 
-  std::string human_readable_message;
-  ok = EvaluateResponseMessageId(message4, id, human_readable_message);
+  BStringList args;
+  ok = EvaluateResponseMessageId(message4, id, args);
 
   EXPECT_EQ(id, kMessageIdPamRequired);
   EXPECT_EQ(ok, true);
 
   const char *m3 {"1001 OK: <director-name> Version: <version>"};
-  EXPECT_STREQ(human_readable_message.c_str(), m3);
+  EXPECT_STREQ(args.JoinReadable().c_str(), m3);
 }

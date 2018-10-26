@@ -41,6 +41,7 @@
 #include "dird/dird_globals.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/bstringlist.h"
 
 namespace directordaemon {
 
@@ -315,11 +316,12 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   /* no need to evaluate auth_success if no pam is required */
   if (!cons->use_pam_authentication_) { return false; }
 
-  uint32_t response;
-  std::string message;
+  uint32_t response_id;
+  BStringList message_arguments;
 
-  if (!ReceiveAndEvaluateResponseMessage(ua->UA_sock, response, message)) {
-    Dmsg2(100, "Could not evaluate response: %d - %d", response, message.c_str());
+  if (!ReceiveAndEvaluateResponseMessage(ua->UA_sock, response_id, message_arguments)) {
+    Dmsg2(100, "Could not evaluate response_id: %d - %d", response_id,
+                                                          message_arguments.JoinReadable().c_str());
     auth_success = false;
     return true;
   }
@@ -327,10 +329,17 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   std::string pam_username;
   std::string pam_password;
 
-  if (response == kMessageIdPamUserCredentials) {
-    /* Ueb: receive username and password */
+  if (response_id == kMessageIdPamUserCredentials) {
     Dmsg0(200, "Console chooses Pam direct credentials\n");
-  } else if (response == kMessageIdPamInteractive) {
+    if (message_arguments.size() < 3) {
+      Dmsg0(200, "Console sent wrong number of credentials\n");
+      auth_success = false;
+      return true;
+    } else {
+      pam_username = message_arguments.at(1);
+      pam_password = message_arguments.at(2);
+    }
+  } else if (response_id == kMessageIdPamInteractive) {
     Dmsg0(200, "Console chooses Pam interactive\n");
   }
 
@@ -342,6 +351,7 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
     ConsoleResource *user = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE,
                                                                          authenticated_username.c_str());
     if (!user) {
+      Dmsg1(200, "No user config found for user %s\n", authenticated_username.c_str());
       ua->cons = nullptr;
       auth_success = false;
     } else {

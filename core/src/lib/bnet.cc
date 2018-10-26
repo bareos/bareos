@@ -612,20 +612,22 @@ bool ReadoutCommandIdFromMessage(const BStringList& list_of_arguments, uint32_t 
   return true;
 }
 
-bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, std::string &human_readable_message_out)
+bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, BStringList &args_out)
 {
   BStringList list_of_arguments(message, AsciiControlCharacters::RecordSeparator());
   uint32_t id = kMessageIdUnknown;
 
   bool ok = ReadoutCommandIdFromMessage(list_of_arguments, id);
 
-  id_out = id;
-  human_readable_message_out = list_of_arguments.Join(' ');
+  if (ok) {
+    id_out = id;
+  }
+  args_out = list_of_arguments;
 
   return ok;
 }
 
-bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, std::string &human_readable_message_out)
+bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, BStringList &args_out)
 {
   int ret = bsock->recv();
   bsock->StopTimer();
@@ -635,8 +637,6 @@ bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, st
     return false;
   }
 
-  Dmsg1(10, "<bsockd: %s", bsock->msg);
-
   std::string message(bsock->msg);
 
   if (message.empty()) {
@@ -644,12 +644,14 @@ bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, st
     return false;
   }
 
-  return EvaluateResponseMessageId(message, id_out, human_readable_message_out);
+  return EvaluateResponseMessageId(message, id_out, args_out);
 }
 
-bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, BStringList list_of_agruments)
+bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const BStringList &list_of_agruments)
 {
-  std::string m = list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
+  std::string m = std::to_string(id);
+  m += AsciiControlCharacters::RecordSeparator();
+  m += list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
 
   if (bsock->send(m.c_str(), m.size()) <=0 ) {
     Dmsg1(100, "Could not send response message: %d\n", m.c_str());
@@ -661,7 +663,6 @@ bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, BStringList 
 bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str)
 {
   BStringList message;
-  message << id;
   message << str;
   message << "\n";
 
