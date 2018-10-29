@@ -864,7 +864,7 @@ try_again:
 }
 
 namespace console {
-BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len, uint32_t &response)
+BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len, uint32_t &response_id)
 {
   BareosSocketTCP *UA_sock = New(BareosSocketTCP);
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
@@ -910,7 +910,7 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
   }
 
   if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, errmsg,
-                                                errmsg_len, director_resource, response)) {
+                                                errmsg_len, director_resource, response_id)) {
     ConsoleOutput(errmsg);
     TerminateConsole(0);
     return nullptr;
@@ -1110,15 +1110,15 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   uint32_t response;
-   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len, response);
+   uint32_t response_id;
+   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len, response_id);
    if (!UA_sock) { return 1; }
 
    UA_sock->OutputCipherMessageString(ConsoleOutput);
 
    ConsoleOutput(errmsg);
 
-   if (response == kMessageIdPamRequired) {
+   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)
      ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename);
 #else

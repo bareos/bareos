@@ -325,7 +325,7 @@ static char hello[] = "Hello %s calling\n";
 bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
                                                    const char *identity,
                                                    s_password &password,
-                                                   char *response,
+                                                   char *response_text,
                                                    int response_len,
                                                    TlsResource *tls_resource,
                                                    uint32_t &response_id)
@@ -333,7 +333,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
   char bashed_name[MAX_NAME_LENGTH];
   BareosSocket *dir = this; /* for readability */
 
-  response[0] = 0;
+  response_text[0] = 0;
 
   bstrncpy(bashed_name, identity, sizeof(bashed_name));
   BashSpaces(bashed_name);
@@ -353,7 +353,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
   BStringList args;
   if (ReceiveAndEvaluateResponseMessage(dir, message_id, args)) {
     response_id = message_id;
-    Bsnprintf(response, response_len, "%s\n", args.JoinReadable().c_str());
+    Bsnprintf(response_text, response_len, "%s\n", args.JoinReadable().c_str());
     return true;
   }
   Dmsg0(100, "Wrong Message Protocol ID\n");
@@ -363,7 +363,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
 bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
                                             const char *identity,
                                             s_password &password,
-                                            char *response,
+                                            char *response_text,
                                             int response_len,
                                             TlsResource *tls_resource)
 {
@@ -372,7 +372,7 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
   char bashed_name[MAX_NAME_LENGTH];
   BareosSocket *dir = this; /* for readability */
 
-  response[0] = 0;
+  response_text[0] = 0;
 
   /*
    * Send my name to the Director then do authentication
@@ -388,7 +388,7 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
   Dmsg1(6, ">dird: %s", dir->msg);
   if (dir->recv() <= 0) {
     dir->StopTimer();
-    Bsnprintf(response, response_len,
+    Bsnprintf(response_text, response_len,
               _("Bad response to Hello command: ERR=%s\n"
                 "The Director at \"%s:%d\" is probably not running.\n"),
               dir->bstrerror(), dir->host(), dir->port());
@@ -398,18 +398,18 @@ bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
   dir->StopTimer();
   Dmsg1(10, "<dird: %s", dir->msg);
   if (!bstrncmp(dir->msg, OKAnswerFromDirector, sizeof(OKAnswerFromDirector) - 1)) {
-    Bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"), dir->host(),
+    Bsnprintf(response_text, response_len, _("Director at \"%s:%d\" rejected Hello command\n"), dir->host(),
               dir->port());
     return false;
   } else {
-    Bsnprintf(response, response_len, "%s", dir->msg);
+    Bsnprintf(response_text, response_len, "%s", dir->msg);
   }
 
   return true;
 
 bail_out:
   dir->StopTimer();
-  Bsnprintf(response, response_len,
+  Bsnprintf(response_text, response_len,
             _("Authorization problem with Director at \"%s:%d\"\n"
               "Most likely the passwords do not agree.\n"
               "If you are using TLS, there may have been a certificate "
