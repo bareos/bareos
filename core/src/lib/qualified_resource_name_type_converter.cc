@@ -21,6 +21,7 @@
 
 #include "qualified_resource_name_type_converter.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
 
 #include <sstream>
 #include <algorithm>
@@ -79,32 +80,23 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
   return true;
 }
 
-template <class Container>
-static void SplitStringIntoList(const std::string &str_in, Container &cont, char delim, int max_substring)
-{
-  std::stringstream ss(str_in);
-  std::string token;
-  int max = max_substring;
-  while (std::getline(ss, token, delim) && max) {
-    cont.push_back(token);
-    max--;
-  }
-}
-
 bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
                                                           int &r_type,
                                                           int &job_id,
                                                           const std::string &str_in) const
 {
-  std::vector<std::string> string_list;
-  SplitStringIntoList(str_in, string_list, AsciiControlCharacters::RecordSeparator(), 3);
+  BStringList string_list(str_in, AsciiControlCharacters::RecordSeparator());
+
   if (string_list.size() < 2) { /* minimum of parameters are name_of_resource and r_type */
     return false;
   }
+
+  /* convert resource type */
   std::string r_type_str = string_list.at(0);
   int r_type_temp        = StringToResourceType(r_type_str);
   if (r_type_temp == -1) { return false; }
   r_type           = r_type_temp;
+
   name_of_resource = string_list.at(1);
 
   if (string_list.size() == 3) { /* str_in contains probably a job_id */
