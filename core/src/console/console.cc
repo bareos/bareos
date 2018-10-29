@@ -62,8 +62,6 @@ static void TerminateConsole(int sig);
 static int CheckResources();
 int GetCmd(FILE *input, const char *prompt, BareosSocket *sock, int sec);
 static int DoOutputcmd(FILE *input, BareosSocket *UA_sock);
-static bool ExaminePamAuthentication(bool use_pam_credentials_file,
-                                     const std::string &pam_credentials_filename);
 
 extern "C" void GotSigstop(int sig);
 extern "C" void GotSigcontinue(int sig);
@@ -863,6 +861,35 @@ try_again:
    return 1;
 }
 
+#if defined(HAVE_PAM)
+static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
+{
+   if (use_pam_credentials_file) {
+     std::fstream s(pam_credentials_filename, s.in);
+     if (!s.is_open()) {
+        Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
+        return false;
+     } else {
+       std::string user, pw;
+       s >> user >> pw;
+       if (user.empty() || pw.empty()) {
+         Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
+       }
+       BStringList args;
+       args << user << pw;
+       FormatAndSendResponseMessage(UA_sock, kMessageIdPamUserCredentials, args);
+     }
+   } else {
+     FormatAndSendResponseMessage(UA_sock, kMessageIdPamInteractive, "OK");
+     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+       TerminateConsole(0);
+       return false;
+     }
+   }
+   return true;
+}
+#endif
+
 namespace console {
 BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len, uint32_t &response_id)
 {
@@ -937,7 +964,9 @@ int main(int argc, char *argv[])
    PoolMem history_file;
    utime_t heart_beat;
    std::string pam_credentials_filename;
+#if defined(HAVE_PAM)
    bool use_pam_credentials_file = false;
+#endif
 
    errmsg_len = sizeof(errmsg);
    setlocale(LC_ALL, "");
@@ -984,6 +1013,7 @@ int main(int argc, char *argv[])
          break;
 
       case 'p':
+#if defined(HAVE_PAM)
          pam_credentials_filename = optarg;
          if (pam_credentials_filename.empty()) {
            Emsg0(M_ERROR_TERM, 0, _("No filename given for -p.\n"));
@@ -992,10 +1022,13 @@ int main(int argc, char *argv[])
             if (FILE *f = fopen(pam_credentials_filename.c_str(), "r+")) {
               use_pam_credentials_file = true;
               fclose(f);
-            } else { /* file does not exist */
+            } else { /* file cannot be opened, i.e. does not exist */
               Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
             }
          }
+#else
+         Emsg0(M_ERROR_TERM, 0, _("No PAM available on this system.\n"));
+#endif
          break;
 
       case 's':                    /* turn off signals */
@@ -1179,33 +1212,6 @@ int main(int argc, char *argv[])
 
    TerminateConsole(0);
    return 0;
-}
-
-static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
-{
-   if (use_pam_credentials_file) {
-     std::fstream s(pam_credentials_filename, s.in);
-     if (!s.is_open()) {
-        Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
-        return false;
-     } else {
-       std::string user, pw;
-       s >> user >> pw;
-       if (user.empty() || pw.empty()) {
-         Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
-       }
-       BStringList args;
-       args << user << pw;
-       FormatAndSendResponseMessage(UA_sock, kMessageIdPamUserCredentials, args);
-     }
-   } else {
-     FormatAndSendResponseMessage(UA_sock, kMessageIdPamInteractive, "OK");
-     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-       TerminateConsole(0);
-       return false;
-     }
-   }
-   return true;
 }
 
 static void TerminateConsole(int sig)
