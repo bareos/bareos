@@ -52,7 +52,7 @@ static std::map<AuthenticationResult,std::string> authentication_error_to_string
   { AuthenticationResult::kQualifiedResourceNameFailed, "Could not generate a qualified resource name" },
   { AuthenticationResult::kTlsHandshakeFailed, "TLS Handshake failed" },
   { AuthenticationResult::kSendHelloMessageFailed, "Send of hello handshake message failed" },
-  { AuthenticationResult::kCramMd5HandshakeFailed, "Challenge resonse handshake failed" },
+  { AuthenticationResult::kCramMd5HandshakeFailed, "Challenge response handshake failed" },
   { AuthenticationResult::kDaemonResponseFailed, "Daemon response could not be read" },
   { AuthenticationResult::kRejectedByDaemon, "Authentication was rejected by the daemon" },
   { AuthenticationResult::kUnknownDaemon, "Unkown daemon type" }
