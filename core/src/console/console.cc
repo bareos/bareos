@@ -865,15 +865,17 @@ try_again:
 static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
 {
    if (use_pam_credentials_file) {
-     std::fstream s(pam_credentials_filename, s.in);
+     std::ifstream s(pam_credentials_filename);
      if (!s.is_open()) {
         Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
         return false;
      } else {
        std::string user, pw;
-       s >> user >> pw;
+       std::getline(s, user);
+       std::getline(s, pw);
        if (user.empty() || pw.empty()) {
          Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
+         return false;
        }
        BStringList args;
        args << user << pw;
