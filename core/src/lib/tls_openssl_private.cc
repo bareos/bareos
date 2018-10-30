@@ -30,6 +30,7 @@
 
 #include "lib/parse_conf.h"
 #include "lib/get_tls_psk_by_fqname_callback.h"
+#include "lib/bstringlist.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -378,21 +379,21 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
       Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
       return result;
   }
+  BStringList lst(std::string(identity),AsciiControlCharacters::RecordSeparator());
+  Dmsg1(100, "psk_server_cb. identitiy: %s.\n", lst.JoinReadable().c_str());
 
-  Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
-
-    std::string configured_psk;
-    GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
-        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
-            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
+  std::string configured_psk;
+  GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
+      reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
+          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
 
   if (!GetTlsPskByFullyQualifiedResourceNameCb) {
     Dmsg0(100, "Callback not set: kGetTlsPskByFullyQualifiedResourceNameCb\n");
     return result;
   }
 
-    ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
-            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
+  ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
+          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
 
   if (!config) {
     Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
