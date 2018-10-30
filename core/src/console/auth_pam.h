@@ -27,7 +27,7 @@
 
 class BareosSocket;
 
-bool ConsolePamAuthenticate(FILE *stdin, BareosSocket *UA_sock);
+bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock);
 
 
 #endif /* BAREOS_CONSOLE_AUTH_PAM_H_ */

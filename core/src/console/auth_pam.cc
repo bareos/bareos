@@ -40,10 +40,10 @@ enum class PamAuthState {
 };
 
 static PamAuthState state = PamAuthState::INIT;
-static bool SetEcho(FILE *stdin, bool on);
+static bool SetEcho(FILE *std_in, bool on);
 
 
-bool ConsolePamAuthenticate(FILE *stdin, BareosSocket *UA_sock)
+bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
 {
    bool quit = false;
    bool error = false;
@@ -70,7 +70,7 @@ bool ConsolePamAuthenticate(FILE *stdin, BareosSocket *UA_sock)
                switch (type) {
                   case PAM_PROMPT_ECHO_OFF:
                   case PAM_PROMPT_ECHO_ON:
-                     SetEcho (stdin, type == PAM_PROMPT_ECHO_ON);
+                     SetEcho (std_in, type == PAM_PROMPT_ECHO_ON);
                      state = PamAuthState::RECEIVE_MSG;
                      break;
                   case PAM_SUCCESS:
@@ -123,19 +123,19 @@ bool ConsolePamAuthenticate(FILE *stdin, BareosSocket *UA_sock)
       }
    }; /* while (!quit) */
 
-   SetEcho (stdin, true);
+   SetEcho (std_in, true);
    ConsoleOutput("\n");
 
    return !error;
 }
 
 #include <termios.h>
-static bool SetEcho(FILE *stdin, bool on)
+static bool SetEcho(FILE *std_in, bool on)
 {
     struct termios termios_old, termios_new;
 
     /* Turn echoing off and fail if we can’t. */
-    if (tcgetattr (fileno (stdin), &termios_old) != 0)
+    if (tcgetattr (fileno (std_in), &termios_old) != 0)
         return false;
     termios_new = termios_old;
     if (on) {
@@ -143,7 +143,7 @@ static bool SetEcho(FILE *stdin, bool on)
     } else {
       termios_new.c_lflag &= ~ECHO;
     }
-    if (tcsetattr (fileno (stdin), TCSAFLUSH, &termios_new) != 0)
+    if (tcsetattr (fileno (std_in), TCSAFLUSH, &termios_new) != 0)
         return false;
    return true;
 }
