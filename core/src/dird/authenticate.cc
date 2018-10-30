@@ -259,9 +259,9 @@ static void SendOkMessage(UaContext *ua)
   ::snprintf(buffer, 100, "OK: %s Version: %s (%s)", my_name, VERSION, BDATE);
 
   if (ua->cons && ua->cons->use_pam_authentication_) {
-    FormatAndSendResponseMessage(ua->UA_sock, kMessageIdPamRequired, std::string(buffer));
+    ua->UA_sock->FormatAndSendResponseMessage(kMessageIdPamRequired, std::string(buffer));
   } else {
-    FormatAndSendResponseMessage(ua->UA_sock, kMessageIdOk, std::string(buffer));
+    ua->UA_sock->FormatAndSendResponseMessage(kMessageIdOk, std::string(buffer));
   }
 }
 
@@ -319,7 +319,7 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   uint32_t response_id;
   BStringList message_arguments;
 
-  if (!ReceiveAndEvaluateResponseMessage(ua->UA_sock, response_id, message_arguments)) {
+  if (!ua->UA_sock->ReceiveAndEvaluateResponseMessage(response_id, message_arguments)) {
     Dmsg2(100, "Could not evaluate response_id: %d - %d", response_id,
                                                           message_arguments.JoinReadable().c_str());
     auth_success = false;

@@ -446,11 +446,11 @@ TEST(BNet, FormatAndSendResponseMessage)
 
   std::string m("Test123");
 
-  FormatAndSendResponseMessage(test_sockets->client.get(), kMessageIdOk, m);
+  test_sockets->client->FormatAndSendResponseMessage(kMessageIdOk, m);
 
   uint32_t id = kMessageIdUnknown;
   BStringList args;
-  bool ok = ReceiveAndEvaluateResponseMessage(test_sockets->server.get(), id, args);
+  bool ok = test_sockets->server->ReceiveAndEvaluateResponseMessage(id, args);
 
   EXPECT_TRUE(ok) << "ReceiveAndEvaluateResponseMessage errored.";
   EXPECT_EQ(id, kMessageIdOk) << "Wrong MessageID received.";

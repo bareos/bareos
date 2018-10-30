@@ -627,17 +627,17 @@ bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, BSt
   return ok;
 }
 
-bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, BStringList &args_out)
+bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out)
 {
-  int ret = bsock->recv();
-  bsock->StopTimer();
+  int ret = recv();
+  StopTimer();
 
   if (ret <= 0) {
-    Dmsg1(100, "Error while receiving response message: %s", bsock->msg);
+    Dmsg1(100, "Error while receiving response message: %s", msg);
     return false;
   }
 
-  std::string message(bsock->msg);
+  std::string message(msg);
 
   if (message.empty()) {
     Dmsg0(100, "Received message is empty\n");
@@ -647,24 +647,24 @@ bool ReceiveAndEvaluateResponseMessage(BareosSocket *bsock, uint32_t &id_out, BS
   return EvaluateResponseMessageId(message, id_out, args_out);
 }
 
-bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const BStringList &list_of_agruments)
+bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments)
 {
   std::string m = std::to_string(id);
   m += AsciiControlCharacters::RecordSeparator();
   m += list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
 
-  if (bsock->send(m.c_str(), m.size()) <=0 ) {
+  if (send(m.c_str(), m.size()) <=0 ) {
     Dmsg1(100, "Could not send response message: %d\n", m.c_str());
     return false;
   }
   return true;
 }
 
-bool FormatAndSendResponseMessage(BareosSocket *bsock, uint32_t id, const std::string &str)
+bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const std::string &str)
 {
   BStringList message;
   message << str;
   message << "\n";
 
-  return FormatAndSendResponseMessage(bsock, id, message);
+  return FormatAndSendResponseMessage(id, message);
 }

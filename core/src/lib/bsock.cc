@@ -351,7 +351,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
 
   uint32_t message_id;
   BStringList args;
-  if (ReceiveAndEvaluateResponseMessage(dir, message_id, args)) {
+  if (dir->ReceiveAndEvaluateResponseMessage(message_id, args)) {
     response_id = message_id;
     Bsnprintf(response_text, response_len, "%s\n", args.JoinReadable().c_str());
     return true;

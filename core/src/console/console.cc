@@ -879,10 +879,10 @@ static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::s
        }
        BStringList args;
        args << user << pw;
-       FormatAndSendResponseMessage(UA_sock, kMessageIdPamUserCredentials, args);
+       UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, args);
      }
    } else {
-     FormatAndSendResponseMessage(UA_sock, kMessageIdPamInteractive, "OK");
+     UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive, "OK");
      if (!ConsolePamAuthenticate(stdin, UA_sock)) {
        TerminateConsole(0);
        return false;
