@@ -208,9 +208,11 @@ static bool connect_to_server(std::string console_name, std::string console_pass
     Dmsg0(10, "socket connect failed\n");
   } else {
     Dmsg0(10, "socket connect OK\n");
-    if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, cons_dir_config.get())) {
+    uint32_t response_id;
+    if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, cons_dir_config.get(), response_id)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {
+      EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
       Dmsg0(10, "Authenticate Connect to Server successful!\n");
       std::string cipher;
       if (UA_sock->tls_conn) {

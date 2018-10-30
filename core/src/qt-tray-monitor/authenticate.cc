@@ -84,16 +84,19 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord *jcr, Dire
                   ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
 
    BareosSocket *dir = jcr->dir_bsock;
-   if (!dir->DoTlsHandshake(tls_policy, dir_res, false, qualified_resource_name.c_str(), monitor->password.value, jcr)) {
+   if (!dir->DoTlsHandshake(tls_policy, dir_res, false, qualified_resource_name.c_str(),
+                            monitor->password.value, jcr)) {
       return AuthenticationResult::kTlsHandshakeFailed;
    }
 
    char errmsg[1024];
    int32_t errmsg_len = sizeof(errmsg);
-   if (!dir->AuthenticateWithDirector(jcr, monitor->name(),(s_password &) monitor->password, errmsg, errmsg_len, dir_res)) {
+   uint32_t response_id;
+   if (!dir->ConsoleAuthenticateWithDirector(jcr, monitor->name(), monitor->password,
+                                             errmsg, errmsg_len, dir_res, response_id)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
-                                 "Most likely the passwords do not agree.\n"
-                                 "Please see %s for help.\n"), MANUAL_AUTH_URL);
+                              "Most likely the passwords do not agree.\n"
+                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
       return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 

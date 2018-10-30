@@ -157,12 +157,6 @@ class BareosSocket : public SmartAlloc {
   bool signal(int signal);
   const char *bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool AuthenticateWithDirector(JobControlRecord *jcr,
-                                const char *name,
-                                s_password &password,
-                                char *response,
-                                int response_len,
-                                TlsResource *tls_resource);
   bool ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
                                        const char *name,
                                        s_password &password,
