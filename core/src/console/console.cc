@@ -76,6 +76,7 @@ static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
 static bool file_selection = false;
+static bool send_pam_credentials_unencrypted = false;
 
 /* Command prototypes */
 static int Versioncmd(FILE *input, BareosSocket *UA_sock);
@@ -105,6 +106,10 @@ PROG_COPYRIGHT
 "        -D <dir>    select a Director\n"
 "        -l          list Directors defined\n"
 "        -c <path>   specify configuration file or directory\n"
+#if defined(HAVE_PAM)
+"        -p <path>   specify pam credentials file\n"
+"        -o          send pam credentials over unencrypted connection\n"
+#endif
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
 "        -s          no signals\n"
@@ -881,6 +886,10 @@ static BStringList ReadPamCredentialsFile(const std::string &pam_credentials_fil
 
 static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
 {
+   if (!UA_sock->tls_conn && !send_pam_credentials_unencrypted) {
+     ConsoleOutput("Canceled because password would be sent unencrypted!\n");
+     return false;
+   }
    if (use_pam_credentials_file) {
      BStringList args(ReadPamCredentialsFile(pam_credentials_filename));
      if(args.empty()) {
@@ -972,7 +981,7 @@ int main(int argc, char *argv[])
    std::string pam_credentials_filename;
    bool use_pam_credentials_file = false;
 #if defined(HAVE_PAM)
-   static const std::string program_arguments {"D:lc:d:np:stu:x:?"};
+   static const std::string program_arguments {"D:lc:d:np:ostu:x:?"};
 #else
    static const std::string program_arguments {"D:lc:d:nstu:x:?"};
 #endif
@@ -1033,6 +1042,10 @@ int main(int argc, char *argv[])
               Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
             }
          }
+         break;
+
+      case 'o':
+         send_pam_credentials_unencrypted = true;
          break;
 
       case 's':                    /* turn off signals */
