@@ -152,7 +152,7 @@ class BareosConfigurationSchema2Latex:
         result=[]
         for token in s1.split(' '):
             u = token.upper()
-            if u in [ "ACL", "CA", "CN", "DB", "DH", "FD", "LMDB", "NDMP", "SD", "SSL", "TLS", "VSS" ]:
+            if u in [ "ACL", "CA", "CN", "DB", "DH", "FD", "LMDB", "NDMP", "PSK", "SD", "SSL", "TLS", "VSS" ]:
                 token=u
             result.append(token)
         return " ".join( result )
