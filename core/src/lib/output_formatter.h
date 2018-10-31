@@ -49,7 +49,7 @@ typedef struct json_t json_t;
 #else
 #include <jansson.h>
 #endif
-#endif
+#endif /* HAVE_JANSSON */
 
 /**
  * Filtering states.
