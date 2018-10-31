@@ -93,6 +93,13 @@ void BStringList::Append(const char *str)
   emplace_back(str);
 }
 
+void BStringList::PopFront()
+{
+  if (size() >= 1) {
+    erase(begin());
+  }
+}
+
 std::string BStringList::Join(char separator) const
 {
   return Join(&separator);

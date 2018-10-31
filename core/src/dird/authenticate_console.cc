@@ -231,6 +231,9 @@ bool AuthenticateUserAgent(UaContext *ua)
       }
     }
   }
+  std::string message{"You are logged in as: "};
+  message += ua->cons ? ua->cons->name() : "root";
+  ua->UA_sock->FormatAndSendResponseMessage(kMessageIdInfoMessage, message);
   return true;
 }
 } /* namespace directordaemon */

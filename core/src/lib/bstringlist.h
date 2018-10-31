@@ -41,6 +41,7 @@ public:
   void Append(const std::vector<std::string> &vec);
   void Append(char character);
   void Append(const char *str);
+  void PopFront();
 
 private:
   std::string Join(const char *separator) const;

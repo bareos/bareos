@@ -1184,6 +1184,21 @@ int main(int argc, char *argv[])
      ConsoleOutput(response_args.JoinReadable().c_str());
    }
 
+   response_args.clear();
+   if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+     Dmsg0(200, "Could not receive the response message\n");
+     TerminateConsole(0);
+     return 1;
+   }
+
+   if (response_id != kMessageIdInfoMessage) {
+     Dmsg0(200, "Could not receive the response message\n");
+     TerminateConsole(0);
+     return 1;
+   }
+   response_args.PopFront();
+   ConsoleOutput(response_args.JoinReadable().c_str());
+
    Dmsg0(40, "Opened connection with Director daemon\n");
 
    ConsoleOutput(_("\nEnter a period to cancel a command.\n"));

@@ -55,6 +55,7 @@ enum : uint32_t {
   kMessageIdReceiveError = 2,
   kMessageIdOk = 1000,
   kMessageIdPamRequired = 1001,
+  kMessageIdInfoMessage = 1002,
   kMessageIdPamInteractive = 4001,
   kMessageIdPamUserCredentials = 4002
 };
