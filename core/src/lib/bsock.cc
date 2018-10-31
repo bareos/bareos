@@ -325,15 +325,12 @@ static char hello[] = "Hello %s calling\n";
 bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
                                                    const char *identity,
                                                    s_password &password,
-                                                   char *response_text,
-                                                   int response_len,
                                                    TlsResource *tls_resource,
+                                                   BStringList &response_args,
                                                    uint32_t &response_id)
 {
   char bashed_name[MAX_NAME_LENGTH];
   BareosSocket *dir = this; /* for readability */
-
-  response_text[0] = 0;
 
   bstrncpy(bashed_name, identity, sizeof(bashed_name));
   BashSpaces(bashed_name);
@@ -353,7 +350,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
   BStringList args;
   if (dir->ReceiveAndEvaluateResponseMessage(message_id, args)) {
     response_id = message_id;
-    Bsnprintf(response_text, response_len, "%s\n", args.JoinReadable().c_str());
+    response_args = args;
     return true;
   }
   Dmsg0(100, "Wrong Message Protocol ID\n");

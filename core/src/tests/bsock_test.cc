@@ -185,8 +185,6 @@ static bool connect_to_server(std::string console_name, std::string console_pass
 #endif
 {
   utime_t heart_beat = 0;
-  char errmsg[1024];
-  int errmsg_len = sizeof(errmsg);
 
   JobControlRecord jcr;
   memset(&jcr, 0, sizeof(jcr));
@@ -209,7 +207,8 @@ static bool connect_to_server(std::string console_name, std::string console_pass
   } else {
     Dmsg0(10, "socket connect OK\n");
     uint32_t response_id;
-    if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, cons_dir_config.get(), response_id)) {
+    BStringList response_args;
+    if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, cons_dir_config.get(), response_args, response_id)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {
       EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";

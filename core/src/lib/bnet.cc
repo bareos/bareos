@@ -629,6 +629,7 @@ bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, BSt
 
 bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out)
 {
+  StartTimer(30); //30 seconds
   int ret = recv();
   StopTimer();
 
@@ -653,10 +654,13 @@ bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const BStringList &
   m += AsciiControlCharacters::RecordSeparator();
   m += list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
 
+  StartTimer(30); //30 seconds
   if (send(m.c_str(), m.size()) <=0 ) {
     Dmsg1(100, "Could not send response message: %d\n", m.c_str());
+    StopTimer();
     return false;
   }
+  StopTimer();
   return true;
 }
 

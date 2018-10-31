@@ -859,27 +859,38 @@ try_again:
    return 1;
 }
 
+static BStringList ReadPamCredentialsFile(const std::string &pam_credentials_filename)
+{
+   std::ifstream s(pam_credentials_filename);
+   std::string user, pw;
+   if (!s.is_open()) {
+      Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
+      return BStringList();
+   } else {
+     std::getline(s, user);
+     std::getline(s, pw);
+     if (user.empty() || pw.empty()) {
+       Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
+       return BStringList();
+     }
+   }
+   BStringList args;
+   args << user << pw;
+   return args;
+}
+
 static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
 {
    if (use_pam_credentials_file) {
-     std::ifstream s(pam_credentials_filename);
-     if (!s.is_open()) {
-        Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
-        return false;
-     } else {
-       std::string user, pw;
-       std::getline(s, user);
-       std::getline(s, pw);
-       if (user.empty() || pw.empty()) {
-         Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
-         return false;
-       }
-       BStringList args;
-       args << user << pw;
-       UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, args);
+     BStringList args(ReadPamCredentialsFile(pam_credentials_filename));
+     if(args.empty()) {
+       return false;
      }
+     UA_sock->StartTimer(30);
+     UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, args);
+     UA_sock->StopTimer();
    } else {
-     UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive, "OK");
+     UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive, std::string());
      if (!ConsolePamAuthenticate(stdin, UA_sock)) {
        TerminateConsole(0);
        return false;
@@ -889,7 +900,10 @@ static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::s
 }
 
 namespace console {
-BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len, uint32_t &response_id)
+static BareosSocket *ConnectToDirector(JobControlRecord &jcr,
+                                       utime_t heart_beat,
+                                       BStringList &response_args,
+                                       uint32_t &response_id)
 {
   BareosSocketTCP *UA_sock = New(BareosSocketTCP);
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
@@ -929,14 +943,12 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
 
   if (!UA_sock->DoTlsHandshake(tls_policy, local_tls_resource, false,
                                qualified_resource_name.c_str(), password->value, &jcr)) {
-    ConsoleOutput(errmsg);
     TerminateConsole(0);
     return nullptr;
   }
 
-  if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, errmsg,
-                                                errmsg_len, director_resource, response_id)) {
-    ConsoleOutput(errmsg);
+  if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, director_resource,
+                                                 response_args, response_id)) {
     TerminateConsole(0);
     return nullptr;
   }
@@ -950,9 +962,7 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
 int main(int argc, char *argv[])
 {
    int ch;
-   int errmsg_len;
    char *director = NULL;
-   char errmsg[1024];
    bool list_directors = false;
    bool no_signals = false;
    bool test_config = false;
@@ -969,7 +979,6 @@ int main(int argc, char *argv[])
    static const std::string program_arguments {"D:lc:d:nstu:x:?"};
 #endif
 
-   errmsg_len = sizeof(errmsg);
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
@@ -1141,18 +1150,27 @@ int main(int argc, char *argv[])
    }
 
    uint32_t response_id;
-   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len, response_id);
+   BStringList response_args;
+   UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
    if (!UA_sock) { return 1; }
 
    UA_sock->OutputCipherMessageString(ConsoleOutput);
-
-   ConsoleOutput(errmsg);
 
    if (response_id == kMessageIdPamRequired) {
      if (!ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename)) {
        TerminateConsole(0);
        return 1;
+     } else {
+       response_args.clear();
+       if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+         TerminateConsole(0);
+         return 1;
+       }
      }
+   }
+
+   if (response_id == kMessageIdOk) {
+     ConsoleOutput(response_args.JoinReadable().c_str());
    }
 
    Dmsg0(40, "Opened connection with Director daemon\n");

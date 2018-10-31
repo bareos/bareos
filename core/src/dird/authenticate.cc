@@ -245,23 +245,20 @@ static bool GetConsoleName(BareosSocket *ua_sock, std::string &name)
   return true;
 }
 
-static void SendErrorMessage(std::string console_name, UaContext *ua)
+static void LogErrorMessage(std::string console_name, UaContext *ua)
 {
-  ua->UA_sock->fsend("%s", _(dir_not_authorized_message));
   Emsg4(M_ERROR, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"), console_name.c_str(),
                       ua->UA_sock->who(), ua->UA_sock->host(), ua->UA_sock->port());
-  sleep(5);
 }
 
-static void SendOkMessage(UaContext *ua)
+static void SendOkMessage(UaContext *ua, bool final_state)
 {
-  char buffer[100];
-  ::snprintf(buffer, 100, "OK: %s Version: %s (%s)", my_name, VERSION, BDATE);
-
-  if (ua->cons && ua->cons->use_pam_authentication_) {
-    ua->UA_sock->FormatAndSendResponseMessage(kMessageIdPamRequired, std::string(buffer));
-  } else {
+  if (final_state) {
+    char buffer[128];
+    ::snprintf(buffer, 100, "OK: %s Version: %s (%s)", my_name, VERSION, BDATE);
     ua->UA_sock->FormatAndSendResponseMessage(kMessageIdOk, std::string(buffer));
+  } else if (ua->cons && ua->cons->use_pam_authentication_) {
+    ua->UA_sock->FormatAndSendResponseMessage(kMessageIdPamRequired, std::string());
   }
 }
 
@@ -372,7 +369,6 @@ bool AuthenticateUserAgent(UaContext *ua)
   }
 
   if (NumberOfConsoleConnectionsExceeded()) {
-    ua->UA_sock->fsend("%s", _(dir_not_authorized_message));
     Emsg0(M_ERROR, 0, _("Number of console connections exceeded MaximumConsoleConnections\n"));
     return false;
   }
@@ -381,23 +377,25 @@ bool AuthenticateUserAgent(UaContext *ua)
 
   if (OptionalAuthenticateRootConsole(console_name, ua, auth_success)) {
     if (!auth_success) {
-      SendErrorMessage(console_name, ua);
+      LogErrorMessage(console_name, ua);
       return false;
     } else {
-      SendOkMessage(ua);
+      SendOkMessage(ua, true);
     }
   } else {
     AuthenticateNamedConsole(console_name, ua, auth_success);
     if (!auth_success) {
-      SendErrorMessage(console_name, ua);
+      LogErrorMessage(console_name, ua);
       return false;
     } else {
-      SendOkMessage(ua);
+      SendOkMessage(ua, false);
     }
     if (OptionalAuthenticatePamUser(console_name, ua, auth_success)) {
       if (!auth_success) {
-        SendErrorMessage(console_name, ua);
+        LogErrorMessage(console_name, ua);
         return false;
+      } else {
+        SendOkMessage(ua, true);
       }
     }
   }

@@ -84,8 +84,8 @@ static int PamConversationCallback(int num_msg, const struct pam_message **msgm,
       switch (msgm[i]->msg_style) {
          case PAM_PROMPT_ECHO_OFF:
          case PAM_PROMPT_ECHO_ON:
-               if (!PamConvSendMessage(pam_data->UA_sock_,
-                     msgm[i]->msg, msgm[i]->msg_style)) {
+            if (!PamConvSendMessage(pam_data->UA_sock_,
+                   msgm[i]->msg, msgm[i]->msg_style)) {
                error = true;
                break;
             }
@@ -107,8 +107,8 @@ static int PamConversationCallback(int num_msg, const struct pam_message **msgm,
             if (!PamConvSendMessage(pam_data->UA_sock_,
                   msgm[i]->msg, PAM_PROMPT_ECHO_ON)) {
                error = true;
-               break;
-         }
+            }
+            break;
          default:
             Dmsg3(debuglevel, "message[%d]: pam error type: %d error: \"%s\"\n",
                   1, msgm[i]->msg_style, msgm[i]->msg);
