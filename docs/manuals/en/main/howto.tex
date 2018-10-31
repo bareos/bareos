@@ -1004,10 +1004,15 @@ cat - > /tmp/dump.sql
 exit 0
 \end{bconfig}
 
-\section{Enable Statistics Collection}
-\label{StatisticCollection}
+\section{Statistics Collection}
+\label{sec:StatisticCollection}
 
-Statistics Collection needs to be enabled by directives of the following resources.
+Statistics Collection can be controlled by a number of configuration directives.
+If Statistics Collection is enabled, statistics are collected by the \bareosDir and stored into the Catalog database.
+So enabling this feature will increase your database size.
+
+The Statistics are used by the \bareosWebui to show the status of a running job.
+\index[general]{Webui!Configure Statistics Collection}
 
 \subsection{Director Configuration - Director Resource Directives}
 \begin{itemize}
@@ -1024,7 +1029,7 @@ Statistics Collection needs to be enabled by directives of the following resourc
 \begin{itemize}
   \item \linkResourceDirective{Sd}{Storage}{Collect Device Statistics}
   \item \linkResourceDirective{Sd}{Storage}{Collect Job Statistics}
-  \item \linkResoruceDirective{Sd}{Storage}{Statistics Collect Interval}
+  \item \linkResourceDirective{Sd}{Storage}{Statistics Collect Interval}
 \end{itemize}
 
 \subsection{Storage Configuration - Device Resource Directives}
