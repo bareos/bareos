@@ -31,9 +31,7 @@
 #include "include/bareos.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
-#if defined(HAVE_PAM)
 #include "console/auth_pam.h"
-#endif
 #include "console/console_output.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
@@ -861,7 +859,6 @@ try_again:
    return 1;
 }
 
-#if defined(HAVE_PAM)
 static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
 {
    if (use_pam_credentials_file) {
@@ -890,7 +887,6 @@ static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::s
    }
    return true;
 }
-#endif
 
 namespace console {
 BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len, uint32_t &response_id)
@@ -966,8 +962,11 @@ int main(int argc, char *argv[])
    PoolMem history_file;
    utime_t heart_beat;
    std::string pam_credentials_filename;
-#if defined(HAVE_PAM)
    bool use_pam_credentials_file = false;
+#if defined(HAVE_PAM)
+   static const std::string program_arguments {"D:lc:d:np:stu:x:?"};
+#else
+   static const std::string program_arguments {"D:lc:d:nstu:x:?"};
 #endif
 
    errmsg_len = sizeof(errmsg);
@@ -982,7 +981,7 @@ int main(int argc, char *argv[])
    working_directory = "/tmp";
    args = GetPoolMemory(PM_FNAME);
 
-   while ((ch = getopt(argc, argv, "D:lc:d:np:stu:x:?")) != -1) {
+   while ((ch = getopt(argc, argv, program_arguments.c_str())) != -1) {
       switch (ch) {
       case 'D':                    /* Director */
          if (director) {
@@ -1015,7 +1014,6 @@ int main(int argc, char *argv[])
          break;
 
       case 'p':
-#if defined(HAVE_PAM)
          pam_credentials_filename = optarg;
          if (pam_credentials_filename.empty()) {
            Emsg0(M_ERROR_TERM, 0, _("No filename given for -p.\n"));
@@ -1028,9 +1026,6 @@ int main(int argc, char *argv[])
               Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
             }
          }
-#else
-         Emsg0(M_ERROR_TERM, 0, _("No PAM available on this system.\n"));
-#endif
          break;
 
       case 's':                    /* turn off signals */
@@ -1154,13 +1149,10 @@ int main(int argc, char *argv[])
    ConsoleOutput(errmsg);
 
    if (response_id == kMessageIdPamRequired) {
-#if defined(HAVE_PAM)
-     ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename);
-#else
-     Dmsg0(100, "This Console program does not have the pam feature\n");
-     TerminateConsole(0);
-     return 1;
-#endif /* HAVE_PAM */
+     if (!ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename)) {
+       TerminateConsole(0);
+       return 1;
+     }
    }
 
    Dmsg0(40, "Opened connection with Director daemon\n");
