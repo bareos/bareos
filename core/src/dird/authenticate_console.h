@@ -19,19 +19,14 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_AUTHENTICATE_H_
-#define BAREOS_DIRD_AUTHENTICATE_H_
+#ifndef BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_
+#define BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_
 
 namespace directordaemon {
 
-class StorageResource;
 class UaContext;
 
-bool AuthenticateWithStorageDaemon(BareosSocket *sd, JobControlRecord *jcr, StorageResource *store);
-bool AuthenticateWithFileDaemon(JobControlRecord *jcr);
-bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name);
 bool AuthenticateUserAgent(UaContext *ua);
 
 } /* namespace directordaemon */
-
-#endif // BAREOS_DIRD_AUTHENTICATE_H_
+#endif /* BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_ */
