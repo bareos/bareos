@@ -69,18 +69,15 @@ static void LogErrorMessage(std::string console_name, UaContext *ua)
                       ua->UA_sock->who(), ua->UA_sock->host(), ua->UA_sock->port());
 }
 
-static bool SendOkMessage(UaContext *ua, bool final_state)
+static bool SendResponseMessage(UaContext *ua, uint32_t response_id, bool send_version_info)
 {
-  if (final_state) {
+  std::string message;
+  if (send_version_info) {
     char version_info[128];
     ::snprintf(version_info, 100, "OK: %s Version: %s (%s)", my_name, VERSION, BDATE);
-    return ua->UA_sock->FormatAndSendResponseMessage(kMessageIdOk, std::string(version_info));
-  } else if (ua->cons && ua->cons->use_pam_authentication_) {
-    return ua->UA_sock->FormatAndSendResponseMessage(kMessageIdPamRequired, std::string());
-  } else {
-    Dmsg0(200, "Unexpected program flow\n");
-    return false;
+    message = version_info;
   }
+  return ua->UA_sock->FormatAndSendResponseMessage(response_id, message);
 }
 
 static bool OptionalAuthenticateRootConsole(std::string console_name, UaContext *ua, bool &auth_success)
@@ -90,6 +87,10 @@ static bool OptionalAuthenticateRootConsole(std::string console_name, UaContext 
      return false; /* no need to evaluate auth_success */
    }
    auth_success = ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", root_console_name.c_str(), me->password, me);
+
+   if (!SendResponseMessage(ua, kMessageIdOk, true)) {
+     auth_success = false;
+   }
    return true;
 }
 
@@ -107,6 +108,17 @@ static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bo
   } else {
     ua->cons = cons;
     auth_success = true;
+  }
+  if (auth_success) {
+    uint32_t response_id = kMessageIdOk;
+    bool send_version = true;
+    if (cons->use_pam_authentication_) {
+      response_id = kMessageIdPamRequired;
+      send_version = false;
+    }
+    if (!SendResponseMessage(ua, response_id, send_version)) {
+      auth_success = false;
+    }
   }
 }
 
@@ -177,6 +189,11 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
       auth_success = true;
     }
   }
+  if (auth_success) {
+    if (!SendResponseMessage(ua, kMessageIdOk, true)) {
+      auth_success = false;
+    }
+  }
   return true;
 } /* HAVE PAM */
 #endif /* !HAVE_PAM */
@@ -200,23 +217,17 @@ bool AuthenticateUserAgent(UaContext *ua)
     if (!auth_success) {
       LogErrorMessage(console_name, ua);
       return false;
-    } else {
-      if (!SendOkMessage(ua, true)) { return false; }
     }
   } else {
     AuthenticateNamedConsole(console_name, ua, auth_success);
     if (!auth_success) {
       LogErrorMessage(console_name, ua);
       return false;
-    } else {
-      if (!SendOkMessage(ua, false)) { return false; }
     }
     if (OptionalAuthenticatePamUser(console_name, ua, auth_success)) {
       if (!auth_success) {
         LogErrorMessage(console_name, ua);
         return false;
-      } else {
-        if (!SendOkMessage(ua, true)) { return false; }
       }
     }
   }

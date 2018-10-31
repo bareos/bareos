@@ -886,9 +886,7 @@ static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::s
      if(args.empty()) {
        return false;
      }
-     UA_sock->StartTimer(30);
      UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, args);
-     UA_sock->StopTimer();
    } else {
      UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive, std::string());
      if (!ConsolePamAuthenticate(stdin, UA_sock)) {
@@ -1151,6 +1149,7 @@ int main(int argc, char *argv[])
 
    uint32_t response_id;
    BStringList response_args;
+
    UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
    if (!UA_sock) { return 1; }
 
@@ -1160,14 +1159,13 @@ int main(int argc, char *argv[])
      if (!ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename)) {
        TerminateConsole(0);
        return 1;
-     } else {
-       response_args.clear();
-       if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
-         TerminateConsole(0);
-         return 1;
-       }
      }
-   }
+     response_args.clear();
+     if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+       TerminateConsole(0);
+       return 1;
+     }
+   } /* kMessageIdPamRequired */
 
    if (response_id == kMessageIdOk) {
      ConsoleOutput(response_args.JoinReadable().c_str());
