@@ -975,20 +975,26 @@ Section "Bareos Webui" SEC_WEBUI
    File /r "bareos-webui"
 
 IfSilent skip_vc_redist_check
-   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (32 Bit)
+   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
    ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
 check_for_vc_redist:
    ${If} $R1 == ""
-      ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-      MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
+      ${If} $R2 == ""
+         ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+         MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
                                  It is needed by the bareos-webui service.$\r$\n\
                                  Please install vcredist_x86.exe from $\r$\n\
                                  https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
                                  and click OK when done." /SD IDOK
+      ${EndIf}   								 
    ${EndIf}
    ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
    ${If} $R1 == ""
-      goto check_for_vc_redist
+      ${If} $R2 == ""
+         goto check_for_vc_redist
+	  ${EndIf}
    ${EndIf}
 
 skip_vc_redist_check:
