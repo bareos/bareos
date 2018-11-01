@@ -270,7 +270,8 @@ ${EndIf}
       LogEx::Write "PostgresPath=$PostgresPath"
 
 
-    # set postgres username and password in environment
+    # set postgres port, username and password in environment
+    System::Call 'kernel32::SetEnvironmentVariable(t "PGPORT", t "$DbPort")i.r0'
     System::Call 'kernel32::SetEnvironmentVariable(t "PGUSER", t "$DbAdminUser")i.r0'
     System::Call 'kernel32::SetEnvironmentVariable(t "PGPASSWORD", t "$DbAdminPassword")i.r0'
 
