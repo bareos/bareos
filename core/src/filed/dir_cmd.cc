@@ -1535,12 +1535,9 @@ static bool StorageCmd(JobControlRecord *jcr)
    char stored_addr[MAX_NAME_LENGTH];
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
-  BareosSocket *sd          = nullptr; /* storage daemon bsock */
-  TlsResource *tls_resource = nullptr;
-  std::string qualified_resource_name;
+   BareosSocket *storage_daemon_socket = New(BareosSocketTCP);
 
-   sd = New(BareosSocketTCP);
-  if (me->nokeepalive) { sd->ClearKeepalive(); }
+  if (me->nokeepalive) { storage_daemon_socket->ClearKeepalive(); }
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->message_length);
   if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &enable_ssl, sd_auth_key.c_str()) != 4) {
@@ -1555,7 +1552,7 @@ static bool StorageCmd(JobControlRecord *jcr)
 
    Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
 
-   sd->SetSourceAddress(me->FDsrc_addr);
+   storage_daemon_socket->SetSourceAddress(me->FDsrc_addr);
 
    /*
     * TODO: see if we put limit on restore and backup...
@@ -1568,39 +1565,37 @@ static bool StorageCmd(JobControlRecord *jcr)
       }
    }
 
-   sd->SetBwlimit(jcr->max_bandwidth);
-  if (me->allow_bw_bursting) { sd->SetBwlimitBursting(); }
+   storage_daemon_socket->SetBwlimit(jcr->max_bandwidth);
+  if (me->allow_bw_bursting) { storage_daemon_socket->SetBwlimitBursting(); }
 
    /*
     * Open command communications with Storage daemon
     */
-  if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval, _("Storage daemon"),
+  if (!storage_daemon_socket->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval, _("Storage daemon"),
                    stored_addr, nullptr, stored_port, 1)) {
-     delete sd;
-    sd = nullptr;
-   }
-
-  if (sd == nullptr) {
     Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"), stored_addr, stored_port);
     Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr, stored_port);
-      goto bail_out;
+    goto bail_out;
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
-   jcr->store_bsock = sd;
+   jcr->store_bsock = storage_daemon_socket;
 
-  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-          jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
-    goto bail_out;
-  }
+   if (me->IsTlsConfigured()) {
+    std::string qualified_resource_name;
+    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+            jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+      goto bail_out;
+    }
 
-  tls_resource = dynamic_cast<TlsResource *>(me);
-  if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_resource, false,
-                          qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
-    goto bail_out;
-  }
+    if (!storage_daemon_socket->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+                            qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
+      jcr->store_bsock = nullptr;
+      goto bail_out;
+    }
+   }
 
-   sd->fsend("Hello Start Job %s\n", jcr->Job);
+   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
    if (!AuthenticateWithStoragedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
       goto bail_out;
@@ -1613,6 +1608,7 @@ static bool StorageCmd(JobControlRecord *jcr)
    return dir->fsend(OKstore);
 
 bail_out:
+   delete storage_daemon_socket;
    dir->fsend(BADcmd, "storage");
    return false;
 }
@@ -2153,51 +2149,50 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
 {
   ASSERT(dir_res != nullptr);
 
-  BareosSocket *dir = New(BareosSocketTCP);
-  if (me->nokeepalive) { dir->ClearKeepalive(); }
+  BareosSocketUniquePtr director_socket = MakeNewBareosSocketUniquePtr();
 
-  dir->SetSourceAddress(me->FDsrc_addr);
+  if (me->nokeepalive) { director_socket->ClearKeepalive(); }
+
+  director_socket->SetSourceAddress(me->FDsrc_addr);
 
    int retry_interval = 0;
    int max_retry_time = 0;
   utime_t heart_beat = me->heartbeat_interval;
-  if (!dir->connect(jcr, retry_interval, max_retry_time, heart_beat, dir_res->name(), dir_res->address,
+  if (!director_socket->connect(jcr, retry_interval, max_retry_time, heart_beat, dir_res->name(), dir_res->address,
                     nullptr, dir_res->port, verbose)) {
-    delete dir;
-    dir = nullptr;
     return nullptr;
   }
 
-  std::string qualified_resource_name;
-  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
-                                                                            qualified_resource_name)) {
-    Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
-    return nullptr;
-   }
+  if (dir_res->IsTlsConfigured()) {
+    std::string qualified_resource_name;
+    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                              qualified_resource_name)) {
+      Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+      return nullptr;
+     }
 
-  if (!dir->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, dir_res, false, qualified_resource_name.c_str(),
-                           dir_res->password.value, jcr)) {
-    Dmsg0(100, "Could not DoTlsHandshake() with director\n");
-    return nullptr;
-   }
+    if (!director_socket->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, dir_res, false, qualified_resource_name.c_str(),
+                             dir_res->password.value, jcr)) {
+      Dmsg0(100, "Could not DoTlsHandshake() with director\n");
+      return nullptr;
+     }
+  }
 
    Dmsg1(10, "Opened connection with Director %s\n", dir_res->name());
-   jcr->dir_bsock = dir;
+   jcr->dir_bsock = director_socket.get();
 
-   dir->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
+   director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
    if (!AuthenticateWithDirector(jcr, dir_res)) {
     jcr->dir_bsock = nullptr;
-      delete dir;
-    dir = nullptr;
     return nullptr;
    }
 
-   dir->recv();
-   ParseOkVersion(dir->msg);
+   director_socket->recv();
+   ParseOkVersion(director_socket->msg);
 
    jcr->director = dir_res;
 
-   return dir;
+   return director_socket.release();
 }
 
 /**

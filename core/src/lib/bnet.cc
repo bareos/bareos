@@ -123,7 +123,8 @@ bool BnetTlsServer(BareosSocket *bsock, const std::vector<std::string> &verify_l
    JobControlRecord *jcr = bsock->jcr();
 
    if (!bsock->tls_conn_init) {
-     Dmsg0(100, "No Tsl Connection: Cannot call TlsBsockAccept\n");
+     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockAccept\n");
+     goto err;
    }
 
    if (!bsock->tls_conn_init->TlsBsockAccept(bsock)) {
@@ -160,6 +161,11 @@ err:
 bool BnetTlsClient(BareosSocket *bsock, bool VerifyPeer, const std::vector<std::string> &verify_list)
 {
    JobControlRecord *jcr = bsock->jcr();
+
+   if (!bsock->tls_conn_init) {
+     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockConnect\n");
+     goto err;
+   }
 
    if (!bsock->tls_conn_init->TlsBsockConnect(bsock)) {
       goto err;

@@ -111,7 +111,7 @@ CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char 
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-CommonResourceHeader *ConfigurationParser::GetNextRes(int rcode, CommonResourceHeader *res)
+CommonResourceHeader *ConfigurationParser::GetNextRes(int rcode, CommonResourceHeader *res) const
 {
   CommonResourceHeader *nres;
   int rindex = rcode - r_first_;

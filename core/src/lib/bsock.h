@@ -76,6 +76,7 @@ class BareosSocket : public SmartAlloc {
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
+  uint32_t *test_variable_;
 
  protected:
   JobControlRecord *jcr_; /* JobControlRecord or NULL for error msgs */
@@ -97,9 +98,9 @@ class BareosSocket : public SmartAlloc {
   btime_t last_tick_;    /* Last tick used by bwlimit */
   bool tls_established_; /* is true when tls connection is established */
 
-   virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
+  virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                        struct sockaddr *lclient_addr) = 0;
-   virtual bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
+  virtual bool open(JobControlRecord *jcr, const char *name, const char *host, char *service,
                      int port, utime_t heart_beat, int *fatal) = 0;
 
  private:
@@ -131,7 +132,7 @@ class BareosSocket : public SmartAlloc {
                        utime_t max_retry_time,
                        utime_t heart_beat,
                        const char *name,
-                       char *host,
+                       const char *host,
                        char *service,
                        int port,
                        bool verbose)                      = 0;
@@ -181,7 +182,7 @@ class BareosSocket : public SmartAlloc {
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist *src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool IsCleartextBareosHello();
+  bool EvaluateCleartextBareosHello(bool &cleartext) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
   void GetCipherMessageString(std::string &str);
 

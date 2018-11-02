@@ -570,7 +570,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
       if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
         tls_need = GetLocalTlsPolicyFromConfiguration(client);
       } else {
-        tls_need = TlsConfigBase::BNET_TLS_AUTO;
+        tls_need = client->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
       }
 
       connection_target_address = ClientAddressToContact(client, store);

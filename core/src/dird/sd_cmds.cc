@@ -138,19 +138,21 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
       return false;
    }
 
-   std::string qualified_resource_name;
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
-                                                                             qualified_resource_name)) {
-      Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
-      sd->close();
-      return false;
-   }
+   if (store->IsTlsConfigured()) {
+     std::string qualified_resource_name;
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
+                                                                               qualified_resource_name)) {
+        Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
+        sd->close();
+        return false;
+     }
 
-   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
-                           store->password.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
-      sd->close();
-      return false;
+     if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
+                             store->password.value, jcr)) {
+        Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
+        sd->close();
+        return false;
+     }
    }
 
    if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {

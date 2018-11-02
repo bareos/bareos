@@ -60,6 +60,9 @@ BareosSocketTCP::BareosSocketTCP() : BareosSocket()
 
 BareosSocketTCP::~BareosSocketTCP()
 {
+   if(test_variable_) {
+     *test_variable_ = 12345;
+   }
    destroy();
 }
 
@@ -100,7 +103,7 @@ BareosSocket *BareosSocketTCP::clone()
  * this routine.
  */
 bool BareosSocketTCP::connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
-                        utime_t heart_beat, const char *name, char *host,
+                        utime_t heart_beat, const char *name, const char *host,
                         char *service, int port, bool verbose)
 {
    bool ok = false;
@@ -169,7 +172,7 @@ void BareosSocketTCP::FinInit(JobControlRecord * jcr, int sockfd, const char *wh
  * Returns NULL
  * Returns BareosSocket * pointer on success
  */
-bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, char *service,
+bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, const char *host, char *service,
                      int port, utime_t heart_beat, int *fatal)
 {
    int sockfd = -1;

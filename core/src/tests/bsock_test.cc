@@ -426,6 +426,24 @@ TEST(bsock, auth_works_with_tls_cert)
   EXPECT_TRUE(future.get());
 }
 
+TEST(bsock, create_bareos_socket_unique_ptr)
+{
+  uint32_t test_variable = 0;
+  {
+    BareosSocketUniquePtr p;
+    {
+      BareosSocketUniquePtr p1 = MakeNewBareosSocketUniquePtr();
+      p1->test_variable_ = &test_variable;
+      EXPECT_NE(p1.get(), nullptr);
+      p = std::move(p1);
+      EXPECT_EQ(p1.get(), nullptr);
+      EXPECT_EQ(test_variable, 0);
+    }
+    EXPECT_NE(p.get(), nullptr);
+  }
+  EXPECT_EQ(test_variable, 12345);
+}
+
 #if 0
 TEST(bsock, auth_works_with_tls_psk)
 {

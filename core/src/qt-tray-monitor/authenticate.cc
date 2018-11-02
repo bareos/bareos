@@ -52,7 +52,7 @@ static std::map<AuthenticationResult,std::string> authentication_error_to_string
   { AuthenticationResult::kQualifiedResourceNameFailed, "Could not generate a qualified resource name" },
   { AuthenticationResult::kTlsHandshakeFailed, "TLS Handshake failed" },
   { AuthenticationResult::kSendHelloMessageFailed, "Send of hello handshake message failed" },
-  { AuthenticationResult::kCramMd5HandshakeFailed, "Challenge resonse handshake failed" },
+  { AuthenticationResult::kCramMd5HandshakeFailed, "Challenge response handshake failed" },
   { AuthenticationResult::kDaemonResponseFailed, "Daemon response could not be read" },
   { AuthenticationResult::kRejectedByDaemon, "Authentication was rejected by the daemon" },
   { AuthenticationResult::kUnknownDaemon, "Unkown daemon type" }
@@ -73,27 +73,26 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord *jcr, Dire
       return AuthenticationResult::kAlreadyAuthenticated;
    }
 
-   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
-   std::string qualified_resource_name;
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-                  monitor->name(), R_CONSOLE, qualified_resource_name)) {
-     return AuthenticationResult::kQualifiedResourceNameFailed;
-   }
-
-   int tls_policy = dir_res->tls_psk.IsActivated() || dir_res->tls_cert.IsActivated()
-                  ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
-
    BareosSocket *dir = jcr->dir_bsock;
-   if (!dir->DoTlsHandshake(tls_policy, dir_res, false, qualified_resource_name.c_str(), monitor->password.value, jcr)) {
-      return AuthenticationResult::kTlsHandshakeFailed;
+   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   if (dir_res->IsTlsConfigured()) {
+     std::string qualified_resource_name;
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                    monitor->name(), R_CONSOLE, qualified_resource_name)) {
+       return AuthenticationResult::kQualifiedResourceNameFailed;
+     }
+
+     if (!dir->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, dir_res, false, qualified_resource_name.c_str(), monitor->password.value, jcr)) {
+        return AuthenticationResult::kTlsHandshakeFailed;
+     }
    }
 
    char errmsg[1024];
    int32_t errmsg_len = sizeof(errmsg);
    if (!dir->AuthenticateWithDirector(jcr, monitor->name(),(s_password &) monitor->password, errmsg, errmsg_len, dir_res)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
-                                 "Most likely the passwords do not agree.\n"
-                                 "Please see %s for help.\n"), MANUAL_AUTH_URL);
+                              "Most likely the passwords do not agree.\n"
+                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
       return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 
@@ -106,19 +105,19 @@ static AuthenticationResult AuthenticateWithStorageDaemon(JobControlRecord *jcr,
       return AuthenticationResult::kAlreadyAuthenticated;
    }
 
-   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
-   std::string qualified_resource_name;
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-                  monitor->name(), R_DIRECTOR, qualified_resource_name)) {
-     return AuthenticationResult::kQualifiedResourceNameFailed;
-   }
-
-   int tls_policy = store->tls_psk.IsActivated() || store->tls_cert.IsActivated()
-                  ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
-
    BareosSocket *sd = jcr->store_bsock;
-   if (!sd->DoTlsHandshake(tls_policy, store, false, qualified_resource_name.c_str(), store->password.value, jcr)) {
-      return AuthenticationResult::kTlsHandshakeFailed;
+   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   if (store->IsTlsConfigured()) {
+     std::string qualified_resource_name;
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                    monitor->name(), R_DIRECTOR, qualified_resource_name)) {
+       return AuthenticationResult::kQualifiedResourceNameFailed;
+     }
+
+     if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false,
+                             qualified_resource_name.c_str(), store->password.value, jcr)) {
+        return AuthenticationResult::kTlsHandshakeFailed;
+     }
    }
 
    /**
@@ -176,19 +175,19 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord *jcr, Cl
       return AuthenticationResult::kAlreadyAuthenticated;
    }
 
-   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
-   std::string qualified_resource_name;
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-                  monitor->name(), R_DIRECTOR, qualified_resource_name)) {
-     return AuthenticationResult::kQualifiedResourceNameFailed;
-   }
-
-   int tls_policy = client->tls_psk.IsActivated() || client->tls_cert.IsActivated()
-                  ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
-
    BareosSocket *fd = jcr->file_bsock;
-   if (!fd->DoTlsHandshake(tls_policy, client, false, qualified_resource_name.c_str(), client->password.value, jcr)) {
-      return AuthenticationResult::kTlsHandshakeFailed;
+   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
+   if (client->IsTlsConfigured()) {
+     std::string qualified_resource_name;
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                    monitor->name(), R_DIRECTOR, qualified_resource_name)) {
+       return AuthenticationResult::kQualifiedResourceNameFailed;
+     }
+
+     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, client, false,
+                             qualified_resource_name.c_str(), client->password.value, jcr)) {
+        return AuthenticationResult::kTlsHandshakeFailed;
+     }
    }
 
    /**

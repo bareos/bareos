@@ -1585,13 +1585,10 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    uint32_t JobId = 0;
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
-   BareosSocket *sd;                      /* storage daemon bsock */
-   std::string qualified_resource_name;
-   TlsResource *tls_resource;
+   BareosSocketUniquePtr storage_daemon_socket = MakeNewBareosSocketUniquePtr();
 
-   sd = New(BareosSocketTCP);
    if (me->nokeepalive) {
-      sd->ClearKeepalive();
+      storage_daemon_socket->ClearKeepalive();
    }
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->message_length);
@@ -1599,14 +1596,14 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
               &enable_ssl, sd_auth_key.c_str()) != 6) {
       dir->fsend(BADcmd, "replicate", dir->msg);
-      goto bail_out;
+      return false;
    }
 
    SetStorageAuthKey(jcr, sd_auth_key.c_str());
 
    Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
 
-   sd->SetSourceAddress(me->SDsrc_addr);
+   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
 
    if (!jcr->max_bandwidth) {
       if (jcr->director->max_bandwidth_per_job) {
@@ -1616,47 +1613,45 @@ static bool ReplicateCmd(JobControlRecord *jcr)
       }
    }
 
-   sd->SetBwlimit(jcr->max_bandwidth);
+   storage_daemon_socket->SetBwlimit(jcr->max_bandwidth);
    if (me->allow_bw_bursting) {
-      sd->SetBwlimitBursting();
+      storage_daemon_socket->SetBwlimitBursting();
    }
 
    /*
     * Open command communications with Storage daemon
     */
-   if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
+   if (!storage_daemon_socket->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                     _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
-      delete sd;
-      sd = NULL;
-   }
-
-   if (sd == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
            stored_addr, stored_port);
       Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
             stored_addr, stored_port);
-      goto bail_out;
+      return false;
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-           JobName, R_JOB, JobId, qualified_resource_name)) {
-     goto bail_out;
+   if (me->IsTlsConfigured()) {
+     std::string qualified_resource_name;
+     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+             JobName, R_JOB, JobId, qualified_resource_name)) {
+      return false;
+     }
+
+     if (!storage_daemon_socket->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+                                                qualified_resource_name.c_str(),
+                                                jcr->sd_auth_key, jcr)) {
+      return false;
+     }
    }
 
-   tls_resource = dynamic_cast<TlsResource *>(me);
-   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_resource, false, qualified_resource_name.c_str(),
-                           jcr->sd_auth_key, jcr)) {
-     goto bail_out;
-   }
+   jcr->store_bsock = storage_daemon_socket.get();
 
-   jcr->store_bsock = sd;
-
-   sd->fsend("Hello Start Storage Job %s\n", JobName);
+   storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
    if (!AuthenticateWithStoragedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
-      delete sd;
-      goto bail_out;
+      jcr->store_bsock = nullptr;
+      return false;
    }
    Dmsg0(110, "Authenticated with SD.\n");
 
@@ -1668,10 +1663,8 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    /*
     * Send OK to Director
     */
+   storage_daemon_socket.release(); /* jcr->store_bsock */
    return dir->fsend(OK_replicate);
-
-bail_out:
-   return false;
 }
 
 static bool RunCmd(JobControlRecord *jcr)
@@ -1696,7 +1689,6 @@ static bool PassiveCmd(JobControlRecord *jcr)
    char filed_addr[MAX_NAME_LENGTH];
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *fd;                      /* file daemon bsock */
-   std::string qualified_resource_name;
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
@@ -1734,6 +1726,7 @@ static bool PassiveCmd(JobControlRecord *jcr)
    Dmsg0(110, "Connection OK to FD.\n");
 
    if (enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+     std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
        goto bail_out;

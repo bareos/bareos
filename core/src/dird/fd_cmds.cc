@@ -233,7 +233,11 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    OutputMessageForConnectionTry(jcr, ua);
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+      if (jcr->res.client->IsTlsConfigured()) {
+         jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+      } else {
+         jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;
+      }
    } else {
       /* if there is a stored mode from a previous connection then use this */
       jcr->connection_handshake_try_ = jcr->res.client->connection_successful_handshake_;

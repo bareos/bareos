@@ -28,8 +28,8 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    md5.h mem_pool.h message.h mntent_cache.h parse_conf.h
    plugins.h qualified_resource_name_type_converter.h queue.h rblist.h
    runscript.h rwlock.h scsi_crypto.h scsi_lli.h scsi_tapealert.h sellist.h
-   serial.h sha1.h smartall.h status.h tls.h tls_conf.h tree.h var.h
-   watchdog.h workq.h)
+   serial.h sha1.h smartall.h status.h tls.h tls_conf.h tree.h try_tls_handshake_as_a_server.h
+   var.h watchdog.h workq.h)
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
@@ -46,7 +46,7 @@ include_directories(
 set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bpipe.cc
    breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc
-   bsys.cc btime.cc btimers.cc  cbuf.cc compression.cc
+   bsys.cc btime.cc btimers.cc  cbuf.cc try_tls_handshake_as_a_server.cc compression.cc
    connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc crypto_gnutls.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc

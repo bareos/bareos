@@ -885,23 +885,22 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     local_tls_resource = director_resource;
   }
 
-  std::string qualified_resource_name;
-  if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
-                                                                            qualified_resource_name)) {
-    ConsoleOutput("Could not generate qualified resource name\n");
-    TerminateConsole(0);
-    return nullptr;
-  }
+  if (local_tls_resource->IsTlsConfigured()) {
+    std::string qualified_resource_name;
+    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
+                                                                              qualified_resource_name)) {
+      ConsoleOutput("Could not generate qualified resource name\n");
+      TerminateConsole(0);
+      return nullptr;
+    }
 
-  int tls_policy = local_tls_resource->tls_psk.IsActivated() || local_tls_resource->tls_cert.IsActivated()
-                 ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
-
-  if (!UA_sock->DoTlsHandshake(tls_policy, local_tls_resource, false,
-                               qualified_resource_name.c_str(), password->value, &jcr)) {
-    ConsoleOutput(errmsg);
-    TerminateConsole(0);
-    return nullptr;
-  }
+    if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
+                                 qualified_resource_name.c_str(), password->value, &jcr)) {
+      ConsoleOutput(errmsg);
+      TerminateConsole(0);
+      return nullptr;
+    }
+  } /* IsTlsConfigured */
 
   if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
     ConsoleOutput(errmsg);
@@ -1097,8 +1096,8 @@ int main(int argc, char *argv[])
    if (console_resource) { /* not for root console */
       if (director_resource && director_resource->UsePamAuthentication_) {
          if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-            TerminateConsole(0);
-            return 1;
+           TerminateConsole(0);
+           return 1;
          }
       }
    }

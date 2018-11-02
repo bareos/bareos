@@ -337,9 +337,13 @@ public:
 
 class TlsResource : public BareosResource {
  public:
-   s_password password; /* UA server password */
+  s_password password; /* UA server password */
   TlsConfigCert tls_cert; /* TLS structure */
   TlsConfigPsk tls_psk;   /* TLS-PSK structure */
+
+  bool IsTlsConfigured() const {
+    return tls_cert.IsActivated() || tls_psk.IsActivated();
+  }
 };
 
 /*
@@ -489,7 +493,7 @@ public:
                             const char *name,
                             bool error_if_exits     = false,
                             bool create_directories = false);
-  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
+  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res) const;
   CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
   void b_LockRes(const char *file, int line);
   void b_UnlockRes(const char *file, int line);
@@ -502,6 +506,7 @@ public:
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk);
+  bool GetCleartextConfigured(bool &cleartext, TlsResource **tls_resource_out = nullptr) const;
 
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;
@@ -569,6 +574,7 @@ private:
 };
 
 void PrintMessage(void *sock, const char *fmt, ...);
+bool IsTlsConfigured(TlsResource *tls_resource);
 
 /*
  * Data type routines

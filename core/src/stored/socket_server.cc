@@ -36,6 +36,7 @@
 #include "stored/fd_cmds.h"
 #include "stored/sd_cmds.h"
 #include "lib/bnet_server_tcp.h"
+#include "lib/try_tls_handshake_as_a_server.h"
 
 namespace storagedaemon {
 
@@ -66,7 +67,11 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
   char name[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
 
-  if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config); }
+  if (!TryTlsHandshakeAsAServer(bs, config)) {
+    bs->close();
+    delete bs;
+    return nullptr;
+  }
 
   if (bs->recv() <= 0) {
     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());

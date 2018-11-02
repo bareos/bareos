@@ -54,6 +54,7 @@ BareosSocket::BareosSocket()
     , sleep_time_after_authentication_error(5)
     , client_addr{0}
     , peer_addr{0}
+    , test_variable_(0)
 
     /* protected: */
     , jcr_(nullptr)
@@ -98,6 +99,7 @@ BareosSocket::BareosSocket(const BareosSocket &other)
   sleep_time_after_authentication_error = other.sleep_time_after_authentication_error;
   client_addr                           = other.client_addr;
   peer_addr                             = other.peer_addr;
+  test_variable_                        = other.test_variable_;
   tls_conn                              = other.tls_conn;
 
   /* protected: */
@@ -438,6 +440,10 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
 bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobControlRecord *jcr)
 {
   TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
+  if (!tls_resource) {
+    Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
+    return false;
+  }
 
   if (!ParameterizeAndInitTlsConnectionAsAServer(config)) { return false; }
 
@@ -469,11 +475,6 @@ void BareosSocket::ParameterizeTlsCert(Tls *tls_conn_init, TlsResource *tls_reso
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config)
 {
-  TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
-
-  if (!tls_resource->tls_cert.IsActivated() && !tls_resource->tls_psk.IsActivated()) {
-    return true; /* cleartext connection */
-  }
   tls_conn_init.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {
     Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
@@ -481,6 +482,12 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
   }
 
   tls_conn_init->SetTcpFileDescriptor(fd_);
+
+  TlsResource *tls_resource = reinterpret_cast<TlsResource *>(config->GetNextRes(config->r_own_, nullptr));
+  if (!tls_resource) {
+    Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
+    return false;
+  }
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
@@ -619,7 +626,7 @@ bool BareosSocket::AuthenticateInboundConnection(JobControlRecord *jcr,
   return TwoWayAuthenticate(jcr, what, identity, password, tls_resource, true);
 }
 
-bool BareosSocket::IsCleartextBareosHello()
+bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext) const
 {
   char buffer[12];
   memset(buffer, 0, sizeof(buffer));
@@ -627,7 +634,8 @@ bool BareosSocket::IsCleartextBareosHello()
   if (ret == 10) {
     std::string hello("Hello ");
     std::string received(&buffer[4]);
-    if (hello == received) { return true; }
+    cleartext = hello == received ? true : false;
+    return true;
   }
   return false;
 }
