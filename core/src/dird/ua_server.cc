@@ -32,6 +32,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/authenticate.h"
+#include "dird/authenticate_console.h"
 #include "dird/job.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
@@ -84,7 +85,7 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
    ua->UA_sock = user_agent_socket;
    SetJcrInTsd(INVALID_JCR);
 
-   bool success = AuthenticateUserAgent(ua);
+   bool success = AuthenticateConsole(ua);
 
    if (!success) {
       ua->quit = true;

@@ -199,7 +199,7 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
 #endif /* !HAVE_PAM */
 }
 
-bool AuthenticateUserAgent(UaContext *ua)
+bool AuthenticateConsole(UaContext *ua)
 {
   std::string console_name;
   if (!GetConsoleName(ua->UA_sock, console_name)) {
