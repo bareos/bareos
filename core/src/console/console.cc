@@ -76,7 +76,15 @@ static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
 static bool file_selection = false;
-static bool send_pam_credentials_unencrypted = false;
+
+#if defined(HAVE_PAM)
+static bool force_send_pam_credentials_unencrypted = false;
+static bool use_pam_credentials_file = false;
+static std::string pam_credentials_filename;
+static const std::string program_arguments {"D:lc:d:np:ostu:x:?"};
+#else
+static const std::string program_arguments {"D:lc:d:nstu:x:?"};
+#endif
 
 /* Command prototypes */
 static int Versioncmd(FILE *input, BareosSocket *UA_sock);
@@ -864,6 +872,7 @@ try_again:
    return 1;
 }
 
+#if defined(HAVE_PAM)
 static BStringList ReadPamCredentialsFile(const std::string &pam_credentials_filename)
 {
    std::ifstream s(pam_credentials_filename);
@@ -886,7 +895,7 @@ static BStringList ReadPamCredentialsFile(const std::string &pam_credentials_fil
 
 static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
 {
-   if (!UA_sock->tls_conn && !send_pam_credentials_unencrypted) {
+   if (!UA_sock->tls_conn && !force_send_pam_credentials_unencrypted) {
      ConsoleOutput("Canceled because password would be sent unencrypted!\n");
      return false;
    }
@@ -905,6 +914,7 @@ static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::s
    }
    return true;
 }
+#endif /* HAVE_PAM */
 
 namespace console {
 static BareosSocket *ConnectToDirector(JobControlRecord &jcr,
@@ -978,13 +988,6 @@ int main(int argc, char *argv[])
    JobControlRecord jcr;
    PoolMem history_file;
    utime_t heart_beat;
-   std::string pam_credentials_filename;
-   bool use_pam_credentials_file = false;
-#if defined(HAVE_PAM)
-   static const std::string program_arguments {"D:lc:d:np:ostu:x:?"};
-#else
-   static const std::string program_arguments {"D:lc:d:nstu:x:?"};
-#endif
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -1029,6 +1032,7 @@ int main(int argc, char *argv[])
          }
          break;
 
+#if defined(HAVE_PAM)
       case 'p':
          pam_credentials_filename = optarg;
          if (pam_credentials_filename.empty()) {
@@ -1045,8 +1049,9 @@ int main(int argc, char *argv[])
          break;
 
       case 'o':
-         send_pam_credentials_unencrypted = true;
+         force_send_pam_credentials_unencrypted = true;
          break;
+#endif /* HAVE_PAM */
 
       case 's':                    /* turn off signals */
          no_signals = true;
@@ -1169,6 +1174,7 @@ int main(int argc, char *argv[])
    UA_sock->OutputCipherMessageString(ConsoleOutput);
 
    if (response_id == kMessageIdPamRequired) {
+#if defined(HAVE_PAM)
      if (!ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename)) {
        TerminateConsole(0);
        return 1;
@@ -1178,6 +1184,11 @@ int main(int argc, char *argv[])
        TerminateConsole(0);
        return 1;
      }
+#else
+     Dmsg0(200, "This console does not have the pam feature\n");
+     TerminateConsole(0);
+     return 1;
+#endif /* HAVE_PAM */
    } /* kMessageIdPamRequired */
 
    if (response_id == kMessageIdOk) {
