@@ -147,6 +147,7 @@ class BareosSocket : public SmartAlloc {
   virtual int SetNonblocking()                            = 0;
   virtual int SetBlocking()                               = 0;
   virtual void RestoreBlocking(int flags)                 = 0;
+  virtual bool ConnectionReceivedTerminateSignal()        = 0;
   /*
    * Returns: 1 if data available, 0 if timeout, -1 if error
    */

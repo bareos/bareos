@@ -384,6 +384,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
 
     btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
 
+    if (ConnectionReceivedTerminateSignal()) { return false; }
+
     auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
     if (!auth_success) {
       Jmsg(jcr, M_FATAL, 0,

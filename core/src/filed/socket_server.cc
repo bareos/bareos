@@ -58,14 +58,22 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
 
-   if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config); }
+   if (!bs->IsCleartextBareosHello()) {
+      if (!bs->DoTlsHandshakeAsAServer(config)) {
+         bs->signal(BNET_TERMINATE);
+         bs->close();
+         delete bs;
+         return nullptr;
+      }
+   }
 
    if (bs->recv() <= 0) {
-      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
-      Bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      delete bs;
-      return NULL;
+     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+     Bmicrosleep(5, 0);   /* make user wait 5 seconds */
+     bs->signal(BNET_TERMINATE);
+     bs->close();
+     delete bs;
+     return NULL;
    }
 
    Dmsg1(110, "Conn: %s\n", bs->msg);

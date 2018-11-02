@@ -1100,3 +1100,16 @@ int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
 
    return nbytes - nleft;
 }
+
+bool BareosSocketTCP::ConnectionReceivedTerminateSignal()
+{
+  int32_t signal;
+  if (::recv(fd_, (char*)&signal, 4, MSG_PEEK | MSG_DONTWAIT) == 4) {
+    signal = ntohl(signal);
+    if (signal == BNET_TERMINATE) {
+       SetTerminated();
+       return true;
+    }
+  }
+  return false;
+}
