@@ -121,11 +121,10 @@ struct s_password {
   * TLS Settings for PSK only
   */
  #define TLS_PSK_CONFIG(res) \
-   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
+   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", "18.2.4-", \
          "Enable TLS-PSK support." }, \
-   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
-         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
-         "Enabling this implicitly sets \"TLS-PSK Enable = yes\"." }
+   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require_), 0, CFG_ITEM_DEFAULT, "false", "18.2.4-", \
+         "Enabling this implicitly sets \"TLS PSK Enable = yes\"." }
 
 /*
  * This is the structure that defines the record types (items) permitted within each
