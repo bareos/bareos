@@ -213,6 +213,7 @@ static void SendInfoSuccess(JobControlRecord *jcr, UaContext *ua)
      std::string m1 = m;
      std::replace(m1.begin(), m1.end(), '\r', ' ');
      std::replace(m1.begin(), m1.end(), '\v', ' ');
+     std::replace(m1.begin(), m1.end(), ',' , ' ');
      Jmsg(jcr, M_INFO, 0, m1.c_str());
    }
    if (ua) { /* only whith console connection */
