@@ -3797,13 +3797,14 @@ static void PrintConfigCb(ResourceItem *items, int i, PoolMem &cfg_str, bool hid
 static void ResetAllClientConnectionHandshakeModes(ConfigurationParser &my_config)
 {
   CommonResourceHeader *header = nullptr;
-  do {
-    header = my_config.GetNextRes(R_CLIENT, header);
+  header = my_config.GetNextRes(R_CLIENT, header);
+  while(header) {
     ClientResource *client = reinterpret_cast<ClientResource*>(header);
     if (client) {
       client->connection_successful_handshake_ = ClientConnectionHandshakeMode::kUndefined;
     }
-  } while (header);
+    header = my_config.GetNextRes(R_CLIENT, header);
+  };
 }
 
 static void ConfigReadyCallback(ConfigurationParser &my_config)
@@ -3862,8 +3863,9 @@ static bool AddResourceCopyToEndOfChain(UnionOfResources *res_to_add, int type)
 static void CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config)
 {
   DirectorResource *dir_resource = (DirectorResource *)my_config.GetNextRes(R_DIRECTOR, NULL);
-  ConsoleResource console;
+  if (!dir_resource) { return; }
 
+  ConsoleResource console;
   memset(&console, 0, sizeof(console));
   console.password.encoding = dir_resource->password.encoding;
   console.password.value    = bstrdup(dir_resource->password.value);

@@ -185,7 +185,7 @@ bool ConfigurationParser::ParseConfig()
    used_config_path_ = config_path.c_str();
    Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
    bool success = ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
-   if (ParseConfigReadyCb_) {
+   if (success && ParseConfigReadyCb_) {
      ParseConfigReadyCb_(*this);
    }
    return success;
