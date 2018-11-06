@@ -218,7 +218,8 @@ static ResourceItem con_items[] = {
    { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL, "14.2.3-",
      "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
      "First the console ACL is checked then any profile the console is linked to." },
-   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con.use_pam_authentication_), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con.use_pam_authentication_), 0, CFG_ITEM_DEFAULT,
+     "false", "18.2.4-", NULL },
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
    TLS_PSK_CONFIG(res_con),
