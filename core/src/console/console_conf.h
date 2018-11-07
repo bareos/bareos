@@ -32,7 +32,6 @@
 #define BAREOS_CONSOLE_CONSOLE_CONF_H_ 1
 
 class ConfigurationParser;
-extern ConfigurationParser *my_config;             /* Our Global config */
 
 namespace console {
 

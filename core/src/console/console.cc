@@ -35,6 +35,7 @@
 #include "console/auth_pam.h"
 #endif
 #include "console/console_output.h"
+#include "console/connect_to_director.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
@@ -51,8 +52,6 @@
 #endif
 
 using namespace console;
-
-ConfigurationParser *my_config = nullptr;
 
 static void TerminateConsole(int sig);
 static int CheckResources();
@@ -857,60 +856,6 @@ try_again:
    return 1;
 }
 
-namespace console {
-BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
-{
-  BareosSocketTCP *UA_sock = New(BareosSocketTCP);
-  if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
-                        director_resource->DIRport, false)) {
-    delete UA_sock;
-    TerminateConsole(0);
-    return nullptr;
-  }
-  jcr.dir_bsock = UA_sock;
-
-  const char *name;
-  s_password *password = NULL;
-
-  TlsResource *local_tls_resource;
-  if (console_resource) {
-    name = console_resource->name();
-    ASSERT(console_resource->password.encoding == p_encoding_md5);
-    password          = &console_resource->password;
-    local_tls_resource = console_resource;
-  } else { /* default console */
-    name = "*UserAgent*";
-    ASSERT(director_resource->password.encoding == p_encoding_md5);
-    password          = &director_resource->password;
-    local_tls_resource = director_resource;
-  }
-
-  if (local_tls_resource->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
-                                                                              qualified_resource_name)) {
-      ConsoleOutput("Could not generate qualified resource name\n");
-      TerminateConsole(0);
-      return nullptr;
-    }
-
-    if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
-                                 qualified_resource_name.c_str(), password->value, &jcr)) {
-      ConsoleOutput(errmsg);
-      TerminateConsole(0);
-      return nullptr;
-    }
-  } /* IsTlsConfigured */
-
-  if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
-    ConsoleOutput(errmsg);
-    TerminateConsole(0);
-    return nullptr;
-  }
-  return UA_sock;
-}
-
-} /* namespace console */
 /*
  * Main Bareos Console -- User Interface Program
  */
@@ -1086,7 +1031,10 @@ int main(int argc, char *argv[])
    }
 
    UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
-   if (!UA_sock) { return 1; }
+   if (!UA_sock) {
+     TerminateConsole(0);
+     return 1;
+   }
 
    UA_sock->OutputCipherMessageString(ConsoleOutput);
 

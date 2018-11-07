@@ -510,3 +510,33 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   EXPECT_FALSE(future.get());
 }
 #endif
+
+#include "console/console_conf.h"
+#include "console/console_globals.h"
+
+TEST(bsock, create_console)
+{
+   const char* configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/bconsole.conf";
+   console::my_config = console::InitConsConfig(configfile, M_ERROR_TERM);
+
+   EXPECT_NE(console::my_config,nullptr);
+   if (!console::my_config) {
+     return;
+   }
+
+   bool ok = console::my_config->ParseConfig();
+   EXPECT_TRUE(ok);
+
+   console::director_resource = reinterpret_cast<console::DirectorResource*>
+                                    (console::my_config->GetNextRes(console::R_DIRECTOR, NULL));
+   console::console_resource = reinterpret_cast<console::ConsoleResource*>
+                                    (console::my_config->GetNextRes(console::R_CONSOLE, NULL));
+
+   JobControlRecord jcr;
+   char errmsg[128];
+
+//   BareosSocket *UA_sock = console::ConnectToDirector(jcr, 0, errmsg, 128);
+//   EXPECT_NE(UA_sock,nullptr);
+
+//   delete UA_sock;
+}
