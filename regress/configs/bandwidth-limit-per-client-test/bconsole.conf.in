@@ -1,0 +1,8 @@
+Director {
+  Name = bareos-dir
+  DIRport = @dir_port@
+  address = localhost
+  Password = "pNvX1WiXnwv2C/F7E52LGvw6rKjbbPvu2kyuPa9pVaL3"
+  TLS PSK Enable = False
+}
+

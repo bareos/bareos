@@ -13,6 +13,7 @@ rm -f bin/bareos-dir.conf
 /bin/cp -f ${rconfigs}/${TestName}/bareos-dir.conf ${configs}/bareos-dir.conf
 /bin/cp -f ${rconfigs}/${TestName}/bareos-sd.conf ${configs}/bareos-sd.conf
 /bin/cp -f ${rconfigs}/${TestName}/bareos-fd.conf ${configs}/bareos-fd.conf
+/bin/cp -f ${rconfigs}/${TestName}/bconsole.conf ${configs}/bconsole.conf
 
 #
 # create test data
