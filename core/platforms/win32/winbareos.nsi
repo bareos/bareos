@@ -987,7 +987,7 @@ check_for_vc_redist:
                                  Please install vcredist_x86.exe from $\r$\n\
                                  https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
                                  and click OK when done." /SD IDOK
-      ${EndIf}   								 
+      ${EndIf}
    ${EndIf}
    ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
    ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
