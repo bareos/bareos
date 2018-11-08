@@ -60,9 +60,6 @@ BareosSocketTCP::BareosSocketTCP() : BareosSocket()
 
 BareosSocketTCP::~BareosSocketTCP()
 {
-   if(test_variable_) {
-     *test_variable_ = 12345;
-   }
    destroy();
 }
 

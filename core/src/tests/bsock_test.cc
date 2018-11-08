@@ -369,22 +369,34 @@ TEST(bsock, auth_works_with_tls_cert)
   EXPECT_TRUE(future.get());
 }
 
+class BareosSocketTCPMock : public BareosSocketTCP
+{
+public:
+  BareosSocketTCPMock(std::string &t)
+    : test_variable_(t) {}
+
+  virtual ~BareosSocketTCPMock() {
+    test_variable_ = "Destructor Called";
+  }
+  std::string &test_variable_;
+};
+
 TEST(bsock, create_bareos_socket_unique_ptr)
 {
-  uint32_t test_variable = 0;
+  std::string test_variable;
   {
-    BareosSocketUniquePtr p;
+    std::unique_ptr<BareosSocketTCPMock,std::function<void(BareosSocket*)>> p;
     {
-      BareosSocketUniquePtr p1 = MakeNewBareosSocketUniquePtr();
-      p1->test_variable_ = &test_variable;
+      std::unique_ptr<BareosSocketTCPMock,std::function<void(BareosSocket*)>>
+                            p1(New(BareosSocketTCPMock(test_variable)), [](BareosSocket *p) {delete p;});
       EXPECT_NE(p1.get(), nullptr);
       p = std::move(p1);
       EXPECT_EQ(p1.get(), nullptr);
-      EXPECT_EQ(test_variable, 0);
+      EXPECT_TRUE(test_variable.empty());
     }
     EXPECT_NE(p.get(), nullptr);
   }
-  EXPECT_EQ(test_variable, 12345);
+  EXPECT_STREQ(test_variable.c_str(), "Destructor Called");
 }
 
 #if 0
@@ -454,19 +466,6 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
 }
 #endif
 
-#include "console/console_conf.h"
-#include "console/console_globals.h"
-#include "console/connect_to_director.h"
-#include "dird/dird_globals.h"
-#include "dird/socket_server.h"
-
-namespace directordaemon {
- bool DoReloadConfig()
- {
-   return false;
- }
-}
-
 TEST(BNet, FormatAndSendResponseMessage)
 {
   std::unique_ptr<TestSockets> test_sockets(create_connected_server_and_client_bareos_socket());
@@ -488,49 +487,3 @@ TEST(BNet, FormatAndSendResponseMessage)
   EXPECT_STREQ(args.JoinReadable().c_str(), test.c_str());
 }
 
-TEST(bsock, console_director_connection_test)
-{
-   const char* console_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/";
-   console::my_config = console::InitConsConfig(console_configfile, M_INFO);
-
-   EXPECT_NE(console::my_config,nullptr);
-   if (!console::my_config) {
-     return;
-   }
-
-   bool ok = console::my_config->ParseConfig();
-   EXPECT_TRUE(ok) << "Could not parse console config";
-
-   console::director_resource = reinterpret_cast<console::DirectorResource*>
-                                    (console::my_config->GetNextRes(console::R_DIRECTOR, NULL));
-   console::console_resource = reinterpret_cast<console::ConsoleResource*>
-                                    (console::my_config->GetNextRes(console::R_CONSOLE, NULL));
-
-
-   const char* director_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/"
-                                     "regress/bin/";
-
-   directordaemon::my_config = directordaemon::InitDirConfig(director_configfile, M_INFO);
-
-   EXPECT_NE(directordaemon::my_config,nullptr);
-   if (!directordaemon::my_config) {
-     return;
-   }
-
-   ok = directordaemon::my_config->ParseConfig();
-   EXPECT_TRUE(ok) << "Could not parse director config";
-
-   Dmsg0(200, "Start UA server\n");
-   directordaemon::me = (directordaemon::DirectorResource *)directordaemon::
-                              my_config->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
-   directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
-
-   JobControlRecord jcr;
-   BStringList args;
-   uint32_t response_id;
-   BareosSocket *UA_sock = console::ConnectToDirector(jcr, 0, args, response_id);
-   EXPECT_NE(UA_sock,nullptr);
-   EXPECT_EQ(response_id, kMessageIdOk);
-
-   delete UA_sock;
-}

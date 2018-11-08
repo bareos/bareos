@@ -95,3 +95,19 @@ set_property(TEST test_bsock
    )
 
 add_dependencies(check test_bsock)
+
+add_executable(test_connection_setup
+    bsock_test_connection_setup.cc
+)
+
+target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
+
+add_test(NAME test_connection_setup COMMAND test_connection_setup)
+
+set_property(TEST test_connection_setup
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+
+add_dependencies(check test_connection_setup)
+

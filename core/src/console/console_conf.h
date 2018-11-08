@@ -31,6 +31,9 @@
 #ifndef BAREOS_CONSOLE_CONSOLE_CONF_H_
 #define BAREOS_CONSOLE_CONSOLE_CONF_H_ 1
 
+#include <string>
+#include "lib/parse_conf.h"
+
 class ConfigurationParser;
 
 namespace console {

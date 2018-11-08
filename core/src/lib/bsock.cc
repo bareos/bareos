@@ -55,7 +55,6 @@ BareosSocket::BareosSocket()
     , sleep_time_after_authentication_error(5)
     , client_addr{0}
     , peer_addr{0}
-    , test_variable_(0)
 
     /* protected: */
     , jcr_(nullptr)
@@ -100,7 +99,6 @@ BareosSocket::BareosSocket(const BareosSocket &other)
   sleep_time_after_authentication_error = other.sleep_time_after_authentication_error;
   client_addr                           = other.client_addr;
   peer_addr                             = other.peer_addr;
-  test_variable_                        = other.test_variable_;
   tls_conn                              = other.tls_conn;
 
   /* protected: */

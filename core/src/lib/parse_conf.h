@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "include/bc_types.h"
 #include "lib/parse_conf_callbacks.h"
+#include "lib/s_password.h"
 
 #include <functional>
 
@@ -41,12 +42,6 @@ enum parse_state
 {
    p_none,
    p_resource
-};
-
-enum password_encoding
-{
-   p_encoding_clear,
-   p_encoding_md5
 };
 
 /*
@@ -72,11 +67,6 @@ struct s_mtypes {
 struct s_kw {
    const char *name;
    uint32_t token;
-};
-
-struct s_password {
-   enum password_encoding encoding;
-   char *value;
 };
 
 /**

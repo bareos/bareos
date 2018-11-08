@@ -40,7 +40,9 @@
 
 #include <include/bareos.h>
 #include <mutex>
+#include <functional>
 #include "lib/tls.h"
+#include "lib/s_password.h"
 
 struct btimer_t; /* forward reference */
 class BareosSocket;
@@ -77,7 +79,6 @@ class BareosSocket : public SmartAlloc {
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
-  uint32_t *test_variable_;           /* used for unit testing */
 
  protected:
   JobControlRecord *jcr_; /* JobControlRecord or NULL for error msgs */
