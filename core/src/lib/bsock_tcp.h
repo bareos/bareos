@@ -70,6 +70,7 @@ public:
    int SetNonblocking();
    int SetBlocking();
    void RestoreBlocking(int flags);
+   bool ConnectionReceivedTerminateSignal() override;
    int WaitData(int sec, int usec = 0);
    int WaitDataIntr(int sec, int usec = 0);
 };

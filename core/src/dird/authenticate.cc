@@ -33,11 +33,15 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/authenticate.h"
+#if defined(HAVE_PAM)
+#include "dird/auth_pam.h"
+#endif
 #include "dird/fd_cmds.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/dird_globals.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/bstringlist.h"
 
 namespace directordaemon {
 
@@ -55,14 +59,8 @@ static char OKhello[]      = "3000 OK Hello\n";
 static char FDOKhello[]    = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
 
-/*
- * Sent to User Agent
- */
-static char Dir_sorry[] = "1999 You are not authorized.\n";
+static char dir_not_authorized_message[] = "1999 You are not authorized.\n";
 
-/**
- * Authenticate with a remote Storage daemon
- */
 bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, StorageResource *store)
 {
   if (store->IsTlsConfigured()) {
@@ -123,9 +121,6 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, Stor
   return true;
 }
 
-/**
- * Authenticate with a remote File daemon
- */
 bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
 {
   if (jcr->authenticated) { return true; }
@@ -195,9 +190,6 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   return true;
 }
 
-/**
- * Authenticate File daemon connection
- */
 bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
 {
   ClientResource *client;
@@ -216,82 +208,13 @@ bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
    * Authorization Completed
    */
   if (!auth_success) {
-    fd->fsend("%s", _(Dir_sorry));
+    fd->fsend("%s", _(dir_not_authorized_message));
     Emsg4(M_ERROR, 0, _("Unable to authenticate client \"%s\" at %s:%s:%d.\n"), client_name, fd->who(),
           fd->host(), fd->port());
     sleep(5);
     return false;
   }
   fd->fsend("1000 OK: %s Version: %s (%s)\n", my_name, VERSION, BDATE);
-
-  return true;
-}
-
-/**
- * Count the number of established console connections.
- */
-static inline bool count_console_connections()
-{
-  JobControlRecord *jcr;
-  unsigned int cnt = 0;
-
-  foreach_jcr(jcr)
-  {
-    if (jcr->is_JobType(JT_CONSOLE)) { cnt++; }
-  }
-  endeach_jcr(jcr);
-
-  return (cnt >= me->MaxConsoleConnections) ? false : true;
-}
-
-/**
- * Authenticate user agent.
- */
-bool AuthenticateUserAgent(UaContext *uac)
-{
-  char name[MAX_NAME_LENGTH];
-  ConsoleResource *cons = NULL;
-  BareosSocket *ua      = uac->UA_sock;
-  bool auth_success     = false;
-
-  if (sscanf(ua->msg, "Hello %127s calling\n", name) != 1) {
-    ua->msg[100] = 0; /* Terminate string */
-    Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"), ua->who(), ua->host(), ua->port(),
-          ua->msg);
-    return false;
-  }
-  name[sizeof(name) - 1] = 0; /* Terminate name */
-
-  if (!count_console_connections()) {
-    ua->fsend("%s", _(Dir_sorry));
-    Emsg0(M_ERROR, 0,
-          _("Number of console connections exhausted, please increase MaximumConsoleConnections\n"));
-    return false;
-  }
-
-  if (bstrcmp(name, "*UserAgent*")) { /* default console */
-    auth_success = ua->AuthenticateInboundConnection(NULL, "Console", "*UserAgent*", me->password, me);
-  } else {
-    UnbashSpaces(name);
-    cons = (ConsoleResource *)my_config->GetResWithName(R_CONSOLE, name);
-    if (cons) {
-      auth_success = ua->AuthenticateInboundConnection(NULL, "Console", name, cons->password, cons);
-
-      if (auth_success) { uac->cons = cons; /* save console resource pointer */ }
-    }
-  }
-
-  /*
-   * Authorization Completed
-   */
-  if (!auth_success) {
-    ua->fsend("%s", _(Dir_sorry));
-    Emsg4(M_ERROR, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"), name, ua->who(), ua->host(),
-          ua->port());
-    sleep(5);
-    return false;
-  }
-  ua->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
 
   return true;
 }

@@ -80,7 +80,6 @@ class DirectorResource : public TlsResource {
       uint32_t DIRport;                  /**< UA server port */
       char *address;                     /**< UA server address */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      bool UsePamAuthentication_;        /**< Use Pam authentication instead of password */
       DirectorResource() : TlsResource() {}
 };
 

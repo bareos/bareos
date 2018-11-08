@@ -60,6 +60,7 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
    BareosSocket *bs = (BareosSocket *)arg;
 
    if (!TryTlsHandshakeAsAServer(bs, config)) {
+     bs->signal(BNET_TERMINATE);
      bs->close();
      delete bs;
      return nullptr;

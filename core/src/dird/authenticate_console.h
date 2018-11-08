@@ -19,15 +19,14 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_AUTH_PAM_H_
-#define BAREOS_DIRD_AUTH_PAM_H_
+#ifndef BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_
+#define BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_
 
-#include <string>
+namespace directordaemon {
 
-class BareosSocket;
-bool PamAuthenticateUser(BareosSocket *UA_sock,
-                              const std::string &username,
-                              const std::string &passwd,
-                              std::string& authenticated_username);
+class UaContext;
 
-#endif /* BAREOS_DIRD_AUTH_PAM_H_ */
+bool AuthenticateConsole(UaContext *ua);
+
+} /* namespace directordaemon */
+#endif /* BAREOS_DIRD_AUTHENTICATE_CONSOLE_H_ */

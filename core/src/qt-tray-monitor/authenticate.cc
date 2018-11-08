@@ -34,6 +34,7 @@
 #include "lib/tls_conf.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/bstringlist.h"
 
 const int debuglevel = 50;
 
@@ -87,9 +88,10 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord *jcr, Dire
      }
    }
 
-   char errmsg[1024];
-   int32_t errmsg_len = sizeof(errmsg);
-   if (!dir->AuthenticateWithDirector(jcr, monitor->name(),(s_password &) monitor->password, errmsg, errmsg_len, dir_res)) {
+   uint32_t response_id;
+   BStringList response_args;
+   if (!dir->ConsoleAuthenticateWithDirector(jcr, monitor->name(), monitor->password,
+                                             dir_res, response_args, response_id)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
                               "Most likely the passwords do not agree.\n"
                               "Please see %s for help.\n"), MANUAL_AUTH_URL);

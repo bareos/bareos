@@ -144,6 +144,7 @@ static bool use_cmd(UaContext *ua, const char *cmd);
 static bool var_cmd(UaContext *ua, const char *cmd);
 static bool VersionCmd(UaContext *ua, const char *cmd);
 static bool wait_cmd(UaContext *ua, const char *cmd);
+static bool WhoAmICmd(UaContext *ua, const char *cmd);
 
 static void DoJobDelete(UaContext *ua, JobId_t JobId);
 static bool DeleteJobIdRange(UaContext *ua, char *tok);
@@ -444,7 +445,9 @@ static struct ua_cmdstruct commands[] = {
    { NT_("version"), VersionCmd, _("Print Director version"),
      NT_(""), true, false },
    { NT_("wait"), wait_cmd, _("Wait until no jobs are running"),
-     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false }
+     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false },
+   { NT_("whoami"), WhoAmICmd, _("Print the user name associated with this console"),
+     NT_(""), false, false }
 };
 
 #define comsize ((int)(sizeof(commands)/sizeof(struct ua_cmdstruct)))
@@ -479,9 +482,10 @@ bool Do_a_command(UaContext *ua)
    for (i = 0; i < comsize; i++) { /* search for command */
       if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
          /*
-          * Check if command permitted, but "quit" is always OK
+          * Check if command permitted, but "quit" and "whoami" is always OK
           */
          if (!bstrcmp(ua->argk[0], NT_("quit")) &&
+             !bstrcmp(ua->argk[0], NT_("whoami")) &&
              !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
             break;
          }
@@ -2670,6 +2674,14 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
    ua->send->ObjectEnd("Job");
 
    return true;
+}
+
+static bool WhoAmICmd(UaContext *ua, const char *cmd)
+{
+  std::string message;
+  message = ua->cons ? ua->cons->name(): "root";
+  message += '\n';
+  return ua->UA_sock->fsend(message.c_str());
 }
 
 static bool help_cmd(UaContext *ua, const char *cmd)

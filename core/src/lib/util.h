@@ -21,6 +21,8 @@
 #ifndef BAREOS_LIB_UTIL_H_
 #define BAREOS_LIB_UTIL_H_
 
+#include "lib/ascii_control_characters.h"
+
 void EscapeString(PoolMem &snew, char *old, int len);
 bool IsBufZero(char *buf, int len);
 void lcase(char *str);
@@ -28,6 +30,7 @@ void BashSpaces(char *str);
 void BashSpaces(PoolMem &pm);
 void UnbashSpaces(char *str);
 void UnbashSpaces(PoolMem &pm);
+void SwapSeparatorsInString(std::string &str, char separator = AsciiControlCharacters::RecordSeparator(), char new_separator = ' ');
 const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
 char *encode_time(utime_t time, char *buf);
 bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);

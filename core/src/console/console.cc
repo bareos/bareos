@@ -31,13 +31,15 @@
 #include "include/bareos.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
-#if defined(HAVE_PAM)
 #include "console/auth_pam.h"
-#endif
 #include "console/console_output.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
+#include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include <stdio.h>
+#include <fstream>
+#include <string>
 
 #define ConInit(x)
 #define ConTerm()
@@ -75,6 +77,15 @@ static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
 static bool file_selection = false;
 
+#if defined(HAVE_PAM)
+static bool force_send_pam_credentials_unencrypted = false;
+static bool use_pam_credentials_file = false;
+static std::string pam_credentials_filename;
+static const std::string program_arguments {"D:lc:d:np:ostu:x:?"};
+#else
+static const std::string program_arguments {"D:lc:d:nstu:x:?"};
+#endif
+
 /* Command prototypes */
 static int Versioncmd(FILE *input, BareosSocket *UA_sock);
 static int InputCmd(FILE *input, BareosSocket *UA_sock);
@@ -103,6 +114,10 @@ PROG_COPYRIGHT
 "        -D <dir>    select a Director\n"
 "        -l          list Directors defined\n"
 "        -c <path>   specify configuration file or directory\n"
+#if defined(HAVE_PAM)
+"        -p <path>   specify pam credentials file\n"
+"        -o          send pam credentials over unencrypted connection\n"
+#endif
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
 "        -s          no signals\n"
@@ -857,8 +872,55 @@ try_again:
    return 1;
 }
 
+#if defined(HAVE_PAM)
+static BStringList ReadPamCredentialsFile(const std::string &pam_credentials_filename)
+{
+   std::ifstream s(pam_credentials_filename);
+   std::string user, pw;
+   if (!s.is_open()) {
+      Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
+      return BStringList();
+   } else {
+     std::getline(s, user);
+     std::getline(s, pw);
+     if (user.empty() || pw.empty()) {
+       Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
+       return BStringList();
+     }
+   }
+   BStringList args;
+   args << user << pw;
+   return args;
+}
+
+static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::string &pam_credentials_filename)
+{
+   if (!UA_sock->tls_conn && !force_send_pam_credentials_unencrypted) {
+     ConsoleOutput("Canceled because password would be sent unencrypted!\n");
+     return false;
+   }
+   if (use_pam_credentials_file) {
+     BStringList args(ReadPamCredentialsFile(pam_credentials_filename));
+     if(args.empty()) {
+       return false;
+     }
+     UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, args);
+   } else {
+     UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive, std::string());
+     if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+       TerminateConsole(0);
+       return false;
+     }
+   }
+   return true;
+}
+#endif /* HAVE_PAM */
+
 namespace console {
-BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char *errmsg, int errmsg_len)
+static BareosSocket *ConnectToDirector(JobControlRecord &jcr,
+                                       utime_t heart_beat,
+                                       BStringList &response_args,
+                                       uint32_t &response_id)
 {
   BareosSocketTCP *UA_sock = New(BareosSocketTCP);
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
@@ -889,21 +951,19 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
                                                                               qualified_resource_name)) {
-      ConsoleOutput("Could not generate qualified resource name\n");
       TerminateConsole(0);
       return nullptr;
     }
 
     if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
-                                 qualified_resource_name.c_str(), password->value, &jcr)) {
-      ConsoleOutput(errmsg);
+                               qualified_resource_name.c_str(), password->value, &jcr)) {
       TerminateConsole(0);
       return nullptr;
     }
   } /* IsTlsConfigured */
 
-  if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, director_resource)) {
-    ConsoleOutput(errmsg);
+  if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, director_resource,
+                                                 response_args, response_id)) {
     TerminateConsole(0);
     return nullptr;
   }
@@ -917,9 +977,7 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr, utime_t heart_beat, char 
 int main(int argc, char *argv[])
 {
    int ch;
-   int errmsg_len;
    char *director = NULL;
-   char errmsg[1024];
    bool list_directors = false;
    bool no_signals = false;
    bool test_config = false;
@@ -929,7 +987,6 @@ int main(int argc, char *argv[])
    PoolMem history_file;
    utime_t heart_beat;
 
-   errmsg_len = sizeof(errmsg);
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
@@ -941,7 +998,7 @@ int main(int argc, char *argv[])
    working_directory = "/tmp";
    args = GetPoolMemory(PM_FNAME);
 
-   while ((ch = getopt(argc, argv, "D:lc:d:nstu:x:?")) != -1) {
+   while ((ch = getopt(argc, argv, program_arguments.c_str())) != -1) {
       switch (ch) {
       case 'D':                    /* Director */
          if (director) {
@@ -972,6 +1029,27 @@ int main(int argc, char *argv[])
             }
          }
          break;
+
+#if defined(HAVE_PAM)
+      case 'p':
+         pam_credentials_filename = optarg;
+         if (pam_credentials_filename.empty()) {
+           Emsg0(M_ERROR_TERM, 0, _("No filename given for -p.\n"));
+           usage();
+         } else {
+            if (FILE *f = fopen(pam_credentials_filename.c_str(), "r+")) {
+              use_pam_credentials_file = true;
+              fclose(f);
+            } else { /* file cannot be opened, i.e. does not exist */
+              Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
+            }
+         }
+         break;
+
+      case 'o':
+         force_send_pam_credentials_unencrypted = true;
+         break;
+#endif /* HAVE_PAM */
 
       case 's':                    /* turn off signals */
          no_signals = true;
@@ -1085,23 +1163,50 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   UA_sock = ConnectToDirector(jcr, heart_beat, errmsg, errmsg_len);
+   uint32_t response_id;
+   BStringList response_args;
+
+   UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
    if (!UA_sock) { return 1; }
 
    UA_sock->OutputCipherMessageString(ConsoleOutput);
 
-   ConsoleOutput(errmsg);
-
+   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)
-   if (console_resource) { /* not for root console */
-      if (director_resource && director_resource->UsePamAuthentication_) {
-         if (!ConsolePamAuthenticate(stdin, UA_sock)) {
-           TerminateConsole(0);
-           return 1;
+     if (!ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename)) {
+            TerminateConsole(0);
+            return 1;
          }
+     response_args.clear();
+     if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+       TerminateConsole(0);
+       return 1;
       }
-   }
+#else
+     Dmsg0(200, "This console does not have the pam feature\n");
+     TerminateConsole(0);
+     return 1;
 #endif /* HAVE_PAM */
+   } /* kMessageIdPamRequired */
+
+   if (response_id == kMessageIdOk) {
+     ConsoleOutput(response_args.JoinReadable().c_str());
+   }
+
+   response_args.clear();
+   if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+     Dmsg0(200, "Could not receive the response message\n");
+     TerminateConsole(0);
+     return 1;
+   }
+
+   if (response_id != kMessageIdInfoMessage) {
+     Dmsg0(200, "Could not receive the response message\n");
+     TerminateConsole(0);
+     return 1;
+   }
+   response_args.PopFront();
+   ConsoleOutput(response_args.JoinReadable().c_str());
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 

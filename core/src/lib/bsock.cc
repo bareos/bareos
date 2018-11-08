@@ -32,6 +32,7 @@
 #include "lib/cram_md5.h"
 #include "lib/tls.h"
 #include "lib/util.h"
+#include "lib/bstringlist.h"
 
 static constexpr int debuglevel = 50;
 
@@ -322,70 +323,39 @@ void BareosSocket::SetKillable(bool killable)
 /** Commands sent to Director */
 static char hello[] = "Hello %s calling\n";
 
-/** Response from Director */
-static char OKhello[] = "1000 OK:";
 
-/**
- * Authenticate with Director
- */
-bool BareosSocket::AuthenticateWithDirector(JobControlRecord *jcr,
-                                            const char *identity,
-                                            s_password &password,
-                                            char *response,
-                                            int response_len,
-                                            TlsResource *tls_resource)
+bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
+                                                   const char *identity,
+                                                   s_password &password,
+                                                   TlsResource *tls_resource,
+                                                   BStringList &response_args,
+                                                   uint32_t &response_id)
 {
   char bashed_name[MAX_NAME_LENGTH];
   BareosSocket *dir = this; /* for readability */
 
-  response[0] = 0;
-
-  /*
-   * Send my name to the Director then do authentication
-   */
   bstrncpy(bashed_name, identity, sizeof(bashed_name));
   BashSpaces(bashed_name);
 
-  /*
-   * Timeout Hello after 5 mins
-   */
-  dir->StartTimer(60 * 5);
+  dir->StartTimer(60 * 5); /* 5 minutes */
   dir->fsend(hello, bashed_name);
 
-  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) { goto bail_out; }
+  if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) {
+    Dmsg0(100, "Authenticate outbound connection failed\n");
+    dir->StopTimer();
+    return false;
+  }
 
   Dmsg1(6, ">dird: %s", dir->msg);
-  if (dir->recv() <= 0) {
-    dir->StopTimer();
-    Bsnprintf(response, response_len,
-              _("Bad response to Hello command: ERR=%s\n"
-                "The Director at \"%s:%d\" is probably not running.\n"),
-              dir->bstrerror(), dir->host(), dir->port());
-    return false;
+
+  uint32_t message_id;
+  BStringList args;
+  if (dir->ReceiveAndEvaluateResponseMessage(message_id, args)) {
+    response_id = message_id;
+    response_args = args;
+    return true;
   }
-
-  dir->StopTimer();
-  Dmsg1(10, "<dird: %s", dir->msg);
-  if (!bstrncmp(dir->msg, OKhello, sizeof(OKhello) - 1)) {
-    Bsnprintf(response, response_len, _("Director at \"%s:%d\" rejected Hello command\n"), dir->host(),
-              dir->port());
-    return false;
-  } else {
-    Bsnprintf(response, response_len, "%s", dir->msg);
-  }
-
-  return true;
-
-bail_out:
-  dir->StopTimer();
-  Bsnprintf(response, response_len,
-            _("Authorization problem with Director at \"%s:%d\"\n"
-              "Most likely the passwords do not agree.\n"
-              "If you are using TLS, there may have been a certificate "
-              "validation error during the TLS handshake.\n"
-              "Please see %s for help.\n"),
-            dir->host(), dir->port(), MANUAL_AUTH_URL);
-
+  Dmsg0(100, "Wrong Message Protocol ID\n");
   return false;
 }
 
@@ -415,6 +385,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
     CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy);
 
     btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
+
+    if (ConnectionReceivedTerminateSignal()) { return false; }
 
     auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
     if (!auth_success) {

@@ -105,7 +105,6 @@ static ResourceItem dir_items[] = {
    { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_dir.UsePamAuthentication_), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
    TLS_PSK_CONFIG(res_dir),

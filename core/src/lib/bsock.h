@@ -45,6 +45,7 @@
 struct btimer_t; /* forward reference */
 class BareosSocket;
 class Tls;
+class BStringList;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
@@ -76,7 +77,7 @@ class BareosSocket : public SmartAlloc {
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
-  uint32_t *test_variable_;
+  uint32_t *test_variable_;           /* used for unit testing */
 
  protected:
   JobControlRecord *jcr_; /* JobControlRecord or NULL for error msgs */
@@ -147,6 +148,7 @@ class BareosSocket : public SmartAlloc {
   virtual int SetNonblocking()                            = 0;
   virtual int SetBlocking()                               = 0;
   virtual void RestoreBlocking(int flags)                 = 0;
+  virtual bool ConnectionReceivedTerminateSignal()        = 0;
   /*
    * Returns: 1 if data available, 0 if timeout, -1 if error
    */
@@ -158,12 +160,12 @@ class BareosSocket : public SmartAlloc {
   bool signal(int signal);
   const char *bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool AuthenticateWithDirector(JobControlRecord *jcr,
-                                const char *name,
-                                s_password &password,
-                                char *response,
-                                int response_len,
-                                TlsResource *tls_resource);
+  bool ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
+                                       const char *name,
+                                       s_password &password,
+                                       TlsResource *tls_resource,
+                                       BStringList &response_args,
+                                       uint32_t &response_id);
   bool ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                         const char *identity,
                                         const char *password,
@@ -185,6 +187,9 @@ class BareosSocket : public SmartAlloc {
   bool EvaluateCleartextBareosHello(bool &cleartext) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
   void GetCipherMessageString(std::string &str);
+  bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);
+  bool FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments);
+  bool FormatAndSendResponseMessage(uint32_t id, const std::string &str);
 
   bool AuthenticateOutboundConnection(JobControlRecord *jcr,
                                       const char *what,

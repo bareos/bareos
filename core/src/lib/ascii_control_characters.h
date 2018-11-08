@@ -1,4 +1,4 @@
-/*
+/**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2018-2018 Bareos GmbH & Co. KG
@@ -19,15 +19,19 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_AUTH_PAM_H_
-#define BAREOS_DIRD_AUTH_PAM_H_
+#ifndef BAREOS_LIB_ASCII_CONTROL_CHARACTERS_H_
+#define BAREOS_LIB_ASCII_CONTROL_CHARACTERS_H_ 1
 
-#include <string>
+class AsciiControlCharacters {
+ public:
+  static char UnitSeparator() { return unit_separator_; }     /* smallest data item separator           */
+  static char RecordSeparator() { return record_separator_; } /* data record separator within a group   */
+  static char GroupSeparator() { return group_separator_; }   /* group separator to separate datasets   */
 
-class BareosSocket;
-bool PamAuthenticateUser(BareosSocket *UA_sock,
-                              const std::string &username,
-                              const std::string &passwd,
-                              std::string& authenticated_username);
+ private:
+  static constexpr char unit_separator_   = 0x1f;
+  static constexpr char record_separator_ = 0x1e;
+  static constexpr char group_separator_  = 0x1d;
+};
 
-#endif /* BAREOS_DIRD_AUTH_PAM_H_ */
+#endif /* BAREOS_LIB_ASCII_CONTROL_CHARACTERS_H_ */

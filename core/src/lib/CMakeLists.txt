@@ -21,7 +21,7 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    ../include/bc_types.h ../include/config.h
    ../include/jcr.h ../include/version.h
    address_conf.h alist.h attr.h base64.h berrno.h
-   bits.h bpipe.h breg.h bregex.h bsock.h
+   bits.h bpipe.h breg.h bregex.h bstringlist.h bsock.h
    bsock_tcp.h btime.h btimers.h cbuf.h
    crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
    guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
@@ -45,8 +45,8 @@ include_directories(
 
 set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bpipe.cc
-   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc
-   bsys.cc btime.cc btimers.cc  cbuf.cc try_tls_handshake_as_a_server.cc compression.cc
+   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc bstringlist.cc
+   bsys.cc btime.cc btimers.cc  cbuf.cc
    connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc crypto_gnutls.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
@@ -56,8 +56,8 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    sellist.cc serial.cc sha1.cc signal.cc  smartall.cc tls.cc
    tls_gnutls.cc tls_conf_base.cc tls_conf_psk.cc tls_conf_cert.cc tls_openssl.cc
-   tls_openssl_crl.cc tls_openssl_private.cc tree.cc util.cc var.cc watchdog.cc
-   workq.cc)
+   tls_openssl_crl.cc tls_openssl_private.cc tree.cc  try_tls_handshake_as_a_server.cc compression.cc
+   util.cc var.cc watchdog.cc workq.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_SRCS

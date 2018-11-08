@@ -37,6 +37,8 @@
 #include "jcr.h"
 #include "lib/bnet.h"
 #include "lib/bsys.h"
+#include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
 
 #include <netdb.h>
 #include "lib/tls.h"
@@ -594,4 +596,85 @@ const char *BnetSigToAscii(BareosSocket * bs)
       sprintf(buf, _("Unknown sig %d"), (int)bs->message_length);
       return buf;
    }
+}
+
+bool ReadoutCommandIdFromMessage(const BStringList& list_of_arguments, uint32_t &id_out)
+{
+  if (list_of_arguments.size() < 1) {
+    return false;
+  }
+
+  uint32_t id = kMessageIdUnknown;
+
+  try { /* "1000 OK: <director name> ..." */
+    const std::string &first_argument = list_of_arguments.front();
+    id = std::stoul(first_argument);
+  } catch (const std::exception &e) {
+    id_out = kMessageIdProtokollError;
+    return false;
+  }
+
+  id_out = id;
+  return true;
+}
+
+bool EvaluateResponseMessageId(const std::string &message, uint32_t &id_out, BStringList &args_out)
+{
+  BStringList list_of_arguments(message, AsciiControlCharacters::RecordSeparator());
+  uint32_t id = kMessageIdUnknown;
+
+  bool ok = ReadoutCommandIdFromMessage(list_of_arguments, id);
+
+  if (ok) {
+    id_out = id;
+  }
+  args_out = list_of_arguments;
+
+  return ok;
+}
+
+bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out)
+{
+  StartTimer(30); //30 seconds
+  int ret = recv();
+  StopTimer();
+
+  if (ret <= 0) {
+    Dmsg1(100, "Error while receiving response message: %s", msg);
+    return false;
+  }
+
+  std::string message(msg);
+
+  if (message.empty()) {
+    Dmsg0(100, "Received message is empty\n");
+    return false;
+  }
+
+  return EvaluateResponseMessageId(message, id_out, args_out);
+}
+
+bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments)
+{
+  std::string m = std::to_string(id);
+  m += AsciiControlCharacters::RecordSeparator();
+  m += list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
+
+  StartTimer(30); //30 seconds
+  if (send(m.c_str(), m.size()) <=0 ) {
+    Dmsg1(100, "Could not send response message: %d\n", m.c_str());
+    StopTimer();
+    return false;
+  }
+  StopTimer();
+  return true;
+}
+
+bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const std::string &str)
+{
+  BStringList message;
+  message << str;
+  message << "\n";
+
+  return FormatAndSendResponseMessage(id, message);
 }

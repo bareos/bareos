@@ -19,15 +19,26 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_AUTH_PAM_H_
-#define BAREOS_DIRD_AUTH_PAM_H_
 
-#include <string>
+#ifndef BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_
+#define BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_
 
+#include <memory>
+
+class BareosSocketTCP;
 class BareosSocket;
-bool PamAuthenticateUser(BareosSocket *UA_sock,
-                              const std::string &username,
-                              const std::string &passwd,
-                              std::string& authenticated_username);
 
-#endif /* BAREOS_DIRD_AUTH_PAM_H_ */
+class TestSockets {
+public:
+  std::unique_ptr<BareosSocket> server;
+  std::unique_ptr<BareosSocketTCP> client;
+
+  TestSockets() = default;
+  TestSockets(const TestSockets &) = delete;
+};
+
+int create_accepted_server_socket(int port);
+BareosSocket *create_new_bareos_socket(int fd);
+std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket();
+
+#endif /* BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_ */
