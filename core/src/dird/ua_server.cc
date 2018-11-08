@@ -60,7 +60,7 @@ JobControlRecord *new_control_jcr(const char *base_name, int job_type)
     */
    LockRes(my_config);
    jcr->res.job = (JobResource *)my_config->GetNextRes(R_JOB, NULL);
-   SetJcrDefaults(jcr, jcr->res.job);
+//   SetJcrDefaults(jcr, jcr->res.job);
    UnlockRes(my_config);
 
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */

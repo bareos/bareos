@@ -513,11 +513,20 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
 
 #include "console/console_conf.h"
 #include "console/console_globals.h"
+#include "dird/dird_globals.h"
+#include "dird/socket_server.h"
+
+namespace directordaemon {
+ bool DoReloadConfig()
+ {
+   return false;
+ }
+}
 
 TEST(bsock, create_console)
 {
-   const char* configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/bconsole.conf";
-   console::my_config = console::InitConsConfig(configfile, M_ERROR_TERM);
+   const char* console_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/";
+   console::my_config = console::InitConsConfig(console_configfile, M_INFO);
 
    EXPECT_NE(console::my_config,nullptr);
    if (!console::my_config) {
@@ -525,18 +534,37 @@ TEST(bsock, create_console)
    }
 
    bool ok = console::my_config->ParseConfig();
-   EXPECT_TRUE(ok);
+   EXPECT_TRUE(ok) << "Could not parse console config";
 
    console::director_resource = reinterpret_cast<console::DirectorResource*>
                                     (console::my_config->GetNextRes(console::R_DIRECTOR, NULL));
    console::console_resource = reinterpret_cast<console::ConsoleResource*>
                                     (console::my_config->GetNextRes(console::R_CONSOLE, NULL));
 
+
+   const char* director_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/"
+                                     "regress/bin/";
+
+   directordaemon::my_config = directordaemon::InitDirConfig(director_configfile, M_INFO);
+
+   EXPECT_NE(directordaemon::my_config,nullptr);
+   if (!directordaemon::my_config) {
+     return;
+   }
+
+   ok = directordaemon::my_config->ParseConfig();
+   EXPECT_TRUE(ok) << "Could not parse director config";
+
+   Dmsg0(200, "Start UA server\n");
+   directordaemon::me = (directordaemon::DirectorResource *)directordaemon::
+                              my_config->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
+   directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
+
    JobControlRecord jcr;
    char errmsg[128];
 
-//   BareosSocket *UA_sock = console::ConnectToDirector(jcr, 0, errmsg, 128);
-//   EXPECT_NE(UA_sock,nullptr);
+   BareosSocket *UA_sock = console::ConnectToDirector(jcr, 0, errmsg, 128);
+   EXPECT_NE(UA_sock,nullptr);
 
-//   delete UA_sock;
+   delete UA_sock;
 }
