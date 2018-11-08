@@ -527,6 +527,8 @@ private:
    std::string used_config_path_;                /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
   ParseConfigReadyCb_t ParseConfigReadyCb_;
+  bool parser_first_run_;
+
 
    const char *get_default_configdir();
    bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);

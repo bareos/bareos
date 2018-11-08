@@ -246,11 +246,9 @@ std::string client_cons_password;
 std::string server_cons_name;
 std::string server_cons_password;
 
-int port = BSOCK_TEST_PORT_NUMBER;
-
 TEST(bsock, auth_works)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -267,10 +265,10 @@ TEST(bsock, auth_works)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -279,7 +277,7 @@ TEST(bsock, auth_works)
 
 TEST(bsock, auth_works_with_different_names)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -296,10 +294,10 @@ TEST(bsock, auth_works_with_different_names)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -307,7 +305,7 @@ TEST(bsock, auth_works_with_different_names)
 
 TEST(bsock, auth_fails_with_different_passwords)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -324,10 +322,10 @@ TEST(bsock, auth_fails_with_different_passwords)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 
   server_thread.join();
   EXPECT_FALSE(future.get());
@@ -335,7 +333,7 @@ TEST(bsock, auth_fails_with_different_passwords)
 
 TEST(bsock, auth_works_with_tls_cert)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -353,15 +351,16 @@ TEST(bsock, auth_works_with_tls_cert)
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, cons_dir_config.get());
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password,
+                            HOST, listening_server_port_number, cons_dir_config.get());
   client_thread.join();
 #else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 #endif
 
   server_thread.join();
@@ -455,6 +454,19 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
 }
 #endif
 
+#include "console/console_conf.h"
+#include "console/console_globals.h"
+#include "console/connect_to_director.h"
+#include "dird/dird_globals.h"
+#include "dird/socket_server.h"
+
+namespace directordaemon {
+ bool DoReloadConfig()
+ {
+   return false;
+ }
+}
+
 TEST(BNet, FormatAndSendResponseMessage)
 {
   std::unique_ptr<TestSockets> test_sockets(create_connected_server_and_client_bareos_socket());
@@ -474,4 +486,51 @@ TEST(BNet, FormatAndSendResponseMessage)
 
   std::string test("1000 Test123 \n");
   EXPECT_STREQ(args.JoinReadable().c_str(), test.c_str());
+}
+
+TEST(bsock, console_director_connection_test)
+{
+   const char* console_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/";
+   console::my_config = console::InitConsConfig(console_configfile, M_INFO);
+
+   EXPECT_NE(console::my_config,nullptr);
+   if (!console::my_config) {
+     return;
+   }
+
+   bool ok = console::my_config->ParseConfig();
+   EXPECT_TRUE(ok) << "Could not parse console config";
+
+   console::director_resource = reinterpret_cast<console::DirectorResource*>
+                                    (console::my_config->GetNextRes(console::R_DIRECTOR, NULL));
+   console::console_resource = reinterpret_cast<console::ConsoleResource*>
+                                    (console::my_config->GetNextRes(console::R_CONSOLE, NULL));
+
+
+   const char* director_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/"
+                                     "regress/bin/";
+
+   directordaemon::my_config = directordaemon::InitDirConfig(director_configfile, M_INFO);
+
+   EXPECT_NE(directordaemon::my_config,nullptr);
+   if (!directordaemon::my_config) {
+     return;
+   }
+
+   ok = directordaemon::my_config->ParseConfig();
+   EXPECT_TRUE(ok) << "Could not parse director config";
+
+   Dmsg0(200, "Start UA server\n");
+   directordaemon::me = (directordaemon::DirectorResource *)directordaemon::
+                              my_config->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
+   directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
+
+   JobControlRecord jcr;
+   BStringList args;
+   uint32_t response_id;
+   BareosSocket *UA_sock = console::ConnectToDirector(jcr, 0, args, response_id);
+   EXPECT_NE(UA_sock,nullptr);
+   EXPECT_EQ(response_id, kMessageIdOk);
+
+   delete UA_sock;
 }

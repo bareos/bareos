@@ -1,9 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,21 +18,20 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_CONSOLE_CONSOLE_GLOBALS_H_
-#define BAREOS_CONSOLE_CONSOLE_GLOBALS_H_ 1
 
-class ConfigurationParser;
+#ifndef BAREOS_CONSOLE_CONNECT_TO_DIRECTOR_H_
+#define BAREOS_CONSOLE_CONNECT_TO_DIRECTOR_H_
 
-namespace console {
+#include "include/bareos.h"
 
-class ConsoleResource;
-class DirectorResource;
+class JobControlRecord;
 
-extern ConfigurationParser *my_config;
-extern ConsoleResource *me;
-extern ConsoleResource *console_resource;
-extern DirectorResource *director_resource;
+namespace console
+{
+  BareosSocket *ConnectToDirector(JobControlRecord &jcr,
+                                  utime_t heart_beat,
+                                  BStringList &response_args,
+                                  uint32_t &response_id);
+} /* namespace console  */
 
-} /* namespace console */
-
-#endif /* BAREOS_CONSOLE_CONSOLE_GLOBALS_H_ */
+#endif

@@ -102,7 +102,8 @@ ConfigurationParser::ConfigurationParser()
    , DumpResourceCb_(nullptr)
    , FreeResourceCb_(nullptr)
    , use_config_include_dir_ (false)
-   , ParseConfigReadyCb_(nullptr) {
+   , ParseConfigReadyCb_(nullptr)
+   , parser_first_run_(true) {
    return;
 }
 
@@ -168,16 +169,15 @@ void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(const std
 
 bool ConfigurationParser::ParseConfig()
 {
-   static bool first = true;
    int errstat;
    PoolMem config_path;
 
-   if (first && (errstat = RwlInit(&res_lock_)) != 0) {
+   if (parser_first_run_ && (errstat = RwlInit(&res_lock_)) != 0) {
       BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
             be.bstrerror(errstat));
    }
-   first = false;
+   parser_first_run_ = false;
 
    if (!FindConfigPath(config_path)) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));

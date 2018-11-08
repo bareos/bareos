@@ -25,6 +25,8 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 
+int listening_server_port_number = BSOCK_TEST_PORT_NUMBER;
+
 static int create_listening_server_socket(int port)
 {
   int listen_file_descriptor;
@@ -94,7 +96,8 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
 {
   std::unique_ptr<TestSockets> test_sockets(new TestSockets);
 
-  int server_file_descriptor = create_listening_server_socket(BSOCK_TEST_PORT_NUMBER);
+  listening_server_port_number++;
+  int server_file_descriptor = create_listening_server_socket(listening_server_port_number);
 
   EXPECT_GE(server_file_descriptor, 0) << "Could not create listening socket";
   if (server_file_descriptor < 0) {
@@ -105,7 +108,7 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
   test_sockets->client->sleep_time_after_authentication_error = 0;
 
   bool ok = test_sockets->client->connect(NULL, 1, 1, 0, "Director daemon", HOST,
-                        NULL, BSOCK_TEST_PORT_NUMBER, false);
+                        NULL, listening_server_port_number, false);
   EXPECT_EQ(ok, true) << "Could not connect client socket with server socket.";
   if (!ok) { return nullptr; }
 

@@ -33,6 +33,7 @@
 #include "console/console_globals.h"
 #include "console/auth_pam.h"
 #include "console/console_output.h"
+#include "console/connect_to_director.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
@@ -53,8 +54,6 @@
 #endif
 
 using namespace console;
-
-ConfigurationParser *my_config = nullptr;
 
 static void TerminateConsole(int sig);
 static int CheckResources();
@@ -770,7 +769,7 @@ static bool SelectDirector(const char *director, DirectorResource **ret_dir, Con
    *ret_cons = NULL;
    *ret_dir = NULL;
 
-  LockRes(my_config);
+   LockRes(console::my_config);
    numdir = 0;
    foreach_res(director_resource_tmp, R_DIRECTOR) {
       numdir++;
@@ -916,61 +915,6 @@ static bool ExaminePamAuthentication(bool use_pam_credentials_file, const std::s
 }
 #endif /* HAVE_PAM */
 
-namespace console {
-static BareosSocket *ConnectToDirector(JobControlRecord &jcr,
-                                       utime_t heart_beat,
-                                       BStringList &response_args,
-                                       uint32_t &response_id)
-{
-  BareosSocketTCP *UA_sock = New(BareosSocketTCP);
-  if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", director_resource->address, NULL,
-                        director_resource->DIRport, false)) {
-    delete UA_sock;
-    TerminateConsole(0);
-    return nullptr;
-  }
-  jcr.dir_bsock = UA_sock;
-
-  const char *name;
-  s_password *password = NULL;
-
-  TlsResource *local_tls_resource;
-  if (console_resource) {
-    name = console_resource->name();
-    ASSERT(console_resource->password.encoding == p_encoding_md5);
-    password          = &console_resource->password;
-    local_tls_resource = console_resource;
-  } else { /* default console */
-    name = "*UserAgent*";
-    ASSERT(director_resource->password.encoding == p_encoding_md5);
-    password          = &director_resource->password;
-    local_tls_resource = director_resource;
-  }
-
-  if (local_tls_resource->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(name, my_config->r_own_,
-                                                                              qualified_resource_name)) {
-      TerminateConsole(0);
-      return nullptr;
-    }
-
-    if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
-                               qualified_resource_name.c_str(), password->value, &jcr)) {
-      TerminateConsole(0);
-      return nullptr;
-    }
-  } /* IsTlsConfigured */
-
-  if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, director_resource,
-                                                 response_args, response_id)) {
-    TerminateConsole(0);
-    return nullptr;
-  }
-  return UA_sock;
-}
-
-} /* namespace console */
 /*
  * Main Bareos Console -- User Interface Program
  */
@@ -985,7 +929,6 @@ int main(int argc, char *argv[])
    bool export_config_schema = false;
    JobControlRecord jcr;
    PoolMem history_file;
-   utime_t heart_beat;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -1155,6 +1098,7 @@ int main(int argc, char *argv[])
 
    ConsoleOutputFormat(_("Connecting to Director %s:%d\n"), director_resource->address,director_resource->DIRport);
 
+   utime_t heart_beat;
    if (director_resource->heartbeat_interval) {
       heart_beat = director_resource->heartbeat_interval;
    } else if (console_resource) {
@@ -1176,12 +1120,12 @@ int main(int argc, char *argv[])
      if (!ExaminePamAuthentication(use_pam_credentials_file, pam_credentials_filename)) {
             TerminateConsole(0);
             return 1;
-         }
+     }
      response_args.clear();
      if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
        TerminateConsole(0);
        return 1;
-      }
+     }
 #else
      Dmsg0(200, "This console does not have the pam feature\n");
      TerminateConsole(0);
