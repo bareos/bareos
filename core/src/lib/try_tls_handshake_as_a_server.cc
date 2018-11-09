@@ -47,8 +47,8 @@ static bool CheckForCleartextConnection(BareosSocket *bs, ConfigurationParser *c
     Dmsg0(100, "Client wants tls connection but cleartext is configured\n");
     return false;
   }
-  Dmsg0(100, "Client and Server want cleartext connection\n");
   do_cleartext = cleartext_configured; /* this covers the other two cases */
+  Dmsg1(100, "Client and Server want %s connection\n", do_cleartext ? "cleartext" : "tls");
   return true;
 }
 

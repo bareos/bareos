@@ -49,6 +49,7 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
     , tcp_file_descriptor_(0)
     , pem_callback_(nullptr)
     , pem_userdata_(nullptr)
+    , verify_peer_ (false)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 }

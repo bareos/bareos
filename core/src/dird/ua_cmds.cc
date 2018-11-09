@@ -474,7 +474,7 @@ bool Do_a_command(UaContext *ua)
       return false;
    }
 
-   while (ua->jcr->res.wstorage->size()) {
+   while (ua->jcr->res.wstorage && ua->jcr->res.wstorage->size()) {
       ua->jcr->res.wstorage->remove(0);
    }
 
