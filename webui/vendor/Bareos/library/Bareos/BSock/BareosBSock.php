@@ -507,6 +507,11 @@ class BareosBSock implements BareosBSockInterface
       try {
          //$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
          $this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
+
+         if (!$result) {
+            throw new \Exception("Error in TLS handshake\n");
+         }
+
          if (!$this->socket) {
             throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
          }
@@ -521,10 +526,6 @@ class BareosBSock implements BareosBSockInterface
          echo "Connected to " . $this->config['host'] . " on port " . $this->config['port'] . "\n";
       }
 
-      if (!self::login()) {
-         return false;
-      }
-
       if (($this->config['server_can_do_tls'] || $this->config['server_requires_tls']) &&
          ($this->config['client_can_do_tls'] || $this->config['client_requires_tls'])) {
 
@@ -534,18 +535,23 @@ class BareosBSock implements BareosBSockInterface
          if (!$result) {
             throw new \Exception("Error in TLS handshake\n");
          }
-      }
 
-      if ($this->config['tls_verify_peer']) {
-         if (!empty($this->config['allowed_cns'])) {
-            if (!self::tls_postconnect_verify_cn()) {
-               throw new \Exception("Error in TLS postconnect verify CN\n");
-            }
-         } else {
-            if (!self::tls_postconnect_verify_host()) {
-               throw new \Exception("Error in TLS postconnect verify host\n");
+         if ($this->config['tls_verify_peer']) {
+            if (!empty($this->config['allowed_cns'])) {
+               if (!self::tls_postconnect_verify_cn()) {
+                  throw new \Exception("Error in TLS postconnect verify CN\n");
+               }
+            } else {
+               if (!self::tls_postconnect_verify_host()) {
+                  throw new \Exception("Error in TLS postconnect verify host\n");
+               }
             }
          }
+
+      }
+
+      if (!self::login()) {
+         return false;
       }
 
       /*
