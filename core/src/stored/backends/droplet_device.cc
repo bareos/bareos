@@ -159,15 +159,6 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
    return errno;
 }
 
-/**
- * Generic callback for the WalkDplDirectory() function.
- *
- * Returns true - abort loop
- *         false - continue loop
- */
-typedef bool (*t_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                            const char *dirname, void *data);
-
 /*
  * Callback for getting the total size of a chunked volume.
  */
@@ -221,7 +212,7 @@ static dpl_status_t chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_c
 /*
  * Callback for getting the total size of a chunked volume.
  */
-static bool WalkDplDirectory(dpl_ctx_t *ctx, const char *dirname, t_call_back callback, void *data)
+static dpl_status_t chunked_volume_size_callback(dpl_sysmd_t *sysmd, dpl_ctx_t *ctx, const char *chunkpath, void *data)
 {
    dpl_status_t status = DPL_SUCCESS;
    ssize_t *volumesize = (ssize_t *)data;
@@ -267,15 +258,15 @@ bool droplet_device::walk_chunks(const char *dirname, t_dpl_walk_chunks_call_bac
    dpl_status_t status;
    dpl_status_t callback_status;
    dpl_sysmd_t *sysmd = NULL;
-   POOL_MEM path(PM_NAME);
+   PoolMem path(PM_NAME);
 
-   sysmd = dpl_sysmd_dup(&m_sysmd);
+   sysmd = dpl_sysmd_dup(&sysmd_);
    bool found = true;
    int i = 0;
-   while ((i < m_max_chunks) && (found) && (retval)) {
+   while ((i < max_chunks_) && (found) && (retval)) {
       path.bsprintf("%s/%04d", dirname, i);
 
-      status = dpl_getattr(m_ctx, /* context */
+      status = dpl_getattr(ctx_, /* context */
                            path.c_str(), /* locator */
                            NULL, /* metadata */
                            sysmd); /* sysmd */
@@ -283,13 +274,13 @@ bool droplet_device::walk_chunks(const char *dirname, t_dpl_walk_chunks_call_bac
       switch (status) {
          case DPL_SUCCESS:
             Dmsg1(100, "chunk %s exists. Calling callback.\n", path.c_str());
-            callback_status = callback(sysmd, m_ctx, path.c_str(), data);
+            callback_status = callback(sysmd, ctx_, path.c_str(), data);
             if (callback_status == DPL_SUCCESS) {
                i++;
             } else {
                Mmsg2(errmsg, _("Operation failed on chunk %s: ERR=%s."),
                      path.c_str(), dpl_status_str(callback_status));
-               dev_errno = droplet_errno_to_system_errno(callback_status);
+               dev_errno = DropletErrnoToSystemErrno(callback_status);
                /* exit loop */
                retval = false;
             }
@@ -364,12 +355,12 @@ dpl_status_t droplet_device::check_path(const char *path)
    dpl_status_t status;
    dpl_sysmd_t *sysmd = NULL;
 
-   sysmd = dpl_sysmd_dup(&m_sysmd);
-   status = dpl_getattr(m_ctx, /* context */
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_getattr(ctx_, /* context */
                         path, /* locator */
                         NULL, /* metadata */
                         sysmd); /* sysmd */
-   Dmsg4(100, "check_path(device=%s, bucket=%s, path=%s): %s\n", prt_name, m_ctx->cur_bucket, path, dpl_status_str(status));
+   Dmsg4(100, "check_path(device=%s, bucket=%s, path=%s): %s\n", prt_name, ctx_->cur_bucket, path, dpl_status_str(status));
    dpl_sysmd_free(sysmd);
 
    return status;
@@ -383,20 +374,20 @@ dpl_status_t droplet_device::check_path(const char *path)
  * Returns true  - if connection can be established
  *         false - otherwise
  */
-bool droplet_device::check_remote()
+bool droplet_device::CheckRemote()
 {
-   if (!m_ctx) {
+   if (!ctx_) {
       if (!initialize()) {
          return false;
       }
    }
 
    if (check_path("/") != DPL_SUCCESS) {
-      Dmsg1(100, "check_remote(%s): failed\n", prt_name);
+      Dmsg1(100, "CheckRemote(%s): failed\n", prt_name);
       return false;
    }
 
-   Dmsg1(100, "check_remote(%s): ok\n", prt_name);
+   Dmsg1(100, "CheckRemote(%s): ok\n", prt_name);
 
    return true;
 }
@@ -407,9 +398,9 @@ bool droplet_device::remote_chunked_volume_exists()
 {
    bool retval = false;
    dpl_status_t status;
-   POOL_MEM chunk_dir(PM_FNAME);
+   PoolMem chunk_dir(PM_FNAME);
 
-   if (!check_remote()) {
+   if (!CheckRemote()) {
       return false;
    }
 
@@ -444,7 +435,7 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request *request)
    dpl_option_t dpl_options;
    dpl_sysmd_t *sysmd = NULL;
    PoolMem chunk_dir(PM_FNAME),
-            chunk_name(PM_FNAME);
+           chunk_name(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", request->volname);
    Mmsg(chunk_name, "%s/%04d", chunk_dir.c_str(), request->chunk);
@@ -670,7 +661,9 @@ bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord *dcr)
 
    Dmsg1(100, "truncate_remote_chunked_volume(%s) start.\n", getVolCatName());
    Mmsg(chunk_dir, "/%s", getVolCatName());
-   if (!WalkDplDirectory(ctx_, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
+   bool ignore_gaps = true;
+   if (!walk_chunks(chunk_dir.c_str(), chunked_volume_truncate_callback, NULL, ignore_gaps)) {
+      /* errno already set in walk_chunks. */
       return false;
    }
    Dmsg1(100, "truncate_remote_chunked_volume(%s) finished.\n", getVolCatName());
@@ -679,9 +672,9 @@ bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord *dcr)
 }
 
 
-bool droplet_device::d_flush(DCR *dcr)
+bool droplet_device::d_flush(DeviceControlRecord *dcr)
 {
-   return wait_until_chunks_written();
+   return WaitUntilChunksWritten();
 };
 
 /*
@@ -954,7 +947,7 @@ ssize_t droplet_device::d_write(int fd, const void *buffer, size_t count)
 
 int droplet_device::d_close(int fd)
 {
-   return close_chunk();
+   return CloseChunk();
 }
 
 int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
@@ -976,7 +969,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    /*
     * FIXME: With the current version of libdroplet a dpl_getattr() on a directory
     *        fails with DPL_ENOENT even when the directory does exist. All other
-    *        operations succeed and as WalkDplDirectory() does a dpl_chdir() anyway
+    *        operations succeed and as walk_chunks() does a dpl_chdir() anyway
     *        that will fail if the directory doesn't exist for now we should be
     *        mostly fine.
     */
@@ -1009,7 +1002,9 @@ ssize_t droplet_device::chunked_remote_volume_size()
    }
 #endif
 
-   if (!WalkDplDirectory(ctx_, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+   Dmsg1(100, "get chunked_remote_volume_size(%s)\n", getVolCatName());
+   if (!walk_chunks(chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+      /* errno is already set in walk_chunks */
       volumesize = -1;
       goto bail_out;
    }

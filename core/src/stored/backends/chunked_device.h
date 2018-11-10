@@ -121,6 +121,7 @@ private:
    bool EnqueueChunk(chunk_io_request *request);
    bool FlushChunk(bool release_chunk, bool move_to_next_chunk);
    bool ReadChunk();
+   bool is_written();
 
 protected:
    /*
@@ -143,14 +144,17 @@ protected:
    int SetupChunk(const char *pathname, int flags, int mode);
    ssize_t ReadChunked(int fd, void *buffer, size_t count);
    ssize_t WriteChunked(int fd, const void *buffer, size_t count);
-   int close_chunk();
+   int CloseChunk();
    bool TruncateChunkedVolume(DeviceControlRecord *dcr);
    ssize_t ChunkedVolumeSize();
    bool LoadChunk();
+   bool WaitUntilChunksWritten();
 
    /*
     * Methods implemented by inheriting class.
     */
+   virtual bool CheckRemote() = 0;
+   virtual bool remote_chunked_volume_exists() = 0;
    virtual bool FlushRemoteChunk(chunk_io_request *request) = 0;
    virtual bool ReadRemoteChunk(chunk_io_request *request) = 0;
    virtual ssize_t chunked_remote_volume_size() = 0;

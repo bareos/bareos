@@ -32,12 +32,26 @@
 #include <droplet/vfs.h>
 
 namespace storagedaemon {
+/*
+ * Generic callback for the droplet_device::walk_directory() function.
+ *
+ * Returns DPL_SUCCESS - success
+ *         other dpl_status_t value: failure
+ */
+typedef dpl_status_t (*t_dpl_walk_directory_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
+                                                       const char *dirname, void *data);
+typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t *sysmd, dpl_ctx_t *ctx, const char *chunkpath, void *data);
+
+
+
 
 class droplet_device: public chunked_device {
 private:
    /*
     * Private Members
     */
+   /* maximun number of chunks in a volume (0000 to 9999) */
+   const int max_chunks_ = 10000;
    char *configstring_;
    const char *profile_;
    const char *location_;
@@ -56,6 +70,8 @@ private:
    /*
     * Interface from chunked_device
     */
+   bool CheckRemote();
+   bool remote_chunked_volume_exists();
    bool FlushRemoteChunk(chunk_io_request *request);
    bool ReadRemoteChunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
@@ -81,6 +97,7 @@ public:
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
+   bool d_flush(DeviceControlRecord *dcr);
 };
 } /* namespace storagedaemon */
 #endif /* OBJECTSTORE_DEVICE_H */
