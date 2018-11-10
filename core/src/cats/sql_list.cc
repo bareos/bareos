@@ -539,6 +539,11 @@ void BareosDb::ListJobRecords(JobControlRecord *jcr, JobDbRecord *jr, const char
       PmStrcat(selection, temp.c_str());
    }
 
+   if (poolname) {
+      temp.bsprintf("AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ", poolname);
+      pm_strcat(selection, temp.c_str());
+   }
+
    if (since_time) {
       bstrutime(dt, sizeof(dt), since_time);
       temp.bsprintf("AND Job.SchedTime > '%s' ", dt);

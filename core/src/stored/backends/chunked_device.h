@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
+   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +36,12 @@ namespace storagedaemon {
 #define DEFAULT_RECHECK_INTERVAL 300
 
 /*
+ * Recheck interval when waiting that buffer gets written
+ * (write buffer is empty).
+ */
+#define DEFAULT_RECHECK_INTERVAL_WRITE_BUFFER 10
+
+/*
  * Chunk the volume into chunks of this size.
  * This is the lower limit used the exact chunksize is
  * configured as a device option.
@@ -50,9 +57,9 @@ namespace storagedaemon {
 
 /*
  * Busy wait retry for inflight chunks.
- * Default 12 * 5 = 60 seconds.
+ * Default 120 * 5 = 600 seconds, 10 minutes.
  */
-#define INFLIGHT_RETRIES 12
+#define INFLIGHT_RETRIES 120
 #define INFLIGT_RETRY_TIME 5
 
 enum thread_wait_type {

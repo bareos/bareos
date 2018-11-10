@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,7 @@ private:
     * Private Methods
     */
    bool initialize();
+   dpl_status_t check_path(const char *path);
 
    /*
     * Interface from chunked_device
@@ -59,6 +60,9 @@ private:
    bool ReadRemoteChunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
    bool TruncateRemoteChunkedVolume(DeviceControlRecord *dcr);
+
+   bool walk_directory(const char *dirname, t_dpl_walk_directory_call_back callback, void *data);
+   bool walk_chunks(const char *dirname, t_dpl_walk_chunks_call_back callback, void *data, bool ignore_gaps = false);
 
 public:
    /*

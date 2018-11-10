@@ -298,7 +298,7 @@ void UpdateJobStatistics(JobControlRecord *jcr, utime_t now)
    job_stat->timestamp = now;
    job_stat->JobFiles = jcr->JobFiles;
    job_stat->JobBytes = jcr->JobBytes;
-   if (jcr->dcr) {
+   if (jcr->dcr && jcr->dcr->device) {
       job_stat->DevName = bstrdup(jcr->dcr->device->name());
    } else {
       job_stat->DevName = bstrdup("unknown");

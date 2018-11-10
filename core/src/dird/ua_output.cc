@@ -563,6 +563,7 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
    time_t schedtime = 0;
    char *clientname = NULL;
    char *volumename = NULL;
+   char *poolname = NULL;
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
    PoolMem query_range(PM_MESSAGE);
@@ -649,6 +650,11 @@ static bool DoListCmd(UaContext *ua, const char *cmd, e_list_type llist)
       i = FindArgWithValue(ua, NT_("volume"));
       if (i >= 0) {
          volumename = ua->argv[i];
+      }
+
+      i = find_arg_with_value(ua, NT_("pool"));
+      if (i >= 0) {
+          poolname = ua->argv[i];
       }
 
       switch (llist) {

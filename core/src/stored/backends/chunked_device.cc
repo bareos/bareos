@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
+   Copyright (C) 2017-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -662,9 +663,13 @@ bool chunked_device::ReadChunk()
 
 /*
  * Setup a chunked volume for reading or writing.
+ * return:
+ *  -1: failure
+ *   0: success
  */
 int chunked_device::SetupChunk(const char *pathname, int flags, int mode)
 {
+   int retval = -1;
    /*
     * If device is (re)opened and we are put into readonly mode because
     * of problems flushing chunks to the backing store we return EROFS
@@ -732,7 +737,23 @@ int chunked_device::SetupChunk(const char *pathname, int flags, int mode)
 
    current_volname_ = bstrdup(getVolCatName());
 
-   return 0;
+   /*
+    * in principle it is not required to load_chunk(),
+    * but we need a secure way to determine,
+    * if the chunk already exists.
+    */
+   if (load_chunk()) {
+      m_current_chunk->opened = true;
+      retval = 0;
+   } else if (flags & O_CREAT) {
+      /* create a chunk */
+      if (flush_chunk(false /* release */, false /* move_to_next_chunk */)) {
+         m_current_chunk->opened = true;
+         retval = 0;
+      }
+   }
+
+   return retval;
 }
 
 /*
@@ -1007,7 +1028,20 @@ int chunked_device::close_chunk()
          } else {
             dev_errno = EIO;
          }
+      } else {
+         /*
+          * If chunked_device::wait_until_chunks_written() has been called before,
+          * chunk has been flushed (buffer given to an io thread),
+          * but not released. Therefore the buffer is set to NULL,
+          * as normally done by flush_chunk(true, *).
+          */
+         if (m_io_threads && m_current_chunk->buffer) {
+            free_chunkbuffer(m_current_chunk->buffer);
+            m_current_chunk->buffer = NULL;
+         }
+         retval = 0;
       }
+
 
       /*
        * Invalidate chunk.
@@ -1276,6 +1310,7 @@ bool chunked_device::LoadChunk()
             if (current_chunk_->writing) {
                current_chunk_->end_offset = start_offset + (current_chunk_->chunk_size - 1);
             }
+            return false;
             break;
          default:
             return false;
@@ -1309,6 +1344,9 @@ bool chunked_device::DeviceStatus(bsdDevStatTrig *dst)
    /*
     * See if we are using io-threads or not and the ordered CircularBuffer is created and not empty.
     */
+   bool pending = false;
+   POOL_MEM inflights(PM_MESSAGE);
+
    dst->status_length = 0;
    if (io_threads_ > 0 && cb_) {
       if (!cb_->empty()) {
@@ -1321,6 +1359,10 @@ bool chunked_device::DeviceStatus(bsdDevStatTrig *dst)
       } else {
          dst->status_length = PmStrcpy(dst->status, _("No Pending IO flush requests\n"));
       }
+   }
+
+   if (!pending) {
+      dst->status_length += pm_strcat(dst->status, _("No Pending IO flush requests.\n"));
    }
 
    return (dst->status_length > 0);
