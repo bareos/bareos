@@ -14,7 +14,7 @@ For details about Droplet itself see \externalReferenceDroplet.
   \item The Bareos package \package{bareos-storage-droplet} is not available on all platforms. Please refer to \nameref{sec:packages}.
   \item Droplet S3:
   \begin{itemize}
-    \item The droplet S3 can only be used with virtual-hosted-style buckets like \url{http://<bucket>.<s3_server>/object}.
+    \item The droplet S3 backend can only be used with virtual-hosted-style buckets like \url{http://<bucket>.<s3_server>/object}.
         Path-style buckets are not supported.
         It has  been tested successfully with AWS S3 and CEPH Object Gateway S3.
   \end{itemize}
@@ -23,7 +23,7 @@ For details about Droplet itself see \externalReferenceDroplet.
 
 \subsection{Installation}
 
-Install the package \package{bareos-storage-droplet} including its requirements
+Install the package \package{bareos-storage-droplet}
 by using an appropriate package management tool
 (eg. \command{yum}, \command{zypper}).
 
@@ -74,7 +74,8 @@ The name and media type must correspond to those settings in the \bareosDir \nam
         \item \linkResourceDirective{Sd}{Device}{Media Type} = \linkResourceDirective{Dir}{Storage}{Media Type}
 \end{itemize}
 
-A device for the usage of AWS S3 object storage with a bucket named \path|backup-bareos| located in EU West 2, would look like this:
+A device for the usage of AWS S3 object storage with a bucket named \path|backup-bareos| located in EU Central 1 (Frankfurt, Germany),
+would look like this:
 
 \begin{bareosConfigResource}{bareos-sd}{device}{AWS\_S3\_1-00}
 Device {
@@ -82,41 +83,40 @@ Device {
   Media Type = "S3_Object1"
   Archive Device = "AWS S3 Storage"
   Device Type = droplet
-  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/aws.profile.conf,bucket=backup-bareos,location=eu-west-2,chunksize=100M"
-  LabelMedia = yes                    # Lets Bareos label unlabeled media
+  Device Options = "profile=/etc/bareos/bareos-sd.d/device/droplet/aws.profile,bucket=backup-bareos,chunksize=100M"
+  Label Media = yes                    # Lets Bareos label unlabeled media
   Random Access = yes
-  AutomaticMount = yes                # When device opened, read it
-  RemovableMedia = no
-  AlwaysOpen = no
-  Maximum File Size = 500M            # 500 MB (allows for seeking to small portions of the Volume)
+  Automatic Mount = yes                # When device opened, read it
+  Removable Media = no
+  Always Open = no
   Maximum Concurrent Jobs = 1
-  Maximum Spool Size = 15000M
 }
 \end{bareosConfigResource}
 
 
 
 In these examples all the backup data is placed in the \path|bareos-backup| bucket on the defined S3 storage.
-In contract to other \bareosSd backends, a Bareos volume is not represented by a single file.
+In contrast to other \bareosSd backends, a Bareos volume is not represented by a single file.
 Instead a volume is a sub-directory in the defined bucket
-and every chunk is placed in the Volume directory with the filename 0000-9999
-and a size that is defined in the chunksize.
-It is implemented this way, as S3 only allows reading full files,
-so every append operation could result in reading the full volume file again.
+and every chunk is placed in the volume directory with the filename 0000-9999
+and a size defined in the chunksize option.
+It is implemented this way, as S3 does not allow to append to a file.
+Instead it always writes full files,
+so every append operation could result in reading and writing the full volume file.
 
 Following \linkResourceDirective{Sd}{Device}{Device Options} settings are possible:
 
 \begin{description}
-\item[profile] Droplet profile path (e.g. /etc/bareos/bareos-sd.d/droplet/droplet.profile.conf). Make sure the profile file is readable for user \user{bareos}.
-\item[location] Optional, but required for AWS Storage (e.g. eu-west-2 etc.)
+\item[profile] Droplet profile path (e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile). Make sure the profile file is readable for user \user{bareos}.
 \item[acl] Canned ACL
 \item[storageclass] Storage Class to use.
 \item[bucket] Bucket to store objects in.
-\item[chunksize] Size of Volume Chunks (default = 10 Mb)
+\item[chunksize] Size of Volume Chunks (default = 10 Mb).
 \item[iothreads] Number of IO-threads to use for uploads (if not set, blocking uploads are used)
-\item[ioslots] Number of IO-slots per IO-thread (default 10). Set this to $>=$ 1 for cached and to 0 for direct writing.
-\item[retries] Number of writing tries before discarding a job. Set this to 0 for unlimited retries. Setting anything $!=$ 0 here will cause dataloss if the backend is not available, so be very careful.
+\item[ioslots] Number of IO-slots per IO-thread (0-255, default 10). Set this to $\ge 1$ for cached and to 0 for direct writing.
+\item[retries] Number of writing tries before discarding the data. Set this to 0 for unlimited retries. Setting anything $\neq 0$ here will cause dataloss if the backend is not available, so be very careful (0-255, default = 0, which means unlimited retries).
 \item[mmap] Use mmap to allocate Chunk memory instead of malloc().
+\item[location] Deprecated. If required (AWS only), it has to be set in the Droplet profile.
 \end{description}
 
 
@@ -125,19 +125,21 @@ This profile is used later by the droplet library when accessing your cloud stor
 
 An example for AWS S3 could look like this:
 
-\begin{bareosConfigResource}{bareos-sd}{droplet}{aws.profile}
-use_https = false               # Default is false, if set to true you may use the SSL parameters given in the droplet configuration wiki, see below.
+\begin{config}{aws.profile}
 host = s3.amazonaws.com         # This parameter is only used as baseurl and will be prepended with bucket and location set in device ressource to form correct url
+use_https = true
 access_key = myaccesskey
 secret_key = mysecretkey
 pricing_dir = ""                # If not empty, an droplet.csv file will be created which will record all S3 operations.
 backend = s3
 aws_auth_sign_version = 4       # Currently, AWS S3 uses version 4. The Ceph S3 gateway uses version 2.
-\end{bareosConfigResource}
+aws_region = eu-central-1
+\end{config}
 
 
 More arguments and the SSL parameters can be found in the documentation of the droplet library:
-\url{https://github.com/scality/Droplet/wiki/Configuration-File}
+\externalReferenceDropletDocConfigurationFile
+
 
 \subsubsection{CEPH Object Gateway S3}
 
@@ -164,55 +166,33 @@ Device {
   Media Type = "S3_Object1"
   Archive Device = "Object S3 Storage"
   Device Type = droplet
-  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/ceph.profile,bucket=backup-bareos,chunksize=100M"
-  LabelMedia = yes                    # Lets Bareos label unlabeled media
+  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/ceph-rados-gateway.profile,bucket=backup-bareos,chunksize=100M"
+  Label Media = yes                    # Lets Bareos label unlabeled media
   Random Access = yes
-  AutomaticMount = yes                # When device opened, read it
-  RemovableMedia = no
-  AlwaysOpen = no
-  Maximum File Size = 500M            # 500 MB (allows for seeking to small portions of the Volume)
+  Automatic Mount = yes                # When device opened, read it
+  Removable Media = no
+  Always Open = no
   Maximum Concurrent Jobs = 1
-  Maximum Spool Size = 15000M
 }
 \end{bareosConfigResource}
 
-
-And for CEPH it would be:
-\begin{bareosConfigResource}{bareos-sd.d}{droplet}{ceph.profile}
-use_https = false
+The correspondig Droplet profile looks like this:
+\begin{config}{ceph-rados-gateway.profile}
 host = CEPH-host.example.com
+use_https = False
 access_key = myaccesskey
 secret_key = mysecretkey
 pricing_dir = ""
 backend = s3
 aws_auth_sign_version = 2
-\end{bareosConfigResource}
+\end{config}
 
-Main differences are, that a location is not required and in the profile, \path|aws_auth_sign_version = 2| instead of 4.
+Main differences are, that \path|aws_region| is not required and \path|aws_auth_sign_version = 2| instead of 4.
 
 
 \subsection{Troubleshooting}
 
-\hide{
-\subsubsection{S3 Backend Unreachable}
 
-The droplet device can run in two modes:
-
-\begin{itemize}
-    \item direct writing \path|(iothreads  = 0)|
-    \item cached writing \path|(iothreads >= 1)|
-\end{itemize}
-
-If \path|iothreads >= 1, retries = 0| (unlimited retries) and the \sdBackend{Droplet}{} (e.g. S3 storage) is not available, a job will continue running until the backend problem is fixed.
-If this is the case and the job is canceled, it will only be canceled on the Director. It continues running on the Storage Daemon, until the S3 backend is available again or the Storage Daemon itself is restarted.
-
-If \path|iothreads >= 1, retries != 0| and the droplet backend (e.g. S3 storage) is not available, write operation will be silently discarded after the specified number of retries.
-
-\warning{This combination of option is dangerous. Don't use it.}
-
-%Caching when S3 backend is not available:
-%This behaviour have not changed, but I fear problems can arise, if the backend is not available and all write operations are stored in memory.
-}
 
 \subsubsection{iothreads}
 
@@ -222,10 +202,11 @@ For testing following \linkResourceDirective{Sd}{Device}{Device Options} should 
     \item \path|retries=1|
 \end{itemize}
 
-If the S3 backend becomes or is unreachable, the storage daemon will behave depending on \argument{iothreads} and \argument{retries}.
-When the storage daemon is using cached writing (\argument{iothreads}$>=1$) and \argument{retries} is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the storage daemon will continuously try to write the cached files.
+If the S3 backend is or becomes unreachable, the \bareosSd will behave depending on \argument{iothreads} and \argument{retries}.
+When the \bareosSd is using cached writing (\argument{iothreads}$>=1$) and \argument{retries} is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the \bareosSd will continuously try to write the cached files.
 
-Great caution should be used when using \argument{retries} > 0 combined with cached writing. If the backend becomes unavailable and the storage daemon reaches the predefined tries, the job will be discarded silently yet marked as \path|OK| in the \bareosDir.
+Great caution should be used when using \argument{retries} $>=0$ combined with cached writing. If the backend becomes unavailable and the \bareosSd
+reaches the predefined tries, the job will be discarded silently yet marked as \path|OK| in the \bareosDir.
 
 You can always check the status of the writing process by using \bcommand{status}{storage=...}. The current writing status will be displayed then:
 \begin{bconsole}{status storage}
@@ -264,6 +245,47 @@ Device state:
 Attached Jobs:
 ...
 \end{bconsole}
+
+For  performance, \linkResourceDirective{Sd}{Device}{Device Options} should be configured with:
+\begin{itemize}
+    \item \path|iothreads >= 1|
+    \item \path|retries = 0|
+\end{itemize}
+
+
+\subsubsection{New AWS S3 Buckets}
+
+As AWS S3 buckets are accessed via virtual-hosted-style buckets (like \url{http://<bucket>.<s3_server>/object})
+creating a new bucket results in a new DNS entry.
+
+As a new DNS entry is not available immediatly, Amazon solves this by using HTTP temporary redirects (code: 307) to redirect to the correct host.
+Unfortenatly, the Droplet library does not support HTTP redirects.
+
+Requesting the device status only resturn a unspecific error:
+
+\begin{bconsole}{status storage}
+*status storage=...
+...
+Backend connection is not working.
+...
+\end{bconsole}
+
+\paragraph{Workaround:}
+
+\begin{itemize}
+    \item Wait until bucket is available a permanet hostname. This can take up to 24 hours.
+    \item Configure the AWS location into the profiles host entry.
+            For the AWS location \path|eu-central-1|,
+            change \configline{host = s3.amazonaws.com} into \configline{host = s3.eu-central-1.amazonaws.com}:
+\begin{config}{Droplet profile}
+...
+host = s3.eu-central-1.amazonaws.com
+aws_region = eu-central-1
+...
+\end{config}
+
+\end{itemize}
+
 
 
 \subsubsection{AWS S3 Logging}

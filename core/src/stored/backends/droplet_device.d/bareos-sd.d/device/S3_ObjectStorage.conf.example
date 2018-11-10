@@ -5,16 +5,16 @@ Device {
 
   #
   # Device Options:
-  #    profile= - Droplet profile path, e.g. /etc/bareos/bareos-sd.d/droplet/droplet.profile
-  #    location= - AWS location (e.g. us-east etc.). Optional.
-  #    acl= - Canned ACL
+  #    profile=      - Droplet profile path, e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile
+  #    acl=          - Canned ACL
   #    storageclass= - Storage Class to use.
-  #    bucket= - Bucket to store objects in.
-  #    chunksize= - Size of Volume Chunks (default = 10 Mb)
-  #    iothreads= - Number of IO-threads to use for upload (use blocking uploads if not defined)
-  #    ioslots= - Number of IO-slots per IO-thread (0-255, default 10)
-  #    retries= - Number of retires if a write fails (0-255, default = 0, which means unlimited retries)
-  #    mmap - Use mmap to allocate Chunk memory instead of malloc().
+  #    bucket=       - Bucket to store objects in.
+  #    chunksize=    - Size of Volume Chunks (default = 10 Mb)
+  #    iothreads=    - Number of IO-threads to use for upload (use blocking uploads if not defined)
+  #    ioslots=      - Number of IO-slots per IO-thread (0-255, default 10)
+  #    retries=      - Number of retires if a write fails (0-255, default = 0, which means unlimited retries)
+  #    mmap=         - Use mmap to allocate Chunk memory instead of malloc().
+  #    location=     - Deprecated. If required (AWS only), it has to be set in the Droplet profile.
   #
 
   # testing:
@@ -24,13 +24,12 @@ Device {
   #Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/droplet.profile,bucket=bareos-bucket,chunksize=100M"
 
   Device Type = droplet
-  LabelMedia = yes                    # lets Bareos label unlabeled media
+  Label Media = yes                    # lets Bareos label unlabeled media
   Random Access = yes
-  AutomaticMount = yes                # when device opened, read it
-  RemovableMedia = no
-  AlwaysOpen = no
+  Automatic Mount = yes                # when device opened, read it
+  Removable Media = no
+  Always Open = no
   Description = "S3 device"
-  Maximum File Size = 500M            # 500 MB (allows for seeking to small portions of the Volume)
   Maximum Concurrent Jobs = 1
-  Maximum Spool Size = 15000M
 }
+

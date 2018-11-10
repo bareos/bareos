@@ -1,6 +1,6 @@
 #   BAREOS�� - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2018 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -58,33 +58,43 @@ endif()
 
 
 
-
-
 # install configs from sd backends
 FOREACH (BACKEND ${BACKENDS})
-   MESSAGE(STATUS "install config files for BACKEND ${BACKEND}")
-   file(GLOB resourcedirs "${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}/*")
-   MESSAGE(STATUS "globbing ${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}/")
-   foreach(resdir ${resourcedirs})
-      MESSAGE(STATUS "install config files for BACKEND ${BACKEND} ${resdir}")
-      file(GLOB configfiles "${resdir}/*.conf*")
-      get_filename_component(resname ${resdir} NAME)
-      foreach(configfile ${configfiles})
-         get_filename_component(fname ${configfile} NAME)
-         if (EXISTS ${DESTCONFDIR}/${resname}/${fname})
-            MESSAGE(STATUS "${resname}/${fname} as ${resname}/${fname}.new (keep existing)")
-            FILE (RENAME "${configfile}" "${configfile}.new")
-            FILE (COPY "${configfile}.new" DESTINATION "${DESTCONFDIR}/${resname}")
-            FILE (RENAME "${configfile}.new" "${configfile}")
-         else()
-            MESSAGE(STATUS "${resname}/${fname} as ${resname}/${fname}")
-            FILE (COPY "${configfile}" DESTINATION "${DESTCONFDIR}/${resname}")
-         endif()
-      endforeach()
+
+   MESSAGE(STATUS "install ${CONFIGBASEDIRECTORY} config files for BACKEND ${BACKEND}")
+   set(BackendConfigSrcDir "${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}")
+
+   file(GLOB_RECURSE configfiles  RELATIVE "${BackendConfigSrcDir}" "${BackendConfigSrcDir}/*.conf")
+   foreach(configfile ${configfiles})
+      get_filename_component(dir   ${configfile} DIRECTORY)
+      get_filename_component(fname ${configfile} NAME)
+
+      if (EXISTS ${DESTCONFDIR}/${configfile})
+         MESSAGE(STATUS "${configfile} as ${configfile}.new (keep existing)")
+         FILE(RENAME "${BackendConfigSrcDir}/${configfile}" "${BackendConfigSrcDir}/${configfile}.new")
+         FILE(COPY   "${BackendConfigSrcDir}/${configfile}.new" DESTINATION "${DESTCONFDIR}/${dir}")
+         FILE(RENAME "${BackendConfigSrcDir}/${configfile}.new" "${BackendConfigSrcDir}/${configfile}")
+      else()
+         MESSAGE(STATUS "${configfile} as ${configfile}")
+         FILE(COPY "${BackendConfigSrcDir}/${configfile}" DESTINATION "${DESTCONFDIR}/${dir}")
+      endif()
+   endforeach()
+
+   file(GLOB_RECURSE configfiles RELATIVE "${BackendConfigSrcDir}" "${BackendConfigSrcDir}/*.example")
+   foreach(configfile ${configfiles})
+      get_filename_component(dir   ${configfile} DIRECTORY)
+      #get_filename_component(fname ${configfile} NAME)
+
+      if (EXISTS ${DESTCONFDIR}/${configfile})
+         MESSAGE(STATUS "overwriting ${configfile}")
+      else()
+         MESSAGE(STATUS "${configfile} as ${configfile}")
+      endif()
+
+      FILE(COPY "${BackendConfigSrcDir}/${configfile}" DESTINATION "${DESTCONFDIR}/${dir}")
    endforeach()
 
 ENDFOREACH()
-
 
 
 
@@ -114,4 +124,5 @@ FOREACH (PLUGIN ${PLUGINS})
       endforeach()
    endforeach()
 ENDFOREACH()
+
 ENDMACRO(BareosInstallConfigFiles)
