@@ -31,11 +31,26 @@
 #include <droplet.h>
 #include <droplet/vfs.h>
 
+/*
+ * Generic callback for the droplet_device::walk_directory() function.
+ *
+ * Returns DPL_SUCCESS - success
+ *         other dpl_status_t value: failure
+ */
+typedef dpl_status_t (*t_dpl_walk_directory_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
+                                                       const char *dirname, void *data);
+typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t *sysmd, dpl_ctx_t *ctx, const char *chunkpath, void *data);
+
+
+
+
 class droplet_device: public chunked_device {
 private:
    /*
     * Private Members
     */
+   /* maximun number of chunks in a volume (0000 to 9999) */
+   const int m_max_chunks = 10000;
    char *m_configstring;
    const char *m_profile;
    const char *m_location;
@@ -49,6 +64,7 @@ private:
     * Private Methods
     */
    bool initialize();
+   dpl_status_t check_path(const char *path);
 
    /*
     * Interface from chunked_device
@@ -59,6 +75,9 @@ private:
    bool read_remote_chunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
    bool truncate_remote_chunked_volume(DCR *dcr);
+
+   bool walk_directory(const char *dirname, t_dpl_walk_directory_call_back callback, void *data);
+   bool walk_chunks(const char *dirname, t_dpl_walk_chunks_call_back callback, void *data, bool ignore_gaps = false);
 
 public:
    /*

@@ -55,9 +55,9 @@
 
 /*
  * Busy wait retry for inflight chunks.
- * Default 12 * 5 = 60 seconds.
+ * Default 120 * 5 = 600 seconds, 10 minutes.
  */
-#define INFLIGHT_RETRIES 12
+#define INFLIGHT_RETRIES 120
 #define INFLIGT_RETRY_TIME 5
 
 enum thread_wait_type {

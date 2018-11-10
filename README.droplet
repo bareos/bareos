@@ -6,7 +6,7 @@ For this you need to install the the bareos-storage-droplet packages which conta
 the libbareossd-chunked*.so  and  libbareossd-droplet*.so shared objects and the droplet storage backend which implements a dynamic loaded storage backend.
 
 In the following example all the backup data is placed in the "bareos-backup" bucket on the defined S3 storage.
-A volume is a sub-directory in the defined bucket, and every chunk is placed in the Volume directory withe the filename 0000-9999 and a size that is defined in the chunksize.
+A volume is a sub-directory in the defined bucket, and every chunk is placed in the Volume directory with the filename 0000-9999 and a size that is defined in the chunksize.
 
 The droplet S3 can only be used with virtual-hosted-style buckets like http://<bucket>.<s3_server>/object
 Path-style buckets are not supported when using the droplet S3.
@@ -26,7 +26,7 @@ Device {
   #    acl= - Canned ACL
   #    storageclass= - Storage Class to use.
   #    bucket= - Bucket to store objects in.
-  #    chunksize= - Size of Volume Chunks (default = 10 Mb)
+  #    chunksize= - Size of Volume Chunks (minimum = default = 10 Mb)
   #    iothreads= - Number of IO-threads to use for upload (use blocking uploads if not defined)
   #    ioslots= - Number of IO-slots per IO-thread (0-255, default 10)
   #    retries= - Number of retires if a write fails (0-255, default = 0, which means unlimited retries)
