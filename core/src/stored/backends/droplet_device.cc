@@ -159,54 +159,6 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
    return errno;
 }
 
-/*
- * Callback for getting the total size of a chunked volume.
- */
-static dpl_status_t chunked_volume_size_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                                 const char *dirname, void *data)
-{
-   dpl_status_t status = DPL_SUCCESS;
-   ssize_t *volumesize = (ssize_t *)data;
-
-   /*
-    * Make sure it starts with [0-9] e.g. a volume chunk.
-    */
-   if (*dirent->name >= '0' && *dirent->name <= '9') {
-      *volumesize = *volumesize + dirent->size;
-   }
-
-   return status;
-}
-
-/*
- * Callback for truncating a chunked volume.
- *
- * @return DPL_SUCCESS on success, on error: a dpl_status_t value that represents the error.
- */
-static dpl_status_t chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                                     const char *dirname, void *data)
-{
-   dpl_status_t status = DPL_SUCCESS;
-
-   /*
-    * Make sure it starts with [0-9] e.g. a volume chunk.
-    */
-   if (*dirent->name >= '0' && *dirent->name <= '9') {
-
-      status = dpl_unlink(ctx, dirent->name);
-
-      switch (status) {
-      case DPL_SUCCESS:
-         break;
-      default:
-         /* no error message here, as error will be set by calling function. */
-         return status;
-      }
-   }
-
-   return status;
-}
-
 
 
 /*
