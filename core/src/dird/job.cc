@@ -1743,6 +1743,10 @@ void SetJcrDefaults(JobControlRecord *jcr, JobResource *job)
    jcr->spool_size = job->spool_size;
    jcr->IgnoreDuplicateJobChecking = job->IgnoreDuplicateJobChecking;
    jcr->MaxRunSchedTime = job->MaxRunSchedTime;
+
+   if (jcr->backup_format) {
+     free(jcr->backup_format);
+   }
    jcr->backup_format = bstrdup(job->backup_format);
 
    if (jcr->RestoreBootstrap) {
