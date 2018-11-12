@@ -70,11 +70,13 @@ struct s_sockfd {
  * Stop the Threaded Network Server if its realy running in a separate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
  */
-void BnetStopThreadServerTcp(pthread_t tid)
+void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
 {
+   Dmsg0(100, "Stop BnetThreadServer and wait until finished\n");
    quit = true;
    if (!pthread_equal(tid, pthread_self())) {
       pthread_kill(tid, TIMEOUT_SIGNAL);
+      pthread_join(tid, nullptr);
    }
 }
 
@@ -82,7 +84,7 @@ void BnetStopThreadServerTcp(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
+static void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
 {
    int status;
    s_sockfd *fd_ptr = NULL;
@@ -131,7 +133,8 @@ void BnetThreadServerTcp(dlist *addr_list,
                             bool nokeepalive,
                             void *HandleConnectionRequest(ConfigurationParser *config,
                                                         void *bsock),
-                            ConfigurationParser *config)
+                            ConfigurationParser *config,
+                            bool *const tcp_server_ready)
 {
    int newsockfd, status;
    socklen_t clilen;
@@ -276,6 +279,10 @@ void BnetThreadServerTcp(dlist *addr_list,
    }
 #endif
 
+   if (tcp_server_ready) {
+     *tcp_server_ready = true;
+   }
+
    /*
     * Wait for a connection from the client process.
     */
@@ -389,4 +396,8 @@ void BnetThreadServerTcp(dlist *addr_list,
    }
 
    CleanupBnetThreadServerTcp(sockfds, client_wq);
+
+   if (tcp_server_ready) {
+     *tcp_server_ready = false;
+   }
 }

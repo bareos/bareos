@@ -47,6 +47,7 @@ static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
 static ConnectionPool *client_connections = NULL;
+static bool tcp_server_ready = false;
 
 struct s_addr_port {
   char *addr;
@@ -118,7 +119,6 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
 extern "C" void *connect_thread(void *arg)
 {
-  pthread_detach(pthread_self());
   SetJcrInTsd(INVALID_JCR);
 
   /*
@@ -126,7 +126,7 @@ extern "C" void *connect_thread(void *arg)
    */
   sock_fds = New(alist(10, not_owned_by_alist));
   BnetThreadServerTcp((dlist *)arg, me->MaxConnections, sock_fds, &socket_workq, me->nokeepalive,
-                      HandleConnectionRequest, my_config);
+                      HandleConnectionRequest, my_config, &tcp_server_ready);
 
   return NULL;
 }
@@ -140,11 +140,17 @@ void StartSocketServer(dlist *addrs)
 {
   int status;
   static dlist *myaddrs = addrs;
+  tcp_server_ready = false;
 
   if (client_connections == NULL) { client_connections = New(ConnectionPool()); }
   if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
+  }
+
+  int timeout_ctr = 1000; /* 1000 * 10000µs = 10 sec */
+  while (!tcp_server_ready && timeout_ctr--) {
+    Bmicrosleep(0, 10000);
   }
 
   return;
@@ -153,8 +159,7 @@ void StartSocketServer(dlist *addrs)
 void StopSocketServer()
 {
   if (sock_fds) {
-    BnetStopThreadServerTcp(tcp_server_tid);
-    CleanupBnetThreadServerTcp(sock_fds, &socket_workq);
+    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     delete sock_fds;
     sock_fds = NULL;
   }

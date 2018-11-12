@@ -129,7 +129,7 @@ void StopSocketServer(bool wait)
 {
    Dmsg0(100, "StopSocketServer\n");
    if (sock_fds) {
-      BnetStopThreadServerTcp(tcp_server_tid);
+      BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
       /*
        * before thread_servers terminates,
        * it calls cleanup_bnet_thread_server_tcp

@@ -136,8 +136,7 @@ void StartSocketServer(dlist *addrs)
 void StopSocketServer()
 {
   if (sock_fds) {
-    BnetStopThreadServerTcp(tcp_server_tid);
-    CleanupBnetThreadServerTcp(sock_fds, &socket_workq);
+    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     delete sock_fds;
     sock_fds = NULL;
   }

@@ -23,7 +23,6 @@
 
 class ConfigurationParser;
 
-void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq);
 void BnetThreadServerTcp(dlist *addr_list,
                             int max_clients,
                             alist *sockfds,
@@ -31,7 +30,8 @@ void BnetThreadServerTcp(dlist *addr_list,
                             bool nokeepalive,
                             void *HandleConnectionRequest(ConfigurationParser *config,
                                                         void *bsock),
-                            ConfigurationParser *config);
-void BnetStopThreadServerTcp(pthread_t tid);
+                            ConfigurationParser *config,
+                            bool * const tcp_server_ready = nullptr);
+void BnetStopAndWaitForThreadServerTcp(pthread_t tid);
 
 #endif // BAREOS_LIB_BNET_SEVER_TCP_H_

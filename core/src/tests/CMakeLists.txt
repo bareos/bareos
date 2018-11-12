@@ -30,12 +30,33 @@ set (TEST_SRC
     lib_tests.cc
    )
 
+set(LINK_LIBRARIES
+   stored_objects
+   dird_objects
+   console_objects
+   bareossd
+   bareos
+   bareoscats
+   bareossql
+   bareosfind
+   ${LMDB_LIBS}
+   ${NDMP_LIBS}
+   ${JANSSON_LIBRARIES}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES})
 
+IF(HAVE_PAM)
+  LIST(APPEND LINK_LIBRARIES ${PAM_LIBRARIES})
+ENDIF()
 add_definitions(-DTEST_SMALL_HTABLE)
 
 # where to find the certificates
 add_definitions(-DCERTDIR=\"${CMAKE_SOURCE_DIR}/../regress/configs/BASE/tls\")
 
+# where to find the source dir
+add_definitions(-DCMAKE_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
+
+####### test_lib ###############################
 add_executable(test_lib
     ${TEST_SRC}
     )
@@ -59,6 +80,7 @@ set_property(TEST test_lib
 
 add_dependencies(check test_lib)
 
+####### test_bsock ###############################
 add_executable(test_bsock
     bsock_test.cc
     bareos_test_sockets.cc
@@ -66,24 +88,6 @@ add_executable(test_bsock
     bsock_cert_verify_common_names_test.cc
     create_resource.cc
 )
-set(LINK_LIBRARIES
-   stored_objects
-   dird_objects
-   console_objects
-   bareossd
-   bareos
-   bareoscats
-   bareossql
-   bareosfind
-   ${LMDB_LIBS}
-   ${NDMP_LIBS}
-   ${JANSSON_LIBRARIES}
-   ${GTEST_LIBRARIES}
-   ${GTEST_MAIN_LIBRARIES})
-
-IF(HAVE_PAM)
-  LIST(APPEND LINK_LIBRARIES ${PAM_LIBRARIES})
-ENDIF()
 
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
 
@@ -96,6 +100,7 @@ set_property(TEST test_bsock
 
 add_dependencies(check test_bsock)
 
+####### test_bsock ###############################
 add_executable(test_connection_setup
     bsock_test_connection_setup.cc
 )

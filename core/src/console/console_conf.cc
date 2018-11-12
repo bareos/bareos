@@ -316,13 +316,13 @@ static void ConfigReadyCallback(ConfigurationParser &my_config)
 
 ConfigurationParser *InitConsConfig(const char *configfile, int exit_code)
 {
-  my_config =
+  ConfigurationParser *config =
       new ConfigurationParser(configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
                               (void *)&res_all, res_all_size, R_FIRST, R_LAST, resources, res_head,
                               default_config_filename.c_str(), "bconsole.d", ConfigReadyCallback,
                               SaveResource, DumpResource, FreeResource);
-  if (my_config) { my_config->r_own_ = R_CONSOLE; }
-  return my_config;
+  if (config) { config->r_own_ = R_CONSOLE; }
+  return config;
 }
 
 /**

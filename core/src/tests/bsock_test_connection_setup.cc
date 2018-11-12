@@ -33,55 +33,82 @@
 #include "lib/bstringlist.h"
 
 #include "include/jcr.h"
+#include <signal.h>
 
-#if 0
+static void signal_handler(int arg)
+{
+  return;
+}
+
 TEST(bsock, console_director_connection_test)
 {
-   const char* console_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/regress/bin/";
-   std::unique_ptr<ConfigurationParser> c_guard(console::InitConsConfig(console_configfile, M_INFO));
+   struct sigaction sig{0};
+   sig.sa_handler = signal_handler;
+   sigaction(SIGUSR2,&sig, nullptr);
+   sigaction(SIGPIPE,&sig, nullptr);
 
-   EXPECT_NE(console::my_config, nullptr);
-   if (!console::my_config) {
+   const char* console_configfile = CMAKE_SOURCE_DIR "/src/tests/configs/";
+   std::unique_ptr<ConfigurationParser> console_config_parser(console::InitConsConfig(console_configfile, M_INFO));
+   console::my_config = console_config_parser.get(); /* set the console global variable */
+
+   EXPECT_NE(console_config_parser.get(), nullptr);
+   if (!console_config_parser) {
      return;
    }
 
-   bool ok = console::my_config->ParseConfig();
+   bool ok = console_config_parser->ParseConfig();
    EXPECT_TRUE(ok) << "Could not parse console config";
 
    console::director_resource = reinterpret_cast<console::DirectorResource*>
-                                    (console::my_config->GetNextRes(console::R_DIRECTOR, NULL));
+                                    (console_config_parser->GetNextRes(console::R_DIRECTOR, NULL));
    console::console_resource = reinterpret_cast<console::ConsoleResource*>
-                                    (console::my_config->GetNextRes(console::R_CONSOLE, NULL));
+                                    (console_config_parser->GetNextRes(console::R_CONSOLE, NULL));
 
+   const char* director_configfile = CMAKE_SOURCE_DIR "/src/tests/configs/";
 
-   const char* director_configfile = "/home/franku/01-prj/git/bareos-18.2-release-fixes/"
-                                     "regress/bin/";
+   std::unique_ptr<ConfigurationParser> director_config_parser(directordaemon::InitDirConfig(director_configfile, M_INFO));
+   directordaemon::my_config = director_config_parser.get(); /* set the director global variable */
 
-   std::unique_ptr<ConfigurationParser> d_guard(directordaemon::InitDirConfig(director_configfile, M_INFO));
+   EXPECT_NE(director_config_parser.get(), nullptr);
+   if (!director_config_parser) { return; }
 
-   EXPECT_NE(directordaemon::my_config, nullptr);
-   if (!directordaemon::my_config) {
-     return;
-   }
-
-   ok = directordaemon::my_config->ParseConfig();
+   ok = director_config_parser->ParseConfig();
    EXPECT_TRUE(ok) << "Could not parse director config";
+   if (!ok) { return; }
 
    Dmsg0(200, "Start UA server\n");
-   directordaemon::me = (directordaemon::DirectorResource *)directordaemon::
-                              my_config->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
+   directordaemon::me = (directordaemon::DirectorResource *)
+                         director_config_parser->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
    directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
 
    JobControlRecord jcr;
+   memset(&jcr, 0, sizeof(jcr));
    BStringList args;
    uint32_t response_id;
-   BareosSocket *UA_sock = console::ConnectToDirector(jcr, 0, args, response_id);
-   EXPECT_NE(UA_sock,nullptr);
+
+   std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>
+                UA_sock(console::ConnectToDirector(jcr, 0, args, response_id), [](BareosSocket *p) { delete p; });
+
    EXPECT_EQ(response_id, kMessageIdOk);
 
-   delete UA_sock;
+   EXPECT_NE(UA_sock.get(), nullptr);
+   if (!UA_sock) { return; }
+
+   EXPECT_NE(UA_sock->tls_conn.get(), nullptr);
+   std::string cipher;
+   UA_sock->GetCipherMessageString(cipher);
+   std::cout << cipher;
+
+   UA_sock->signal(BNET_TERMINATE);
+   UA_sock->close();
+   directordaemon::StopSocketServer();
+   StopWatchdog();
+
+   UA_sock.reset();
+
+   director_config_parser.reset();
+   console_config_parser.reset();
 }
-#endif
 
 namespace directordaemon {
  bool DoReloadConfig()
