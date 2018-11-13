@@ -42,7 +42,7 @@ class BareosBSockServiceFactory implements FactoryInterface
       if (isset($_SESSION['bareos']['director'])) {
          $this->bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
          $this->bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-         $this->bsock->init();
+         $this->bsock->connect_and_authenticate();
       }
 
       return $this->bsock;

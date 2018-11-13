@@ -210,6 +210,20 @@ function read_directors_ini($directors, $directors_ini)
          else {
             $arr[key($directors)]['catalog'] = null;
          }
+
+         if(array_key_exists('pam_console_name', $instance) && isset($instance['pam_console_name'])) {
+            $arr[key($directors)]['console_name'] = $instance['pam_console_name'];
+         }
+         else {
+            $arr[key($directors)]['console_name'] = null;
+         }
+
+         if(array_key_exists('pam_console_password', $instance) && isset($instance['pam_console_password'])) {
+            $arr[key($directors)]['password'] = $instance['pam_console_password'];
+         }
+         else {
+            $arr[key($directors)]['password'] = null;
+         }
       }
 
       next($directors);

@@ -69,6 +69,8 @@ class BareosBSock implements BareosBSockInterface
       'port' => null,
       'password' => null,
       'console_name' => null,
+      'pam_password' => null,
+      'pam_username' => null,
       'tls_verify_peer' => null,
       'server_can_do_tls' => null,
       'server_requires_tls' => null,
@@ -84,23 +86,11 @@ class BareosBSock implements BareosBSockInterface
    private $socket = null;
 
    /**
-    * Initialize connection
-    */
-   public function init()
-   {
-      if(self::connect($this->config['console_name'], $this->config['password'])) {
-         return true;
-      } else {
-         return false;
-      }
-   }
-
-   /**
     * Authenticate
     */
-   public function auth($console, $password)
+   public function connect_and_authenticate()
    {
-      if(self::connect($console, $password)) {
+      if(self::connect()) {
          return true;
       } else {
          return false;
@@ -122,10 +112,15 @@ class BareosBSock implements BareosBSockInterface
    /**
     * Set user credentials
     */
-   public function set_user_credentials($username=null, $password=null)
+   public function set_user_credentials($username, $password)
    {
-      $this->config['console_name'] = $username;
-      $this->config['password'] = $password;
+      if(!$this->config['console_name']) {
+        $this->config['console_name'] = $username;
+        $this->config['password'] = $password;
+      }
+
+      $this->config['pam_password'] = $password;
+      $this->config['pam_username'] = $username;
 
       if($this->config['debug']) {
          // extended debug: print config array
@@ -142,17 +137,16 @@ class BareosBSock implements BareosBSockInterface
    {
       array_walk($config, array('self', 'set_config_keyword'));
 
-      if(empty($config['host'])) {
-         throw new \Exception("Missing parameter 'host' in /config/autoload/local.php");
-      }
-
-      if(empty($config['port'])) {
-         throw new \Exception("Missing parameter 'port' in /config/autoload/local.php");
-      }
-
       if($this->config['debug']) {
          // extended debug: print config array
          var_dump($this->config);
+      }
+
+      if(!empty($config['console_name'])) {
+        $this->config['console_name'] = $config['console_name'];
+      }
+      if(!empty($config['console_password'])) {
+        $this->config['password'] = $config['console_password'];
       }
    }
 
@@ -213,10 +207,11 @@ class BareosBSock implements BareosBSockInterface
       $str_length = strlen($msg);
       $msg = pack('N', $str_length) . $msg;
       $str_length += 4;
-
-      while($str_length > 0) {
+      while($this->socket && $str_length > 0) {
          $send = fwrite($this->socket, $msg, $str_length);
-         if($send === false) {
+         if($send === 0) {
+            fclose($this->socket);
+            $this->socket = null;
             return false;
          } elseif($send < $str_length) {
             $msg = substr($msg, $send);
@@ -225,6 +220,7 @@ class BareosBSock implements BareosBSockInterface
             return true;
          }
       }
+      return false;
    }
 
    /**
@@ -238,6 +234,10 @@ class BareosBSock implements BareosBSockInterface
    {
       $buffer = "";
       $msg_len = 0;
+
+      if (!$this->socket) {
+        return $buffer;
+      }
 
       if ($len === 0) {
          $buffer = stream_get_contents($this->socket, 4);
@@ -266,6 +266,10 @@ class BareosBSock implements BareosBSockInterface
    {
       $msg = "";
       $buffer = "";
+
+      if (!$this->socket) {
+        return $msg;
+      }
 
       while (true) {
          $buffer = stream_get_contents($this->socket, 4);
@@ -442,14 +446,13 @@ class BareosBSock implements BareosBSockInterface
     *
     * @return boolean
     */
-   private function connect($username, $password)
+   private function connect()
    {
       if (!isset($this->config['host']) or !isset($this->config['port'])) {
          return false;
       }
 
-      $this->config['console_name'] = $username;
-      $this->config['password'] = $password;
+      error_log("console_name: ".$this->config['console_name']);
 
       $port = $this->config['port'];
       $remote = "tcp://" . $this->config['host'] . ":" . $port;
@@ -462,6 +465,23 @@ class BareosBSock implements BareosBSockInterface
       );
 
       $context = stream_context_create($opts);
+
+      try {
+         //$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
+         $this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
+
+         if (!$this->socket) {
+            throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
+         }
+         // socket_set_nonblock($this->socket);
+      }
+      catch(\Exception $e) {
+         echo $e->getMessage();
+         exit;
+      }
+      if($this->config['debug']) {
+         echo "Connected to " . $this->config['host'] . " on port " . $this->config['port'] . "\n";
+      }
 
       /*
        * It only makes sense to setup the whole TLS context when we as client support or
@@ -504,28 +524,6 @@ class BareosBSock implements BareosBSockInterface
          }
       }
 
-      try {
-         //$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
-         $this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
-
-         if (!$result) {
-            throw new \Exception("Error in TLS handshake\n");
-         }
-
-         if (!$this->socket) {
-            throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
-         }
-         // socket_set_nonblock($this->socket);
-      }
-      catch(\Exception $e) {
-         echo $e->getMessage();
-         exit;
-      }
-
-      if($this->config['debug']) {
-         echo "Connected to " . $this->config['host'] . " on port " . $this->config['port'] . "\n";
-      }
-
       if (($this->config['server_can_do_tls'] || $this->config['server_requires_tls']) &&
          ($this->config['client_can_do_tls'] || $this->config['client_requires_tls'])) {
 
@@ -547,23 +545,34 @@ class BareosBSock implements BareosBSockInterface
                }
             }
          }
-
       }
 
       if (!self::login()) {
          return false;
       }
 
-      /*
-       * Get the 1000 OK: xx-dir Version: ...
-       */
       $recv = self::receive();
-
       if($this->config['debug']) {
-         echo($recv);
+         error_log($recv);
       }
 
-      return true;
+      if (!strncasecmp($recv, "1001", 4)) {
+          $pam_answer = "4002".chr(0x1e).$this->config['pam_username'].chr(0x1e).$this->config['pam_password'];
+          if (!self::send($pam_answer)) {
+            error_log("Send failed for pam credentials");
+            return false;
+          }
+          $recv = self::receive();
+          error_log($recv);
+      }
+
+      if (!strncasecmp($recv, "1000", 4)) {
+        $recv = self::receive();
+        error_log($recv);
+        return true;
+      }
+
+      return false;
    }
 
    /**
@@ -575,6 +584,7 @@ class BareosBSock implements BareosBSockInterface
    {
       if ($this->socket != null) {
          fclose($this->socket);
+         $this->socket = null;
          if ($this->config['debug']) {
             echo "Connection to " . $this->config['host'] . " on port " . $this->config['port'] . " closed\n";
          }
@@ -623,6 +633,10 @@ class BareosBSock implements BareosBSockInterface
     */
    private function tls_postconnect_verify_cn()
    {
+      if ($this->socket) {
+        return false;
+      }
+
       $options = stream_context_get_options($this->socket);
 
       if (isset($options['ssl']) && isset($options['ssl']['peer_certificate'])) {
@@ -730,6 +744,10 @@ class BareosBSock implements BareosBSockInterface
     */
    private function tls_postconnect_verify_host()
    {
+      if (!$this->socket) {
+        return false;
+      }
+
       $options = stream_context_get_options($this->socket);
 
       if (isset($options['ssl']) && isset($options['ssl']['peer_certificate'])) {

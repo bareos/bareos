@@ -88,8 +88,9 @@ class AuthController extends AbstractActionController
             $this->bsock = $this->getServiceLocator()->get('director');
             $this->bsock->set_config($config['directors'][$director]);
             $this->bsock->set_user_credentials($username, $password);
+            error_log($username);
 
-            if($this->bsock->auth($username, $password)) {
+            if($this->bsock->connect_and_authenticate()) {
                $_SESSION['bareos']['director'] = $director;
                $_SESSION['bareos']['username'] = $username;
                $_SESSION['bareos']['password'] = $password;
@@ -159,6 +160,7 @@ class AuthController extends AbstractActionController
                else {
                   // updates could not be retrieved by ajax call
                   $_SESSION['bareos']['product-updates-status'] = false;
+                  return null;
                }
 
                // Get available commands
