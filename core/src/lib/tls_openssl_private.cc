@@ -405,8 +405,8 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
     Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
   } else {
       int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
-      Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
       result = (psklen < 0) ? 0 : psklen;
+      Dmsg1(100, "psk_server_cb. result: %d.\n", result);
   }
   return result;
 }
@@ -442,8 +442,6 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
         Dmsg0(100, "Error, psk too long\n");
         return 0;
       }
-      Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
-
       return ret;
     }
   return 0;

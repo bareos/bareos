@@ -160,7 +160,7 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
   std::string pam_password;
 
   if (response_id == kMessageIdPamUserCredentials) {
-    Dmsg0(200, "Console chooses Pam direct credentials\n");
+    Dmsg0(200, "Console chooses PAM direct credentials\n");
     if (message_arguments.size() < 3) {
       Dmsg0(200, "Console sent wrong number of credentials\n");
       auth_success = false;
@@ -170,8 +170,10 @@ static bool OptionalAuthenticatePamUser(std::string console_name, UaContext *ua,
       pam_password = message_arguments.at(2);
     }
   } else if (response_id == kMessageIdPamInteractive) {
-    Dmsg0(200, "Console chooses Pam interactive\n");
+    Dmsg0(200, "Console chooses PAM interactive\n");
   }
+
+  Dmsg1(200, "Try to authenticate user:%s\n", pam_username.c_str());
 
   std::string authenticated_username;
   if (!PamAuthenticateUser(ua->UA_sock, pam_username, pam_password, authenticated_username)) {
