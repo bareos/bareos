@@ -149,7 +149,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
 {
    int32_t n = BNET_TERMINATE;
    char Job[MAX_NAME_LENGTH];
-   char MsgType[20];
+   char MsgType[21];
    int type;
    utime_t mtime;                     /* message time */
    JobControlRecord *jcr = bs->jcr();
@@ -309,7 +309,7 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
          int dev_offline, dev_autochanger, dev_autoselect;
          int dev_num_writers, dev_max_writers, dev_reserved;
          uint64_t dev_read_time, dev_write_time, dev_write_bytes, dev_read_bytes;
-         uint64_t dev_PoolId;
+         uint64_t dev_PoolId = 0;
          Dmsg1(100, "<stored: %s", bs->msg);
          if (sscanf(bs->msg, Device_update,
              &Job, dev_name.c_str(),

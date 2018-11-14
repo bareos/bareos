@@ -1356,7 +1356,7 @@ bool BareosDbDBI::SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar)
    esc_path = CheckPoolMemorySize(esc_path, pnl*2+1);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
-      *digest = '\0';
+      digest = "";
    } else {
       digest = ar->Digest;
    }
