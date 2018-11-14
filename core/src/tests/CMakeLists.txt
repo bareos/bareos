@@ -21,14 +21,6 @@ IF(HAVE_WIN32)
    link_libraries(kernel32
       user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)
 ENDIF()
-set (TEST_SRC
-    alist_test.cc
-    bareos_test_sockets.cc
-    dlist_test.cc
-    htable_test.cc
-    qualified_resource_name_type_converter_test.cc
-    lib_tests.cc
-   )
 
 set(LINK_LIBRARIES
    stored_objects
@@ -58,8 +50,14 @@ add_definitions(-DCMAKE_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 
 ####### test_lib ###############################
 add_executable(test_lib
-    ${TEST_SRC}
+    alist_test.cc
+    bareos_test_sockets.cc
+    dlist_test.cc
+    htable_test.cc
+    qualified_resource_name_type_converter_test.cc
+    lib_tests.cc
     )
+
 target_link_libraries(test_lib
    stored_objects
    bareossd
@@ -79,6 +77,28 @@ set_property(TEST test_lib
    )
 
 add_dependencies(check test_lib)
+
+####### test_output_formatter ###############################
+add_executable(test_output_formatter
+    lib_tests_output_formatter.cc
+    )
+target_link_libraries(test_output_formatter
+   bareos
+   ${JANSSON_LIBRARIES}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
+   )
+
+add_test(NAME test_output_formatter
+   COMMAND test_output_formatter
+   )
+
+set_property(TEST test_output_formatter
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+
+add_dependencies(check test_output_formatter)
 
 ####### test_bsock ###############################
 add_executable(test_bsock
