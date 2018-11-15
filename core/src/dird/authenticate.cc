@@ -63,21 +63,6 @@ static char dir_not_authorized_message[] = "1999 You are not authorized.\n";
 
 bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, StorageResource *store)
 {
-  if (store->IsTlsConfigured()) {
-    std::string qualified_resource_name;
-    if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
-                                                                              qualified_resource_name)) {
-      Dmsg0(100, "Could not generate qualified resource name for a storage resource\n");
-      return false;
-    }
-
-    if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
-                            store->password.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with a storage daemon\n");
-      return false;
-    }
-  }
-
   char dirname[MAX_NAME_LENGTH];
   bstrncpy(dirname, me->hdr.name, sizeof(dirname));
   BashSpaces(dirname);
