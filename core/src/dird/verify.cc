@@ -350,7 +350,7 @@ bool DoVerify(JobControlRecord *jcr)
           * TLS Requirement
           */
 
-         tls_need = GetLocalTlsPolicyFromConfiguration(store);
+         tls_need = store->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {

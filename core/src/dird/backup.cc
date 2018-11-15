@@ -557,7 +557,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
        * TLS Requirement
        */
 
-      tls_need = GetLocalTlsPolicyFromConfiguration(store);
+      tls_need = store->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
 
       connection_target_address = StorageAddressToContact(client, store);
 
