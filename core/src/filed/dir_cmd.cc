@@ -1609,6 +1609,7 @@ static bool StorageCmd(JobControlRecord *jcr)
 
 bail_out:
    delete storage_daemon_socket;
+   jcr->store_bsock = nullptr;
    dir->fsend(BADcmd, "storage");
    return false;
 }
