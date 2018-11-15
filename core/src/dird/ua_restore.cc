@@ -1557,14 +1557,7 @@ static int JobidFileindexHandler(void *ctx, int num_fields, char **row)
    rx->found = true;
    rx->selected_files++;
 
-   if (bstrcmp(rx->last_jobid, row[0])) {
-      return 0;                       /* duplicate id */
-   }
-   bstrncpy(rx->last_jobid, row[0], sizeof(rx->last_jobid));
-   if (rx->JobIds[0] != 0) {
-      PmStrcat(rx->JobIds, ",");
-   }
-   PmStrcat(rx->JobIds, row[0]);
+   JobidHandler(ctx, num_fields, row);
 
    return 0;
 }
