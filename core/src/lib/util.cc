@@ -29,6 +29,10 @@
 #include "include/jcr.h"
 #include "lib/edit.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
+#include "lib/qualified_resource_name_type_converter.h"
+
+#include <algorithm>
 
 /*
  * Various BAREOS Utility subroutines
@@ -179,17 +183,62 @@ void UnbashSpaces(PoolMem &pm)
    }
 }
 
-void SwapSeparatorsInString(std::string &str,
-                            char separator,
-                            char new_separator)
+struct HelloInformation {
+  std::string hello_string;
+  std::string resource_type_string;
+  uint32_t position_of_name;
+};
+
+static std::list<HelloInformation> hello_list {
+  /* this order is important */
+  { "Hello Storage calling start Job", "R_JOB", 5 },
+  { "Hello Start Storage Job", "R_JOB", 4 },
+  { "Hello Start Job", "R_JOB", 3 },
+  { "Hello Director", "R_DIRECTOR", 2 },
+  { "Hello Storage", "R_STORAGE", 2 },
+  { "Hello Client", "R_CLIENT", 2 },
+  { "Hello", "R_CONSOLE", 1 }
+};
+
+bool GetNameAndResourceTypeFromHello(const char *input,
+                                     const QualifiedResourceNameTypeConverter &converter,
+                                     std::string &name,
+                                     uint32_t &r_type)
 {
-  std::string::iterator it = str.begin();
-  while( it != str.end() ) {
-    if (*it == separator) {
-      *it = new_separator;
+  bool ok = false;
+
+  std::string s(input);
+
+  std::list<HelloInformation>::const_iterator hello = hello_list.cbegin();
+
+  bool found = false;
+  while (hello != hello_list.cend()) {
+    uint32_t size = hello->hello_string.size();
+    if (s.size() >= size ) {
+      if (!s.compare(0, size, hello->hello_string)) {
+        found = true;
+        break;
+      }
     }
-    it++;
+    hello++;
   }
+
+  if (!found) {
+    Dmsg1(100, "Client information not found: %s", s.c_str());
+    return false;
+  }
+
+  BStringList args(s, ' '); /* split at blanks */
+
+  if (args.size() >= hello->position_of_name) {
+    name = args[hello->position_of_name];
+    std::replace(name.begin(),name.end(), (char)0x1, ' ');
+    int r = converter.StringToResourceType(hello->resource_type_string);
+    if (r < 0) { return false; }
+    r_type = r;
+    ok = true;
+  }
+  return ok;
 }
 
 /*

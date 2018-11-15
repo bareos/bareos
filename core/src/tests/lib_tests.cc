@@ -152,3 +152,42 @@ TEST(BNet, EvaluateResponseMessage_Correct_Id)
   const char *m3 {"1001 OK: <director-name> Version: <version>"};
   EXPECT_STREQ(args.JoinReadable().c_str(), m3);
 }
+
+enum {
+  R_DIRECTOR = 1, R_CLIENT, R_JOB, R_STORAGE, R_CONSOLE
+};
+
+#include "lib/qualified_resource_name_type_converter.h"
+
+static void do_get_name_from_hello_test(const char *client_string_fmt, uint32_t r_type_test)
+{
+  std::map<int, std::string> map{
+    {R_DIRECTOR, "R_DIRECTOR"}, {R_CLIENT, "R_CLIENT"}, {R_JOB, "R_JOB"}, { R_CONSOLE, "R_CONSOLE" }
+  };
+
+  QualifiedResourceNameTypeConverter converter(map);
+
+  char bashed_client_name[20];
+  const char *t = "Test Client";
+  sprintf(bashed_client_name, t);
+  BashSpaces(bashed_client_name);
+
+  char output_text[64];
+  sprintf(output_text, client_string_fmt, bashed_client_name);
+
+  std::string name;
+  uint32_t r_type;
+
+  bool ok = GetNameAndResourceTypeFromHello(output_text, converter, name, r_type);
+
+  EXPECT_TRUE(ok);
+  EXPECT_STREQ(name.c_str(), t);
+  EXPECT_EQ(r_type, r_type_test);
+}
+
+TEST(Util, get_name_from_hello_test)
+{
+  do_get_name_from_hello_test("Hello Client %s calling", R_CLIENT);
+  do_get_name_from_hello_test("Hello Storage calling start Job %s", R_JOB);
+  do_get_name_from_hello_test("Hello %s", R_CONSOLE);
+}

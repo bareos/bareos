@@ -48,6 +48,7 @@ struct btimer_t; /* forward reference */
 class BareosSocket;
 class Tls;
 class BStringList;
+class QualifiedResourceNameTypeConverter;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
@@ -185,7 +186,10 @@ class BareosSocket : public SmartAlloc {
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist *src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool EvaluateCleartextBareosHello(bool &cleartext) const;
+  bool EvaluateCleartextBareosHello(const QualifiedResourceNameTypeConverter &converter,
+                                    bool &cleartext,
+                                    std::string &client_name,
+                                    uint32_t &r_code) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
   void GetCipherMessageString(std::string &str);
   bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);

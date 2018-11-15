@@ -23,6 +23,8 @@
 
 #include "lib/ascii_control_characters.h"
 
+class QualifiedResourceNameTypeConverter;
+
 void EscapeString(PoolMem &snew, char *old, int len);
 bool IsBufZero(char *buf, int len);
 void lcase(char *str);
@@ -30,7 +32,10 @@ void BashSpaces(char *str);
 void BashSpaces(PoolMem &pm);
 void UnbashSpaces(char *str);
 void UnbashSpaces(PoolMem &pm);
-void SwapSeparatorsInString(std::string &str, char separator = AsciiControlCharacters::RecordSeparator(), char new_separator = ' ');
+bool GetNameAndResourceTypeFromHello(const char *input,
+                                     const QualifiedResourceNameTypeConverter &converter,
+                                     std::string &name,
+                                     uint32_t &r_type);
 const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
 char *encode_time(utime_t time, char *buf);
 bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);
