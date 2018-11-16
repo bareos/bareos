@@ -1025,7 +1025,7 @@ bool ConfigurationParser::GetCleartextConfigured(uint32_t r_code,
 
   TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
   if (!foreign_tls_resource) {
-    Dmsg2(100, "Could not find foreign tls resource: %d-%s\n", r_code, name);
+    Dmsg2(100, "Could not find foreign tls resource: %d-%s\n", r_code, name.c_str());
     return false;
   }
 
