@@ -50,6 +50,7 @@
 #elif HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
+#include <atomic>
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -72,11 +73,13 @@ struct s_sockfd {
  */
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
 {
-   Dmsg0(100, "Stop BnetThreadServer and wait until finished\n");
+   Dmsg0(100, "BnetThreadServer: Request Stop\n");
    quit = true;
    if (!pthread_equal(tid, pthread_self())) {
       pthread_kill(tid, TIMEOUT_SIGNAL);
+      Dmsg0(100, "BnetThreadServer: Wait until finished\n");
       pthread_join(tid, nullptr);
+      Dmsg0(100, "BnetThreadServer: finished\n");
    }
 }
 
@@ -86,36 +89,45 @@ void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
  */
 static void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq)
 {
-   int status;
-   s_sockfd *fd_ptr = NULL;
-
    Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
 
-   if (!sockfds->empty()) {
-      /*
-       * Cleanup open files and pointers to them
-       */
-      fd_ptr = (s_sockfd *)sockfds->first();
+   if (sockfds && !sockfds->empty()) {
+      s_sockfd *fd_ptr = (s_sockfd *)sockfds->first();
       while (fd_ptr) {
          close(fd_ptr->fd);
          fd_ptr = (s_sockfd *)sockfds->next();
       }
-
       sockfds->destroy();
-
-      /*
-       * Stop work queue thread
-       */
-      if ((status = WorkqDestroy(client_wq)) != 0) {
-         BErrNo be;
-         be.SetErrno(status);
-         Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
-               be.bstrerror());
-      }
    }
 
+   if (client_wq) {
+      int status = WorkqDestroy(client_wq);
+      if (status != 0) {
+          BErrNo be;
+          be.SetErrno(status);
+          Emsg1(M_ERROR, 0, _("Could not destroy client queue: ERR=%s\n"),
+                be.bstrerror());
+      }
+   }
    Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");
 }
+
+class BNetThreadServerCleanupObject
+{
+public:
+   BNetThreadServerCleanupObject(alist *sockfds,
+                     workq_t *client_wq)
+     : sockfds_(sockfds)
+     , client_wq_(client_wq)
+   {}
+
+   ~BNetThreadServerCleanupObject() {
+     CleanupBnetThreadServerTcp(sockfds_, client_wq_);
+   }
+private:
+   alist *sockfds_;
+   workq_t *client_wq_;
+};
 
 /**
  * Become Threaded Network Server
@@ -134,12 +146,12 @@ void BnetThreadServerTcp(dlist *addr_list,
                             void *HandleConnectionRequest(ConfigurationParser *config,
                                                         void *bsock),
                             ConfigurationParser *config,
-                            bool *const tcp_server_ready)
+                            std::atomic<BnetServerState> *const server_state)
 {
    int newsockfd, status;
    socklen_t clilen;
    struct sockaddr cli_addr;       /* client's address */
-   int tlog, tmax;
+   int tlog;
    int value;
 #ifdef HAVE_LIBWRAP
    struct request_info request;
@@ -154,6 +166,10 @@ void BnetThreadServerTcp(dlist *addr_list,
 #endif
 
    char allbuf[256 * 10];
+
+   BNetThreadServerCleanupObject cleanup_object(sockfds, client_wq);
+
+   if (server_state) { server_state->store(BnetServerState::kStarting); }
 
    /*
     * Remove any duplicate addresses.
@@ -212,28 +228,34 @@ void BnetThreadServerTcp(dlist *addr_list,
          Bmicrosleep(10, 0);
       }
 
-      /*
-       * Reuse old sockets
-       */
       if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&value, sizeof(value)) < 0) {
          BErrNo be;
          Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
                be.bstrerror());
       }
 
-      tmax = 30 * (60 / 5);        /* wait 30 minutes max */
-      for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0; tlog -= 5) {
+      int tries = 3;
+      int wait_seconds = 5;
+      bool ok = false;
+
+      do {
+         int ret = bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen());
+         if (ret < 0) {
+           BErrNo be;
+           Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
+                 ntohs(fd_ptr->port), be.bstrerror());
+           Bmicrosleep(wait_seconds, 0);
+         } else {
+           ok = true;
+         }
+      } while (!ok && --tries);
+
+      if (!ok) {
          BErrNo be;
-         if (tlog <= 0) {
-            tlog = 2 * 60;         /* Complain every 2 minutes */
-            Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
-                  ntohs(fd_ptr->port), be.bstrerror());
-         }
-         Bmicrosleep(5, 0);
-         if (--tmax <= 0) {
-            Emsg2(M_ABORT, 0, _("Cannot bind port %d: ERR=%s.\n"), ntohs(fd_ptr->port),
-                  be.bstrerror());
-         }
+         Emsg2(M_ERROR, 0, _("Cannot bind port %d: ERR=%s.\n"), ntohs(fd_ptr->port),
+               be.bstrerror());
+         if (server_state) { server_state->store(BnetServerState::kError); }
+         return;
       }
 
       listen(fd_ptr->fd, 50);      /* tell system we are ready */
@@ -279,13 +301,8 @@ void BnetThreadServerTcp(dlist *addr_list,
    }
 #endif
 
-   if (tcp_server_ready) {
-     *tcp_server_ready = true;
-   }
+   if (server_state) { server_state->store(BnetServerState::kStarted); }
 
-   /*
-    * Wait for a connection from the client process.
-    */
    while (!quit) {
 #ifndef HAVE_POLL
       unsigned int maxfd = 0;
@@ -305,6 +322,7 @@ void BnetThreadServerTcp(dlist *addr_list,
          if (errno == EINTR) {
             continue;
          }
+         if(server_state) { server_state->store(BnetServerState::kError); }
          Emsg1(M_FATAL, 0, _("Error in select: %s\n"), be.bstrerror());
          break;
       }
@@ -321,6 +339,7 @@ void BnetThreadServerTcp(dlist *addr_list,
             continue;
          }
          Emsg1(M_FATAL, 0, _("Error in poll: %s\n"), be.bstrerror());
+
          break;
       }
 
@@ -394,10 +413,5 @@ void BnetThreadServerTcp(dlist *addr_list,
          }
       }
    }
-
-   CleanupBnetThreadServerTcp(sockfds, client_wq);
-
-   if (tcp_server_ready) {
-     *tcp_server_ready = false;
-   }
+   if(server_state) { server_state->store(BnetServerState::kEnded); }
 }

@@ -24,7 +24,7 @@
 
 namespace directordaemon {
 
-void StartSocketServer(dlist *addrs);
+bool StartSocketServer(dlist *addrs);
 void StopSocketServer();
 
 } /* namespace directordaemon */

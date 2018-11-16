@@ -79,7 +79,9 @@ TEST(bsock, console_director_connection_test)
    Dmsg0(200, "Start UA server\n");
    directordaemon::me = (directordaemon::DirectorResource *)
                          director_config_parser->GetNextRes(directordaemon::R_DIRECTOR, nullptr);
-   directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
+   ok = directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
+   EXPECT_TRUE(ok) << "Could not start StartSocketServer";
+   if (!ok) { return; }
 
    JobControlRecord jcr;
    memset(&jcr, 0, sizeof(jcr));

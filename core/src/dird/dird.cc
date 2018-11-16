@@ -426,7 +426,9 @@ int main (int argc, char *argv[])
    InitConsoleMsg(working_directory);
 
    Dmsg0(200, "Start UA server\n");
-   StartSocketServer(me->DIRaddrs);
+   if (!StartSocketServer(me->DIRaddrs)) {
+      TerminateDird(0);
+   }
 
    StartWatchdog();                  /* start network watchdog thread */
 

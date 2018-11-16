@@ -36,6 +36,8 @@
 #include "lib/bnet_server_tcp.h"
 #include "lib/try_tls_handshake_as_a_server.h"
 
+#include <atomic>
+
 namespace directordaemon {
 
 static char hello_client_with_version[] = "Hello Client %127s FdProtocolVersion=%d calling";
@@ -47,7 +49,8 @@ static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
 static ConnectionPool *client_connections = NULL;
-static bool tcp_server_ready = false;
+
+static std::atomic<BnetServerState> server_state(BnetServerState::kUndefined);
 
 struct s_addr_port {
   char *addr;
@@ -126,34 +129,46 @@ extern "C" void *connect_thread(void *arg)
    */
   sock_fds = New(alist(10, not_owned_by_alist));
   BnetThreadServerTcp((dlist *)arg, me->MaxConnections, sock_fds, &socket_workq, me->nokeepalive,
-                      HandleConnectionRequest, my_config, &tcp_server_ready);
+                      HandleConnectionRequest, my_config, &server_state);
 
   return NULL;
 }
-
+#include <errno.h>
 /**
  * Called here by Director daemon to start UA (user agent)
  * command thread. This routine creates the thread and then
  * returns.
  */
-void StartSocketServer(dlist *addrs)
+bool StartSocketServer(dlist *addrs)
 {
   int status;
-  static dlist *myaddrs = addrs;
-  tcp_server_ready = false;
 
-  if (client_connections == NULL) { client_connections = New(ConnectionPool()); }
-  if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
+  if (client_connections == nullptr) { client_connections = New(ConnectionPool()); }
+
+  server_state.store(BnetServerState::kUndefined);
+
+  if ((status = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void *)addrs)) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
   }
 
-  int timeout_ctr = 1000; /* 1000 * 10000µs = 10 sec */
-  while (!tcp_server_ready && timeout_ctr--) {
-    Bmicrosleep(0, 10000);
-  }
+  int tries = 200; /* consider bind() tries in BnetThreadServerTcp */
+  int wait_ms = 100;
+  do {
+    Bmicrosleep(0, wait_ms * 1000);
+    if (server_state.load() != BnetServerState::kUndefined) {
+      break;
+    }
+  } while (--tries);
 
-  return;
+  if (server_state != BnetServerState::kStarted) {
+    if (client_connections) {
+      delete (client_connections);
+      client_connections = nullptr;
+    }
+    return false;
+  }
+  return true;
 }
 
 void StopSocketServer()
@@ -161,8 +176,11 @@ void StopSocketServer()
   if (sock_fds) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     delete sock_fds;
-    sock_fds = NULL;
+    sock_fds = nullptr;
   }
-  if (client_connections) { delete (client_connections); }
+  if (client_connections) {
+    delete (client_connections);
+    client_connections = nullptr;
+  }
 }
 } /* namespace directordaemon */
