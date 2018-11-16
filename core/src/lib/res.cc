@@ -50,7 +50,7 @@ static int res_locked = 0; /* resource chain lock count -- for debug */
 
 // #define TRACE_RES
 
-void ConfigurationParser::b_LockRes(const char *file, int line)
+void ConfigurationParser::b_LockRes(const char *file, int line) const
 {
   int errstat;
 
@@ -72,7 +72,7 @@ void ConfigurationParser::b_LockRes(const char *file, int line)
   res_locked++;
 }
 
-void ConfigurationParser::b_UnlockRes(const char *file, int line)
+void ConfigurationParser::b_UnlockRes(const char *file, int line) const
 {
   int errstat;
 
@@ -88,7 +88,7 @@ void ConfigurationParser::b_UnlockRes(const char *file, int line)
 /*
  * Return resource of type rcode that matches name
  */
-CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock)
+CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock) const
 {
   CommonResourceHeader *res;
   int rindex = rcode - r_first_;

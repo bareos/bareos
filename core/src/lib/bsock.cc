@@ -611,7 +611,7 @@ bool BareosSocket::EvaluateCleartextBareosHello(const QualifiedResourceNameTypeC
     if (cleartext) {
       std::string name;
       uint32_t code;
-      if (GetNameAndResourceTypeFromHello(buffer, converter, name, code)) {
+      if (GetNameAndResourceTypeFromHello(received, converter, name, code)) {
         client_name = name;
         r_code = code;
       }

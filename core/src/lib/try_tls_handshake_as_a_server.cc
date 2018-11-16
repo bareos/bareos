@@ -40,23 +40,24 @@ static bool CheckForCleartextConnection(BareosSocket *bs, ConfigurationParser *c
     return false;
   }
 
-  bool cleartext_configured;
-  if (!config->GetCleartextConfigured(cleartext_configured)) {
-    Dmsg0(100, "Could not read out cleartext configuration\n");
-    return false;
+  if (cleartext_requested) {
+    bool cleartext_configured;
+    if (!config->GetCleartextConfigured(r_code, client_name, cleartext_configured)) {
+      Dmsg0(100, "Could not read out cleartext configuration\n");
+      return false;
+    }
+
+    if (!cleartext_configured) {
+      Dmsg0(100, "Client wants cleartext connection but tls is configured\n");
+      return false;
+    }
+    do_cleartext = true;
+  } else {
+    /* client is unknown, yet; try tls */
+    do_cleartext = false;
   }
 
-  if (cleartext_requested && !cleartext_configured) {
-    Dmsg0(100, "Client wants cleartext connection but tls is configured\n");
-    return false;
-  }
-
-  if (!cleartext_requested && cleartext_configured) {
-    Dmsg0(100, "Client wants tls connection but cleartext is configured\n");
-    return false;
-  }
-  do_cleartext = cleartext_configured; /* this covers the other two cases */
-  Dmsg1(100, "Client and Server want %s connection\n", do_cleartext ? "cleartext" : "tls");
+  Dmsg1(100, "Try %s connection\n", do_cleartext ? "cleartext" : "tls");
   return true;
 }
 

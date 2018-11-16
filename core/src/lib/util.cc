@@ -200,22 +200,21 @@ static std::list<HelloInformation> hello_list {
   { "Hello", "R_CONSOLE", 1 }
 };
 
-bool GetNameAndResourceTypeFromHello(const char *input,
+bool GetNameAndResourceTypeFromHello(const std::string &input,
                                      const QualifiedResourceNameTypeConverter &converter,
                                      std::string &name,
                                      uint32_t &r_type)
 {
   bool ok = false;
 
-  std::string s(input);
-
   std::list<HelloInformation>::const_iterator hello = hello_list.cbegin();
 
   bool found = false;
   while (hello != hello_list.cend()) {
     uint32_t size = hello->hello_string.size();
-    if (s.size() >= size ) {
-      if (!s.compare(0, size, hello->hello_string)) {
+    uint32_t input_size = input.size();
+    if (input_size >= size) {
+      if (!input.compare(0, size, hello->hello_string)) {
         found = true;
         break;
       }
@@ -224,11 +223,11 @@ bool GetNameAndResourceTypeFromHello(const char *input,
   }
 
   if (!found) {
-    Dmsg1(100, "Client information not found: %s", s.c_str());
+    Dmsg1(100, "Client information not found: %s", input.c_str());
     return false;
   }
 
-  BStringList args(s, ' '); /* split at blanks */
+  BStringList args(input, ' '); /* split at blanks */
 
   if (args.size() >= hello->position_of_name) {
     name = args[hello->position_of_name];

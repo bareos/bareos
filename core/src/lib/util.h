@@ -32,7 +32,7 @@ void BashSpaces(char *str);
 void BashSpaces(PoolMem &pm);
 void UnbashSpaces(char *str);
 void UnbashSpaces(PoolMem &pm);
-bool GetNameAndResourceTypeFromHello(const char *input,
+bool GetNameAndResourceTypeFromHello(const std::string &input,
                                      const QualifiedResourceNameTypeConverter &converter,
                                      std::string &name,
                                      uint32_t &r_type);

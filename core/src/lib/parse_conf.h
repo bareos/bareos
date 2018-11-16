@@ -420,7 +420,7 @@ public:
   int32_t r_own_;                   /* own resource type */
    ResourceTable *resources_;          /* Pointer to table of permitted resources */
    CommonResourceHeader **res_head_;   /* Pointer to defined resources */
-   brwlock_t res_lock_;                /* Resource lock */
+   mutable brwlock_t res_lock_;        /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
@@ -483,9 +483,9 @@ public:
                             bool error_if_exits     = false,
                             bool create_directories = false);
   CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res) const;
-  CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
-  void b_LockRes(const char *file, int line);
-  void b_UnlockRes(const char *file, int line);
+  CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true) const;
+  void b_LockRes(const char *file, int line) const;
+  void b_UnlockRes(const char *file, int line) const;
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
   void InitializeQualifiedResourceNameTypeConverter(const std::map<int,std::string> &);
@@ -495,7 +495,7 @@ public:
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk);
-  bool GetCleartextConfigured(bool &cleartext, TlsResource **tls_resource_out = nullptr) const;
+  bool GetCleartextConfigured(uint32_t r_code, const std::string &name, bool &cleartext) const;
 
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;

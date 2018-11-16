@@ -288,7 +288,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
           }
         }
      } else {
-        Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
+        Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n", jcr->res.client->name());
      }
      connect_tries--;
    } while (!tcp_connect_failed && connect_tries

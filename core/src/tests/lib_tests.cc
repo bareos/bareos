@@ -159,7 +159,9 @@ enum {
 
 #include "lib/qualified_resource_name_type_converter.h"
 
-static void do_get_name_from_hello_test(const char *client_string_fmt, uint32_t r_type_test)
+static void do_get_name_from_hello_test(const char *client_string_fmt,
+                                        const char *client_name,
+                                        uint32_t r_type_test)
 {
   std::map<int, std::string> map{
     {R_DIRECTOR, "R_DIRECTOR"}, {R_CLIENT, "R_CLIENT"}, {R_JOB, "R_JOB"}, { R_CONSOLE, "R_CONSOLE" }
@@ -168,8 +170,7 @@ static void do_get_name_from_hello_test(const char *client_string_fmt, uint32_t 
   QualifiedResourceNameTypeConverter converter(map);
 
   char bashed_client_name[20];
-  const char *t = "Test Client";
-  sprintf(bashed_client_name, t);
+  sprintf(bashed_client_name, client_name);
   BashSpaces(bashed_client_name);
 
   char output_text[64];
@@ -181,13 +182,14 @@ static void do_get_name_from_hello_test(const char *client_string_fmt, uint32_t 
   bool ok = GetNameAndResourceTypeFromHello(output_text, converter, name, r_type);
 
   EXPECT_TRUE(ok);
-  EXPECT_STREQ(name.c_str(), t);
+  EXPECT_STREQ(name.c_str(), client_name);
   EXPECT_EQ(r_type, r_type_test);
 }
 
 TEST(Util, get_name_from_hello_test)
 {
-  do_get_name_from_hello_test("Hello Client %s calling", R_CLIENT);
-  do_get_name_from_hello_test("Hello Storage calling start Job %s", R_JOB);
-  do_get_name_from_hello_test("Hello %s", R_CONSOLE);
+  do_get_name_from_hello_test("Hello Client %s calling", "Test Client", R_CLIENT);
+  do_get_name_from_hello_test("Hello Storage calling start Job %s", "Test Client", R_JOB);
+  do_get_name_from_hello_test("Hello %s", "Console Name",  R_CONSOLE);
+  do_get_name_from_hello_test("Hello %s", "*UserAgent*",  R_CONSOLE);
 }

@@ -1013,16 +1013,26 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg,
    return true;
 }
 
-bool ConfigurationParser::GetCleartextConfigured(bool &cleartext, TlsResource **tls_resource_out) const
+bool ConfigurationParser::GetCleartextConfigured(uint32_t r_code,
+                                                 const std::string &name,
+                                                 bool &cleartext) const
 {
-  TlsResource *tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
-  if (!tls_resource) {
+  TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
+  if (!own_tls_resource) {
     Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
     return false;
   }
-  cleartext = !tls_resource->IsTlsConfigured();
-  if (tls_resource_out) {
-    *tls_resource_out = tls_resource;
+
+  TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
+  if (!foreign_tls_resource) {
+    Dmsg2(100, "Could not find foreign tls resource: %d-%s\n", r_code, name);
+    return false;
+  }
+
+  if (name == std::string("*UserAgent*")) {
+    cleartext = !own_tls_resource->tls_cert.IsActivated() && !own_tls_resource->tls_psk.IsActivated();
+  } else {
+    cleartext = !own_tls_resource->tls_cert.IsActivated() && !foreign_tls_resource->tls_psk.IsActivated();
   }
   return true;
 }
