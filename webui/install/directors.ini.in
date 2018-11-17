@@ -1,7 +1,7 @@
 ;
 ; Bareos WebUI Configuration File
 ;
-; File: /etc/bareos-webui/directors.ini
+; File: @CONFDIR@/directors.ini
 ;
 
 ;------------------------------------------------------------------------------
@@ -15,8 +15,8 @@ enabled = "yes"
 ; Fill in the IP-Address or FQDN of you director.
 diraddress = "localhost"
 
-; Default value is 9101
-dirport	= 9101
+; Default value is @dirport@
+dirport	= @dirport@
 
 ; Set catalog to explicit value if you have multiple catalogs
 ;catalog = "MyCatalog"
@@ -48,11 +48,11 @@ client_can_do_tls = false
 client_requires_tls = false
 
 ; Path to the certificate authority file
-; E.g. ca_file = "/etc/bareos-webui/tls/BareosCA.crt"
+; E.g. ca_file = "@CONFDIR@/tls/BareosCA.crt"
 ;ca_file = ""
 
 ; Path to the cert file which needs to contain the client certificate and the key in PEM encoding
-; E.g. ca_file = "/etc/bareos-webui/tls/restricted-named-console.pem"
+; E.g. ca_file = "@CONFDIR@/tls/restricted-named-console.pem"
 ;cert_file = ""
 
 ; Passphrase needed to unlock the above cert file if set
@@ -68,7 +68,7 @@ client_requires_tls = false
 [another-host-dir]
 enabled = "no"
 diraddress = "192.168.120.1"
-dirport = 9101
+dirport = @dirport@
 ;catalog = "MyCatalog"
 ;tls_verify_peer = false
 ;server_can_do_tls = false

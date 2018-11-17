@@ -35,8 +35,8 @@
  * file.
  */
 
-$directors_ini = "/etc/bareos-webui/directors.ini";
-$configuration_ini = "/etc/bareos-webui/configuration.ini";
+$directors_ini = "@CONFDIR@/directors.ini";
+$configuration_ini = "@CONFDIR@/configuration.ini";
 
 $directors = null;
 $configuration = null;
@@ -139,7 +139,7 @@ function read_directors_ini($directors, $directors_ini)
             $arr[key($directors)]['port'] = $instance['dirport'];
          }
          else {
-            $arr[key($directors)]['port'] = 9101;
+            $arr[key($directors)]['port'] = @dirport@;
          }
 
          if(array_key_exists('tls_verify_peer', $instance) && isset($instance['tls_verify_peer'])) {
