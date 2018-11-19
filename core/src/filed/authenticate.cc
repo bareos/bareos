@@ -129,7 +129,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
     return false;
   }
 
-  if (!dir->AuthenticateInboundConnection(jcr, "Director", dirname.c_str(), director->password, director)) {
+  if (!dir->AuthenticateInboundConnection(jcr, "Director", dirname.c_str(), director->password_, director)) {
     dir->fsend("%s", Dir_sorry);
     errormsg.bsprintf(_("Unable to authenticate Director %s.\n"), dirname.c_str());
     AuthenticateFailed(jcr, errormsg);
@@ -146,7 +146,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
  */
 bool AuthenticateWithDirector(JobControlRecord *jcr, DirectorResource *director)
 {
-  return jcr->dir_bsock->AuthenticateOutboundConnection(jcr, "Director", me->name(), director->password,
+  return jcr->dir_bsock->AuthenticateOutboundConnection(jcr, "Director", me->name(), director->password_,
                                                         director);
 }
 

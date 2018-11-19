@@ -52,8 +52,8 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr,
     local_tls_resource = console_resource;
   } else { /* default console */
     name = "*UserAgent*";
-    ASSERT(director_resource->password.encoding == p_encoding_md5);
-    password          = &director_resource->password;
+    ASSERT(director_resource->password_.encoding == p_encoding_md5);
+    password          = &director_resource->password_;
     local_tls_resource = director_resource;
   }
 

@@ -361,7 +361,7 @@ bool DoVerify(JobControlRecord *jcr)
          ClientResource *client = jcr->res.client;
 
          if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
-            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+            tls_need = client->GetPolicy();
          } else {
             tls_need = client->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
          }

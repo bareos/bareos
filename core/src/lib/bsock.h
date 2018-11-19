@@ -113,9 +113,9 @@ class BareosSocket : public SmartAlloc {
                           s_password &password,
                           TlsResource *tls_resource,
                           bool initiated_by_remote);
-  bool DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
+  bool DoTlsHandshakeWithClient(TlsConfigCert *local_tls_cert,
                                 JobControlRecord *jcr);
-  bool DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
+  bool DoTlsHandshakeWithServer(TlsConfigCert *local_tls_cert,
                                 const char *identity,
                                 const char *password,
                                 JobControlRecord *jcr);

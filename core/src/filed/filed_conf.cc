@@ -150,7 +150,6 @@ static ResourceItem cli_items[] = {
     {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-    TLS_PSK_CONFIG(res_client),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**
@@ -159,7 +158,7 @@ static ResourceItem cli_items[] = {
 static ResourceItem dir_items[] = {
     {"Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
-    {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+    {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL,
      "Director Network Address. Only required if \"Connection From Client To Director\" is enabled."},
     {"Port", CFG_TYPE_PINT32, ITEM(res_dir.port), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, "16.2.2",
@@ -174,7 +173,6 @@ static ResourceItem dir_items[] = {
     {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-    TLS_PSK_CONFIG(res_client),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**
@@ -393,22 +391,22 @@ static void FreeResource(CommonResourceHeader *sres, int type)
   if (res->res_dir.hdr.desc) { free(res->res_dir.hdr.desc); }
   switch (type) {
     case R_DIRECTOR:
-      if (res->res_dir.password.value) { free(res->res_dir.password.value); }
+      if (res->res_dir.password_.value) { free(res->res_dir.password_.value); }
       if (res->res_dir.address) { free(res->res_dir.address); }
       if (res->res_dir.allowed_script_dirs) { delete res->res_dir.allowed_script_dirs; }
       if (res->res_dir.allowed_job_cmds) { delete res->res_dir.allowed_job_cmds; }
-      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
-        res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_dir.tls_cert.allowed_certificate_common_names_);
+      if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
+        res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.tls_cert.CaCertfile) { delete res->res_dir.tls_cert.CaCertfile; }
-      if (res->res_dir.tls_cert.CaCertdir) { delete res->res_dir.tls_cert.CaCertdir; }
-      if (res->res_dir.tls_cert.crlfile) { delete res->res_dir.tls_cert.crlfile; }
-      if (res->res_dir.tls_cert.certfile) { delete res->res_dir.tls_cert.certfile; }
-      if (res->res_dir.tls_cert.keyfile) { delete res->res_dir.tls_cert.keyfile; }
-      if (res->res_dir.tls_cert.cipherlist) { delete res->res_dir.tls_cert.cipherlist; }
-      if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
-      if (res->res_dir.tls_cert.pem_message) { delete res->res_dir.tls_cert.pem_message; }
+      if (res->res_dir.tls_cert_.ca_certfile_) { delete res->res_dir.tls_cert_.ca_certfile_; }
+      if (res->res_dir.tls_cert_.ca_certdir_) { delete res->res_dir.tls_cert_.ca_certdir_; }
+      if (res->res_dir.tls_cert_.crlfile_) { delete res->res_dir.tls_cert_.crlfile_; }
+      if (res->res_dir.tls_cert_.certfile_) { delete res->res_dir.tls_cert_.certfile_; }
+      if (res->res_dir.tls_cert_.keyfile_) { delete res->res_dir.tls_cert_.keyfile_; }
+      if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
+      if (res->res_dir.tls_cert_.dhfile_) { delete res->res_dir.tls_cert_.dhfile_; }
+      if (res->res_dir.tls_cert_.pem_message_) { delete res->res_dir.tls_cert_.pem_message_; }
       break;
     case R_CLIENT:
       if (res->res_client.working_directory) { free(res->res_client.working_directory); }
@@ -442,18 +440,18 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_client.allowed_job_cmds) { delete res->res_client.allowed_job_cmds; }
       if (res->res_client.secure_erase_cmdline) { free(res->res_client.secure_erase_cmdline); }
       if (res->res_client.log_timestamp_format) { free(res->res_client.log_timestamp_format); }
-      if (res->res_client.tls_cert.allowed_certificate_common_names_) {
-        res->res_client.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_client.tls_cert.allowed_certificate_common_names_);
+      if (res->res_client.tls_cert_.allowed_certificate_common_names_) {
+        res->res_client.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_client.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_client.tls_cert.CaCertfile) { delete res->res_client.tls_cert.CaCertfile; }
-      if (res->res_client.tls_cert.CaCertdir) { delete res->res_client.tls_cert.CaCertdir; }
-      if (res->res_client.tls_cert.crlfile) { delete res->res_client.tls_cert.crlfile; }
-      if (res->res_client.tls_cert.certfile) { delete res->res_client.tls_cert.certfile; }
-      if (res->res_client.tls_cert.keyfile) { delete res->res_client.tls_cert.keyfile; }
-      if (res->res_client.tls_cert.cipherlist) { delete res->res_client.tls_cert.cipherlist; }
-      if (res->res_client.tls_cert.dhfile) { delete res->res_client.tls_cert.dhfile; }
-      if (res->res_client.tls_cert.pem_message) { delete res->res_client.tls_cert.pem_message; }
+      if (res->res_client.tls_cert_.ca_certfile_) { delete res->res_client.tls_cert_.ca_certfile_; }
+      if (res->res_client.tls_cert_.ca_certdir_) { delete res->res_client.tls_cert_.ca_certdir_; }
+      if (res->res_client.tls_cert_.crlfile_) { delete res->res_client.tls_cert_.crlfile_; }
+      if (res->res_client.tls_cert_.certfile_) { delete res->res_client.tls_cert_.certfile_; }
+      if (res->res_client.tls_cert_.keyfile_) { delete res->res_client.tls_cert_.keyfile_; }
+      if (res->res_client.cipherlist_) { delete res->res_client.cipherlist_; }
+      if (res->res_client.tls_cert_.dhfile_) { delete res->res_client.tls_cert_.dhfile_; }
+      if (res->res_client.tls_cert_.pem_message_) { delete res->res_client.tls_cert_.pem_message_; }
       break;
     case R_MSGS:
       if (res->res_msgs.mail_cmd) { free(res->res_msgs.mail_cmd); }
@@ -515,8 +513,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
             NULL) {
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
         } else {
-          res->res_dir.tls_cert.allowed_certificate_common_names_ =
-              res_all.res_dir.tls_cert.allowed_certificate_common_names_;
+          res->res_dir.tls_cert_.allowed_certificate_common_names_ =
+              res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
           res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
           res->res_dir.allowed_job_cmds    = res_all.res_dir.allowed_job_cmds;
         }
@@ -531,8 +529,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
           res->res_client.pki_signers           = res_all.res_client.pki_signers;
           res->res_client.pki_recipients        = res_all.res_client.pki_recipients;
           res->res_client.messages              = res_all.res_client.messages;
-          res->res_client.tls_cert.allowed_certificate_common_names_ =
-              res_all.res_client.tls_cert.allowed_certificate_common_names_;
+          res->res_client.tls_cert_.allowed_certificate_common_names_ =
+              res_all.res_client.tls_cert_.allowed_certificate_common_names_;
           res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
           res->res_client.allowed_job_cmds    = res_all.res_client.allowed_job_cmds;
         }

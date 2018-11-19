@@ -241,7 +241,7 @@ static inline bool IsSameStorageDaemon(StorageResource *rstore, StorageResource 
 {
    return rstore->SDport == wstore->SDport &&
           Bstrcasecmp(rstore->address, wstore->address) &&
-          Bstrcasecmp(rstore->password.value, wstore->password.value);
+          Bstrcasecmp(rstore->password_.value, wstore->password_.value);
 }
 
 bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where)

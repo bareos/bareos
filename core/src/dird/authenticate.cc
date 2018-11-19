@@ -74,7 +74,7 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, Stor
   }
 
   bool auth_success = false;
-  auth_success = sd->AuthenticateOutboundConnection(jcr, "Storage daemon", dirname, store->password, store);
+  auth_success = sd->AuthenticateOutboundConnection(jcr, "Storage daemon", dirname, store->password_, store);
   if (!auth_success) {
     Dmsg2(debuglevel, "Director unable to authenticate with Storage daemon at \"%s:%d\"\n", sd->host(),
           sd->port());
@@ -122,7 +122,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
     }
 
     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, client, false,
-                            qualified_resource_name.c_str(), client->password.value, jcr)) {
+                            qualified_resource_name.c_str(), client->password_.value, jcr)) {
       Dmsg0(100, "Could not DoTlsHandshake() with a file daemon\n");
       return false;
     }
@@ -140,7 +140,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
   Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
   bool auth_success;
-  auth_success = fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password, client);
+  auth_success = fd->AuthenticateOutboundConnection(jcr, "File Daemon", dirname, client->password_, client);
 
   if (!auth_success) {
     Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
@@ -185,7 +185,7 @@ bool AuthenticateFileDaemon(BareosSocket *fd, char *client_name)
   if (client) {
     if (IsConnectFromClientAllowed(client)) {
       auth_success =
-          fd->AuthenticateInboundConnection(NULL, "File Daemon", client_name, client->password, client);
+          fd->AuthenticateInboundConnection(NULL, "File Daemon", client_name, client->password_, client);
     }
   }
 

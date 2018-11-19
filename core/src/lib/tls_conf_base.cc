@@ -21,25 +21,12 @@
 #include "include/bareos.h"
 #include "tls_conf.h"
 
-uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource)
-{
-  uint32_t local_policy = TlsConfigBase::BNET_TLS_NONE;
-
-#if defined(HAVE_TLS)
-  local_policy = tls_resource->tls_cert.GetPolicy(); /* backward compatibility: before 18.2 never psk */
-  Dmsg1(100, "GetLocalTlsPolicyFromConfiguration: %u\n", local_policy);
-#else
-  Dmsg1(100, "Ignore configuration no tls compiled in: %u\n", local_policy);
-#endif
-  return local_policy;
-}
-
 int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy)
 {
   if (remote_policy == TlsConfigBase::BNET_TLS_AUTO) {
     return TlsConfigBase::BNET_TLS_AUTO;
   }
-  uint32_t local_policy = GetLocalTlsPolicyFromConfiguration(tls_resource);
+  uint32_t local_policy = tls_resource->GetPolicy();
 
   if ((remote_policy == 0 && local_policy == 0) || (remote_policy == 0 && local_policy == 1) ||
       (remote_policy == 1 && local_policy == 0)) {
@@ -49,9 +36,4 @@ int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy)
     return TlsConfigBase::BNET_TLS_DENY;
   }
   return TlsConfigBase::BNET_TLS_ENABLED;
-}
-
-TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy)
-{
-  return &tls_resource->tls_cert;
 }

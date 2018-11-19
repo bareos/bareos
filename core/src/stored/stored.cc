@@ -388,16 +388,16 @@ static int CheckResources()
    }
 
    StorageResource *store = me;
-   if (store->tls_cert.IsActivated()) {
+   if (store->IsTlsConfigured()) {
       if (!have_tls) {
          Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled into Bareos.\n"));
          OK = false;
       }
    }
 
-   tls_needed = store->tls_cert.IsActivated() || store->tls_cert.authenticate;
+   tls_needed = store->IsTlsConfigured() || store->authenticate_;
 
-   if ((store->tls_cert.certfile == nullptr || store->tls_cert.certfile->empty()) && tls_needed) {
+   if ((store->tls_cert_.certfile_ == nullptr || store->tls_cert_.certfile_->empty()) && tls_needed) {
       Jmsg(NULL,
            M_FATAL,
            0,
@@ -407,7 +407,7 @@ static int CheckResources()
       OK = false;
    }
 
-   if ((store->tls_cert.keyfile == nullptr || store->tls_cert.keyfile->empty()) && tls_needed) {
+   if ((store->tls_cert_.keyfile_ == nullptr || store->tls_cert_.keyfile_->empty()) && tls_needed) {
       Jmsg(NULL,
            M_FATAL,
            0,
@@ -417,9 +417,9 @@ static int CheckResources()
       OK = false;
    }
 
-   if (((store->tls_cert.CaCertfile == nullptr || store->tls_cert.CaCertfile->empty()) &&
-        (store->tls_cert.CaCertdir == nullptr || store->tls_cert.CaCertdir->empty())) &&
-       tls_needed && store->tls_cert.VerifyPeer) {
+   if (((store->tls_cert_.ca_certfile_ == nullptr || store->tls_cert_.ca_certfile_->empty()) &&
+        (store->tls_cert_.ca_certdir_ == nullptr || store->tls_cert_.ca_certdir_->empty())) &&
+       tls_needed && store->tls_cert_.verify_peer_) {
       Jmsg(NULL,
            M_FATAL,
            0,
@@ -435,24 +435,24 @@ static int CheckResources()
    DirectorResource *director;
    foreach_res(director, R_DIRECTOR) {
 
-      tls_needed = director->tls_cert.IsActivated() || director->tls_cert.authenticate;
+      tls_needed = director->IsTlsConfigured() || director->authenticate_;
 
-      if ((director->tls_cert.certfile == nullptr || director->tls_cert.certfile->empty()) &&
+      if ((director->tls_cert_.certfile_ == nullptr || director->tls_cert_.certfile_->empty()) &&
           tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
               director->name(), configfile.c_str());
          OK = false;
       }
 
-      if ((director->tls_cert.keyfile == nullptr || director->tls_cert.keyfile->empty()) && tls_needed) {
+      if ((director->tls_cert_.keyfile_ == nullptr || director->tls_cert_.keyfile_->empty()) && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
               director->name(), configfile.c_str());
          OK = false;
       }
 
-      if (((director->tls_cert.CaCertfile == nullptr || director->tls_cert.CaCertfile->empty()) &&
-           (director->tls_cert.CaCertdir == nullptr || director->tls_cert.CaCertdir->empty())) &&
-          tls_needed && director->tls_cert.VerifyPeer) {
+      if (((director->tls_cert_.ca_certfile_ == nullptr || director->tls_cert_.ca_certfile_->empty()) &&
+           (director->tls_cert_.ca_certdir_ == nullptr || director->tls_cert_.ca_certdir_->empty())) &&
+          tls_needed && director->tls_cert_.verify_peer_) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"

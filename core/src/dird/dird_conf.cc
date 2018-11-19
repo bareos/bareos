@@ -136,7 +136,7 @@ static ResourceItem dir_items[] = {
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
    { "MaximumConnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConnections), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
    { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
-   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
    { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
@@ -158,7 +158,6 @@ static ResourceItem dir_items[] = {
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
-   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -203,7 +202,7 @@ static ResourceItem profile_items[] = {
 static ResourceItem con_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL, NULL, NULL },
-   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "JobACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL, NULL, NULL },
    { "ClientACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL, NULL, NULL },
    { "StorageACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL, NULL, NULL },
@@ -222,7 +221,6 @@ static ResourceItem con_items[] = {
      "false", "18.2.4-", NULL },
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
-   TLS_PSK_CONFIG(res_con),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -244,8 +242,8 @@ static ResourceItem cli_items[] = {
    { "Port", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL },
    { "FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, FD_DEFAULT_PORT, NULL, NULL },
    { "Username", CFG_TYPE_STR, ITEM(res_client.username), 0, 0, NULL, NULL, NULL },
-   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "FdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "FdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password_), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
    { "Catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL, NULL, NULL },
    { "Passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false", "13.2.0-",
      "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon." },
@@ -273,7 +271,6 @@ static ResourceItem cli_items[] = {
    { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client.ndmp_use_lmdb), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    TLS_COMMON_CONFIG(res_client),
    TLS_CERT_CONFIG(res_client),
-   TLS_PSK_CONFIG(res_client),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -294,8 +291,8 @@ static ResourceItem store_items[] = {
    { "Port", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
    { "SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, SD_DEFAULT_PORT, NULL, "Alias for Port." },
    { "Username", CFG_TYPE_STR, ITEM(res_store.username), 0, 0, NULL, NULL, NULL },
-   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "SdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Password." },
+   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "SdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password_), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Password." },
    { "Device", CFG_TYPE_DEVICE, ITEM(res_store.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store.media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store.autochanger), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -318,7 +315,6 @@ static ResourceItem store_items[] = {
    //  "Allows direct control of Storage Daemon Tape devices by the Director. Only used in NDMP_NATIVE environments." },
    TLS_COMMON_CONFIG(res_store),
    TLS_CERT_CONFIG(res_store),
-   TLS_PSK_CONFIG(res_store),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -2450,8 +2446,8 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          return false;
       } else {
-        res->res_con.tls_cert.allowed_certificate_common_names_ =
-            res_all.res_con.tls_cert.allowed_certificate_common_names_;
+        res->res_con.tls_cert_.allowed_certificate_common_names_ =
+            res_all.res_con.tls_cert_.allowed_certificate_common_names_;
          res->res_con.profiles = res_all.res_con.profiles;
       }
       break;
@@ -2463,8 +2459,8 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          res->res_dir.plugin_names = res_all.res_dir.plugin_names;
          res->res_dir.messages = res_all.res_dir.messages;
          res->res_dir.backend_directories = res_all.res_dir.backend_directories;
-        res->res_dir.tls_cert.allowed_certificate_common_names_ =
-            res_all.res_dir.tls_cert.allowed_certificate_common_names_;
+        res->res_dir.tls_cert_.allowed_certificate_common_names_ =
+            res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
       }
       break;
    case R_STORAGE:
@@ -2475,8 +2471,8 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
          int status;
 
          res->res_store.paired_storage = res_all.res_store.paired_storage;
-        res->res_store.tls_cert.allowed_certificate_common_names_ =
-            res_all.res_store.tls_cert.allowed_certificate_common_names_;
+        res->res_store.tls_cert_.allowed_certificate_common_names_ =
+            res_all.res_store.tls_cert_.allowed_certificate_common_names_;
 
          /*
           * We must explicitly copy the device alist pointer
@@ -2575,8 +2571,8 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
              */
           res->res_client.catalog = (CatalogResource *)my_config->GetNextRes(R_CATALOG, NULL);
          }
-        res->res_client.tls_cert.allowed_certificate_common_names_ =
-            res_all.res_client.tls_cert.allowed_certificate_common_names_;
+        res->res_client.tls_cert_.allowed_certificate_common_names_ =
+            res_all.res_client.tls_cert_.allowed_certificate_common_names_;
 
          res->res_client.rcs = (runtime_client_status_t *)malloc(sizeof(runtime_client_status_t));
          memset(res->res_client.rcs, 0, sizeof(runtime_client_status_t));
@@ -3869,9 +3865,9 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config)
 
   ConsoleResource console;
   memset(&console, 0, sizeof(console));
-  console.password.encoding = dir_resource->password.encoding;
-  console.password.value    = bstrdup(dir_resource->password.value);
-  console.tls_psk.enable_   = true;
+  console.password_.encoding = dir_resource->password_.encoding;
+  console.password_.value   = bstrdup(dir_resource->password_.value);
+  console.enable_           = true;
   console.hdr.name          = bstrdup("*UserAgent*");
   console.hdr.desc          = bstrdup("root console definition");
   console.hdr.rcode         = 1013;
@@ -4015,7 +4011,7 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.pid_directory) { free(res->res_dir.pid_directory); }
       if (res->res_dir.subsys_directory) { free(res->res_dir.subsys_directory); }
       if (res->res_dir.backend_directories) { delete res->res_dir.backend_directories; }
-      if (res->res_dir.password.value) { free(res->res_dir.password.value); }
+      if (res->res_dir.password_.value) { free(res->res_dir.password_.value); }
       if (res->res_dir.query_file) { free(res->res_dir.query_file); }
       if (res->res_dir.DIRaddrs) { FreeAddresses(res->res_dir.DIRaddrs); }
       if (res->res_dir.DIRsrc_addr) { FreeAddresses(res->res_dir.DIRsrc_addr); }
@@ -4024,18 +4020,18 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_dir.audit_events) { delete res->res_dir.audit_events; }
       if (res->res_dir.secure_erase_cmdline) { free(res->res_dir.secure_erase_cmdline); }
       if (res->res_dir.log_timestamp_format) { free(res->res_dir.log_timestamp_format); }
-      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
-        res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_dir.tls_cert.allowed_certificate_common_names_);
+      if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
+        res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.tls_cert.CaCertfile) { delete res->res_dir.tls_cert.CaCertfile; }
-      if (res->res_dir.tls_cert.CaCertdir) { delete res->res_dir.tls_cert.CaCertdir; }
-      if (res->res_dir.tls_cert.crlfile) { delete res->res_dir.tls_cert.crlfile; }
-      if (res->res_dir.tls_cert.certfile) { delete res->res_dir.tls_cert.certfile; }
-      if (res->res_dir.tls_cert.keyfile) { delete res->res_dir.tls_cert.keyfile; }
-      if (res->res_dir.tls_cert.cipherlist) { delete res->res_dir.tls_cert.cipherlist; }
-      if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
-      if (res->res_dir.tls_cert.pem_message) { delete res->res_dir.tls_cert.pem_message; }
+      if (res->res_dir.tls_cert_.ca_certfile_) { delete res->res_dir.tls_cert_.ca_certfile_; }
+      if (res->res_dir.tls_cert_.ca_certdir_) { delete res->res_dir.tls_cert_.ca_certdir_; }
+      if (res->res_dir.tls_cert_.crlfile_) { delete res->res_dir.tls_cert_.crlfile_; }
+      if (res->res_dir.tls_cert_.certfile_) { delete res->res_dir.tls_cert_.certfile_; }
+      if (res->res_dir.tls_cert_.keyfile_) { delete res->res_dir.tls_cert_.keyfile_; }
+      if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
+      if (res->res_dir.tls_cert_.dhfile_) { delete res->res_dir.tls_cert_.dhfile_; }
+      if (res->res_dir.tls_cert_.pem_message_) { delete res->res_dir.tls_cert_.pem_message_; }
       break;
     case R_DEVICE:
     case R_COUNTER:
@@ -4049,7 +4045,7 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       }
       break;
     case R_CONSOLE:
-      if (res->res_con.password.value) { free(res->res_con.password.value); }
+      if (res->res_con.password_.value) { free(res->res_con.password_.value); }
       if (res->res_con.profiles) { delete res->res_con.profiles; }
       for (int i = 0; i < Num_ACL; i++) {
         if (res->res_con.ACL_lists[i]) {
@@ -4057,43 +4053,43 @@ static void FreeResource(CommonResourceHeader *sres, int type)
           res->res_con.ACL_lists[i] = NULL;
         }
       }
-      if (res->res_con.tls_cert.allowed_certificate_common_names_) {
-        res->res_con.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_con.tls_cert.allowed_certificate_common_names_);
+      if (res->res_con.tls_cert_.allowed_certificate_common_names_) {
+        res->res_con.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_con.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_con.tls_cert.CaCertfile) { delete res->res_con.tls_cert.CaCertfile; }
-      if (res->res_con.tls_cert.CaCertdir) { delete res->res_con.tls_cert.CaCertdir; }
-      if (res->res_con.tls_cert.crlfile) { delete res->res_con.tls_cert.crlfile; }
-      if (res->res_con.tls_cert.certfile) { delete res->res_con.tls_cert.certfile; }
-      if (res->res_con.tls_cert.keyfile) { delete res->res_con.tls_cert.keyfile; }
-      if (res->res_con.tls_cert.cipherlist) { delete res->res_con.tls_cert.cipherlist; }
-      if (res->res_con.tls_cert.dhfile) { delete res->res_con.tls_cert.dhfile; }
-      if (res->res_con.tls_cert.pem_message) { delete res->res_con.tls_cert.pem_message; }
+      if (res->res_con.tls_cert_.ca_certfile_) { delete res->res_con.tls_cert_.ca_certfile_; }
+      if (res->res_con.tls_cert_.ca_certdir_) { delete res->res_con.tls_cert_.ca_certdir_; }
+      if (res->res_con.tls_cert_.crlfile_) { delete res->res_con.tls_cert_.crlfile_; }
+      if (res->res_con.tls_cert_.certfile_) { delete res->res_con.tls_cert_.certfile_; }
+      if (res->res_con.tls_cert_.keyfile_) { delete res->res_con.tls_cert_.keyfile_; }
+      if (res->res_con.cipherlist_) { delete res->res_con.cipherlist_; }
+      if (res->res_con.tls_cert_.dhfile_) { delete res->res_con.tls_cert_.dhfile_; }
+      if (res->res_con.tls_cert_.pem_message_) { delete res->res_con.tls_cert_.pem_message_; }
       break;
     case R_CLIENT:
       if (res->res_client.address) { free(res->res_client.address); }
       if (res->res_client.lanaddress) { free(res->res_client.lanaddress); }
       if (res->res_client.username) { free(res->res_client.username); }
-      if (res->res_client.password.value) { free(res->res_client.password.value); }
+      if (res->res_client.password_.value) { free(res->res_client.password_.value); }
       if (res->res_client.rcs) { free(res->res_client.rcs); }
-      if (res->res_client.tls_cert.allowed_certificate_common_names_) {
-        res->res_client.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_client.tls_cert.allowed_certificate_common_names_);
+      if (res->res_client.tls_cert_.allowed_certificate_common_names_) {
+        res->res_client.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_client.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_client.tls_cert.CaCertfile) { delete res->res_client.tls_cert.CaCertfile; }
-      if (res->res_client.tls_cert.CaCertdir) { delete res->res_client.tls_cert.CaCertdir; }
-      if (res->res_client.tls_cert.crlfile) { delete res->res_client.tls_cert.crlfile; }
-      if (res->res_client.tls_cert.certfile) { delete res->res_client.tls_cert.certfile; }
-      if (res->res_client.tls_cert.keyfile) { delete res->res_client.tls_cert.keyfile; }
-      if (res->res_client.tls_cert.cipherlist) { delete res->res_client.tls_cert.cipherlist; }
-      if (res->res_client.tls_cert.dhfile) { delete res->res_client.tls_cert.dhfile; }
-      if (res->res_client.tls_cert.pem_message) { delete res->res_client.tls_cert.pem_message; }
+      if (res->res_client.tls_cert_.ca_certfile_) { delete res->res_client.tls_cert_.ca_certfile_; }
+      if (res->res_client.tls_cert_.ca_certdir_) { delete res->res_client.tls_cert_.ca_certdir_; }
+      if (res->res_client.tls_cert_.crlfile_) { delete res->res_client.tls_cert_.crlfile_; }
+      if (res->res_client.tls_cert_.certfile_) { delete res->res_client.tls_cert_.certfile_; }
+      if (res->res_client.tls_cert_.keyfile_) { delete res->res_client.tls_cert_.keyfile_; }
+      if (res->res_client.cipherlist_) { delete res->res_client.cipherlist_; }
+      if (res->res_client.tls_cert_.dhfile_) { delete res->res_client.tls_cert_.dhfile_; }
+      if (res->res_client.tls_cert_.pem_message_) { delete res->res_client.tls_cert_.pem_message_; }
       break;
     case R_STORAGE:
       if (res->res_store.address) { free(res->res_store.address); }
       if (res->res_store.lanaddress) { free(res->res_store.lanaddress); }
       if (res->res_store.username) { free(res->res_store.username); }
-      if (res->res_store.password.value) { free(res->res_store.password.value); }
+      if (res->res_store.password_.value) { free(res->res_store.password_.value); }
       if (res->res_store.media_type) { free(res->res_store.media_type); }
       if (res->res_store.ndmp_changer_device) { free(res->res_store.ndmp_changer_device); }
       if (res->res_store.device) { delete res->res_store.device; }
@@ -4114,18 +4110,18 @@ static void FreeResource(CommonResourceHeader *sres, int type)
         pthread_mutex_destroy(&res->res_store.rss->changer_lock);
         free(res->res_store.rss);
       }
-      if (res->res_store.tls_cert.allowed_certificate_common_names_) {
-        res->res_store.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_store.tls_cert.allowed_certificate_common_names_);
+      if (res->res_store.tls_cert_.allowed_certificate_common_names_) {
+        res->res_store.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_store.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_store.tls_cert.CaCertfile) { delete res->res_store.tls_cert.CaCertfile; }
-      if (res->res_store.tls_cert.CaCertdir) { delete res->res_store.tls_cert.CaCertdir; }
-      if (res->res_store.tls_cert.crlfile) { delete res->res_store.tls_cert.crlfile; }
-      if (res->res_store.tls_cert.certfile) { delete res->res_store.tls_cert.certfile; }
-      if (res->res_store.tls_cert.keyfile) { delete res->res_store.tls_cert.keyfile; }
-      if (res->res_store.tls_cert.cipherlist) { delete res->res_store.tls_cert.cipherlist; }
-      if (res->res_store.tls_cert.dhfile) { delete res->res_store.tls_cert.dhfile; }
-      if (res->res_store.tls_cert.pem_message) { delete res->res_store.tls_cert.pem_message; }
+      if (res->res_store.tls_cert_.ca_certfile_) { delete res->res_store.tls_cert_.ca_certfile_; }
+      if (res->res_store.tls_cert_.ca_certdir_) { delete res->res_store.tls_cert_.ca_certdir_; }
+      if (res->res_store.tls_cert_.crlfile_) { delete res->res_store.tls_cert_.crlfile_; }
+      if (res->res_store.tls_cert_.certfile_) { delete res->res_store.tls_cert_.certfile_; }
+      if (res->res_store.tls_cert_.keyfile_) { delete res->res_store.tls_cert_.keyfile_; }
+      if (res->res_store.cipherlist_) { delete res->res_store.cipherlist_; }
+      if (res->res_store.tls_cert_.dhfile_) { delete res->res_store.tls_cert_.dhfile_; }
+      if (res->res_store.tls_cert_.pem_message_) { delete res->res_store.tls_cert_.pem_message_; }
       break;
     case R_CATALOG:
       if (res->res_cat.db_address) { free(res->res_cat.db_address); }

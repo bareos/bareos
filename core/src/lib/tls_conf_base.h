@@ -24,16 +24,6 @@
 
 class TlsConfigBase {
 public:
-   bool enable_;  /*!< Enable TLS */
-   bool require_; /*!< Require TLS */
-
-   bool IsActivated() const { return (enable_ || require_); }
-   virtual uint32_t GetPolicy() const = 0;
-
-   virtual bool GetAuthenticate() const { return false; }
-   virtual bool GetVerifyPeer() const { return false; }
-   virtual std::vector<std::string> AllowedCertificateCommonNames() const { return std::vector<std::string>(); }
-
    typedef enum {
       BNET_TLS_NONE = 0,            /*!< No TLS configured */
       BNET_TLS_ENABLED = 1,         /*!< TLS with certificates is allowed but not required on my end */
@@ -41,10 +31,6 @@ public:
       BNET_TLS_AUTO = 4,            /*!< TLS mode will be negotiated by ssl handshake */
       BNET_TLS_DENY = 0xFF          /*!< TLS connection not allowed */
    } Policy_e;
-
-protected:
-   TlsConfigBase() : enable_(false), require_(false) {}
-   virtual ~TlsConfigBase() {}
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_BASE_H_ */

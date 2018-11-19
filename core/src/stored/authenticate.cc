@@ -99,7 +99,7 @@ bool AuthenticateDirector(JobControlRecord *jcr)
    }
 
    if (!dir->AuthenticateInboundConnection(jcr, "Director",
-                                             director->name(), director->password,
+                                             director->name(), director->password_,
                                              director)) {
       dir->fsend("%s", Dir_sorry);
       Dmsg2(debuglevel, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());

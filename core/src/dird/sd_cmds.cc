@@ -138,7 +138,7 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
       return false;
    }
 
-   if (me->tls_cert.IsActivated() || store->tls_psk.IsActivated()) {
+   if (me->IsTlsConfigured() || store->IsTlsConfigured()) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                                qualified_resource_name)) {
@@ -148,7 +148,7 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
      }
 
      if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
-                             store->password.value, jcr)) {
+                             store->password_.value, jcr)) {
         Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
         sd->close();
         return false;

@@ -73,16 +73,16 @@ struct s_kw {
  * Common TLS-Settings for both (Certificate and PSK).
 */
 #define TLS_COMMON_CONFIG(res) \
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls_cert.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.authenticate_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.enable_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
          "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls_cert.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
          "List of valid TLS Ciphers." }, \
-   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.dhfile), 0, 0, NULL, NULL, \
+   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.dhfile_), 0, 0, NULL, NULL, \
          "Path to PEM encoded Diffie-Hellman parameter file. " \
          "If this directive is specified, DH key exchange will be used for the ephemeral keying, " \
          "allowing for forward secrecy of communications." }
@@ -91,30 +91,21 @@ struct s_kw {
   * TLS Settings for Certificate only
   */
  #define TLS_CERT_CONFIG(res) \
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert.VerifyPeer), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert_.verify_peer_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "If disabled, all certificates signed by a known CA will be accepted. " \
          "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
-   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertfile), 0, 0, NULL, NULL, \
+   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.ca_certfile_), 0, 0, NULL, NULL, \
          "Path of a PEM encoded TLS CA certificate(s) file." }, \
-   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertdir), 0, 0, NULL, NULL, \
+   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.ca_certdir_), 0, 0, NULL, NULL, \
          "Path of a TLS CA certificate directory." }, \
-   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.crlfile), 0, 0, NULL, NULL, \
+   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.crlfile_), 0, 0, NULL, NULL, \
          "Path of a Certificate Revocation List file." }, \
-   { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.certfile), 0, 0, NULL, NULL, \
+   { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.certfile_), 0, 0, NULL, NULL, \
          "Path of a PEM encoded TLS certificate." }, \
-   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
+   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.keyfile_), 0, 0, NULL, NULL, \
          "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_certificate_common_names_), 0, 0, NULL, NULL, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, NULL, \
          "\"Common Name\"s (CNs) of the allowed peer certificates."  }
-
- /*
-  * TLS Settings for PSK only
-  */
- #define TLS_PSK_CONFIG(res) \
-   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", "18.2.4-", \
-         "Enable TLS-PSK support." }, \
-   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require_), 0, CFG_ITEM_DEFAULT, "false", "18.2.4-", \
-         "Enabling this implicitly sets \"TLS PSK Enable = yes\"." }
 
 /*
  * This is the structure that defines the record types (items) permitted within each
@@ -325,13 +316,35 @@ public:
 };
 
 class TlsResource : public BareosResource {
- public:
-  s_password password; /* UA server password */
-  TlsConfigCert tls_cert; /* TLS structure */
-  TlsConfigPsk tls_psk;   /* TLS-PSK structure */
+public:
+  s_password password_;     /* UA server password */
+  TlsConfigCert tls_cert_;  /* TLS structure */
+  std::string *cipherlist_; /* TLS Cipher List */
+  bool authenticate_;       /* Authenticate only with TLS */
+  bool enable_;
+  bool require_;
+
+  TlsResource()
+   : authenticate_(false)
+   , enable_(false)
+   , require_(false)
+   , cipherlist_(nullptr)
+   {}
 
   bool IsTlsConfigured() const {
-    return tls_cert.IsActivated() || tls_psk.IsActivated();
+    return enable_ || require_;
+  }
+
+  uint32_t GetPolicy() const
+  {
+   uint32_t result = TlsConfigBase::BNET_TLS_NONE;
+   if (enable_) {
+      result = TlsConfigBase::BNET_TLS_ENABLED;
+   }
+   if (require_) {
+      result = TlsConfigBase::BNET_TLS_REQUIRED;
+   }
+   return result;
   }
 };
 

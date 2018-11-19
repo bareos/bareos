@@ -86,7 +86,7 @@ static bool OptionalAuthenticateRootConsole(std::string console_name, UaContext 
    if (console_name != root_console_name) {
      return false; /* no need to evaluate auth_success */
    }
-   auth_success = ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", root_console_name.c_str(), me->password, me);
+   auth_success = ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", root_console_name.c_str(), me->password_, me);
 
    if (!SendResponseMessage(ua, kMessageIdOk, true)) {
      auth_success = false;
@@ -102,7 +102,7 @@ static void AuthenticateNamedConsole(std::string console_name, UaContext *ua, bo
     auth_success = false;
     return;
   }
-  if (!ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", console_name.c_str(), cons->password, cons)) {
+  if (!ua->UA_sock->AuthenticateInboundConnection(NULL, "Console", console_name.c_str(), cons->password_, cons)) {
     ua->cons = nullptr;
     auth_success = false;
   } else {

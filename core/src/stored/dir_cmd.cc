@@ -1631,7 +1631,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
-   if (me->tls_cert.IsActivated() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+   if (me->IsTlsConfigured() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              JobName, R_JOB, JobId, qualified_resource_name)) {
@@ -1725,7 +1725,7 @@ static bool PassiveCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to FD.\n");
 
-   if (me->tls_cert.IsActivated() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+   if (me->IsTlsConfigured() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {

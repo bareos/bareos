@@ -192,7 +192,7 @@ static inline bool ConfigureCreateFdResourceString(UaContext *ua, PoolMem &resou
    if (!client) {
       return false;
    }
-   password = &client->password;
+   password = &client->password_;
 
    resource.strcat("Director {\n");
    config_add_directive(NULL, NULL, "Name", me->name(), resource);

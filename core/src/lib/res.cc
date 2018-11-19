@@ -162,7 +162,7 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   } else {
     TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
     if (tls) {
-      psk = tls->password.value;
+      psk = tls->password_.value;
       return true;
     }
   }

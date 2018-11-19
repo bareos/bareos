@@ -379,7 +379,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
          _("Password encoding is not MD5. You are probably restoring a NDMP Backup "
            "with a restore job not configured for NDMP protocol.\n"));
   } else {
-    uint32_t local_tls_policy = GetLocalTlsPolicyFromConfiguration(tls_resource);
+    uint32_t local_tls_policy = tls_resource->GetPolicy();
     CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy);
 
     btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
@@ -417,9 +417,9 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
 
   if (!ParameterizeAndInitTlsConnectionAsAServer(config)) { return false; }
 
-  if (!DoTlsHandshakeWithClient(&tls_resource->tls_cert, jcr)) { return false; }
+  if (!DoTlsHandshakeWithClient(&tls_resource->tls_cert_, jcr)) { return false; }
 
-  if (tls_resource->tls_cert.GetAuthenticate()) { /* tls authentication only? */
+  if (tls_resource->authenticate_) { /* tls authentication only? */
     CloseTlsConnectionAndFreeMemory(); /* yes, shutdown tls */
   }
 
@@ -428,18 +428,18 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
 
 void BareosSocket::ParameterizeTlsCert(Tls *tls_conn_init, TlsResource *tls_resource)
 {
-  if (tls_resource->tls_cert.IsActivated()) {
+  if (tls_resource->IsTlsConfigured()) {
     const std::string empty;
-    tls_conn_init->SetCaCertfile(tls_resource->tls_cert.CaCertfile ? *tls_resource->tls_cert.CaCertfile : empty);
-    tls_conn_init->SetCaCertdir(tls_resource->tls_cert.CaCertdir ? *tls_resource->tls_cert.CaCertdir : empty);
-    tls_conn_init->SetCrlfile(tls_resource->tls_cert.crlfile ? *tls_resource->tls_cert.crlfile : empty);
-    tls_conn_init->SetCertfile(tls_resource->tls_cert.certfile ? *tls_resource->tls_cert.certfile : empty);
-    tls_conn_init->SetKeyfile(tls_resource->tls_cert.keyfile ? *tls_resource->tls_cert.keyfile : empty);
+    tls_conn_init->Setca_certfile_(tls_resource->tls_cert_.ca_certfile_ ? *tls_resource->tls_cert_.ca_certfile_ : empty);
+    tls_conn_init->SetCaCertdir(tls_resource->tls_cert_.ca_certdir_ ? *tls_resource->tls_cert_.ca_certdir_ : empty);
+    tls_conn_init->SetCrlfile(tls_resource->tls_cert_.crlfile_ ? *tls_resource->tls_cert_.crlfile_ : empty);
+    tls_conn_init->SetCertfile(tls_resource->tls_cert_.certfile_ ? *tls_resource->tls_cert_.certfile_ : empty);
+    tls_conn_init->SetKeyfile(tls_resource->tls_cert_.keyfile_ ? *tls_resource->tls_cert_.keyfile_ : empty);
     //      tls_conn_init->SetPemCallback(TlsPemCallback); Ueb: --> Feature not implemented: Console Callback
-    tls_conn_init->SetPemUserdata(tls_resource->tls_cert.pem_message);
-    tls_conn_init->SetDhFile(tls_resource->tls_cert.dhfile ? *tls_resource->tls_cert.dhfile : empty);
-    tls_conn_init->SetCipherList(tls_resource->tls_cert.cipherlist ? *tls_resource->tls_cert.cipherlist : empty);
-    tls_conn_init->SetVerifyPeer(tls_resource->tls_cert.VerifyPeer);
+    tls_conn_init->SetPemUserdata(tls_resource->tls_cert_.pem_message_);
+    tls_conn_init->SetDhFile(tls_resource->tls_cert_.dhfile_ ? *tls_resource->tls_cert_.dhfile_ : empty);
+    tls_conn_init->SetCipherList(tls_resource->cipherlist_ ? *tls_resource->cipherlist_ : empty);
+    tls_conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
   }
 }
 
@@ -461,7 +461,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  if (tls_resource->tls_psk.IsActivated()) {
+  if (tls_resource->IsTlsConfigured()) {
     tls_conn_init->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
   }
 
@@ -492,15 +492,13 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
       return false;
     }
 
-    TlsConfigBase *selected_local_tls;
-    selected_local_tls = SelectTlsFromPolicy(tls_resource, remote_tls_policy);
     if (initiated_by_remote) {
-      if (!DoTlsHandshakeWithClient(selected_local_tls, jcr)) { return false; }
+      if (!DoTlsHandshakeWithClient(&tls_resource->tls_cert_, jcr)) { return false; }
     } else {
-      if (!DoTlsHandshakeWithServer(selected_local_tls, identity, password, jcr)) { return false; }
+      if (!DoTlsHandshakeWithServer(&tls_resource->tls_cert_, identity, password, jcr)) { return false; }
     }
 
-    if (selected_local_tls->GetAuthenticate()) { /* tls authentication only */
+    if (tls_resource->authenticate_) { /* tls authentication only */
       CloseTlsConnectionAndFreeMemory();
     }
   }
@@ -519,7 +517,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                                     const char *password,
                                                     bool initiated_by_remote)
 {
-  if (!tls_resource->tls_cert.IsActivated() && !tls_resource->tls_psk.IsActivated()) { return true; }
+  if (!tls_resource->IsTlsConfigured() && !tls_resource->IsTlsConfigured()) { return true; }
 
   tls_conn_init.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {
@@ -531,7 +529,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  if (tls_resource->tls_psk.IsActivated()) {
+  if (tls_resource->IsTlsConfigured()) {
     if (!initiated_by_remote) {
       const PskCredentials psk_cred(identity, password);
       tls_conn_init->SetTlsPskClientContext(psk_cred);
@@ -545,12 +543,12 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
   return true;
 }
 
-bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, JobControlRecord *jcr)
+bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigCert *local_tls_cert, JobControlRecord *jcr)
 {
   std::vector<std::string> verify_list;
 
-  if (selected_local_tls->GetVerifyPeer()) {
-    verify_list = selected_local_tls->AllowedCertificateCommonNames();
+  if (local_tls_cert->GetVerifyPeer()) {
+    verify_list = local_tls_cert->AllowedCertificateCommonNames();
   }
   if (BnetTlsServer(this, verify_list)) {
     return true;
@@ -562,13 +560,13 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls, J
   return false;
 }
 
-bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
+bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert *local_tls_cert,
                                             const char *identity,
                                             const char *password,
                                             JobControlRecord *jcr)
 {
-  if (BnetTlsClient(this, selected_local_tls->GetVerifyPeer(),
-                    selected_local_tls->AllowedCertificateCommonNames())) {
+  if (BnetTlsClient(this, local_tls_cert->GetVerifyPeer(),
+                    local_tls_cert->AllowedCertificateCommonNames())) {
     return true;
   }
   if (jcr && jcr->JobId != 0) {

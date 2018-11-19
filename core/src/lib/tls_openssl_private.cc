@@ -450,7 +450,7 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
 /*
  * public interfaces from TlsOpenSsl that set private data
  */
-void TlsOpenSsl::SetCaCertfile(const std::string &ca_certfile)
+void TlsOpenSsl::Setca_certfile_(const std::string &ca_certfile)
 {
   Dmsg1(100, "Set ca_certfile:\t<%s>\n", ca_certfile.c_str());
   d_->ca_certfile_ = ca_certfile;
@@ -462,22 +462,22 @@ void TlsOpenSsl::SetCaCertdir(const std::string &ca_certdir)
   d_->ca_certdir_ = ca_certdir;
 }
 
-void TlsOpenSsl::SetCrlfile(const std::string &crlfile)
+void TlsOpenSsl::SetCrlfile(const std::string &crlfile_)
 {
-  Dmsg1(100, "Set crlfile:\t<%s>\n", crlfile.c_str());
-  d_->crlfile_ = crlfile;
+  Dmsg1(100, "Set crlfile_:\t<%s>\n", crlfile_.c_str());
+  d_->crlfile_ = crlfile_;
 }
 
-void TlsOpenSsl::SetCertfile(const std::string &certfile)
+void TlsOpenSsl::SetCertfile(const std::string &certfile_)
 {
-  Dmsg1(100, "Set certfile:\t<%s>\n", certfile.c_str());
-  d_->certfile_ = certfile;
+  Dmsg1(100, "Set certfile_:\t<%s>\n", certfile_.c_str());
+  d_->certfile_ = certfile_;
 }
 
-void TlsOpenSsl::SetKeyfile(const std::string &keyfile)
+void TlsOpenSsl::SetKeyfile(const std::string &keyfile_)
 {
-  Dmsg1(100, "Set keyfile:\t<%s>\n", keyfile.c_str());
-  d_->keyfile_ = keyfile;
+  Dmsg1(100, "Set keyfile_:\t<%s>\n", keyfile_.c_str());
+  d_->keyfile_ = keyfile_;
 }
 
 void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
@@ -492,10 +492,10 @@ void TlsOpenSsl::SetPemUserdata(void *pem_userdata)
   d_->pem_userdata_ = pem_userdata;
 }
 
-void TlsOpenSsl::SetDhFile(const std::string &dhfile)
+void TlsOpenSsl::SetDhFile(const std::string &dhfile_)
 {
-  Dmsg1(100, "Set dhfile:\t<%s>\n", dhfile.c_str());
-  d_->dhfile_ = dhfile;
+  Dmsg1(100, "Set dhfile_:\t<%s>\n", dhfile_.c_str());
+  d_->dhfile_ = dhfile_;
 }
 
 void TlsOpenSsl::SetVerifyPeer(const bool &verify_peer)

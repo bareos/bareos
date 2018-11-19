@@ -25,14 +25,9 @@
 #include "lib/tls_psk_credentials.h"
 #include "lib/tls_conf_base.h"
 #include "lib/tls_conf_cert.h"
-#include "lib/tls_conf_psk.h"
-#include "lib/tls_conf_none.h"
-#include "lib/tls_conf_deny.h"
 
 class TlsResource;
 
-uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource);
-TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy);
 int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy);
 
 #endif //BAREOS_LIB_TLS_CONF_H_
