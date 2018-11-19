@@ -1,0 +1,4 @@
+Howtos
+######
+
+.. include:: howto.rst
