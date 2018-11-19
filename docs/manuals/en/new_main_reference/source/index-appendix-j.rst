@@ -1,0 +1,4 @@
+Troubleshooting
+###############
+
+.. include:: troubleshooting.rst

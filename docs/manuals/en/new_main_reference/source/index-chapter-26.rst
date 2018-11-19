@@ -1,0 +1,4 @@
+Plugins
+#######
+
+.. include:: plugins.rst

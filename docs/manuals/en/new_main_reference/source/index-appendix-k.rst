@@ -1,0 +1,4 @@
+Debugging
+#########
+
+.. include:: debug.rst
