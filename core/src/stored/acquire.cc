@@ -558,7 +558,7 @@ bool ReleaseDevice(DeviceControlRecord *dcr)
       dev->SetBlocked(BST_RELEASING);
    }
    LockVolumes();
-   Dmsg2(100, "ReleaseDevice device %s is %s\n", dev->print_name(), dev->IsTape() ? "tape" : "disk");
+   Dmsg1(100, "releasing device %s\n", dev->print_name());
 
    /*
     * If device is reserved, job never started, so release the reserve here

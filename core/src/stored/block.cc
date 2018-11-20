@@ -996,7 +996,7 @@ reread:
    status = 0;
 
    do {
-      if ((retry > 0 && status == -1 && errno == EBUSY)) {
+      if (retry) {
          BErrNo be;
          Dmsg4(100, "===== read retry=%d status=%d errno=%d: ERR=%s\n",
                retry, status, errno, be.bstrerror());
