@@ -32,7 +32,7 @@
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket *bs,
                                    const char *password,
-                                   uint32_t local_tls_policy)
+                                   TlsPolicy local_tls_policy)
   : bs_(bs)
   , password_(password)
   , local_tls_policy_(local_tls_policy)
@@ -44,7 +44,7 @@ CramMd5Handshake::CramMd5Handshake(BareosSocket *bs,
 /* Authorize other end
  * Codes that tls_local_need and tls_remote_need can take:
  *
- *   BNET_TLS_NONE     I cannot do tls
+ *   kBnetTlsNone     I cannot do tls
  *   BNET_TLS_CERTIFICATE_ALLOWED       I can do tls, but it is not required on my end
  *   BNET_TLS_CERTIFICATE_REQUIRED  tls is required on my end
  *

@@ -1545,7 +1545,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       /*
        * TLS Requirement
        */
-      tls_need = wstore->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
+      tls_need = wstore->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
       char *connection_target_address = StorageAddressToContact(rstore, wstore);
 

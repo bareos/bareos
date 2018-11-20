@@ -335,14 +335,14 @@ public:
     return enable_ || require_;
   }
 
-  uint32_t GetPolicy() const
+  TlsPolicy GetPolicy() const
   {
-   uint32_t result = TlsConfigBase::BNET_TLS_NONE;
+   TlsPolicy result = TlsPolicy::kBnetTlsNone;
    if (enable_) {
-      result = TlsConfigBase::BNET_TLS_ENABLED;
+      result = TlsPolicy::kBnetTlsEnabled;
    }
    if (require_) {
-      result = TlsConfigBase::BNET_TLS_REQUIRED;
+      result = TlsPolicy::kBnetTlsRequired;
    }
    return result;
   }

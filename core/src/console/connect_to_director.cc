@@ -65,7 +65,7 @@ BareosSocket *ConnectToDirector(JobControlRecord &jcr,
       return nullptr;
     }
 
-    if (!UA_sock->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, local_tls_resource, false,
+    if (!UA_sock->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, local_tls_resource, false,
                                qualified_resource_name.c_str(), password->value, &jcr)) {
       delete UA_sock;
       return nullptr;

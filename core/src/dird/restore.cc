@@ -266,7 +266,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-         tls_need = store->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
+         tls_need = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
          connection_target_address = StorageAddressToContact(client, store);
 
@@ -295,7 +295,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
             tls_need = client->GetPolicy();
          } else {
-            tls_need = client->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
+            tls_need = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
          }
 
          connection_target_address = ClientAddressToContact(client, store);

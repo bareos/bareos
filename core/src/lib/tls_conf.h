@@ -23,11 +23,19 @@
 #define BAREOS_LIB_TLS_CONF_H_
 
 #include "lib/tls_psk_credentials.h"
-#include "lib/tls_conf_base.h"
+#include "lib/tls_conf.h"
 #include "lib/tls_conf_cert.h"
 
+enum TlsPolicy : uint32_t
+{
+  kBnetTlsNone     = 0,   /*!< No TLS configured */
+  kBnetTlsEnabled  = 1,   /*!< TLS with certificates is allowed but not required */
+  kBnetTlsRequired = 2,   /*!< TLS with certificates is required */
+  kBnetTlsAuto     = 4,   /*!< TLS mode will be negotiated by ssl handshake */
+  kBnetTlsDeny     = 0xFF /*!< TLS connection not allowed */
+};
+
 class TlsResource;
+int SelectTlsPolicy(TlsResource *tls_resource, TlsPolicy remote_policy);
 
-int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy);
-
-#endif //BAREOS_LIB_TLS_CONF_H_
+#endif  // BAREOS_LIB_TLS_CONF_H_

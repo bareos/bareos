@@ -18,19 +18,22 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#include "include/bareos.h"
+#include "tls_conf.h"
 
-#ifndef BAREOS_LIB_TLS_CONF_BASE_H_
-#define BAREOS_LIB_TLS_CONF_BASE_H_
+int SelectTlsPolicy(TlsResource *tls_resource, TlsPolicy remote_policy)
+{
+  if (remote_policy == TlsPolicy::kBnetTlsAuto) {
+    return TlsPolicy::kBnetTlsAuto;
+  }
+  TlsPolicy local_policy = tls_resource->GetPolicy();
 
-class TlsConfigBase {
-public:
-   typedef enum {
-      BNET_TLS_NONE = 0,            /*!< No TLS configured */
-      BNET_TLS_ENABLED = 1,         /*!< TLS with certificates is allowed but not required on my end */
-      BNET_TLS_REQUIRED = 2,        /*!< TLS with certificates is required */
-      BNET_TLS_AUTO = 4,            /*!< TLS mode will be negotiated by ssl handshake */
-      BNET_TLS_DENY = 0xFF          /*!< TLS connection not allowed */
-   } Policy_e;
-};
-
-#endif /* BAREOS_LIB_TLS_CONF_BASE_H_ */
+  if ((remote_policy == 0 && local_policy == 0) || (remote_policy == 0 && local_policy == 1) ||
+      (remote_policy == 1 && local_policy == 0)) {
+    return TlsPolicy::kBnetTlsNone;
+  }
+  if ((remote_policy == 0 && local_policy == 2) || (remote_policy == 2 && local_policy == 0)) {
+    return TlsPolicy::kBnetTlsDeny;
+  }
+  return TlsPolicy::kBnetTlsEnabled;
+}

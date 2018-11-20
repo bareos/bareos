@@ -1631,14 +1631,14 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
-   if (me->IsTlsConfigured() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+   if (me->IsTlsConfigured() || enable_ssl == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              JobName, R_JOB, JobId, qualified_resource_name)) {
       return false;
      }
 
-     if (!storage_daemon_socket->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+     if (!storage_daemon_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
                                                 qualified_resource_name.c_str(),
                                                 jcr->sd_auth_key, jcr)) {
       return false;
@@ -1725,14 +1725,14 @@ static bool PassiveCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to FD.\n");
 
-   if (me->IsTlsConfigured() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+   if (me->IsTlsConfigured() || enable_ssl == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
        goto bail_out;
      }
 
-     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
             qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
        goto bail_out;
      }

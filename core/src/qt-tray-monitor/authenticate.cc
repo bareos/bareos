@@ -83,7 +83,7 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord *jcr, Dire
        return AuthenticationResult::kQualifiedResourceNameFailed;
      }
 
-     if (!dir->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, dir_res, false, qualified_resource_name.c_str(), monitor->password.value, jcr)) {
+     if (!dir->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res, false, qualified_resource_name.c_str(), monitor->password.value, jcr)) {
         return AuthenticationResult::kTlsHandshakeFailed;
      }
    }
@@ -116,7 +116,7 @@ static AuthenticationResult AuthenticateWithStorageDaemon(JobControlRecord *jcr,
        return AuthenticationResult::kQualifiedResourceNameFailed;
      }
 
-     if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false,
+     if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false,
                              qualified_resource_name.c_str(), store->password.value, jcr)) {
         return AuthenticationResult::kTlsHandshakeFailed;
      }
@@ -186,7 +186,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord *jcr, Cl
        return AuthenticationResult::kQualifiedResourceNameFailed;
      }
 
-     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, client, false,
+     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
                              qualified_resource_name.c_str(), client->password.value, jcr)) {
         return AuthenticationResult::kTlsHandshakeFailed;
      }

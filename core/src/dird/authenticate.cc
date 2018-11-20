@@ -121,7 +121,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
       return false;
     }
 
-    if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, client, false,
+    if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
                             qualified_resource_name.c_str(), client->password_.value, jcr)) {
       Dmsg0(100, "Could not DoTlsHandshake() with a file daemon\n");
       return false;

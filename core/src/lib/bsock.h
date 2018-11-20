@@ -173,7 +173,7 @@ class BareosSocket : public SmartAlloc {
                                         const char *password,
                                         bool initiated_by_remote);
   bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config);
-  bool DoTlsHandshake(uint32_t remote_tls_policy,
+  bool DoTlsHandshake(TlsPolicy remote_tls_policy,
                       TlsResource *tls_resource,
                       bool initiated_by_remote,
                       const char *identity,

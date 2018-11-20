@@ -379,7 +379,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
          _("Password encoding is not MD5. You are probably restoring a NDMP Backup "
            "with a restore job not configured for NDMP protocol.\n"));
   } else {
-    uint32_t local_tls_policy = tls_resource->GetPolicy();
+    TlsPolicy local_tls_policy = tls_resource->GetPolicy();
     CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy);
 
     btimer_t *tid = StartBsockTimer(this, AUTH_TIMEOUT);
@@ -472,7 +472,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
   return true;
 }
 
-bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
+bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
                                   TlsResource *tls_resource,
                                   bool initiated_by_remote,
                                   const char *identity,
@@ -483,10 +483,10 @@ bool BareosSocket::DoTlsHandshake(uint32_t remote_tls_policy,
 
   int tls_policy = SelectTlsPolicy(tls_resource, remote_tls_policy);
 
-  if (tls_policy == TlsConfigBase::BNET_TLS_DENY) { /* tls required but not configured */
+  if (tls_policy == TlsPolicy::kBnetTlsDeny) { /* tls required but not configured */
     return false;
   }
-  if (tls_policy != TlsConfigBase::BNET_TLS_NONE) { /* no tls configuration is ok */
+  if (tls_policy != TlsPolicy::kBnetTlsNone) { /* no tls configuration is ok */
 
     if (!ParameterizeAndInitTlsConnection(tls_resource, identity, password, initiated_by_remote)) {
       return false;

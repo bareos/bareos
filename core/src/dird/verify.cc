@@ -350,7 +350,7 @@ bool DoVerify(JobControlRecord *jcr)
           * TLS Requirement
           */
 
-         tls_need = store->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
+         tls_need = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
@@ -363,7 +363,7 @@ bool DoVerify(JobControlRecord *jcr)
          if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
             tls_need = client->GetPolicy();
          } else {
-            tls_need = client->IsTlsConfigured() ? TlsConfigBase::BNET_TLS_AUTO : TlsConfigBase::BNET_TLS_NONE;
+            tls_need = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
          }
 
          /*

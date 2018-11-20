@@ -147,7 +147,7 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
         return false;
      }
 
-     if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, store, false, qualified_resource_name.c_str(),
+     if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false, qualified_resource_name.c_str(),
                              store->password_.value, jcr)) {
         Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
         sd->close();

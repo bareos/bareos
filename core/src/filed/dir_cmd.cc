@@ -1581,14 +1581,14 @@ static bool StorageCmd(JobControlRecord *jcr)
 
    jcr->store_bsock = storage_daemon_socket;
 
-   if (me->IsTlsConfigured() || enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+   if (me->IsTlsConfigured() || enable_ssl == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
       goto bail_out;
     }
 
-    if (!storage_daemon_socket->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+    if (!storage_daemon_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
                             qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
       jcr->store_bsock = nullptr;
       goto bail_out;
@@ -2172,7 +2172,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
       return nullptr;
      }
 
-    if (!director_socket->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, dir_res, false, qualified_resource_name.c_str(),
+    if (!director_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res, false, qualified_resource_name.c_str(),
                              dir_res->password_.value, jcr)) {
       Dmsg0(100, "Could not DoTlsHandshake() with director\n");
       return nullptr;
