@@ -75,7 +75,7 @@ struct s_kw {
 #define TLS_COMMON_CONFIG(res) \
    { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.authenticate_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.enable_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
          "Enable TLS support." }, \
    { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
