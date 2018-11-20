@@ -346,10 +346,6 @@ bool DoVerify(JobControlRecord *jcr)
             store->SDDport = store->SDport;
          }
 
-         /*
-          * TLS Requirement
-          */
-
          tls_need = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);

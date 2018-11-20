@@ -428,19 +428,17 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser *config, JobContr
 
 void BareosSocket::ParameterizeTlsCert(Tls *tls_conn_init, TlsResource *tls_resource)
 {
-  if (tls_resource->IsTlsConfigured()) {
-    const std::string empty;
-    tls_conn_init->Setca_certfile_(tls_resource->tls_cert_.ca_certfile_ ? *tls_resource->tls_cert_.ca_certfile_ : empty);
-    tls_conn_init->SetCaCertdir(tls_resource->tls_cert_.ca_certdir_ ? *tls_resource->tls_cert_.ca_certdir_ : empty);
-    tls_conn_init->SetCrlfile(tls_resource->tls_cert_.crlfile_ ? *tls_resource->tls_cert_.crlfile_ : empty);
-    tls_conn_init->SetCertfile(tls_resource->tls_cert_.certfile_ ? *tls_resource->tls_cert_.certfile_ : empty);
-    tls_conn_init->SetKeyfile(tls_resource->tls_cert_.keyfile_ ? *tls_resource->tls_cert_.keyfile_ : empty);
-    //      tls_conn_init->SetPemCallback(TlsPemCallback); Ueb: --> Feature not implemented: Console Callback
-    tls_conn_init->SetPemUserdata(tls_resource->tls_cert_.pem_message_);
-    tls_conn_init->SetDhFile(tls_resource->tls_cert_.dhfile_ ? *tls_resource->tls_cert_.dhfile_ : empty);
-    tls_conn_init->SetCipherList(tls_resource->cipherlist_ ? *tls_resource->cipherlist_ : empty);
-    tls_conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
-  }
+  const std::string empty;
+  tls_conn_init->Setca_certfile_(tls_resource->tls_cert_.ca_certfile_ ? *tls_resource->tls_cert_.ca_certfile_ : empty);
+  tls_conn_init->SetCaCertdir(tls_resource->tls_cert_.ca_certdir_ ? *tls_resource->tls_cert_.ca_certdir_ : empty);
+  tls_conn_init->SetCrlfile(tls_resource->tls_cert_.crlfile_ ? *tls_resource->tls_cert_.crlfile_ : empty);
+  tls_conn_init->SetCertfile(tls_resource->tls_cert_.certfile_ ? *tls_resource->tls_cert_.certfile_ : empty);
+  tls_conn_init->SetKeyfile(tls_resource->tls_cert_.keyfile_ ? *tls_resource->tls_cert_.keyfile_ : empty);
+  //      tls_conn_init->SetPemCallback(TlsPemCallback); Ueb: --> Feature not implemented: Console Callback
+  tls_conn_init->SetPemUserdata(tls_resource->tls_cert_.pem_message_);
+  tls_conn_init->SetDhFile(tls_resource->tls_cert_.dhfile_ ? *tls_resource->tls_cert_.dhfile_ : empty);
+  tls_conn_init->SetCipherList(tls_resource->cipherlist_ ? *tls_resource->cipherlist_ : empty);
+  tls_conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
 }
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config)
@@ -461,9 +459,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
-  if (tls_resource->IsTlsConfigured()) {
-    tls_conn_init->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
-  }
+  tls_conn_init->SetTlsPskServerContext(config, config->GetTlsPskByFullyQualifiedResourceName);
 
   if (!tls_conn_init->init()) {
     tls_conn_init.reset();
@@ -517,7 +513,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                                     const char *password,
                                                     bool initiated_by_remote)
 {
-  if (!tls_resource->IsTlsConfigured() && !tls_resource->IsTlsConfigured()) { return true; }
+  if (!tls_resource->IsTlsConfigured()) { return true; }
 
   tls_conn_init.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {

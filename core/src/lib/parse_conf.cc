@@ -1030,7 +1030,7 @@ bool ConfigurationParser::GetCleartextConfigured(uint32_t r_code,
   }
 
   if (name == std::string("*UserAgent*")) {
-    cleartext = !own_tls_resource->IsTlsConfigured() && !own_tls_resource->IsTlsConfigured();
+    cleartext = !own_tls_resource->IsTlsConfigured();
   } else {
     cleartext = !own_tls_resource->IsTlsConfigured() && !foreign_tls_resource->IsTlsConfigured();
   }

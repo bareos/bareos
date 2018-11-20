@@ -84,19 +84,6 @@ void InitForTest()
   InitMsg(NULL, NULL);
 }
 
-#if 0
-static bool check_cipher(const TlsResource &tls, const std::string &cipher)
-{
-   bool success = false;
-   if (tls.IsTlsConfigured() && !tls.IsTlsConfigured()) { /* cert && !psk */
-      success = cipher.find("-RSA-") != std::string::npos;
-   } else if (!tls.IsTlsConfigured() && tls.IsTlsConfigured()) { /* !cert && psk */
-      success = cipher.find("-PSK-") != std::string::npos;
-   }
-   return success;
-}
-#endif
-
 static void clone_a_server_socket(BareosSocket* bs)
 {
    std::unique_ptr<BareosSocket> bs2(bs->clone());
@@ -141,7 +128,7 @@ static void start_bareos_server(std::promise<bool> *promise, std::string console
          Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
          cipher_server = cipher;
       }
-      if (dir_cons_config->IsTlsConfigured() || dir_cons_config->IsTlsConfigured()) {
+      if (dir_cons_config->IsTlsConfigured()) {
          Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n" : "Tls failed to establish\n");
          success = bs->TlsEstablished();
       } else {
@@ -219,7 +206,7 @@ static bool connect_to_server(std::string console_name, std::string console_pass
          Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
          cipher_client = cipher;
       }
-      if (cons_dir_config->IsTlsConfigured() || cons_dir_config->IsTlsConfigured()) {
+      if (cons_dir_config->IsTlsConfigured()) {
          Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n" : "Tls failed to establish\n");
          success = UA_sock->TlsEstablished();
       } else {
