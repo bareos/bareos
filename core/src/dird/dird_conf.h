@@ -144,7 +144,9 @@ public:
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    s_password keyencrkey;             /* Key Encryption Key */
 
-   DirectorResource() : TlsResource() {}
+   DirectorResource()
+    : TlsResource()
+    , DIRaddrs(nullptr) {}
 };
 
 /*

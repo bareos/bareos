@@ -42,8 +42,21 @@
 //#include <resolv.h>
 #endif
 
-IPADDR::IPADDR(const IPADDR &src) : type(src.type)
+IPADDR::IPADDR()
+  : type(R_UNDEFINED)
+  , saddr(nullptr)
+  , saddr4(nullptr)
+#ifdef HAVE_IPV6
+  , saddr6(nullptr)
+#endif
 {
+   memset(&saddrbuf, 0, sizeof(saddrbuf));
+}
+
+IPADDR::IPADDR(const IPADDR &src)
+  : IPADDR()
+{
+  type = src.type;
   memcpy(&saddrbuf, &src.saddrbuf, sizeof(saddrbuf));
   saddr  = &saddrbuf.dontuse;
   saddr4 = &saddrbuf.dontuse4;
@@ -52,8 +65,10 @@ IPADDR::IPADDR(const IPADDR &src) : type(src.type)
 #endif
 }
 
-IPADDR::IPADDR(int af) : type(R_EMPTY)
+IPADDR::IPADDR(int af)
+  : IPADDR()
 {
+  type = R_EMPTY;
 #ifdef HAVE_IPV6
    if (!(af == AF_INET6 || af == AF_INET)) {
       Emsg1(M_ERROR_TERM, 0, _("Only ipv4 and ipv6 are supported (%d)\n"), af);
