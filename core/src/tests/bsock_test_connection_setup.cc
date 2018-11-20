@@ -40,14 +40,14 @@ static void signal_handler(int arg)
   return;
 }
 
-TEST(bsock, console_director_connection_test)
+static void do_connection_test(std::string path_to_config)
 {
    struct sigaction sig{0};
    sig.sa_handler = signal_handler;
    sigaction(SIGUSR2,&sig, nullptr);
    sigaction(SIGPIPE,&sig, nullptr);
 
-   const char* console_configfile = CMAKE_SOURCE_DIR "/src/tests/configs/";
+   const char* console_configfile = path_to_config.c_str();
    std::unique_ptr<ConfigurationParser> console_config_parser(console::InitConsConfig(console_configfile, M_INFO));
    console::my_config = console_config_parser.get(); /* set the console global variable */
 
@@ -64,7 +64,7 @@ TEST(bsock, console_director_connection_test)
    console::console_resource = reinterpret_cast<console::ConsoleResource*>
                                     (console_config_parser->GetNextRes(console::R_CONSOLE, NULL));
 
-   const char* director_configfile = CMAKE_SOURCE_DIR "/src/tests/configs/";
+   const char* director_configfile = path_to_config.c_str();
 
    std::unique_ptr<ConfigurationParser> director_config_parser(directordaemon::InitDirConfig(director_configfile, M_INFO));
    directordaemon::my_config = director_config_parser.get(); /* set the director global variable */
@@ -110,6 +110,11 @@ TEST(bsock, console_director_connection_test)
 
    director_config_parser.reset();
    console_config_parser.reset();
+}
+
+TEST(bsock, console_director_connection_test)
+{
+   do_connection_test(std::string(CMAKE_SOURCE_DIR "/src/tests/configs/console-director/tls_psk_default_enabled/"));
 }
 
 namespace directordaemon {
