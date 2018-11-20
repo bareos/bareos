@@ -191,7 +191,7 @@ class BareosSocket : public SmartAlloc {
                                     std::string &client_name,
                                     uint32_t &r_code) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
-  void GetCipherMessageString(std::string &str);
+  void GetCipherMessageString(std::string &str) const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);
   bool FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments);
   bool FormatAndSendResponseMessage(uint32_t id, const std::string &str);

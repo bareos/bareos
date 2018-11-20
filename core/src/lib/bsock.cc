@@ -615,7 +615,7 @@ bool BareosSocket::EvaluateCleartextBareosHello(const QualifiedResourceNameTypeC
   return false;
 }
 
-void BareosSocket::GetCipherMessageString(std::string &str)
+void BareosSocket::GetCipherMessageString(std::string &str) const
 {
    if (tls_conn) {
      std::string m;
