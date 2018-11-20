@@ -325,10 +325,10 @@ public:
   bool require_;
 
   TlsResource()
-   : authenticate_(false)
+   : cipherlist_(nullptr)
+   , authenticate_(false)
    , enable_(false)
    , require_(false)
-   , cipherlist_(nullptr)
    {}
 
   bool IsTlsConfigured() const {
