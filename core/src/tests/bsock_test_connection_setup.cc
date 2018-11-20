@@ -177,9 +177,9 @@ TEST(bsock, console_director_connection_test_tls_psk)
                                   TlsPolicy::kBnetTlsEnabled);
 }
 
-TEST(bsock, console_director_connection_test_cleartext)
-{
-   do_connection_test(std::string(CMAKE_SOURCE_DIR
-                                  "/src/tests/configs/console-director/tls_disabled/"),
-                                  TlsPolicy::kBnetTlsNone);
-}
+//TEST(bsock, console_director_connection_test_cleartext)
+//{
+//   do_connection_test(std::string(CMAKE_SOURCE_DIR
+//                                  "/src/tests/configs/console-director/tls_disabled/"),
+//                                  TlsPolicy::kBnetTlsNone);
+//}
