@@ -742,41 +742,12 @@ static bool CheckResources()
          goto bail_out;
       }
 
-      /*
-       * tls_require implies tls_enable
-       */
-      if (me->IsTlsConfigured() || me->IsTlsConfigured()) {
+      if (me->IsTlsConfigured() ) {
          if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled into BAREOS.\n"));
             OK = false;
             goto bail_out;
          }
-      }
-
-      need_tls = me->IsTlsConfigured() || me->authenticate_;
-
-      if ((me->tls_cert_.certfile_ == nullptr || me->tls_cert_.certfile_->empty()) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(),configfile.c_str());
-         OK = false;
-         goto bail_out;
-      }
-
-      if ((me->tls_cert_.keyfile_ == nullptr || me->tls_cert_.keyfile_->empty()) && need_tls) {
-         Jmsg(NULL,  M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),me->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
-      }
-
-      if (((me->tls_cert_.ca_certfile_ == nullptr || me->tls_cert_.ca_certfile_->empty()) &&
-           (me->tls_cert_.ca_certdir_ == nullptr || me->tls_cert_.ca_certdir_->empty())) &&
-          need_tls && me->tls_cert_.verify_peer_) {
-         Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
-              " Certificate Dir\" are defined for Director \"%s\" in %s."
-              " At least one CA certificate store is required"
-              " when using \"TLS Verify Peer\".\n"),
-              me->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
       }
     }
 
@@ -812,14 +783,8 @@ static bool CheckResources()
       }
    }
 
-   /*
-    * Loop over Consoles
-    */
    ConsoleResource *cons;
    foreach_res(cons, R_CONSOLE) {
-      /*
-       * tls_require implies tls_enable
-       */
       if (cons->IsTlsConfigured()) {
          if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
@@ -827,39 +792,8 @@ static bool CheckResources()
             goto bail_out;
          }
       }
-
-      need_tls = cons->IsTlsConfigured() || cons->authenticate_;
-
-      if ((cons->tls_cert_.certfile_ == nullptr || cons->tls_cert_.certfile_->empty()) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
-            cons->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
-      }
-
-      if ((cons->tls_cert_.keyfile_ == nullptr || cons->tls_cert_.keyfile_->empty()) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
-            cons->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
-      }
-
-      if ((cons->tls_cert_.ca_certfile_ == nullptr || cons->tls_cert_.ca_certfile_->empty()) &&
-          (cons->tls_cert_.ca_certdir_ == nullptr || cons->tls_cert_.ca_certdir_->empty()) && need_tls &&
-          cons->tls_cert_.verify_peer_) {
-         Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
-            " Certificate Dir\" are defined for Console \"%s\" in %s."
-            " At least one CA certificate store is required"
-            " when using \"TLS Verify Peer\".\n"),
-            cons->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
-      }
    }
 
-   /*
-    * Loop over Clients
-    */
    me->subscriptions_used = 0;
    ClientResource *client;
    foreach_res(client, R_CLIENT) {
@@ -870,9 +804,6 @@ static bool CheckResources()
        */
       me->subscriptions_used++;
 
-      /*
-       * tls_require implies tls_enable
-       */
       if (client->IsTlsConfigured()) {
          if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
@@ -880,44 +811,16 @@ static bool CheckResources()
             goto bail_out;
          }
       }
-      need_tls = client->IsTlsConfigured() || client->authenticate_;
-      if ((client->tls_cert_.ca_certfile_ == nullptr || client->tls_cert_.ca_certfile_->empty()) &&
-          (client->tls_cert_.ca_certdir_ == nullptr || client->tls_cert_.ca_certdir_->empty()) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-            " or \"TLS CA Certificate Dir\" are defined for File daemon \"%s\" in %s.\n"),
-            client->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
-      }
     }
 
-   /*
-    * Loop over Storages
-    */
    StorageResource *store, *nstore;
    foreach_res(store, R_STORAGE) {
-      /*
-       * tls_require implies tls_enable
-       */
       if (store->IsTlsConfigured()) {
-         if (have_tls) {
-            // store->tls.enable = true;
-         } else {
+         if (!have_tls) {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
             OK = false;
             goto bail_out;
          }
-      }
-
-      need_tls = store->IsTlsConfigured() || store->authenticate_;
-
-      if ((store->tls_cert_.ca_certfile_ == nullptr || store->tls_cert_.ca_certfile_->empty()) &&
-          (store->tls_cert_.ca_certdir_ == nullptr || store->tls_cert_.ca_certdir_->empty()) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-              " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
-              store->name(), configfile.c_str());
-         OK = false;
-         goto bail_out;
       }
 
       /*
