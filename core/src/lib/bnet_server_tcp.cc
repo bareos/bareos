@@ -169,6 +169,7 @@ void BnetThreadServerTcp(dlist *addr_list,
 
    BNetThreadServerCleanupObject cleanup_object(sockfds, client_wq);
 
+   quit = false;
    if (server_state) { server_state->store(BnetServerState::kStarting); }
 
    /*

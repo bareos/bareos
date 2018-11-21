@@ -133,7 +133,7 @@ static void CheckEncryption(const BareosSocket *UA_sock,
 {
    if (tls_policy == TlsPolicy::kBnetTlsNone) {
      EXPECT_FALSE(UA_sock->tls_conn.get());
-     std::cout << "Cleartext";
+     std::cout << " Cleartext" << std::endl;
    } else {
      EXPECT_TRUE(UA_sock->tls_conn.get());
      std::string cipher;
@@ -177,9 +177,9 @@ TEST(bsock, console_director_connection_test_tls_psk)
                                   TlsPolicy::kBnetTlsEnabled);
 }
 
-//TEST(bsock, console_director_connection_test_cleartext)
-//{
-//   do_connection_test(std::string(CMAKE_SOURCE_DIR
-//                                  "/src/tests/configs/console-director/tls_disabled/"),
-//                                  TlsPolicy::kBnetTlsNone);
-//}
+TEST(bsock, console_director_connection_test_cleartext)
+{
+   do_connection_test(std::string(CMAKE_SOURCE_DIR
+                                  "/src/tests/configs/console-director/tls_disabled/"),
+                                  TlsPolicy::kBnetTlsNone);
+}
