@@ -3867,7 +3867,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser &my_config)
   memset(&console, 0, sizeof(console));
   console.password_.encoding = dir_resource->password_.encoding;
   console.password_.value   = bstrdup(dir_resource->password_.value);
-  console.enable_           = true;
+  console.tls_enable_           = true;
   console.hdr.name          = bstrdup("*UserAgent*");
   console.hdr.desc          = bstrdup("root console definition");
   console.hdr.rcode         = 1013;

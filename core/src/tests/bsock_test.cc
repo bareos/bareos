@@ -247,8 +247,8 @@ TEST(bsock, auth_works)
 
   InitForTest();
 
-  cons_dir_config->enable_ = false;
-  dir_cons_config->enable_ = false;
+  cons_dir_config->tls_enable_ = false;
+  dir_cons_config->tls_enable_ = false;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
@@ -276,8 +276,8 @@ TEST(bsock, auth_works_with_different_names)
 
   InitForTest();
 
-  cons_dir_config->enable_ = false;
-  dir_cons_config->enable_ = false;
+  cons_dir_config->tls_enable_ = false;
+  dir_cons_config->tls_enable_ = false;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
@@ -304,8 +304,8 @@ TEST(bsock, auth_fails_with_different_passwords)
 
   InitForTest();
 
-  cons_dir_config->enable_ = false;
-  dir_cons_config->enable_ = false;
+  cons_dir_config->tls_enable_ = false;
+  dir_cons_config->tls_enable_ = false;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
@@ -332,8 +332,8 @@ TEST(bsock, auth_works_with_tls_cert)
 
   InitForTest();
 
-  cons_dir_config->enable_ = true;
-  dir_cons_config->enable_ = true;
+  cons_dir_config->tls_enable_ = true;
+  dir_cons_config->tls_enable_ = true;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,

@@ -75,9 +75,9 @@ struct s_kw {
 #define TLS_COMMON_CONFIG(res) \
    { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.authenticate_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
          "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
    { "TlsCipherList", CFG_TYPE_STR, ITEM(res.cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
@@ -321,27 +321,27 @@ public:
   TlsConfigCert tls_cert_;  /* TLS structure */
   std::string *cipherlist_; /* TLS Cipher List */
   bool authenticate_;       /* Authenticate only with TLS */
-  bool enable_;
-  bool require_;
+  bool tls_enable_;
+  bool tls_require_;
 
   TlsResource()
    : cipherlist_(nullptr)
    , authenticate_(false)
-   , enable_(false)
-   , require_(false)
+   , tls_enable_(false)
+   , tls_require_(false)
    {}
 
   bool IsTlsConfigured() const {
-    return enable_ || require_;
+    return tls_enable_ || tls_require_;
   }
 
   TlsPolicy GetPolicy() const
   {
    TlsPolicy result = TlsPolicy::kBnetTlsNone;
-   if (enable_) {
+   if (tls_enable_) {
       result = TlsPolicy::kBnetTlsEnabled;
    }
-   if (require_) {
+   if (tls_require_) {
       result = TlsPolicy::kBnetTlsRequired;
    }
    return result;
