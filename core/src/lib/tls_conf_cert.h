@@ -44,7 +44,6 @@ public:
 
    int (*TlsPemCallback)(char *buf, int size, const void *userdata);
 
-   bool GetVerifyPeer() const { return verify_peer_; }
    std::vector<std::string> AllowedCertificateCommonNames() const;
 };
 
