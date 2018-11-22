@@ -1013,29 +1013,27 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg,
    return true;
 }
 
-bool ConfigurationParser::GetCleartextConfigured(const std::string &r_code_str,
+bool ConfigurationParser::GetConfiguredTlsPolicy(const std::string &r_code_str,
                                                  const std::string &name,
-                                                 bool &cleartext) const
+                                                 TlsPolicy &tls_policy) const
 {
-  TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
-  if (!own_tls_resource) {
-    Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
-    return false;
-  }
-
-  uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
-  if (r_code < 0) { return false; }
-
-  TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
-  if (!foreign_tls_resource) {
-    Dmsg2(100, "Could not find foreign tls resource: %d-%s\n", r_code, name.c_str());
-    return false;
-  }
-
   if (name == std::string("*UserAgent*")) {
-    cleartext = !own_tls_resource->IsTlsConfigured();
+    TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
+    if (!own_tls_resource) {
+      Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
+      return false;
+    }
+    tls_policy = own_tls_resource->GetPolicy();
   } else {
-    cleartext = !own_tls_resource->IsTlsConfigured() && !foreign_tls_resource->IsTlsConfigured();
+    uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
+    if (r_code < 0) { return false; }
+
+    TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
+    if (!foreign_tls_resource) {
+      Dmsg2(100, "Could not find foreign tls resource: %d-%s\n", r_code, name.c_str());
+      return false;
+    }
+    tls_policy = foreign_tls_resource->GetPolicy();
   }
   return true;
 }

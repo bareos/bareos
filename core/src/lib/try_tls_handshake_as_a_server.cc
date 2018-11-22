@@ -24,7 +24,14 @@
 
 #include "lib/bsock_tcp.h"
 
-static bool CheckForCleartextConnection(BareosSocket *bs, ConfigurationParser *config, bool &do_cleartext)
+enum class ConnectionHandshakeMode {
+  PerformTlsHandshake,
+  PerformCleartextHandshake,
+  CloseConnection
+};
+
+static ConnectionHandshakeMode GetHandshakeMode(BareosSocket *bs,
+                                                ConfigurationParser *config)
 {
   bool cleartext_hello;
   std::string client_name;
@@ -34,42 +41,54 @@ static bool CheckForCleartextConnection(BareosSocket *bs, ConfigurationParser *c
                                         client_name,
                                         r_code_str)) {
     Dmsg0(100, "Could not read out cleartext hello\n");
-    return false;
+    return ConnectionHandshakeMode::CloseConnection;
   }
 
   if (cleartext_hello) {
-    bool cleartext_configured;
-    if (!config->GetCleartextConfigured(r_code_str, client_name, cleartext_configured)) {
+    TlsPolicy tls_policy;
+    if (!config->GetConfiguredTlsPolicy(r_code_str, client_name, tls_policy)) {
       Dmsg0(100, "Could not read out cleartext configuration\n");
-      return false;
+      return ConnectionHandshakeMode::CloseConnection;
     }
-
-    if (!cleartext_configured) {
-      Dmsg0(100, "Client wants cleartext connection but tls is configured\n");
-      return false;
+    if (r_code_str == std::string("R_CLIENT")) {
+      if (tls_policy == kBnetTlsRequired) {
+        return ConnectionHandshakeMode::CloseConnection;
+      } else { /* kBnetTlsNone or kBnetTlsEnabled */
+        return ConnectionHandshakeMode::PerformCleartextHandshake;
+      }
+    } else { /* not R_CLIENT */
+      if (tls_policy == kBnetTlsNone) {
+        return ConnectionHandshakeMode::PerformCleartextHandshake;
+      } else {
+        return ConnectionHandshakeMode::CloseConnection;
+      }
     }
-    do_cleartext = true;
-  } else {
-    /* client is unknown, yet; try tls */
-    do_cleartext = false;
-  }
-
-  Dmsg1(100, "Try %s connection\n", do_cleartext ? "cleartext" : "tls");
-  return true;
+  } else { /* !cleartext_hello */
+    return ConnectionHandshakeMode::PerformTlsHandshake;
+  } /* if (cleartext_hello) */
 }
 
 bool TryTlsHandshakeAsAServer(BareosSocket *bs, ConfigurationParser *config)
 {
-   bool cleartext;
-   if (!CheckForCleartextConnection(bs, config, cleartext)) {
-     return false;
+   ConnectionHandshakeMode type = GetHandshakeMode(bs, config);
+
+   bool success = false;
+
+   switch(type) {
+   case ConnectionHandshakeMode::PerformTlsHandshake:
+      if (bs->DoTlsHandshakeAsAServer(config)) {
+        success = true;
+      }
+      break;
+   case ConnectionHandshakeMode::PerformCleartextHandshake:
+      /* do tls handshake later */
+      success = true;
+      break;
+   default:
+   case ConnectionHandshakeMode::CloseConnection:
+      success = false;
+      break;
    }
 
-   if (!cleartext) {
-     if (!bs->DoTlsHandshakeAsAServer(config)) {
-       return false;
-     }
-   }
-   /* cleartext - no Tls Handshake */
-   return true;
+   return success;
 }
