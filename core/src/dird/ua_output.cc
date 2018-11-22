@@ -456,7 +456,7 @@ bail_out:
 }
 
 /**
- * Filter convience functions that abstract the actions needed to
+ * Filter convenience functions that abstract the actions needed to
  * perform a certain type of acl or resource filtering.
  */
 static inline void SetAclFilter(UaContext *ua, int column, int acltype)
