@@ -201,9 +201,8 @@ static std::list<HelloInformation> hello_list {
 };
 
 bool GetNameAndResourceTypeFromHello(const std::string &input,
-                                     const QualifiedResourceNameTypeConverter &converter,
                                      std::string &name,
-                                     uint32_t &r_type)
+                                     std::string &r_type_str)
 {
   bool ok = false;
 
@@ -232,9 +231,7 @@ bool GetNameAndResourceTypeFromHello(const std::string &input,
   if (args.size() >= hello->position_of_name) {
     name = args[hello->position_of_name];
     std::replace(name.begin(),name.end(), (char)0x1, ' ');
-    int r = converter.StringToResourceType(hello->resource_type_string);
-    if (r < 0) { return false; }
-    r_type = r;
+    r_type_str = hello->resource_type_string;
     ok = true;
   }
   return ok;

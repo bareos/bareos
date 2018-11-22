@@ -33,9 +33,8 @@ void BashSpaces(PoolMem &pm);
 void UnbashSpaces(char *str);
 void UnbashSpaces(PoolMem &pm);
 bool GetNameAndResourceTypeFromHello(const std::string &input,
-                                     const QualifiedResourceNameTypeConverter &converter,
                                      std::string &name,
-                                     uint32_t &r_type);
+                                     std::string &r_type_str);
 const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
 char *encode_time(utime_t time, char *buf);
 bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);

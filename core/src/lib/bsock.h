@@ -186,10 +186,9 @@ class BareosSocket : public SmartAlloc {
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist *src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool EvaluateCleartextBareosHello(const QualifiedResourceNameTypeConverter &converter,
-                                    bool &cleartext,
+  bool EvaluateCleartextBareosHello(bool &cleartext,
                                     std::string &client_name,
-                                    uint32_t &r_code) const;
+                                    std::string &r_code_str) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
   void GetCipherMessageString(std::string &str) const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);

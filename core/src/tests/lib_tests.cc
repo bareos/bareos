@@ -161,14 +161,8 @@ enum {
 
 static void do_get_name_from_hello_test(const char *client_string_fmt,
                                         const char *client_name,
-                                        uint32_t r_type_test)
+                                        std::string r_type_test)
 {
-  std::map<int, std::string> map{
-    {R_DIRECTOR, "R_DIRECTOR"}, {R_CLIENT, "R_CLIENT"}, {R_JOB, "R_JOB"}, { R_CONSOLE, "R_CONSOLE" }
-  };
-
-  QualifiedResourceNameTypeConverter converter(map);
-
   char bashed_client_name[20];
   sprintf(bashed_client_name, client_name);
   BashSpaces(bashed_client_name);
@@ -177,19 +171,24 @@ static void do_get_name_from_hello_test(const char *client_string_fmt,
   sprintf(output_text, client_string_fmt, bashed_client_name);
 
   std::string name;
-  uint32_t r_type;
+  std::string r_type_str;
 
-  bool ok = GetNameAndResourceTypeFromHello(output_text, converter, name, r_type);
+  bool ok = GetNameAndResourceTypeFromHello(output_text, name, r_type_str);
 
   EXPECT_TRUE(ok);
   EXPECT_STREQ(name.c_str(), client_name);
-  EXPECT_EQ(r_type, r_type_test);
+  EXPECT_STREQ(r_type_str.c_str(), r_type_test.c_str());
 }
 
 TEST(Util, get_name_from_hello_test)
 {
-  do_get_name_from_hello_test("Hello Client %s calling", "Test Client", R_CLIENT);
-  do_get_name_from_hello_test("Hello Storage calling start Job %s", "Test Client", R_JOB);
-  do_get_name_from_hello_test("Hello %s", "Console Name",  R_CONSOLE);
-  do_get_name_from_hello_test("Hello %s", "*UserAgent*",  R_CONSOLE);
+  do_get_name_from_hello_test("Hello Client %s calling", "Test Client", "R_CLIENT");
+  do_get_name_from_hello_test("Hello Storage calling start Job %s", "Test Client", "R_JOB");
+  do_get_name_from_hello_test("Hello %s", "Console Name",  "R_CONSOLE");
+  do_get_name_from_hello_test("Hello %s", "*UserAgent*",  "R_CONSOLE");
+  do_get_name_from_hello_test("Hello %s", "*UserAgent*",  "R_CONSOLE");
+  do_get_name_from_hello_test("Hello %s calling", "Console",  "R_CONSOLE");
+  do_get_name_from_hello_test("Hello Director %s calling\n", "bareos dir",  "R_DIRECTOR");
+  do_get_name_from_hello_test("Hello Start Storage Job %s", "Test Job", "R_JOB");
+  do_get_name_from_hello_test("Hello Client %s FdProtocolVersion=123 calling\n", "Test Client again", "R_CLIENT");
 }

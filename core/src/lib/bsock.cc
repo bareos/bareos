@@ -590,10 +590,9 @@ bool BareosSocket::AuthenticateInboundConnection(JobControlRecord *jcr,
   return TwoWayAuthenticate(jcr, what, identity, password, tls_resource, true);
 }
 
-bool BareosSocket::EvaluateCleartextBareosHello(const QualifiedResourceNameTypeConverter &converter,
-                                                bool &cleartext,
+bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
                                                 std::string &client_name,
-                                                uint32_t &r_code) const
+                                                std::string &r_code_str) const
 {
   char buffer[256];
   memset(buffer, 0, sizeof(buffer));
@@ -601,13 +600,13 @@ bool BareosSocket::EvaluateCleartextBareosHello(const QualifiedResourceNameTypeC
   if (ret >= 10) {
     std::string hello("Hello ");
     std::string received(&buffer[4]);
-    cleartext = received.compare(0, hello.size(), hello) == 0;
-    if (cleartext) {
+    cleartext_hello = received.compare(0, hello.size(), hello) == 0;
+    if (cleartext_hello) {
       std::string name;
-      uint32_t code;
-      if (GetNameAndResourceTypeFromHello(received, converter, name, code)) {
+      std::string code;
+      if (GetNameAndResourceTypeFromHello(received, name, code)) {
         client_name = name;
-        r_code = code;
+        r_code_str = code;
       }
     }
     return true;

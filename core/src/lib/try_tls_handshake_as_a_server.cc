@@ -26,23 +26,20 @@
 
 static bool CheckForCleartextConnection(BareosSocket *bs, ConfigurationParser *config, bool &do_cleartext)
 {
-  bool cleartext_requested;
+  bool cleartext_hello;
   std::string client_name;
-  uint32_t r_code;
+  std::string r_code_str;
 
-  QualifiedResourceNameTypeConverter *converter = config->GetQualifiedResourceNameTypeConverter();
-  if (!converter) { return false; }
-  if (!bs->EvaluateCleartextBareosHello(*converter,
-                                        cleartext_requested,
+  if (!bs->EvaluateCleartextBareosHello(cleartext_hello,
                                         client_name,
-                                        r_code)) {
+                                        r_code_str)) {
     Dmsg0(100, "Could not read out cleartext hello\n");
     return false;
   }
 
-  if (cleartext_requested) {
+  if (cleartext_hello) {
     bool cleartext_configured;
-    if (!config->GetCleartextConfigured(r_code, client_name, cleartext_configured)) {
+    if (!config->GetCleartextConfigured(r_code_str, client_name, cleartext_configured)) {
       Dmsg0(100, "Could not read out cleartext configuration\n");
       return false;
     }

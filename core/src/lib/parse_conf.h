@@ -508,7 +508,7 @@ public:
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk);
-  bool GetCleartextConfigured(uint32_t r_code, const std::string &name, bool &cleartext) const;
+  bool GetCleartextConfigured(const std::string &r_code, const std::string &name, bool &cleartext) const;
 
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;

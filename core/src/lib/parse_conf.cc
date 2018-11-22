@@ -1013,7 +1013,7 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg,
    return true;
 }
 
-bool ConfigurationParser::GetCleartextConfigured(uint32_t r_code,
+bool ConfigurationParser::GetCleartextConfigured(const std::string &r_code_str,
                                                  const std::string &name,
                                                  bool &cleartext) const
 {
@@ -1022,6 +1022,9 @@ bool ConfigurationParser::GetCleartextConfigured(uint32_t r_code,
     Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
     return false;
   }
+
+  uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
+  if (r_code < 0) { return false; }
 
   TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
   if (!foreign_tls_resource) {
