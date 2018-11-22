@@ -1527,7 +1527,7 @@ static bool HasDefaultValue(ResourceItem *item)
         is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
         break;
       case CFG_TYPE_SIZE32:
-        is_default = (*(item->ui32value) != (uint32_t)str_to_int32(item->default_value));
+        is_default = (*(item->ui32value) == (uint32_t)str_to_int32(item->default_value));
         break;
       case CFG_TYPE_TIME:
         is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
