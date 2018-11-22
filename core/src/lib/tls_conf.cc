@@ -18,15 +18,42 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "include/bareos.h"
-#include "tls_conf.h"
 
-int SelectTlsPolicy(TlsResource *tls_resource, TlsPolicy remote_policy)
+#include "include/bareos.h"
+#include "lib/tls_conf.h"
+
+TlsResource::TlsResource()
+ : cipherlist_(nullptr)
+ , authenticate_(false)
+ , tls_enable_(false)
+ , tls_require_(false)
+{
+  return;
+}
+
+bool TlsResource::IsTlsConfigured() const
+{
+  return tls_enable_ || tls_require_;
+}
+
+TlsPolicy TlsResource::GetPolicy() const
+{
+ TlsPolicy result = TlsPolicy::kBnetTlsNone;
+ if (tls_enable_) {
+    result = TlsPolicy::kBnetTlsEnabled;
+ }
+ if (tls_require_) {
+    result = TlsPolicy::kBnetTlsRequired;
+ }
+ return result;
+}
+
+int TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
 {
   if (remote_policy == TlsPolicy::kBnetTlsAuto) {
     return TlsPolicy::kBnetTlsAuto;
   }
-  TlsPolicy local_policy = tls_resource->GetPolicy();
+  TlsPolicy local_policy = GetPolicy();
 
   if ((remote_policy == 0 && local_policy == 0) || (remote_policy == 0 && local_policy == 1) ||
       (remote_policy == 1 && local_policy == 0)) {

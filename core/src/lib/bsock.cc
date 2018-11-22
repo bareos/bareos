@@ -477,7 +477,7 @@ bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
 {
   if (tls_conn) { return true; }
 
-  int tls_policy = SelectTlsPolicy(tls_resource, remote_tls_policy);
+  int tls_policy = tls_resource->SelectTlsPolicy(remote_tls_policy);
 
   if (tls_policy == TlsPolicy::kBnetTlsDeny) { /* tls required but not configured */
     return false;

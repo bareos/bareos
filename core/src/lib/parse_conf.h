@@ -151,22 +151,6 @@ struct ResourceItem {
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
 
-#define MAX_RES_ITEMS 90                /* maximum resource items per CommonResourceHeader */
-
-/*
- * This is the universal header that is at the beginning of every resource record.
- */
-class CommonResourceHeader {
-public:
-   CommonResourceHeader *next;          /* Pointer to next resource of this type */
-   char *name;                          /* Resource name */
-   char *desc;                          /* Resource description */
-   uint32_t rcode;                      /* Resource id or type */
-   int32_t refcnt;                      /* Reference count for releasing */
-   char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
-   char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
-};
-
 /*
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to this daemon.
@@ -295,57 +279,6 @@ struct DatatypeName {
    const int number;
    const char *name;
    const char *description;
-};
-
-/*
- * Base Class for all Resource Classes
- */
-class BareosResource {
-public:
-   CommonResourceHeader hdr;
-
-   /* Methods */
-   inline char *name() const { return this->hdr.name; }
-   bool PrintConfig(PoolMem &buf, const ConfigurationParser &my_config,
-                    bool hide_sensitive_data = false, bool verbose = false);
-   /*
-    * validate can be defined by inherited classes,
-    * when special rules for this resource type must be checked.
-    */
-   // virtual inline bool validate() { return true; };
-};
-
-class TlsResource : public BareosResource {
-public:
-  s_password password_;     /* UA server password */
-  TlsConfigCert tls_cert_;  /* TLS structure */
-  std::string *cipherlist_; /* TLS Cipher List */
-  bool authenticate_;       /* Authenticate only with TLS */
-  bool tls_enable_;
-  bool tls_require_;
-
-  TlsResource()
-   : cipherlist_(nullptr)
-   , authenticate_(false)
-   , tls_enable_(false)
-   , tls_require_(false)
-   {}
-
-  bool IsTlsConfigured() const {
-    return tls_enable_ || tls_require_;
-  }
-
-  TlsPolicy GetPolicy() const
-  {
-   TlsPolicy result = TlsPolicy::kBnetTlsNone;
-   if (tls_enable_) {
-      result = TlsPolicy::kBnetTlsEnabled;
-   }
-   if (tls_require_) {
-      result = TlsPolicy::kBnetTlsRequired;
-   }
-   return result;
-  }
 };
 
 /*

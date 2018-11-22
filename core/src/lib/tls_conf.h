@@ -23,8 +23,9 @@
 #define BAREOS_LIB_TLS_CONF_H_
 
 #include "lib/tls_psk_credentials.h"
-#include "lib/tls_conf.h"
 #include "lib/tls_conf_cert.h"
+#include "lib/bareos_resource.h"
+#include "lib/s_password.h"
 
 enum TlsPolicy : uint32_t
 {
@@ -35,7 +36,19 @@ enum TlsPolicy : uint32_t
   kBnetTlsDeny     = 0xFF /*!< TLS connection not allowed */
 };
 
-class TlsResource;
-int SelectTlsPolicy(TlsResource *tls_resource, TlsPolicy remote_policy);
+class TlsResource : public BareosResource {
+ public:
+  s_password password_;     /* UA server password */
+  TlsConfigCert tls_cert_;  /* TLS structure */
+  std::string *cipherlist_; /* TLS Cipher List */
+  bool authenticate_;       /* Authenticate only with TLS */
+  bool tls_enable_;
+  bool tls_require_;
+
+  TlsResource();
+  bool IsTlsConfigured() const;
+  TlsPolicy GetPolicy() const;
+  int SelectTlsPolicy(TlsPolicy remote_policy) const;
+};
 
 #endif  // BAREOS_LIB_TLS_CONF_H_
