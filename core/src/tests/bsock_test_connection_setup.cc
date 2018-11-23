@@ -65,10 +65,12 @@ static void InitGlobals()
    console::me = nullptr;
 }
 
-static std::unique_ptr<ConfigurationParser> ConsolePrepareResources(const std::string &path_to_config)
+typedef std::unique_ptr<ConfigurationParser> PConfigParser;
+
+static PConfigParser ConsolePrepareResources(const std::string &path_to_config)
 {
    const char* console_configfile = path_to_config.c_str();
-   std::unique_ptr<ConfigurationParser> console_config(console::InitConsConfig(console_configfile, M_INFO));
+   PConfigParser console_config(console::InitConsConfig(console_configfile, M_INFO));
    console::my_config = console_config.get(); /* set the console global variable */
 
    EXPECT_NE(console_config.get(), nullptr);
@@ -90,9 +92,9 @@ static std::unique_ptr<ConfigurationParser> ConsolePrepareResources(const std::s
    return console_config;
 }
 
-static std::unique_ptr<ConfigurationParser> DirectorPrepareResources(const std::string &path_to_config)
+static PConfigParser DirectorPrepareResources(const std::string &path_to_config)
 {
-   std::unique_ptr<ConfigurationParser> director_config(directordaemon::InitDirConfig(path_to_config.c_str(), M_INFO));
+   PConfigParser director_config(directordaemon::InitDirConfig(path_to_config.c_str(), M_INFO));
    directordaemon::my_config = director_config.get(); /* set the director global variable */
 
    EXPECT_NE(director_config.get(), nullptr);
@@ -109,15 +111,17 @@ static std::unique_ptr<ConfigurationParser> DirectorPrepareResources(const std::
    return director_config;
 }
 
-static std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>> ConnectToDirector()
+typedef std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>> PBareosSocket;
+
+static PBareosSocket ConnectToDirector()
 {
    JobControlRecord jcr;
    memset(&jcr, 0, sizeof(jcr));
    BStringList args;
    uint32_t response_id;
 
-   std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>
-                UA_sock(console::ConnectToDirector(jcr, 0, args, response_id), [](BareosSocket *p) { delete p; });
+   PBareosSocket UA_sock(console::ConnectToDirector(jcr, 0, args, response_id),
+                         [](BareosSocket *p) { delete p; });
 
    EXPECT_EQ(response_id, kMessageIdOk);
 
@@ -147,17 +151,17 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
    InitSignalHandler();
    InitGlobals();
 
-   std::unique_ptr<ConfigurationParser> console_config(ConsolePrepareResources(path_to_config));
+   PConfigParser console_config(ConsolePrepareResources(path_to_config));
    if (!console_config) { return false; }
 
-   std::unique_ptr<ConfigurationParser> director_config(DirectorPrepareResources(path_to_config));
+   PConfigParser director_config(DirectorPrepareResources(path_to_config));
    if (!director_config) { return false; }
 
    bool start_socket_server_ok = directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
    EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
    if (!start_socket_server_ok) { return false; }
 
-   std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>UA_sock(ConnectToDirector());
+   PBareosSocket UA_sock(ConnectToDirector());
    if (!UA_sock) { return false; }
 
    CheckEncryption(UA_sock.get(), tls_policy);
