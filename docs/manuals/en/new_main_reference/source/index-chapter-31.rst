@@ -1,4 +1,4 @@
 NDMP Backups with Bareos
 ########################
 
-.. include:: ndmp.rst
+.. include:: chapter31/ndmp.rst

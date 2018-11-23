@@ -1,4 +1,2 @@
-Automated Disk Backup
-#####################
 
-.. include:: pools.rst
+.. include:: chapter18/pools.rst

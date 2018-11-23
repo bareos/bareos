@@ -1,4 +1,2 @@
-Autochanger Support
-###################
 
-.. include:: autochangers.rst
+.. include:: chapter19/autochangers.rst

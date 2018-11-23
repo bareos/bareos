@@ -1,4 +1,2 @@
-Migration and Copy
-##################
 
-.. include:: migration.rst
+.. include:: chapter22/migration.rst

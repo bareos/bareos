@@ -1,4 +1,2 @@
-Bareos Security Issues
-######################
 
-.. include:: security.rst
+.. include:: chapter33/security.rst

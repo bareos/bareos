@@ -15,21 +15,21 @@ Welcome to Bareos Developer Guide's documentation!
    messages.rst
    pluginAPI.rst
    platformsupport.rst
-   daemonprotocol.rst 
+   daemonprotocol.rst
    file.rst
    storage.rst
-   catalog.rst 
+   catalog.rst
    mediaformat.rst
    porting.rst
    api.rst
    tls-techdoc.rst
    regression.rst
-   mempool.rst    
+   mempool.rst
    netprotocol.rst
    directorConsole.rst
    smartall.rst
    fdl.rst
-  
+
 Indices and tables
 ==================
 

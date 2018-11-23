@@ -1,4 +1,4 @@
 Howtos
 ######
 
-.. include:: howto.rst
+.. include:: appendix-h/howto.rst

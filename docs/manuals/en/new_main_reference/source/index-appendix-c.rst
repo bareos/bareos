@@ -1,4 +1,2 @@
-Bareos Programs
-###############
 
-.. include:: programs.rst
+.. include:: appendix-c/programs.rst

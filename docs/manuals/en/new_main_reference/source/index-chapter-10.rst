@@ -1,4 +1,2 @@
-Storage Daemon Configuration
-############################
 
-.. include:: storedconf.rst
+.. include:: chapter10/storedconf.rst

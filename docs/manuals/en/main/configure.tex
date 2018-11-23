@@ -401,15 +401,15 @@ The scripts are called at the start of the daemon. You should use this with care
 A resource is defined as the resource type (see \nameref{ResTypes}),
 followed by an open brace (\path|{|), a number of \nameref{sec:ConfigurationResourceDirective}s, and ended by a closing brace (\path|}|)
 
-\hide{
-\begin{bconfig}{Resource}
-$RESOURCETYPE {
-    Name  = $RESOURCENAME
-    $KEY1 = $VALUE1
-    $KEY2 = $VALUE2
-}
-\end{bconfig}
-}
+% \hide{
+% \begin{bconfig}{Resource}
+% $RESOURCETYPE {
+%     Name  = $RESOURCENAME
+%     $KEY1 = $VALUE1
+%     $KEY2 = $VALUE2
+% }
+% \end{bconfig}
+% }
 
 Each resource definition MUST contain a \configdirective{Name} directive.
 It can contain a \configdirective{Description} directive.

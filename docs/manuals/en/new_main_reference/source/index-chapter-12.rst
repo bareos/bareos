@@ -1,4 +1,2 @@
-Message Resource
-################
 
-.. include:: messageres.rst
+.. include:: chapter12/messagesres.rst

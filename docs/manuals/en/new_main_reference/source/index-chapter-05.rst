@@ -1,6 +1,4 @@
 Getting Started with Bareos
 ###########################
 
-.. toctree::
-
-   quickstart.rst
+.. include:: chapter05/quickstart.rst

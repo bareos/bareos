@@ -1,4 +1,2 @@
-The Bootstrap File
-##################
 
-.. include:: bootstrap.rst
+.. include:: appendix-d/bootstrap.rst

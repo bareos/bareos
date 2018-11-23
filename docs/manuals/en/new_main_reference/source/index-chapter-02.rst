@@ -1,6 +1,4 @@
 Installing Bareos
 #################
 
-.. toctree::
-
-   install.rst
+.. include:: chapter02/install.rst

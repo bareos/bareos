@@ -1,4 +1,2 @@
-Plugins
-#######
 
-.. include:: plugins.rst
+.. include:: chapter26/plugins.rst

@@ -1,4 +1,2 @@
-Bareos Console
-##############
 
-.. include:: bconsole.rst
+.. include:: chapter15/bconsole.rst

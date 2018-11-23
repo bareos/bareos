@@ -1,4 +1,2 @@
-The Windows Version of Bareos
-#############################
 
-.. include:: win32.rst
+.. include:: chapter27/win32.rst

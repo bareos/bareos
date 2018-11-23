@@ -1,6 +1,0 @@
-Tutorial
-########
-
-.. toctree::
-
-   tutorial.rst

@@ -1,4 +1,2 @@
-Client/File Daemon Configuration
-################################
 
-.. include:: filed.conf
+.. include:: chapter11/filedconf.rst

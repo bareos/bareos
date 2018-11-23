@@ -1,4 +1,4 @@
 Operating Systems
 #################
 
-.. include:: supportedoses.rst
+.. include:: appendix-b/supportedoses.rst
