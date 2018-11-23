@@ -35,6 +35,7 @@
 #define BAREOS_INCLUDE_JCR_H_ 1
 
 #include <include/bareos.h>
+#include "lib/tls_conf.h"
 
 #ifdef STORAGE_DAEMON
 #include "stored/read_ctx.h"
@@ -410,7 +411,8 @@ public:
    POOLMEM *RestoreBootstrap;             /**< Bootstrap file to restore */
    POOLMEM *stime;                        /**< start time for incremental/differential */
    char *sd_auth_key;                     /**< SD auth key */
-   MessagesResource *jcr_msgs;                     /**< Copy of message resource -- actually used */
+   TlsPolicy sd_tls_policy;                  /**< SD Tls Policy */
+   MessagesResource *jcr_msgs;            /**< Copy of message resource -- actually used */
    uint32_t ClientId;                     /**< Client associated with Job */
    char *where;                           /**< Prefix to restore files to */
    char *RegexWhere;                      /**< File relocation in restore */
@@ -679,6 +681,7 @@ extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t Session
 extern JobControlRecord *get_jcr_by_partial_name(char *Job);
 extern JobControlRecord *get_jcr_by_full_name(char *Job);
 extern const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name);
+TlsPolicy JcrGetTlsPolicy(const char *unified_job_name);
 extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
 extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
 extern int num_jobs_run;

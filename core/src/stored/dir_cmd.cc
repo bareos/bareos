@@ -1542,25 +1542,19 @@ static void SendDirBusyMessage(BareosSocket *dir, Device *dev)
    }
 }
 
-static inline void SetStorageAuthKey(JobControlRecord *jcr, char *key)
+static void SetStorageAuthKey(JobControlRecord *jcr, char *key, TlsPolicy policy)
 {
-   /*
-    * If no key don't update anything
-    */
-   if (!*key) {
-      return;
-   }
+   if (!*key) { return; }
 
-   /*
-    * Clear any sd_auth_key which can be a key when we are acting as
-    * the endpoint for a backup session which we don't seem to be.
-    */
    if (jcr->sd_auth_key) {
       bfree(jcr->sd_auth_key);
    }
 
    jcr->sd_auth_key = bstrdup(key);
    Dmsg0(5, "set sd auth key\n");
+
+   jcr->sd_tls_policy = policy;
+   Dmsg1(5, "set sd ssl_policy to %d\n", policy);
 }
 
 /**
@@ -1579,7 +1573,7 @@ static bool ListenCmd(JobControlRecord *jcr)
 static bool ReplicateCmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
-   int enable_ssl;                 /* enable ssl to sd */
+   TlsPolicy tls_policy;                 /* enable ssl to sd */
    char JobName[MAX_NAME_LENGTH];
    char stored_addr[MAX_NAME_LENGTH];
    uint32_t JobId = 0;
@@ -1594,14 +1588,14 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    sd_auth_key.check_size(dir->message_length);
 
    if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-              &enable_ssl, sd_auth_key.c_str()) != 6) {
+              &tls_policy, sd_auth_key.c_str()) != 6) {
       dir->fsend(BADcmd, "replicate", dir->msg);
       return false;
    }
 
-   SetStorageAuthKey(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str(), tls_policy);
 
-   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
+   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, tls_policy);
 
    storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
 
@@ -1631,7 +1625,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
-   if (me->IsTlsConfigured() || enable_ssl == TlsPolicy::kBnetTlsAuto) {
+   if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              JobName, R_JOB, JobId, qualified_resource_name)) {
@@ -1685,19 +1679,19 @@ static bool RunCmd(JobControlRecord *jcr)
 static bool PassiveCmd(JobControlRecord *jcr)
 {
    int filed_port;                 /* file daemon port */
-   int enable_ssl;                 /* enable ssl to fd */
+   TlsPolicy tls_policy;                 /* enable ssl to fd */
    char filed_addr[MAX_NAME_LENGTH];
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *fd;                      /* file daemon bsock */
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
-   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
+   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &tls_policy) != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
       goto bail_out;
    }
 
-   Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port, enable_ssl);
+   Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port, tls_policy);
 
    jcr->passive_client = true;
 
@@ -1725,7 +1719,7 @@ static bool PassiveCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to FD.\n");
 
-   if (me->IsTlsConfigured() || enable_ssl == TlsPolicy::kBnetTlsAuto) {
+   if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {

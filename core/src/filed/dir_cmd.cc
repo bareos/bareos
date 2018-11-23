@@ -47,6 +47,7 @@
 #include "lib/edit.h"
 #include "lib/path_list.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/tls_conf.h"
 
 #if defined(WIN32_VSS)
 #include "win32/findlib/win32.h"
@@ -123,7 +124,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
 static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *cmd);
 static void FiledFreeJcr(JobControlRecord *jcr);
 static bool OpenSdReadSession(JobControlRecord *jcr);
-static void SetStorageAuthKey(JobControlRecord *jcr, char *key);
+static void SetStorageAuthKey(JobControlRecord *jcr, char *key, TlsPolicy policy);
 
 /* Exported functions */
 
@@ -796,7 +797,7 @@ static bool SetauthorizationCmd(JobControlRecord *jcr)
       return false;
    }
 
-   SetStorageAuthKey(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str(), jcr->sd_tls_policy);
    Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
 
    return dir->fsend(OkAuthorization);
@@ -927,7 +928,7 @@ static bool job_cmd(JobControlRecord *jcr)
       dir->fsend(BADjob);
       return false;
    }
-   SetStorageAuthKey(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str(), jcr->sd_tls_policy);
    Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
    Mmsg(jcr->errmsg, "JobId=%d Job=%s", jcr->JobId, jcr->Job);
    NewPlugins(jcr);                  /* instantiate plugins for this jcr */
@@ -1494,7 +1495,7 @@ static bool SessionCmd(JobControlRecord *jcr)
    return dir->fsend(OKsession);
 }
 
-static void SetStorageAuthKey(JobControlRecord *jcr, char *key)
+static void SetStorageAuthKey(JobControlRecord *jcr, char *key, TlsPolicy policy)
 {
    /* if no key don't update anything */
   if (!*key) { return; }
@@ -1523,6 +1524,10 @@ static void SetStorageAuthKey(JobControlRecord *jcr, char *key)
 
    jcr->sd_auth_key = bstrdup(key);
    Dmsg0(5, "set sd auth key\n");
+
+   jcr->sd_tls_policy = policy;
+   Dmsg1(5, "set sd ssl_policy to %d\n", policy);
+
 }
 
 /**
@@ -1531,7 +1536,7 @@ static void SetStorageAuthKey(JobControlRecord *jcr, char *key)
 static bool StorageCmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
-   int enable_ssl;                 /* enable ssl to sd */
+   TlsPolicy tls_policy;                 /* enable ssl to sd */
    char stored_addr[MAX_NAME_LENGTH];
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
@@ -1540,17 +1545,17 @@ static bool StorageCmd(JobControlRecord *jcr)
   if (me->nokeepalive) { storage_daemon_socket->ClearKeepalive(); }
    Dmsg1(100, "StorageCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->message_length);
-  if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &enable_ssl, sd_auth_key.c_str()) != 4) {
-    if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &enable_ssl) != 3) {
+  if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &tls_policy, sd_auth_key.c_str()) != 4) {
+    if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &tls_policy) != 3) {
          PmStrcpy(jcr->errmsg, dir->msg);
          Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s"), jcr->errmsg);
          goto bail_out;
       }
    }
 
-   SetStorageAuthKey(jcr, sd_auth_key.c_str());
+   SetStorageAuthKey(jcr, sd_auth_key.c_str(), tls_policy);
 
-   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
+   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, tls_policy);
 
    storage_daemon_socket->SetSourceAddress(me->FDsrc_addr);
 
@@ -1581,7 +1586,7 @@ static bool StorageCmd(JobControlRecord *jcr)
 
    jcr->store_bsock = storage_daemon_socket;
 
-   if (me->IsTlsConfigured() || enable_ssl == TlsPolicy::kBnetTlsAuto) {
+   if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {

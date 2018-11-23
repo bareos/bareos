@@ -51,6 +51,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/jcr.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/qualified_resource_name_type_converter.h"
@@ -1024,7 +1025,14 @@ bool ConfigurationParser::GetConfiguredTlsPolicy(const std::string &r_code_str,
       return false;
     }
     tls_policy = own_tls_resource->GetPolicy();
-  } else {
+  } else if(r_code_str == std::string("R_JOB")) {
+    TlsPolicy policy = JcrGetTlsPolicy(name.c_str());
+    if (policy == kBnetTlsUnknown) {
+      return false;
+    }
+    tls_policy = policy;
+  }
+  else {
     uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
     if (r_code < 0) { return false; }
 
