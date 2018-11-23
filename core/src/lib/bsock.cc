@@ -594,11 +594,15 @@ bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
                                                 std::string &client_name,
                                                 std::string &r_code_str) const
 {
-  char buffer[256];
-  memset(buffer, 0, sizeof(buffer));
-  int ret = ::recv(fd_, buffer, 255, MSG_PEEK);
-  if (ret >= 10) {
-    std::string hello("Hello ");
+  char buffer[256] {0};
+
+  std::string::size_type amount_bytes = ::recv(fd_, buffer, 255, MSG_PEEK);
+
+  std::string hello("Hello ");
+  std::string::size_type bnet_header_bytes = 4;
+
+  int success = false;
+  if (amount_bytes >= hello.size() + bnet_header_bytes) {
     std::string received(&buffer[4]);
     cleartext_hello = received.compare(0, hello.size(), hello) == 0;
     if (cleartext_hello) {
@@ -607,11 +611,13 @@ bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
       if (GetNameAndResourceTypeFromHello(received, name, code)) {
         client_name = name;
         r_code_str = code;
+        success = true;
       }
+    } else { /* not cleartext hello */
+      success = true;
     }
-    return true;
-  }
-  return false;
+  } /* if (amount_bytes >= 10) */
+  return success;
 }
 
 void BareosSocket::GetCipherMessageString(std::string &str) const
