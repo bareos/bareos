@@ -1,4 +1,2 @@
-Always Incremental Backup Scheme
-################################
 
-.. include:: always-incremental.rst
+.. include:: chapter23/always-incremental.rst

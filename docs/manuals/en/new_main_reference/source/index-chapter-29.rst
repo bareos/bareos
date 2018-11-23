@@ -1,4 +1,2 @@
-Transport Encryption
-####################
 
-.. include:: tls.rst
+.. include:: chapter29/tls.rst

@@ -1,6 +1,4 @@
 Installing Bareos Webui
 #######################
 
-.. toctree::
-
-   webui.rst
+.. include:: chapter03/webui.rst

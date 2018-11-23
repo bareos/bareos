@@ -1,4 +1,2 @@
-Data Encryption
-###############
 
-.. include:: dataencrption.rst
+.. include:: chapter30/dataencryption.rst

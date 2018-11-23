@@ -1,4 +1,2 @@
-Backward Compatibility
-######################
 
-.. include:: backward-compatibility.rst
+.. include:: appendix-f/backward-compatibility.rst

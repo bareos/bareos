@@ -1,4 +1,2 @@
-Console Configuration
-#####################
 
-.. include:: consoleconf.rst
+.. include:: chapter13/consoleconf.rst

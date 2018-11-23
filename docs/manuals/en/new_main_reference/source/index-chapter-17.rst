@@ -1,5 +1,5 @@
 Volume Management
 #################
 
-.. include:: disk.rst
-.. include:: recycling.rst
+.. include:: chapter17/disk.rst
+.. include:: chapter17/recycling.rst

@@ -3,8 +3,8 @@ Configuration
 
 .. toctree::
 
-   index-chapter-8.rst
-   index-chapter-9.rst
+   index-chapter-08.rst
+   index-chapter-09.rst
    index-chapter-10.rst
    index-chapter-11.rst
    index-chapter-12.rst

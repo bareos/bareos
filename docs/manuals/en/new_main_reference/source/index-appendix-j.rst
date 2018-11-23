@@ -1,4 +1,4 @@
 Troubleshooting
 ###############
 
-.. include:: troubleshooting.rst
+.. include:: appendix-j/troubleshooting.rst

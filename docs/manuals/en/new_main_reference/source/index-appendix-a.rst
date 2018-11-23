@@ -1,4 +1,2 @@
-System requirements
-###################
 
-.. include:: requirements.rst
+.. include:: appendix-a/requirements.rst

@@ -51,11 +51,11 @@ For installing Bareos, follow the instructions from the \nameref{InstallChapter}
 Assuming you have installed the packages,
 to start the three daemons, from your installation directory, simply enter:
 
-\begin{verbatim}
+\begin{bconsole}{start services}
 service bareos-dir start
 service bareos-sd start
 service bareos-fd start
-\end{verbatim}
+\end{bconsole}
 
 \section{Using the Director to Query and Start Jobs}
 
@@ -280,15 +280,15 @@ that it will use device \directory{/var/lib/bareos/storage}, which is not curren
 Now, let's actually run a job with:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{run}
 run
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 you should get the following output:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{select job}
 Automatically selected Catalog: MyCatalog
 Using Catalog "MyCatalog"
 A job name must be specified.
@@ -297,14 +297,14 @@ The defined Job resources are:
      2: BackupCatalog
      3: RestoreFiles
 Select Job resource (1-3):
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 Here, Bareos has listed the three different Jobs that you can run, and you
 should choose number {\bf 1} and type enter, at which point you will get:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{run job}
 Run Backup job
 JobName:  BackupClient1
 Level:    Incremental
@@ -317,7 +317,7 @@ Storage:  File (From Job resource)
 When:     2013-05-23 14:50:04
 Priority: 10
 OK to run? (yes/mod/no):
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 At this point, take some time to look carefully at what is printed and
@@ -337,7 +337,7 @@ you will get back something like:
 
 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % 28-Apr-2003 14:22 bareos-dir: Last FULL backup time not found. Doing
 %                   FULL backup.
 % 28-Apr-2003 14:22 bareos-dir: Start Backup JobId 1,
@@ -348,7 +348,7 @@ you will get back something like:
 %     Storage:      FileStorage
 %     Media type:   File
 %     Pool:         Default
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % The first message, indicates that no previous Full backup was done, so Bareos
@@ -363,20 +363,20 @@ you will get back something like:
 % Volume that Bareos can write on. We do so with:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % label
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % and Bareos will print:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % The defined Storage resources are:
 %      1: File
 % Item 1 selected automatically.
 % Enter new Volume name:
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % at which point, you should enter some name beginning with a letter and
@@ -384,7 +384,7 @@ you will get back something like:
 % permitted. For example, enter {\bf TestVolume001}, and you should get back:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % Defined Pools:
 %      1: Default
 % Item 1 selected automatically.
@@ -394,7 +394,7 @@ you will get back something like:
 % Catalog record for Volume "TestVolume002", Slot 0  successfully created.
 % Requesting mount FileStorage ...
 % 3001 OK mount. Device=/var/lib/bareos/storage
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 %
 % Finally, enter {\bf messages} and you should get something like:
@@ -449,9 +449,9 @@ If you do an \command{ls -l} of your \directory{/var/lib/bareos/storage} directo
 have the following item:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{volume}
 -rw-r-----    1 bareos bareos   39072153 Apr 28 14:30 Full-001
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 This is the file Volume that you just wrote and it contains all the data of
@@ -471,10 +471,10 @@ program.
 % your database using:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % ./drop_bareos_tables
 % ./make_bareos_tables
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % Please note that this will erase all information about the previous jobs that
@@ -523,13 +523,13 @@ demonstration, please enter {\bf 5} to do a restore of the last backup you
 did, and you will get the following output:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{select resource}
 Automatically selected Client: bareos-fd
 The defined FileSet resources are:
      1: Catalog
      2: Full Set
 Select FileSet resource (1-2): 
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 As you can see, Bareos knows what client
@@ -537,7 +537,7 @@ you have, and since there was only one, it selected it automatically.
 Select {\bf 2}, because you want to restore files from the file set.
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{restore filesystem}
 +-------+-------+----------+------------+---------------------+---------------+
 | jobid | level | jobfiles | jobbytes   | starttime           | volumename    |
 +-------+-------+----------+------------+---------------------+---------------+
@@ -555,7 +555,7 @@ Enter "done" to leave this mode.
 
 cwd is: /
 $ 
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 where I have truncated the listing on the right side to make it more readable.
@@ -577,15 +577,15 @@ more details.
 To exit this mode, simply enter:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{done}
 done
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 and you will get the following output:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{job report}
 Bootstrap records written to
    /home/user/bareos/testbin/working/restore.bsr
 The restore job will require the following Volumes:
@@ -632,7 +632,7 @@ Catalog:         MyCatalog
 Priority:        10
 Plugin Options:  *None*
 OK to run? (yes/mod/no): 
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 If you answer {\bf yes} your files will be restored to
@@ -644,7 +644,7 @@ of all the files that were restored as well as a summary of the job that looks
 similar to this:
 
 \footnotesize
-\begin{verbatim}
+\begin{bconsole}{job report}
 23-May 15:24 bareos-dir JobId 2: Start Restore Job RestoreFiles.2013-05-23_15.24.01_10
 23-May 15:24 bareos-dir JobId 2: Using Device "FileStorage" to read.
 23-May 15:24 bareos-sd JobId 2: Ready to read from volume "TestVolume001" on device "FileStorage" (/var/lib/bareos/storage).
@@ -664,7 +664,7 @@ similar to this:
   FD termination status:  OK
   SD termination status:  OK
   Termination:            Restore OK
-\end{verbatim}
+\end{bconsole}
 \normalsize
 
 After exiting the Console program, you can examine the files in \directory{/tmp/bareos-restores},
@@ -882,9 +882,9 @@ Job {
 % send you a message similar to the following:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % bareos-sd: block.c:337 === Write error errno=28: ERR=No space left on device
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % This indicates that Bareos got a write error because the tape is full. Bareos
@@ -905,14 +905,14 @@ Job {
 % message similar to the following:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % bareos-sd: Job usersave.2002-09-19.10:50:48 waiting. Cannot find any
 %           appendable volumes.
 % Please use the "label"  command to create a new Volume for:
 %     Storage:      SDT-10000
 %     Media type:   DDS-4
 %     Pool:         Default
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % Until you create a new Volume, this message will be repeated an hour later,
@@ -995,9 +995,9 @@ Job {
 % daemons from the install directory as follows:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % ./bareos start -d100
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % This can be particularly helpful if your daemons do not start correctly,
@@ -1008,9 +1008,9 @@ Job {
 % To stop the three daemons, enter the following from the install directory:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % ./bareos stop
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % The execution of {\bf bareos stop} may complain about pids not found. This is
@@ -1134,14 +1134,14 @@ recorded in the catalog. You can verify this by entering:
 % the following:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % The defined Storage resources are:
 %      1: File
 %      2: 8mmDrive
 %      3: DLTDrive
 %      4: SDT-10000
 % Select Storage resource (1-4):
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % At this point, you should have a blank tape in the drive corresponding to the
@@ -1150,17 +1150,17 @@ recorded in the catalog. You can verify this by entering:
 % It will then ask you for the Volume name.
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % Enter new Volume name:
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % If Bareos complains:
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % Media record for Volume xxxx already exists.
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % It means that the volume name {\bf xxxx} that you entered already exists in
@@ -1169,7 +1169,7 @@ recorded in the catalog. You can verify this by entering:
 % proper printing.
 % 
 % \footnotesize
-% \begin{verbatim}
+% \begin{bconsole}
 % +---------------+---------+--------+----------------+-----/~/-+------------+-----+
 % | VolumeName    | MediaTyp| VolStat| VolBytes       | LastWri | VolReten   | Recy|
 % +---------------+---------+--------+----------------+---------+------------+-----+
@@ -1186,7 +1186,7 @@ recorded in the catalog. You can verify this by entering:
 % | DLT-04May2002 | DLT8000 | Full   | 60,486,677,724 | 2002-05 | 31,536,000 |   0 |
 % | DLT-26May02   | DLT8000 | Append |  1,336,699,620 | 2002-05 | 31,536,000 |   1 |
 % +---------------+---------+--------+----------------+-----/~/-+------------+-----+
-% \end{verbatim}
+% \end{bconsole}
 % \normalsize
 % 
 % Once Bareos has verified that the volume does not already exist, it will

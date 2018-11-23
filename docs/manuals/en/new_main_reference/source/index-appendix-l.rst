@@ -1,4 +1,4 @@
 Release Notes
 #############
 
-.. include:: releasenotes.rst
+.. include:: appendix-l/releasenotes.rst

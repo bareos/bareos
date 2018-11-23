@@ -1,4 +1,2 @@
-Monitor Configuration
-#####################
 
-.. include:: monitorconf.rst
+.. include:: chapter14/monitorconf.rst

@@ -1,7 +1,7 @@
 Source: bareos-docs
 Priority: extra
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
-Build-Depends: bareos-director, bareos-database-sqlite3, bareos-storage, bareos-filedaemon, bareos-bconsole, bareos-traymonitor, debhelper, ghostscript, imagemagick, librsvg2-bin, pandoc, python, texlive-fonts-recommended, texlive-latex-recommended, tex4ht
+Build-Depends: bareos-director, bareos-database-sqlite3, bareos-storage, bareos-filedaemon, bareos-bconsole, bareos-traymonitor, debhelper, ghostscript, imagemagick, librsvg2-bin, pandoc, python, texlive-fonts-recommended, texlive-latex-recommended, tex4ht, perl
 Standards-Version: 3.8.4
 Section: doc
 Vcs-Git: https://github.com/bareos/bareos-docs.git

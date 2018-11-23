@@ -1,4 +1,4 @@
 Debugging
 #########
 
-.. include:: debug.rst
+.. include:: appendix-k/debug.rst

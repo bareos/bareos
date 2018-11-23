@@ -1,4 +1,2 @@
-Catalog Maintenance
-###################
 
-.. include:: catmaintenance.rst
+.. include:: chapter32/catmaintenance.rst

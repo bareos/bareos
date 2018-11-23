@@ -1,4 +1,2 @@
-The Restore Command
-###################
 
-.. include:: restore.rst
+.. include:: chapter16/restore.rst

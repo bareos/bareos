@@ -1,19 +1,19 @@
 Bareos Copyright, Trademark and Licenses
 ########################################
 
-.. include:: license.rst
+.. include:: appendix-m/license.rst
 
 GNU Free Documentation License
 ------------------------------
 
-.. include:: fdl.txt
+.. include:: appendix-m/fdl.txt
 
 GNU Affero General Public License
 ---------------------------------
 
-.. include:: agpl.txt
+.. include:: appendix-m/agpl.txt
 
 GNU Lesser General Public License
 ---------------------------------
 
-.. include:: lgpl.txt
+.. include:: appendix-m/lgpl.txt

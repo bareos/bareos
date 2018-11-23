@@ -1,4 +1,2 @@
-Catalog Tables
-##############
 
-.. include:: tables.rst
+.. include:: appendix-g/tables.rst

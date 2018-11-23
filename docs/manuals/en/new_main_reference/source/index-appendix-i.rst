@@ -1,4 +1,2 @@
-Disaster Recovery Using Bareos
-##############################
 
-.. include:: rescue.rst
+.. include:: appendix-i/rescue.rst

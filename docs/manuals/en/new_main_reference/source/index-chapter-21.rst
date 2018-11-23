@@ -1,4 +1,2 @@
-Data Spooling
-#############
 
-.. include:: spooling.rst
+.. include:: chapter21/spooling.rst

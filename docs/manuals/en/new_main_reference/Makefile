@@ -11,6 +11,7 @@ BUILDDIR      = BareosMainReference
 
 # Put it first so that "make" without argument is like "make help".
 all:
+	./convert_all_tex_files_to_rst.sh
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	#@$(SPHINXBUILD) -M latexpdf "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
