@@ -89,9 +89,7 @@ BuildRequires: libtirpc-devel
 %define droplet 1
 %endif
 
-# Ceph packages have changed with SLE_12_SP2,
-# therefore build it only for SLE_12 and SLE_12_SP1
-%if 0%{?sle_version} >= 120000 && 0%{?sle_version} <= 120100
+%if 0%{?sle_version} >= 120000
 %define ceph 1
 %endif
 
@@ -153,7 +151,12 @@ BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
 %if 0%{?ceph}
+%if 0%{?sle_version} >= 120200
+BuildRequires: libcephfs-devel
+BuildRequires: librados-devel
+%else
 BuildRequires: ceph-devel
+%endif
 %endif
 
 %if 0%{?have_git}

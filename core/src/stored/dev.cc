@@ -138,7 +138,7 @@ const char *Device::mode_to_str(int mode)
    return modes[mode - 1];
 }
 
-static inline Device *init_dev_(JobControlRecord *jcr, DeviceResource *device, bool new_init)
+static inline Device *init_dev(JobControlRecord *jcr, DeviceResource *device, bool new_init)
 {
    struct stat statp;
    int errstat;
@@ -420,7 +420,7 @@ Device *InitDev(JobControlRecord *jcr, DeviceResource *device)
 {
    Device *dev;
 
-   dev = init_dev_(jcr, device, false);
+   dev = init_dev(jcr, device, false);
    return dev;
 }
 
@@ -773,7 +773,7 @@ bool Device::rewind(DeviceControlRecord *dcr)
    if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
       BErrNo be;
       dev_errno = errno;
-      Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(), be.bstrerror());
+      Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
       return false;
    }
 

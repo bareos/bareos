@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -148,6 +148,9 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
    case DPL_EPERM:
       errno = EPERM;
       break;
+   case DPL_FAILURE: /**< General failure */
+      errno = EIO;
+      break;
    default:
       errno = EINVAL;
       break;
@@ -156,127 +159,221 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
    return errno;
 }
 
-/**
- * Generic callback for the WalkDplDirectory() function.
- *
- * Returns true - abort loop
- *         false - continue loop
- */
-typedef bool (*t_call_back)(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                            const char *dirname, void *data);
+
 
 /*
  * Callback for getting the total size of a chunked volume.
  */
-static bool chunked_volume_size_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                         const char *dirname, void *data)
+static dpl_status_t chunked_volume_size_callback(dpl_sysmd_t *sysmd, dpl_ctx_t *ctx, const char *chunkpath, void *data)
 {
+   dpl_status_t status = DPL_SUCCESS;
    ssize_t *volumesize = (ssize_t *)data;
 
-   /*
-    * Make sure it starts with [0-9] e.g. a volume chunk.
-    */
-   if (*dirent->name >= '0' && *dirent->name <= '9') {
-      *volumesize = *volumesize + dirent->size;
-   }
+   *volumesize = *volumesize + sysmd->size;
 
-   return false;
+   return status;
 }
 
 /*
  * Callback for truncating a chunked volume.
+ *
+ * @return DPL_SUCCESS on success, on error: a dpl_status_t value that represents the error.
  */
-static bool chunked_volume_truncate_callback(dpl_dirent_t *dirent, dpl_ctx_t *ctx,
-                                             const char *dirname, void *data)
+static dpl_status_t chunked_volume_truncate_callback(dpl_sysmd_t *sysmd, dpl_ctx_t *ctx, const char *chunkpath, void *data)
 {
-   dpl_status_t status;
+   dpl_status_t status = DPL_SUCCESS;
 
-   /*
-    * Make sure it starts with [0-9] e.g. a volume chunk.
-    */
-   if (*dirent->name >= '0' && *dirent->name <= '9') {
-      status = dpl_unlink(ctx, dirent->name);
+   status = dpl_unlink(ctx, chunkpath);
 
-      switch (status) {
+   switch (status) {
       case DPL_SUCCESS:
          break;
       default:
-         return true;
-      }
+         /* no error message here, as error will be set by calling function. */
+         return status;
    }
 
-   return false;
+   return status;
 }
+
 
 /*
  * Generic function that walks a dirname and calls the callback
  * function for each entry it finds in that directory.
+ *
+ * @return: true - if no error occured
+ *          false - if an error has occured. Sets dev_errno and errmsg to the first error.
  */
-static bool WalkDplDirectory(dpl_ctx_t *ctx, const char *dirname, t_call_back callback, void *data)
+bool droplet_device::walk_chunks(const char *dirname, t_dpl_walk_chunks_call_back callback, void *data, bool ignore_gaps)
 {
-   void *dir_hdl;
+   bool retval = true;
    dpl_status_t status;
-   dpl_dirent_t dirent;
+   dpl_status_t callback_status;
+   dpl_sysmd_t *sysmd = NULL;
+   PoolMem path(PM_NAME);
 
-   if (dirname) {
-      status = dpl_chdir(ctx, dirname);
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   bool found = true;
+   int i = 0;
+   while ((i < max_chunks_) && (found) && (retval)) {
+      path.bsprintf("%s/%04d", dirname, i);
+
+      status = dpl_getattr(ctx_, /* context */
+                           path.c_str(), /* locator */
+                           NULL, /* metadata */
+                           sysmd); /* sysmd */
 
       switch (status) {
-      case DPL_SUCCESS:
-         break;
-      default:
+         case DPL_SUCCESS:
+            Dmsg1(100, "chunk %s exists. Calling callback.\n", path.c_str());
+            callback_status = callback(sysmd, ctx_, path.c_str(), data);
+            if (callback_status == DPL_SUCCESS) {
+               i++;
+            } else {
+               Mmsg2(errmsg, _("Operation failed on chunk %s: ERR=%s."),
+                     path.c_str(), dpl_status_str(callback_status));
+               dev_errno = DropletErrnoToSystemErrno(callback_status);
+               /* exit loop */
+               retval = false;
+            }
+            break;
+         case DPL_ENOENT:
+            if (ignore_gaps) {
+               Dmsg1(1000, "chunk %s does not exists. Skipped.\n", path.c_str());
+               i++;
+            } else {
+               Dmsg1(100, "chunk %s does not exists. Exiting.\n", path.c_str());
+               found = false;
+            }
+            break;
+         default:
+            Dmsg2(100, "chunk %s failure: %s. Exiting.\n", path.c_str(), dpl_status_str(callback_status));
+            found = false;
+            break;
+      }
+   }
+
+   if (sysmd) {
+      dpl_sysmd_free(sysmd);
+      sysmd = NULL;
+   }
+
+   return retval;
+}
+
+/**
+ * Check if a specific path exists.
+ * It uses dpl_getattr() for this.
+ * However, dpl_getattr() results wrong results in a couple of situations,
+ * espescially directoy names should not be checked using a prepended "/".
+ *
+ * Results in detail:
+ *
+ * path      | "name"  | "name/" | target reachable | target not reachable  | target not reachable | wrong credentials
+ *           | exists  | exists  |                  | (already initialized) | (not initialized)    |
+ * -------------------------------------------------------------------------------------------------------------------
+ * ""        | -       | yes     | DPL_SUCCESS      | DPL_SUCCESS (!)       | DPL_FAILURE          | DPL_EPERM
+ * "/"       | yes     | -       | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ *
+ * "name"    | -       | -       | DPL_ENOENT       | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name"   | -       | -       | DPL_ENOENT       | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "name/"   | -       | -       | DPL_ENOENT       | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name/"  | -       | -       | DPL_SUCCESS (!)  | DPL_SUCCESS (!)       | DPL_SUCCESS (!)      | DPL_SUCCESS (!)
+ *
+ * "name"    | yes     | -       | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name"   | yes     | -       | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "name/"   | yes     | -       | DPL_ENOTDIR      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name/"  | yes     | -       | DPL_SUCCESS (!)  | DPL_SUCCESS (!)       | DPL_SUCCESS (!)      | DPL_SUCCESS (!)
+ *
+ * "name"    | -       | yes     | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name"   | -       | yes     | DPL_ENOENT  (!)  | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "name/"   | -       | yes     | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name/"  | -       | yes     | DPL_SUCCESS      | DPL_SUCCESS (!)       | DPL_SUCCESS (!)      | DPL_SUCCESS (!)
+ *
+ * "name"    | yes     | yes     | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name"   | yes     | yes     | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "name/"   | yes     | yes     | DPL_SUCCESS      | DPL_FAILURE           | DPL_FAILURE          | DPL_EPERM
+ * "/name/"  | yes     | yes     | DPL_SUCCESS      | DPL_SUCCESS (!)       | DPL_SUCCESS (!)      | DPL_SUCCESS (!)
+ *
+ * Best test for
+ *   directories as "dir/"
+ *   files as "file" or "/file".
+ *
+ * Returns DPL_SUCCESS     - if path exists and can be accessed
+ *         DPL_* errorcode - otherwise
+ */
+dpl_status_t droplet_device::check_path(const char *path)
+{
+   dpl_status_t status;
+   dpl_sysmd_t *sysmd = NULL;
+
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_getattr(ctx_, /* context */
+                        path, /* locator */
+                        NULL, /* metadata */
+                        sysmd); /* sysmd */
+   Dmsg4(100, "check_path(device=%s, bucket=%s, path=%s): %s\n", prt_name, ctx_->cur_bucket, path, dpl_status_str(status));
+   dpl_sysmd_free(sysmd);
+
+   return status;
+}
+
+
+
+/**
+ * Checks if the connection to the backend storage system is possible.
+ *
+ * Returns true  - if connection can be established
+ *         false - otherwise
+ */
+bool droplet_device::CheckRemote()
+{
+   if (!ctx_) {
+      if (!initialize()) {
          return false;
       }
    }
 
-   status = dpl_opendir(ctx, ".", &dir_hdl);
-
-   switch (status) {
-   case DPL_SUCCESS:
-      break;
-   default:
+   if (check_path("/") != DPL_SUCCESS) {
+      Dmsg1(100, "CheckRemote(%s): failed\n", prt_name);
       return false;
    }
 
-   while (!dpl_eof(dir_hdl)) {
-      status = dpl_readdir(dir_hdl, &dirent);
-
-      switch (status) {
-      case DPL_SUCCESS:
-         break;
-      default:
-         dpl_closedir(dir_hdl);
-         return false;
-      }
-
-      /*
-       * Skip '.' and '..'
-       */
-      if (bstrcmp(dirent.name, ".") ||
-          bstrcmp(dirent.name, "..")) {
-         continue;
-      }
-
-      if (callback(&dirent, ctx, dirname, data)) {
-         break;
-      }
-   }
-
-   dpl_closedir(dir_hdl);
-
-   if (dirname) {
-      status = dpl_chdir(ctx, "/");
-
-      switch (status) {
-      case DPL_SUCCESS:
-         break;
-      default:
-         return false;
-      }
-   }
+   Dmsg1(100, "CheckRemote(%s): ok\n", prt_name);
 
    return true;
 }
+
+
+
+bool droplet_device::remote_chunked_volume_exists()
+{
+   bool retval = false;
+   dpl_status_t status;
+   PoolMem chunk_dir(PM_FNAME);
+
+   if (!CheckRemote()) {
+      return false;
+   }
+
+   Mmsg(chunk_dir, "%s/", getVolCatName());
+   status = check_path(chunk_dir.c_str());
+
+   switch (status) {
+   case DPL_SUCCESS:
+      Dmsg1(100, "remote_chunked_volume %s exists\n", chunk_dir.c_str());
+      retval = true;
+      break;
+   case DPL_ENOENT:
+   case DPL_FAILURE:
+   default:
+      Dmsg1(100, "remote_chunked_volume %s does not exists\n", chunk_dir.c_str());
+      break;
+   }
+
+   return retval;
+}
+
 
 /*
  * Internal method for flushing a chunk to the backing store.
@@ -290,7 +387,7 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request *request)
    dpl_option_t dpl_options;
    dpl_sysmd_t *sysmd = NULL;
    PoolMem chunk_dir(PM_FNAME),
-            chunk_name(PM_FNAME);
+           chunk_name(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", request->volname);
    Mmsg(chunk_name, "%s/%04d", chunk_dir.c_str(), request->chunk);
@@ -356,7 +453,7 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request *request)
          case DPL_SUCCESS:
             break;
          default:
-            Mmsg2(errmsg, _("Failed to create direcory %s using dpl_mkdir(): ERR=%s.\n"),
+            Mmsg2(errmsg, _("Failed to create directory %s using dpl_mkdir(): ERR=%s.\n"),
                   chunk_dir.c_str(), dpl_status_str(status));
             dev_errno = DropletErrnoToSystemErrno(status);
             goto bail_out;
@@ -514,13 +611,23 @@ bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord *dcr)
 {
    PoolMem chunk_dir(PM_FNAME);
 
+   Dmsg1(100, "truncate_remote_chunked_volume(%s) start.\n", getVolCatName());
    Mmsg(chunk_dir, "/%s", getVolCatName());
-   if (!WalkDplDirectory(ctx_, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
+   bool ignore_gaps = true;
+   if (!walk_chunks(chunk_dir.c_str(), chunked_volume_truncate_callback, NULL, ignore_gaps)) {
+      /* errno already set in walk_chunks. */
       return false;
    }
+   Dmsg1(100, "truncate_remote_chunked_volume(%s) finished.\n", getVolCatName());
 
    return true;
 }
+
+
+bool droplet_device::d_flush(DeviceControlRecord *dcr)
+{
+   return WaitUntilChunksWritten();
+};
 
 /*
  * Initialize backend.
@@ -792,7 +899,7 @@ ssize_t droplet_device::d_write(int fd, const void *buffer, size_t count)
 
 int droplet_device::d_close(int fd)
 {
-   return close_chunk();
+   return CloseChunk();
 }
 
 int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
@@ -805,7 +912,6 @@ int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
  */
 ssize_t droplet_device::chunked_remote_volume_size()
 {
-   dpl_status_t status;
    ssize_t volumesize = 0;
    dpl_sysmd_t *sysmd = NULL;
    PoolMem chunk_dir(PM_FNAME);
@@ -815,7 +921,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    /*
     * FIXME: With the current version of libdroplet a dpl_getattr() on a directory
     *        fails with DPL_ENOENT even when the directory does exist. All other
-    *        operations succeed and as WalkDplDirectory() does a dpl_chdir() anyway
+    *        operations succeed and as walk_chunks() does a dpl_chdir() anyway
     *        that will fail if the directory doesn't exist for now we should be
     *        mostly fine.
     */
@@ -848,7 +954,9 @@ ssize_t droplet_device::chunked_remote_volume_size()
    }
 #endif
 
-   if (!WalkDplDirectory(ctx_, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+   Dmsg1(100, "get chunked_remote_volume_size(%s)\n", getVolCatName());
+   if (!walk_chunks(chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+      /* errno is already set in walk_chunks */
       volumesize = -1;
       goto bail_out;
    }
@@ -858,7 +966,7 @@ bail_out:
       dpl_sysmd_free(sysmd);
    }
 
-   Dmsg2(100, "Volume size of volume %s, %lld\n", chunk_dir.c_str(), volumesize);
+   Dmsg2(100, "Size of volume %s: %lld\n", chunk_dir.c_str(), volumesize);
 
    return volumesize;
 }
