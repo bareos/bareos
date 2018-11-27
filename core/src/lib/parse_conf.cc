@@ -55,6 +55,8 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/bstringlist.h"
+#include "lib/ascii_control_characters.h"
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
@@ -1026,11 +1028,22 @@ bool ConfigurationParser::GetConfiguredTlsPolicy(const std::string &r_code_str,
     }
     tls_policy = own_tls_resource->GetPolicy();
   } else if(r_code_str == std::string("R_JOB")) {
-    TlsPolicy policy = JcrGetTlsPolicy(name.c_str());
-    if (policy == kBnetTlsUnknown) {
-      return false;
+    BStringList job_information(name, AsciiControlCharacters::RecordSeparator());
+    if (job_information.size() >= 3) {
+      uint32_t job_id;
+      try {
+        job_id = stoi(job_information[2]);
+      }
+      catch(const std::exception &e) {
+        return false;
+      }
+      TlsPolicy policy = JcrGetTlsPolicy(job_id, job_information[1].c_str());
+      if (policy != kBnetTlsUnknown) {
+        tls_policy = policy;
+        return true;
+      }
     }
-    tls_policy = policy;
+    return false;
   }
   else {
     uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);

@@ -843,7 +843,7 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
   return auth_key;
 }
 
-TlsPolicy JcrGetTlsPolicy(const char *unified_job_name)
+TlsPolicy JcrGetTlsPolicy(uint32_t job_id, const char *unified_job_name)
 {
   if (!unified_job_name) { return kBnetTlsUnknown; }
 

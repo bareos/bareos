@@ -1586,7 +1586,7 @@ static bool StorageCmd(JobControlRecord *jcr)
 
    jcr->store_bsock = storage_daemon_socket;
 
-   if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
+   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
