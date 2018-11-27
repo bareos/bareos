@@ -831,9 +831,11 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
   const char *auth_key = nullptr;
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
-      auth_key = jcr->sd_auth_key;
-      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
-      break;
+      if (jcr->JobId == job_id) {
+        auth_key = jcr->sd_auth_key;
+        Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
+        break;
+      }
     }
   }
   endeach_jcr(jcr);
@@ -850,9 +852,12 @@ TlsPolicy JcrGetTlsPolicy(const char *unified_job_name)
 
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
-      policy = jcr->sd_tls_policy;
-      Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n", jcr->JobId, jcr->UseCount(), jcr->Job, policy);
-      break;
+      if (jcr->JobId == job_id) {
+        policy = jcr->sd_tls_policy;
+        Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n",
+              jcr->JobId, jcr->UseCount(), jcr->Job, policy);
+        break;
+      }
     }
   }
   endeach_jcr(jcr);
