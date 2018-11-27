@@ -2169,7 +2169,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
     return nullptr;
   }
 
-  if (dir_res->IsTlsConfigured() || me->IsTlsConfigured()) {
+  if (dir_res->IsTlsConfigured()) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                               qualified_resource_name)) {

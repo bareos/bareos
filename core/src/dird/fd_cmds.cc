@@ -234,7 +234,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    OutputMessageForConnectionTry(jcr, ua);
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      if (me->IsTlsConfigured() || jcr->res.client->IsTlsConfigured()) {
+      if (jcr->res.client->IsTlsConfigured()) {
          jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
       } else {
          jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;

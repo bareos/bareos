@@ -138,7 +138,7 @@ bool ConnectToStorageDaemon(JobControlRecord *jcr, int retry_interval,
       return false;
    }
 
-   if (me->IsTlsConfigured() || store->IsTlsConfigured()) {
+   if (store->IsTlsConfigured()) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(me->hdr.name, my_config->r_own_,
                                                                                qualified_resource_name)) {
