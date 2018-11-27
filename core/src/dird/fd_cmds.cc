@@ -1171,7 +1171,7 @@ bool CancelFileDaemonJob(UaContext *ua, JobControlRecord *jcr)
 
    ua->jcr->res.client = jcr->res.client;
    if (!ConnectToFileDaemon(ua->jcr, 10, me->FDConnectTimeout, true, ua)) {
-      ua->ErrorMsg(_("Failed to connect to File daemon.\n"));
+      ua->ErrorMsg(_("\nFailed to connect to File daemon.\n"));
       return false;
    }
    Dmsg0(200, "Connected to file daemon\n");
@@ -1210,7 +1210,7 @@ void DoNativeClientStatus(UaContext *ua, ClientResource *client, char *cmd)
    }
 
    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->SendMsg(_("Failed to connect to Client %s.\n====\n"),
+      ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();
@@ -1261,7 +1261,7 @@ void DoClientResolve(UaContext *ua, ClientResource *client)
    }
 
    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->SendMsg(_("Failed to connect to Client %s.\n====\n"),
+      ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();

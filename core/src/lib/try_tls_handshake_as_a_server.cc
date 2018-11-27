@@ -40,7 +40,7 @@ static ConnectionHandshakeMode GetHandshakeMode(BareosSocket *bs,
   if (!bs->EvaluateCleartextBareosHello(cleartext_hello,
                                         client_name,
                                         r_code_str)) {
-    Dmsg0(100, "Could not read out cleartext hello\n");
+    Dmsg0(100, "Error occured when trying to peek cleartext hello\n");
     return ConnectionHandshakeMode::CloseConnection;
   }
 
@@ -63,18 +63,18 @@ static ConnectionHandshakeMode GetHandshakeMode(BareosSocket *bs,
         return ConnectionHandshakeMode::CloseConnection;
       }
     }
-  } else { /* !cleartext_hello */
+  } else { /* not cleartext */
     return ConnectionHandshakeMode::PerformTlsHandshake;
   } /* if (cleartext_hello) */
 }
 
 bool TryTlsHandshakeAsAServer(BareosSocket *bs, ConfigurationParser *config)
 {
-   ConnectionHandshakeMode type = GetHandshakeMode(bs, config);
+   ConnectionHandshakeMode mode = GetHandshakeMode(bs, config);
 
    bool success = false;
 
-   switch(type) {
+   switch(mode) {
    case ConnectionHandshakeMode::PerformTlsHandshake:
       if (bs->DoTlsHandshakeAsAServer(config)) {
         success = true;
