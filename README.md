@@ -1,6 +1,9 @@
 # <img src="https://raw.githubusercontent.com/bareos/bareos/master/webui/public/img/bareos.png" alt="Bareos" />
 
+
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
+[![Build Status](https://saucelabs.com/buildstatus/bareossaucelabs)](https://saucelabs.com/u/bareossaucelabs)
+
 
 ### Bareos
 
@@ -48,4 +51,3 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 ### Packages
 
   * [http://download.bareos.org](http://download.bareos.org)
-

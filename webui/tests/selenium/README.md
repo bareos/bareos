@@ -29,17 +29,24 @@ To run the test you must set certain environment variables:
 ## Running the test
 
 ```
-BAREOS_BASE_URL=http://127.0.0.1/bareos-webui/
-BAREOS_USERNAME=admin
-BAREOS_PASSWORD=linuxlinux
-BAREOS_CLIENT_NAME=bareos-fd
-BAREOS_RESTOREFILE=/etc/passwd
-BAREOS_LOG_PATH=/tmp/selenium-logs/
-BAREOS_DELAY=1
+export BAREOS_BASE_URL=http://127.0.0.1/bareos-webui/
+export BAREOS_USERNAME=admin
+export BAREOS_PASSWORD=linuxlinux
+export BAREOS_CLIENT_NAME=bareos-fd
+export BAREOS_RESTOREFILE=/etc/passwd
+export BAREOS_LOG_PATH=/tmp/selenium-logs/
+export BAREOS_DELAY=1
 python webui-selenium-test.py -v
 ```
 
 After setting the environment variables you can run the test. Use `-v`option of our test to show the progress and results of each test.
+
+A single test can be performed by:
+
+```
+python webui-selenium-test.py -v SeleniumTest.test_login
+```
+
 
 ## Debugging
 
