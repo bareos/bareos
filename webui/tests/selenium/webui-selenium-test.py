@@ -4,8 +4,13 @@
 
 # selenium.common.exceptions.ElementNotInteractableException: requires >= selenium-3.4.0
 
-import logging, os, sys, unittest
 from   datetime import datetime
+import logging
+import os
+import sys
+from   time import sleep
+import unittest
+
 from   selenium import webdriver
 from   selenium.common.exceptions import *
 from   selenium.webdriver.common.by import By
@@ -13,7 +18,18 @@ from   selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from   selenium.webdriver.common.keys import Keys
 from   selenium.webdriver.support import expected_conditions as EC
 from   selenium.webdriver.support.ui import Select, WebDriverWait
-from   time import sleep
+
+#
+# try to import the SauceClient,
+# required for builds inside https://travis-ci.org,
+# but not available on all platforms.
+#
+try:
+    from sauceclient import SauceClient
+except ImportError:
+    pass
+
+
 
 class BadJobException(Exception):
     '''Raise when a started job doesn't result in ID'''
@@ -23,10 +39,10 @@ class BadJobException(Exception):
 
 class ClientStatusException(Exception):
     '''Raise when a client does not have the expected status'''
-    def __init__(self,client, status, msg=None):
-        if status=='enabled':
+    def __init__(self, client, status, msg=None):
+        if status == 'enabled':
             msg = '%s is enabled and cannot be enabled again.' % client
-        if status=='disabled':
+        if status == 'disabled':
             msg = '%s is disabled and cannot be disabled again.' % client
         super(ClientStatusException, self).__init__(msg)
 
@@ -66,20 +82,21 @@ class FailedClickException(Exception):
 class LocaleException(Exception):
     '''Raise when wait_and_click fails'''
     def __init__(self, dirCounter, langCounter):
-        if dirCounter!=langCounter:
+        if dirCounter != langCounter:
             msg = 'The available languages in login did not meet expectations.\n Expected '+str(dirCounter)+' languages but got '+str(langCounter)+'.'
         else:
-             msg = 'The available languages in login did not meet expectations.\n'
+            msg = 'The available languages in login did not meet expectations.\n'
         super(LocaleException, self).__init__(msg)
 
 class WrongCredentialsException(Exception):
     '''Raise when wait_and_click fails'''
     def __init__(self, username, password):
-        msg = 'Username "%s" or password "%s" is wrong.' % (username,password)
+        msg = 'Username "%s" or password "%s" is wrong.' % (username, password)
         super(WrongCredentialsException, self).__init__(msg)
 
-class SeleniumTest(unittest.TestCase):
 
+
+class SeleniumTest(unittest.TestCase):
 
     browser = 'firefox'
     base_url = 'http://127.0.0.1/bareos-webui'
@@ -95,47 +112,84 @@ class SeleniumTest(unittest.TestCase):
     maxwait = 10
     # time to wait before trying again
     waittime = 0.1
+    # Travis SauceLab integration
+    travis = False
+    sauce_username = None
+    access_key = None
+
+
+    def __get_dict_from_env(self):
+        result = {}
+
+        for key in [
+                'TRAVIS_BRANCH',
+                'TRAVIS_BUILD_NUMBER',
+                'TRAVIS_BUILD_WEB_URL',
+                'TRAVIS_COMMIT',
+                'TRAVIS_COMMIT_MESSAGE',
+                'TRAVIS_JOB_NUMBER',
+                'TRAVIS_JOB_WEB_URL',
+                'TRAVIS_PULL_REQUEST',
+                'TRAVIS_PULL_REQUEST_BRANCH',
+                'TRAVIS_PULL_REQUEST_SHA',
+                'TRAVIS_PULL_REQUEST_SLUG',
+                'TRAVIS_REPO_SLUG',
+                'TRAVIS_TAG'
+            ]:
+            result[key] = os.environ.get(key)
+        result['GIT_BRANCH_URL'] = 'https://github.com/bareos/bareos/tree/' + os.environ.get('TRAVIS_BRANCH')
+        result['GIT_COMMIT_URL'] = 'https://github.com/bareos/bareos/tree/' + os.environ.get('TRAVIS_COMMIT')
+
+        return result
+
+
+    def __setUpTravis(self):
+        self.desired_capabilities = {}
+        buildnumber = os.environ['TRAVIS_BUILD_NUMBER']
+        jobnumber = os.environ['TRAVIS_JOB_NUMBER']
+        self.desired_capabilities['tunnel-identifier'] = jobnumber
+        self.desired_capabilities['build'] = "{} {}".format(os.environ.get('TRAVIS_REPO_SLUG'), buildnumber)
+        #self.desired_capabilities['name'] = "Travis Build Nr. {}: {}".format(buildnumber, self.__get_name_of_test())
+        self.desired_capabilities['name'] = "{}: {}".format(os.environ.get('TRAVIS_BRANCH'), self.__get_name_of_test())
+        self.desired_capabilities['tags'] = [os.environ.get('TRAVIS_BRANCH')]
+        self.desired_capabilities['custom-data'] = self.__get_dict_from_env()
+        self.desired_capabilities['platform'] = "macOS 10.13"
+        self.desired_capabilities['browserName'] = "chrome"
+        self.desired_capabilities['version'] = "latest"
+        self.desired_capabilities['captureHtml'] = True
+        self.desired_capabilities['extendedDebugging'] = True
+        sauce_url = "http://%s:%s@localhost:4445/wd/hub"
+        self.driver = webdriver.Remote(
+            desired_capabilities=self.desired_capabilities,
+            command_executor=sauce_url % (self.sauce_username, self.access_key)
+        )
+
 
     def setUp(self):
         # Configure the logger, for information about the timings set it to INFO
         # Selenium driver itself will write additional debug messages when set to DEBUG
         logging.basicConfig(
-                filename='%s/webui-selenium-test.log' % (self.logpath),
-                format='%(levelname)s %(module)s.%(funcName)s: %(message)s',
-                level=logging.INFO
+            filename='%s/webui-selenium-test.log' % (self.logpath),
+            format='%(levelname)s %(module)s.%(funcName)s: %(message)s',
+            level=logging.INFO
         )
         self.logger = logging.getLogger()
 
-        if(os.environ.get('TRAVIS') == 'true'):
-            from sauceclient import SauceClient
-            from   selenium.webdriver.remote.remote_connection import RemoteConnection
-            self.desired_capabilities = {}
-            self.desired_capabilities['name'] = (self.id().split('.'))[2]+": Travis Build Nr. %s" % os.environ['TRAVIS_BUILD_NUMBER']
-            jobnumber = os.environ['TRAVIS_JOB_NUMBER']
-            if jobnumber:
-                self.desired_capabilities['tunnel-identifier'] = jobnumber
-            buildnumber = os.environ['TRAVIS_BUILD_NUMBER']
-            if buildnumber:
-                self.desired_capabilities['build'] = buildnumber
-            self.desired_capabilities['platform'] = "macOS 10.13"
-            self.desired_capabilities['browserName'] = "chrome"
-            self.desired_capabilities['version'] = "latest"
-            sauce_url = "http://%s:%s@localhost:4445/wd/hub"
-            self.driver = webdriver.Remote(
-                desired_capabilities=self.desired_capabilities,
-                command_executor=sauce_url % (self.sauce_username, self.access_key)
-            )
+        if self.travis:
+            self.__setUpTravis()
         else:
             if self.browser == 'chrome':
                 chromedriverpath = self.getChromedriverpath()
                 self.driver = webdriver.Chrome(chromedriverpath)
-
-            if self.browser == "firefox":
+            elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
-                d['loggingPrefs'] = { 'browser':'ALL' }
+                d['loggingPrefs'] = {'browser': 'ALL'}
                 fp = webdriver.FirefoxProfile()
                 fp.set_preference('webdriver.log.file', self.logpath + '/firefox_console.log')
                 self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
+            else:
+                raise RuntimeError('Browser {} not found.'.format(str(self.browser)))
+
 
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
@@ -145,7 +199,13 @@ class SeleniumTest(unittest.TestCase):
         self.verificationErrors = []
         self.logger.info("===================== TESTING =====================")
 
-# Tests
+    #
+    # Tests
+    #
+    def test_login(self):
+        self.login()
+        self.logout()
+
     def test_client_disabling(self):
         # This test navigates to clients, ensures client is enabled,
         # disables it, closes a possible modal, goes to dashboard and reenables client.
@@ -166,17 +226,17 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.LINK_TEXT, self.client)
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
         # Checks if client is enabled
-        if self.client_status(self.client)=='Enabled':
+        if self.client_status(self.client) == 'Enabled':
             # Disables client
             self.wait_and_click(By.XPATH, '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]' % self.client)
             # Switches to dashboard, if prevented by open modal: close modal
-            self.wait_and_click(By.ID, 'menu-topnavbar-dashboard',By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
+            self.wait_and_click(By.ID, 'menu-topnavbar-dashboard', By.CSS_SELECTOR, 'div.modal-footer > button.btn.btn-default')
         # Throw exception if client is already disabled
         else:
             raise ClientStatusException(self.client, 'disabled')
         self.wait_and_click(By.ID, 'menu-topnavbar-client')
         # Checks if client is disabled so that it can be enabled
-        if self.client_status(self.client)=='Disabled':
+        if self.client_status(self.client) == 'Disabled':
             # Enables client
             self.wait_and_click(By.XPATH, '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]' % self.client)
             # Switches to dashboard, if prevented by open modal: close modal
@@ -187,14 +247,9 @@ class SeleniumTest(unittest.TestCase):
         self.logout()
 
     def disabled_test_job_canceling(self):
-        driver = self.driver
         self.login()
         job_id = self.job_start_configured()
         self.job_cancel(job_id)
-        self.logout()
-
-    def test_login(self):
-        self.login()
         self.logout()
 
     def test_languages(self):
@@ -202,10 +257,10 @@ class SeleniumTest(unittest.TestCase):
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
         self.wait_and_click(By.XPATH, '//button[@data-id="locale"]')
-        expected_elements = {'Chinese','Czech','Dutch/Belgium','English','French','German','Italian','Russian','Slovak','Spanish','Turkish'}
+        expected_elements = ['Chinese', 'Czech', 'Dutch/Belgium', 'English', 'French', 'German', 'Italian', 'Russian', 'Slovak', 'Spanish', 'Turkish']
         found_elements = []
         for element in self.driver.find_elements_by_xpath('//ul[@aria-expanded="true"]/li[@data-original-index>"0"]/a/span[@class="text"]'):
-               found_elements.append(element.text)
+            found_elements.append(element.text)
         # Compare the counted languages against the counted directories
         for element in expected_elements:
             if element not in found_elements:
@@ -237,7 +292,7 @@ class SeleniumTest(unittest.TestCase):
     def test_restore(self):
         # Login
         self.login()
-        self.wait_for_url_and_click('/restore/')
+        self.wait_and_click(By.ID, 'menu-topnavbar-restore')
         # Click on client dropdown menue and close the possible modal
         self.wait_and_click(By.XPATH, '(//button[@data-id="client"])', By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')
         # Select correct client
@@ -276,15 +331,17 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.ID, 'menu-topnavbar-dashboard')
         self.logout()
 
-# Methods used for testing
+    #
+    # Methods used for testing
+    #
 
     def client_status(self, client):
         # Wait until site and status element are loaded, check client, if not found raise exception
-        self.wait.until(EC.presence_of_element_located((By.XPATH, '//tr[contains(td[1], "%s")]/td[4]/span' % self.client)))
+        self.wait.until(EC.presence_of_element_located((By.XPATH, '//tr[contains(td[1], "%s")]/td[4]/span' % client)))
         try:
-            status = self.driver.find_element(By.XPATH, '//tr[contains(td[1], "%s")]/td[4]/span' % self.client).text
+            status = self.driver.find_element(By.XPATH, '//tr[contains(td[1], "%s")]/td[4]/span' % client).text
         except NoSuchElementException:
-            raise ClientNotFoundException(self.client)
+            raise ClientNotFoundException(client)
         return status
 
     def job_cancel(self, id):
@@ -339,17 +396,16 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.LINK_TEXT, 'Logout')
         sleep(self.sleeptime)
 
-# Methods used for waiting and clicking
+    #
+    # Methods used for waiting and clicking
+    #
 
     def getChromedriverpath(self):
         # On OS X: Chromedriver path is 'usr/local/lib/chromium-browser/chromedriver'
-        for chromedriverpath in {'/usr/lib/chromium-browser/chromedriver', '/usr/local/lib/chromium-browser/chromedriver'}:
-            try:
-                os.path.isfile(chromedriverpath)
-            except FileNotFoundError:
-                pass
-            else:
+        for chromedriverpath in ['/usr/lib/chromium-browser/chromedriver', '/usr/local/lib/chromium-browser/chromedriver']:
+            if os.path.isfile(chromedriverpath):
                 return chromedriverpath
+        raise IOError('Chrome Driver file not found.')
 
     def wait_and_click(self, by, value, modal_by=None, modal_value=None):
         logger = logging.getLogger()
@@ -387,7 +443,7 @@ class SeleniumTest(unittest.TestCase):
         except TimeoutException:
             self.driver.save_screenshot('screenshot.png')
             raise ElementTimeoutException(value)
-        if element==None:
+        if element is None:
             try:
                 self.driver.find_element(by, value)
             except NoSuchElementException:
@@ -412,33 +468,41 @@ class SeleniumTest(unittest.TestCase):
             alert = self.driver.switch_to_alert()
             alert_text = alert.text
         except NoAlertPresentException:
-            return
+            return None
         if accept:
             alert.accept()
         else:
             alert.dismiss()
-        logger.debug( 'alert message: %s' % (alert_text))
+        logger.debug('alert message: %s' % (alert_text))
         return alert_text
 
     def tearDown(self):
-        if(os.environ.get('TRAVIS') == 'true'):
-            print("Link to job : https://saucelabs.com/jobs/%s" % self.driver.session_id)
+        logger = logging.getLogger()
+        if self.travis:
+            print("Link to test {}: https://app.saucelabs.com/jobs/{}".format(self.__get_name_of_test(), self.driver.session_id))
             sauce_client = SauceClient(self.sauce_username, self.access_key)
-            try:
-                if sys.exc_info() == (None, None, None):
-                    sauce_client.jobs.update_job(self.driver.session_id, passed=True)
-                else:
-                    sauce_client.jobs.update_job(self.driver.session_id, passed=False)
-            finally:
-                self.driver.quit()
-                self.assertEqual([], self.verificationErrors)
-        else:
+            if sys.exc_info() == (None, None, None):
+                sauce_client.jobs.update_job(self.driver.session_id, passed=True)
+            else:
+                sauce_client.jobs.update_job(self.driver.session_id, passed=False)
+        try:
             self.driver.quit()
-            self.assertEqual([], self.verificationErrors)
+        except WebDriverException as e:
+            logger.warn('{}: ignored'.format(str(e)))
+
+        self.assertEqual([], self.verificationErrors)
+
+    def __get_name_of_test(self):
+        return self.id().split('.', 1)[1]
+
+
 
 def get_env():
-    # Get attributes as environment variables,
-    # if not available or set use defaults.
+    '''
+    Get attributes as environment variables,
+    if not available or set use defaults.
+    '''
+
     chromedriverpath = os.environ.get('BAREOS_CHROMEDRIVER_PATH')
     if chromedriverpath:
         SeleniumTest.chromedriverpath = chromedriverpath
@@ -466,9 +530,12 @@ def get_env():
     sleeptime = os.environ.get('BAREOS_DELAY')
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
-    if(os.environ.get('TRAVIS') == 'true'):
-            SeleniumTest.sauce_username = os.environ.get('SAUCE_USERNAME')
-            SeleniumTest.access_key = os.environ.get('SAUCE_ACCESS_KEY')
+    if os.environ.get('TRAVIS_COMMIT'):
+        SeleniumTest.travis = True
+        SeleniumTest.sauce_username = os.environ.get('SAUCE_USERNAME')
+        SeleniumTest.access_key = os.environ.get('SAUCE_ACCESS_KEY')
+
+
 
 if __name__ == '__main__':
     get_env()

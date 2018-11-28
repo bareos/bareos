@@ -25,14 +25,14 @@ set -v
 
 BACKUP_TEST_FILE=/usr/sbin/bareos.test
 
-echo -e "status dir" | bconsole
-echo
-echo "---- label a volume ----"
-echo -e "label volume=testvol pool=Full" | bconsole
-echo
 echo "----- create some file to test backup / restore ----"
 echo "bareos restore test" > ${BACKUP_TEST_FILE}
 echo
+echo -e "status dir" | bconsole
+echo
+#echo "---- label a volume ----"
+#echo -e "label volume=testvol pool=Full" | bconsole
+#echo
 echo "------ trigger backup job -----"
 echo -e "run job=backup-bareos-fd yes\rwait" | bconsole | grep "Job queued. JobId="
 echo "status dir" | bconsole
@@ -42,15 +42,17 @@ echo -e "restore select current\r2\rls\rmark usr\rdone\ryes\rwait" | bconsole
 echo "status dir" | bconsole
 grep "bareos restore test" /tmp/bareos-restores/${BACKUP_TEST_FILE}
 
-if [ "${BUILD_WEBUI}" ]
-then
-	service apache2 restart
-	service apache2 status
-	export BAREOS_BROWSER="none"
-	export BAREOS_USERNAME="citest"
-	export BAREOS_PASSWORD="citestpass"
-	export BAREOS_CLIENT_NAME=$HOSTNAME-fd
-	echo "--------- testing webui over selenium -----------"
-	echo "configure add console name=citest password=citestpass profile=webui-admin" | bconsole
-	python ${TRAVIS_BUILD_DIR}/webui/tests/selenium/webui-selenium-test.py -v
+if [ "${BUILD_WEBUI}" ]; then
+    # show environment
+    export | grep " TRAVIS"
+
+    service apache2 restart
+    #service apache2 status
+    export BAREOS_BROWSER="none"
+    export BAREOS_USERNAME="citest"
+    export BAREOS_PASSWORD="citestpass"
+    export BAREOS_CLIENT_NAME="$HOSTNAME-fd"
+    echo "--------- testing webui over selenium -----------"
+    echo "configure add console name=citest password=citestpass profile=webui-admin" | bconsole
+    python ${TRAVIS_BUILD_DIR}/webui/tests/selenium/webui-selenium-test.py -v
 fi
