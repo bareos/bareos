@@ -2,11 +2,11 @@
 #
 # spec file for package bareos-docs
 #
-# Copyright (c) 2013-2015  Bareos GmbH & Co. KG
+# Copyright (c) 2013-2018  Bareos GmbH & Co. KG
 #
 
 Name:           bareos-docs
-Version:        14.4.0
+Version:        0.0.0
 Release:        0
 License:        GFDL-1.3
 Summary:        Documentation
@@ -23,6 +23,8 @@ BuildRequires:  bareos-storage bareos-filedaemon bareos-bconsole bareos-traymoni
 BuildRequires:  python
 BuildRequires:  texlive-latex
 BuildRequires:  texlive-tex4ht ImageMagick
+BuildRequires:  graphviz graphviz-gnome
+BuildRequires:  pandoc python-Sphinx
 %if ( 0%{?rhel_version} || 0%{?fedora_version} )
 BuildRequires:  texlive-collection-latexrecommended texlive-moreverb texlive-ifmtarg texlive-xifthen
 %endif
@@ -44,7 +46,7 @@ This package contains the Bareos documentation.
 %setup -q
 
 %build
-cd manuals/en/main
+cd manuals/en/new_main_reference
 make
 
 find
@@ -55,7 +57,5 @@ find
 
 %files
 %defattr(-,root,root)
-%doc manuals/en/main/bareos-manual-main-reference.dvi
-%doc manuals/en/main/bareos-manual-main-reference.pdf
-%doc manuals/en/main/html
+%doc manuals/en/new_main_reference/BareosMainReference
 %changelog
