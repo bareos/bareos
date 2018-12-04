@@ -1719,7 +1719,7 @@ static bool PassiveCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to FD.\n");
 
-   if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
+   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              jcr->Job, R_JOB, qualified_resource_name)) {
