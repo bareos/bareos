@@ -1625,7 +1625,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to SD.\n");
 
-   if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
+   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
              JobName, R_JOB, qualified_resource_name)) {
