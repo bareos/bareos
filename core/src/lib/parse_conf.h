@@ -443,7 +443,7 @@ public:
                                                     std::string &psk);
   bool GetConfiguredTlsPolicyFromCleartextHello(const std::string &r_code,
                               const std::string &name,
-                              TlsPolicy &tls_policy) const;
+                              TlsPolicy &tls_policy_out) const;
 
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;
@@ -510,6 +510,10 @@ private:
                   char *where,
                   char *cmd,
                   char *timestamp_format);
+  TlsPolicy GetTlsPolicyForRootConsole() const;
+  TlsPolicy GetTlsPolicyForJob(const std::string &name) const;
+  TlsPolicy GetTlsPolicyForResourceCodeAndName(const std::string &r_code_str,
+                                               const std::string &name) const;
 };
 
 void PrintMessage(void *sock, const char *fmt, ...);

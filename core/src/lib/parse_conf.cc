@@ -58,6 +58,8 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 
+#include <algorithm>
+
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
 #else
@@ -1015,58 +1017,66 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg,
 
    return true;
 }
-#include <algorithm>
+
+TlsPolicy ConfigurationParser::GetTlsPolicyForRootConsole() const
+{
+  TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
+  if (!own_tls_resource) {
+    Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
+    return kBnetTlsUnknown;
+  }
+  return own_tls_resource->GetPolicy();
+}
+
+TlsPolicy ConfigurationParser::GetTlsPolicyForJob(const std::string &name) const
+{
+  BStringList job_information(name, AsciiControlCharacters::RecordSeparator());
+  std::string unified_job_name;
+  if (job_information.size() == 2) {
+    unified_job_name = job_information[1].c_str();
+  } else if (job_information.size() == 1) { /* client before Release 18.2 */
+    unified_job_name = job_information[0];
+    unified_job_name.erase(std::remove(unified_job_name.begin(), unified_job_name.end(), '\n'),
+                           unified_job_name.end());
+  } else {
+    Dmsg1(100, "Could not get unified job name: %s\n", name.c_str());
+    return TlsPolicy::kBnetTlsUnknown;
+  }
+  return JcrGetTlsPolicy(unified_job_name.c_str());
+}
+
+TlsPolicy ConfigurationParser::GetTlsPolicyForResourceCodeAndName(const std::string &r_code_str,
+                                                               const std::string &name) const
+{
+  uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
+  if (r_code < 0) { return TlsPolicy::kBnetTlsUnknown; }
+
+  TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
+  if (!foreign_tls_resource) {
+    Dmsg2(100, "Could not find foreign tls resource: %s-%s\n", r_code_str.c_str(), name.c_str());
+    return TlsPolicy::kBnetTlsUnknown;
+  }
+  return foreign_tls_resource->GetPolicy();
+}
+
+
 bool ConfigurationParser::GetConfiguredTlsPolicyFromCleartextHello(const std::string &r_code_str,
                                                                    const std::string &name,
-                                                                   TlsPolicy &tls_policy) const
+                                                                   TlsPolicy &tls_policy_out) const
 {
+  TlsPolicy tls_policy;
   if (name == std::string("*UserAgent*")) {
-    TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
-    if (!own_tls_resource) {
-      Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
-      return false;
-    }
-    tls_policy = own_tls_resource->GetPolicy();
+    tls_policy = GetTlsPolicyForRootConsole();
   } else if(r_code_str == std::string("R_JOB")) {
-    BStringList job_information(name, AsciiControlCharacters::RecordSeparator());
-    std::string unified_job_name;
-    std::string job_number_str;
-    if (job_information.size() >= 3) {
-      unified_job_name = job_information[1].c_str();
-      job_number_str = job_information[2];
-    } else if (job_information.size() == 1) {
-      BStringList job_information_from_cleartext_client(job_information[0], '_');
-      if (job_information_from_cleartext_client.size() == 3) {
-        unified_job_name = job_information_from_cleartext_client.Join('_');
-        unified_job_name.erase(std::remove(unified_job_name.begin(), unified_job_name.end(), '\n'),
-                               unified_job_name.end());
-        job_number_str = job_information_from_cleartext_client[2];
-      }
-    }
-    uint32_t job_id;
-    try {
-      job_id = stoi(job_number_str);
-    }
-    catch(const std::exception &e) {
-      return false;
-    }
-    TlsPolicy policy = JcrGetTlsPolicy(unified_job_name.c_str());
-    if (policy != kBnetTlsUnknown) {
-      tls_policy = policy;
-      return true;
-    }
-    Dmsg2(100, "Could not find foreign tls policy: %s-%s\n", r_code_str, name.c_str());
+    tls_policy = GetTlsPolicyForJob(name);
+  } else {
+    tls_policy = GetTlsPolicyForResourceCodeAndName(r_code_str, name);
+  }
+  if (tls_policy == TlsPolicy::kBnetTlsUnknown) {
+    Dmsg2(100, "Could not find foreign tls resource: %s-%s\n", r_code_str.c_str(), name.c_str());
     return false;
   } else {
-    uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
-    if (r_code < 0) { return false; }
-
-    TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
-    if (!foreign_tls_resource) {
-      Dmsg2(100, "Could not find foreign tls resource: %d-%s\n", r_code, name.c_str());
-      return false;
-    }
-    tls_policy = foreign_tls_resource->GetPolicy();
+    tls_policy_out = tls_policy;
+    return true;
   }
-  return true;
 }
