@@ -23,7 +23,7 @@ chapter14/monitorconf.tex
 chapter15/bconsole.tex
 chapter16/restore.tex
 chapter17/disk.tex
-hapter17/recycling.tex
+chapter17/recycling.tex
 chapter18/pools.tex
 chapter19/autochangers.tex
 chapter20/tape-without-autochanger.tex
