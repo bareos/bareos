@@ -1542,7 +1542,7 @@ static void SendDirBusyMessage(BareosSocket *dir, Device *dev)
    }
 }
 
-static void SetStorageAuthKey(JobControlRecord *jcr, char *key, TlsPolicy policy)
+static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord *jcr, char *key, TlsPolicy policy)
 {
    if (!*key) { return; }
 
@@ -1593,7 +1593,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
       return false;
    }
 
-   SetStorageAuthKey(jcr, sd_auth_key.c_str(), tls_policy);
+   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
    Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, tls_policy);
 

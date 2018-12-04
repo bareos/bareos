@@ -1015,10 +1015,10 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg,
 
    return true;
 }
-
-bool ConfigurationParser::GetConfiguredTlsPolicy(const std::string &r_code_str,
-                                                 const std::string &name,
-                                                 TlsPolicy &tls_policy) const
+#include <algorithm>
+bool ConfigurationParser::GetConfiguredTlsPolicyFromCleartextHello(const std::string &r_code_str,
+                                                                   const std::string &name,
+                                                                   TlsPolicy &tls_policy) const
 {
   if (name == std::string("*UserAgent*")) {
     TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
@@ -1029,23 +1029,35 @@ bool ConfigurationParser::GetConfiguredTlsPolicy(const std::string &r_code_str,
     tls_policy = own_tls_resource->GetPolicy();
   } else if(r_code_str == std::string("R_JOB")) {
     BStringList job_information(name, AsciiControlCharacters::RecordSeparator());
+    std::string unified_job_name;
+    std::string job_number_str;
     if (job_information.size() >= 3) {
-      uint32_t job_id;
-      try {
-        job_id = stoi(job_information[2]);
-      }
-      catch(const std::exception &e) {
-        return false;
-      }
-      TlsPolicy policy = JcrGetTlsPolicy(job_id, job_information[1].c_str());
-      if (policy != kBnetTlsUnknown) {
-        tls_policy = policy;
-        return true;
+      unified_job_name = job_information[1].c_str();
+      job_number_str = job_information[2];
+    } else if (job_information.size() == 1) {
+      BStringList job_information_from_cleartext_client(job_information[0], '_');
+      if (job_information_from_cleartext_client.size() == 3) {
+        unified_job_name = job_information_from_cleartext_client.Join('_');
+        unified_job_name.erase(std::remove(unified_job_name.begin(), unified_job_name.end(), '\n'),
+                               unified_job_name.end());
+        job_number_str = job_information_from_cleartext_client[2];
       }
     }
+    uint32_t job_id;
+    try {
+      job_id = stoi(job_number_str);
+    }
+    catch(const std::exception &e) {
+      return false;
+    }
+    TlsPolicy policy = JcrGetTlsPolicy(job_id, unified_job_name.c_str());
+    if (policy != kBnetTlsUnknown) {
+      tls_policy = policy;
+      return true;
+    }
+    Dmsg2(100, "Could not find foreign tls policy: %s-%s\n", r_code_str, name.c_str());
     return false;
-  }
-  else {
+  } else {
     uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
     if (r_code < 0) { return false; }
 

@@ -46,7 +46,7 @@ static ConnectionHandshakeMode GetHandshakeMode(BareosSocket *bs,
 
   if (cleartext_hello) {
     TlsPolicy tls_policy;
-    if (!config->GetConfiguredTlsPolicy(r_code_str, client_name, tls_policy)) {
+    if (!config->GetConfiguredTlsPolicyFromCleartextHello(r_code_str, client_name, tls_policy)) {
       Dmsg0(100, "Could not read out cleartext configuration\n");
       return ConnectionHandshakeMode::CloseConnection;
     }

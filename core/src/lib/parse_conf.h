@@ -441,7 +441,7 @@ public:
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk);
-  bool GetConfiguredTlsPolicy(const std::string &r_code,
+  bool GetConfiguredTlsPolicyFromCleartextHello(const std::string &r_code,
                               const std::string &name,
                               TlsPolicy &tls_policy) const;
 

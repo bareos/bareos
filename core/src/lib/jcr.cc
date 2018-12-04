@@ -852,12 +852,12 @@ TlsPolicy JcrGetTlsPolicy(uint32_t job_id, const char *unified_job_name)
 
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
-      if (jcr->JobId == job_id) {
+//      if (jcr->JobId == job_id) {
         policy = jcr->sd_tls_policy;
         Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n",
               jcr->JobId, jcr->UseCount(), jcr->Job, policy);
         break;
-      }
+//      }
     }
   }
   endeach_jcr(jcr);
