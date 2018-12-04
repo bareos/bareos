@@ -67,22 +67,8 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
   return true;
 }
 
-bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &name_of_resource,
-                                                          const int &r_type,
-                                                          const int &job_id,
-                                                          std::string &str_out) const
-{
-  std::string r_name = ResourceTypeToString(r_type);
-  if (r_name.empty()) { return false; }
-  str_out = r_name + AsciiControlCharacters::RecordSeparator()
-            + name_of_resource + AsciiControlCharacters::RecordSeparator()
-            + std::to_string(job_id);
-  return true;
-}
-
 bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
                                                           int &r_type,
-                                                          int &job_id,
                                                           const std::string &str_in) const
 {
   BStringList string_list(str_in, AsciiControlCharacters::RecordSeparator());
@@ -98,16 +84,5 @@ bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_r
   r_type           = r_type_temp;
 
   name_of_resource = string_list.at(1);
-
-  if (string_list.size() == 3) { /* str_in contains probably a job_id */
-    int job_id_temp;
-    std::string job_id_str = string_list.at(2);
-    try {
-      job_id_temp = std::stoi(job_id_str);
-    } catch (const std::exception &e) {
-      return false;
-    }
-    job_id = job_id_temp;
-  }
   return true;
 }

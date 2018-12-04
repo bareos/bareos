@@ -1589,7 +1589,7 @@ static bool StorageCmd(JobControlRecord *jcr)
    if (tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-            jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+            jcr->Job, R_JOB, qualified_resource_name)) {
       goto bail_out;
     }
 

@@ -823,7 +823,7 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
   return jcr;
 }
 
-const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
+const char *JcrGetAuthenticateKey(const char *unified_job_name)
 {
   if (!unified_job_name) { return nullptr; }
 
@@ -831,11 +831,9 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
   const char *auth_key = nullptr;
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
-      if (jcr->JobId == job_id) {
-        auth_key = jcr->sd_auth_key;
-        Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
-        break;
-      }
+      auth_key = jcr->sd_auth_key;
+      Dmsg3(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
+      break;
     }
   }
   endeach_jcr(jcr);
@@ -843,7 +841,7 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
   return auth_key;
 }
 
-TlsPolicy JcrGetTlsPolicy(uint32_t job_id, const char *unified_job_name)
+TlsPolicy JcrGetTlsPolicy(const char *unified_job_name)
 {
   if (!unified_job_name) { return kBnetTlsUnknown; }
 
@@ -852,12 +850,10 @@ TlsPolicy JcrGetTlsPolicy(uint32_t job_id, const char *unified_job_name)
 
   foreach_jcr (jcr) {
     if (bstrcmp(jcr->Job, unified_job_name)) {
-//      if (jcr->JobId == job_id) {
-        policy = jcr->sd_tls_policy;
-        Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n",
-              jcr->JobId, jcr->UseCount(), jcr->Job, policy);
-        break;
-//      }
+      policy = jcr->sd_tls_policy;
+      Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job, policy);
+      break;
     }
   }
   endeach_jcr(jcr);

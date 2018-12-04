@@ -1050,7 +1050,7 @@ bool ConfigurationParser::GetConfiguredTlsPolicyFromCleartextHello(const std::st
     catch(const std::exception &e) {
       return false;
     }
-    TlsPolicy policy = JcrGetTlsPolicy(job_id, unified_job_name.c_str());
+    TlsPolicy policy = JcrGetTlsPolicy(unified_job_name.c_str());
     if (policy != kBnetTlsUnknown) {
       tls_policy = policy;
       return true;

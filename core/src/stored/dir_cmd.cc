@@ -1628,7 +1628,7 @@ static bool ReplicateCmd(JobControlRecord *jcr)
    if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-             JobName, R_JOB, JobId, qualified_resource_name)) {
+             JobName, R_JOB, qualified_resource_name)) {
       return false;
      }
 
@@ -1722,7 +1722,7 @@ static bool PassiveCmd(JobControlRecord *jcr)
    if (me->IsTlsConfigured() || tls_policy == TlsPolicy::kBnetTlsAuto) {
      std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+             jcr->Job, R_JOB, qualified_resource_name)) {
        goto bail_out;
      }
 

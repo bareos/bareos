@@ -147,14 +147,13 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   if (!c) { return false; }
 
   int r_type;
-  int job_id = -1;
   std::string name; /* either unique job name or client name */
 
-  bool ok = c->StringToResource(name, r_type, job_id, fq_name_in);
+  bool ok = c->StringToResource(name, r_type, fq_name_in);
   if (!ok) { return false; }
 
-  if (job_id > 0 && fq_name.find("R_JOB") != std::string::npos) {
-    const char *psk_cstr = JcrGetAuthenticateKey(job_id, name.c_str());
+  if (fq_name.find("R_JOB") != std::string::npos) {
+    const char *psk_cstr = JcrGetAuthenticateKey(name.c_str());
     if (psk_cstr) {
       psk = psk_cstr;
       return true;
