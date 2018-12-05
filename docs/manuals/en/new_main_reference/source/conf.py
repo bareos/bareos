@@ -69,7 +69,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Bareos Main Reference'
-copyright = '2018, Bareos GmbH & Co. KG'
+copyright = '2018, Bareos GmbH & Co. KG and others'
 author = 'Bareos GmbH & Co. KG'
 
 
