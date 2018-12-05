@@ -213,6 +213,7 @@ static void SendInfoSuccess(JobControlRecord *jcr, UaContext *ua)
      std::string m1 = m;
      std::replace(m1.begin(), m1.end(), '\r', ' ');
      std::replace(m1.begin(), m1.end(), '\v', ' ');
+     std::replace(m1.begin(), m1.end(), ',' , ' ');
      Jmsg(jcr, M_INFO, 0, m1.c_str());
    }
    if (ua) { /* only whith console connection */
@@ -233,7 +234,11 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    OutputMessageForConnectionTry(jcr, ua);
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+      if (jcr->res.client->IsTlsConfigured()) {
+         jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+      } else {
+         jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;
+      }
    } else {
       /* if there is a stored mode from a previous connection then use this */
       jcr->connection_handshake_try_ = jcr->res.client->connection_successful_handshake_;
@@ -283,7 +288,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
           }
         }
      } else {
-        Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
+        Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n", jcr->res.client->name());
      }
      connect_tries--;
    } while (!tcp_connect_failed && connect_tries
@@ -1166,7 +1171,7 @@ bool CancelFileDaemonJob(UaContext *ua, JobControlRecord *jcr)
 
    ua->jcr->res.client = jcr->res.client;
    if (!ConnectToFileDaemon(ua->jcr, 10, me->FDConnectTimeout, true, ua)) {
-      ua->ErrorMsg(_("Failed to connect to File daemon.\n"));
+      ua->ErrorMsg(_("\nFailed to connect to File daemon.\n"));
       return false;
    }
    Dmsg0(200, "Connected to file daemon\n");
@@ -1205,7 +1210,7 @@ void DoNativeClientStatus(UaContext *ua, ClientResource *client, char *cmd)
    }
 
    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->SendMsg(_("Failed to connect to Client %s.\n====\n"),
+      ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();
@@ -1256,7 +1261,7 @@ void DoClientResolve(UaContext *ua, ClientResource *client)
    }
 
    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->SendMsg(_("Failed to connect to Client %s.\n====\n"),
+      ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();

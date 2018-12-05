@@ -45,7 +45,8 @@
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
-#include "console_conf.h"
+#include "console/console_globals.h"
+#include "console/console_conf.h"
 #include "lib/json.h"
 
 namespace console {
@@ -93,7 +94,6 @@ static ResourceItem cons_items[] = {
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
-   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -103,12 +103,10 @@ static ResourceItem dir_items[] = {
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
-   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_dir.UsePamAuthentication_), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
-   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -180,33 +178,33 @@ static void FreeResource(CommonResourceHeader *sres, int type)
    case R_CONSOLE:
       if (res->res_cons.rc_file) { free(res->res_cons.rc_file); }
       if (res->res_cons.history_file) { free(res->res_cons.history_file); }
-      if (res->res_cons.tls_cert.allowed_certificate_common_names_) {
-        res->res_cons.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_cons.tls_cert.allowed_certificate_common_names_);
+      if (res->res_cons.tls_cert_.allowed_certificate_common_names_) {
+        res->res_cons.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_cons.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_cons.tls_cert.CaCertfile) { delete res->res_cons.tls_cert.CaCertfile; }
-      if (res->res_cons.tls_cert.CaCertdir) { delete res->res_cons.tls_cert.CaCertdir; }
-      if (res->res_cons.tls_cert.crlfile) { delete res->res_cons.tls_cert.crlfile; }
-      if (res->res_cons.tls_cert.certfile) { delete res->res_cons.tls_cert.certfile; }
-      if (res->res_cons.tls_cert.keyfile) { delete res->res_cons.tls_cert.keyfile; }
-      if (res->res_cons.tls_cert.cipherlist) { delete res->res_cons.tls_cert.cipherlist; }
-      if (res->res_cons.tls_cert.dhfile) { delete res->res_cons.tls_cert.dhfile; }
-      if (res->res_cons.tls_cert.pem_message) { delete res->res_cons.tls_cert.pem_message; }
+      if (res->res_cons.tls_cert_.ca_certfile_) { delete res->res_cons.tls_cert_.ca_certfile_; }
+      if (res->res_cons.tls_cert_.ca_certdir_) { delete res->res_cons.tls_cert_.ca_certdir_; }
+      if (res->res_cons.tls_cert_.crlfile_) { delete res->res_cons.tls_cert_.crlfile_; }
+      if (res->res_cons.tls_cert_.certfile_) { delete res->res_cons.tls_cert_.certfile_; }
+      if (res->res_cons.tls_cert_.keyfile_) { delete res->res_cons.tls_cert_.keyfile_; }
+      if (res->res_cons.cipherlist_) { delete res->res_cons.cipherlist_; }
+      if (res->res_cons.tls_cert_.dhfile_) { delete res->res_cons.tls_cert_.dhfile_; }
+      if (res->res_cons.tls_cert_.pem_message_) { delete res->res_cons.tls_cert_.pem_message_; }
       break;
    case R_DIRECTOR:
       if (res->res_dir.address) { free(res->res_dir.address); }
-      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
-        res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_dir.tls_cert.allowed_certificate_common_names_);
+      if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
+        res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.tls_cert.CaCertfile) { delete res->res_dir.tls_cert.CaCertfile; }
-      if (res->res_dir.tls_cert.CaCertdir) { delete res->res_dir.tls_cert.CaCertdir; }
-      if (res->res_dir.tls_cert.crlfile) { delete res->res_dir.tls_cert.crlfile; }
-      if (res->res_dir.tls_cert.certfile) { delete res->res_dir.tls_cert.certfile; }
-      if (res->res_dir.tls_cert.keyfile) { delete res->res_dir.tls_cert.keyfile; }
-      if (res->res_dir.tls_cert.cipherlist) { delete res->res_dir.tls_cert.cipherlist; }
-      if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
-      if (res->res_dir.tls_cert.pem_message) { delete res->res_dir.tls_cert.pem_message; }
+      if (res->res_dir.tls_cert_.ca_certfile_) { delete res->res_dir.tls_cert_.ca_certfile_; }
+      if (res->res_dir.tls_cert_.ca_certdir_) { delete res->res_dir.tls_cert_.ca_certdir_; }
+      if (res->res_dir.tls_cert_.crlfile_) { delete res->res_dir.tls_cert_.crlfile_; }
+      if (res->res_dir.tls_cert_.certfile_) { delete res->res_dir.tls_cert_.certfile_; }
+      if (res->res_dir.tls_cert_.keyfile_) { delete res->res_dir.tls_cert_.keyfile_; }
+      if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
+      if (res->res_dir.tls_cert_.dhfile_) { delete res->res_dir.tls_cert_.dhfile_; }
+      if (res->res_dir.tls_cert_.pem_message_) { delete res->res_dir.tls_cert_.pem_message_; }
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
@@ -252,14 +250,14 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
             if ((res = (UnionOfResources *)my_config->GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
             } else {
-               res->res_cons.tls_cert.allowed_certificate_common_names_ = res_all.res_cons.tls_cert.allowed_certificate_common_names_;
+               res->res_cons.tls_cert_.allowed_certificate_common_names_ = res_all.res_cons.tls_cert_.allowed_certificate_common_names_;
             }
             break;
          case R_DIRECTOR:
             if ((res = (UnionOfResources *)my_config->GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls_cert.allowed_certificate_common_names_ = res_all.res_dir.tls_cert.allowed_certificate_common_names_;
+               res->res_dir.tls_cert_.allowed_certificate_common_names_ = res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
             }
             break;
          default:

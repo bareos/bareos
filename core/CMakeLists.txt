@@ -128,7 +128,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/compat/include
       )
-   
+
    set(HAVE_WIN32 1)
 
    set(WINDOWS_LIBRARIES ws2_32)

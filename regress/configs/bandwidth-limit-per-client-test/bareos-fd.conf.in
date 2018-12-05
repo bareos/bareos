@@ -23,6 +23,7 @@ FileDaemon {                          # this is me
   Pid Directory = "@piddir@"
   Plugin Directory = "@plugindirtmp@"
   Maximum Concurrent Jobs = 100
+  TLS PSK Enable = no
 }
 
 # Send all messages except skipped files back to Director

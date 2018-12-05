@@ -58,7 +58,7 @@ bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
             if(tid) {
                StopBsockTimer(tid);
             }
-            tid = StartBsockTimer(UA_sock, 10);
+            tid = StartBsockTimer(UA_sock, 30);
             if (!tid) {
                error = true;
             }
@@ -74,8 +74,13 @@ bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
                      state = PamAuthState::RECEIVE_MSG;
                      break;
                   case PAM_SUCCESS:
-                     state = PamAuthState::AUTH_OK;
-                     quit = true;
+                     if (UA_sock->recv() == 1) {
+                        state = PamAuthState::AUTH_OK;
+                        quit = true;
+                     } else {
+                        Dmsg0(100, "Error, did not receive 2nd part of a message\n");
+                        error = true;
+                     }
                      break;
                   default:
                      Dmsg1(100, "Error, unknown pam type %d\n", type);
@@ -115,14 +120,14 @@ bool ConsolePamAuthenticate(FILE *std_in, BareosSocket *UA_sock)
          if(userinput) {
             Actuallyfree(userinput);
          }
-         if(tid) {
-            StopBsockTimer(tid);
-         }
          error = true;
          break;
       }
    }; /* while (!quit) */
 
+   if(tid) {
+      StopBsockTimer(tid);
+   }
    SetEcho (std_in, true);
    ConsoleOutput("\n");
 

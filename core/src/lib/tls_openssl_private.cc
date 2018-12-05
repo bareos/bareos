@@ -30,6 +30,7 @@
 
 #include "lib/parse_conf.h"
 #include "lib/get_tls_psk_by_fqname_callback.h"
+#include "lib/bstringlist.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -48,6 +49,7 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
     , tcp_file_descriptor_(0)
     , pem_callback_(nullptr)
     , pem_userdata_(nullptr)
+    , verify_peer_ (false)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 }
@@ -140,7 +142,7 @@ bool TlsOpenSslPrivate::init()
       OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
       return false;
     }
-    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);  // Ueb: Init BIO correctly?
+    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
     BIO_free(bio);
     if (!dh) {
       OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));
@@ -378,21 +380,21 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
       Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
       return result;
   }
+  BStringList lst(std::string(identity),AsciiControlCharacters::RecordSeparator());
+  Dmsg1(100, "psk_server_cb. identitiy: %s.\n", lst.JoinReadable().c_str());
 
-  Dmsg1(100, "psk_server_cb. identitiy: %s.\n", identity);
-
-    std::string configured_psk;
-    GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
-        reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
-            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
+  std::string configured_psk;
+  GetTlsPskByFullyQualifiedResourceNameCb_t GetTlsPskByFullyQualifiedResourceNameCb =
+      reinterpret_cast<GetTlsPskByFullyQualifiedResourceNameCb_t>(SSL_CTX_get_ex_data(
+          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kGetTlsPskByFullyQualifiedResourceNameCb));
 
   if (!GetTlsPskByFullyQualifiedResourceNameCb) {
     Dmsg0(100, "Callback not set: kGetTlsPskByFullyQualifiedResourceNameCb\n");
     return result;
   }
 
-    ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
-            openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
+  ConfigurationParser *config  = reinterpret_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
+          openssl_ctx, TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
 
   if (!config) {
     Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
@@ -403,8 +405,8 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL *ssl,
     Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
   } else {
       int psklen = Bsnprintf((char *)psk_output, max_psk_len, "%s", configured_psk.c_str());
-      Dmsg1(100, "psk_server_cb. psk: %s.\n", psk_output);
       result = (psklen < 0) ? 0 : psklen;
+      Dmsg1(100, "psk_server_cb. result: %d.\n", result);
   }
   return result;
 }
@@ -440,8 +442,6 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
         Dmsg0(100, "Error, psk too long\n");
         return 0;
       }
-      Dmsg1(100, "psk_client_cb. psk: %s.\n", psk);
-
       return ret;
     }
   return 0;
@@ -450,7 +450,7 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
 /*
  * public interfaces from TlsOpenSsl that set private data
  */
-void TlsOpenSsl::SetCaCertfile(const std::string &ca_certfile)
+void TlsOpenSsl::Setca_certfile_(const std::string &ca_certfile)
 {
   Dmsg1(100, "Set ca_certfile:\t<%s>\n", ca_certfile.c_str());
   d_->ca_certfile_ = ca_certfile;
@@ -462,22 +462,22 @@ void TlsOpenSsl::SetCaCertdir(const std::string &ca_certdir)
   d_->ca_certdir_ = ca_certdir;
 }
 
-void TlsOpenSsl::SetCrlfile(const std::string &crlfile)
+void TlsOpenSsl::SetCrlfile(const std::string &crlfile_)
 {
-  Dmsg1(100, "Set crlfile:\t<%s>\n", crlfile.c_str());
-  d_->crlfile_ = crlfile;
+  Dmsg1(100, "Set crlfile_:\t<%s>\n", crlfile_.c_str());
+  d_->crlfile_ = crlfile_;
 }
 
-void TlsOpenSsl::SetCertfile(const std::string &certfile)
+void TlsOpenSsl::SetCertfile(const std::string &certfile_)
 {
-  Dmsg1(100, "Set certfile:\t<%s>\n", certfile.c_str());
-  d_->certfile_ = certfile;
+  Dmsg1(100, "Set certfile_:\t<%s>\n", certfile_.c_str());
+  d_->certfile_ = certfile_;
 }
 
-void TlsOpenSsl::SetKeyfile(const std::string &keyfile)
+void TlsOpenSsl::SetKeyfile(const std::string &keyfile_)
 {
-  Dmsg1(100, "Set keyfile:\t<%s>\n", keyfile.c_str());
-  d_->keyfile_ = keyfile;
+  Dmsg1(100, "Set keyfile_:\t<%s>\n", keyfile_.c_str());
+  d_->keyfile_ = keyfile_;
 }
 
 void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
@@ -492,10 +492,10 @@ void TlsOpenSsl::SetPemUserdata(void *pem_userdata)
   d_->pem_userdata_ = pem_userdata;
 }
 
-void TlsOpenSsl::SetDhFile(const std::string &dhfile)
+void TlsOpenSsl::SetDhFile(const std::string &dhfile_)
 {
-  Dmsg1(100, "Set dhfile:\t<%s>\n", dhfile.c_str());
-  d_->dhfile_ = dhfile;
+  Dmsg1(100, "Set dhfile_:\t<%s>\n", dhfile_.c_str());
+  d_->dhfile_ = dhfile_;
 }
 
 void TlsOpenSsl::SetVerifyPeer(const bool &verify_peer)

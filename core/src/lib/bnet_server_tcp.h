@@ -21,9 +21,18 @@
 #ifndef BAREOS_LIB_BNET_SEVER_TCP_H_
 #define BAREOS_LIB_BNET_SEVER_TCP_H_
 
+#include <atomic>
+
 class ConfigurationParser;
 
-void CleanupBnetThreadServerTcp(alist *sockfds, workq_t *client_wq);
+enum class BnetServerState {
+  kUndefined = 0,
+  kStarting,
+  kError,
+  kStarted,
+  kEnded
+};
+
 void BnetThreadServerTcp(dlist *addr_list,
                             int max_clients,
                             alist *sockfds,
@@ -31,7 +40,8 @@ void BnetThreadServerTcp(dlist *addr_list,
                             bool nokeepalive,
                             void *HandleConnectionRequest(ConfigurationParser *config,
                                                         void *bsock),
-                            ConfigurationParser *config);
-void BnetStopThreadServerTcp(pthread_t tid);
+                            ConfigurationParser *config,
+                            std::atomic<BnetServerState> * const server_state = nullptr);
+void BnetStopAndWaitForThreadServerTcp(pthread_t tid);
 
 #endif // BAREOS_LIB_BNET_SEVER_TCP_H_

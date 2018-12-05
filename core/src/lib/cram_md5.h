@@ -24,17 +24,17 @@
 class CramMd5Handshake
 {
 public:
-   CramMd5Handshake(BareosSocket *bs, const char *passwort, uint32_t local_tls_policy);
+   CramMd5Handshake(BareosSocket *bs, const char *passwort, TlsPolicy local_tls_policy);
    bool DoHandshake(bool initiated_by_remote);
-   uint32_t RemoteTlsPolicy() const { return remote_tls_policy_; }
+   TlsPolicy RemoteTlsPolicy() const { return remote_tls_policy_; }
 
 private:
    static constexpr int debuglevel_ = 50;
    bool compatible_ = true;
    BareosSocket *bs_;
    const char *password_;
-   uint32_t local_tls_policy_;
-   uint32_t remote_tls_policy_;
+   TlsPolicy local_tls_policy_;
+   TlsPolicy remote_tls_policy_;
    bool CramMd5Challenge();
    bool CramMd5Response();
    void InitRandom() const;

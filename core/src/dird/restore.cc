@@ -235,8 +235,6 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
       }
 
       if (!jcr->passive_client) {
-         uint32_t tls_need = 0;
-
          /*
           * When the client is not in passive mode we can put the SD in
           * listen mode for the FD connection. And ask the FD to connect
@@ -266,12 +264,12 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-         tls_need = GetLocalTlsPolicyFromConfiguration(store);
+         TlsPolicy tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
          connection_target_address = StorageAddressToContact(client, store);
 
          fd->fsend(storaddrcmd, connection_target_address,
-                   store->SDDport, tls_need, jcr->sd_auth_key);
+                   store->SDDport, tls_policy, jcr->sd_auth_key);
          memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
          Dmsg1(6, "dird>filed: %s", fd->msg);
@@ -279,7 +277,6 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
             goto bail_out;
          }
       } else {
-          uint32_t tls_need = 0;
             /*
           * In passive mode we tell the FD what authorization key to use
           * and the ask the SD to initiate the connection.
@@ -292,17 +289,19 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
             goto bail_out;
          }
 
+         TlsPolicy tls_policy;
+
          if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
-            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+            tls_policy = client->GetPolicy();
          } else {
-            tls_need = TlsConfigBase::BNET_TLS_AUTO;
+            tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
          }
 
          connection_target_address = ClientAddressToContact(client, store);
          /*
           * Tell the SD to connect to the FD.
           */
-         sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_need);
+         sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_policy);
          Bmicrosleep(2,0);
          if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
             goto bail_out;

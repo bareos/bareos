@@ -267,15 +267,15 @@ static btimer_t *btimer_start_common(uint32_t wait)
    return wid;
 }
 
-/*
- * Stop btimer
- */
 static void StopBtimer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Emsg0(M_ABORT, 0, _("StopBtimer called with NULL btimer_id\n"));
+     Emsg0(M_INFO, 0, _("StopBtimer called with NULL btimer_id\n"));
+     return;
    }
-   UnregisterWatchdog(wid->wd);
-   free(wid->wd);
+   if (wid->wd) {
+     UnregisterWatchdog(wid->wd);
+     free(wid->wd);
+   }
    free(wid);
 }

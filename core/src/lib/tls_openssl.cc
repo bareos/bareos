@@ -40,6 +40,7 @@
 
 #include "lib/tls_openssl.h"
 #include "lib/tls_openssl_private.h"
+#include "lib/bstringlist.h"
 
 #include "parse_conf.h"
 
@@ -79,7 +80,8 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials &credentials)
   if (!d_->openssl_ctx_) {
     Dmsg0(50, "Could not set TLS_PSK CLIENT context (no SSL_CTX)\n");
   } else {
-  Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", credentials.get_identity().c_str());
+  BStringList ident(credentials.get_identity(), AsciiControlCharacters::RecordSeparator());
+  Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n", ident.JoinReadable().c_str());
     d_->ClientContextInsertCredentials(credentials);
     SSL_CTX_set_psk_client_callback(d_->openssl_ctx_, TlsOpenSslPrivate::psk_client_cb);
   }

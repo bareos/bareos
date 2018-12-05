@@ -93,7 +93,7 @@ bool NdmpValidateClient(JobControlRecord *jcr)
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      if (jcr->res.client->password.encoding != p_encoding_clear) {
+      if (jcr->res.client->password_.encoding != p_encoding_clear) {
          Jmsg(jcr, M_FATAL, 0,
               _("Client %s, has incompatible password encoding for running NDMP backup.\n"),
               jcr->res.client->name());
@@ -116,7 +116,7 @@ static inline bool NdmpValidateStorage(JobControlRecord *jcr, StorageResource *s
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      if (store->password.encoding != p_encoding_clear) {
+      if (store->password_.encoding != p_encoding_clear) {
          Jmsg(jcr, M_FATAL, 0,
               _("Storage %s, has incompatible password encoding for running NDMP backup.\n"),
               store->name());
@@ -341,22 +341,22 @@ bool NdmpBuildClientJob(JobControlRecord *jcr,
    /*
     * The data_agent is the client being backuped or restored using NDMP.
     */
-   ASSERT(client->password.encoding == p_encoding_clear);
+   ASSERT(client->password_.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                                client->AuthType, client->address,
                                client->FDport, client->username,
-                               client->password.value)) {
+                               client->password_.value)) {
       goto bail_out;
    }
 
    /*
     * The tape_agent is the storage daemon via the NDMP protocol.
     */
-   ASSERT(store->password.encoding == p_encoding_clear);
+   ASSERT(store->password_.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->tape_agent, store->Protocol,
                                store->AuthType, store->address,
                                store->SDport, store->username,
-                               store->password.value)) {
+                               store->password_.value)) {
       goto bail_out;
    }
 
@@ -408,7 +408,7 @@ bool NdmpBuildStorageJob(JobControlRecord *jcr,
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, store->Protocol,
                                store->AuthType, store->address,
                                store->SDport, store->username,
-                               store->password.value)) {
+                               store->password_.value)) {
       goto bail_out;
    }
 
@@ -417,11 +417,11 @@ bool NdmpBuildStorageJob(JobControlRecord *jcr,
      /*
       * Setup the TAPE agent of the NDMP job.
       */
-     ASSERT(store->password.encoding == p_encoding_clear);
+     ASSERT(store->password_.encoding == p_encoding_clear);
      if (!fill_ndmp_agent_config(jcr, &job->tape_agent,
                                  store->Protocol, store->AuthType,
                                  store->address, store->SDport,
-                                 store->username, store->password.value)) {
+                                 store->username, store->password_.value)) {
         goto bail_out;
      }
   }
@@ -433,7 +433,7 @@ bool NdmpBuildStorageJob(JobControlRecord *jcr,
      if (!fill_ndmp_agent_config(jcr, &job->robot_agent,
                                  store->Protocol, store->AuthType,
                                  store->address, store->SDport,
-                                 store->username, store->password.value)) {
+                                 store->username, store->password_.value)) {
         goto bail_out;
      }
   }
@@ -470,7 +470,7 @@ bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr,
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                                client->AuthType, client->address,
                                client->FDport, client->username,
-                               client->password.value)) {
+                               client->password_.value)) {
       goto bail_out;
    }
 
@@ -672,11 +672,11 @@ void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
    /*
     * Query the DATA agent of the NDMP server.
     */
-   ASSERT(client->password.encoding == p_encoding_clear);
+   ASSERT(client->password_.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.data_agent,
                                client->Protocol, client->AuthType,
                                client->address, client->FDport,
-                               client->username, client->password.value)) {
+                               client->username, client->password_.value)) {
       return;
    }
 

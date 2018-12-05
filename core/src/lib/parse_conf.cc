@@ -51,9 +51,14 @@
  */
 
 #include "include/bareos.h"
+#include "include/jcr.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/bstringlist.h"
+#include "lib/ascii_control_characters.h"
+
+#include <algorithm>
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
@@ -102,7 +107,8 @@ ConfigurationParser::ConfigurationParser()
    , DumpResourceCb_(nullptr)
    , FreeResourceCb_(nullptr)
    , use_config_include_dir_ (false)
-   , ParseConfigReadyCb_(nullptr) {
+   , ParseConfigReadyCb_(nullptr)
+   , parser_first_run_(true) {
    return;
 }
 
@@ -168,16 +174,15 @@ void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(const std
 
 bool ConfigurationParser::ParseConfig()
 {
-   static bool first = true;
    int errstat;
    PoolMem config_path;
 
-   if (first && (errstat = RwlInit(&res_lock_)) != 0) {
+   if (parser_first_run_ && (errstat = RwlInit(&res_lock_)) != 0) {
       BErrNo be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
             be.bstrerror(errstat));
    }
-   first = false;
+   parser_first_run_ = false;
 
    if (!FindConfigPath(config_path)) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
@@ -185,7 +190,7 @@ bool ConfigurationParser::ParseConfig()
    used_config_path_ = config_path.c_str();
    Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
    bool success = ParseConfigFile(config_path.c_str(), NULL, scan_error_, scan_warning_);
-   if (ParseConfigReadyCb_) {
+   if (success && ParseConfigReadyCb_) {
      ParseConfigReadyCb_(*this);
    }
    return success;
@@ -1013,3 +1018,65 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem &path, PoolMem &extramsg,
    return true;
 }
 
+TlsPolicy ConfigurationParser::GetTlsPolicyForRootConsole() const
+{
+  TlsResource *own_tls_resource = reinterpret_cast<TlsResource *>(GetNextRes(r_own_, nullptr));
+  if (!own_tls_resource) {
+    Dmsg1(100, "Could not find own tls resource: %d\n", r_own_);
+    return kBnetTlsUnknown;
+  }
+  return own_tls_resource->GetPolicy();
+}
+
+TlsPolicy ConfigurationParser::GetTlsPolicyForJob(const std::string &name) const
+{
+  BStringList job_information(name, AsciiControlCharacters::RecordSeparator());
+  std::string unified_job_name;
+  if (job_information.size() == 2) {
+    unified_job_name = job_information[1].c_str();
+  } else if (job_information.size() == 1) { /* client before Release 18.2 */
+    unified_job_name = job_information[0];
+    unified_job_name.erase(std::remove(unified_job_name.begin(), unified_job_name.end(), '\n'),
+                           unified_job_name.end());
+  } else {
+    Dmsg1(100, "Could not get unified job name: %s\n", name.c_str());
+    return TlsPolicy::kBnetTlsUnknown;
+  }
+  return JcrGetTlsPolicy(unified_job_name.c_str());
+}
+
+TlsPolicy ConfigurationParser::GetTlsPolicyForResourceCodeAndName(const std::string &r_code_str,
+                                                                  const std::string &name) const
+{
+  uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
+  if (r_code < 0) { return TlsPolicy::kBnetTlsUnknown; }
+
+  TlsResource *foreign_tls_resource = reinterpret_cast<TlsResource *>(GetResWithName(r_code, name.c_str()));
+  if (!foreign_tls_resource) {
+    Dmsg2(100, "Could not find foreign tls resource: %s-%s\n", r_code_str.c_str(), name.c_str());
+    return TlsPolicy::kBnetTlsUnknown;
+  }
+  return foreign_tls_resource->GetPolicy();
+}
+
+
+bool ConfigurationParser::GetConfiguredTlsPolicyFromCleartextHello(const std::string &r_code_str,
+                                                                   const std::string &name,
+                                                                   TlsPolicy &tls_policy_out) const
+{
+  TlsPolicy tls_policy;
+  if (name == std::string("*UserAgent*")) {
+    tls_policy = GetTlsPolicyForRootConsole();
+  } else if(r_code_str == std::string("R_JOB")) {
+    tls_policy = GetTlsPolicyForJob(name);
+  } else {
+    tls_policy = GetTlsPolicyForResourceCodeAndName(r_code_str, name);
+  }
+  if (tls_policy == TlsPolicy::kBnetTlsUnknown) {
+    Dmsg2(100, "Could not find foreign tls resource: %s-%s\n", r_code_str.c_str(), name.c_str());
+    return false;
+  } else {
+    tls_policy_out = tls_policy;
+    return true;
+  }
+}

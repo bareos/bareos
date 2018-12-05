@@ -241,7 +241,7 @@ static inline bool IsSameStorageDaemon(StorageResource *rstore, StorageResource 
 {
    return rstore->SDport == wstore->SDport &&
           Bstrcasecmp(rstore->address, wstore->address) &&
-          Bstrcasecmp(rstore->password.value, wstore->password.value);
+          Bstrcasecmp(rstore->password_.value, wstore->password_.value);
 }
 
 bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where)
@@ -1545,7 +1545,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       /*
        * TLS Requirement
        */
-      tls_need = GetLocalTlsPolicyFromConfiguration(wstore);
+      tls_need = wstore->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
       char *connection_target_address = StorageAddressToContact(rstore, wstore);
 

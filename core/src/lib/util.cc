@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,11 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/edit.h"
+#include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
+#include "lib/qualified_resource_name_type_converter.h"
+
+#include <algorithm>
 
 /*
  * Various BAREOS Utility subroutines
@@ -178,6 +183,59 @@ void UnbashSpaces(PoolMem &pm)
    }
 }
 
+struct HelloInformation {
+  std::string hello_string;
+  std::string resource_type_string;
+  uint32_t position_of_name;
+};
+
+static std::list<HelloInformation> hello_list {
+  /* this order is important */
+  { "Hello Storage calling start Job", "R_JOB", 5 },
+  { "Hello Start Storage Job", "R_JOB", 4 },
+  { "Hello Start Job", "R_JOB", 3 },
+  { "Hello Director", "R_DIRECTOR", 2 },
+  { "Hello Storage", "R_STORAGE", 2 },
+  { "Hello Client", "R_CLIENT", 2 },
+  { "Hello", "R_CONSOLE", 1 }
+};
+
+bool GetNameAndResourceTypeFromHello(const std::string &input,
+                                     std::string &name,
+                                     std::string &r_type_str)
+{
+  bool ok = false;
+
+  std::list<HelloInformation>::const_iterator hello = hello_list.cbegin();
+
+  bool found = false;
+  while (hello != hello_list.cend()) {
+    uint32_t size = hello->hello_string.size();
+    uint32_t input_size = input.size();
+    if (input_size >= size) {
+      if (!input.compare(0, size, hello->hello_string)) {
+        found = true;
+        break;
+      }
+    }
+    hello++;
+  }
+
+  if (!found) {
+    Dmsg1(100, "Client information not found: %s", input.c_str());
+    return false;
+  }
+
+  BStringList args(input, ' '); /* split at blanks */
+
+  if (args.size() >= hello->position_of_name) {
+    name = args[hello->position_of_name];
+    std::replace(name.begin(),name.end(), (char)0x1, ' ');
+    r_type_str = hello->resource_type_string;
+    ok = true;
+  }
+  return ok;
+}
 
 /*
  * Parameter:

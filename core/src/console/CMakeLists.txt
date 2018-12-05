@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-SET (BCONSSRCS console_conf.cc console_globals.cc console_output.cc)
+SET (BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc console_output.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()

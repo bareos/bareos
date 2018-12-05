@@ -405,7 +405,6 @@ bool SendAccurateCurrentFiles(JobControlRecord *jcr)
 bool DoNativeBackup(JobControlRecord *jcr)
 {
    int status;
-   uint32_t tls_need = 0;
    BareosSocket *fd = NULL;
    BareosSocket *sd = NULL;
    StorageResource *store = NULL;
@@ -557,28 +556,39 @@ bool DoNativeBackup(JobControlRecord *jcr)
        * TLS Requirement
        */
 
-      tls_need = GetLocalTlsPolicyFromConfiguration(store);
+      TlsPolicy tls_policy;
+      if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
+        tls_policy = store->GetPolicy();
+      } else {
+        tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+      }
+
+      Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
 
       connection_target_address = StorageAddressToContact(client, store);
 
-      fd->fsend(storaddrcmd, connection_target_address, store->SDDport, tls_need);
+      fd->fsend(storaddrcmd, connection_target_address, store->SDDport, tls_policy);
       if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
+         Dmsg0(200, "Error from active client on storeaddrcmd\n");
          goto bail_out;
       }
-   } else {
 
+   } else { /* passive client */
+
+      TlsPolicy tls_policy;
       if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
-        tls_need = GetLocalTlsPolicyFromConfiguration(client);
+        tls_policy = client->GetPolicy();
       } else {
-        tls_need = TlsConfigBase::BNET_TLS_AUTO;
+        tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
       }
+      Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
 
       connection_target_address = ClientAddressToContact(client, store);
 
       /*
        * Tell the SD to connect to the FD.
        */
-      sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_need);
+      sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_policy);
       Bmicrosleep(2,0);
       if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
          goto bail_out;
@@ -604,7 +614,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
       }
 
       Dmsg0(150, "Storage daemon connection OK\n");
-   }
+   } /* if (!jcr->passive_client) */
 
    /*
     * Declare the job started to start the MaxRunTime check

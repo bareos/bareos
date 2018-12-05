@@ -52,6 +52,10 @@
 struct dlink {
    void *next;
    void *prev;
+   dlink() {
+     next = nullptr;
+     prev = nullptr;
+   }
 };
 
 class dlist : public SmartAlloc {
@@ -105,7 +109,7 @@ inline void dlist::init(void *item, dlink *link)
 
 inline void dlist::init()
 {
-   head = tail = NULL;
+   head = tail = nullptr;
    loffset = 0;
    num_items = 0;
 }
@@ -125,8 +129,13 @@ inline dlist::dlist(void *item, dlink *link)
 }
 
 /* Constructor with link at head of item */
-inline dlist::dlist(void) : head(0), tail(0), loffset(0), num_items(0)
+inline dlist::dlist(void)
+   : head(nullptr)
+   , tail(nullptr)
+   , loffset(0)
+   , num_items(0)
 {
+  return;
 }
 
 inline void dlist::SetPrev(void *item, void *prev)

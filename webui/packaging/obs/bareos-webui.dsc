@@ -7,6 +7,6 @@ Maintainer: Bareos Packager <packager@bareos.com>
 Standards-Version: 3.9.1
 Vcs-Browser: https://github.com/bareos/bareos-webui.git
 Vcs-Git: git://github.com/bareos/bareos-webui.git
-Build-Depends: debhelper (>= 7.0.50~), apache2, apache2-dev | apache2-prefork-dev, autoconf, automake, bareos-common
+Build-Depends: debhelper (>= 7.0.50~), apache2, apache2-dev | apache2-prefork-dev, cmake, bareos-common
 DEBTRANSFORM-RELEASE: 1
 Files:

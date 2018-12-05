@@ -34,6 +34,9 @@
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
 #include "lib/bnet_server_tcp.h"
+#include "lib/try_tls_handshake_as_a_server.h"
+
+#include <atomic>
 
 namespace directordaemon {
 
@@ -46,6 +49,8 @@ static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
 static ConnectionPool *client_connections = NULL;
+
+static std::atomic<BnetServerState> server_state(BnetServerState::kUndefined);
 
 struct s_addr_port {
   char *addr;
@@ -72,17 +77,20 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
   jcr.ua = bs;
 
-  if (!bs->IsCleartextBareosHello()) {
-    if (!bs->DoTlsHandshakeAsAServer(config, &jcr)) {
-      return nullptr;
-    }
+  if (!TryTlsHandshakeAsAServer(bs, config)) {
+    bs->signal(BNET_TERMINATE);
+    bs->close();
+    delete bs;
+    return nullptr;
   }
 
   if (bs->recv() <= 0) {
     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
+    bs->signal(BNET_TERMINATE);
     bs->close();
-    return NULL;
+    delete bs;
+    return nullptr;
   }
 
   /*
@@ -92,8 +100,10 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
     Dmsg1(000, "<filed: %s", bs->msg);
     Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
+    bs->signal(BNET_TERMINATE);
     bs->close();
-    return NULL;
+    delete bs;
+    return nullptr;
   }
 
   Dmsg1(110, "Conn: %s", bs->msg);
@@ -112,7 +122,6 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
 extern "C" void *connect_thread(void *arg)
 {
-  pthread_detach(pthread_self());
   SetJcrInTsd(INVALID_JCR);
 
   /*
@@ -120,38 +129,58 @@ extern "C" void *connect_thread(void *arg)
    */
   sock_fds = New(alist(10, not_owned_by_alist));
   BnetThreadServerTcp((dlist *)arg, me->MaxConnections, sock_fds, &socket_workq, me->nokeepalive,
-                      HandleConnectionRequest, my_config);
+                      HandleConnectionRequest, my_config, &server_state);
 
   return NULL;
 }
-
+#include <errno.h>
 /**
  * Called here by Director daemon to start UA (user agent)
  * command thread. This routine creates the thread and then
  * returns.
  */
-void StartSocketServer(dlist *addrs)
+bool StartSocketServer(dlist *addrs)
 {
   int status;
-  static dlist *myaddrs = addrs;
 
-  if (client_connections == NULL) { client_connections = New(ConnectionPool()); }
-  if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
+  if (client_connections == nullptr) { client_connections = New(ConnectionPool()); }
+
+  server_state.store(BnetServerState::kUndefined);
+
+  if ((status = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void *)addrs)) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
   }
 
-  return;
+  int tries = 200; /* consider bind() tries in BnetThreadServerTcp */
+  int wait_ms = 100;
+  do {
+    Bmicrosleep(0, wait_ms * 1000);
+    if (server_state.load() != BnetServerState::kUndefined) {
+      break;
+    }
+  } while (--tries);
+
+  if (server_state != BnetServerState::kStarted) {
+    if (client_connections) {
+      delete (client_connections);
+      client_connections = nullptr;
+    }
+    return false;
+  }
+  return true;
 }
 
 void StopSocketServer()
 {
   if (sock_fds) {
-    BnetStopThreadServerTcp(tcp_server_tid);
-    CleanupBnetThreadServerTcp(sock_fds, &socket_workq);
+    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     delete sock_fds;
-    sock_fds = NULL;
+    sock_fds = nullptr;
   }
-  if (client_connections) { delete (client_connections); }
+  if (client_connections) {
+    delete (client_connections);
+    client_connections = nullptr;
+  }
 }
 } /* namespace directordaemon */

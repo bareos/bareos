@@ -139,7 +139,6 @@ static ResourceItem store_items[] = {
     {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-    TLS_PSK_CONFIG(res_store),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**
@@ -148,13 +147,12 @@ static ResourceItem store_items[] = {
 static ResourceItem dir_items[] = {
     {"Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
-    {"Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+    {"Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"Monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, 0, NULL, NULL, NULL},
     {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
     {"KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-    TLS_PSK_CONFIG(res_dir),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**
@@ -706,8 +704,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
             NULL) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
         } else {
-          res->res_dir.tls_cert.allowed_certificate_common_names_ =
-              res_all.res_dir.tls_cert.allowed_certificate_common_names_;
+          res->res_dir.tls_cert_.allowed_certificate_common_names_ =
+              res_all.res_dir.tls_cert_.allowed_certificate_common_names_;
         }
         break;
       case R_STORAGE:
@@ -718,8 +716,8 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
           res->res_store.plugin_names        = res_all.res_store.plugin_names;
           res->res_store.messages            = res_all.res_store.messages;
           res->res_store.backend_directories = res_all.res_store.backend_directories;
-          res->res_store.tls_cert.allowed_certificate_common_names_ =
-              res_all.res_store.tls_cert.allowed_certificate_common_names_;
+          res->res_store.tls_cert_.allowed_certificate_common_names_ =
+              res_all.res_store.tls_cert_.allowed_certificate_common_names_;
         }
         break;
       case R_AUTOCHANGER:
@@ -814,21 +812,21 @@ static void FreeResource(CommonResourceHeader *sres, int type)
 
   switch (type) {
     case R_DIRECTOR:
-      if (res->res_dir.password.value) { free(res->res_dir.password.value); }
+      if (res->res_dir.password_.value) { free(res->res_dir.password_.value); }
       if (res->res_dir.address) { free(res->res_dir.address); }
       if (res->res_dir.keyencrkey.value) { free(res->res_dir.keyencrkey.value); }
-      if (res->res_dir.tls_cert.allowed_certificate_common_names_) {
-        res->res_dir.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_dir.tls_cert.allowed_certificate_common_names_);
+      if (res->res_dir.tls_cert_.allowed_certificate_common_names_) {
+        res->res_dir.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_dir.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_dir.tls_cert.CaCertfile) { delete res->res_dir.tls_cert.CaCertfile; }
-      if (res->res_dir.tls_cert.CaCertdir) { delete res->res_dir.tls_cert.CaCertdir; }
-      if (res->res_dir.tls_cert.crlfile) { delete res->res_dir.tls_cert.crlfile; }
-      if (res->res_dir.tls_cert.certfile) { delete res->res_dir.tls_cert.certfile; }
-      if (res->res_dir.tls_cert.keyfile) { delete res->res_dir.tls_cert.keyfile; }
-      if (res->res_dir.tls_cert.cipherlist) { delete res->res_dir.tls_cert.cipherlist; }
-      if (res->res_dir.tls_cert.dhfile) { delete res->res_dir.tls_cert.dhfile; }
-      if (res->res_dir.tls_cert.pem_message) { delete res->res_dir.tls_cert.pem_message; }
+      if (res->res_dir.tls_cert_.ca_certfile_) { delete res->res_dir.tls_cert_.ca_certfile_; }
+      if (res->res_dir.tls_cert_.ca_certdir_) { delete res->res_dir.tls_cert_.ca_certdir_; }
+      if (res->res_dir.tls_cert_.crlfile_) { delete res->res_dir.tls_cert_.crlfile_; }
+      if (res->res_dir.tls_cert_.certfile_) { delete res->res_dir.tls_cert_.certfile_; }
+      if (res->res_dir.tls_cert_.keyfile_) { delete res->res_dir.tls_cert_.keyfile_; }
+      if (res->res_dir.cipherlist_) { delete res->res_dir.cipherlist_; }
+      if (res->res_dir.tls_cert_.dhfile_) { delete res->res_dir.tls_cert_.dhfile_; }
+      if (res->res_dir.tls_cert_.pem_message_) { delete res->res_dir.tls_cert_.pem_message_; }
       break;
     case R_NDMP:
       if (res->res_ndmp.username) { free(res->res_ndmp.username); }
@@ -854,18 +852,18 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_store.verid) { free(res->res_store.verid); }
       if (res->res_store.secure_erase_cmdline) { free(res->res_store.secure_erase_cmdline); }
       if (res->res_store.log_timestamp_format) { free(res->res_store.log_timestamp_format); }
-      if (res->res_store.tls_cert.allowed_certificate_common_names_) {
-        res->res_store.tls_cert.allowed_certificate_common_names_->destroy();
-        free(res->res_store.tls_cert.allowed_certificate_common_names_);
+      if (res->res_store.tls_cert_.allowed_certificate_common_names_) {
+        res->res_store.tls_cert_.allowed_certificate_common_names_->destroy();
+        free(res->res_store.tls_cert_.allowed_certificate_common_names_);
       }
-      if (res->res_store.tls_cert.CaCertfile) { delete res->res_store.tls_cert.CaCertfile; }
-      if (res->res_store.tls_cert.CaCertdir) { delete res->res_store.tls_cert.CaCertdir; }
-      if (res->res_store.tls_cert.crlfile) { delete res->res_store.tls_cert.crlfile; }
-      if (res->res_store.tls_cert.certfile) { delete res->res_store.tls_cert.certfile; }
-      if (res->res_store.tls_cert.keyfile) { delete res->res_store.tls_cert.keyfile; }
-      if (res->res_store.tls_cert.cipherlist) { delete res->res_store.tls_cert.cipherlist; }
-      if (res->res_store.tls_cert.dhfile) { delete res->res_store.tls_cert.dhfile; }
-      if (res->res_store.tls_cert.pem_message) { delete res->res_store.tls_cert.pem_message; }
+      if (res->res_store.tls_cert_.ca_certfile_) { delete res->res_store.tls_cert_.ca_certfile_; }
+      if (res->res_store.tls_cert_.ca_certdir_) { delete res->res_store.tls_cert_.ca_certdir_; }
+      if (res->res_store.tls_cert_.crlfile_) { delete res->res_store.tls_cert_.crlfile_; }
+      if (res->res_store.tls_cert_.certfile_) { delete res->res_store.tls_cert_.certfile_; }
+      if (res->res_store.tls_cert_.keyfile_) { delete res->res_store.tls_cert_.keyfile_; }
+      if (res->res_store.cipherlist_) { delete res->res_store.cipherlist_; }
+      if (res->res_store.tls_cert_.dhfile_) { delete res->res_store.tls_cert_.dhfile_; }
+      if (res->res_store.tls_cert_.pem_message_) { delete res->res_store.tls_cert_.pem_message_; }
       break;
     case R_DEVICE:
       if (res->res_dev.media_type) { free(res->res_dev.media_type); }

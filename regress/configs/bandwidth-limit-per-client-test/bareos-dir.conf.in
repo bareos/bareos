@@ -19,6 +19,7 @@ Director {                            # define myself
   Maximum Concurrent Jobs = 4
   Password = "pNvX1WiXnwv2C/F7E52LGvw6rKjbbPvu2kyuPa9pVaL3"         # Console password
   Messages = Standard
+  TLS PSK Enable = no
 }
 
 JobDefs {
@@ -66,6 +67,7 @@ Client {
   Maximum Concurrent Jobs = 4
   # bwlimit
   Maximum Bandwidth Per Job  = 1024 k/s
+  TLS PSK Enable = no
 }
 
 # Definiton of file storage device
@@ -77,6 +79,7 @@ Storage {
   Device = FileStorage
   Media Type = File
   Maximum Concurrent Jobs = 4
+  TLS PSK Enable = no
 }
 
 # Generic catalog service

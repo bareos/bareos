@@ -32,9 +32,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/authenticate.h"
-#if defined(HAVE_PAM)
-#include "dird/auth_pam.h"
-#endif
+#include "dird/authenticate_console.h"
 #include "dird/job.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
@@ -87,17 +85,7 @@ void *HandleUserAgentClientRequest(BareosSocket *user_agent_socket)
    ua->UA_sock = user_agent_socket;
    SetJcrInTsd(INVALID_JCR);
 
-   bool success = AuthenticateUserAgent(ua);
-
-#if defined(HAVE_PAM)
-   if (success && me->UsePamAuthentication_) {
-      std::string username;
-      if (ua->cons) {
-         username = ua->cons->name();
-         success = PamAuthenticateUseragent(ua->UA_sock, username);
-      }
-   }
-#endif /* HAVE_PAM */
+   bool success = AuthenticateConsole(ua);
 
    if (!success) {
       ua->quit = true;

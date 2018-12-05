@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "include/bc_types.h"
 #include "lib/parse_conf_callbacks.h"
+#include "lib/s_password.h"
 
 #include <functional>
 
@@ -41,12 +42,6 @@ enum parse_state
 {
    p_none,
    p_resource
-};
-
-enum password_encoding
-{
-   p_encoding_clear,
-   p_encoding_md5
 };
 
 /*
@@ -74,25 +69,20 @@ struct s_kw {
    uint32_t token;
 };
 
-struct s_password {
-   enum password_encoding encoding;
-   char *value;
-};
-
 /**
  * Common TLS-Settings for both (Certificate and PSK).
 */
 #define TLS_COMMON_CONFIG(res) \
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls_cert.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.authenticate_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
          "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls_cert.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
          "List of valid TLS Ciphers." }, \
-   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.dhfile), 0, 0, NULL, NULL, \
+   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.dhfile_), 0, 0, NULL, NULL, \
          "Path to PEM encoded Diffie-Hellman parameter file. " \
          "If this directive is specified, DH key exchange will be used for the ephemeral keying, " \
          "allowing for forward secrecy of communications." }
@@ -101,31 +91,21 @@ struct s_password {
   * TLS Settings for Certificate only
   */
  #define TLS_CERT_CONFIG(res) \
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert.VerifyPeer), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert_.verify_peer_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "If disabled, all certificates signed by a known CA will be accepted. " \
          "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
-   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertfile), 0, 0, NULL, NULL, \
+   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.ca_certfile_), 0, 0, NULL, NULL, \
          "Path of a PEM encoded TLS CA certificate(s) file." }, \
-   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.CaCertdir), 0, 0, NULL, NULL, \
+   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.ca_certdir_), 0, 0, NULL, NULL, \
          "Path of a TLS CA certificate directory." }, \
-   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.crlfile), 0, 0, NULL, NULL, \
+   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.crlfile_), 0, 0, NULL, NULL, \
          "Path of a Certificate Revocation List file." }, \
-   { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.certfile), 0, 0, NULL, NULL, \
+   { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.certfile_), 0, 0, NULL, NULL, \
          "Path of a PEM encoded TLS certificate." }, \
-   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
+   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.keyfile_), 0, 0, NULL, NULL, \
          "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_certificate_common_names_), 0, 0, NULL, NULL, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, NULL, \
          "\"Common Name\"s (CNs) of the allowed peer certificates."  }
-
- /*
-  * TLS Settings for PSK only
-  */
- #define TLS_PSK_CONFIG(res) \
-   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, \
-         "Enable TLS-PSK support." }, \
-   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
-         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
-         "Enabling this implicitly sets \"TLS-PSK Enable = yes\"." }
 
 /*
  * This is the structure that defines the record types (items) permitted within each
@@ -170,22 +150,6 @@ struct ResourceItem {
 
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
-
-#define MAX_RES_ITEMS 90                /* maximum resource items per CommonResourceHeader */
-
-/*
- * This is the universal header that is at the beginning of every resource record.
- */
-class CommonResourceHeader {
-public:
-   CommonResourceHeader *next;          /* Pointer to next resource of this type */
-   char *name;                          /* Resource name */
-   char *desc;                          /* Resource description */
-   uint32_t rcode;                      /* Resource id or type */
-   int32_t refcnt;                      /* Reference count for releasing */
-   char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
-   char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
-};
 
 /*
  * Master Resource configuration structure definition
@@ -318,31 +282,6 @@ struct DatatypeName {
 };
 
 /*
- * Base Class for all Resource Classes
- */
-class BareosResource {
-public:
-   CommonResourceHeader hdr;
-
-   /* Methods */
-   inline char *name() const { return this->hdr.name; }
-   bool PrintConfig(PoolMem &buf, const ConfigurationParser &my_config,
-                    bool hide_sensitive_data = false, bool verbose = false);
-   /*
-    * validate can be defined by inherited classes,
-    * when special rules for this resource type must be checked.
-    */
-   // virtual inline bool validate() { return true; };
-};
-
-class TlsResource : public BareosResource {
- public:
-   s_password password; /* UA server password */
-  TlsConfigCert tls_cert; /* TLS structure */
-  TlsConfigPsk tls_psk;   /* TLS-PSK structure */
-};
-
-/*
  * Message Resource
  */
 class MessagesResource : public BareosResource {
@@ -427,7 +366,7 @@ public:
   int32_t r_own_;                   /* own resource type */
    ResourceTable *resources_;          /* Pointer to table of permitted resources */
    CommonResourceHeader **res_head_;   /* Pointer to defined resources */
-   brwlock_t res_lock_;                /* Resource lock */
+   mutable brwlock_t res_lock_;        /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
   DumpResourceCb_t DumpResourceCb_;
@@ -489,10 +428,10 @@ public:
                             const char *name,
                             bool error_if_exits     = false,
                             bool create_directories = false);
-  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
-  CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
-  void b_LockRes(const char *file, int line);
-  void b_UnlockRes(const char *file, int line);
+  CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res) const;
+  CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true) const;
+  void b_LockRes(const char *file, int line) const;
+  void b_UnlockRes(const char *file, int line) const;
   const char *res_to_str(int rcode) const;
   bool StoreResource(int type, LEX *lc, ResourceItem *item, int index, int pass);
   void InitializeQualifiedResourceNameTypeConverter(const std::map<int,std::string> &);
@@ -502,6 +441,9 @@ public:
   static bool GetTlsPskByFullyQualifiedResourceName(ConfigurationParser *config,
                                                     const char *fully_qualified_name,
                                                     std::string &psk);
+  bool GetConfiguredTlsPolicyFromCleartextHello(const std::string &r_code,
+                              const std::string &name,
+                              TlsPolicy &tls_policy_out) const;
 
 private:
    ConfigurationParser(const ConfigurationParser&) = delete;
@@ -523,6 +465,8 @@ private:
    std::string used_config_path_;                /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter> qualified_resource_name_type_converter_;
   ParseConfigReadyCb_t ParseConfigReadyCb_;
+  bool parser_first_run_;
+
 
    const char *get_default_configdir();
    bool GetConfigFile(PoolMem &full_path, const char *config_dir, const char *config_filename);
@@ -566,9 +510,14 @@ private:
                   char *where,
                   char *cmd,
                   char *timestamp_format);
+  TlsPolicy GetTlsPolicyForRootConsole() const;
+  TlsPolicy GetTlsPolicyForJob(const std::string &name) const;
+  TlsPolicy GetTlsPolicyForResourceCodeAndName(const std::string &r_code_str,
+                                               const std::string &name) const;
 };
 
 void PrintMessage(void *sock, const char *fmt, ...);
+bool IsTlsConfigured(TlsResource *tls_resource);
 
 /*
  * Data type routines

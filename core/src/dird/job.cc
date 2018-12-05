@@ -1700,7 +1700,7 @@ void SetJcrDefaults(JobControlRecord *jcr, JobResource *job)
     */
    if (job->storage) {
       CopyRwstorage(jcr, job->storage, _("Job resource"));
-   } else {
+   } else if (job->pool) {
       CopyRwstorage(jcr, job->pool->storage, _("Pool resource"));
    }
    jcr->res.client = job->client;
@@ -1718,7 +1718,7 @@ void SetJcrDefaults(JobControlRecord *jcr, JobResource *job)
    jcr->res.inc_pool = job->inc_pool;
    jcr->res.diff_pool = job->diff_pool;
 
-   if (job->pool->catalog) {
+   if (job->pool && job->pool->catalog) {
       jcr->res.catalog = job->pool->catalog;
       PmStrcpy(jcr->res.catalog_source, _("Pool resource"));
    } else {
@@ -1743,6 +1743,10 @@ void SetJcrDefaults(JobControlRecord *jcr, JobResource *job)
    jcr->spool_size = job->spool_size;
    jcr->IgnoreDuplicateJobChecking = job->IgnoreDuplicateJobChecking;
    jcr->MaxRunSchedTime = job->MaxRunSchedTime;
+
+   if (jcr->backup_format) {
+     free(jcr->backup_format);
+   }
    jcr->backup_format = bstrdup(job->backup_format);
 
    if (jcr->RestoreBootstrap) {

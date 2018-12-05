@@ -31,8 +31,10 @@
 #ifndef BAREOS_CONSOLE_CONSOLE_CONF_H_
 #define BAREOS_CONSOLE_CONSOLE_CONF_H_ 1
 
+#include <string>
+#include "lib/parse_conf.h"
+
 class ConfigurationParser;
-extern ConfigurationParser *my_config;             /* Our Global config */
 
 namespace console {
 
@@ -80,7 +82,6 @@ class DirectorResource : public TlsResource {
       uint32_t DIRport;                  /**< UA server port */
       char *address;                     /**< UA server address */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      bool UsePamAuthentication_;        /**< Use Pam authentication instead of password */
       DirectorResource() : TlsResource() {}
 };
 

@@ -52,14 +52,14 @@ public:
 
    virtual void SetCipherList(const std::string &cipherlist) override {};
 
-   virtual void SetCaCertfile(const std::string &ca_certfile) override {};
+   virtual void Setca_certfile_(const std::string &ca_certfile) override {};
    virtual void SetCaCertdir(const std::string &ca_certdir) override {};
-   virtual void SetCrlfile(const std::string &crlfile) override {};
-   virtual void SetCertfile(const std::string &certfile) override {};
-   virtual void SetKeyfile(const std::string &keyfile) override {};
+   virtual void SetCrlfile(const std::string &crlfile_) override {};
+   virtual void SetCertfile(const std::string &certfile_) override {};
+   virtual void SetKeyfile(const std::string &keyfile_) override {};
    virtual void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override {};
    virtual void SetPemUserdata(void *pem_userdata) override {};
-   virtual void SetDhFile(const std::string &dhfile) override {};
+   virtual void SetDhFile(const std::string &dhfile_) override {};
    virtual void SetVerifyPeer(const bool &verify_peer) override {};
    virtual void SetTcpFileDescriptor(const int& fd) override {};
 };

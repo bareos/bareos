@@ -98,7 +98,7 @@ int WorkqDestroy(workq_t *wq)
    int status, status1, status2;
 
   if (wq->valid != WORKQ_VALID) {
-     return EINVAL;
+     return 0; /* nothing to do */
   }
   P(wq->mutex);
   wq->valid = 0;                      /* prevent any more operations */

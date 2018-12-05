@@ -64,7 +64,7 @@ struct TlsConnection {
   gnutls_session_t gnutls_state;
 };
 
-static inline bool LoadDhfileData(TLS_IMPLEMENTATION *ctx, const char *dhfile)
+static inline bool LoadDhfileData(TLS_IMPLEMENTATION *ctx, const char *dhfile_)
 {
   FILE *fp;
   int error;
@@ -75,11 +75,11 @@ static inline bool LoadDhfileData(TLS_IMPLEMENTATION *ctx, const char *dhfile)
   /*
    * Load the content of the file into memory.
    */
-  if (stat(dhfile, &st) < 0) {
+  if (stat(dhfile_, &st) < 0) {
     return false;
   }
 
-  if ((fp = fopen(dhfile, "r")) == (FILE *)NULL) {
+  if ((fp = fopen(dhfile_, "r")) == (FILE *)NULL) {
     return false;
   }
 
@@ -110,14 +110,14 @@ TLS_IMPLEMENTATION *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {
  *  Returns: Pointer to TLS_IMPLEMENTATION instance on success
  *           NULL on failure;
  */
-TLS_IMPLEMENTATION *new_tls_context(const char *CaCertfile,
-                                    const char *CaCertdir,
-                                    const char *crlfile,
-                                    const char *certfile,
-                                    const char *keyfile,
+TLS_IMPLEMENTATION *new_tls_context(const char *ca_certfile_,
+                                    const char *ca_certdir_,
+                                    const char *crlfile_,
+                                    const char *certfile_,
+                                    const char *keyfile_,
                                     CRYPTO_PEM_PASSWD_CB *pem_callback,
                                     const void *pem_userdata,
-                                    const char *dhfile,
+                                    const char *dhfile_,
                                     const char *cipherlist,
                                     bool VerifyPeer)
 {
@@ -141,22 +141,22 @@ TLS_IMPLEMENTATION *new_tls_context(const char *CaCertfile,
   }
 
   /*
-   * GNUTLS supports only a certfile not a certdir.
+   * GNUTLS supports only a certfile_ not a certdir.
    */
-  if (CaCertdir && !CaCertfile) {
-    Jmsg0(NULL, M_ERROR, 0, _("GNUTLS doesn't support certdir use certfile instead\n"));
+  if (ca_certdir_ && !ca_certfile_) {
+    Jmsg0(NULL, M_ERROR, 0, _("GNUTLS doesn't support certdir use certfile_ instead\n"));
     goto bail_out;
   }
 
   /*
    * Try to load the trust file, first in PEM format and if that fails in DER format.
    */
-  if (CaCertfile) {
-    error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred, CaCertfile, GNUTLS_X509_FMT_PEM);
+  if (ca_certfile_) {
+    error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred, ca_certfile_, GNUTLS_X509_FMT_PEM);
     if (error < GNUTLS_E_SUCCESS) {
-      error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred, CaCertfile, GNUTLS_X509_FMT_DER);
+      error = gnutls_certificate_set_x509_trust_file(ctx->gnutls_cred, ca_certfile_, GNUTLS_X509_FMT_DER);
       if (error < GNUTLS_E_SUCCESS) {
-        Jmsg1(NULL, M_ERROR, 0, _("Error loading CA certificates from %s\n"), CaCertfile);
+        Jmsg1(NULL, M_ERROR, 0, _("Error loading CA certificates from %s\n"), ca_certfile_);
         goto bail_out;
       }
     }
@@ -171,26 +171,26 @@ TLS_IMPLEMENTATION *new_tls_context(const char *CaCertfile,
   /*
    * Try to load the revocation list file, first in PEM format and if that fails in DER format.
    */
-  if (crlfile) {
-    error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred, crlfile, GNUTLS_X509_FMT_PEM);
+  if (crlfile_) {
+    error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred, crlfile_, GNUTLS_X509_FMT_PEM);
     if (error < GNUTLS_E_SUCCESS) {
-      error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred, crlfile, GNUTLS_X509_FMT_DER);
+      error = gnutls_certificate_set_x509_crl_file(ctx->gnutls_cred, crlfile_, GNUTLS_X509_FMT_DER);
       if (error < GNUTLS_E_SUCCESS) {
-        Jmsg1(NULL, M_ERROR, 0, _("Error loading certificate revocation list from %s\n"), crlfile);
+        Jmsg1(NULL, M_ERROR, 0, _("Error loading certificate revocation list from %s\n"), crlfile_);
         goto bail_out;
       }
     }
   }
 
   /*
-   * Try to load the certificate and the keyfile, first in PEM format and if that fails in DER format.
+   * Try to load the certificate and the keyfile_, first in PEM format and if that fails in DER format.
    */
-  if (certfile && keyfile) {
-    error = gnutls_certificate_set_x509_key_file(ctx->gnutls_cred, certfile, keyfile, GNUTLS_X509_FMT_PEM);
+  if (certfile_ && keyfile_) {
+    error = gnutls_certificate_set_x509_key_file(ctx->gnutls_cred, certfile_, keyfile_, GNUTLS_X509_FMT_PEM);
     if (error != GNUTLS_E_SUCCESS) {
-      error = gnutls_certificate_set_x509_key_file(ctx->gnutls_cred, certfile, keyfile, GNUTLS_X509_FMT_DER);
+      error = gnutls_certificate_set_x509_key_file(ctx->gnutls_cred, certfile_, keyfile_, GNUTLS_X509_FMT_DER);
       if (error != GNUTLS_E_SUCCESS) {
-        Jmsg2(NULL, M_ERROR, 0, _("Error loading key from %s or certificate from %s\n"), keyfile, certfile);
+        Jmsg2(NULL, M_ERROR, 0, _("Error loading key from %s or certificate from %s\n"), keyfile_, certfile_);
         goto bail_out;
       }
     }
@@ -201,9 +201,9 @@ TLS_IMPLEMENTATION *new_tls_context(const char *CaCertfile,
     goto bail_out;
   }
 
-  if (dhfile) {
-    if (!LoadDhfileData(ctx, dhfile)) {
-      Jmsg1(NULL, M_ERROR, 0, _("Failed to load DH file %s\n"), dhfile);
+  if (dhfile_) {
+    if (!LoadDhfileData(ctx, dhfile_)) {
+      Jmsg1(NULL, M_ERROR, 0, _("Failed to load DH file %s\n"), dhfile_);
       goto bail_out;
     }
   } else {

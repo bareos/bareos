@@ -165,9 +165,9 @@ extern "C" void SignalHandler(int sig)
       pid_t pid;
       int exelen = strlen(exepath);
 
-      fprintf(stderr, _("Kaboom! %s, %s got signal %d - %s. Attempting traceback.\n"),
+      fprintf(stderr, _("%s, %s got signal %d - %s. Attempting traceback.\n"),
               exename, my_name, sig, get_signal_name(sig));
-      fprintf(stderr, _("Kaboom! exepath=%s\n"), exepath);
+      fprintf(stderr, _("exepath=%s\n"), exepath);
 
       if (exelen + 12 > (int)sizeof(btpath)) {
          bstrncpy(btpath, "btraceback", sizeof(btpath));
