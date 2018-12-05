@@ -1,0 +1,5 @@
+{
+  "bareos": {
+    "bconsole_executable": "../../regress/bin/bconsole"
+  }
+}

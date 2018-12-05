@@ -1,0 +1,36 @@
+{
+  "name": "bareos-webapi",
+  "version": "1.0.0",
+  "description": "Bareos Console .api 2 REST wrapper",
+  "main": "api/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon api",
+    "debug": "node $NODE_DEBUG_OPTION  api/index.js"
+  },
+  "author": "Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)",
+  "license": "AGPL",
+  "dependencies": {
+    "@koa/cors": "^2.2.3",
+    "boom": "^7.3.0",
+    "config": "^3.0.1",
+    "is-uuid": "^1.0.2",
+    "koa": "^2.7.0",
+    "koa-router": "^7.4.0",
+    "lodash": "^4.17.11",
+    "socket.io": "^2.2.0",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.2.1",
+    "eslint": "^5.13.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.9"
+  }
+}
