@@ -6,48 +6,10 @@ can contribute to the Bareos project and the general framework of making
 Bareos source changes.
 
 .. uml::
-   :caption: This is an example UML diagram
+  :caption: This is an example UML diagram
 
-   Title: OpenSSL - GNUTls Classes (planned)\n\n\n
-
-   class BareosSocket {
-   + Tls tls_conn
-   }
-
-   class "TlsOpenSsl" as OpenSsl {
-    - const char *default_ciphers
-    - SSL_CTX *openssl_
-    - SSL *openssl_
-    - CRYPTO_PEM_PASSWD_CB *pem_callback
-    - const void *pem_userdata
-    + new_tls_psk_client_context()
-    + new_tls_psk_server_context()
-    + TlsCipherGetName()
-    + TlsLogConninfo()
-    + TlsPolicyHandshake()
-   }
-
-   class "TlsGnuTls" as GnuTls {
-    - const char *default_ciphers
-   }
-
-   abstract class Tls {
-    + new_tls_context()
-    + FreeTlsContext()
-    + TlsPostconnectVerifyHost()
-    + TlsPostconnectVerifyCn()
-    + TlsBsockAccept()
-    + TlsBsockWriten()
-    + TlsBsockReadn()
-    + TlsBsockConnect()
-    + TlsBsockShutdown()
-    + FreeTlsConnection()
-   }
-
-   OpenSsl ..|> Tls
-   GnuTls ..|> Tls
-
-   BareosSocket -> Tls : tls_conn
+  Dir -> Fd: Hello Fd
+  Dir <- Fd: Hello Dir
 
 
 History
