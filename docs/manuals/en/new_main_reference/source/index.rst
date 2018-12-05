@@ -3,6 +3,8 @@
 Bareos Main Reference and Documentation
 =======================================
 
+For Bareos version  |version| release |release|
+
 .. toctree::
    :maxdepth: 3
    :numbered:
