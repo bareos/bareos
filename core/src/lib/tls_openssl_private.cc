@@ -142,7 +142,7 @@ bool TlsOpenSslPrivate::init()
       OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
       return false;
     }
-    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);  // Ueb: Init BIO correctly?
+    DH *dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
     BIO_free(bio);
     if (!dh) {
       OpensslPostErrors(M_FATAL, _("Unable to load DH parameters from specified file"));

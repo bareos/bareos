@@ -1046,7 +1046,7 @@ TlsPolicy ConfigurationParser::GetTlsPolicyForJob(const std::string &name) const
 }
 
 TlsPolicy ConfigurationParser::GetTlsPolicyForResourceCodeAndName(const std::string &r_code_str,
-                                                               const std::string &name) const
+                                                                  const std::string &name) const
 {
   uint32_t r_code = qualified_resource_name_type_converter_->StringToResourceType(r_code_str);
   if (r_code < 0) { return TlsPolicy::kBnetTlsUnknown; }

@@ -434,7 +434,7 @@ void BareosSocket::ParameterizeTlsCert(Tls *tls_conn_init, TlsResource *tls_reso
   tls_conn_init->SetCrlfile(tls_resource->tls_cert_.crlfile_ ? *tls_resource->tls_cert_.crlfile_ : empty);
   tls_conn_init->SetCertfile(tls_resource->tls_cert_.certfile_ ? *tls_resource->tls_cert_.certfile_ : empty);
   tls_conn_init->SetKeyfile(tls_resource->tls_cert_.keyfile_ ? *tls_resource->tls_cert_.keyfile_ : empty);
-  //      tls_conn_init->SetPemCallback(TlsPemCallback); Ueb: --> Feature not implemented: Console Callback
+  //      tls_conn_init->SetPemCallback(TlsPemCallback); --> Feature not implemented: Console Callback
   tls_conn_init->SetPemUserdata(tls_resource->tls_cert_.pem_message_);
   tls_conn_init->SetDhFile(tls_resource->tls_cert_.dhfile_ ? *tls_resource->tls_cert_.dhfile_ : empty);
   tls_conn_init->SetCipherList(tls_resource->cipherlist_ ? *tls_resource->cipherlist_ : empty);
