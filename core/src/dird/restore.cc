@@ -264,7 +264,15 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          /*
           * TLS Requirement
           */
-         TlsPolicy tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+
+         TlsPolicy tls_policy;
+         if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
+           tls_policy = store->GetPolicy();
+         } else {
+           tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+         }
+
+         Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
 
          connection_target_address = StorageAddressToContact(client, store);
 
@@ -296,6 +304,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          } else {
             tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
          }
+
+         Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
 
          connection_target_address = ClientAddressToContact(client, store);
          /*
