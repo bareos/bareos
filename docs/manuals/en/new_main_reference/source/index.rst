@@ -3,7 +3,7 @@
 Bareos Main Reference and Documentation
 =======================================
 
-For Bareos version  |version| release |release|
+for Bareos version  |version| release |release|, created |today|
 
 .. toctree::
    :maxdepth: 3
@@ -15,7 +15,9 @@ For Bareos version  |version| release |release|
    index-part-4
    index-developer-guide
 
-Indicies and tables
+
+
+Indices and tables
 ===================
 
 * :ref:`genindex`
