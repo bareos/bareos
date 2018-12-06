@@ -1,7 +1,7 @@
 ;
 ; Bareos WebUI Configuration File
 ;
-; File: @CONFDIR@/directors.ini
+; File: @WEBUICONFDIR@/directors.ini
 ;
 
 ;------------------------------------------------------------------------------

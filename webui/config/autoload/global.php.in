@@ -35,8 +35,8 @@
  * file.
  */
 
-$directors_ini = "@CONFDIR@/directors.ini";
-$configuration_ini = "@CONFDIR@/configuration.ini";
+$directors_ini = "@WEBUICONFDIR@/directors.ini";
+$configuration_ini = "@WEBUICONFDIR@/configuration.ini";
 
 $directors = null;
 $configuration = null;

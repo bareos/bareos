@@ -43,6 +43,7 @@ MATH(EXPR webuiport "${baseport} + 3")
 # upcase variables for CONFIGURE_FILE
 set(SYSCONFDIR "${sysconfdir}")
 set(CONFDIR "${confdir}")
+set(WEBUICONFDIR "${webuiconfdir}")
 
 
 MESSAGE("   Install system config files:  ${sysconfdir} ")
