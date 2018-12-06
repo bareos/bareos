@@ -121,7 +121,7 @@ ENDIF()
 
 # logdir
 IF(NOT DEFINED logdir)
-   set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
+   set(logdir "/${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
 ENDIF()
 
 # datarootdir
