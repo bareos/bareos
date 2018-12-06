@@ -49,7 +49,11 @@ rst_epilog = '''
 extensions = ['sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.autosectionlabel',
-    'sphinxcontrib.plantuml'
+    'sphinxcontrib.plantuml',
+    'sphinxcontrib.blockdiag',
+    'sphinxcontrib.nwdiag',
+    'sphinxcontrib.seqdiag',
+    'sphinxcontrib.actdiag',
     ]
 plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
 #plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/java/plantuml.jar'
