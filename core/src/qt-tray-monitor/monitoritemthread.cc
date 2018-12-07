@@ -128,7 +128,9 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       item->setType(R_DIRECTOR);
       item->setResource(dird);
       item->setConnectTimeout(monitor->DIRConnectTimeout);
-      item->connectToMainWindow(MainWindow::instance());
+      if (!cl.do_connection_test_only_) {
+        item->connectToMainWindow(MainWindow::instance());
+      }
       tabRefs.append(item->get_name());
       items.append(item);
       nitems++;
@@ -140,7 +142,9 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       item->setType(R_CLIENT);
       item->setResource(filed);
       item->setConnectTimeout(monitor->FDConnectTimeout);
-      item->connectToMainWindow(MainWindow::instance());
+      if (!cl.do_connection_test_only_) {
+        item->connectToMainWindow(MainWindow::instance());
+      }
       tabRefs.append(item->get_name());
       items.append(item);
       nitems++;
@@ -152,7 +156,9 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       item->setType(R_STORAGE);
       item->setResource(stored);
       item->setConnectTimeout(monitor->SDConnectTimeout);
-      item->connectToMainWindow(MainWindow::instance());
+      if (!cl.do_connection_test_only_) {
+        item->connectToMainWindow(MainWindow::instance());
+      }
       tabRefs.append(item->get_name());
       items.append(item);
       nitems++;
@@ -163,7 +169,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
    if (nitems == 0) {
       Emsg1(M_ERROR_TERM, 0, "No Client, Storage or Director resource defined in %s\n"
                              "Without that I don't know how to get status from the File, "
-                             "Storage or Director Daemon :-(\n", cl.configfile);
+                             "Storage or Director Daemon :-(\n", cl.configfile_);
    }
 
    // check the refresh intervals for reasonable values
@@ -171,7 +177,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
    if ((interval < 1) || (interval > 600)) {
       Emsg2(M_ERROR_TERM, 0, "Invalid refresh interval defined in %s\n"
                              "This value must be greater or equal to 1 second and less or "
-                             "equal to 10 minutes (read value: %d).\n", cl.configfile, interval);
+                             "equal to 10 minutes (read value: %d).\n", cl.configfile_, interval);
    }
 
    return tabRefs;
@@ -187,6 +193,20 @@ void MonitorItemThread::onRefreshItems()
       emit refreshItemsReady();
       isRefreshing = false;
    }
+}
+
+bool MonitorItemThread::doConnectionTest()
+{
+  int failed = 0;
+  for (int i = 0; i < items.count(); i++) {
+    bool success = items[i]->doconnect();
+    if (success) {
+      items[i]->disconnect();
+    } else {
+      ++failed;
+    }
+  }
+  return failed ? false : true;
 }
 
 void MonitorItemThread::on_RefreshTimer_timeout()

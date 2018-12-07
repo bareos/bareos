@@ -31,15 +31,17 @@
 
 struct cl_opts
 {
-   char *configfile;
-   bool test_config_only;
-   bool export_config;
-   bool export_config_schema;
+   char *configfile_;
+   bool test_config_only_;
+   bool export_config_;
+   bool export_config_schema_;
+   bool do_connection_test_only_;
    cl_opts () {
-      configfile = (char*)0;
-      test_config_only = false;
-      export_config = false;
-      export_config_schema = false;
+      configfile_ = nullptr;
+      test_config_only_ = false;
+      export_config_ = false;
+      export_config_schema_ = false;
+      do_connection_test_only_ = false;
    }
 };
 
