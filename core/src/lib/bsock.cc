@@ -513,8 +513,6 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                                     const char *password,
                                                     bool initiated_by_remote)
 {
-//  if (!tls_resource->IsTlsConfigured()) { return true; }
-
   tls_conn_init.reset(Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {
     Qmsg0(BareosSocket::jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));

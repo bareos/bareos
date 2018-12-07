@@ -86,8 +86,6 @@ int32_t res_all_size = sizeof(res_all);
 static ResourceItem mon_items[] = {
     {"Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
     {"Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL},
-//    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_monitor.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
-//    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_monitor.tls_psk.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL,
      NULL},
@@ -111,8 +109,6 @@ static ResourceItem dir_items[] = {
     {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
     {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
     {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-//    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_cert_.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
-//    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_psk.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
@@ -128,8 +124,6 @@ static ResourceItem cli_items[] = {
     {"Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-//    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_client.tls_cert_.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
-//    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_client.tls_psk.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
@@ -147,8 +141,6 @@ static ResourceItem store_items[] = {
     {"SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL},
     {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL},
-//    {"TlsEnable", CFG_TYPE_BOOL, ITEM(res_store.tls_cert_.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
-//    {"TlsPskEnable", CFG_TYPE_BOOL, ITEM(res_store.tls_psk.tls_enable_), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
@@ -387,11 +379,11 @@ static bool SaveResource(int type, ResourceItem *items, int pass)
 
 static void ConfigReadyCallback(ConfigurationParser &my_config)
 {
-  std::map<int, std::string> map{{R_MONITOR, "R_MONITOR"},
+  std::map<int, std::string> map{{R_MONITOR,  "R_MONITOR"},
                                  {R_DIRECTOR, "R_DIRECTOR"},
-                                 {R_CLIENT, "R_CLIENT"},
-                                 {R_STORAGE, "R_STORAGE"},
-                                 {R_CONSOLE, "R_CONSOLE"},
+                                 {R_CLIENT,   "R_CLIENT"},
+                                 {R_STORAGE,  "R_STORAGE"},
+                                 {R_CONSOLE,  "R_CONSOLE"},
                                  {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }

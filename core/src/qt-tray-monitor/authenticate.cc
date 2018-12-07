@@ -51,7 +51,7 @@ static std::map<AuthenticationResult,std::string> authentication_error_to_string
   { AuthenticationResult::kNoError, "No Error" },
   { AuthenticationResult::kAlreadyAuthenticated, "Already authenticated" },
   { AuthenticationResult::kQualifiedResourceNameFailed, "Could not generate a qualified resource name" },
-  { AuthenticationResult::kTlsHandshakeFailed, "TLS Handshake failed" },
+  { AuthenticationResult::kTlsHandshakeFailed, "TLS handshake failed" },
   { AuthenticationResult::kSendHelloMessageFailed, "Send of hello handshake message failed" },
   { AuthenticationResult::kCramMd5HandshakeFailed, "Challenge response handshake failed" },
   { AuthenticationResult::kDaemonResponseFailed, "Daemon response could not be read" },
