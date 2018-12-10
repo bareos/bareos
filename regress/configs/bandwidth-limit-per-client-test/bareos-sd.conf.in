@@ -13,7 +13,6 @@ Storage {                             # definition of myself
   SDPort = @sdport@                  # Director's port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  TLS PSK Enable = False
 }
 
 #
@@ -22,7 +21,6 @@ Storage {                             # definition of myself
 Director {
   Name = @hostname@-dir
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
-  TLS PSK Enable = False
 }
 
 #

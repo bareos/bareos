@@ -272,6 +272,12 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket *bsock, char *ptr, int
         goto cleanup;
     }
 
+    if (bsock->UseBwlimit()) {
+      if (nwritten > 0) {
+        bsock->ControlBwlimit(nwritten);
+      }
+    }
+
     /* Everything done? */
     if (nleft == 0) {
       goto cleanup;
