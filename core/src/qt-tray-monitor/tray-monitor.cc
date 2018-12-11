@@ -34,10 +34,12 @@
 #include "monitoritemthread.h"
 #include "lib/bsignal.h"
 
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;
 
-/* Static variables */
-static QApplication* app = NULL;
+/* QCoreApplication* app will be initialized with:
+ * - QApplication for normal execution with a GUI or
+ * - QCoreApplication for tests when no GUI must be used */
+static QCoreApplication* app = nullptr;
 
 static void usage()
 {
@@ -157,12 +159,12 @@ static void cleanup()
 
    if(app) {
       delete app;
-      app = NULL;
+      app = nullptr;
    }
 
    if (my_config) {
       delete my_config;
-      my_config = NULL;
+      my_config = nullptr;
    }
 
    WSACleanup(); /* Cleanup Windows sockets */
@@ -223,8 +225,14 @@ int main(int argc, char *argv[])
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   app = new QApplication(argc, argv);
-   app->setQuitOnLastWindowClosed(false);
+   if (cl.do_connection_test_only_) {
+      /* do not initialize a GUI */
+      app = new QCoreApplication(argc, argv);
+   } else {
+      QApplication *p = new QApplication(argc, argv);
+      p->setQuitOnLastWindowClosed(false);
+      app = p;
+   }
 
    if (!cl.do_connection_test_only_) {
      setupQtObjects();
