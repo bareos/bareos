@@ -674,7 +674,6 @@ bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const std::string &
 {
   BStringList message;
   message << str;
-  message << "\n";
 
   return FormatAndSendResponseMessage(id, message);
 }

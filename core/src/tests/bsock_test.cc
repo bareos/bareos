@@ -469,7 +469,7 @@ TEST(BNet, FormatAndSendResponseMessage)
   EXPECT_TRUE(ok) << "ReceiveAndEvaluateResponseMessage errored.";
   EXPECT_EQ(id, kMessageIdOk) << "Wrong MessageID received.";
 
-  std::string test("1000 Test123 \n");
+  std::string test("1000 Test123");
   EXPECT_STREQ(args.JoinReadable().c_str(), test.c_str());
 }
 

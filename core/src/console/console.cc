@@ -1135,6 +1135,7 @@ int main(int argc, char *argv[])
 
    if (response_id == kMessageIdOk) {
      ConsoleOutput(response_args.JoinReadable().c_str());
+     ConsoleOutput("\n");
    }
 
    response_args.clear();
@@ -1151,6 +1152,7 @@ int main(int argc, char *argv[])
    }
    response_args.PopFront();
    ConsoleOutput(response_args.JoinReadable().c_str());
+   ConsoleOutput("\n");
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 

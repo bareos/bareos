@@ -233,8 +233,13 @@ bool AuthenticateConsole(UaContext *ua)
       }
     }
   }
-  std::string message{"You are logged in as: "};
-  message += ua->cons ? ua->cons->name() : "root";
+  std::string message{"You are "};
+  if (ua->cons) {
+    message += "logged in as: ";
+    message += ua->cons->name();
+  } else {
+    message += "connected using the default console";
+  }
   ua->UA_sock->FormatAndSendResponseMessage(kMessageIdInfoMessage, message);
   return true;
 }
