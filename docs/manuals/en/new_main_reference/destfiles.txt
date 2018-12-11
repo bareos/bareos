@@ -59,6 +59,7 @@ appendix-l/releasenotes.tex
 appendix-m/license.tex
 
 # developer guide (only copying from developers guide)
+developers/releasenotes.rst
 developers/api.rst
 developers/catalog.rst
 developers/daemonprotocol.rst

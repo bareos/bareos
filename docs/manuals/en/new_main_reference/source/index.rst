@@ -14,7 +14,7 @@ for Bareos version  |version| release |release|, created |today|
    index-part-3
    index-part-4
    index-developer-guide
-
+   developers/releasenotes.rst
 
 
 Indices and tables
