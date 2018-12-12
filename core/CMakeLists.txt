@@ -33,8 +33,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-Wsuggest-override compiler_will_suggest_override)
 
-
+if (${compiler_will_suggest_override})
+   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
+endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include_directories(/usr/include)
