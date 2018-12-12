@@ -47,29 +47,29 @@ New Features
 
 * New network Protocol using immediately TLS
 
-  * TLS is immediately used on all network connections.
+  * TLS is immediately used on all network connections
   * Support for TLS-PSK in all daemons
   * Automatic encryption of all network traffic with TLS-PSK
   * Compatibility with old clients
-  * Full compatibility with old clients.
+  * Full compatibility with old clients
 
     * Old clients speaking the old protocol are automatically detected
-      and daemons switch to the old protocol.
+      and daemons switch to the old protocol
 
-  * Easy update without configuration changes.
+  * Easy update without configuration changes
 
-    * Existing Bareos installations can be upgraded without configuration changes.
+    * Existing Bareos installations can be upgraded without configuration changes
 
 * PAM Support
 
-  * Introduction of new "User" Resource.
-  * The Bareos Director supports PAM for user authentication.
-  * The Bareos WebUI supports PAM user authentication against the Bareos Director.
+  * Introduction of new "User" Resource
+  * The Bareos Director supports PAM for user authentication
+  * The Bareos WebUI supports PAM user authentication against the Bareos Director
 
 Changed Features
 ----------------
 * Bandwidth limiting now also works in TLS encrypted connections. Before, bandwidth limiting
-  was ignored when the connections were TLS encrypted.
+  was ignored when the connections were TLS encrypted
 
 * droplet: multiple enhancements
 
@@ -86,10 +86,15 @@ Changed Features
 Deprecated and Removed Features
 -------------------------------
 
+* removed bareos conio and console command line argument -n
+
+
 Bugs Fixed
 ----------
 * #805: can't restore vmware-plugin assisted backups via webui
 * Windows Installer: Fixed infinite install dialog for VC 2012 checks on x86 windows
+* Fixed memory leaks in the director when using bconsole or webui
+* Fixed a bug in the debug message handler on the director when debuglevel is >= 900
 
 
 Internal Project Changes
@@ -105,6 +110,7 @@ Internal Project Changes
   * refactored variable names
 
 * refactored configuration parser
+* tls implementation has now a base class interface instead of compile time switched behaviour
 * library cleanup and reorganization
 
   * library does not use main program variables anymore
@@ -117,6 +123,7 @@ Internal Project Changes
   * removed "protos.h"
   * introduced individual header file for each c++ file
   * each header file has own google c++ standard header guard
+  * explicitly declare functions override where applicable
 
 * tray monitor: switched to qt5
 * tray monitor: enable testing in binary and created regression test
