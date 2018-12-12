@@ -35,7 +35,7 @@ public:
    unix_tape_device();
    ~unix_tape_device();
 
-   int d_ioctl(int fd, ioctl_req_t request, char *op);
+   int d_ioctl(int fd, ioctl_req_t request, char *op) override;
 };
 
 } /* namespace storagedaemon */

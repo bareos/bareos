@@ -689,7 +689,6 @@ static bool CheckResources()
 {
    bool OK = true;
    JobResource *job;
-   bool need_tls;
    const std::string &configfile = my_config->get_base_config_path();
 
    LockRes(my_config);

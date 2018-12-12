@@ -38,17 +38,17 @@ public:
    /*
     * Interface from Device
     */
-   void OpenDevice(DeviceControlRecord *dcr, int omode);
-   bool eod(DeviceControlRecord *dcr);
-   bool MountBackend(DeviceControlRecord *dcr, int timeout);
-   bool UnmountBackend(DeviceControlRecord *dcr, int timeout);
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DeviceControlRecord *dcr);
+   void OpenDevice(DeviceControlRecord *dcr, int omode) override;
+   bool eod(DeviceControlRecord *dcr) override;
+   bool MountBackend(DeviceControlRecord *dcr, int timeout) override;
+   bool UnmountBackend(DeviceControlRecord *dcr, int timeout) override;
+   int d_close(int) override;
+   int d_open(const char *pathname, int flags, int mode) override;
+   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL) override;
+   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) override;
+   ssize_t d_read(int fd, void *buffer, size_t count) override;
+   ssize_t d_write(int fd, const void *buffer, size_t count) override;
+   bool d_truncate(DeviceControlRecord *dcr) override;
 };
 
 } /* namespace storagedaemon */

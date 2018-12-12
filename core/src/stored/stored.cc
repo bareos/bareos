@@ -344,7 +344,6 @@ bail_out:
 static int CheckResources()
 {
    bool OK = true;
-   bool tls_needed;
    const std::string &configfile = my_config->get_base_config_path();
 
    if (my_config->GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
