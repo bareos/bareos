@@ -1847,6 +1847,7 @@ static bool BackupCmd(JobControlRecord *jcr)
    /**
     * Validate some options given to the backup make sense for the compiled in options of this filed.
     */
+#ifndef HAVE_WIN32
    if (!have_acl) {
     ClearFlagInFileset(
         jcr, FO_ACL,
@@ -1858,7 +1859,7 @@ static bool BackupCmd(JobControlRecord *jcr)
         jcr, FO_XATTR,
                             _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
    }
-
+#endif
    if (!have_encryption) {
     ClearFlagInFileset(
         jcr, FO_ENCRYPT,
@@ -1867,9 +1868,10 @@ static bool BackupCmd(JobControlRecord *jcr)
 
    ClearCompressionFlagInFileset(jcr);
 
+#ifndef HAVE_WIN32
    LogFlagStatus(jcr, FO_XATTR, "Extended attribute support ");
    LogFlagStatus(jcr, FO_ACL,   "ACL support ");
-
+#endif
    if (!GetWantedCryptoCipher(jcr, &cipher)) {
       dir->fsend(BADcmd, "backup");
       goto cleanup;
