@@ -83,9 +83,8 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd, JobControlRecord *jcr, Stor
            "Passwords or names not the same or\n"
            "TLS negotiation problem or\n"
            "Maximum Concurrent Jobs exceeded on the SD or\n"
-           "SD networking messed up (restart daemon).\n"
-           "Please see %s for help.\n"),
-         sd->host(), sd->port(), MANUAL_AUTH_URL);
+           "SD networking messed up (restart daemon).\n"),
+         sd->host(), sd->port());
     return false;
   }
 
@@ -149,9 +148,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord *jcr)
            "Passwords or names not the same or\n"
            "TLS negotiation failed or\n"
            "Maximum Concurrent Jobs exceeded on the FD or\n"
-           "FD networking messed up (restart daemon).\n"
-           "Please see %s for help.\n"),
-         fd->host(), fd->port(), MANUAL_AUTH_URL);
+           "FD networking messed up (restart daemon).\n"),
+         fd->host(), fd->port());
     return false;
   }
 

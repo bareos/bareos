@@ -55,8 +55,6 @@
 #define ioctl_req_t int
 #endif
 
-#define MANUAL_AUTH_URL "http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
-#define MANUAL_CONFIG_DIR_URL "http://doc.bareos.org/master/html/bareos-manual-main-reference.html#ConfigurationIncludeDirectory"
 
 #ifdef PROTOTYPES
 # define __PROTO(p)     p

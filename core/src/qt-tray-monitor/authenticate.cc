@@ -93,8 +93,7 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord *jcr, Dire
    if (!dir->ConsoleAuthenticateWithDirector(jcr, monitor->name(), monitor->password,
                                              dir_res, response_args, response_id)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
-                              "Most likely the passwords do not agree.\n"
-                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
+                              "Most likely the passwords do not agree.\n"));
       return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 
@@ -147,9 +146,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(JobControlRecord *jcr,
                 "Passwords or names not the same or\n"
                 "TLS negotiation problem or\n"
                 "Maximum Concurrent Jobs exceeded on the SD or\n"
-                "SD networking messed up (restart daemon).\n"
-                "Please see %s for help.\n"),
-           sd->host(), sd->port(), MANUAL_AUTH_URL);
+                "SD networking messed up (restart daemon).\n"),
+           sd->host(), sd->port());
       return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 
@@ -218,11 +216,9 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord *jcr, Cl
                 "Passwords or names not the same or\n"
                 "TLS negotiation failed or\n"
                 "Maximum Concurrent Jobs exceeded on the FD or\n"
-                "FD networking messed up (restart daemon).\n"
-                "Please see %s for help.\n"),
+                "FD networking messed up (restart daemon).\n"),
            fd->host(),
-           fd->port(),
-           MANUAL_AUTH_URL);
+           fd->port());
       return AuthenticationResult::kCramMd5HandshakeFailed;
    }
 

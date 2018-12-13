@@ -91,9 +91,8 @@ bool AuthenticateDirector(JobControlRecord *jcr)
    if (!director) {
       Dmsg2(debuglevel, "Connection from unknown Director %s at %s rejected.\n",
             dirname, dir->who());
-      Jmsg(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"
-                              "Please see %s for help.\n"),
-           dirname, dir->who(), MANUAL_AUTH_URL);
+      Jmsg(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"),
+           dirname, dir->who());
       FreePoolMemory(dirname);
       return false;
    }

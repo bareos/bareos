@@ -389,9 +389,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord *jcr,
     auth_success = cram_md5_handshake.DoHandshake(initiated_by_remote);
     if (!auth_success) {
       Jmsg(jcr, M_FATAL, 0,
-           _("Authorization key rejected by %s %s.\n"
-             "Please see %s for help.\n"),
-           what, identity, MANUAL_AUTH_URL);
+           _("Authorization key rejected by %s %s.\n"),
+           what, identity);
     } else if (jcr && JobCanceled(jcr)) {
       Dmsg0(debuglevel, "Failed, because job is canceled.\n");
       auth_success = false;
