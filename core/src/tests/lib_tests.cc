@@ -183,7 +183,7 @@ static void do_get_name_from_hello_test(const char *client_string_fmt,
 TEST(Util, get_name_from_hello_test)
 {
   do_get_name_from_hello_test("Hello Client %s calling", "Test Client", "R_CLIENT");
-  do_get_name_from_hello_test("Hello Storage calling start Job %s", "Test Client", "R_JOB");
+  do_get_name_from_hello_test("Hello Storage calling Start Job %s", "Test Client", "R_JOB");
   do_get_name_from_hello_test("Hello %s", "Console Name",  "R_CONSOLE");
   do_get_name_from_hello_test("Hello %s", "*UserAgent*",  "R_CONSOLE");
   do_get_name_from_hello_test("Hello %s", "*UserAgent*",  "R_CONSOLE");

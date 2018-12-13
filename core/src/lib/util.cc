@@ -191,7 +191,7 @@ struct HelloInformation {
 
 static std::list<HelloInformation> hello_list {
   /* this order is important */
-  { "Hello Storage calling start Job", "R_JOB", 5 },
+  { "Hello Storage calling Start Job", "R_JOB", 5 },
   { "Hello Start Storage Job", "R_JOB", 4 },
   { "Hello Start Job", "R_JOB", 3 },
   { "Hello Director", "R_DIRECTOR", 2 },
