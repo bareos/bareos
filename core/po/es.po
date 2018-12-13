@@ -1832,80 +1832,6 @@ msgstr "Sig desconocido %d"
 msgid "Cannot fork to become daemon: ERR=%s\n"
 msgstr "No se puede fork para convertirse en demonio: ERR =%s\n"
 
-#: src/lib/tls_gnutls.c:127
-#, fuzzy, c-format
-msgid "Failed to create a new GNUTLS certificate credential: ERR=%s\n"
-msgstr ""
-"No se ha podido re-abrir el DVD después de truncar el dispositivo %s: ERR=%"
-"s\n"
-
-#: src/lib/tls_gnutls.c:138
-msgid "GNUTLS doesn't support certdir use certfile instead\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:155
-#, fuzzy, c-format
-msgid "Error loading CA certificates from %s\n"
-msgstr "Error cargando archivos de certificados"
-
-#: src/lib/tls_gnutls.c:165
-#, fuzzy
-msgid "Certificate file must be specified as a verification store\n"
-msgstr ""
-"Un certificado de archivo o un directorio debe especificarse como un "
-"almacenes de verificación\n"
-
-#: src/lib/tls_gnutls.c:182
-#, fuzzy, c-format
-msgid "Error loading certificate revocation list from %s\n"
-msgstr "Error al cargar los almacenes de verificación del certificado"
-
-#: src/lib/tls_gnutls.c:204
-#, fuzzy, c-format
-msgid "Error loading key from %s or certificate from %s\n"
-msgstr "Error cargando archivos de certificados"
-
-#: src/lib/tls_gnutls.c:219
-#, fuzzy, c-format
-msgid "Failed to load DH file %s\n"
-msgstr "No se ha podido asignar un nuevo objeto keypair.\n"
-
-#: src/lib/tls_gnutls.c:227
-#, fuzzy
-msgid "Failed to generate new DH parameters\n"
-msgstr "No se pudo establecer parámetros TLS de Diffie-Hellman"
-
-#: src/lib/tls_gnutls.c:297
-#, fuzzy, c-format
-msgid "gnutls_certificate_verify_peers2 failed: ERR=%s\n"
-msgstr "cap_set_proc fallido: ERR=%s\n"
-
-#: src/lib/tls_gnutls.c:304
-#, c-format
-msgid "peer certificate untrusted or revoked (0x%x)\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:311
-msgid "gnutls_certificate_expiration_time_peers failed\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:315
-msgid "peer certificate is expired\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:321
-msgid "gnutls_certificate_activation_time_peers failed\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:325
-msgid "peer certificate not yet active\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:484
-#, fuzzy, c-format
-msgid "Failed to create a new GNUTLS session: ERR=%s\n"
-msgstr "No se pudo abrir %s: ERR=%s\n"
-
 #: src/lib/btimers.c:258
 msgid "stop_btimer called with NULL btimer_id\n"
 msgstr "stop_btimer llamado con NULL btimer_id\n"
@@ -1969,11 +1895,6 @@ msgstr "No se pudo agregar job a la cola de cliente: ERR=%s\n"
 #: src/lib/passphrase.c:71
 #, c-format
 msgid "Failed to get random bytes from RAND_bytes for passphrase: ERR=%s\n"
-msgstr ""
-
-#: src/lib/passphrase.c:85
-#, c-format
-msgid "Failed to get random bytes from gnutls_rnd for passphrase: ERR=%s\n"
 msgstr ""
 
 #: src/lib/attr.c:72
@@ -3041,15 +2962,10 @@ msgstr "No se puede destruir mutex: ERR=%s\n"
 msgid "Unable to destroy mutex: %d ERR=%s\n"
 msgstr "No se puede destruir mutex: ERR=%s\n"
 
-#: src/lib/crypto_gnutls.c:71 src/lib/crypto_nss.c:67 src/lib/crypto_none.c:65
+#: src/lib/crypto_nss.c:67 src/lib/crypto_none.c:65
 #, c-format
 msgid "Unsupported digest type=%d specified\n"
 msgstr "Incompatible resume tipo=%d especificado\n"
-
-#: src/lib/crypto_gnutls.c:243
-#, fuzzy, c-format
-msgid "Unable to init GNUTLS: ERR=%d\n"
-msgstr "No se puede iniciar mutex: ERR=%s\n"
 
 #: src/lib/signal.c:59
 msgid "Invalid signal number"

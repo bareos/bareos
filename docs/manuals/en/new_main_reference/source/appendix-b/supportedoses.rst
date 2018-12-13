@@ -119,8 +119,6 @@ Limitations of the Debian.org/Ubuntu Universe version of Bareos
 
 -  Debian.org does not include the libfastlz compression library and therefore the Bareos (Debian.org) packages do not offer the fileset options                :option:`compression=LZFAST`,                :option:`compression=LZ4` and                :option:`compression=LZ4HC`.
 
--  Debian.org prefers that Bareos (Debian.org) is linked against GnuTLS instead of OpenSSL. Therefore, the Bareos (Debian.org) package only support :ref:`section-TransportEncryption` but no :ref:`DataEncryption`.
-
 -  Debian.org does not include the **bareos-webui** package.
 
 Mac OS X
@@ -129,7 +127,7 @@ Mac OS X
 
 .. index::
    triple: Platform; Mac; OS X;
- 
+
 
 .. _`section-macosx`: section-macosx
 

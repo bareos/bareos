@@ -28,16 +28,11 @@
 #include "include/bareos.h"
 #include "lib/passphrase.h"
 
-#if defined(HAVE_OPENSSL) || defined(HAVE_GNUTLS)
+#if defined(HAVE_OPENSSL)
 
 #ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/rand.h>
-#endif
-
-#ifdef HAVE_GNUTLS
-#include <gnutls/gnutls.h>
-#include <gnutls/crypto.h>
 #endif
 
 /*
@@ -48,9 +43,6 @@
  */
 char *generate_crypto_passphrase(uint16_t length)
 {
-#ifdef HAVE_GNUTLS
-   int error;
-#endif
    uint16_t vc_len, cnt, c;
    char *passphrase;
    unsigned char *rand_bytes;
@@ -70,20 +62,6 @@ char *generate_crypto_passphrase(uint16_t length)
       Emsg1(M_ERROR, 0,
             _("Failed to get random bytes from RAND_bytes for passphrase: ERR=%s\n"),
             ERR_lib_error_string(error));
-
-      free(rand_bytes);
-      free(passphrase);
-
-      return NULL;
-   }
-#endif
-
-#ifdef HAVE_GNUTLS
-   error = gnutls_rnd(GNUTLS_RND_RANDOM, rand_bytes, length);
-   if (error != GNUTLS_E_SUCCESS) {
-      Emsg1(M_ERROR, 0,
-            _("Failed to get random bytes from gnutls_rnd for passphrase: ERR=%s\n"),
-            gnutls_strerror(error));
 
       free(rand_bytes);
       free(passphrase);
@@ -148,4 +126,4 @@ char *generate_crypto_passphrase(uint16_t length)
 
    return passphrase;
 }
-#endif /* HAVE_OPENSSL || HAVE_GNUTLS*/
+#endif /* HAVE_OPENSSL */

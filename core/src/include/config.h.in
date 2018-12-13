@@ -403,18 +403,6 @@
 /* Define to 1 if you have the <glob.h> header file. */
 #cmakedefine HAVE_GLOB_H @HAVE_GLOB_H@
 
-/* Define to 1 if GNUTLS library is available */
-#cmakedefine HAVE_GNUTLS @HAVE_GNUTLS@
-
-/* Define to 1 if you have the `gnutls_cipher_init' function. */
-#cmakedefine HAVE_GNUTLS_CIPHER_INIT @HAVE_GNUTLS_CIPHER_INIT@
-
-/* Define to 1 if you have the <gnutls/gnutls.h> header file. */
-#cmakedefine HAVE_GNUTLS_GNUTLS_H @HAVE_GNUTLS_GNUTLS_H@
-
-/* Define to 1 if you have the `gnutls_transport_set_int' function. */
-#cmakedefine HAVE_GNUTLS_TRANSPORT_SET_INT @HAVE_GNUTLS_TRANSPORT_SET_INT@
-
 /* Define to 1 if you have the <grp.h> header file. */
 #cmakedefine HAVE_GRP_H @HAVE_GRP_H@
 

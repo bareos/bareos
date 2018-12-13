@@ -225,7 +225,6 @@ const char *crypto_digest_name(DIGEST *digest)
 #endif /* HAVE_CRYPTO */
 
 #if !defined(HAVE_OPENSSL) && \
-    !defined(HAVE_GNUTLS) && \
     !defined(HAVE_NSS)
 /*
  * Dummy initialization functions when no crypto framework found.
@@ -239,4 +238,4 @@ int CleanupCrypto(void)
 {
       return 0;
 }
-#endif /* !HAVE_OPENSSL && !HAVE_GNUTLS && !HAVE_NSS */
+#endif /* !HAVE_OPENSSL && !HAVE_NSS */

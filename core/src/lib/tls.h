@@ -45,8 +45,7 @@ class Tls {
   enum class TlsImplementationType
   {
     kTlsUnknown,
-    kTlsOpenSsl,
-    kTlsGnuTls
+    kTlsOpenSsl
   };
   static Tls *CreateNewTlsContext(Tls::TlsImplementationType type);
 

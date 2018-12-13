@@ -1652,74 +1652,6 @@ msgstr ""
 msgid "Cannot fork to become daemon: ERR=%s\n"
 msgstr ""
 
-#: src/lib/tls_gnutls.c:127
-#, c-format
-msgid "Failed to create a new GNUTLS certificate credential: ERR=%s\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:138
-msgid "GNUTLS doesn't support certdir use certfile instead\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:155
-#, c-format
-msgid "Error loading CA certificates from %s\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:165
-msgid "Certificate file must be specified as a verification store\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:182
-#, c-format
-msgid "Error loading certificate revocation list from %s\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:204
-#, c-format
-msgid "Error loading key from %s or certificate from %s\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:219
-#, c-format
-msgid "Failed to load DH file %s\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:227
-msgid "Failed to generate new DH parameters\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:297
-#, c-format
-msgid "gnutls_certificate_verify_peers2 failed: ERR=%s\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:304
-#, c-format
-msgid "peer certificate untrusted or revoked (0x%x)\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:311
-msgid "gnutls_certificate_expiration_time_peers failed\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:315
-msgid "peer certificate is expired\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:321
-msgid "gnutls_certificate_activation_time_peers failed\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:325
-msgid "peer certificate not yet active\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:484
-#, c-format
-msgid "Failed to create a new GNUTLS session: ERR=%s\n"
-msgstr ""
-
 #: src/lib/btimers.c:258
 msgid "stop_btimer called with NULL btimer_id\n"
 msgstr ""
@@ -1783,11 +1715,6 @@ msgstr ""
 #: src/lib/passphrase.c:71
 #, c-format
 msgid "Failed to get random bytes from RAND_bytes for passphrase: ERR=%s\n"
-msgstr ""
-
-#: src/lib/passphrase.c:85
-#, c-format
-msgid "Failed to get random bytes from gnutls_rnd for passphrase: ERR=%s\n"
 msgstr ""
 
 #: src/lib/attr.c:72
@@ -2793,14 +2720,9 @@ msgstr ""
 msgid "Unable to destroy mutex: %d ERR=%s\n"
 msgstr ""
 
-#: src/lib/crypto_gnutls.c:71 src/lib/crypto_nss.c:67 src/lib/crypto_none.c:65
+#: src/lib/crypto_nss.c:67 src/lib/crypto_none.c:65
 #, c-format
 msgid "Unsupported digest type=%d specified\n"
-msgstr ""
-
-#: src/lib/crypto_gnutls.c:243
-#, c-format
-msgid "Unable to init GNUTLS: ERR=%d\n"
 msgstr ""
 
 #: src/lib/signal.c:59

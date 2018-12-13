@@ -88,7 +88,6 @@
 ./src/lib/tls_nss.c
 ./src/lib/daemon.c
 ./src/lib/crypto_wrap.c
-./src/lib/tls_gnutls.c
 ./src/lib/btimers.c
 ./src/lib/bnet_server_tcp.c
 ./src/lib/passphrase.c
@@ -117,7 +116,6 @@
 ./src/lib/smartall.c
 ./src/lib/crypto_cache.c
 ./src/lib/crypto_openssl.c
-./src/lib/crypto_gnutls.c
 ./src/lib/path_list.c
 ./src/lib/signal.c
 ./src/lib/scan.c

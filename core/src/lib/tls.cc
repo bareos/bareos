@@ -21,7 +21,6 @@
 
 #include "lib/tls.h"
 #include "lib/tls_openssl.h"
-#include "lib/tls_gnutls.h"
 
 Tls::Tls()
 {
@@ -38,9 +37,6 @@ Tls *Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
    switch (type) {
       case Tls::TlsImplementationType::kTlsOpenSsl:
          return new TlsOpenSsl();
-
-      case Tls::TlsImplementationType::kTlsGnuTls:
-         return new TlsGnuTls();
 
       case Tls::TlsImplementationType::kTlsUnknown:
       default:
