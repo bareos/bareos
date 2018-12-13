@@ -20,6 +20,6 @@ do
     ./post_conversion_changes.sh ${TARGET_DIR}${chapterdir}/${filebase}.rst
  else
    # developers files are only copied over
-   cp ../developers/source/${file} ${TARGET_DIR}${chapterdir}
+   echo "not doing: cp ../developers/source/${file} ${TARGET_DIR}${chapterdir}"
  fi
 done
