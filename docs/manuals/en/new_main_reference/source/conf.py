@@ -35,6 +35,7 @@ rst_epilog = '''
 .. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
+.. |bconsole| replace:: Bareos Console
 
 '''
 

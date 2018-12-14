@@ -8,13 +8,13 @@ General Release Information
    :header-rows: 0
 
    * - **Release Date**
-     - 12 December 2018
+     - December 2018
    * - **Database Version**
      -  2171
    * - **Release Ticket**
-     - #123
+     -
    * - **URL**
-     - http://
+     - http://download.bareos.org/release/18.2/
 
 ..
    * - **LOC**
@@ -50,10 +50,9 @@ New Features
   * TLS is immediately used on all network connections
   * Support for TLS-PSK in all daemons
   * Automatic encryption of all network traffic with TLS-PSK
-  * Compatibility with old clients
-  * Full compatibility with old clients
+  * Full Compatibility with old |bareosFd|
 
-    * Old clients speaking the old protocol are automatically detected
+    * Old |bareosFd| speaking the old protocol are automatically detected
       and daemons switch to the old protocol
 
   * Easy update without configuration changes
@@ -62,16 +61,17 @@ New Features
 
 * PAM Support
 
+  * Detailed information follows
   * Introduction of new "User" Resource
-  * The Bareos Director supports PAM for user authentication
-  * The Bareos WebUI supports PAM user authentication against the Bareos Director
+  * The |bareosDir| supports PAM for user authentication
+  * The Bareos WebUI supports PAM user authentication against the |bareosDir|
 
 Changed Features
 ----------------
 * Bandwidth limiting now also works in TLS encrypted connections. Before, bandwidth limiting
   was ignored when the connections were TLS encrypted
 
-* droplet: multiple enhancements
+* droplet (S3): multiple enhancements
 
 * bconsole: added "whoami" command to show currently associated user
 
@@ -79,22 +79,28 @@ Changed Features
 
   * both features were disabled by default and needed to be enabled in the fileset options
   * now both are enabled by default and can be disabled in the fileset options
-  * new filedaemon logs the current status of both options in job log
+  * new |bareosFd| logs the current status of both options in job log
 
+Backward compatibiliy
+---------------------
+  * |bareosDir| >= 18.2 can work with all |bareosFd| versions. However, all other components need to be updated to Bareos version >= 18.2
 
+..  * |bconsole| < 18.2 can be used with minor drawbacks (no PAM authentication, no TLS-PSK)
+
+  * To maintain |bareosWebui| access to the |bareosDir|, it depends on the current configuration. 1. TLS certificates: Nothing to do. 2. No TLS configured: Set TlsEnable=false in the respective console config of the |bareosWebui| in the |bareosDir|
+  * The local |bareosFd| on the |bareosDir| will be renamed (also his jobs?). What to do to make it work again?
 
 Deprecated and Removed Features
 -------------------------------
-
-* removed bareos conio and console command line argument -n
-
+* removed Bareos conio option, as the standard library readline is used instead
 
 Bugs Fixed
 ----------
-* #805: can't restore vmware-plugin assisted backups via webui
+* #805 (bugs.bareos.org): can't restore vmware-plugin assisted backups via |bareosWebui|
 * Windows Installer: Fixed infinite install dialog for VC 2012 checks on x86 windows
-* Fixed memory leaks in the director when using bconsole or webui
-* Fixed a bug in the debug message handler on the director when debuglevel is >= 900
+* Fixed memory leaks in the |bareosDir| when using bconsole or |bareosWebui|
+* Fixed a bug in the debug message handler on the |bareosDir| when debuglevel is >= 900
+* Improved shutdown of |bareosDir|
 
 
 Internal Project Changes
@@ -102,7 +108,6 @@ Internal Project Changes
 * reorganized the whole git repository and merged sub repositories into main repository
 * changed the build system from autoconf/automake to cmake
 * switched from cmocka to google test framework for unit tests
-* introduced first tests based on google test
 * introduced namespaces to avoid name clashes when parts of different daemons are tested in one test
 * switched to use c++11 standard, start to refactor using standard library instead of legacy features
 * use google c++ style guide
@@ -125,14 +130,13 @@ Internal Project Changes
   * each header file has own google c++ standard header guard
   * explicitly declare functions override where applicable
 
-* tray monitor: switched to qt5
-* tray monitor: enable testing in binary and created regression test
+* |bareosTraymonitor|: allows compiling against to qt4 and qt5
 * switch the documentation from LaTeX to Sphinx (work in progress)
-* webui: enabled automatic tests in saucelabs
+* |bareosWebui|: enhances Selenium tests to be used on https://saucelabs.com/u/bareossaucelabs
 * clang: massively reduced number of warnings
 * FreeBSD: added start scripts, fixed buggy cmake detection of ACL support
 * regression tests
 
-  * automatically build traymonitor
-  * preconfigure webui to run in php's own webserver for easy testing
+  * automatically build |bareosTraymonitor|
+  * preconfigure |bareosWebui| to run in php's own webserver for easy testing
 
