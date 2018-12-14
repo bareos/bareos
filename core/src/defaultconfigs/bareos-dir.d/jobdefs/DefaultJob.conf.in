@@ -2,7 +2,7 @@ JobDefs {
   Name = "DefaultJob"
   Type = Backup
   Level = Incremental
-  Client = @basename@-fd
+  Client = bareos-fd
   FileSet = "SelfTest"                     # selftest fileset                            (#13)
   Schedule = "WeeklyCycle"
   Storage = File
