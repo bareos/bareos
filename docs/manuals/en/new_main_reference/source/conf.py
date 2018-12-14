@@ -78,9 +78,9 @@ author = 'Bareos GmbH & Co. KG'
 
 
 # auto detect version info from version.h
-import os
+import os,re
 release = os.popen('./get-version.sh').read()
-version = release[:-2]
+version = re.match(r'\d+\.\d+',release).group()
 #print release
 #print version
 
