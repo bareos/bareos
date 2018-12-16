@@ -67,8 +67,6 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
   char name[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
 
-  Bmicrosleep(0,250000);
-
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);
     bs->close();

@@ -77,8 +77,6 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
   jcr.ua = bs;
 
-  Bmicrosleep(0,250000);
-
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);
     bs->close();
