@@ -1,6 +1,6 @@
 #   BAREOS�� - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2018 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -73,7 +73,9 @@ INCLUDE(BareosExtractVersionInfo)
 
 INCLUDE(BareosFindAllLibraries)
 
-
+IF (NOT ${OPENSSL_FOUND})
+  MESSAGE(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
+ENDIF()
 
 
 IF (coverage)
