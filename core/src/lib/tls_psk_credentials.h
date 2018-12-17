@@ -45,7 +45,7 @@ public:
 
    PskCredentials &operator = (const PskCredentials &rhs) {
       identity_ = rhs.identity_;
-      psk_ = rhs.identity_;
+      psk_ = rhs.psk_;
       return *this;
    }
 

@@ -63,6 +63,7 @@ class TlsOpenSslPrivate {
 
   /* PskCredentials lookup map for all connections */
   static std::map<const SSL_CTX *, PskCredentials> psk_client_credentials_;
+  static std::mutex psk_client_credentials_mutex_;
 
   /* tls_default_ciphers_ if no user ciphers given  */
   static const std::string tls_default_ciphers_;
