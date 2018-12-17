@@ -1,0 +1,8 @@
+PORTNAME=	bareos.com
+PORTREVISION=	0
+PKGNAMESUFFIX=	-filedaemon
+COMMENT=	Backup archiving recovery open sourced (filedaemon)
+PLIST=		${PKGDIR}/pkg-plist.filedaemon
+MASTERDIR=	${.CURDIR}/../../sysutils/bareos.com
+
+#.include "${MASTERDIR}/Makefile"

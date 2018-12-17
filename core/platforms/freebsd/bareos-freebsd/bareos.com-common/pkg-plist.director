@@ -1,0 +1,29 @@
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/catalog/MyCatalog.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/client/bareos-fd.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/console/bareos-mon.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/director/bareos-dir.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/Catalog.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/LinuxAll.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/SelfTest.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/backup-bareos-fd.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/BackupCatalog.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/jobdefs/DefaultJob.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/RestoreFiles.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/messages/Daemon.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/messages/Standard.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Differential.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Full.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Incremental.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Scratch.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/profile/operator.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycle.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/storage/File.conf.sample
+/usr/lib/bareos/scripts/delete_catalog_backup
+/usr/lib/bareos/scripts/make_catalog_backup
+/usr/lib/bareos/scripts/make_catalog_backup.pl
+sbin/bareos-dir
+man/man8/bareos-dir.8.gz
+man/man8/bareos.8.gz
+etc/rc.d/bareos-dir

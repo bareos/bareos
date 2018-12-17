@@ -1,0 +1,15 @@
+director
+storage
+storage-tape
+storage-fifo
+filedaemon
+common
+database-common
+database-postgresql
+database-tools
+tools
+devel
+director-python-plugin
+filedaemon-python-plugin
+filedaemon-ldap-python-plugin
+storage-python-plugin

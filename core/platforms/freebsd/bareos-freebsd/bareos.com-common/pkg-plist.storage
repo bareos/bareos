@@ -1,0 +1,18 @@
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/autochanger
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/device
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/director
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/ndmp
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/messages
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/storage
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/device/FileStorage.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/director/bareos-dir.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/director/bareos-mon.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/messages/Standard.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/storage/bareos-sd.conf.sample
+sbin/bareos-sd
+/usr/lib/bareos/scripts/disk-changer
+lib/bareos/plugins/autoxflate-sd.so
+man/man8/bareos-sd.8.gz
+@dir(bareos,bareos,0775) /usr/var/lib/bareos/storage
+etc/rc.d/bareos-sd

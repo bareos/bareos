@@ -1,0 +1,142 @@
+# $FreeBSD$
+
+PORTNAME=bareos.com
+#PKGNAMESUFFIX?=	.com
+DISTVERSIONPREFIX=Release/
+DISTVERSION=18.2.4-rc1
+PKGCATEGORY=sysutils
+CATEGORIES=sysutils
+
+DEBUG_MK_SCRIPTS_DEPENDS_LIST=yes
+
+#CATEGORIES=${PORTNAME}-${DISTVERSION}
+#sysutils
+
+ETCDIR=${PREFIX}/etc/bareos
+
+CONFLICTS?=	bacula-* bareos-*
+
+
+MAINTAINER=     Philipp.Storz@bareos.com
+# comes from the individual makefile
+#COMMENT=        Backup archiving recovery open sourced
+WWW=            https://www.bareos.com
+
+LICENSE=	AGPLv3 LGPL3
+LICENSE_COMB=	multi
+
+USERS=     bareos
+GROUPS=    bareos
+
+BAREOS_USER?=   bareos
+BAREOS_GROUP?=  ${BAREOS_USER}
+BAREOS_UID?=    997
+BAREOS_GID?=    ${BAREOS_UID}
+
+FILE_DAEMON_USER=root
+STORAGE_DAEMON_USER=${BAREOS_USER}
+DIRECTOR_DAEMON_USER=${BAREOS_GROUP}
+
+DAEMON_GROUP=wheel
+STORAGE_DAEMON_GROUP=operator
+
+
+SHEBANG_LANG=   perl
+SHEBANG_FILES=  ${WRKSRC}/core/src/cats/make_catalog_backup.pl.in
+
+
+PLIST_SUB+=	LIBVERSION=${DISTVERSION:C/\..*//} # major version
+PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{6}).*/\1/} # full version
+
+USES+=ssl
+USES+=gettext-runtime
+USES+=readline
+USES+=libtool
+USES+=pkgconfig
+
+USES+=gettext-runtime
+USES+=readline
+
+USES+=		libtool:keepla pkgconfig readline:port
+#USES+=cmake:outsource
+#USES+=cmake
+USES+=cmake:noninja
+USES+=shebangfix
+
+USE_LDCONFIG=	yes
+
+LDFLAGS+=	-L${LOCALBASE}/lib
+LDFLAGS+=	-lz
+LDFLAGS+=	-ljansson
+LDFLAGS+=	-lcrypto
+
+CPPFLAGS+=	-I/usr/include/readline
+CPPFLAGS+=      -I${LOCALBASE}/include
+
+LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
+		          libjansson.so:devel/jansson
+LIB_DEPENDS+= libpython2.7.so:lang/python27
+
+
+#GNU_CONFIGURE=	yes
+CMAKE_VERBOSE = yes
+CMAKE_SOURCE_PATH=   ${WRKSRC}/core
+CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DCMAKE_INSTALL_PREFIX:PATH=/usr/local \
+      -DCMAKE_INSTALL_LIBDIR:PATH=/usr/local/lib \
+      -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+      -DLIB_INSTALL_DIR:PATH=/usr/local/lib \
+      -DSYSCONF_INSTALL_DIR:PATH=/etc \
+      -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+      -DBUILD_SHARED_LIBS:BOOL=ON \
+  -Dlibdir=/usr/local/lib \
+  -Darchivedir=/var/lib/bareos/storage \
+  -Dbackenddir=/usr/local/lib \
+  -Dscriptdir=/usr/lib/bareos/scripts \
+  -Dworking-dir=/var/lib/bareos \
+  -Dplugindir=/usr/local/lib/bareos/plugins \
+  -Dpid-dir=/var/lib/bareos \
+  -Dbsrdir=/var/lib/bareos \
+  -Dlogdir=/var/log/bareos \
+  -Dsubsys-dir=/var/lock \
+  -Dpython=yes\
+  -Dsmartalloc=yes\
+  -Dconio=no \
+  -Dreadline=yes\
+  -Dreadline=${LOCALBASE} \
+  -Dbatch-insert=yes\
+  -Ddynamic-cats-backends=yes\
+  -Ddynamic-storage-backends=yes\
+  -Dscsi-crypto=no\
+  -Dlmdb=yes\
+  -Dndmp=yes\
+  -Dipv6=yes\
+  -Dacl=yes\
+  -Dxattr=yes\
+  -Dpostgresql=yes\
+  -Dtcp-wrappers=yes\
+  -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
+  -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
+  -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
+  -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
+  -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
+  -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
+  -Dopenssl=yes\
+  -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  -Dincludes=yes\
+  -Djansson=${LOCALBASE} \
+  -Ddir-user=$(DIRECTOR_DAEMON_USER) \
+  -Ddir-group=$(DAEMON_GROUP) \
+  -Dsd-user=$(STORAGE_DAEMON_USER) \
+  -Dsd-group=$(STORAGE_DAEMON_GROUP) \
+  -Dfd-user=$(FILE_DAEMON_USER) \
+  -Dfd-group=$(DAEMON_GROUP) \
+
+post-install:
+	find ${STAGEDIR} -name '*.conf' -exec mv -v {} {}.sample \;
+	@${MKDIR} ${STAGEDIR}/var/lib/bareos/storage
+	@${MKDIR} ${STAGEDIR}/var/log/bareos
+	@${MKDIR} ${STAGEDIR}/var/run/bareos
+
+.include <bsd.port.mk>

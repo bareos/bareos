@@ -1,0 +1,11 @@
+
+Thank you for installing the Bareos storage daemon!
+
+
+enable the service by running the following commands:
+
+'sysrc bareossd_enable=YES'
+
+to start the service please run:
+
+'service bareos-sd start'

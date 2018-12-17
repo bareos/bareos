@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+PKGNAME="$1"
+MODE="$2" # PRE-INSTALL, POST-INSTALL, DEINSTALL, POST-DEINSTALL
+
+case "$MODE" in
+POST-INSTALL)
+	echo "initializing database driver..."
+	/usr/lib/bareos/scripts/bareos-config initialize_database_driver
+	;;
+DEINSTALL)
+	;;
+PRE-INSTALL|POST-DEINSTALL)
+	true
+	;;
+esac
