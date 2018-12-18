@@ -1,7 +1,7 @@
 #undef  VERSION
-#define VERSION "18.2.4rc1"
-#define BDATE   "25 Sep 2018"
-#define LSMDATE "25Sep18"
+#define VERSION "18.2.4rc2"
+#define BDATE   "18 Dec 2018"
+#define LSMDATE "18Dec18"
 
 #define PROG_COPYRIGHT "Copyright (C) 2013-2018 Bareos GmbH & Co. KG\n" \
                        "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
