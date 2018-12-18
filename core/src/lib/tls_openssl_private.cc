@@ -38,6 +38,7 @@
 /* static private */
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials_;
 std::mutex TlsOpenSslPrivate::psk_client_credentials_mutex_;
+std::mutex TlsOpenSslPrivate::file_access_mutex_;
 
 /* static private */
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers */
@@ -107,6 +108,7 @@ bool TlsOpenSslPrivate::init()
   const char *ca_certdir  = ca_certdir_.empty() ? nullptr : ca_certdir_.c_str();
 
   if (ca_certfile || ca_certdir) { /* at least one should be set */
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_load_verify_locations(openssl_ctx_, ca_certfile, ca_certdir)) {
       OpensslPostErrors(M_FATAL, _("Error loading certificate verification stores"));
       return false;
@@ -119,6 +121,7 @@ bool TlsOpenSslPrivate::init()
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
   if (!crlfile_.empty()) {
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SetCertificateRevocationList(crlfile_, openssl_ctx_)) {
       return false;
     }
@@ -126,6 +129,7 @@ bool TlsOpenSslPrivate::init()
 #endif
 
   if (!certfile_.empty()) {
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
       OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
       return false;
@@ -133,6 +137,7 @@ bool TlsOpenSslPrivate::init()
   }
 
   if (!keyfile_.empty()) {
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_PrivateKey_file(openssl_ctx_, keyfile_.c_str(), SSL_FILETYPE_PEM)) {
       OpensslPostErrors(M_FATAL, _("Error loading private key"));
       return false;
@@ -141,6 +146,7 @@ bool TlsOpenSslPrivate::init()
 
   if (!dhfile_.empty()) { /* Diffie-Hellman parameters */
     BIO *bio;
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!(bio = BIO_new_file(dhfile_.c_str(), "r"))) {
       OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
       return false;
@@ -156,7 +162,6 @@ bool TlsOpenSslPrivate::init()
       DH_free(dh);
       return false;
     }
-
     SSL_CTX_set_options(openssl_ctx_, SSL_OP_SINGLE_DH_USE);
   }
 
