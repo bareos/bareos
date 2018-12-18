@@ -195,7 +195,7 @@ static bool connect_to_server(std::string console_name, std::string console_pass
     Dmsg0(10, "socket connect failed\n");
   } else {
     Dmsg0(10, "socket connect OK\n");
-    uint32_t response_id;
+    uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
     if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, cons_dir_config.get(), response_args, response_id)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");

@@ -37,7 +37,7 @@ static int create_listening_server_socket(int port)
     return -1;
   }
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
     perror("setsockopt");
     return -1;
   }

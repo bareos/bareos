@@ -36,6 +36,8 @@
 #include "include/jcr.h"
 #include <signal.h>
 
+extern void setup_tsd_key();
+
 static void signal_handler(int arg)
 {
   return;
@@ -151,6 +153,7 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 {
    InitSignalHandler();
    InitGlobals();
+   setup_tsd_key();
 
    PConfigParser console_config(ConsolePrepareResources(path_to_config));
    if (!console_config) { return false; }
