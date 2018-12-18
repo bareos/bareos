@@ -21,6 +21,7 @@
 #include "bsock_test.h"
 #include "create_resource.h"
 #include "tests/bareos_test_sockets.h"
+#include "tests/init_openssl.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <fstream>
@@ -64,6 +65,7 @@ static std::unique_ptr<console::ConsoleResource> cons_cons_config;
 
 void InitForTest()
 {
+  InitOpenSsl();
   dir_cons_config.reset(directordaemon::CreateAndInitializeNewConsoleResource());
   dir_dir_config.reset(directordaemon::CreateAndInitializeNewDirectorResource());
   cons_dir_config.reset(console::CreateAndInitializeNewDirectorResource());

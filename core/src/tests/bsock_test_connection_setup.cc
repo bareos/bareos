@@ -31,6 +31,7 @@
 #include "lib/tls_openssl.h"
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
+#include "tests/init_openssl.h"
 
 #include "include/jcr.h"
 #include <signal.h>
@@ -176,6 +177,7 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 
 TEST(bsock, console_director_connection_test_tls_psk)
 {
+   InitOpenSsl();
    do_connection_test(std::string(CMAKE_SOURCE_DIR
                                   "/src/tests/configs/console-director/tls_psk_default_enabled/"),
                                   TlsPolicy::kBnetTlsEnabled);
@@ -183,6 +185,7 @@ TEST(bsock, console_director_connection_test_tls_psk)
 
 TEST(bsock, console_director_connection_test_cleartext)
 {
+   InitOpenSsl();
    do_connection_test(std::string(CMAKE_SOURCE_DIR
                                   "/src/tests/configs/console-director/tls_disabled/"),
                                   TlsPolicy::kBnetTlsNone);

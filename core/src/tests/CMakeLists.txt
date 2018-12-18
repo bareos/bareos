@@ -22,6 +22,10 @@ IF(HAVE_WIN32)
       user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)
 ENDIF()
 
+IF(HAVE_OPENSSL)
+  set(SSL_UNIT_TEST_FILES init_openssl.cc)
+ENDIF()
+
 set(LINK_LIBRARIES
    stored_objects
    dird_objects
@@ -107,7 +111,8 @@ add_executable(test_bsock
     bsock_constructor_test.cc
     bsock_cert_verify_common_names_test.cc
     create_resource.cc
-)
+    ${SSL_UNIT_TEST_FILES}
+    )
 
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
 
@@ -120,9 +125,10 @@ set_property(TEST test_bsock
 
 add_dependencies(check test_bsock)
 
-####### test_bsock ###############################
+####### test_connection_setup ###############################
 add_executable(test_connection_setup
     bsock_test_connection_setup.cc
+    ${SSL_UNIT_TEST_FILES}
 )
 
 target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
