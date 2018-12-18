@@ -98,7 +98,7 @@ GLOBAL int			n_e_exclude_pattern;
 GLOBAL char *			f_tape_device;
 GLOBAL char *			I_index_file;	/* output */
 GLOBAL char *			J_index_file;	/* input */
-GLOBAL struct ndm_media_table	media_;
+GLOBAL struct ndm_media_table	m_media;
 GLOBAL struct ndmagent		R_robot_agent;
 GLOBAL struct ndmscsi_target *	r_robot_target;
 GLOBAL struct ndmagent		T_tape_agent;

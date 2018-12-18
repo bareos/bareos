@@ -105,4 +105,9 @@ INSTALL(TARGETS bareosndmp DESTINATION ${libdir})
 
 set_target_properties(bareosndmp PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
+
                                           )
+IF(build_ndmjob)
+  add_executable(ndmjob ${NDMJOB_SRCS})
+  target_link_libraries(ndmjob bareosndmp)
+ENDIF()

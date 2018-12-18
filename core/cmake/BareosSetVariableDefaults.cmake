@@ -338,6 +338,11 @@ IF(NOT DEFINED xattr)
    SET(xattr ON)
 ENDIF()
 
+# build_ndmjob
+IF(NOT DEFINED build_ndmjob)
+   SET(build_ndmjob OFF)
+ENDIF()
+
 # bat
 IF(NOT DEFINED bat)
    SET(bat OFF)

@@ -672,6 +672,7 @@ MESSAGE("   FASTLZ support:               ${FASTLZ_FOUND} ${FASTLZ_LIBRARIES} ${
 MESSAGE("   JANSSON support:              ${JANSSON_FOUND} ${JANSSON_LIBRARIES} ${JANSSON_INCLUDE_DIRS} ")
 MESSAGE("   LMDB support:                 ${lmdb} ")
 MESSAGE("   NDMP support:                 ${ndmp} ")
+MESSAGE("   Build ndmjob binary:          ${build_ndmjob} ")
 MESSAGE("   enable-smartalloc:            ${smartalloc} ")
 MESSAGE("   enable-lockmgr:               ${lockmgr} ")
 MESSAGE("   bat support:                  ${support_bat} ")
