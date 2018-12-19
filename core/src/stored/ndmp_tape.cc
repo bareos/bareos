@@ -1264,9 +1264,8 @@ bail_out:
    free(sess);
 
    close(handle->fd);
-   if (handle->jcr) {
-      FreeJcr(handle->jcr);
-   }
+   if (handle->jcr) FreeJcr(handle->jcr);
+   if (handle->host) free(handle->host);
    free(handle);
 
    return NULL;
