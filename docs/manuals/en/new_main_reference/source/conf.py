@@ -55,9 +55,13 @@ extensions = ['sphinx.ext.todo',
     'sphinxcontrib.nwdiag',
     'sphinxcontrib.seqdiag',
     'sphinxcontrib.actdiag',
+    'sphinx_issues',
     ]
 plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
 #plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/java/plantuml.jar'
+
+issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
+issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
 
 
 # Add any paths that contain templates here, relative to this directory.

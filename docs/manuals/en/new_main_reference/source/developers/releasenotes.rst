@@ -98,8 +98,8 @@ Deprecated and Removed Features
 
 Bugs Fixed
 ----------
-* #845: NetApp OnCommand System Manager calls on SD Port 10000 lead to Segmentation Violation
-* #805 (bugs.bareos.org): can't restore vmware-plugin assisted backups via |bareosWebui|
+* :issue:`845`: NetApp OnCommand System Manager calls on SD Port 10000 lead to Segmentation Violation
+* :issue:`805`: can't restore vmware-plugin assisted backups via |bareosWebui|
 * Windows Installer: Fixed infinite install dialog for VC 2012 checks on x86 windows
 * Fixed memory leaks in the |bareosDir| when using bconsole or |bareosWebui|
 * Fixed a bug in the debug message handler on the |bareosDir| when debuglevel is >= 900
