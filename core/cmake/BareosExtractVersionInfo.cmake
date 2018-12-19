@@ -22,6 +22,7 @@
 file(STRINGS ${CMAKE_SOURCE_DIR}/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
 string(REGEX MATCH [0-9.]+ VERSION ${VERSION_INFO})
 string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_INFO})
+string(REGEX MATCH \".*\" FULLVERSION ${VERSION_INFO})
 
 # extract date from version.h
 file(STRINGS ${CMAKE_SOURCE_DIR}/src/include/version.h DATE_INFO REGEX define.*BDATE.*)
