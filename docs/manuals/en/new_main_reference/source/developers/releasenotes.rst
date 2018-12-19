@@ -258,6 +258,6 @@ changes need to be done:
   connections**.
 
 * For **clients that use the passive mode**, also the clients' setting in the
-  Bareos 17.2 director in file :file:`/etc/Bareos/Bareos-dir.d/client/passive-fd.conf` needs
+  Bareos 17.2 director in file :file:`/etc/bareos/bareos-dir.d/client/passive-fd.conf` needs
   to to be altered so that both directives **TLS Enable**
   and **TLS Require** are set to **no**.
