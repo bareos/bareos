@@ -136,7 +136,7 @@ Internal Project Changes
 
 * |bareosTraymonitor|: Allows compiling using Qt4 or Qt5
 * switch the documentation from LaTeX to Sphinx (work in progress)
-* |bareosWebui|: Enhances Selenium tests to be used on https://saucelabs.com/u/Bareossaucelabs
+* |bareosWebui|: Enhances Selenium tests to be used on https://saucelabs.com/u/bareossaucelabs
 * clang: massively reduced number of warnings
 * FreeBSD: added start scripts, fixed buggy cmake detection of ACL support
 * regression tests
