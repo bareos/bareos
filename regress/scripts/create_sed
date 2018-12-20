@@ -134,6 +134,7 @@ echo "s%@regress_gitbranch@%${regress_gitbranch}%g" >>${out}
 echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
 echo "s%@GCOV@%${GCOV}%g" >>${out}
 echo "s%@PERL@%${PERL}%g" >>${out}
-if [ -z ${TRAYMON} ] ; then
-  echo "s%tray-monitor-connection-test%tray-monitor-connection-test_disabled%g" >> ${out}
+
+if [ -n "${TRAYMON}" ] ; then
+  echo "s%#ADD_TEST(disk:tray-monitor-connection-test%ADD_TEST(disk:tray-monitor-connection-test%g" >> ${out}
 fi

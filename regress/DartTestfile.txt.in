@@ -1,4 +1,4 @@
-ADD_TEST(disk:tray-monitor-connection-test "@regressdir@/tests/tray-monitor-connection-test")
+#ADD_TEST(disk:tray-monitor-connection-test "@regressdir@/tests/tray-monitor-connection-test")
 ADD_TEST(disk:lan-addr-test "@regressdir@/tests/lan-addr-test")
 ADD_TEST(disk:lan-addr-test-passive "@regressdir@/tests/lan-addr-test-passive")
 ADD_TEST(disk:reload-test "@regressdir@/tests/reload-test")
