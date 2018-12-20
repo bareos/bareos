@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_STORAGE_H_
 #define BAREOS_DIRD_STORAGE_H_
 
+#include "ndmp/smc.h"
+
 namespace directordaemon {
 
 void CopyRwstorage(JobControlRecord *jcr, alist *storage, const char *where);
@@ -53,7 +55,13 @@ void StorageReleaseVolList(StorageResource *store, changer_vol_list_t *vol_list)
 void StorageFreeVolList(StorageResource *store, changer_vol_list_t *vol_list);
 void InvalidateVolList(StorageResource *store);
 int CompareStorageMapping(void *e1, void *e2);
-slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
+slot_number_t LookupStorageMapping(StorageResource *store, slot_type_t slot_type,
                                      s_mapping_type map_type, slot_number_t slot);
+
+slot_number_t GetElementAddressByBareosSlotNumber(smc_element_address_assignment*
+      smc_elem_aa , slot_type_t slot_type, slot_number_t slotnumber);
+slot_number_t GetBareosSlotNumberByElementAddress(smc_element_address_assignment*
+      smc_elem_aa, slot_type_t slot_type, slot_number_t element_addr);
+
 } /* namespace directordaemon */
 #endif // BAREOS_DIRD_STORAGE_H_

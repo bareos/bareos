@@ -383,21 +383,21 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
          /*
           * Scanning -- require only valid slot
           */
-         vl->Slot = atoi(field1);
-         if (vl->Slot <= 0) {
+         vl->bareos_slot_number = atoi(field1);
+         if (vl->bareos_slot_number <= 0) {
             ua->ErrorMsg(_("Invalid Slot number: %s\n"), sd->msg);
             free(vl);
             continue;
          }
 
-         vl->Type = slot_type_normal;
+         vl->slot_type = slot_type_storage;
          if (strlen(field2) > 0) {
-            vl->Content = slot_content_full;
+            vl->slot_status = slot_status_full;
             vl->VolName = bstrdup(field2);
          } else {
-            vl->Content = slot_content_empty;
+            vl->slot_status = slot_status_empty;
          }
-         vl->Index = INDEX_SLOT_OFFSET + vl->Slot;
+         vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
       } else if (!listall) {
          /*
           * Not scanning and not listall.
@@ -407,7 +407,7 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
             continue;
          }
 
-         if (!IsAnInteger(field1) || (vl->Slot = atoi(field1)) <= 0) {
+         if (!IsAnInteger(field1) || (vl->bareos_slot_number = atoi(field1)) <= 0) {
             ua->ErrorMsg(_("Invalid Slot number: %s\n"), field1);
             free(vl);
             continue;
@@ -419,10 +419,10 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
             continue;
          }
 
-         vl->Type = slot_type_normal;
-         vl->Content = slot_content_full;
+         vl->slot_type = slot_type_storage;
+         vl->slot_status = slot_status_full;
          vl->VolName = bstrdup(field2);
-         vl->Index = INDEX_SLOT_OFFSET + vl->Slot;
+         vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
       } else {
          /*
           * Listall.
@@ -433,17 +433,17 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
 
          switch (*field1) {
          case 'D':
-            vl->Type = slot_type_drive;
+            vl->slot_type = slot_type_drive;
             break;
          case 'S':
-            vl->Type = slot_type_normal;
+            vl->slot_type = slot_type_storage;
             break;
          case 'I':
-            vl->Type = slot_type_import;
-            vl->Flags |= (can_import | can_export | by_oper);
+            vl->slot_type = slot_type_import;
+            vl->flags |= (can_import | can_export | by_oper);
             break;
          default:
-            vl->Type = slot_type_unknown;
+            vl->slot_type = slot_type_unknown;
             break;
          }
 
@@ -451,39 +451,39 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
           * For drives the Slot is the actual drive number.
           * For any other type its the actual slot number.
           */
-         switch (vl->Type) {
+         switch (vl->slot_type) {
          case slot_type_drive:
-            if (!IsAnInteger(field2) || (vl->Slot = atoi(field2)) < 0) {
+            if (!IsAnInteger(field2) || (vl->bareos_slot_number = atoi(field2)) < 0) {
                ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
                free(vl);
                continue;
             }
-            vl->Index = INDEX_DRIVE_OFFSET + vl->Slot;
-            if (vl->Index >= INDEX_MAX_DRIVES) {
+            vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
+            if (vl->element_address >= INDEX_MAX_DRIVES) {
                ua->ErrorMsg(_("Drive number %hd greater then INDEX_MAX_DRIVES(%hd) please increase define\n"),
-                             vl->Slot, INDEX_MAX_DRIVES);
+                             vl->bareos_slot_number, INDEX_MAX_DRIVES);
                free(vl);
                continue;
             }
             break;
          default:
-            if (!IsAnInteger(field2) || (vl->Slot = atoi(field2)) <= 0) {
+            if (!IsAnInteger(field2) || (vl->bareos_slot_number = atoi(field2)) <= 0) {
                ua->ErrorMsg(_("Invalid Slot number: %s\n"), field2);
                free(vl);
                continue;
             }
-            vl->Index = INDEX_SLOT_OFFSET + vl->Slot;
+            vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
             break;
          }
 
          switch (*field3) {
          case 'E':
-            vl->Content = slot_content_empty;
+            vl->slot_status = slot_status_empty;
             break;
          case 'F':
-            vl->Content = slot_content_full;
-            switch (vl->Type) {
-            case slot_type_normal:
+            vl->slot_status = slot_status_full;
+            switch (vl->slot_status) {
+            case slot_type_storage:
             case slot_type_import:
                if (field4) {
                   vl->VolName = bstrdup(field4);
@@ -491,7 +491,7 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
                break;
             case slot_type_drive:
                if (field4) {
-                  vl->Loaded = atoi(field4);
+                  vl->currently_loaded_slot_number = atoi(field4);
                }
                if (field5) {
                   vl->VolName = bstrdup(field5);
@@ -502,17 +502,17 @@ dlist *native_get_vol_list(UaContext *ua, StorageResource *store, bool listall, 
             }
             break;
          default:
-            vl->Content = slot_content_unknown;
+            vl->slot_status = slot_status_unknown;
             break;
          }
       }
 
       if (vl->VolName) {
          Dmsg6(100, "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=%s to SD list.\n",
-               vl->Index, vl->Slot, vl->Loaded, vl->Type, vl->Content, NPRT(vl->VolName));
+               vl->element_address, vl->bareos_slot_number, vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type, NPRT(vl->VolName));
       } else {
          Dmsg5(100, "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=NULL to SD list.\n",
-               vl->Index, vl->Slot, vl->Loaded, vl->Type, vl->Content);
+               vl->element_address, vl->bareos_slot_number, vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type);
       }
 
       vol_list->binary_insert(vl, StorageCompareVolListEntry);

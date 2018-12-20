@@ -30,9 +30,10 @@
  */
 
 #include "include/bareos.h"
-#include "dird.h"
+#include "dird/dird.h"
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
+#include "ndmp/ndmagents.h"
 #include "dird/ndmp_dma_storage.h"
 #include "dird/storage.h"
 
@@ -539,10 +540,10 @@ int StorageCompareVolListEntry(void *e1, void *e2)
    ASSERT(v1);
    ASSERT(v2);
 
-   if (v1->Index == v2->Index) {
+   if (v1->element_address == v2->element_address) {
       return 0;
    } else {
-      return (v1->Index < v2->Index) ? -1 : 1;
+      return (v1->element_address < v2->element_address) ? -1 : 1;
    }
 }
 
@@ -783,10 +784,10 @@ vol_list_t *vol_is_loaded_in_drive(StorageResource *store, changer_vol_list_t *v
 
    vl = (vol_list_t *)vol_list->contents->first();
    while (vl) {
-      switch (vl->Type) {
+      switch (vl->slot_type) {
       case slot_type_drive:
-         Dmsg2(100, "Checking drive %hd for loaded volume == %hd\n", vl->Slot, vl->Loaded);
-         if (vl->Loaded == slot) {
+         Dmsg2(100, "Checking drive %hd for loaded volume == %hd\n", vl->bareos_slot_number, vl->currently_loaded_slot_number);
+         if (vl->currently_loaded_slot_number == slot) {
             return vl;
          }
          break;
@@ -875,59 +876,5 @@ void InvalidateVolList(StorageResource *store)
    V(store->rss->changer_lock);
 }
 
-/**
- * Simple comparison function for binary insert of storage_mapping_t
- */
-int CompareStorageMapping(void *e1, void *e2)
-{
-   storage_mapping_t *m1, *m2;
 
-   m1 = (storage_mapping_t *)e1;
-   m2 = (storage_mapping_t *)e2;
-
-   ASSERT(m1);
-   ASSERT(m2);
-
-   if (m1->Index == m2->Index) {
-      return 0;
-   } else {
-      return (m1->Index < m2->Index) ? -1 : 1;
-   }
-}
-
-/**
- * Map a slotnr from Logical to Physical or the other way around based on
- * the s_mapping_type type given.
- */
-slot_number_t LookupStorageMapping(StorageResource *store, slot_type slot_type,
-                                     s_mapping_type type, slot_number_t slot)
-{
-   slot_number_t retval = -1;
-   storage_mapping_t *mapping;
-
-   if (store->rss->storage_mappings) {
-      mapping = (storage_mapping_t *)store->rss->storage_mappings->first();
-      while (mapping) {
-         switch (type) {
-         case LOGICAL_TO_PHYSICAL:
-            if (mapping->Type == slot_type && mapping->Slot == slot) {
-               retval = mapping->Index;
-               break;
-            }
-            break;
-         case PHYSICAL_TO_LOGICAL:
-            if (mapping->Type == slot_type && mapping->Index == slot) {
-               retval = mapping->Slot;
-               break;
-            }
-            break;
-         default:
-            break;
-         }
-         mapping = (storage_mapping_t *)store->rss->storage_mappings->next(mapping);
-      }
-   }
-
-   return retval;
-}
 } /* namespace directordaemon */

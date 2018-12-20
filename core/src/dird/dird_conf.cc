@@ -2486,6 +2486,12 @@ static bool UpdateResourcePointer(int type, ResourceItem *items)
 
             Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"), be.bstrerror(status));
          }
+         if ((status = pthread_mutex_init(&res->res_store.rss->ndmp_deviceinfo_lock, NULL)) != 0) {
+            BErrNo be;
+
+            Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"), be.bstrerror(status));
+         }
+
       }
       break;
    case R_JOBDEFS:
@@ -4094,7 +4100,6 @@ static void FreeResource(CommonResourceHeader *sres, int type)
       if (res->res_store.ndmp_changer_device) { free(res->res_store.ndmp_changer_device); }
       if (res->res_store.device) { delete res->res_store.device; }
       if (res->res_store.rss) {
-        if (res->res_store.rss->storage_mappings) { delete res->res_store.rss->storage_mappings; }
         if (res->res_store.rss->vol_list) {
           if (res->res_store.rss->vol_list->contents) {
             vol_list_t *vl;
@@ -4108,6 +4113,7 @@ static void FreeResource(CommonResourceHeader *sres, int type)
           free(res->res_store.rss->vol_list);
         }
         pthread_mutex_destroy(&res->res_store.rss->changer_lock);
+        pthread_mutex_destroy(&res->res_store.rss->ndmp_deviceinfo_lock);
         free(res->res_store.rss);
       }
       if (res->res_store.tls_cert_.allowed_certificate_common_names_) {

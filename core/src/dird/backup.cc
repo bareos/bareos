@@ -45,6 +45,7 @@
 #include "dird/msgchan.h"
 #include "dird/quota.h"
 #include "dird/sd_cmds.h"
+#include "ndmp/smc.h"
 #include "dird/storage.h"
 
 #include "cats/sql.h"

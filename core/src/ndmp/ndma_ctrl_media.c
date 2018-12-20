@@ -47,10 +47,10 @@ ndmca_media_register_callbacks (struct ndm_session *sess,
 	/*
 	 * Only allow one register.
 	 */
-        if (!sess->nmc) {
-		sess->nmc = NDMOS_API_MALLOC (sizeof(struct ndmca_media_callbacks));
-		if (sess->nmc) {
-			memcpy (sess->nmc, callbacks, sizeof(struct ndmca_media_callbacks));
+        if (!sess->media_cbs) {
+		sess->media_cbs = NDMOS_API_MALLOC (sizeof(struct ndmca_media_callbacks));
+		if (sess->media_cbs) {
+			memcpy (sess->media_cbs, callbacks, sizeof(struct ndmca_media_callbacks));
 		}
         }
 }
@@ -58,9 +58,9 @@ ndmca_media_register_callbacks (struct ndm_session *sess,
 void
 ndmca_media_unregister_callbacks (struct ndm_session *sess)
 {
-        if (sess->nmc) {
-		NDMOS_API_FREE (sess->nmc);
-		sess->nmc = NULL;
+        if (sess->media_cbs) {
+		NDMOS_API_FREE (sess->media_cbs);
+		sess->media_cbs = NULL;
 	}
 }
 
@@ -69,8 +69,8 @@ ndmca_media_load_first (struct ndm_session *sess)
 {
 	int		rc;
 
-	if (sess->nmc && sess->nmc->load_first) {
-		rc = sess->nmc->load_first (sess);
+	if (sess->media_cbs && sess->media_cbs->load_first) {
+		rc = sess->media_cbs->load_first (sess);
 		if (rc) return rc;
         }
 
@@ -92,8 +92,8 @@ ndmca_media_load_next (struct ndm_session *sess)
 	int		rc;
 	int		n_media;
 
-	if (sess->nmc && sess->nmc->load_next) {
-		rc = sess->nmc->load_next (sess);
+	if (sess->media_cbs && sess->media_cbs->load_next) {
+		rc = sess->media_cbs->load_next (sess);
 		if (rc) return rc;
         }
 
@@ -293,8 +293,8 @@ ndmca_media_unload_current (struct ndm_session *sess)
 
 	ca->media_is_loaded = 0;
 
-	if (sess->nmc && sess->nmc->unload_current) {
-		rc = sess->nmc->unload_current (sess);
+	if (sess->media_cbs && sess->media_cbs->unload_current) {
+		rc = sess->media_cbs->unload_current (sess);
 		if (rc) return rc;
         }
 

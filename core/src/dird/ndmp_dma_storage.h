@@ -37,6 +37,8 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
                              drive_number_t drive, slot_number_t slot);
 char *lookup_ndmp_drive(StorageResource *store, drive_number_t drive);
 bool NdmpUpdateStorageMappings(JobControlRecord* jcr, StorageResource *store);
-
+bool ndmp_native_setup_robot_and_tape_for_native_backup_job(JobControlRecord* jcr, StorageResource* store,
+      ndm_job_param& ndmp_job);
+bool unreserve_ndmp_tapedevice_for_job(StorageResource *store, JobControlRecord *jcr);
 } /* namespace directordaemon */
 #endif // BAREOS_DIRD_NDMP_DMA_STORAGE_H_

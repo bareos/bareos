@@ -33,6 +33,7 @@
 #include "dird/dird_globals.h"
 #include "dird/msgchan.h"
 #include "dird/next_vol.h"
+#include "ndmp/ndmagents.h"
 #include "dird/ndmp_dma_storage.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
@@ -335,10 +336,10 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
                   "Slot  Volume\n"
                   "==============\n"));
    foreach_dlist(vl, vol_list->contents) {
-      if (!vl->VolName || !BitIsSet(vl->Slot - 1, slot_list)) {
+      if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
          continue;
       }
-      ua->SendMsg("%4d  %s\n", vl->Slot, vl->VolName);
+      ua->SendMsg("%4d  %s\n", vl->bareos_slot_number, vl->VolName);
    }
 
    if (!yes &&
@@ -358,7 +359,7 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
     * Fire off the label requests
     */
    foreach_dlist(vl, vol_list->contents) {
-      if (!vl->VolName || !BitIsSet(vl->Slot - 1, slot_list)) {
+      if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
          continue;
       }
       memset(&mr, 0, sizeof(mr));
@@ -367,8 +368,8 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
       if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
          if (mr.VolBytes != 0) {
             ua->WarningMsg(_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
-                            vl->Slot, mr.VolumeName);
-            mr.Slot = vl->Slot;
+                            vl->bareos_slot_number, mr.VolumeName);
+            mr.Slot = vl->bareos_slot_number;
             mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
             SetStorageidInMr(store, &mr);
             if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
@@ -427,8 +428,8 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
          }
       }
 
-      mr.Slot = vl->Slot;
-      SendLabelRequest(ua, store, &mr, NULL, &pr, media_record_exists, false, drive, vl->Slot);
+      mr.Slot = vl->bareos_slot_number;
+      SendLabelRequest(ua, store, &mr, NULL, &pr, media_record_exists, false, drive, vl->bareos_slot_number);
    }
 
 bail_out:

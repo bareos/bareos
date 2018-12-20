@@ -39,6 +39,31 @@
 
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
+void
+ndmca_jobcontrol_register_callbacks (struct ndm_session *sess,
+      struct ndmca_jobcontrol_callbacks *callbacks)
+{
+   /*
+    * Only allow one register.
+    */
+   if (!sess->jobcontrol_cbs) {
+      sess->jobcontrol_cbs = NDMOS_API_MALLOC (sizeof(struct ndmca_jobcontrol_callbacks));
+      if (sess->jobcontrol_cbs) {
+         memcpy (sess->jobcontrol_cbs, callbacks, sizeof(struct ndmca_jobcontrol_callbacks));
+      }
+   }
+}
+
+void
+ndmca_jobcontrol_unregister_callbacks (struct ndm_session *sess)
+{
+   if (sess->jobcontrol_cbs) {
+      NDMOS_API_FREE (sess->jobcontrol_cbs);
+      sess->jobcontrol_cbs = NULL;
+   }
+}
+
+
 
 int ndmca_monitor_backup_tape_tcp (struct ndm_session *sess);
 int ndmca_monitor_recover_tape_tcp (struct ndm_session *sess);
@@ -196,10 +221,20 @@ ndmca_monitor_backup (struct ndm_session *sess)
 
 	ndmalogf (sess, 0, 3, "Monitoring backup");
 
-	for (count = 0; count < 10; count++) {
-		ndmca_mon_wait_for_something (sess, count <= 1 ? 30 : 10);
-		if (ndmca_monitor_get_states(sess) < 0)
-		    break;
+   for (count = 0; count < 10; count++) {
+      /*
+       * check if job needs to be cancelled
+       */
+      if (sess->jobcontrol_cbs && sess->jobcontrol_cbs->is_job_canceled) {
+         if (sess->jobcontrol_cbs->is_job_canceled(sess)) {
+			   ndmalogf (sess, 0, 0, "Job was cancelled, cancelling NDMP operation");
+            return -1;
+         }
+      }
+
+      ndmca_mon_wait_for_something (sess, count <= 1 ? 30 : 10);
+      if (ndmca_monitor_get_states(sess) < 0)
+         break;
 
 #if 0
 		if (count > 2)

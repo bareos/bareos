@@ -30,6 +30,7 @@ set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc authenticate_console.c
    ndmp_dma_generic.cc
    ndmp_dma_restore_common.cc ndmp_dma_restore_NDMP_BAREOS.cc ndmp_dma_restore_NDMP_NATIVE.cc
    ndmp_fhdb_common.cc ndmp_fhdb_helpers.cc
+   ndmp_slot2elemaddr.cc
    ndmp_fhdb_mem.cc ndmp_fhdb_lmdb.cc ndmp_ndmmedia_db_helpers.cc
    newvol.cc next_vol.cc quota.cc socket_server.cc recycle.cc restore.cc
    run_conf.cc sd_cmds.cc scheduler.cc stats.cc storage.cc ua.cc ua_acl.cc ua_audit.cc

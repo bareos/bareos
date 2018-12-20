@@ -34,11 +34,11 @@
 #include "lib/edit.h"
 
 #if HAVE_NDMP
-#include "dird/ndmp_dma_storage.h"
 
 #define NDMP_NEED_ENV_KEYWORDS 1
 
 #include "ndmp/ndmagents.h"
+#include "dird/ndmp_dma_storage.h"
 #include "ndmp_dma_priv.h"
 #include "dird/ndmp_dma_restore_common.h"
 #include "dird/ndmp_dma_generic.h"
@@ -263,25 +263,58 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    bool retval = false;
    int NdmpLoglevel;
    char mediabuf[100];
+   ndmmedia *media;
    slot_number_t ndmp_slot;
+   StorageResource *store = NULL;
 
-   if (jcr->res.client->ndmp_loglevel > me->ndmp_loglevel) {
-      NdmpLoglevel = jcr->res.client->ndmp_loglevel;
-   } else {
-      NdmpLoglevel = me->ndmp_loglevel;
-   }
+   store = jcr->res.read_storage;
 
+   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
 
    nis = (NIS *)malloc(sizeof(NIS));
    memset(nis, 0, sizeof(NIS));
 
+   NdmpLoglevel = std::max(jcr->res.client->ndmp_loglevel, me->ndmp_loglevel);
+
+   if (!NdmpBuildClientAndStorageJob(jcr, store, jcr->res.client,
+            true, /* init_tape */
+            true, /* init_robot */
+            NDM_JOB_OP_EXTRACT, &ndmp_job)) {
+      goto cleanup;
+   }
 
 
-   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
-   ndmp_sess.control_agent_enabled = 1;
+   if ( !ndmp_native_setup_robot_and_tape_for_native_backup_job(jcr, store, ndmp_job)) {
+      Jmsg(jcr, M_ERROR, 0, _("ndmp_native_setup_robot_and_tape_for_native_backup_job failed\n"));
+      goto cleanup;
+   }
 
-   ndmp_sess.dump_media_info = 1; // for debugging
+
+
+   /*
+    * Get media from database and put into ndmmmedia table
+    */
+
+   GetNdmmediaInfoFromDatabase(&ndmp_job.media_tab, jcr);
+
+   for (ndmmedia *media = ndmp_job.media_tab.head; media; media = media->next) {
+      ndmmedia_to_str(media, mediabuf);
+      Jmsg(jcr, M_INFO, 0, _("Media: %s\n"), mediabuf);
+   }
+
+   for (ndmmedia *media = ndmp_job.media_tab.head; media; media = media->next) {
+      Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label, media->slot_addr);
+      ndmp_slot = GetElementAddressByBareosSlotNumber(&store->rss->storage_mapping, slot_type_storage, media->slot_addr);
+      media->slot_addr = ndmp_slot;
+      Jmsg(jcr, M_INFO, 0, _("Physical(NDMP) slot for volume %s is %d\n"), media->label, media->slot_addr);
+      Jmsg(jcr, M_INFO, 0, _("Media Index of volume %s is %d\n"), media->label, media->index);
+   }
+
+
+   if (!NdmpValidateJob(jcr, &ndmp_job)) {
+      Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_validate_job\n"));
+      goto cleanup_ndmp;
+   }
 
    /*
     * session initialize
@@ -294,19 +327,12 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    ndmp_sess.param->log.ctx = nis;
    ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
 
+   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
+   ndmp_sess.control_agent_enabled = 1;
 
-   int drive=0;
-   ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.read_storage, drive);
-   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.read_storage, jcr->res.client,
-            true, /* init_tape */
-            true, /* init_robot */
-            NDM_JOB_OP_EXTRACT, &ndmp_job)) {
-      goto cleanup;
-   }
-
+   ndmp_sess.dump_media_info = 1; // for debugging
 
    jcr->setJobStatus(JS_Running);
-
 
    /*
     * Initialize the session structure.
@@ -316,63 +342,19 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    }
    session_initialized = true;
 
+   ndmca_media_calculate_offsets(&ndmp_sess);
+
+   /*
+    * copy our prepared ndmp_job into the session
+    */
    memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
+
+
 
    if (!fill_restore_environment_ndmp_native(jcr,
             current_fi,
             &ndmp_sess.control_acb->job)) {
       Jmsg(jcr, M_ERROR, 0, _("ERROR in fill_restore_environment\n"));
-      goto cleanup_ndmp;
-   }
-
-   ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.read_storage, drive);
-   ndmp_job.record_size = jcr->res.client->ndmp_blocksize;
-   Jmsg(jcr, M_INFO, 0, _("Record size is %d\n"), ndmp_job.record_size);
-
-   ndmp_sess.control_acb->job.tape_device = ndmp_job.tape_device;
-   ndmp_sess.control_acb->job.record_size = ndmp_job.record_size;
-
-
-   GetNdmmediaInfoFromDatabase(&ndmp_sess.control_acb->job.media_tab, jcr);
-
-   for (ndmmedia *media = ndmp_sess.control_acb->job.media_tab.head; media; media = media->next) {
-      ndmmedia_to_str(media, mediabuf);
-      Jmsg(jcr, M_INFO, 0, _("Media: %s\n"), mediabuf);
-   }
-
-   for (ndmmedia *media = ndmp_sess.control_acb->job.media_tab.head; media; media = media->next) {
-
-      if (!NdmpUpdateStorageMappings(jcr, jcr->res.read_storage )){
-         Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpUpdateStorageMappings\n"));
-      }
-      /*
-       * convert slot from database to ndmp slot
-       */
-      Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label, media->slot_addr);
-
-      ndmp_slot = LookupStorageMapping(jcr->res.read_storage, slot_type_normal, LOGICAL_TO_PHYSICAL, media->slot_addr);
-      media->slot_addr = ndmp_slot;
-
-      Jmsg(jcr, M_INFO, 0, _("Physical(NDMP) slot for volume %s is %d\n"), media->label, media->slot_addr);
-      Jmsg(jcr, M_INFO, 0, _("Media Index of volume %s is %d\n"), media->label, media->index);
-
-   }
-
-   ndmca_media_calculate_offsets(&ndmp_sess);
-
-   /*
-    * Set the robot to use
-    */
-   ndmp_sess.control_acb->job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_sess.control_acb->job.robot_target, jcr->res.read_storage->ndmp_changer_device) != 0) {
-      Actuallyfree(ndmp_sess.control_acb->job.robot_target);
-      Dmsg0(100,"no robot to use\n");
-      goto bail_out;
-   }
-   ndmp_sess.control_acb->job.have_robot = 1;
-
-   if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) {
-      Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpValidateJob\n"));
       goto cleanup_ndmp;
    }
 
@@ -401,6 +383,11 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    if (ndmca_control_agent(&ndmp_sess) != 0) {
       Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_control_agent\n"));
       goto cleanup_ndmp;
+   }
+
+   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
+      Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+            ndmp_job.tape_device, jcr->JobId);
    }
 
    /*
@@ -447,6 +434,10 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    goto cleanup;
 
 cleanup_ndmp:
+   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
+      Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+            ndmp_job.tape_device, jcr->JobId);
+   }
    /*
     * Only need to cleanup when things are initialized.
     */
@@ -462,14 +453,14 @@ cleanup_ndmp:
    }
 
    if (ndmp_sess.param) {
-      free(ndmp_sess.param->log_tag);
+      if (ndmp_sess.param->log_tag) {
+         free(ndmp_sess.param->log_tag);
+      }
       free(ndmp_sess.param);
    }
-
 cleanup:
    free(nis);
 
-bail_out:
    FreeTree(jcr->restore_tree_root);
    jcr->restore_tree_root = NULL;
    return retval;

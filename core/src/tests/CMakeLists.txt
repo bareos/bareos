@@ -114,10 +114,10 @@ add_executable(test_bsock
     create_resource.cc
     ${SSL_UNIT_TEST_FILES}
     )
-
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
-
 add_test(NAME test_bsock COMMAND test_bsock)
+
+
 
 set_property(TEST test_bsock
    PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
@@ -142,4 +142,26 @@ set_property(TEST test_connection_setup
    )
 
 add_dependencies(check test_connection_setup)
+
+
+
+####### test_ndmp_address_translate ###############################
+add_executable(test_ndmp_address_translate
+  ndmp_address_translate_test.cc
+  ../dird/ndmp_slot2elemaddr.cc
+)
+
+target_link_libraries(test_ndmp_address_translate ${LINK_LIBRARIES})
+
+add_test(NAME test_ndmp_address_translate COMMAND test_ndmp_address_translate)
+
+set_property(TEST test_ndmp_address_translate
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+
+add_dependencies(check test_ndmp_address_translate)
+
+
+
 

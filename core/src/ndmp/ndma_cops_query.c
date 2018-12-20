@@ -40,6 +40,31 @@
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 
+void ndmca_query_register_callbacks (struct ndm_session *sess,
+      struct ndmca_query_callbacks *callbacks)
+{
+   /*
+    * Only allow one register.
+    */
+   if (!sess->query_cbs) {
+      sess->query_cbs = NDMOS_API_MALLOC (sizeof(struct ndmca_query_callbacks));
+      if (sess->query_cbs) {
+         memcpy (sess->query_cbs, callbacks, sizeof(struct ndmca_query_callbacks));
+      }
+   }
+}
+
+void ndmca_query_unregister_callbacks (struct ndm_session *sess)
+{
+   if (sess->query_cbs) {
+      NDMOS_API_FREE (sess->query_cbs);
+      sess->query_cbs = NULL;
+   }
+}
+
+
+
+
 
 int
 ndmca_op_query (struct ndm_session *sess)
@@ -823,6 +848,13 @@ ndmca_opq_get_tape_info (struct ndm_session *sess, struct ndmconn *conn)
 		reply->config_info.tape_info.tape_info_val,
 		reply->config_info.tape_info.tape_info_len,
 		"tape");
+
+/* execute callback if exists */
+   if (sess->query_cbs && sess->query_cbs->get_tape_info) {
+      rc = sess->query_cbs->get_tape_info(sess,
+            reply->config_info.tape_info.tape_info_val,
+            reply->config_info.tape_info.tape_info_len);
+   }
 
 	NDMC_FREE_REPLY();
 

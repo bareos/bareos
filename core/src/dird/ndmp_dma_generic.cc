@@ -558,9 +558,46 @@ void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg)
 }
 
 /**
- * Interface function which glues the logging infra of the NDMP lib with the user context.
+ * Interface function which glues the logging infra of the NDMP lib to Dmsg output
  */
-extern "C" void NdmpClientStatusHandler(struct ndmlog *log, char *tag, int lev, char *msg)
+extern "C" void ndmp_log_delivery_cb_to_dmsg(struct ndmlog *log, char *tag, int lev, char *msg)
+{
+   NIS *nis;
+
+   /*
+    * Make sure if the logging system was setup properly.
+    */
+   nis = (NIS *)log->ctx;
+   if (!nis || !nis->jcr){
+      return;
+   }
+
+   Dmsg1((int)nis->LogLevel, "%s\n", msg);
+}
+
+
+/**
+ * Interface function which glues the logging infra of the NDMP lib to Jmsg output
+ */
+extern "C" void ndmp_log_delivery_cb_to_jmsg(struct ndmlog *log, char *tag, int lev, char *msg)
+{
+   NIS *nis;
+
+   /*
+    * Make sure if the logging system was setup properly.
+    */
+   nis = (NIS *)log->ctx;
+   if (!nis || !nis->jcr){
+      return;
+   }
+
+   Jmsg(nis->jcr, M_INFO, 0,  "%s\n", msg);
+}
+
+/**
+ * Interface function which glues the logging infra of the NDMP lib with the user agent
+ */
+extern "C" void ndmp_log_delivery_cb_to_ua(struct ndmlog *log, char *tag, int lev, char *msg)
 {
    NIS *nis;
 
@@ -580,27 +617,44 @@ extern "C" void NdmpClientStatusHandler(struct ndmlog *log, char *tag, int lev, 
  * operation. Callback is the above NdmpClientStatusHandler which prints
  * the data to the user context.
  */
-void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
+void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel, ndmca_query_callbacks* query_cbs)
 {
    NIS *nis;
    struct ndm_session ndmp_sess;
 
+   JobControlRecord *local_jcr = nullptr;
    /*
     * Initialize a new NDMP session
     */
    memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
-   ndmp_sess.control_agent_enabled = 1;
-
    ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-   ndmp_sess.param->log.deliver = NdmpClientStatusHandler;
+   ndmp_sess.param->log.deliver = NdmpLoghandler;
    nis = (NIS *)malloc(sizeof(NIS));
    memset(nis, 0, sizeof(NIS));
    ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
    nis->ua = ua;
    ndmp_sess.param->log.ctx = nis;
-   ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
+   ndmp_sess.control_agent_enabled = 1;
+
+   if (ua) {
+      nis->ua = ua;
+      local_jcr = ua->jcr;
+      ndmp_sess.param->log.deliver = ndmp_log_delivery_cb_to_ua;
+
+   /* } else if (jcr) { */
+   /*    local_jcr = jcr; */
+   /*    nis->jcr = jcr; */
+   /*    ndmp_sess.param->log.deliver = ndmp_log_delivery_cb_to_dmsg; */
+
+   } else  {
+      goto bail_out;
+   }
+   /*
+    * Register the query callbacks that give us the query results
+    */
+   ndmca_query_register_callbacks(&ndmp_sess, query_cbs);
 
    /*
     * Initialize the session structure.
@@ -649,6 +703,7 @@ cleanup:
 
 bail_out:
 
+   ndmca_query_unregister_callbacks(&ndmp_sess);
    /*
     * Free the param block.
     */
@@ -680,9 +735,10 @@ void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
       return;
    }
 
+   ndmca_query_callbacks *query_cbs = nullptr;
    NdmpDoQuery(ua, &ndmp_job,
                  (client->ndmp_loglevel > me->ndmp_loglevel) ? client->ndmp_loglevel :
-                                                               me->ndmp_loglevel);
+                                                               me->ndmp_loglevel, query_cbs);
 }
 #else
 void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
