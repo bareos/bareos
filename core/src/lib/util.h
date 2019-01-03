@@ -32,9 +32,10 @@ void BashSpaces(char *str);
 void BashSpaces(PoolMem &pm);
 void UnbashSpaces(char *str);
 void UnbashSpaces(PoolMem &pm);
-bool GetNameAndResourceTypeFromHello(const std::string &input,
+bool GetNameAndResourceTypeAndVersionFromHello(const std::string &input,
                                      std::string &name,
-                                     std::string &r_type_str);
+                                     std::string &r_type_str,
+                                     BareosVersionNumber &version);
 const char* IndentMultilineString(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
 char *encode_time(utime_t time, char *buf);
 bool ConvertTimeoutToTimespec(timespec &timeout, int timeout_in_seconds);

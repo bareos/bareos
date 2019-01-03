@@ -43,6 +43,7 @@
 #include <functional>
 #include "lib/tls.h"
 #include "lib/s_password.h"
+#include "include/version_numbers.h"
 
 struct btimer_t; /* forward reference */
 class BareosSocket;
@@ -80,6 +81,7 @@ class BareosSocket : public SmartAlloc {
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
+  BareosVersionNumber connected_daemon_version_;
 
  protected:
   JobControlRecord *jcr_; /* JobControlRecord or NULL for error msgs */
@@ -187,8 +189,9 @@ class BareosSocket : public SmartAlloc {
   void SetSourceAddress(dlist *src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
   bool EvaluateCleartextBareosHello(bool &cleartext,
-                                    std::string &client_name,
-                                    std::string &r_code_str) const;
+                                    std::string &client_name_out,
+                                    std::string &r_code_str_out,
+                                    BareosVersionNumber &version_out) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
   void GetCipherMessageString(std::string &str) const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);

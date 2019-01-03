@@ -41,7 +41,7 @@ TEST(BStringList, ConstructorsTest)
 TEST(BStringList, AppendTest)
 {
   BStringList list1;
-  std::vector<std::string> list {"T", "est", "123"};
+  std::vector<std::string> list{"T", "est", "123"};
   list1.Append(list);
   EXPECT_EQ(0, list1.front().compare(std::string("T")));
   list1.erase(list1.begin());
@@ -161,7 +161,8 @@ enum {
 
 static void do_get_name_from_hello_test(const char *client_string_fmt,
                                         const char *client_name,
-                                        std::string r_type_test)
+                                        const std::string &r_type_test,
+                                        const BareosVersionNumber &version_test)
 {
   char bashed_client_name[20];
   sprintf(bashed_client_name, client_name);
@@ -172,23 +173,44 @@ static void do_get_name_from_hello_test(const char *client_string_fmt,
 
   std::string name;
   std::string r_type_str;
+  BareosVersionNumber version = BareosVersionNumber::kUndefined;
 
-  bool ok = GetNameAndResourceTypeFromHello(output_text, name, r_type_str);
+  bool ok = GetNameAndResourceTypeAndVersionFromHello(output_text, name, r_type_str, version);
 
   EXPECT_TRUE(ok);
   EXPECT_STREQ(name.c_str(), client_name);
   EXPECT_STREQ(r_type_str.c_str(), r_type_test.c_str());
+  EXPECT_EQ(version, version_test);
 }
 
 TEST(Util, get_name_from_hello_test)
 {
-  do_get_name_from_hello_test("Hello Client %s calling", "Test Client", "R_CLIENT");
-  do_get_name_from_hello_test("Hello Storage calling Start Job %s", "Test Client", "R_JOB");
-  do_get_name_from_hello_test("Hello %s", "Console Name",  "R_CONSOLE");
-  do_get_name_from_hello_test("Hello %s", "*UserAgent*",  "R_CONSOLE");
-  do_get_name_from_hello_test("Hello %s", "*UserAgent*",  "R_CONSOLE");
-  do_get_name_from_hello_test("Hello %s calling", "Console",  "R_CONSOLE");
-  do_get_name_from_hello_test("Hello Director %s calling\n", "bareos dir",  "R_DIRECTOR");
-  do_get_name_from_hello_test("Hello Start Storage Job %s", "Test Job", "R_JOB");
-  do_get_name_from_hello_test("Hello Client %s FdProtocolVersion=123 calling\n", "Test Client again", "R_CLIENT");
+  // clang-format off
+  do_get_name_from_hello_test("Hello Client %s calling",
+                              "Test Client",        "R_CLIENT",   BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello Storage calling Start Job %s",
+                              "Test Client",        "R_JOB",      BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello %s",
+                              "Console Name",       "R_CONSOLE",  BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello %s",
+                              "*UserAgent*",        "R_CONSOLE",  BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello %s",
+                              "*UserAgent*",        "R_CONSOLE",  BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello %s calling version 18.2.4rc2",
+                              "Console",            "R_CONSOLE",  BareosVersionNumber::kRelease_18_2);
+  do_get_name_from_hello_test("Hello Director %s calling\n",
+                              "bareos dir",         "R_DIRECTOR", BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello Start Storage Job %s",
+                              "Test Job",           "R_JOB",      BareosVersionNumber::kUndefined);
+  do_get_name_from_hello_test("Hello Client %s FdProtocolVersion=123 calling\n",
+                              "Test Client again",  "R_CLIENT",    BareosVersionNumber::kUndefined);
+  // clang-format on
+}
+
+TEST(Util, version_number_test)
+{
+  EXPECT_EQ(BareosVersionNumber::kRelease_18_2, static_cast<BareosVersionNumber>(1802));
+  EXPECT_EQ(BareosVersionNumber::kUndefined, static_cast<BareosVersionNumber>(1));
+  EXPECT_NE(BareosVersionNumber::kRelease_18_2, static_cast<BareosVersionNumber>(1702));
+  EXPECT_GT(BareosVersionNumber::kRelease_18_2, BareosVersionNumber::kUndefined);
 }

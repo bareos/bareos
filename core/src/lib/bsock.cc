@@ -55,6 +55,7 @@ BareosSocket::BareosSocket()
     , sleep_time_after_authentication_error(5)
     , client_addr{0}
     , peer_addr{0}
+    , connected_daemon_version_(BareosVersionNumber::kUndefined)
 
     /* protected: */
     , jcr_(nullptr)
@@ -100,6 +101,7 @@ BareosSocket::BareosSocket(const BareosSocket &other)
   client_addr                           = other.client_addr;
   peer_addr                             = other.peer_addr;
   tls_conn                              = other.tls_conn;
+  connected_daemon_version_             = other.connected_daemon_version_;
 
   /* protected: */
   jcr_             = other.jcr_;
@@ -318,10 +320,6 @@ void BareosSocket::SetKillable(bool killable)
   if (jcr_) { jcr_->SetKillable(killable); }
 }
 
-/** Commands sent to Director */
-static char hello[] = "Hello %s calling\n";
-
-
 bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
                                                    const char *identity,
                                                    s_password &password,
@@ -336,7 +334,7 @@ bool BareosSocket::ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
   BashSpaces(bashed_name);
 
   dir->StartTimer(60 * 5); /* 5 minutes */
-  dir->fsend(hello, bashed_name);
+  dir->fsend("Hello %s calling version %s\n", bashed_name, VERSION);
 
   if (!AuthenticateOutboundConnection(jcr, "Director", identity, password, tls_resource)) {
     Dmsg0(100, "Authenticate outbound connection failed\n");
@@ -588,8 +586,9 @@ bool BareosSocket::AuthenticateInboundConnection(JobControlRecord *jcr,
 }
 
 bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
-                                                std::string &client_name,
-                                                std::string &r_code_str) const
+                                                std::string &client_name_out,
+                                                std::string &r_code_str_out,
+                                                BareosVersionNumber &version_out) const
 {
   char buffer[256] {0};
 
@@ -605,9 +604,12 @@ bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
     if (cleartext_hello) {
       std::string name;
       std::string code;
-      if (GetNameAndResourceTypeFromHello(received, name, code)) {
-        client_name = name;
-        r_code_str = code;
+      BareosVersionNumber version = BareosVersionNumber::kUndefined;
+      if (GetNameAndResourceTypeAndVersionFromHello(received, name, code, version)) {
+        Dmsg3(200, "Identified from cleartext handshake: %s-%s recognized version: %d\n", name.c_str(), code.c_str(), version);
+        client_name_out = name;
+        r_code_str_out = code;
+        version_out = version;
         success = true;
       }
     } else { /* not cleartext hello */

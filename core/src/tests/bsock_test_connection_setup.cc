@@ -121,7 +121,7 @@ static PBareosSocket ConnectToDirector()
    JobControlRecord jcr;
    memset(&jcr, 0, sizeof(jcr));
    BStringList args;
-   uint32_t response_id;
+   uint32_t response_id = kMessageIdUnknown;
 
    PBareosSocket UA_sock(console::ConnectToDirector(jcr, 0, args, response_id),
                          [](BareosSocket *p) { delete p; });
