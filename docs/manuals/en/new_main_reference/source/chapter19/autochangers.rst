@@ -6,11 +6,7 @@
 Autochanger Support
 ===================
 
-.. index::
-   pair: Support; Autochanger
-.. index::
-    pair: Autochanger; Support
-
+:index:`[TAG=Support->Autochanger] <pair: Support; Autochanger>` :index:`[TAG=Autochanger->Support] <pair: Autochanger; Support>`
 
 Bareos provides autochanger support for reading and writing tapes. In order to work with an autochanger, Bareos requires a number of things, each of which is explained in more detail after this list:
 
@@ -22,9 +18,9 @@ Bareos provides autochanger support for reading and writing tapes. In order to w
 
 -  Modifications to your Storage daemon’s Device configuration resource to identify that the device is a changer, as well as a few other parameters.
 
--  You need to ensure that your Storage daemon has access permissions to both the tape drive and the control device. On Linux, the system user **bareos}` is added to the groups :raw-latex:`\group{disk}` and :raw-latex:`\group{tape**, so that it should have the permission to access the library.
+-  You need to ensure that your Storage daemon has access permissions to both the tape drive and the control device. On Linux, the system user **bareos** is added to the groups \group{disk} and \group{tape}, so that it should have the permission to access the library.
 
--  Set **Auto Changer**:sup:`Dir`:sub:`Storage` = **yes**.
+-  Set **Auto Changer**:sup:`Dir`:sub:`Storage`\ = **yes**.
 
 Bareos uses its own :program:`mtx-changer` script to interface with a program that actually does the tape changing. Thus in principle, :program:`mtx-changer` can be adapted to function with any autochanger program, or you can call any other script or program. The current version of :program:`mtx-changer` works with the :program:`mtx` program. FreeBSD users might need to adapt this script to use :program:`chio`. For more details, refer
 to the :ref:`Testing Autochanger <AutochangerTesting>` chapter.
@@ -35,7 +31,7 @@ Current Bareos autochanger support does not include cleaning, stackers, or silos
 
 In principle, if :program:`mtx` will operate your changer correctly, then it is just a question of adapting the :program:`mtx-changer` script (or selecting one already adapted) for proper interfacing.
 
-If you are having troubles, please use the **auto** command in the :program:`btape` program to test the functioning of your autochanger with Bareos. Please remember, that on most distributions, the |bareosSd| runs as user **bareos}` and not as :raw-latex:`\user{root**. You will need to ensure that the Storage daemon has sufficient permissions to access the autochanger.
+If you are having troubles, please use the **auto** command in the :program:`btape` program to test the functioning of your autochanger with Bareos. Please remember, that on most distributions, the |bareosSd| runs as user **bareos** and not as **root**. You will need to ensure that the Storage daemon has sufficient permissions to access the autochanger.
 
 Some users have reported that the the Storage daemon blocks under certain circumstances in trying to mount a volume on a drive that has a different volume loaded. As best we can determine, this is simply a matter of waiting a bit. The drive was previously in use writing a Volume, and sometimes the drive will remain BLOCKED for a good deal of time (up to 7 minutes on a slow drive) waiting for the cassette to rewind and to unload before the drive can be used with a different Volume.
 
@@ -44,50 +40,36 @@ Some users have reported that the the Storage daemon blocks under certain circum
 Knowing What SCSI Devices You Have
 ----------------------------------
 
-.. index::
-   single: SCSI devices
-.. index::
-    pair: Devices; SCSI
-.. index::
-    pair: Devices; Detecting
-
+:index:`[TAG=SCSI devices] <single: SCSI devices>` :index:`[TAG=Devices->SCSI] <pair: Devices; SCSI>` :index:`[TAG=Devices->Detecting] <pair: Devices; Detecting>`
 
 Linux
 ~~~~~
 
 Under Linux, you can
 
-.. raw:: latex
-
-   
 
 
+::
 
     cat /proc/scsi/scsi
 
-.. raw:: latex
 
-   
 
 to see what SCSI devices you have available. You can also:
 
-.. raw:: latex
-
-   
 
 
+::
 
     cat /proc/scsi/sg/device_hdr /proc/scsi/sg/devices
 
-.. raw:: latex
-
-   
-
-to find out how to specify their control address (**/dev/sg0** for the first, **/dev/sg1** for the second, ...) on the **Changer Device**:sup:`Sd`:sub:`Autochanger`  Bareos directive.
-
-You can also use the excellent **lsscsi** tool. :raw-latex:``
 
 
+to find out how to specify their control address (**/dev/sg0** for the first, **/dev/sg1** for the second, ...) on the **Changer Device**:sup:`Sd`:sub:`Autochanger`\  Bareos directive.
+
+You can also use the excellent **lsscsi** tool. 
+
+::
 
     $ lsscsi -g
      [1:0:2:0]    tape    SEAGATE  ULTRIUM06242-XXX 1619  /dev/st0  /dev/sg9
@@ -96,49 +78,37 @@ You can also use the excellent **lsscsi** tool. :raw-latex:``
      [3:0:0:0]    enclosu HP       A6255A           HP04  -         /dev/sg3
      [3:0:1:0]    disk    HP 36.4G ST336753FC       HP00  /dev/sdd  /dev/sg4
 
-.. raw:: latex
 
-   
 
 FreeBSD
 ~~~~~~~
 
-Under FreeBSD, use the following command to list the SCSI devices as well as the :file:`/dev/passN` that you will use on the Bareos **Changer Device**:sup:`Sd`:sub:`Autochanger`  directive:
-
-.. raw:: latex
-
-   
+Under FreeBSD, use the following command to list the SCSI devices as well as the :file:`/dev/passN` that you will use on the Bareos **Changer Device**:sup:`Sd`:sub:`Autochanger`\  directive:
 
 
+
+::
 
     camcontrol devlist
 
-.. raw:: latex
 
-   
 
 Please check that your Storage daemon has permission to access this device.
 
-The following tip for FreeBSD users comes from Danny Butroyd: on reboot Bareos will NOT have permission to control the device :file:`/dev/pass0` (assuming this is your changer device). To get around this just edit the :file:`/etc/devfs.conf` file and add the following to the bottom: :raw-latex:``
+The following tip for FreeBSD users comes from Danny Butroyd: on reboot Bareos will NOT have permission to control the device :file:`/dev/pass0` (assuming this is your changer device). To get around this just edit the :file:`/etc/devfs.conf` file and add the following to the bottom: 
 
-
+::
 
     own     pass0   root:bareos
     perm    pass0   0666
     own     nsa0.0  root:bareos
     perm    nsa0.0    0666
 
-.. raw:: latex
 
-   
 
 This gives the bareos group permission to write to the nsa0.0 device too just to be on the safe side. To bring these changes into effect just run:-
 
-
-
-    
 .. code-block:: sh
-    :caption: 
 
     /etc/rc.d/devfs restart
 
@@ -152,11 +122,10 @@ On Solaris, the changer device will typically be some file under :file:`/dev/rds
 Slots
 -----
 
-.. index::
-   single: Slots
- 
+:index:`[TAG=Slots] <single: Slots>` 
 
-.. _`Slots`: Slots
+.. _Slots
+
 
 To properly address autochangers, Bareos must know which Volume is in each **slot** of the autochanger. Slots are where the changer cartridges reside when not loaded into the drive. Bareos numbers these slots from one to the number of cartridges contained in the autochanger.
 
@@ -165,11 +134,8 @@ attempt to use the autochanger even if all the necessary configuration records a
 
 You can check if the Slot number and InChanger flag by:
 
-
-
-    
 .. code-block:: sh
-    :caption: list volumes
+   :caption: list volumes
 
     *list volumes
 
@@ -178,52 +144,45 @@ You can check if the Slot number and InChanger flag by:
 Multiple Devices
 ----------------
 
-.. index::
-   single: Multiple Devices
-
+:index:`[TAG=Devices->Multiple] <pair: Devices; Multiple>` :index:`[TAG=Multiple Devices] <single: Multiple Devices>`
 
 Some autochangers have more than one read/write device (drive). The :ref:`Autochanger resource <AutochangerRes>` permits you to group Device resources, where each device represents a drive. The Director may still reference the Devices (drives) directly, but doing so, bypasses the proper functioning of the drives together. Instead, the Director (in the Storage resource) should reference the Autochanger resource name. Doing so permits the Storage daemon to ensure that only one drive
 uses the mtx-changer script at a time, and also that two drives don’t reference the same Volume.
 
-Multi-drive requires the use of the **Drive Index**:sup:`Sd`:sub:`Device`  directive. Drive numbers or the Device Index are numbered beginning at zero, which is the default. To use the second Drive in an autochanger, you need to define a second Device resource, set the **Drive Index**:sup:`Sd`:sub:`Device`  and set the **Archive Device**:sup:`Sd`:sub:`Device` .
+Multi-drive requires the use of the **Drive Index**:sup:`Sd`:sub:`Device`\  directive. Drive numbers or the Device Index are numbered beginning at zero, which is the default. To use the second Drive in an autochanger, you need to define a second Device resource, set the **Drive Index**:sup:`Sd`:sub:`Device`\  and set the **Archive Device**:sup:`Sd`:sub:`Device`\ .
 
-As a default, Bareos jobs will prefer to write to a Volume that is already mounted. If you have a multiple drive autochanger and you want Bareos to write to more than one Volume in the same Pool at the same time, you will need to set **Prefer Mounted Volumes**:sup:`Dir`:sub:`Job` = **no**. This will cause the Storage daemon to maximize the use of drives.
+As a default, Bareos jobs will prefer to write to a Volume that is already mounted. If you have a multiple drive autochanger and you want Bareos to write to more than one Volume in the same Pool at the same time, you will need to set **Prefer Mounted Volumes**:sup:`Dir`:sub:`Job`\ = **no**. This will cause the Storage daemon to maximize the use of drives.
 
 Device Configuration Records
 ----------------------------
 
-.. index::
-   single: Device Configuration Records
-
+:index:`[TAG=Device Configuration Records] <single: Device Configuration Records>`
 
 Configuration of autochangers within Bareos is done in the Device resource of the Storage daemon.
 
 Following records control how Bareos uses the autochanger:
 
-**Autochanger**:sup:`Sd`:sub:`Device` 
+**Autochanger**:sup:`Sd`:sub:`Device`\ 
     Specifies if the current device belongs to an autochanger resource.
 
-**Changer Command**:sup:`Sd`:sub:`Autochanger`  (**Changer Command**:sup:`Sd`:sub:`Device` )
-**Changer Device**:sup:`Sd`:sub:`Autochanger`  (**Changer Device**:sup:`Sd`:sub:`Device` )
-**Drive Index**:sup:`Sd`:sub:`Device` 
+**Changer Command**:sup:`Sd`:sub:`Autochanger`\  (**Changer Command**:sup:`Sd`:sub:`Device`\ )
+**Changer Device**:sup:`Sd`:sub:`Autochanger`\  (**Changer Device**:sup:`Sd`:sub:`Device`\ )
+**Drive Index**:sup:`Sd`:sub:`Device`\ 
     Individual driver number, starting at 0.
 
-**Maximum Changer Wait**:sup:`Sd`:sub:`Device` 
+**Maximum Changer Wait**:sup:`Sd`:sub:`Device`\ 
 
 Specifying Slots When Labeling
 ------------------------------
 
-.. index::
-   single: Specifying Slots When Labeling
-.. index::
-    pair: Label; Specifying Slots When Labeling
- 
+:index:`[TAG=Specifying Slots When Labeling] <single: Specifying Slots When Labeling>` :index:`[TAG=Label->Specifying Slots When Labeling] <pair: Label; Specifying Slots When Labeling>` 
 
-.. _`SpecifyingSlots`: SpecifyingSlots
+.. _SpecifyingSlots
+
 
 If you add an **Autochanger = yes** record to the Storage resource in your Director’s configuration file, the Bareos Console will automatically prompt you for the slot number when the Volume is in the changer when you **add** or **label** tapes for that Storage device. If your **mtx-changer** script is properly installed, Bareos will automatically load the correct tape during the label command.
 
-You must also set **Autochanger = yes** in the Storage daemon’s Device resource as we have described above in order for the autochanger to be used. Please see **Auto Changer**:sup:`Dir`:sub:`Storage`  and **Autochanger**:sup:`Sd`:sub:`Device`  for more details on these records.
+You must also set **Autochanger = yes** in the Storage daemon’s Device resource as we have described above in order for the autochanger to be used. Please see **Auto Changer**:sup:`Dir`:sub:`Storage`\  and **Autochanger**:sup:`Sd`:sub:`Device`\  for more details on these records.
 
 Thus all stages of dealing with tapes can be totally automated. It is also possible to set or change the Slot using the **update** command in the Console and selecting **Volume Parameters** to update.
 
@@ -232,62 +191,48 @@ Even though all the above configuration statements are specified and correct, Ba
 If your autochanger has barcode labels, you can label all the Volumes in your autochanger one after another by using the :strong:`label barcodes` command. For each tape in the changer containing a barcode, Bareos will mount the tape and then label it with the same name as the barcode. An appropriate Media record will also be created in the catalog. Any barcode that begins with the same characters as specified on the "CleaningPrefix=xxx" command, will be treated as a cleaning tape,
 and will not be labeled. For example with:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Pool {
       Name ...
       Cleaning Prefix = "CLN"
     }
 
-.. raw:: latex
 
-   
 
 Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape and will not be mounted.
 
 Changing Cartridges
 -------------------
 
-.. index::
-   pair: Cartridges; Changing
- If you wish to insert or remove cartridges in your autochanger or you manually run the **mtx** program, you must first tell Bareos to release the autochanger by doing:
-
-.. raw:: latex
-
-   
+:index:`[TAG=Cartridges->Changing] <pair: Cartridges; Changing>` If you wish to insert or remove cartridges in your autochanger or you manually run the **mtx** program, you must first tell Bareos to release the autochanger by doing:
 
 
+
+::
 
     unmount
     (change cartridges and/or run mtx)
     mount
 
-.. raw:: latex
 
-   
 
 If you do not do the unmount before making such a change, Bareos will become completely confused about what is in the autochanger and may stop function because it expects to have exclusive use of the autochanger while it has the drive mounted.
 
 Dealing with Multiple Magazines
 -------------------------------
 
-.. index::
-   pair: Magazines; Dealing with Multiple
-
+:index:`[TAG=Magazines->Dealing with Multiple] <pair: Magazines; Dealing with Multiple>`
 
 If you have several magazines or if you insert or remove cartridges from a magazine, you should notify Bareos of this. By doing so, Bareos will as a preference, use Volumes that it knows to be in the autochanger before accessing Volumes that are not in the autochanger. This prevents unneeded operator intervention.
 
 If your autochanger has barcodes (machine readable tape labels), the task of informing Bareos is simple. Every time, you change a magazine, or add or remove a cartridge from the magazine, simply use following commands in the Console program:
 
-.. raw:: latex
-
-   
 
 
+::
 
     unmount
     (remove magazine)
@@ -295,9 +240,7 @@ If your autochanger has barcodes (machine readable tape labels), the task of inf
     update slots
     mount
 
-.. raw:: latex
 
-   
 
 This will cause Bareos to request the autochanger to return the current Volume names in the magazine. This will be done without actually accessing or reading the Volumes because the barcode reader does this during inventory when the autochanger is first turned on. Bareos will ensure that any Volumes that are currently marked as being in the magazine are marked as no longer in the magazine, and the new list of Volumes will be marked as being in the magazine. In addition, the Slot numbers of the
 Volumes will be corrected in Bareos’s catalog if they are incorrect (added or moved).
@@ -308,94 +251,35 @@ If you do not have a barcode reader on your autochanger, you have several altern
 
 #. You can issue a
 
+   
 
-
-      
-
-
+   ::
 
        update slots scan
 
-
-
-      
+   
 
    command that will cause Bareos to read the label on each of the cartridges in the magazine in turn and update the information (Slot, InChanger flag) in the catalog. This is quite effective but does take time to load each cartridge into the drive in turn and read the Volume label.
 
-.. raw:: latex
 
-   \hide{
-   % unwanted, commented out
-   \section{Simulating Barcodes in your Autochanger}
-   \index[general]{Autochanger!Simulating Barcodes in your}
-   \index[general]{Simulating Barcodes in your Autochanger}
-   \label{simulating}
-
-   You can simulate barcodes in your autochanger by making the {\bf mtx-changer}
-   script return the same information that an autochanger with barcodes would do.
-   This is done by commenting out the one and only line in the {\bf list)} case,
-   which is:
-
-   
-   \
-     ${MTX} -f $ctl status | grep " *Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
-   \
-   
-
-   at approximately line 99 by putting a \# in column one of that line, or by
-   simply deleting it. Then in its place add a new line that prints the contents
-   of a file. For example:
-
-   
-   \
-   cat /etc/bareos/changer.volumes
-   \
-   
-
-   Be sure to include a full path to the file, which can have any name. The
-   contents of the file must be of the following format:
-
-   
-   \
-   1:Volume1
-   2:Volume2
-   3:Volume3
-   ...
-   \
-   
-
-   Where the 1, 2, 3 are the slot numbers and Volume1, Volume2, ... are the
-   Volume names in those slots. You can have multiple files that represent the
-   Volumes in different magazines, and when you change magazines, simply copy the
-   contents of the correct file into your {\bf /etc/bareos/changer.volumes} file.
-   There is no need to stop and start Bareos when you change magazines, simply
-   put the correct data in the file, then run the {\bf update slots} command, and
-   your autochanger will appear to Bareos to be an autochanger with barcodes.
-   }
 
 Update Slots Command
 --------------------
 
+:index:`[TAG=Console->Command->update slots] <triple: Console; Command; update slots>` 
 
-.. index::
-   triple: Console; Command; update slots;
- 
+.. _updateslots
 
-.. _`updateslots`: updateslots
 
 If you change only one cartridge in the magazine, you may not want to scan all Volumes, so the **update slots** command (as well as the **update slots scan** command) has the additional form:
 
-.. raw:: latex
-
-   
 
 
+::
 
     update slots=n1,n2,n3-n4, ...
 
-.. raw:: latex
 
-   
 
 where the keyword **scan** can be appended or not. The n1,n2, ... represent Slot numbers to be updated and the form n3-n4 represents a range of Slot numbers to be updated (e.g. 4-7 will update Slots 4,5,6, and 7).
 
@@ -403,42 +287,33 @@ This form is particularly useful if you want to do a scan (time expensive) and r
 
 For example, the command:
 
-.. raw:: latex
-
-   
 
 
+::
 
     update slots=1,6 scan
 
-.. raw:: latex
 
-   
 
 will cause Bareos to load the Volume in Slot 1, read its Volume label and update the Catalog. It will do the same for the Volume in Slot 6. The command:
 
-.. raw:: latex
-
-   
 
 
+::
 
     update slots=1-3,6
 
-.. raw:: latex
 
-   
 
 will read the barcoded Volume names for slots 1,2,3 and 6 and make the appropriate updates in the Catalog. If you don’t have a barcode reader the above command will not find any Volume names so will do nothing.
 
 Using the Autochanger
 ---------------------
 
-.. index::
-   pair: Autochanger; Using the
- 
+:index:`[TAG=Autochanger->Using the] <pair: Autochanger; Using the>` 
 
-.. _`using`: using
+.. _using
+
 
 Let’s assume that you have properly defined the necessary Storage daemon Device records, and you have added the **Autochanger = yes** record to the Storage resource in your Director’s configuration file.
 
@@ -448,28 +323,22 @@ What do you do to make Bareos access those tapes?
 
 One strategy is to prelabel each of the tapes. Do so by starting Bareos, then with the Console program, enter the **label** command:
 
-.. raw:: latex
-
-   
 
 
+::
 
     ./bconsole
     Connecting to Director rufus:8101
     1000 OK: rufus-dir Version: 1.26 (4 October 2002)
     *label
 
-.. raw:: latex
 
-   
 
 it will then print something like:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Using default Catalog name=BackupDB DB=bareos
     The defined Storage resources are:
@@ -477,49 +346,37 @@ it will then print something like:
          2: File
     Select Storage resource (1-2): 1
 
-.. raw:: latex
 
-   
 
 I select the autochanger (1), and it prints:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Enter new Volume name: TestVolume1
     Enter slot (0 for none): 1
 
-.. raw:: latex
 
-   
 
 where I entered **TestVolume1** for the tape name, and slot **1** for the slot. It then asks:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Defined Pools:
          1: Default
          2: File
     Select the Pool (1-2): 1
 
-.. raw:: latex
 
-   
 
 I select the Default pool. This will be automatically done if you only have a single pool, then Bareos will proceed to unload any loaded volume, load the volume in slot 1 and label it. In this example, nothing was in the drive, so it printed:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Connecting to Storage daemon Autochanger at localhost:9103 ...
     Sending label command ...
@@ -531,9 +388,7 @@ I select the Default pool. This will be automatically done if you only have a si
     You have messages.
     *
 
-.. raw:: latex
 
-   
 
 You may then proceed to label the other volumes. The messages will change slightly because Bareos will unload the volume (just labeled TestVolume1) before loading the next volume to be labeled.
 
@@ -541,11 +396,9 @@ Once all your Volumes are labeled, Bareos will automatically load them as they a
 
 To "see" how you have labeled your Volumes, simply enter the **list volumes** command from the Console program, which should print something like the following:
 
-.. raw:: latex
-
-   
 
 
+::
 
     *{\bf list volumes}
     Using default Catalog name=BackupDB DB=bareos
@@ -562,18 +415,15 @@ To "see" how you have labeled your Volumes, simply enter the **list volumes** co
     | ...                                                                            |
     +-------+----------+--------+---------+-------+--------+----------+-------+------+
 
-.. raw:: latex
 
-   
 
 Barcode Support
 ---------------
 
-.. index::
-   single: Barcode Support
- 
+:index:`[TAG=Support->Barcode] <pair: Support; Barcode>` :index:`[TAG=Barcode Support] <single: Barcode Support>` 
 
-.. _`Barcodes`: Barcodes
+.. _Barcodes
+
 
 Bareos provides barcode support with two Console commands, **label barcodes** and **update slots**.
 
@@ -589,11 +439,9 @@ Use bconsole to display Autochanger content
 
 The **status slots storage=xxx** command displays autochanger content.
 
-.. raw:: latex
-
-   
 
 
+::
 
      Slot |  Volume Name    |  Status  |      Type         |    Pool        |  Loaded |
     ------+-----------------+----------+-------------------+----------------+---------|
@@ -602,28 +450,23 @@ The **status slots storage=xxx** command displays autochanger content.
         3*|           00003 |   Append |  DiskChangerMedia |        Scratch |    0    |
         4 |                 |          |                   |                |    0    |
 
-.. raw:: latex
 
-   
 
 If you see a **** near the slot number, you have to run **update slots** command to synchronize autochanger content with your catalog.
 
 Bareos Autochanger Interface
 ----------------------------
 
-.. index::
-   pair: Autochanger; Interface
- 
+:index:`[TAG=Autochanger->Interface] <pair: Autochanger; Interface>` 
 
-.. _`autochanger-interface`: autochanger-interface
+.. _autochanger-interface
+
 
 Bareos calls the autochanger script that you specify on the **Changer Command** statement. Normally this script will be the **mtx-changer** script that we provide, but it can in fact be any program. The only requirement for the script is that it must understand the commands that Bareos uses, which are **loaded**, **load**, **unload**, **list**, and **slots**. In addition, each of those commands must return the information in the precise format as specified below:
 
-.. raw:: latex
-
-   
 
 
+::
 
     - Currently the changer commands used are:
         loaded -- returns number of the slot that is loaded, base 1,
@@ -641,35 +484,31 @@ Bareos calls the autochanger script that you specify on the **Changer Command** 
                   field is blank.
         slots  -- returns total number of slots in the autochanger.
 
-.. raw:: latex
 
-   
 
 Bareos checks the exit status of the program called, and if it is zero, the data is accepted. If the exit status is non-zero, Bareos will print an error message and request the tape be manually mounted on the drive.
 
 Tapespeed and blocksizes
 ------------------------
 
-.. index::
-   pair: Tuning; Tape
-.. index::
-    pair: Tuning; blocksize
-.. index::
-    pair: Tape; speed
- :raw-latex:`\index[general]{Blocksize!optimize}` 
+:index:`[TAG=Tuning->Tape] <pair: Tuning; Tape>` :index:`[TAG=Tuning->blocksize] <pair: Tuning; blocksize>` :index:`[TAG=Tape->speed] <pair: Tape; speed>` :index:`[TAG=Blocksize->optimize] <pair: Blocksize; optimize>` 
 
-.. _`Tapespeed and blocksizes}` :raw-latex:`\label{setblocksizes`: Tapespeed and blocksizes}` :raw-latex:`\label{setblocksizes
+.. _Tapespeed and blocksizes
+ 
 
-The :raw-latex:`\bareosWhitepaperTapeSpeedTuning `shows that the two parameters :strong:`Maximum File Size` and :strong:`Maximum Block Size` of the device have significant influence on the tape speed.
+.. _setblocksizes
 
-While it is no problem to change the **Maximum File Size**:sup:`Sd`:sub:`Device`  parameter, unfortunately it is not possible to change the **Maximum Block Size**:sup:`Sd`:sub:`Device`  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the **Maximum Block Size**:sup:`Sd`:sub:`Device`  parameter is switched back to the old value to be able to read the old volumes, but of
+
+The `Bareos Whitepaper Tape Speed Tuning <http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html>`_ shows that the two parameters :strong:`Maximum File Size` and :strong:`Maximum Block Size` of the device have significant influence on the tape speed.
+
+While it is no problem to change the **Maximum File Size**:sup:`Sd`:sub:`Device`\  parameter, unfortunately it is not possible to change the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  parameter is switched back to the old value to be able to read the old volumes, but of
 course then the new volumes would be unreadable.
 
 Why is that the case?
 
-The problem is that Bareos writes the label block (header) in the same block size that is configured in the **Maximum Block Size**:sup:`Sd`:sub:`Device`  parameter in the device. Per default, this value is 63k, so usually a tape written by Bareos looks like this:
+The problem is that Bareos writes the label block (header) in the same block size that is configured in the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  parameter in the device. Per default, this value is 63k, so usually a tape written by Bareos looks like this:
 
-
+::
 
     |-------------------
     |label block  (63k)|
@@ -682,7 +521,7 @@ The problem is that Bareos writes the label block (header) in the same block siz
 
 Setting the maximum block size to e.g. 512k, would lead to the following:
 
-
+::
 
     |-------------------
     |label block (512k)|
@@ -699,18 +538,18 @@ The problem that arises here is that reading a block header with a wrong block s
 
 This is a potential source of data loss, because in normal operation, Bareos refuses to relabel an already labeled volume to be sure to not overwrite data that is still needed. If Bareos cannot read the volume label, this security mechanism does not work and you might label tapes already labeled accidentally.
 
-To solve this problem, the block size handling was changed in Bareos 14.2.0 in the following way:
+To solve this problem, the block size handling was changed in Bareos :index:`Version >= 14.2.0 <pair: bareos-14.2.0; Maximum Block Size>` in the following way:
 
 -  The tape label block is always written in the standard 63k (64512) block size.
 
 -  The following blocks are then written in the block size configured in the :strong:`Maximum Block Size` directive.
 
--  To be able to change the block size in an existing environment, it is now possible to set the **Maximum Block Size**:sup:`Dir`:sub:`Pool`  and **Minimum Block Size**:sup:`Dir`:sub:`Pool`  in the pool resource. This setting is automatically promoted to each medium in that pool as usual (i.e. when a medium is labeled for that pool or if a volume is transferred to that pool from the scratch pool). When a volume is mounted, the volume’s block size is
+-  To be able to change the block size in an existing environment, it is now possible to set the **Maximum Block Size**:sup:`Dir`:sub:`Pool`\  and **Minimum Block Size**:sup:`Dir`:sub:`Pool`\  in the pool resource. This setting is automatically promoted to each medium in that pool as usual (i.e. when a medium is labeled for that pool or if a volume is transferred to that pool from the scratch pool). When a volume is mounted, the volume’s block size is
    used to write and read the data blocks that follow the header block.
 
 The following picture shows the result:
 
-
+::
 
     |--------------------------------|
     |label block (label block size)  |
@@ -727,13 +566,10 @@ This approach has the following advantages:
 
 -  If nothing is configured, existing installations keep on working without problems.
 
--  If you want to switch an existing installation that uses the default block size and move to a new (usually bigger) block size, you can do that easily by creating a new pool, where **Maximum Block Size**:sup:`Dir`:sub:`Pool`  is set to the new value that you wish to use in the future:
+-  If you want to switch an existing installation that uses the default block size and move to a new (usually bigger) block size, you can do that easily by creating a new pool, where **Maximum Block Size**:sup:`Dir`:sub:`Pool`\  is set to the new value that you wish to use in the future:
 
-
-
-    
 .. code-block:: sh
-    :caption: Pool Ressource: setting Maximum Block Size
+   :caption: Pool Ressource: setting Maximum Block Size
 
     Pool {
        Name = LTO-4-1M
@@ -747,8 +583,8 @@ This approach has the following advantages:
 
 Now configure your backups that they will write into the newly defined pool in the future, and your backups will be written with the new block size.
 
-Your existing tapes can be automatically transferred to the new pool when they expire via the :ref:`Scratch Pool <TheScratchPool>` mechanism. When a tape in your old pool expires, it is transferred to the scratch pool if you set **Recycle Pool = Scratch**. When your new pool needs a new volume, it will get it from the scratch pool and apply the new pool’s properties to that tape which also include **Maximum Block Size**:sup:`Dir`:sub:`Pool`  and
-**Minimum Block Size**:sup:`Dir`:sub:`Pool` .
+Your existing tapes can be automatically transferred to the new pool when they expire via the :ref:`Scratch Pool <TheScratchPool>` mechanism. When a tape in your old pool expires, it is transferred to the scratch pool if you set **Recycle Pool = Scratch**. When your new pool needs a new volume, it will get it from the scratch pool and apply the new pool’s properties to that tape which also include **Maximum Block Size**:sup:`Dir`:sub:`Pool`\  and
+**Minimum Block Size**:sup:`Dir`:sub:`Pool`\ .
 
 This way you can smoothly switch your tapes to a new block size while you can still restore the data on your old tapes at any time.
 
@@ -757,14 +593,14 @@ Possible Problems
 
 There is only one case where the new block handling will cause problems, and this is if you have used bigger block sizes already in your setup. As we now defined the label block to always be 63k, all labels will not be readable.
 
-To also solve this problem, the directive **Label Block Size**:sup:`Sd`:sub:`Device`  can be used to define a different label block size. That way, everything should work smoothly as all label blocks will be readable again.
+To also solve this problem, the directive **Label Block Size**:sup:`Sd`:sub:`Device`\  can be used to define a different label block size. That way, everything should work smoothly as all label blocks will be readable again.
 
 How can I find out which block size was used when the tape was written?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At least on Linux, you can see if Bareos tries to read the blocks with the wrong block size. In that case, you get a kernel message like the following in your system’s messages:
 
-
+::
 
     [542132.410170] st1: Failed to read 1048576 byte block with 64512 byte transfer.
 
@@ -775,28 +611,18 @@ Here, the block was written with 1M block size but we only read 64k.
 Direct access to Volumes with with non-default block sizes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: bls; block size
-.. index::
-    pair: bextract; block size
-
-.. index::
-    triple: Command; bls; block size;
- :raw-latex:`\index[general]{Command!bextract!block size}`
+:index:`[TAG=bls->block size] <pair: bls; block size>` :index:`[TAG=bextract->block size] <pair: bextract; block size>` :index:`[TAG=Command->bls->block size] <triple: Command; bls; block size>` :index:`[TAG=Command->bextract->block size] <triple: Command; bextract; block size>`
 
 :program:`bls` and :program:`bextract` can directly access Bareos volumes without catalog database. This means that these programs don’t have information about the used block size.
 
-To be able to read a volume written with an arbitrary block size, you need to set the **Label Block Size**:sup:`Sd`:sub:`Device`  (to be able to to read the label block) and the **Maximum Block Size**:sup:`Sd`:sub:`Device`  (to be able to read the data blocks) setting in the device definition used by those tools to be able to open the medium.
+To be able to read a volume written with an arbitrary block size, you need to set the **Label Block Size**:sup:`Sd`:sub:`Device`\  (to be able to to read the label block) and the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  (to be able to read the data blocks) setting in the device definition used by those tools to be able to open the medium.
 
-Example using :program:`bls` with a tape that was written with another blocksize than the :raw-latex:`\variable{DEFAULT_BLOCK_SIZE}` (63k), but with the default label block size of 63k:
+Example using :program:`bls` with a tape that was written with another blocksize than the \variable{DEFAULT_BLOCK_SIZE} (63k), but with the default label block size of 63k:
 
-
-
-    
 .. code-block:: sh
-    :caption: bls with non-default block size
+   :caption: bls with non-default block size
 
-    bls <parameter>FC-Drive-1 -V A00007L4</parameter>
+    <command>bls</command> <parameter>FC-Drive-1 -V A00007L4</parameter>
     bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
     25-Feb 12:47 bls JobId 0: No slot defined in catalog (slot=0) for Volume "A00007L4" on "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
     25-Feb 12:47 bls JobId 0: Cartridge change or "update slots" may be required.
@@ -806,28 +632,22 @@ Example using :program:`bls` with a tape that was written with another blocksize
      Device status: ONLINE IM_REP_EN file=0 block=2
     0 files found.
 
-As can be seen, :program:`bls` manages to read the label block as it knows what volume is mounted (Ready to read from volume                :option:`A00007L4`), but fails to read the data blocks.
+As can be seen, :program:`bls` manages to read the label block as it knows what volume is mounted (Ready to read from volume :option:`A00007L4`), but fails to read the data blocks.
 
-
-
-    
 .. code-block:: sh
-    :caption: dmesg
+   :caption: dmesg
 
-    dmesg
+    <command>dmesg</command>
     [...]
     st2: Failed to read 131072 byte block with 64512 byte transfer.
     [...]
 
 This shows that the block size for the data blocks that we need is 131072.
 
-Now we have to set this block size in the :file:`bareos-sd.conf`, device resource as **Maximum Block Size**:sup:`Sd`:sub:`Device` :
+Now we have to set this block size in the :file:`bareos-sd.conf`, device resource as **Maximum Block Size**:sup:`Sd`:sub:`Device`\ :
 
-
-
-    
 .. code-block:: sh
-    :caption: Storage Device Resource: setting Maximum Block Size
+   :caption: Storage Device Resource: setting Maximum Block Size
 
     Device {
       Name = FC-Drive-1
@@ -844,13 +664,10 @@ Now we have to set this block size in the :file:`bareos-sd.conf`, device resourc
 
 Now we can call bls again, and everything works as expected:
 
-
-
-    
 .. code-block:: sh
-    :caption: bls with non-default block size
+   :caption: bls with non-default block size
 
-    bls <parameter>FC-Drive-1 -V A00007L4</parameter>
+    <command>bls</command> <parameter>FC-Drive-1 -V A00007L4</parameter>
     bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
     25-Feb 12:49 bls JobId 0: No slot defined in catalog (slot=0) for Volume "A00007L4" on "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
     25-Feb 12:49 bls JobId 0: Cartridge change or "update slots" may be required.
@@ -869,15 +686,12 @@ Tape Drive Cleaning
 
 Bareos has no build-in functionality for tape drive cleaning. Fortunately this is not required as most modern tape libraries have build in auto-cleaning functionality. This functionality might require an empty tape drive, so the tape library gets aware, that it is currently not used. However, by default Bareos keeps tapes in the drives, in case the same tape is required again.
 
-The directive **Cleaning Prefix**:sup:`Dir`:sub:`Pool`  is only used for making sure that Bareos does not try to write backups on a cleaning tape.
+The directive **Cleaning Prefix**:sup:`Dir`:sub:`Pool`\  is only used for making sure that Bareos does not try to write backups on a cleaning tape.
 
 If your tape libraries auto-cleaning won’t work when there are tapes in the drives, it’s probably best to set up an admin job that removes the tapes from the drives. This job has to run, when no other backups do run. A job definition for an admin job to do that may look like this:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir job ReleaseAllTapeDrives
+   :caption: bareos-dir.d/job/ReleaseAllTapeDrives.conf
 
     Job {
         Name = ReleaseAllTapeDrives
@@ -893,7 +707,8 @@ If your tape libraries auto-cleaning won’t work when there are tapes in the dr
         }
     }
 
-Replace **Tape**:sup:`Dir`:sub:`Storage`  by the storage name of your tape library. Use the highest **Priority**:sup:`Dir`:sub:`Job`  value to make sure no other jobs are running. In the default configuration for example, the **CatalogBackup**:sup:`Dir`:sub:`job`  job has Priority = 100. The higher the number, the lower the job priority.
+Replace **Tape**:sup:`Dir`:sub:`Storage`  by the storage name of your tape library. Use the highest **Priority**:sup:`Dir`:sub:`Job`\  value to make sure no other jobs are running. In the default configuration for example, the **CatalogBackup**:sup:`Dir`:sub:`job`\  job has Priority = 100. The higher the number, the lower the job priority.
 
 .. |image| image:: \idir blocksize-decisionchart
+
 

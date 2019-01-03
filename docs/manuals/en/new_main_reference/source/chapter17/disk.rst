@@ -3,7 +3,8 @@
 
 
 
-.. _`DiskChapter}` :raw-latex:`\index[general]{Volume!Management}` :raw-latex:`\index[general]{Disk Volumes`: DiskChapter}` :raw-latex:`\index[general]{Volume!Management}` :raw-latex:`\index[general]{Disk Volumes
+.. _DiskChapter
+ :index:`[TAG=Volume->Management] <pair: Volume; Management>` :index:`[TAG=Disk Volumes] <single: Disk Volumes>`
 
 This chapter presents most all the features needed to do Volume management. Most of the concepts apply equally well to both tape and disk Volumes. However, the chapter was originally written to explain backing up to disk, so you will see it is slanted in that direction, but all the directives presented here apply equally well whether your volume is disk or tape.
 
@@ -12,18 +13,13 @@ If you have a lot of hard disk storage or you absolutely must have your backups 
 Key Concepts and Resource Records
 =================================
 
+:index:`[TAG=Volume->Management->Key Concepts and Resource Records] <triple: Volume; Management; Key Concepts and Resource Records>`
 
-.. index::
-   triple: Volume; Management; Key Concepts and Resource Records;
-
-
-Getting Bareos to write to disk rather than tape in the simplest case is rather easy. In the Storage daemon’s configuration file, you simply define an **Archive Device**:sup:`Sd`:sub:`Device`  to be a directory. The default directory to store backups on disk is :file:`/var/lib/bareos/storage`:
-
-.. raw:: latex
-
-   
+Getting Bareos to write to disk rather than tape in the simplest case is rather easy. In the Storage daemon’s configuration file, you simply define an **Archive Device**:sup:`Sd`:sub:`Device`\  to be a directory. The default directory to store backups on disk is :file:`/var/lib/bareos/storage`:
 
 
+
+::
 
     Device {
       Name = FileBackup
@@ -35,17 +31,13 @@ Getting Bareos to write to disk rather than tape in the simplest case is rather 
       AlwaysOpen = no;
     }
 
-.. raw:: latex
 
-   
 
 Assuming you have the appropriate :strong:`Storage` resource in your Director’s configuration file that references the above Device resource,
 
-.. raw:: latex
-
-   
 
 
+::
 
     Storage {
       Name = FileStorage
@@ -55,9 +47,7 @@ Assuming you have the appropriate :strong:`Storage` resource in your Director’
       Media Type = File
     }
 
-.. raw:: latex
 
-   
 
 Bareos will then write the archive to the file **/var/lib/bareos/storage/<volume-name>** where <volume-name> is the volume name of a Volume defined in the Pool. For example, if you have labeled a Volume named **Vol001**, Bareos will write to the file **/var/lib/bareos/storage/Vol001**. Although you can later move the archive file to another directory, you should not rename it or it will become unreadable by Bareos. This is because each archive has the filename as part of the internal label, and
 the internal label must agree with the system filename before Bareos will use it.
@@ -69,30 +59,25 @@ In addition, if you want to use concurrent jobs that write to several different 
 Pool Options to Limit the Volume Usage
 --------------------------------------
 
-.. index::
-   pair: Pool; Options to Limit the Volume Usage
-
+:index:`[TAG=Pool->Options to Limit the Volume Usage] <pair: Pool; Options to Limit the Volume Usage>`
 
 Some of the options you have, all of which are specified in the Pool record, are:
 
--  **Maximum Volume Jobs**:sup:`Dir`:sub:`Pool` : write only the specified number of jobs on each Volume.
+-  **Maximum Volume Jobs**:sup:`Dir`:sub:`Pool`\ : write only the specified number of jobs on each Volume.
 
--  **Maximum Volume Bytes**:sup:`Dir`:sub:`Pool` : limit the maximum size of each Volume.
+-  **Maximum Volume Bytes**:sup:`Dir`:sub:`Pool`\ : limit the maximum size of each Volume.
 
    Note, if you use disk volumes you should probably limit the Volume size to some reasonable value. If you ever have a partial hard disk failure, you are more likely to be able to recover more data if they are in smaller Volumes.
 
--  **Volume Use Duration**:sup:`Dir`:sub:`Pool` : restrict the time between first and last data written to Volume.
+-  **Volume Use Duration**:sup:`Dir`:sub:`Pool`\ : restrict the time between first and last data written to Volume.
 
 Note that although you probably would not want to limit the number of bytes on a tape as you would on a disk Volume, the other options can be very useful in limiting the time Bareos will use a particular Volume (be it tape or disk). For example, the above directives can allow you to ensure that you rotate through a set of daily Volumes if you wish.
 
-As mentioned above, each of those directives is specified in the Pool or Pools that you use for your Volumes. In the case of **Maximum Volume Jobs**:sup:`Dir`:sub:`Pool` , **Maximum Volume Bytes**:sup:`Dir`:sub:`Pool`  and **Volume Use Duration**:sup:`Dir`:sub:`Pool` , you can actually specify the desired value on a Volume by Volume basis. The value specified in the Pool record becomes the default when labeling new Volumes. Once a
+As mentioned above, each of those directives is specified in the Pool or Pools that you use for your Volumes. In the case of **Maximum Volume Jobs**:sup:`Dir`:sub:`Pool`\ , **Maximum Volume Bytes**:sup:`Dir`:sub:`Pool`\  and **Volume Use Duration**:sup:`Dir`:sub:`Pool`\ , you can actually specify the desired value on a Volume by Volume basis. The value specified in the Pool record becomes the default when labeling new Volumes. Once a
 Volume has been created, it gets its own copy of the Pool defaults, and subsequently changing the Pool will have no effect on existing Volumes. You can either manually change the Volume values, or refresh them from the Pool defaults using the :strong:`update volume` command in the Console. As an example of the use of one of the above, suppose your Pool resource contains:
 
-
-
-    
 .. code-block:: sh
-    :caption: Volume Use Duration
+   :caption: Volume Use Duration
 
     Pool {
       Name = File
@@ -107,25 +92,17 @@ then if you run a backup once a day (every 24 hours), Bareos will use a new Volu
 Automatic Volume Labeling
 -------------------------
 
-.. index::
-   pair: Label; Automatic Volume Labeling
-
-.. index::
-    triple: Volume; Labeling; Automatic;
-
+:index:`[TAG=Label->Automatic Volume Labeling] <pair: Label; Automatic Volume Labeling>` :index:`[TAG=Volume->Labeling->Automatic] <triple: Volume; Labeling; Automatic>`
 
 Use of the above records brings up another problem – that of labeling your Volumes. For automated disk backup, you can either manually label each of your Volumes, or you can have Bareos automatically label new Volumes when they are needed.
 
 Please note that automatic Volume labeling can also be used with tapes, but it is not nearly so practical since the tapes must be pre-mounted. This requires some user interaction. Automatic labeling from templates does NOT work with autochangers since Bareos will not access unknown slots. There are several methods of labeling all volumes in an autochanger magazine. For more information on this, please see the :ref:`AutochangersChapter` chapter.
 
-Automatic Volume labeling is enabled by making a change to both the :sup:`Dir` :strong:`Pool` resource and to the :sup:`Sd` :strong:`Device` resource shown above. In the case of the Pool resource, you must provide Bareos with a label format that it will use to create new names. In the simplest form, the label format is simply the Volume name, to which Bareos will append a four digit number. This number starts at 0001 and is incremented for each Volume the catalog
+Automatic Volume labeling is enabled by making a change to both the :sup:`Dir`\ :strong:`Pool` resource and to the :sup:`Sd`\ :strong:`Device` resource shown above. In the case of the Pool resource, you must provide Bareos with a label format that it will use to create new names. In the simplest form, the label format is simply the Volume name, to which Bareos will append a four digit number. This number starts at 0001 and is incremented for each Volume the catalog
 contains. Thus if you modify your Pool resource to be:
 
-
-
-    
 .. code-block:: sh
-    :caption: Label Format
+   :caption: Label Format
 
     Pool {
       Name = File
@@ -136,13 +113,10 @@ contains. Thus if you modify your Pool resource to be:
 
 Bareos will create Volume names Vol0001, Vol0002, and so on when new Volumes are needed. Much more complex and elaborate labels can be created using variable expansion defined in the :ref:`Variable Expansion <VarsChapter>` chapter of this manual.
 
-The second change that is necessary to make automatic labeling work is to give the Storage daemon permission to automatically label Volumes. Do so by adding **Label Media**:sup:`Sd`:sub:`Device`  = yes to the :strong:`Device` resource as follows:
+The second change that is necessary to make automatic labeling work is to give the Storage daemon permission to automatically label Volumes. Do so by adding **Label Media**:sup:`Sd`:sub:`Device`\  = yes to the :strong:`Device` resource as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: Label Media = yes
+   :caption: Label Media = yes
 
     Device {
       Name = File
@@ -155,69 +129,64 @@ The second change that is necessary to make automatic labeling work is to give t
       Label Media = yes
     }
 
-See **Label Format**:sup:`Dir`:sub:`Pool`  for details about the labeling format.
+See **Label Format**:sup:`Dir`:sub:`Pool`\  for details about the labeling format.
 
 Restricting the Number of Volumes and Recycling
 -----------------------------------------------
 
-.. index::
-   single: Restricting the Number of Volumes and Recycling
-
+:index:`[TAG=Recycling->Restricting the Number of Volumes and Recycling] <pair: Recycling; Restricting the Number of Volumes and Recycling>` :index:`[TAG=Restricting the Number of Volumes and Recycling] <single: Restricting the Number of Volumes and Recycling>`
 
 Automatic labeling discussed above brings up the problem of Volume management. With the above scheme, a new Volume will be created every day. If you have not specified Retention periods, your Catalog will continue to fill keeping track of all the files Bareos has backed up, and this procedure will create one new archive file (Volume) every day.
 
 The tools Bareos gives you to help automatically manage these problems are the following:
 
--  **File Retention**:sup:`Dir`:sub:`Client` : catalog file record retention period.
+-  **File Retention**:sup:`Dir`:sub:`Client`\ : catalog file record retention period.
 
--  **Job Retention**:sup:`Dir`:sub:`Client` : catalog job record retention period.
+-  **Job Retention**:sup:`Dir`:sub:`Client`\ : catalog job record retention period.
 
--  **Auto Prune**:sup:`Dir`:sub:`Client`  = yes: permit the application of the above two retention periods.
+-  **Auto Prune**:sup:`Dir`:sub:`Client`\  = yes: permit the application of the above two retention periods.
 
 -  
 
+   **Volume Retention**:sup:`Dir`:sub:`Pool`\ 
 
+-  **Auto Prune**:sup:`Dir`:sub:`Pool`\  = yes: permit the application of the **Volume Retention**:sup:`Dir`:sub:`Pool`\  period.
 
-      **Volume Retention**:sup:`Dir`:sub:`Pool` 
+-  **Recycle**:sup:`Dir`:sub:`Pool`\  = yes: permit automatic recycling of Volumes whose Volume retention period has expired.
 
--  **Auto Prune**:sup:`Dir`:sub:`Pool`  = yes: permit the application of the **Volume Retention**:sup:`Dir`:sub:`Pool`  period.
+-  **Recycle Oldest Volume**:sup:`Dir`:sub:`Pool`\  = yes: prune the oldest volume in the Pool, and if all files were pruned, recycle this volume and use it.
 
--  **Recycle**:sup:`Dir`:sub:`Pool`  = yes: permit automatic recycling of Volumes whose Volume retention period has expired.
+-  **Recycle Current Volume**:sup:`Dir`:sub:`Pool`\  = yes: prune the currently mounted volume in the Pool, and if all files were pruned, recycle this volume and use it.
 
--  **Recycle Oldest Volume**:sup:`Dir`:sub:`Pool`  = yes: prune the oldest volume in the Pool, and if all files were pruned, recycle this volume and use it.
-
--  **Recycle Current Volume**:sup:`Dir`:sub:`Pool`  = yes: prune the currently mounted volume in the Pool, and if all files were pruned, recycle this volume and use it.
-
--  | **Purge Oldest Volume**:sup:`Dir`:sub:`Pool`  = yes: permits a forced recycling of the oldest Volume when a new one is needed.
+-  | **Purge Oldest Volume**:sup:`Dir`:sub:`Pool`\  = yes: permits a forced recycling of the oldest Volume when a new one is needed.
    | 
 .. warning:: 
-  This record ignores retention periods! We highly
-        recommend  not to use this record, but instead use **Recycle Oldest Volume**:sup:`Dir`:sub:`Pool` .
+   This record ignores retention periods! We highly
+        recommend  not to use this record, but instead use **Recycle Oldest Volume**:sup:`Dir`:sub:`Pool`\ .
 
--  **Maximum Volumes**:sup:`Dir`:sub:`Pool` : limit the number of Volumes that can be created.
+-  **Maximum Volumes**:sup:`Dir`:sub:`Pool`\ : limit the number of Volumes that can be created.
 
-The first three records (**File Retention**:sup:`Dir`:sub:`Client` , **Job Retention**:sup:`Dir`:sub:`Client`  and **Auto Prune**:sup:`Dir`:sub:`Client` ) determine the amount of time that Job and File records will remain in your Catalog and they are discussed in detail in the :ref:`Automatic Volume Recycling <RecyclingChapter>` chapter.
+The first three records (**File Retention**:sup:`Dir`:sub:`Client`\ , **Job Retention**:sup:`Dir`:sub:`Client`\  and **Auto Prune**:sup:`Dir`:sub:`Client`\ ) determine the amount of time that Job and File records will remain in your Catalog and they are discussed in detail in the :ref:`Automatic Volume Recycling <RecyclingChapter>` chapter.
 
-**Volume Retention**:sup:`Dir`:sub:`Pool` , **Auto Prune**:sup:`Dir`:sub:`Pool`  and **Recycle**:sup:`Dir`:sub:`Pool`  determine how long Bareos will keep your Volumes before reusing them and they are also discussed in detail in the :ref:`Automatic Volume Recycling <RecyclingChapter>` chapter.
+**Volume Retention**:sup:`Dir`:sub:`Pool`\ , **Auto Prune**:sup:`Dir`:sub:`Pool`\  and **Recycle**:sup:`Dir`:sub:`Pool`\  determine how long Bareos will keep your Volumes before reusing them and they are also discussed in detail in the :ref:`Automatic Volume Recycling <RecyclingChapter>` chapter.
 
-The **Maximum Volumes**:sup:`Dir`:sub:`Pool`  record can also be used in conjunction with the **Volume Retention**:sup:`Dir`:sub:`Pool`  period to limit the total number of archive Volumes that Bareos will create. By setting an appropriate **Volume Retention**:sup:`Dir`:sub:`Pool`  period, a Volume will be purged just before it is needed and thus Bareos can cycle through a fixed set of Volumes. Cycling through a fixed set of
-Volumes can also be done by setting **Purge Oldest Volume**:sup:`Dir`:sub:`Pool`  = yes or **Recycle Current Volume**:sup:`Dir`:sub:`Pool`  = yes. In this case, when Bareos needs a new Volume, it will prune the specified volume.
+The **Maximum Volumes**:sup:`Dir`:sub:`Pool`\  record can also be used in conjunction with the **Volume Retention**:sup:`Dir`:sub:`Pool`\  period to limit the total number of archive Volumes that Bareos will create. By setting an appropriate **Volume Retention**:sup:`Dir`:sub:`Pool`\  period, a Volume will be purged just before it is needed and thus Bareos can cycle through a fixed set of Volumes. Cycling through a fixed set of
+Volumes can also be done by setting **Purge Oldest Volume**:sup:`Dir`:sub:`Pool`\  = yes or **Recycle Current Volume**:sup:`Dir`:sub:`Pool`\  = yes. In this case, when Bareos needs a new Volume, it will prune the specified volume.
 
 Concurrent Disk Jobs
 ====================
 
-.. index::
-   single: Concurrent Disk Jobs
- 
+:index:`[TAG=Concurrent Disk Jobs] <single: Concurrent Disk Jobs>` 
 
-.. _`ConcurrentDiskJobs}` Above, we discussed how you could have a single device named **FileBackup`: ConcurrentDiskJobs**:sup:`Sd`:sub:`Device`  Above, we discussed how you could have a single device named :raw-latex:`\resourcename{Sd}{Device}{FileBackup that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent jobs using the Storage definition given with this example, and all the jobs will simultaneously write into the Volume that is being written.
+.. _ConcurrentDiskJobs
+ Above, we discussed how you could have a single device named **FileBackup**:sup:`Sd`:sub:`Device`  that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent jobs using the Storage definition given with this example, and all the jobs will simultaneously write into the Volume that is being written.
 
 Now suppose you want to use multiple Pools, which means multiple Volumes, or suppose you want each client to have its own Volume and perhaps its own directory such as **/home/bareos/client1** and **/home/bareos/client2** ... . With the single Storage and Device definition above, neither of these two is possible. Why? Because Bareos disk storage follows the same rules as tape devices. Only one Volume can be mounted on any Device at any time. If you want to simultaneously write multiple Volumes,
 you will need multiple Device resources in your |bareosSd| configuration and thus multiple Storage resources in your |bareosDir| configuration.
 
-Okay, so now you should understand that you need multiple Device definitions in the case of different directories or different Pools, but you also need to know that the catalog data that Bareos keeps contains only the Media Type and not the specific storage device. This permits a tape for example to be re-read on any compatible tape drive. The compatibility being determined by the Media Type (**Media Type**:sup:`Dir`:sub:`Storage`  and
-**Media Type**:sup:`Sd`:sub:`Device` ). The same applies to disk storage. Since a volume that is written by a Device in say directory :file:`/home/bareos/backups`` cannot be read by a Device with an **Archive Device**:sup:`Sd`:sub:`Device`  = ``path:/home/bareos/client1`, you will not be able to restore all your files if you give both those devices **Media Type**:sup:`Sd`:sub:`Device`  = File. During the restore, Bareos will
-simply choose the first available device, which may not be the correct one. If this is confusing, just remember that the Directory has only the Media Type and the Volume name. It does not know the **Archive Device**:sup:`Sd`:sub:`Device`  (or the full path) that is specified in the |bareosSd|. Thus you must explicitly tie your Volumes to the correct Device by using the Media Type.
+Okay, so now you should understand that you need multiple Device definitions in the case of different directories or different Pools, but you also need to know that the catalog data that Bareos keeps contains only the Media Type and not the specific storage device. This permits a tape for example to be re-read on any compatible tape drive. The compatibility being determined by the Media Type (**Media Type**:sup:`Dir`:sub:`Storage`\  and
+**Media Type**:sup:`Sd`:sub:`Device`\ ). The same applies to disk storage. Since a volume that is written by a Device in say directory :file:`/home/bareos/backups` cannot be read by a Device with an **Archive Device**:sup:`Sd`:sub:`Device`\  = :file:`/home/bareos/client1`, you will not be able to restore all your files if you give both those devices **Media Type**:sup:`Sd`:sub:`Device`\  = File. During the restore, Bareos will
+simply choose the first available device, which may not be the correct one. If this is confusing, just remember that the Directory has only the Media Type and the Volume name. It does not know the **Archive Device**:sup:`Sd`:sub:`Device`\  (or the full path) that is specified in the |bareosSd|. Thus you must explicitly tie your Volumes to the correct Device by using the Media Type.
 
 Example for two clients, separate devices and recycling
 -------------------------------------------------------
@@ -230,11 +199,8 @@ What is key here is that each physical device on the |bareosSd| has a different 
 
 The |bareosDir| configuration is as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     Director {
       Name = bareos-dir
@@ -347,11 +313,8 @@ The |bareosDir| configuration is as follows:
 
 and the |bareosSd| configuration is:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     Storage {
       Name = bareos-sd
@@ -397,30 +360,23 @@ With a little bit of work, you can change the above example into a weekly or mon
 Using Multiple Storage Devices
 ------------------------------
 
-.. index::
-   single: Multiple Storage Devices
-.. index::
-    pair: Storage Device; Multiple
+:index:`[TAG=Multiple Storage Devices] <single: Multiple Storage Devices>` :index:`[TAG=Storage Device->Multiple] <pair: Storage Device; Multiple>`
 
-
-Bareos treats disk volumes similar to tape volumes as much as it can. This means that you can only have a single Volume mounted at one time on a disk as defined in your :sup:`Sd` :strong:`Device` resource.
+Bareos treats disk volumes similar to tape volumes as much as it can. This means that you can only have a single Volume mounted at one time on a disk as defined in your :sup:`Sd`\ :strong:`Device` resource.
 
 If you use Bareos without :ref:`section-DataSpooling`, multiple concurrent backup jobs can be written to a Volume using interleaving. However, interleaving has disadvantages, see :ref:`section-Interleaving`.
 
-Also the :sup:`Sd` :strong:`Device` will be in use. If there are other jobs, requesting other Volumes, these jobs have to wait.
+Also the :sup:`Sd`\ :strong:`Device` will be in use. If there are other jobs, requesting other Volumes, these jobs have to wait.
 
 On a tape (or autochanger), this is a physical limitation of the hardware. However, when using disk storage, this is only a limitation of the software.
 
-To enable Bareos to run concurrent jobs (on disk storage), define as many :sup:`Sd` :strong:`Device` as concurrent jobs should run. All these :sup:`Sd` :strong:`Device`s can use the same **Archive Device**:sup:`Sd`:sub:`Device`  directory. Set **Maximum Concurrent Jobs**:sup:`Sd`:sub:`Device`  = 1 for all these devices.
+To enable Bareos to run concurrent jobs (on disk storage), define as many :sup:`Sd`\ :strong:`Device` as concurrent jobs should run. All these :sup:`Sd`\ :strong:`Device`s can use the same **Archive Device**:sup:`Sd`:sub:`Device`\  directory. Set **Maximum Concurrent Jobs**:sup:`Sd`:sub:`Device`\  = 1 for all these devices.
 
 Example: use four storage devices pointing to the same directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-
-    
 .. code-block:: sh
-    :caption: \bareosDir configuration: using 4 storage devices
+   :caption: |bareosDir| configuration: using 4 storage devices
 
     Director {
       Name = bareos-dir.example.com
@@ -444,11 +400,8 @@ Example: use four storage devices pointing to the same directory
 
     [...]
 
-
-
-    
 .. code-block:: sh
-    :caption: \bareosSd configuraton: using 4 storage devices
+   :caption: |bareosSd| configuraton: using 4 storage devices
 
     Storage {
       Name = bareos-sd.example.com

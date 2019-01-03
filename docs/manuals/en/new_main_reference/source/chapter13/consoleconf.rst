@@ -6,9 +6,7 @@
 Console Configuration
 =====================
 
-.. index::
-   single: Console Configuration
-
+:index:`[TAG=Configuration->Console] <pair: Configuration; Console>` :index:`[TAG=Console Configuration] <single: Console Configuration>`
 
 The Console configuration file is the simplest of all the configuration files, and in general, you should not need to change it except for the password. It simply contains the information necessary to contact the Director or Directors.
 
@@ -21,21 +19,15 @@ The following Console Resource definition must be defined:
 Director Resource
 -----------------
 
-.. index::
-   single: Director Resource
-.. index::
-    pair: Resource; Director
-
+:index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <pair: Resource; Director>`
 
 The Director resource defines the attributes of the Director running on the network. You may have multiple Director resource specifications in a single Console configuration file. If you have more than one, you will be prompted to choose one when you start the **Console** program.
 
 An actual example might be:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Director {
       Name = HeadMan
@@ -43,68 +35,16 @@ An actual example might be:
       password = xyz1erploit
     }
 
-.. raw:: latex
 
-   
 
-.. raw:: latex
 
-   \hide{
-   \section{ConsoleFont Resource}
-   \index[general]{Resource!ConsoleFont}
-   \index[general]{ConsoleFont Resource}
-
-   The ConsoleFont resource is available only in the GNOME version of the
-   console. It permits you to define the font that you want used to display in
-   the main listing window.
-
-   \begin{description}
-
-   \item [ConsoleFont]
-   \index[console]{ConsoleFont}
-   Start of the ConsoleFont directives.
-
-   \item [Name = {\textless}name{\textgreater}]  \\
-   \index[console]{Name}
-   The name of the font.
-
-   \item [Font = {\textless}Pango Font Name{\textgreater}]  \\
-   \index[console]{Font}
-   The string value given here defines the desired font. It  is specified in the
-   Pango format. For example, the default specification is:
-
-   
-   \
-   Font = "LucidaTypewriter 9"
-   \
-   
-
-   \end{description}
-
-   Thanks to Phil Stracchino for providing the code for this feature.
-
-   An different example might be:
-
-   
-   \
-   ConsoleFont {
-     Name = Default
-     Font = "Monospace 10"
-   }
-   \
-   
-   }
 
 .. _ConsoleResourceConsole:
 
 Console Resource
 ----------------
 
-.. index::
-   single: Console Resource
-.. index::
-    pair: Resource; Console
-
+:index:`[TAG=Console Resource] <single: Console Resource>` :index:`[TAG=Resource->Console] <pair: Resource; Console>`
 
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 
@@ -129,17 +69,12 @@ Note, the Console resource is optional, but can be useful for restricted console
 Example Console Configuration File
 ----------------------------------
 
-.. index::
-   pair: Configuration; bconsole
-
+:index:`[TAG=Configuration->bconsole] <pair: Configuration; bconsole>`
 
 A Console configuration file might look like this:
 
-
-
-    
 .. code-block:: sh
-    :caption: bconsole configuration
+   :caption: bconsole configuration
 
     Director {
       Name = "bareos.example.com-dir"
@@ -158,11 +93,8 @@ The following configuration files were supplied by Phil Stracchino.
 
 To use named consoles from :program:`bconsole`, use a :file:`bconsole.conf` configuration file like this:
 
-
-
-    
 .. code-block:: sh
-    :caption: bconsole: restricted-user
+   :caption: bconsole: restricted-user
 
     Director {
        Name = bareos-dir
@@ -177,11 +109,8 @@ To use named consoles from :program:`bconsole`, use a :file:`bconsole.conf` conf
 
 Where the Password in the Director section is deliberately incorrect and the Console resource is given a name, in this case :strong:`restricted-user`. Then in the Director configuration (not directly accessible by the user), we define:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir console restricted-user
+   :caption: bareos-dir.d/console/restricted-user.conf
 
     Console {
       Name = restricted-user
@@ -197,15 +126,12 @@ Where the Password in the Director section is deliberately incorrect and the Con
     }
 
 The user login into the Director from his Console will get logged in as **restricted-user**:sup:`Dir`:sub:`Console`  and he will only be able to see or access a Job with the name **Restricted Client Save**:sup:`Dir`:sub:`Job` , a Client with the name **restricted-client**:sup:`Dir`:sub:`Client` , a storage device **main-storage**:sup:`Dir`:sub:`Storage` , any Schedule or Pool, a FileSet named
-**Restricted Client's FileSet**:sup:`Dir`:sub:`FileSet` , a Catalog named **MyCatalog**:sup:`Dir`:sub:`Catalog`  and the only command he can use in the Console is the :strong:`run` command. In other words, this user is rather limited in what he can see and do with Bareos. For details how to configure ACLs, see the :strong:`Acl`  data type description.
+**Restricted Client's FileSet**:sup:`Dir`:sub:`FileSet` , a Catalog named **MyCatalog**:sup:`Dir`:sub:`Catalog`  and the only command he can use in the Console is the :strong:`run` command. In other words, this user is rather limited in what he can see and do with Bareos. For details how to configure ACLs, see the :strong:`Acl` data type description.
 
 The following is an example of a :file:`bconsole.conf` file that can access several Directors and has different Consoles depending on the Director:
 
-
-
-    
 .. code-block:: sh
-    :caption: bconsole: multiple consoles
+   :caption: bconsole: multiple consoles
 
     Director {
        Name = bareos-dir
@@ -233,11 +159,8 @@ The following is an example of a :file:`bconsole.conf` file that can access seve
 
 The second Director referenced at **secondserver**:sup:`Dir`:sub:`Director`  might look like the following:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir console restricted-user2
+   :caption: bareos-dir.d/console/restricted-user2.conf
 
     Console {
       Name = restricted-user2

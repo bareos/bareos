@@ -6,9 +6,7 @@
 The Restore Command
 ===================
 
-.. index::
-   single: Restore
-
+:index:`[TAG=Restore] <single: Restore>`
 
 General
 -------
@@ -27,10 +25,7 @@ well, if so desired. By default, Bareos will restore data to the same Client tha
 The Restore Command
 -------------------
 
-
-.. index::
-   triple: Console; Command; restore;
-
+:index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>`
 
 Since Bareos maintains a catalog of your files and on which Volumes (disk or tape), they are stored, it can do most of the bookkeeping work, allowing you simply to specify what kind of restore you want (current, before a particular date), and what files to restore. Bareos will then do the rest.
 
@@ -40,13 +35,10 @@ If a Job’s file records have been pruned from the catalog, the **restore** com
 
 Within the Console program, after entering the **restore** command, you are presented with the following selection prompt:
 
-
-
-    
 .. code-block:: sh
-    :caption: restore
+   :caption: restore
 
-    * restore
+    * <input>restore</input>
     First you select one or more JobIds that contain files
     to be restored. You will be presented several methods
     of specifying the JobIds. Then you will be allowed to
@@ -66,7 +58,7 @@ Within the Console program, after entering the **restore** command, you are pres
         11: Enter a list of directories to restore for found JobIds
         12: Select full restore to a specified Job date
         13: Cancel
-    Select item-  (1-13):
+    Select item:  (1-13):
 
 There are a lot of options, and as a point of reference, most people will want to select item 5 (the most recent backup for a client). The details of the above options are:
 
@@ -99,9 +91,7 @@ There are a lot of options, and as a point of reference, most people will want t
 
 -  Item 10 is the same as item 9, except that it allows you to enter a before date (as with item 6). These JobIds will then be retained internally.
 
-.. index::
-      single: Restore Directories
-
+   :index:`[TAG=Restore Directories] <single: Restore Directories>`
 
 -  Item 11 allows you to enter a list of JobIds from which you can select directories to be restored. The list of JobIds can have been previously created by using either item 9 or 10 on the menu. You may then enter a full path to a directory name or a filename preceded by a less than sign (<). The filename should contain a list of directories to be restored. All files in those directories will be restored, but if the directory contains subdirectories, nothing will be restored in the subdirectory
    unless you explicitly enter its name.
@@ -112,13 +102,10 @@ There are a lot of options, and as a point of reference, most people will want t
 
 As an example, suppose that we select item 5 (restore to most recent state). If you have not specified a client=xxx on the command line, it it will then ask for the desired Client, which on my system, will print all the Clients found in the database as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: restore: select client
+   :caption: restore: select client
 
-    Select item-  (1-13): 5
+    Select item:  (1-13): <input>5</input>
     Defined clients:
          1: Rufus
          2: Matou
@@ -129,34 +116,28 @@ As an example, suppose that we select item 5 (restore to most recent state). If 
          7: PmatouVerify
          8: RufusVerify
          9: Watchdog
-    Select Client (File daemon) resource (1-9): 1
+    Select Client (File daemon) resource (1-9): <input>1</input>
 
 The listed clients are only examples, yours will look differently. If you have only one Client, it will be automatically selected. In this example, I enter 1 for **Rufus** to select the Client. Then Bareos needs to know what FileSet is to be restored, so it prompts with:
 
-.. raw:: latex
-
-   
 
 
+::
 
     The defined FileSet resources are:
          1: Full Set
          2: Other Files
     Select FileSet resource (1-2):
 
-.. raw:: latex
 
-   
 
 If you have only one FileSet defined for the Client, it will be selected automatically. I choose item 1, which is my full backup. Normally, you will only have a single FileSet for each Job, and if your machines are similar (all Linux) you may only have one FileSet for all your Clients.
 
 At this point, Bareos has all the information it needs to find the most recent set of backups. It will then query the database, which may take a bit of time, and it will come up with something like the following. Note, some of the columns are truncated here for presentation:
 
-.. raw:: latex
-
-   
 
 
+::
 
     +-------+------+----------+-------------+-------------+------+-------+------------+
     | JobId | Levl | JobFiles | StartTime   | VolumeName  | File | SesId |VolSesTime  |
@@ -173,9 +154,7 @@ At this point, Bareos has all the information it needs to find the most recent s
     cwd is: /
     $
 
-.. raw:: latex
 
-   
 
 Depending on the number of **JobFiles** for each JobId, the :emphasis:`Building directory tree ...` can take a bit of time. If you notice ath all the JobFiles are zero, your Files have probably been pruned and you will not be able to select any individual files – it will be restore everything or nothing.
 
@@ -193,11 +172,9 @@ Directly entering the JobIds can also permit you to recover data from a Job that
 
 While in file selection mode, you can enter **help** or a question mark (?) to produce a summary of the available commands:
 
-.. raw:: latex
-
-   
 
 
+::
 
      Command    Description
       =======    ===========
@@ -219,9 +196,7 @@ While in file selection mode, you can enter **help** or a question mark (?) to p
       quit       quit and do not do restore
       ?          print help
 
-.. raw:: latex
 
-   
 
 As a default no files have been selected for restore (unless you added **all** to the command line. If you want to restore everything, at this point, you should enter **mark \***, and then **done** and Bareos will write the bootstrap records to a file and request your approval to start a restore job.
 
@@ -229,25 +204,19 @@ If you do not enter the above mentioned **mark \*** command, you will start with
 
 To check what is marked or not marked, enter the **count** command, which displays:
 
-.. raw:: latex
-
-   
 
 
+::
 
     128401 total files. 128401 marked to be restored.
 
-.. raw:: latex
 
-   
 
 Each of the above commands will be described in more detail in the next section. We continue with the above example, having accepted to restore all files as Bareos set by default. On entering the **done** command, Bareos prints:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Run Restore job
     JobName:         RestoreFiles
@@ -265,9 +234,7 @@ Each of the above commands will be described in more detail in the next section.
     Plugin Options:  *None*
     OK to run? (yes/mod/no):
 
-.. raw:: latex
 
-   
 
 Please examine each of the items very carefully to make sure that they are correct. In particular, look at **Where**, which tells you where in the directory structure the files will be restored, and **Client**, which tells you which client will receive the files. Note that by default the Client which will receive the files is the Client that was backed up. These items will not always be completed with the correct values depending on which of the restore options you chose. You can change any of
 these default items by entering **mod** and responding to the prompts.
@@ -286,21 +253,16 @@ If you now enter **yes**, Bareos will run the restore Job.
 Selecting Files by Filename
 ---------------------------
 
-.. index::
-   pair: Restore; by filename
-
+:index:`[TAG=Restore->by filename] <pair: Restore; by filename>`
 
 If you have a small number of files to restore, and you know the filenames, you can either put the list of filenames in a file to be read by Bareos, or you can enter the names one at a time. The filenames must include the full path and filename. No wild cards are used.
 
 To enter the files, after the **restore**, you select item number 7 from the prompt list:
 
-
-
-    
 .. code-block:: sh
-    :caption: restore list of files
+   :caption: restore list of files
 
-    * restore
+    * <input>restore</input>
     First you select one or more JobIds that contain files
     to be restored. You will be presented several methods
     of specifying the JobIds. Then you will be allowed to
@@ -320,15 +282,13 @@ To enter the files, after the **restore**, you select item number 7 from the pro
         11: Enter a list of directories to restore for found JobIds
         12: Select full restore to a specified Job date
         13: Cancel
-    Select item-  (1-13): 7
+    Select item:  (1-13): <input>7</input>
 
 which then prompts you for the client name:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Defined Clients:
          1: client1
@@ -336,76 +296,59 @@ which then prompts you for the client name:
          3: Rufus
     Select the Client (1-3): 3
 
-.. raw:: latex
 
-   
 
 Of course, your client list will be different, and if you have only one client, it will be automatically selected. And finally, Bareos requests you to enter a filename:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Enter filename:
 
-.. raw:: latex
 
-   
 
 At this point, you can enter the full path and filename
 
-.. raw:: latex
-
-   
 
 
+::
 
     Enter filename: /etc/resolv.conf
     Enter filename:
 
-.. raw:: latex
 
-   
 
 as you can see, it took the filename. If Bareos cannot find a copy of the file, it prints the following:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Enter filename: junk filename
     No database record found for: junk filename
     Enter filename:
 
-.. raw:: latex
 
-   
 
 If you want Bareos to read the filenames from a file, you simply precede the filename with a less-than symbol (<).
 
 It is possible to automate the selection by file by putting your list of files in say **/tmp/file-list**, then using the following command:
 
-.. raw:: latex
-
-   
 
 
+::
 
     restore client=client1 file=</tmp/file-list
 
-.. raw:: latex
 
-   
 
 If in modifying the parameters for the Run Restore job, you find that Bareos asks you to enter a Job number, this is because you have not yet specified either a Job number or a Bootstrap file. Simply entering zero will allow you to continue and to select another option to be modified.
 
 
 
-.. _`Replace`: Replace
+.. _Replace
+
 
 Replace Options
 ---------------
@@ -419,17 +362,13 @@ Command Line Arguments
 
 If all the above sounds complicated, you will probably agree that it really isn’t after trying it a few times. It is possible to do everything that was shown above, with the exception of selecting the FileSet, by using command line arguments with a single command by entering:
 
-.. raw:: latex
-
-   
 
 
+::
 
     restore client=Rufus select current all done yes
 
-.. raw:: latex
 
-   
 
 The **client=Rufus** specification will automatically select Rufus as the client, the **current** tells Bareos that you want to restore the system to the most current state possible, and the **yes** suppresses the final **yes/mod/no** prompt and simply runs the restore.
 
@@ -476,11 +415,13 @@ The full list of possible command line arguments are:
 Using File Relocation
 ---------------------
 
-.. index::
-   pair: File Relocation; using
+:index:`[TAG=File Relocation->using] <pair: File Relocation; using>` 
+
+.. _filerelocation
  
 
-.. _`filerelocation}` :raw-latex:`\label{restorefilerelocation`: filerelocation}` :raw-latex:`\label{restorefilerelocation
+.. _restorefilerelocation
+
 
 Introduction
 ~~~~~~~~~~~~
@@ -493,9 +434,9 @@ For example, many users use OS snapshot features so that file ``/home/eric/mbox`
 
 However, case, you could use the **strip_prefix=/.snap** and **add_suffix=.bkp** options and Bareos will restore the file to its original location – that is ``/home/eric/mbox``.
 
-To use this feature, there are command line options as described in the :ref:`restore section <restorefilerelocation>` of this manual; you can modify your restore job before running it; or you can add options to your restore job in as described in **Strip Prefix**:sup:`Dir`:sub:`Job`  and **Add Prefix**:sup:`Dir`:sub:`Job` .
+To use this feature, there are command line options as described in the :ref:`restore section <restorefilerelocation>` of this manual; you can modify your restore job before running it; or you can add options to your restore job in as described in **Strip Prefix**:sup:`Dir`:sub:`Job`\  and **Add Prefix**:sup:`Dir`:sub:`Job`\ .
 
-
+::
 
     Parameters to modify:
          1: Level
@@ -530,7 +471,7 @@ The format is very close to that used by sed or Perl (``s/replace this/by that/`
 
 Each field is delimited by a separator specified by the user as the first character of the expression. The separator can be one of the following:
 
-
+::
 
     <separator-keyword> = / ! ; % : , ~ # = &
 
@@ -538,6 +479,28 @@ You can use several expressions separated by a commas.
 
 Examples
 ^^^^^^^^
+
+# original Latex tabular
+
+::
+
+    \begin{tabular}{|c|c|c|l|}
+    \hline
+    Orignal filename & New filename & RegexWhere & Comments \\
+    \hline
+    \hline
+    \texttt{c:/system.ini} & \texttt{c:/system.old.ini} & \texttt{/.ini\$/.old.ini/} & \$ matches end of name\\
+    \hline
+    \texttt{/prod/u01/pdata/} & \texttt{/rect/u01/rdata}  & \texttt{/prod/rect/,/pdata/rdata/} & uses two regexp\\
+    \hline
+    \texttt{/prod/u01/pdata/} & \texttt{/rect/u01/rdata}  & \texttt{!/prod/!/rect/!,/pdata/rdata/} & use \texttt{!} as separator\\
+    \hline
+    \texttt{C:/WINNT} & \texttt{d:/WINNT}  & \texttt{/c:/d:/i} & case insensitive pattern match \\
+    \hline
+
+    \end{tabular}
+
+# converted Latex tabular
 
 +----------------------+-----------------------+-----------------------------------+--------------------------------+
 | Orignal filename     | New filename          | RegexWhere                        | Comments                       |
@@ -554,9 +517,7 @@ Examples
 Restoring Directory Attributes
 ------------------------------
 
-.. index::
-   single: Restoring Directory Attributes
-
+:index:`[TAG=Attributes->Restoring Directory] <pair: Attributes; Restoring Directory>` :index:`[TAG=Restoring Directory Attributes] <single: Restoring Directory Attributes>`
 
 Depending how you do the restore, you may or may not get the directory entries back to their original state. Here are a few of the problems you can encounter, and for same machine restores, how to avoid them.
 
@@ -575,11 +536,7 @@ Depending how you do the restore, you may or may not get the directory entries b
 Restoring on Windows
 --------------------
 
-.. index::
-   single: Restoring on Windows
-.. index::
-    pair: Windows; Restoring on
-
+:index:`[TAG=Restoring on Windows] <single: Restoring on Windows>` :index:`[TAG=Windows->Restoring on] <pair: Windows; Restoring on>`
 
 If you are restoring on Windows systems, Bareos will restore the files with the original ownerships and permissions as would be expected. This is also true if you are restoring those files to an alternate directory (using the Where option in restore). However, if the alternate directory does not already exist, the Bareos File daemon (Client) will try to create it. In some cases, it may not create the directories, and if it does since the File daemon runs under the SYSTEM account, the directory
 will be created with SYSTEM ownership and permissions. In this case, you may have problems accessing the newly restored files.
@@ -593,9 +550,7 @@ Some users have experienced problems restoring files that participate in the Act
 Restore Errors
 --------------
 
-.. index::
-   single: Restore Errors
-
+:index:`[TAG=Errors->Restore] <pair: Errors; Restore>` :index:`[TAG=Restore Errors] <single: Restore Errors>`
 
 There are a number of reasons why there may be restore errors or warning messages. Some of the more common ones are:
 
@@ -614,15 +569,11 @@ file size error
 Example Restore Job Resource
 ----------------------------
 
-.. index::
-   pair: Resource; Example Restore Job
+:index:`[TAG=Resource->Example Restore Job] <pair: Resource; Example Restore Job>`
 
 
-.. raw:: latex
 
-   
-
-
+::
 
     Job {
       Name = "RestoreFiles"
@@ -635,151 +586,96 @@ Example Restore Job Resource
       Pool = Default
     }
 
-.. raw:: latex
 
-   
 
 If **Where** is not specified, the default location for restoring files will be their original locations. 
 
-.. _`Selection`: Selection
+.. _Selection
+
 
 File Selection Commands
 -----------------------
 
-.. index::
-   single: File Selection Commands
-
+:index:`[TAG=Console->File Selection] <pair: Console; File Selection>` :index:`[TAG=File Selection Commands] <single: File Selection Commands>`
 
 After you have selected the Jobs to be restored and Bareos has created the in-memory directory tree, you will enter file selection mode as indicated by the dollar sign (**$**) prompt. While in this mode, you may use the commands listed above. The basic idea is to move up and down the in memory directory structure with the **cd** command much as you normally do on the system. Once you are in a directory, you may select the files that you want restored. As a default no files are marked to be
 restored. If you wish to start with all files, simply enter: **cd /** and **mark \***. Otherwise proceed to select the files you wish to restore by marking them with the **mark** command. The available commands are:
 
 cd
-
-.. index::
-       triple: Console; File Selection; cd;
- The **cd** command changes the current directory to the argument specified. It operates much like the Unix **cd** command. Wildcard specifications are not permitted.
+    :index:`[TAG=Console->File Selection->cd] <triple: Console; File Selection; cd>` The **cd** command changes the current directory to the argument specified. It operates much like the Unix **cd** command. Wildcard specifications are not permitted.
 
     Note, on Windows systems, the various drives (c:, d:, ...) are treated like a directory within the file tree while in the file selection mode. As a consequence, you must do a **cd c:** or possibly in some cases a **cd C:** (note upper case) to get down to the first directory.
 
 dir
-
-.. index::
-       triple: Console; File Selection; dir;
- The **dir** command is similar to the **ls** command, except that it prints it in long format (all details). This command can be a bit slower than the **ls** command because it must access the catalog database for the detailed information for each file.
+    :index:`[TAG=Console->File Selection->dir] <triple: Console; File Selection; dir>` The **dir** command is similar to the **ls** command, except that it prints it in long format (all details). This command can be a bit slower than the **ls** command because it must access the catalog database for the detailed information for each file.
 
 estimate
-
-.. index::
-       triple: Console; File Selection; estimate;
- The **estimate** command prints a summary of the total files in the tree, how many are marked to be restored, and an estimate of the number of bytes to be restored. This can be useful if you are short on disk space on the machine where the files will be restored.
+    :index:`[TAG=Console->File Selection->estimate] <triple: Console; File Selection; estimate>` The **estimate** command prints a summary of the total files in the tree, how many are marked to be restored, and an estimate of the number of bytes to be restored. This can be useful if you are short on disk space on the machine where the files will be restored.
 
 find
-
-.. index::
-       triple: Console; File Selection; find;
- The **find** command accepts one or more arguments and displays all files in the tree that match that argument. The argument may have wildcards. It is somewhat similar to the Unix command **find / -name arg**.
+    :index:`[TAG=Console->File Selection->find] <triple: Console; File Selection; find>` The **find** command accepts one or more arguments and displays all files in the tree that match that argument. The argument may have wildcards. It is somewhat similar to the Unix command **find / -name arg**.
 
 ls
-
-.. index::
-       triple: Console; File Selection; ls;
- The **ls** command produces a listing of all the files contained in the current directory much like the Unix **ls** command. You may specify an argument containing wildcards, in which case only those files will be listed.
+    :index:`[TAG=Console->File Selection->ls] <triple: Console; File Selection; ls>` The **ls** command produces a listing of all the files contained in the current directory much like the Unix **ls** command. You may specify an argument containing wildcards, in which case only those files will be listed.
 
     Any file that is marked to be restored will have its name preceded by an asterisk (****). Directory names will be terminated with a forward slash (**/**) to distinguish them from filenames.
 
 lsmark
-
-.. index::
-       triple: Console; File Selection; lsmark;
- The **lsmark** command is the same as the **ls** except that it will print only those files marked for extraction. The other distinction is that it will recursively descend into any directory selected.
+    :index:`[TAG=Console->File Selection->lsmark] <triple: Console; File Selection; lsmark>` The **lsmark** command is the same as the **ls** except that it will print only those files marked for extraction. The other distinction is that it will recursively descend into any directory selected.
 
 mark
-
-.. index::
-       triple: Console; File Selection; mark;
- The **mark** command allows you to mark files to be restored. It takes a single argument which is the filename or directory name in the current directory to be marked for extraction. The argument may be a wildcard specification, in which case all files that match in the current directory are marked to be restored. If the argument matches a directory rather than a file, then the directory and all the files contained in that directory
+    :index:`[TAG=Console->File Selection->mark] <triple: Console; File Selection; mark>` The **mark** command allows you to mark files to be restored. It takes a single argument which is the filename or directory name in the current directory to be marked for extraction. The argument may be a wildcard specification, in which case all files that match in the current directory are marked to be restored. If the argument matches a directory rather than a file, then the directory and all the files contained in that directory
     (recursively) are marked to be restored. Any marked file will have its name preceded with an asterisk (****) in the output produced by the **ls** or **dir** commands. Note, supplying a full path on the mark command does not work as expected to select a file or directory in the current directory. Also, the **mark** command works on the current and lower directories but does not touch higher level directories.
 
     After executing the **mark** command, it will print a brief summary:
 
- 
+    
 
-       
-
-
+    ::
 
             No files marked.
 
- 
-
-       
+    
 
     If no files were marked, or:
 
- 
+    
 
-       
-
-
+    ::
 
             nn files marked.
 
- 
-
-       
+    
 
     if some files are marked.
 
 unmark
-
-.. index::
-       triple: Console; File Selection; unmark;
- The **unmark** is identical to the **mark** command, except that it unmarks the specified file or files so that they will not be restored. Note: the **unmark** command works from the current directory, so it does not unmark any files at a higher level. First do a **cd /** before the **unmark \*** command if you want to unmark everything.
+    :index:`[TAG=Console->File Selection->unmark] <triple: Console; File Selection; unmark>` The **unmark** is identical to the **mark** command, except that it unmarks the specified file or files so that they will not be restored. Note: the **unmark** command works from the current directory, so it does not unmark any files at a higher level. First do a **cd /** before the **unmark \*** command if you want to unmark everything.
 
 pwd
-
-.. index::
-       triple: Console; File Selection; pwd;
- The **pwd** command prints the current working directory. It accepts no arguments.
+    :index:`[TAG=Console->File Selection->pwd] <triple: Console; File Selection; pwd>` The **pwd** command prints the current working directory. It accepts no arguments.
 
 count
-
-.. index::
-       triple: Console; File Selection; count;
- The **count** command prints the total files in the directory tree and the number of files marked to be restored.
+    :index:`[TAG=Console->File Selection->count] <triple: Console; File Selection; count>` The **count** command prints the total files in the directory tree and the number of files marked to be restored.
 
 done
-
-.. index::
-       triple: Console; File Selection; done;
- This command terminates file selection mode.
+    :index:`[TAG=Console->File Selection->done] <triple: Console; File Selection; done>` This command terminates file selection mode.
 
 exit
-
-.. index::
-       triple: Console; File Selection; exit;
- This command terminates file selection mode (the same as done).
+    :index:`[TAG=Console->File Selection->exit] <triple: Console; File Selection; exit>` This command terminates file selection mode (the same as done).
 
 quit
-
-.. index::
-       triple: Console; File Selection; quit;
- This command terminates the file selection and does not run the restore job.
+    :index:`[TAG=Console->File Selection->quit] <triple: Console; File Selection; quit>` This command terminates the file selection and does not run the restore job.
 
 help
-
-.. index::
-       triple: Console; File Selection; help;
- This command prints a summary of the commands available.
+    :index:`[TAG=Console->File Selection->help] <triple: Console; File Selection; help>` This command prints a summary of the commands available.
 
 ?
-
-.. index::
-       triple: Console; File Selection; ?;
- This command is the same as the **help** command.
+    :index:`[TAG=Console->File Selection->?] <triple: Console; File Selection; ?>` This command is the same as the **help** command.
 
 If your filename contains some weird caracters, you can use ``?``, ``*`` or \\\. For example, if your filename contains a \\, you can use \\\\\.
 
-
+::
 
     * mark weird_file\\\\with-backslash
+

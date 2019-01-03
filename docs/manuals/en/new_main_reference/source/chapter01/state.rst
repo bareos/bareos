@@ -9,9 +9,7 @@ The Current State of Bareos
 What is Implemented
 -------------------
 
-.. index::
-   pair: Implementation; What is implemented
-
+:index:`[TAG=Implementation->What is implemented] <pair: Implementation; What is implemented>`
 
 -  Job Control
 
@@ -139,13 +137,12 @@ Advantages Over Other Backup Programs
 Current Implementation Restrictions
 -----------------------------------
 
-.. index::
-   pair: Restrictions; Current Implementation
-
+:index:`[TAG=Restrictions->Current Implementation] <pair: Restrictions; Current Implementation>`
 
 -  
 
-.. _`MultipleCatalogs`: MultipleCatalogs It is possible to configure the Bareos Director to use multiple Catalogs. However, this is neither advised, nor supported. Multiple catalogs require more management because in general you must know what catalog contains what data, e.g. currently, all Pools are defined in each catalog.
+.. _MultipleCatalogs
+ It is possible to configure the Bareos Director to use multiple Catalogs. However, this is neither advised, nor supported. Multiple catalogs require more management because in general you must know what catalog contains what data, e.g. currently, all Pools are defined in each catalog.
 
 -  Bareos can generally restore any backup made from one client to any other client. However, if the architecture is significantly different (i.e. 32 bit architecture to 64 bit or Win32 to Unix), some restrictions may apply (e.g. Solaris door files do not exist on other Unix/Linux machines; there are reports that Zlib compression written with 64 bit machines does not always read correctly on a 32 bit machine).
 
@@ -154,11 +151,7 @@ Current Implementation Restrictions
 Design Limitations or Restrictions
 ----------------------------------
 
-.. index::
-   pair: Restrictions; Design Limitations
-.. index::
-    pair: Design; Limitations
-
+:index:`[TAG=Restrictions->Design Limitations] <pair: Restrictions; Design Limitations>` :index:`[TAG=Design->Limitations] <pair: Design; Limitations>`
 
 -  Names (resource names, volume names, and such) defined in Bareos configuration files are limited to a fixed number of characters. Currently the limit is defined as 127 characters. Note, this does not apply to filenames, which may be arbitrarily long.
 
@@ -169,10 +162,9 @@ Design Limitations or Restrictions
 Items to Note
 -------------
 
-.. index::
-   single: Items to Note
-
+:index:`[TAG=Items to Note] <single: Items to Note>`
 
 -  Bareos’s Differential and Incremental *normal* backups are based on time stamps. Consequently, if you move files into an existing directory or move a whole directory into the backup fileset after a Full backup, those files will probably not be backed up by an Incremental save because they will have old dates. This problem is corrected by using :ref:`Accurate mode <accuratemode>` backups or by explicitly updating the date/time stamp on all moved files.
 
 -  In non Accurate mode, files deleted after a Full save will be included in a restoration. This is typical for most similar backup programs. To avoid this, use :ref:`Accurate mode <accuratemode>` backup.
+

@@ -4,11 +4,10 @@
 Understanding Jobs and Schedules
 ================================
 
-.. index::
-   pair: Schedule; Understanding Schedules
- 
+:index:`[TAG=Schedule->Understanding Schedules] <pair: Schedule; Understanding Schedules>` 
 
-.. _`JobsandSchedules`: JobsandSchedules
+.. _JobsandSchedules
+
 
 In order to make Bareos as flexible as possible, the directions given to Bareos are specified in several pieces. The main instruction is the job resource, which defines a job. A backup job generally consists of a FileSet, a Client, a Schedule for one or several levels or times of backups, a Pool, as well as additional instructions. Another way of looking at it is the FileSet is what to backup; the Client is who to backup; the Schedule defines when, and the Pool defines where (i.e. what Volume).
 
@@ -20,15 +19,10 @@ Finally, be aware that in addition to the backup jobs there are restore, verify,
 Understanding Pools, Volumes and Labels
 =======================================
 
-.. index::
-   pair: Pools; Understanding
-.. index::
-    pair: Volumes; Understanding
-.. index::
-    pair: Label; Understanding Labels
- 
+:index:`[TAG=Pools->Understanding] <pair: Pools; Understanding>` :index:`[TAG=Volumes->Understanding] <pair: Volumes; Understanding>` :index:`[TAG=Label->Understanding Labels] <pair: Label; Understanding Labels>` 
 
-.. _`PoolsVolsLabels`: PoolsVolsLabels
+.. _PoolsVolsLabels
+
 
 If you have been using a program such as :program:`tar` to backup your system, Pools, Volumes, and labeling may be a bit confusing at first. A Volume is a single physical tape (or possibly a single file) on which Bareos will write your backup data. Pools group together Volumes so that a backup is not restricted to the length of a single Volume (tape). Consequently, rather than explicitly naming Volumes in your Job, you specify a Pool, and Bareos will select the next appendable Volume
 from the Pool and mounts it.
@@ -49,31 +43,24 @@ For more on Pools, see the :ref:`DirectorResourcePool` section of the Director C
 Setting Up Bareos Configuration Files
 =====================================
 
-.. index::
-   pair: Configuration; Files
+:index:`[TAG=Configuration->Files] <pair: Configuration; Files>`
 
-
-On Unix, Bareos configuration files are usually located in the :file:`/etc/bareos/` directory and are named accordingly to the programs that use it. Since Bareos 16.2.4}` the default configuration is stored as one file per resource in subdirectories under :file:`bareos-dir.d`, :file:`bareos-sd.d` or :raw-latex:`\directory{bareos-fd.d. For details, see
+On Unix, Bareos configuration files are usually located in the :file:`/etc/bareos/` directory and are named accordingly to the programs that use it. Since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; Subdirectory Configuration Scheme used as Default>` the default configuration is stored as one file per resource in subdirectories under :file:`bareos-dir.d`, :file:`bareos-sd.d` or :file:`bareos-fd.d`. For details, see
 :ref:`ConfigureChapter` and :ref:`section-SubdirectoryConfigurationScheme`.
 
 Testing your Configuration Files
 ================================
 
-.. index::
-   pair: Testing; Configuration Files
+:index:`[TAG=Testing->Configuration Files] <pair: Testing; Configuration Files>`
 
+You can test if your configuration file is syntactically correct by running the appropriate daemon with the :option:`-t` option. The daemon will process the configuration file and print any error messages then terminate.
 
-You can test if your configuration file is syntactically correct by running the appropriate daemon with the                :option:`-t` option. The daemon will process the configuration file and print any error messages then terminate.
-
-As the |bareosDir| and |bareosSd| runs as user **bareos}`, testing the configuration should be done as :raw-latex:`\user{bareos**.
+As the |bareosDir| and |bareosSd| runs as user **bareos**, testing the configuration should be done as **bareos**.
 
 This is especially required to test the |bareosDir|, as it also connects to the database and checks if the catalog schema version is correct. Depending on your database, only the **bareos** has permission to access it.
 
-
-
-    
 .. code-block:: sh
-    :caption: Testing Configuration Files
+   :caption: Testing Configuration Files
 
     su bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t"
     su bareos -s /bin/sh -c "/usr/sbin/bareos-sd -t"

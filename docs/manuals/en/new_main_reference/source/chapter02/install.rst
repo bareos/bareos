@@ -9,27 +9,19 @@ If Bareos is available as a package, only 4 steps are required to get to a runni
 
 #. 
 
-
-
-      :ref:`section-AddSoftwareRepository`
+   :ref:`section-AddSoftwareRepository`
 
 #. 
 
-
-
-      :ref:`section-InstallBareosPackages`
+   :ref:`section-InstallBareosPackages`
 
 #. 
 
-
-
-      :ref:`section-CreateDatabase`
+   :ref:`section-CreateDatabase`
 
 #. 
 
-
-
-      :ref:`section-StartDaemons`
+   :ref:`section-StartDaemons`
 
 This will start a very basic Bareos installation which will regularly backup a directory to disk. In order to fit it to your needs, you’ll have to adapt the configuration and might want to backup other clients.
 
@@ -38,9 +30,9 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 ======================================
 
--  `http://download.bareos.org/bareos/release/latest/ <http://download.bareos.org/bareos/release/latest/>`_
+-  http://download.bareos.org/bareos/release/latest/
 
-You’ll find Bareos binary package repositories at `http://download.bareos.org/ <http://download.bareos.org/>`_. The latest stable released version is available at `http://download.bareos.org/bareos/release/latest/ <http://download.bareos.org/bareos/release/latest/>`_.
+You’ll find Bareos binary package repositories at http://download.bareos.org/. The latest stable released version is available at http://download.bareos.org/bareos/release/latest/.
 
 The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 
@@ -60,7 +52,7 @@ Bareos offers the following database backends:
 -  | Sqlite by package **bareos-database-sqlite3**
    | 
 .. warning:: 
-  The Sqlite backend is only intended for testing, not for productive use.
+   The Sqlite backend is only intended for testing, not for productive use.
 
 PostgreSQL
 ^^^^^^^^^^
@@ -91,24 +83,15 @@ The package **bareos** is only a meta package, that contains dependencies to the
 Install on RedHat based Linux Distributions
 -------------------------------------------
 
-RHEL\ :math:`\ge`\ 7, CentOS\ :math:`\ge`\ 7, Fedora
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RHEL>7, CentOS>7, Fedora
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Platform; RHEL
-.. index::
-    pair: Platform; CentOS
-.. index::
-    pair: Platform; Fedora
+:index:`[TAG=Platform->RHEL] <pair: Platform; RHEL>` :index:`[TAG=Platform->CentOS] <pair: Platform; CentOS>` :index:`[TAG=Platform->Fedora] <pair: Platform; Fedora>`
 
+Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
 
-Bareos 15.2.0 requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
-
-
-
-    
 .. code-block:: sh
-    :caption: Bareos installation on RHEL ≥ 7 / CentOS ≥ 7 / Fedora
+   :caption: Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
 
     #
     # define parameter
@@ -135,18 +118,12 @@ Bareos 15.2.0 requires the :ref:`Jansson library <jansson>` package. On RHEL 7 i
 RHEL 6, CentOS 6
 ~~~~~~~~~~~~~~~~
 
+:index:`[TAG=Platform->RHEL->6] <triple: Platform; RHEL; 6>` :index:`[TAG=Platform->CentOS->6] <triple: Platform; CentOS; 6>`
 
-.. index::
-   triple: Platform; RHEL; 6;
- :raw-latex:`\index[general]{Platform!CentOS!6}`
+Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
 
-Bareos 15.2.0 requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
-
-
-
-    
 .. code-block:: sh
-    :caption: Bareos installation on RHEL ≥ 6 / CentOS ≥ 6
+   :caption: Bareos installation on RHEL > 6 / CentOS > 6
 
     #
     # add EPEL repository, if not already present.
@@ -176,18 +153,12 @@ Bareos 15.2.0 requires the :ref:`Jansson library <jansson>` package. This packag
 RHEL 5
 ~~~~~~
 
-
-.. index::
-   triple: Platform; RHEL; 5;
-
+:index:`[TAG=Platform->RHEL->5] <triple: Platform; RHEL; 5>`
 
 yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
 
-
-
-    
 .. code-block:: sh
-    :caption: Bareos installation on RHEL 5 / CentOS 5
+   :caption: Bareos installation on RHEL 5 / CentOS 5
 
     #
     # define parameter
@@ -214,17 +185,10 @@ Install on SUSE based Linux Distributions
 SUSE Linux Enterprise Server (SLES), openSUSE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Platform; SLES
-.. index::
-    pair: Platform; openSUSE
+:index:`[TAG=Platform->SLES] <pair: Platform; SLES>` :index:`[TAG=Platform->openSUSE] <pair: Platform; openSUSE>`
 
-
-
-
-    
 .. code-block:: sh
-    :caption: Bareos installation on SLES / openSUSE
+   :caption: Bareos installation on SLES / openSUSE
 
     #
     # define parameter
@@ -258,19 +222,12 @@ Install on Debian based Linux Distributions
 Debian / Ubuntu
 ~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Platform; Debian
-.. index::
-    pair: Platform; Ubuntu
+:index:`[TAG=Platform->Debian] <pair: Platform; Debian>` :index:`[TAG=Platform->Ubuntu] <pair: Platform; Ubuntu>`
 
+Bareos :index:`Version >= 15.2.0 <triple: bareos-15.2.0; requires; jansson>` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
-Bareos 15.2.0 requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
-
-
-
-    
 .. code-block:: sh
-    :caption: Bareos installation on Debian / Ubuntu
+   :caption: Bareos installation on Debian / Ubuntu
 
     #
     # define parameter
@@ -305,9 +262,7 @@ If you prefer using the versions of Bareos directly integrated into the distribu
 Install on Univention Corporate Server
 --------------------------------------
 
-.. raw:: latex
-
-   :strong:`Univention`
+:strong:`Univention`
 
 Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the intructions in :ref:`section-UniventionCorporateServer`.
 
@@ -320,20 +275,20 @@ Prepare Bareos database
 
 We assume that you have already your database installed and basically running. Using the PostgreSQL database backend is recommended.
 
-The easiest way to set up a database is using an system account that have passwordless local access to the database. Often this is the user **root}` for MySQL and the user :raw-latex:`\user{postgres** for PostgreSQL.
+The easiest way to set up a database is using an system account that have passwordless local access to the database. Often this is the user **root** for MySQL and the user **postgres** for PostgreSQL.
 
 For details, see chapter :ref:`CatMaintenanceChapter`.
 
 Debian based Linux Distributions
 --------------------------------
 
-Since Bareos 14.2.0 the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database.
+Since Bareos :index:`Version >= 14.2.0 <pair: bareos-14.2.0; dbconfig-common (Debian)>` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database.
 
 Follow the instructions during install to configure it according to your needs.
 
 |image| |image|
 
-If you decide not to use **dbconfig-common** (selecting                :option:`<No>` on the initial dialog), follow the instructions for :ref:`section-CreateDatabaseOtherDistributions`.
+If you decide not to use **dbconfig-common** (selecting :option:`<No>` on the initial dialog), follow the instructions for :ref:`section-CreateDatabaseOtherDistributions`.
 
 The selectable database backends depend on the **bareos-database-*** packages installed.
 
@@ -351,11 +306,8 @@ PostgreSQL
 
 If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use following commands:
 
-
-
-    
 .. code-block:: sh
-    :caption: Setup Bareos catalog with PostgreSQL
+   :caption: Setup Bareos catalog with PostgreSQL
 
     su postgres -c /usr/lib/bareos/scripts/create_bareos_database
     su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
@@ -366,24 +318,18 @@ MySQL/MariaDB
 
 Make sure, that **root** has direct access to the local MySQL server. Check if the command :program:`mysql` connects to the database without defining the password. This is the default on RedHat and SUSE distributions. On other systems (Debian, Ubuntu), create the file :file:`~/.my.cnf` with your authentication informations:
 
-
-
-    
 .. code-block:: sh
-    :caption: MySQL credentials file .my.cnf
+   :caption: MySQL credentials file .my.cnf
 
     [client]
     host=localhost
     user=root
-    password=YourPasswordForAccessingMysqlAsRoot
+    password=<input>YourPasswordForAccessingMysqlAsRoot</input>
 
 It is recommended, to secure the Bareos database connection with a password. See :ref:`Catalog Maintenance -- MySQL <catalog-maintenance-mysql>` about how to archieve this. For testing, using a password-less MySQL connection is probable okay. Setup the Bareos database tables by following commands:
 
-
-
-    
 .. code-block:: sh
-    :caption: Setup Bareos catalog with MySQL
+   :caption: Setup Bareos catalog with MySQL
 
     /usr/lib/bareos/scripts/create_bareos_database
     /usr/lib/bareos/scripts/make_bareos_tables
@@ -396,11 +342,8 @@ As some Bareos updates require a database schema update, therefore the file :fil
 Start the daemons
 =================
 
-
-
-    
 .. code-block:: sh
-    :caption: Start the Bareos Daemons
+   :caption: Start the Bareos Daemons
 
     service bareos-dir start
     service bareos-sd start
@@ -416,3 +359,4 @@ When you want to use the bareos-webui, please refer to the chapter :ref:`section
    :width: 45.0%
 .. |image| image:: \idir dbconfig-2-select-database-type
    :width: 45.0%
+

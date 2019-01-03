@@ -8,15 +8,13 @@ Use a dummy device to test the backup
 
 
 
-.. _`TestUsingFifoDevice`: TestUsingFifoDevice If your are testing your configuration, but don’t want to store the backup data, it is possible to use a dummy FIFO device to test your configuration, see :ref:`Stored configuration <SetupFifo>`.
+.. _TestUsingFifoDevice
+ If your are testing your configuration, but don’t want to store the backup data, it is possible to use a dummy FIFO device to test your configuration, see :ref:`Stored configuration <SetupFifo>`.
 
 Obviously, it can not be used to do a restore.
 
-
-
-    
 .. code-block:: sh
-    :caption: FIFO Storage Device Configuration
+   :caption: FIFO Storage Device Configuration
 
     Device {
       Name = NULL
@@ -34,13 +32,10 @@ Obviously, it can not be used to do a restore.
 Backup Of Third Party Databases
 ===============================
 
-.. index::
-   pair: Backup; of Third Party Databases
-.. index::
-    pair: Database; Backup Of Third Party
- 
+:index:`[TAG=Backup->of Third Party Databases] <pair: Backup; of Third Party Databases>` :index:`[TAG=Database->Backup Of Third Party] <pair: Database; Backup Of Third Party>` 
 
-.. _`BackupOtherDBs`: BackupOtherDBs
+.. _BackupOtherDBs
+
 
 If you are running a database in production mode on your machine, Bareos will happily backup the files, but if the database is in use while Bareos is reading it, you may back it up in an unstable state.
 
@@ -49,19 +44,12 @@ The best solution is to shutdown your database before backing it up, or use some
 Backup of MSSQL Databases with Bareos Plugin
 --------------------------------------------
 
-.. index::
-   single: MSSQL Backup
-.. index::
-    pair: Database; MSSQL
-.. index::
-    pair: Plugin; MSSQL backup
- 
+:index:`[TAG=MSSQL Backup] <single: MSSQL Backup>` :index:`[TAG=Database->MSSQL] <pair: Database; MSSQL>` :index:`[TAG=Plugin->MSSQL backup] <pair: Plugin; MSSQL backup>` 
 
-.. _`MSSQL`: MSSQL
+.. _MSSQL
 
-.. raw:: latex
 
-   \sinceVersion{general}{MSSQL}{13.2.0}
+:index:`Version >= 13.2.0 <pair: bareos-13.2.0; MSSQL>`
 
 Preparation
 ~~~~~~~~~~~
@@ -72,7 +60,7 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
    | The database need to run in **Full Recovery Mode**. Otherwise you are not able to use differential and incremental backups or to use point in time recovery.
    | 
 .. warning:: 
-  If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
+   If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
 
 -  | **Security and Access**
    | For connections you can use a SQL-User or a integrated systemaccount (Windows NT user). Both connection types are supported.
@@ -98,7 +86,7 @@ There is no difference for the rights and roles between using a systemaccount (t
 MSSQL Plugin Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For Bareos :math:`<` 14.2, install the Bareos MSSQL plugin onto the MSSQL server you want to backup. Bareos :math:`>=` 14.2 also allows to backup remote MSSQL servers (option                :option:`serveraddress`).
+For Bareos < 14.2, install the Bareos MSSQL plugin onto the MSSQL server you want to backup. Bareos >= 14.2 also allows to backup remote MSSQL servers (option :option:`serveraddress`).
 
 Bareos Windows-Installer
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -108,13 +96,10 @@ Install the Bareos filedaemon including the component "Bareos FileDameon Plugins
 Manual install
 ^^^^^^^^^^^^^^
 
-After downloading the plugin you need to copy it into :file:`C:\Program Files\Bareos\Plugins``. Then you need to define the plugin directory and which plugin the **bareos-filedaemon** should use. You have to edit the **bareos-filedaemon** resource in ``path:C:\Program Data\bareos-fd.conf` as follows:
+After downloading the plugin you need to copy it into :file:`C:\Program Files\Bareos\Plugins`. Then you need to define the plugin directory and which plugin the **bareos-filedaemon** should use. You have to edit the **bareos-filedaemon** resource in :file:`C:\Program Data\bareos-fd.conf` as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: MSSQL plugin configuration
+   :caption: MSSQL plugin configuration
 
     FileDaemon {
       Name = mssqlserver-fd
@@ -130,13 +115,10 @@ After downloading the plugin you need to copy it into :file:`C:\Program Files\Ba
 Plugin Test
 ~~~~~~~~~~~
 
-
-
-    
 .. code-block:: sh
-    :caption: status client=mssqlserver-fd
+   :caption: status client=mssqlserver-fd
 
-    *status client=mssqlserver-fd
+    *<input>status client=mssqlserver-fd</input>
     Connecting to Client mssqlserver-fd at 192.168.10.101:9102
 
     mssqlserver-fd Version: 13.2.2 (12 November 2013)  VSS Linux Cross-compile Win64
@@ -173,11 +155,8 @@ Configure the FileSet
 
 To use the plugin you need to configure it in the fileset as a plugin resource. For each database instance you need to define a exclusive backup job and fileset.
 
-
-
-    
 .. code-block:: sh
-    :caption: MSSQL FileSet
+   :caption: MSSQL FileSet
 
     Fileset {
       Name = "Mssql"
@@ -198,7 +177,7 @@ mssqlvdi
     This is the reference to the MSSQL plugin.
 
 serveraddress
-    (14.2.2) Defines the server address to connect to (if empty defaults to localhost).
+    (:index:`Version >= 14.2.2 <pair: bareos-14.2.2; MSSQL: serveraddress>`) Defines the server address to connect to (if empty defaults to localhost).
 
 instance
     Defines the instance within the database server.
@@ -218,13 +197,10 @@ Run Backups
 
 Here you can see an example for a backup:
 
-
-
-    
 .. code-block:: sh
-    :caption: run MSSQL backup job
+   :caption: run MSSQL backup job
 
-    *run job=MSSQLBak
+    *<input>run job=MSSQLBak</input>
     Using Catalog "MyCatalog"
     Run Backup job
     JobName:  MSSQLBak
@@ -236,10 +212,10 @@ Here you can see an example for a backup:
     Storage:  File (From Job resource)
     When:     2013-11-21 09:48:27
     Priority: 10
-    OK to run? (yes/mod/no): yes
+    OK to run? (yes/mod/no): <input>yes</input>
     Job queued. JobId=7
     You have no messages.
-    *mess
+    *<input>mess</input>
     21-Nov 09:48 bareos-dir JobId 7: Start Backup JobId 7, Job=MSSQLBak.2013-11-21_09.48.30_04
     21-Nov 09:48 bareos-dir JobId 7: Using Device "FileStorage" to write.
     21-Nov 09:49 bareos-sd JobId 7: Volume "test1" previously written, moving to end of data.
@@ -282,29 +258,23 @@ Here you can see an example for a backup:
 
 At least you gain a full backup which contains the follow:
 
-.. raw:: latex
-
-   
 
 
+::
 
     @MSSQL/
     @MSSQL/default/
     @MSSQL/default/myDatabase/
     @MSSQL/default/myDatabase/db-full
 
-.. raw:: latex
 
-   
 
 | So if you perform your first full backup your are capable to perfom differntial and incremental backups.
 | Differntial FileSet example:
 
-.. raw:: latex
-
-   
 
 
+::
 
     /@MSSQL/
     /@MSSQL/default/
@@ -312,17 +282,13 @@ At least you gain a full backup which contains the follow:
     /@MSSQL/default/myDatabase/db-full
     /@MSSQL/default/myDatabase/db-diff
 
-.. raw:: latex
 
-   
 
 Incremental FileSet example:
 
-.. raw:: latex
-
-   
 
 
+::
 
     *@MSSQL/
       *default/
@@ -331,9 +297,7 @@ Incremental FileSet example:
           *db-full
           *log-2013-11-21 17:32:20
 
-.. raw:: latex
 
-   
 
 Restores
 ~~~~~~~~
@@ -355,13 +319,10 @@ When you specify for restore a where path which is lets say ’c:/temp’ the pl
 
 Example for a full restore:
 
-
-
-    
 .. code-block:: sh
-    :caption: restore MSSQL database
+   :caption: restore MSSQL database
 
-    *restore client=mssqlserver-fd
+    *<input>restore client=mssqlserver-fd</input>
     Using Catalog "MyCatalog"
 
     First you select one or more JobIds that contain files
@@ -383,7 +344,7 @@ Example for a full restore:
         11: Enter a list of directories to restore for found JobIds
         12: Select full restore to a specified Job date
         13: Cancel
-    Select item-  (1-13): 5
+    Select item:  (1-13): <input>5</input>
     Automatically selected FileSet: Mssql
     +-------+-------+----------+-------------+---------------------+------------+
     | JobId | Level | JobFiles | JobBytes    | StartTime           | VolumeName |
@@ -401,9 +362,9 @@ Example for a full restore:
     Enter "done" to leave this mode.
 
     cwd is: /
-    $ mark *
+    $ <input>mark *</input>
     1 file marked.
-    $ done
+    $ <input>done</input>
     Bootstrap records written to /var/lib/bareos/bareos-dir.restore.4.bsr
 
     The job will require the following
@@ -420,7 +381,7 @@ Example for a full restore:
     The defined Restore Job resources are:
          1: RestoreMSSQL
          2: RestoreFiles
-    Select Restore Job (1-2): 1
+    Select Restore Job (1-2): <input>1</input>
     Using Catalog "MyCatalog"
     Run Restore job
     JobName:         RestoreMSSQL
@@ -436,7 +397,7 @@ Example for a full restore:
     Catalog:         MyCatalog
     Priority:        10
     Plugin Options:  *None*
-    OK to run? (yes/mod/no): mod
+    OK to run? (yes/mod/no): <input>mod</input>
     Parameters to modify:
          1: Level
          2: Storage
@@ -452,8 +413,8 @@ Example for a full restore:
         12: Replace
         13: JobId
         14: Plugin Options
-    Select parameter to modify (1-14): 14
-    Please enter Plugin Options string: mssqlvdi:instance=default:database=myDatabase:replace=yes
+    Select parameter to modify (1-14): <input>14</input>
+    Please enter Plugin Options string: <input>mssqlvdi:instance=default:database=myDatabase:replace=yes</input>
     Run Restore job
     JobName:         RestoreMSSQL
     Bootstrap:       /var/lib/bareos/bareos-dir.restore.4.bsr
@@ -468,10 +429,10 @@ Example for a full restore:
     Catalog:         MyCatalog
     Priority:        10
     Plugin Options:  mssqlvdi:instance=default:database=myDatabase:replace=yes
-    OK to run? (yes/mod/no): yes
+    OK to run? (yes/mod/no): <input>yes</input>
     Job queued. JobId=10
     You have messages.
-    *mess
+    *<input>mess</input>
     21-Nov 17:12 bareos-dir JobId 10: Start Restore Job RestoreMSSQL.2013-11-21_17.12.26_11
     21-Nov 17:12 bareos-dir JobId 10: Using Device "FileStorage" to read.
     21-Nov 17:13 damorgan-sd JobId 10: Ready to read from volume "test1" on device "FileStorage" (/storage).
@@ -503,17 +464,15 @@ norecovery=<yes|no>
     This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenace operations are possible.
 
 recoverafterrestore=<yes|no>
-    With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement: :raw-latex:``
+    With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement: 
 
-
+    ::
 
             Restore DATABASE yourDatabase WITH RECOVERY
             GO
           
 
- 
-
-       
+    
 
 stopbeforemark=<log sequence number specification>
     used for point in time recovery.
@@ -526,13 +485,10 @@ stopat=<timestamp>
 
 Followed is a example for a restore of full, differential and incremental backup with a replace of the original database:
 
-
-
-    
 .. code-block:: sh
-    :caption: restore MSSQL database chain
+   :caption: restore MSSQL database chain
 
-    *restore client=mssqlserver-fd
+    *<input>restore client=mssqlserver-fd</input>
 
     First you select one or more JobIds that contain files
     to be restored. You will be presented several methods
@@ -553,7 +509,7 @@ Followed is a example for a restore of full, differential and incremental backup
         11: Enter a list of directories to restore for found JobIds
         12: Select full restore to a specified Job date
         13: Cancel
-    Select item-  (1-13): 5
+    Select item:  (1-13): <input>5</input>
     Automatically selected FileSet: Mssql
     +-------+-------+----------+-------------+---------------------+------------+
     | JobId | Level | JobFiles | JobBytes    | StartTime           | VolumeName |
@@ -573,16 +529,16 @@ Followed is a example for a restore of full, differential and incremental backup
     Enter "done" to leave this mode.
 
     cwd is: /
-    $ mark *
+    $ <input>mark *</input>
     3 files marked.
-    $ lsmark
+    $ <input>lsmark</input>
     *@MSSQL/
       *default/
         *myDatabase/
           *db-diff
           *db-full
           *log-2013-11-21 17:32:20
-    $ done
+    $ <input>done</input>
     Bootstrap records written to /var/lib/bareos/bareos-dir.restore.6.bsr
 
     The job will require the following
@@ -599,7 +555,7 @@ Followed is a example for a restore of full, differential and incremental backup
     The defined Restore Job resources are:
          1: RestoreMSSQL
          2: RestoreFiles
-    Select Restore Job (1-2): 1
+    Select Restore Job (1-2): <input>1</input>
     Run Restore job
     JobName:         RestoreMSSQL
     Bootstrap:       /var/lib/bareos/bareos-dir.restore.6.bsr
@@ -614,7 +570,7 @@ Followed is a example for a restore of full, differential and incremental backup
     Catalog:         MyCatalog
     Priority:        10
     Plugin Options:  *None*
-    OK to run? (yes/mod/no): mod
+    OK to run? (yes/mod/no): <input>mod</input>
     Parameters to modify:
          1: Level
          2: Storage
@@ -630,8 +586,8 @@ Followed is a example for a restore of full, differential and incremental backup
         12: Replace
         13: JobId
         14: Plugin Options
-    Select parameter to modify (1-14): 14
-    Please enter Plugin Options string: mssqlvdi:instance=default:database=myDatabase:replace=yes:norecovery=yes
+    Select parameter to modify (1-14): <input>14</input>
+    Please enter Plugin Options string: <input>mssqlvdi:instance=default:database=myDatabase:replace=yes:norecovery=yes</input>
     Run Restore job
     JobName:         RestoreMSSQL
     Bootstrap:       /var/lib/bareos/bareos-dir.restore.6.bsr
@@ -646,7 +602,7 @@ Followed is a example for a restore of full, differential and incremental backup
     Catalog:         MyCatalog
     Priority:        10
     Plugin Options:  mssqlvdi:instance=default:database=myDatabase:replace=yes:norecovery=yes
-    OK to run? (yes/mod/no): yes
+    OK to run? (yes/mod/no): <input>yes</input>
     Job queued. JobId=14
     21-Nov 17:34 bareos-dir JobId 14: Start Restore Job RestoreMSSQL.2013-11-21_17.34.40_16
     21-Nov 17:34 bareos-dir JobId 14: Using Device "FileStorage" to read.
@@ -673,33 +629,24 @@ Followed is a example for a restore of full, differential and incremental backup
 Backup of a PostgreSQL Database
 -------------------------------
 
-.. index::
-   pair: PostgreSQL; Backup
+:index:`[TAG=PostgreSQL->Backup] <pair: PostgreSQL; Backup>` :index:`[TAG=Database->PostgreSQL->Backup] <triple: Database; PostgreSQL; Backup>` 
 
-.. index::
-    triple: Database; PostgreSQL; Backup;
- 
+.. _backup-postgresql
 
-.. _`backup-postgresql`: backup-postgresql
 
 In this section, we describe different methods how to do backups of the PostgreSQL databases.
 
 Backup of a PostgreSQL Database by using the RunScript directive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: RunScript; Example
-
+:index:`[TAG=RunScript->Example] <pair: RunScript; Example>`
 
 One method to backup a PostgreSQL database is to use the :program:`pg_dumpall` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
-This can be done by using **Run Script**:sup:`Dir`:sub:`Job`  directives inside a Job Resource, for example:
+This can be done by using **Run Script**:sup:`Dir`:sub:`Job`\  directives inside a Job Resource, for example:
 
-
-
-    
 .. code-block:: sh
-    :caption: RunScript job resource for a PostgreSQL backup
+   :caption: RunScript job resource for a PostgreSQL backup
 
     Job {
       Name = "BackupDatabase"
@@ -737,22 +684,17 @@ This can be done by using **Run Script**:sup:`Dir`:sub:`Job`  directives inside 
       }
     }
 
-Note that redirecting the :program:`pg_dumpall` output to a file requires to run the whole command line through a shell, otherwise the :program:`pg_dumpall` would not know what do with the :program:`>` character and the job would fail. As no shell features like redirection or piping are used for the :program:`rm`, the :program:`sh -c` is not needed there. See **Run Script**:sup:`Dir`:sub:`Job`  for more details.
+Note that redirecting the :program:`pg_dumpall` output to a file requires to run the whole command line through a shell, otherwise the :program:`pg_dumpall` would not know what do with the :program:`>` character and the job would fail. As no shell features like redirection or piping are used for the :program:`rm`, the :program:`sh -c` is not needed there. See **Run Script**:sup:`Dir`:sub:`Job`\  for more details.
 
 Backup of a PostgreSQL Databases by using the bpipe plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: bpipe; PostgreSQL backup
+:index:`[TAG=bpipe->PostgreSQL backup] <pair: bpipe; PostgreSQL backup>`
 
+Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the **Include**:sup:`Dir`:sub:`FileSet`\  section of a File Set, e.g.:
 
-Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the **Include**:sup:`Dir`:sub:`FileSet`  section of a File Set, e.g.:
-
-
-
-    
 .. code-block:: sh
-    :caption: bpipe directive for PostgreSQL backup
+   :caption: bpipe directive for PostgreSQL backup
 
     FileSet {
       Name = "postgresql-all"
@@ -770,11 +712,8 @@ case is psql. When psql is called, it will read the data sent to it by the plugi
 
 This can also be used, to backup a database that is running on a remote host:
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe directive to backup a PostgreSQL database that is running on a remote host
+   :caption: bpipe directive to backup a PostgreSQL database that is running on a remote host
 
     FileSet {
       Name = "postgresql-remote"
@@ -790,48 +729,42 @@ This can also be used, to backup a database that is running on a remote host:
 Backup of a PostgreSQL Databases by using the PGSQL-Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; PostgreSQL Backup
- 
+:index:`[TAG=Plugin->PostgreSQL Backup] <pair: Plugin; PostgreSQL Backup>` 
 
-.. _`backup-postgresql-plugin`: backup-postgresql-plugin
+.. _backup-postgresql-plugin
+
 
 The PGSQL-Plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving (with pgsql-archlog) and backup. With online database and transaction logs the backup plugin can perform Poin-In-Time-Restore up to a single selected transaction or date/time.
 
 Database recovery is performed fully automatic with dedicated pgsql-restore utility.
 
-For a full description, see `https://github.com/bareos/contrib-pgsql-plugin/wiki <https://github.com/bareos/contrib-pgsql-plugin/wiki>`_.
+For a full description, see https://github.com/bareos/contrib-pgsql-plugin/wiki.
 
 Backup of a MySQL Database
 --------------------------
 
-.. index::
-   pair: MySQL; Backup
+:index:`[TAG=MySQL->Backup] <pair: MySQL; Backup>` :index:`[TAG=Database->MySQL->Backup] <triple: Database; MySQL; Backup>` 
 
-.. index::
-    triple: Database; MySQL; Backup;
- 
+.. _backup-mysql
 
-.. _`backup-mysql`: backup-mysql
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
 Backup of MySQL Databases using the Bareos MySQL Percona xtrabackup Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   single: Percona xtrabackup}` :raw-latex:`\index[general]{xtrabackup
- 
+:index:`[TAG=Plugin->MySQL Backup] <pair: Plugin; MySQL Backup>` :index:`[TAG=Percona xtrabackup] <single: Percona xtrabackup>` :index:`[TAG=xtrabackup] <single: xtrabackup>` 
 
-.. _`backup-mysql-xtrabackup`: backup-mysql-xtrabackup
+.. _backup-mysql-xtrabackup
 
-This plugin is available since 16.2.4, it uses the :program:`xtrabackup` tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB. It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. If you simply want to backup full dumps, then using
+
+This plugin is available since :index:`Version >= 16.2.4 <pair: bareos-16.2.4; MySQL Incremental Backup Plugin for using Percona xtrabackup>`, it uses the :program:`xtrabackup` tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB. It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. If you simply want to backup full dumps, then using
 :ref:`backup-mysql-python` is the easier way.
 
 Prerequisites
 ^^^^^^^^^^^^^
 
-Install the xtrabackup tool from Percona. Documentation and packages are available here: `https://www.percona.com/software/mysql-database/percona-xtrabackup <https://www.percona.com/software/mysql-database/percona-xtrabackup>`_. The plugin was successfully tested with xtrabackup versions 2.3.5 and 2.4.4.
+Install the xtrabackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-xtrabackup. The plugin was successfully tested with xtrabackup versions 2.3.5 and 2.4.4.
 
 As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |bareosFd|, where you run it.
 
@@ -840,18 +773,15 @@ For authentication the :file:`.mycnf` file of the user running the |bareosFd|. B
 Installation
 ^^^^^^^^^^^^
 
-Make sure you have met the prerequisites. Install the files :file:`BareosFdPercona.py` and :file:`bareos-fd-percona.py` in your Bareos plugin directory (usually :file:`/usr/lib64/bareos/plugins`). These files are available in the Git repository `https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/bareos_percona <https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/bareos_percona>`_.
+Make sure you have met the prerequisites. Install the files :file:`BareosFdPercona.py` and :file:`bareos-fd-percona.py` in your Bareos plugin directory (usually :file:`/usr/lib64/bareos/plugins`). These files are available in the Git repository https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/bareos_percona.
 
 Configuration
 ^^^^^^^^^^^^^
 
 Activate your plugin directory in the |bareosFd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-fd client myself
+   :caption: bareos-fd.d/client/myself.conf
 
     Client {
       ...
@@ -861,11 +791,8 @@ Activate your plugin directory in the |bareosFd| configuration. See :ref:`fdPlug
 
 Now include the plugin as command-plugin in the Fileset resource:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir fileset mysql
+   :caption: bareos-dir.d/fileset/mysql.conf
 
     FileSet {
         Name = "mysql"
@@ -884,24 +811,22 @@ If used this way, the plugin will call xtrabackup to create a backup of all data
 
 You can append options to the plugin call as key=value pairs, separated by ’:’. The following options are available:
 
--  With                :option:`mycnf` you can make xtrabackup use a special mycnf-file with login credentials.
+-  With :option:`mycnf` you can make xtrabackup use a special mycnf-file with login credentials.
 
--                 :option:`dumpbinary` lets you modify the default command xtrabackup.
+-  :option:`dumpbinary` lets you modify the default command xtrabackup.
 
--                 :option:`dumpoptions` to modify the options for xtrabackup. Default setting is: :program:`--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir`
+-  :option:`dumpoptions` to modify the options for xtrabackup. Default setting is: :program:`--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir`
 
--                 :option:`restorecommand` to modify the command for restore. Default setting is: :program:`xbstream -x -C`
+-  :option:`restorecommand` to modify the command for restore. Default setting is: :program:`xbstream -x -C`
 
--                 :option:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
+-  :option:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
 
 Restore
 ^^^^^^^
 
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
 
-.. raw:: latex
-
-   \directory{/tmp/bareos-restores/_percona/}
+:file:`/tmp/bareos-restores/_percona/`
 
 Each restore job gets an own subdirectory, because Percona expects an empty directory. In that subdirectory, a new directory is created for every backup job that was part of the Full-Incremental sequence.
 
@@ -909,7 +834,7 @@ The naming scheme is: :file:`fromLSN_toLSN_jobid`
 
 Example:
 
-
+::
 
     /tmp/bareos-restores/_percona/351/
     |-- 00000000000000000000_00000000000010129154_0000000334
@@ -920,33 +845,29 @@ This example shows the restore tree for restore job with ID 351. First subdirect
 
 Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 338.
 
-To further prepare the restored files, use the :program:`xtrabackup --prepare` command. Read `https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html <https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html>`_ for more information.
+To further prepare the restored files, use the :program:`xtrabackup --prepare` command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html for more information.
 
 Backup of MySQL Databases using the Python MySQL plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; MySQL Backup
- 
+:index:`[TAG=Plugin->MySQL Backup] <pair: Plugin; MySQL Backup>` 
 
-.. _`backup-mysql-python`: backup-mysql-python
+.. _backup-mysql-python
 
-The Python plugin from `https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python <https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python>`_ makes a backup of all or selected MySQL databases from the |bareosFd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin
-(see :ref:`backup-mysql-xtrabackup`).
+
+The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |bareosFd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see
+:ref:`backup-mysql-xtrabackup`).
 
 Following settings must be done on the Bareos client (|bareosFd|):
 
 -  install and enable the |bareosFd| Python plugin
 
--  install the Python MySQL plugin (for some platforms it is available prepackaged from :raw-latex:`\contribDownloadBareosOrg`, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+-  install the Python MySQL plugin (for some platforms it is available prepackaged from \contribDownloadBareosOrg, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
 
--  disable bacula compatibility (default for Bareos :math:`>=` 15.2)
+-  disable bacula compatibility (default for Bareos >= 15.2)
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-fd client myself
+   :caption: bareos-fd.d/client/myself.conf
 
     Client {
       ...
@@ -957,11 +878,8 @@ Following settings must be done on the Bareos client (|bareosFd|):
 
 Configure the plugin in the |bareosDir|:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir fileset mysql
+   :caption: bareos-dir.d/fileset/mysql.conf
 
     FileSet {
         Name = "mysql"
@@ -975,7 +893,7 @@ Configure the plugin in the |bareosDir|:
         }
     }
 
-In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called                :option:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
+In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called :option:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
 
 The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`/_mysqlbackups_`.
 
@@ -988,7 +906,7 @@ dumpbinary
     command (with or without full path) to create the dumps. Default: :strong:`mysqldump`
 
 dumpoptions
-    options for dumpbinary, default: :emphasis:`\argument{--events --single-transaction}`
+    options for dumpbinary, default: :emphasis:`:strong:`--events --single-transaction``
 
 drop_and_recreate
     if not set to :strong:`false`, adds :strong:`--add-drop-database --databases` to dumpoptions
@@ -1007,19 +925,14 @@ On restore, the database dumps are restored to the subdirectory :file:`_mysqlbac
 Backup of a MySQL Database by using the RunScript directive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: RunScript; Example
-
+:index:`[TAG=RunScript->Example] <pair: RunScript; Example>`
 
 One method to backup a MySQL database is to use the :program:`mysqldump` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
-This can be done by using **Run Script**:sup:`Dir`:sub:`Job`  directives, for example:
+This can be done by using **Run Script**:sup:`Dir`:sub:`Job`\  directives, for example:
 
-
-
-    
 .. code-block:: sh
-    :caption: RunScript job resource for a MySQL backup
+   :caption: RunScript job resource for a MySQL backup
 
     Job {
       Name = "BackupDatabase"
@@ -1057,22 +970,17 @@ This can be done by using **Run Script**:sup:`Dir`:sub:`Job`  directives, for ex
       }
     }
 
-Note that redirecting the :program:`mysqldump` output to a file requires to run the whole command line through a shell, otherwise the :program:`mysqldump` would not know what do with the :program:`>` character and the job would fail. As no shell features like redirection or piping are used for the :program:`rm`, the :program:`sh -c` is not needed there. See **Run Script**:sup:`Dir`:sub:`Job`  for more details.
+Note that redirecting the :program:`mysqldump` output to a file requires to run the whole command line through a shell, otherwise the :program:`mysqldump` would not know what do with the :program:`>` character and the job would fail. As no shell features like redirection or piping are used for the :program:`rm`, the :program:`sh -c` is not needed there. See **Run Script**:sup:`Dir`:sub:`Job`\  for more details.
 
 Backup of a MySQL Database by using the bpipe plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: bpipe; MySQL backup
-
+:index:`[TAG=bpipe->MySQL backup] <pair: bpipe; MySQL backup>`
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe fileset for MySQL backup
+   :caption: bpipe fileset for MySQL backup
 
     FileSet {
       Name = "mysql-all"
@@ -1087,11 +995,8 @@ Instead of creating a temporary database dump file, the bpipe plugin can be used
 
 This can also be used, to backup a database that is running on a remote host:
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe directive to backup a MySQL database that is running on a remote host
+   :caption: bpipe directive to backup a MySQL database that is running on a remote host
 
     FileSet{
       Name = "mysql-all"
@@ -1106,11 +1011,8 @@ This can also be used, to backup a database that is running on a remote host:
 
 If you do not want a direct restore of your data in your plugin directive, as shown in the examples above, there is the possibility to restore the dump to the filesystem first, which offers you more control over the restore process, e.g.:
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe directive to backup a MySQL database and restore the dump to the filesystem first
+   :caption: bpipe directive to backup a MySQL database and restore the dump to the filesystem first
 
     FileSet{
       Name = "mysql-all"
@@ -1125,11 +1027,8 @@ If you do not want a direct restore of your data in your plugin directive, as sh
 
 A very simple corresponding shell script (:program:`bpipe-restore.sh`) to the method above might look like the following one:
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe shell script for a restore to filesystem
+   :caption: bpipe shell script for a restore to filesystem
 
     #!/bin/bash
     cat - > /tmp/dump.sql
@@ -1142,60 +1041,47 @@ Statistics Collection
 
 Statistics Collection can be controlled by a number of configuration directives. If Statistics Collection is enabled, statistics are collected by the |bareosDir| and stored into the Catalog database. So enabling this feature will increase your database size.
 
-The Statistics are used by the |bareosWebui| to show the status of a running job. :raw-latex:`\index[general]{Webui!Configure Statistics Collection}`
+The Statistics are used by the |bareosWebui| to show the status of a running job. :index:`[TAG=Webui->Configure Statistics Collection] <pair: Webui; Configure Statistics Collection>`
 
 Director Configuration - Director Resource Directives
 -----------------------------------------------------
 
 -  
 
-
-
-      **Statistics Collect Interval**:sup:`Dir`:sub:`Director` 
+   **Statistics Collect Interval**:sup:`Dir`:sub:`Director`\ 
 
 -  
 
-
-
-      **Statistics Retention**:sup:`Dir`:sub:`Director` 
+   **Statistics Retention**:sup:`Dir`:sub:`Director`\ 
 
 Director Configuration - Storage Resource Directives
 ----------------------------------------------------
 
 -  
 
-
-
-      **Collect Statistics**:sup:`Dir`:sub:`Storage` 
+   **Collect Statistics**:sup:`Dir`:sub:`Storage`\ 
 
 Storage Configuration - Storage Resource Directives
 ---------------------------------------------------
 
 -  
 
-
-
-      **Collect Device Statistics**:sup:`Sd`:sub:`Storage` 
+   **Collect Device Statistics**:sup:`Sd`:sub:`Storage`\ 
 
 -  
 
-
-
-      **Collect Job Statistics**:sup:`Sd`:sub:`Storage` 
+   **Collect Job Statistics**:sup:`Sd`:sub:`Storage`\ 
 
 -  
 
-
-
-      **Statistics Collect Interval**:sup:`Sd`:sub:`Storage` 
+   **Statistics Collect Interval**:sup:`Sd`:sub:`Storage`\ 
 
 Storage Configuration - Device Resource Directives
 --------------------------------------------------
 
 -  
 
-
-
-      **Collect Statistics**:sup:`Sd`:sub:`Device` 
+   **Collect Statistics**:sup:`Sd`:sub:`Device`\ 
 
 See chapter :ref:`section-JobStatistics` for additional information.
+

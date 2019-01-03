@@ -6,9 +6,7 @@
 Automated Disk Backup
 =====================
 
-.. index::
-   single: Automated Disk Backup}` :raw-latex:`\index[general]{Pool
-
+:index:`[TAG=Volumes->Using Pools to Manage] <pair: Volumes; Using Pools to Manage>` :index:`[TAG=Disk->Automated Backup] <pair: Disk; Automated Backup>` :index:`[TAG=Automated Disk Backup] <single: Automated Disk Backup>` :index:`[TAG=Pool] <single: Pool>`
 
 If you manage five or ten machines and have a nice tape backup, you don’t need Pools, and you may wonder what they are good for. In this chapter, you will see that Pools can help you optimize disk storage space. The same techniques can be applied to a shop that has multiple tape drives, or that wants to mount various different Volumes to meet their needs.
 
@@ -37,9 +35,7 @@ storage space can be reused.
 As mentioned, the solution is to have multiple Volumes, or files on the disk. To do so, we need to limit the use and thus the size of a single Volume, by time, by number of jobs, or by size. Any of these would work, but we chose to limit the use of a single Volume by putting a single job in each Volume with the exception of Volumes containing Incremental backup where there will be 6 jobs (a week’s worth of data) per volume. The details of this will be discussed shortly. This is a single client
 backup, so if you have multiple clients you will need to multiply those numbers by the number of clients, or use a different system for switching volumes, such as limiting the volume size.
 
-.. raw:: latex
-
-   \TODO{This chapter will get rewritten. Instead of limiting a Volume to one job, we will utilize \variable{Max Use Duration = 24 hours}. This prevents problems when adding more clients, because otherwise each job has to run seperat.}
+.. TODO: This chapter will get rewritten. Instead of limiting a Volume to one job, we will utilize \variable{Max Use Duration = 24 hours}. This prevents problems when adding more clients, because otherwise each job has to run seperat.
 
 The next problem to resolve is recycling of Volumes. As you noted from above, the requirements are to be able to restore monthly for 6 months, weekly for a month, and daily for a week. So to simplify things, why not do a Full save once a month, a Differential save once a week, and Incremental saves daily. Now since each of these different kinds of saves needs to remain valid for differing periods, the simplest way to do this (and possibly the only) is to have a separate Pool for each backup
 type.
@@ -48,22 +44,18 @@ The decision was to use three Pools: one for Full saves, one for Differential sa
 
 
 
-.. _`FullPool`: FullPool
+.. _FullPool
+
 
 Full Pool
 ~~~~~~~~~
 
-.. index::
-   single: Full Pool
-
+:index:`[TAG=Pool->Full] <pair: Pool; Full>` :index:`[TAG=Full Pool] <single: Full Pool>`
 
 Putting a single Full backup on each Volume, will require six Full save Volumes, and a retention period of six months. The Pool needed to do that is:
 
-
-
-    
 .. code-block:: sh
-    :caption: Full-Pool
+   :caption: Full-Pool
 
     Pool {
       Name = Full-Pool
@@ -84,22 +76,18 @@ If you have two clients, you would want to set **Maximum Volume Jobs** to 2 inst
 
 
 
-.. _`DiffPool`: DiffPool
+.. _DiffPool
+
 
 Differential Pool
 ~~~~~~~~~~~~~~~~~
 
-.. index::
-   single: Differential Pool
-
+:index:`[TAG=Pool->Differential] <pair: Pool; Differential>` :index:`[TAG=Differential Pool] <single: Differential Pool>`
 
 For the Differential backup Pool, we choose a retention period of a bit longer than a month and ensure that there is at least one Volume for each of the maximum of five weeks in a month. So the following works:
 
-
-
-    
 .. code-block:: sh
-    :caption: Differential Pool
+   :caption: Differential Pool
 
     Pool {
       Name = Diff-Pool
@@ -120,24 +108,18 @@ See the discussion above concering the Full pool for how to handle multiple clie
 
 
 
-.. _`IncPool`: IncPool
+.. _IncPool
+
 
 Incremental Pool
 ~~~~~~~~~~~~~~~~
 
-.. index::
-   single: Incremental Pool
-.. index::
-    pair: Pool; Incremental
-
+:index:`[TAG=Incremental Pool] <single: Incremental Pool>` :index:`[TAG=Pool->Incremental] <pair: Pool; Incremental>`
 
 Finally, here is the resource for the Incremental Pool:
 
-
-
-    
 .. code-block:: sh
-    :caption: Incremental Pool
+   :caption: Incremental Pool
 
     Pool {
       Name = Inc-Pool
@@ -161,11 +143,8 @@ The following example shows you the actual files used, with only a few minor mod
 
 The Director’s configuration file is as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir.conf
+   :caption: bareos-dir.conf
 
     Director {          # define myself
       Name = bareos-dir
@@ -350,11 +329,8 @@ The Director’s configuration file is as follows:
 
 and the Storage daemon’s configuration file is:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-sd.conf
+   :caption: bareos-sd.conf
 
     Storage {               # definition of myself
       Name = bareos-sd

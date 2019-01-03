@@ -6,12 +6,7 @@
 Automatic Volume Recycling
 ==========================
 
-.. index::
-   pair: Recycle; Automatic Volume
-
-.. index::
-    triple: Volume; Recycle; Automatic;
-
+:index:`[TAG=Recycle->Automatic Volume] <pair: Recycle; Automatic Volume>` :index:`[TAG=Volume->Recycle->Automatic] <triple: Volume; Recycle; Automatic>`
 
 By default, once Bareos starts writing a Volume, it can append to the volume, but it will not overwrite the existing data thus destroying it. However when Bareos recycles a Volume, the Volume becomes available for being reused and Bareos can at some later time overwrite the previous contents of that Volume. Thus all previous data will be lost. If the Volume is a tape, the tape will be rewritten from the beginning. If the Volume is a disk file, the file will be truncated before being rewritten.
 
@@ -21,43 +16,33 @@ Most people prefer to have a Pool of tapes that are used for daily backups and r
 
 By properly defining your Volume Pools with appropriate Retention periods, Bareos can manage the recycling (such as defined above) automatically.
 
-Automatic recycling of Volumes is controlled by four records in the :sup:`Dir` :strong:`Pool` resource definition. These four records are:
+Automatic recycling of Volumes is controlled by four records in the :sup:`Dir`\ :strong:`Pool` resource definition. These four records are:
 
--  **Auto Prune**:sup:`Dir`:sub:`Pool`  = yes
-
--  
-
-
-
-      **Volume Retention**:sup:`Dir`:sub:`Pool` 
-
--  **Recycle**:sup:`Dir`:sub:`Pool`  = yes
+-  **Auto Prune**:sup:`Dir`:sub:`Pool`\  = yes
 
 -  
 
+   **Volume Retention**:sup:`Dir`:sub:`Pool`\ 
 
+-  **Recycle**:sup:`Dir`:sub:`Pool`\  = yes
 
-      **Recycle Pool**:sup:`Dir`:sub:`Pool` 
+-  
+
+   **Recycle Pool**:sup:`Dir`:sub:`Pool`\ 
 
 The above three directives are all you need assuming that you fill each of your Volumes then wait the Volume Retention period before reusing them. If you want Bareos to stop using a Volume and recycle it before it is full, you can use one or more additional directives such as:
 
 -  
 
-
-
-      **Volume Use Duration**:sup:`Dir`:sub:`Pool` 
+   **Volume Use Duration**:sup:`Dir`:sub:`Pool`\ 
 
 -  
 
-
-
-      **Maximum Volume Jobs**:sup:`Dir`:sub:`Pool` 
+   **Maximum Volume Jobs**:sup:`Dir`:sub:`Pool`\ 
 
 -  
 
-
-
-      **Maximum Volume Bytes**:sup:`Dir`:sub:`Pool` 
+   **Maximum Volume Bytes**:sup:`Dir`:sub:`Pool`\ 
 
 Please see below and the :ref:`Basic Volume Management <DiskChapter>` chapter of this manual for complete examples.
 
@@ -81,11 +66,7 @@ can manually set a volume to **Full**. The reason for this is that Bareos wants 
 Automatic Pruning
 -----------------
 
-.. index::
-   pair: Automatic; Pruning
-.. index::
-    pair: Pruning; Automatic
-
+:index:`[TAG=Automatic->Pruning] <pair: Automatic; Pruning>` :index:`[TAG=Pruning->Automatic] <pair: Pruning; Automatic>`
 
 As Bareos writes files to tape, it keeps a list of files, jobs, and volumes in a database called the catalog. Among other things, the database helps Bareos to decide which files to back up in an incremental or differential backup, and helps you locate files on past backups when you want to restore something. However, the catalog will grow larger and larger as time goes on, and eventually it can become unacceptably large.
 
@@ -98,9 +79,7 @@ The alternative to Automatic Pruning is Manual Pruning, in which you explicitly 
 Pruning Directives
 ------------------
 
-.. index::
-   pair: Pruning; Directives
-
+:index:`[TAG=Pruning->Directives] <pair: Pruning; Directives>`
 
 There are three pruning durations. All apply to catalog database records and not to the actual data in a Volume. The pruning (or retention) durations are for: Volumes (Media records), Jobs (Job records), and Files (File records). The durations inter-depend because if Bareos prunes a Volume, it automatically removes all the Job records, and all the File records. Also when a Job record is pruned, all the File records for that Job are also pruned (deleted) from the catalog.
 
@@ -110,63 +89,61 @@ When a Job record is pruned, the Volume (Media record) for that Job can still re
 
 In each case, pruning removes information about where older files are, but it also prevents the catalog from growing to be too large. You choose the retention periods in function of how many files you are backing up and the time periods you want to keep those records online, and the size of the database. It is possible to re-insert the records (with 98% of the original data) by using :program:`bscan` to scan in a whole Volume or any part of the volume that you want.
 
-By setting **Auto Prune**:sup:`Dir`:sub:`Pool`  = yes you will permit the |bareosDir| to automatically prune all Volumes in the Pool when a Job needs another Volume. Volume pruning means removing records from the catalog. It does not shrink the size of the Volume or affect the Volume data until the Volume gets overwritten. When a Job requests another volume and there are no Volumes with Volume status **Append** available, Bareos will
+By setting **Auto Prune**:sup:`Dir`:sub:`Pool`\  = yes you will permit the |bareosDir| to automatically prune all Volumes in the Pool when a Job needs another Volume. Volume pruning means removing records from the catalog. It does not shrink the size of the Volume or affect the Volume data until the Volume gets overwritten. When a Job requests another volume and there are no Volumes with Volume status **Append** available, Bareos will
 begin volume pruning. This means that all Jobs that are older than the Volume Retention = **** period will be pruned from every Volume that has Volume status **Full** or **Used** and has Recycle = **yes**. Pruning consists of deleting the corresponding Job, File, and JobMedia records from the catalog database. No change to the physical data on the Volume occurs during the pruning process. When all
 files are pruned from a Volume (i.e. no records in the catalog), the Volume will be marked as **Purged** implying that no Jobs remain on the volume. The Pool records that control the pruning are described below.
 
-.. raw:: latex
+\begin{description}
 
-   \begin{description}
-
-   \item **Auto Prune**:sup:`Dir`:sub:`Pool`  = yes:
+   \item **Auto Prune**:sup:`Dir`:sub:`Pool`\  = yes:
       when running a Job  and it needs a new Volume but no appendable volumes are available, apply the Volume retention period.
       At that point,
       Bareos will prune all Volumes that can be pruned in an
       attempt to find a usable volume. If  during the autoprune, all files are
-      pruned from the Volume, it will be marked with Volume status \volumestatus{Purged}.
+      pruned from the Volume, it will be marked with Volume status **Purged**.
 
       Note, that although the File and Job records may be
-      pruned from the catalog, a Volume will only be marked \volumestatus{Purged} (and hence
-      ready for recycling) if the Volume status is \volumestatus{Append}, \volumestatus{Full}, \volumestatus{Used}, or \volumestatus{Error}.
-      If the Volume has another status, such as \volumestatus{Archive}, \volumestatus{Read-Only}, \volumestatus{Disabled},
-      \volumestatus{Busy} or \volumestatus{Cleaning}, the Volume status will not be changed to \volumestatus{Purged}.
+      pruned from the catalog, a Volume will only be marked **Purged** (and hence
+      ready for recycling) if the Volume status is **Append**, **Full**, **Used**, or **Error**.
+      If the Volume has another status, such as **Archive**, **Read-Only**, **Disabled**,
+      **Busy** or **Cleaning**, the Volume status will not be changed to **Purged**.
 
-   \item **Volume Retention**:sup:`Dir`:sub:`Pool` 
+   \item **Volume Retention**:sup:`Dir`:sub:`Pool`\ 
       defines the length of time that Bareos will
       guarantee that the Volume is not reused counting from the time the last
       job stored on the Volume terminated.  A key point is that this time
       period is not even considered as long at the Volume remains appendable.
-      The Volume Retention period count down begins only when the \volumestatus{Append}
-      status has been changed to some other status (\volumestatus{Full}, \volumestatus{Used}, \volumestatus{Purged}, ...).
+      The Volume Retention period count down begins only when the **Append**
+      status has been changed to some other status (**Full**, **Used**, **Purged**, ...).
 
-      When this time period expires and if **Auto Prune**:sup:`Dir`:sub:`Pool`  = yes
+      When this time period expires and if **Auto Prune**:sup:`Dir`:sub:`Pool`\  = yes
       and a new Volume is needed, but no appendable Volume is available,
       Bareos will prune (remove) Job records that are older than the specified
-      \volumeparameter{Volume Retention}{} period.
+      Volume Retention = **** period.
 
-      The \volumeparameter{Volume Retention}{} period takes precedence over any **Job Retention**:sup:`Dir`:sub:`Client` 
+      The Volume Retention = **** period takes precedence over any **Job Retention**:sup:`Dir`:sub:`Client`\ 
       period you have specified in the Client resource.  It should also be
-      noted, that the \volumeparameter{Volume Retention}{} period is obtained by reading the
+      noted, that the Volume Retention = **** period is obtained by reading the
       Catalog Database Media record rather than the Pool resource record.
-      This means that if you change the **Volume Retention**:sup:`Dir`:sub:`Pool`  in the Pool resource
+      This means that if you change the **Volume Retention**:sup:`Dir`:sub:`Pool`\  in the Pool resource
       record, you must ensure that the corresponding change is made in the
-      catalog by using the \bcommand{update}{pool} command.  Doing so will insure
-      that any new Volumes will be created with the changed \volumeparameter{Volume Retention}{}
-      period.  Any existing Volumes will have their own copy of the \volumeparameter{Volume Retention}{}
+      catalog by using the :strong:`update pool` command.  Doing so will insure
+      that any new Volumes will be created with the changed Volume Retention = ****
+      period.  Any existing Volumes will have their own copy of the Volume Retention = ****
       period that can only be changed on a Volume by Volume basis
-      using the \bcommand{update}{volume} command.
+      using the :strong:`update volume` command.
 
       When all file catalog entries are removed from the volume,  its Volume status is
-      set to \volumestatus{Purged}. The files remain physically  on the Volume until the
+      set to **Purged**. The files remain physically  on the Volume until the
       volume is overwritten.
 
-   \item **Recycle**:sup:`Dir`:sub:`Pool` 
+   \item **Recycle**:sup:`Dir`:sub:`Pool`\ 
       defines whether or not the particular Volume can be
-      recycled (i.e.  rewritten).  If Recycle is set to                   :option:`no`,
+      recycled (i.e.  rewritten).  If Recycle is set to :option:`no`,
       then even if Bareos prunes all the Jobs on the volume and it
-      is marked \volumestatus{Purged}, it will not consider the tape for recycling.  If
-      Recycle is set to                   :option:`yes` and all Jobs have been pruned, the volume
-      status will be set to \volumestatus{Purged} and the volume may then be reused
+      is marked **Purged**, it will not consider the tape for recycling.  If
+      Recycle is set to :option:`yes` and all Jobs have been pruned, the volume
+      status will be set to **Purged** and the volume may then be reused
       when another volume is needed.  If the volume is reused, it is relabeled
       with the same Volume Name, however all previous data will be lost.
    \end{description}
@@ -174,20 +151,20 @@ files are pruned from a Volume (i.e. no records in the catalog), the Volume will
 Recycling Algorithm
 -------------------
 
-.. index::
-   pair: Algorithm; Recycling
-.. index::
-    pair: Recycle; Algorithm
+:index:`[TAG=Algorithm->Recycling] <pair: Algorithm; Recycling>` :index:`[TAG=Recycle->Algorithm] <pair: Recycle; Algorithm>` 
+
+.. _RecyclingAlgorithm
  
 
-.. _`RecyclingAlgorithm}` :raw-latex:`\label{Recycling`: RecyclingAlgorithm}` :raw-latex:`\label{Recycling
+.. _Recycling
+
 
 After all Volumes of a Pool have been pruned (as mentioned above, this happens when a Job needs a new Volume and no appendable Volumes are available), Bareos will look for the oldest Volume that is **Purged** (all Jobs and Files expired), and if the Recycle = **yes** for that Volume, Bareos will relabel it and write new data on it.
 
 As mentioned above, there are two key points for getting a Volume to be recycled. First, the Volume must no longer be marked **Append** (there are a number of directives to automatically make this change), and second since the last write on the Volume, one or more of the Retention periods must have expired so that there are no more catalog backup job records that reference that Volume. Once both those conditions are satisfied, the volume can be marked
 **Purged** and hence recycled.
 
-The full algorithm that Bareos uses when it needs a new Volume is: :raw-latex:`\index[general]{New Volume Algorithm}` :raw-latex:`\index[general]{Algorithm!New Volume}`
+The full algorithm that Bareos uses when it needs a new Volume is: :index:`[TAG=New Volume Algorithm] <single: New Volume Algorithm>` :index:`[TAG=Algorithm->New Volume] <pair: Algorithm; New Volume>`
 
 The algorithm described below assumes that :strong:`Auto Prune` is enabled, that Recycling is turned on, and that you have defined appropriate Retention periods or used the defaults for all these items.
 
@@ -203,53 +180,49 @@ The algorithm described below assumes that :strong:`Auto Prune` is enabled, that
 
 #. Search the Pool for a Volume with VolStatus=Purged
 
-#. If a Pool named **Scratch**:sup:`Dir`:sub:`pool`  exists, search for a Volume and if found move it to the current Pool for the Job and use it. Note, when the Scratch Volume is moved into the current Pool, the basic Pool defaults are applied as if it is a newly labeled Volume (equivalent to an :strong:`update volume from pool` command).
+#. If a Pool named **Scratch**:sup:`Dir`:sub:`pool`\  exists, search for a Volume and if found move it to the current Pool for the Job and use it. Note, when the Scratch Volume is moved into the current Pool, the basic Pool defaults are applied as if it is a newly labeled Volume (equivalent to an :strong:`update volume from pool` command).
 
 #. If we were looking for Volumes in the Autochanger, go back to step 2 above, but this time, look for any Volume whether or not it is in the Autochanger.
 
 #. Attempt to create a new Volume if automatic labeling enabled. If the maximum number of Volumes specified for the pool is reached, no new Volume will be created.
 
-#. Prune the oldest Volume if **Recycle Oldest Volume**:sup:`Dir`:sub:`Pool` =yes (the Volume with the oldest LastWritten date and VolStatus equal to Full, Recycle, Purged, Used, or Append is chosen). This record ensures that all retention periods are properly respected.
+#. Prune the oldest Volume if **Recycle Oldest Volume**:sup:`Dir`:sub:`Pool`\ =yes (the Volume with the oldest LastWritten date and VolStatus equal to Full, Recycle, Purged, Used, or Append is chosen). This record ensures that all retention periods are properly respected.
 
-#. Purge the oldest Volume if **Purge Oldest Volume**:sup:`Dir`:sub:`Pool` =yes (the Volume with the oldest LastWritten date and VolStatus equal to Full, Recycle, Purged, Used, or Append is chosen). 
+#. Purge the oldest Volume if **Purge Oldest Volume**:sup:`Dir`:sub:`Pool`\ =yes (the Volume with the oldest LastWritten date and VolStatus equal to Full, Recycle, Purged, Used, or Append is chosen). 
 .. warning:: 
-  We strongly recommend against the use of \configdirective{Purge Oldest Volume} as it can quite easily lead to loss of current backup
+   We strongly recommend against the use of :strong:`Purge Oldest Volume` as it can quite easily lead to loss of current backup
       data.
 
 #. Give up and ask operator.
 
 The above occurs when Bareos has finished writing a Volume or when no Volume is present in the drive.
 
-On the other hand, if you have inserted a different Volume after the last job, and Bareos recognizes the Volume as valid, it will request authorization from the Director to use this Volume. In this case, if you have set **Recycle Current Volume**:sup:`Dir`:sub:`Pool`  = yes and the Volume is marked as Used or Full, Bareos will prune the volume and if all jobs were removed during the pruning (respecting the retention periods), the Volume will be recycled and used.
+On the other hand, if you have inserted a different Volume after the last job, and Bareos recognizes the Volume as valid, it will request authorization from the Director to use this Volume. In this case, if you have set **Recycle Current Volume**:sup:`Dir`:sub:`Pool`\  = yes and the Volume is marked as Used or Full, Bareos will prune the volume and if all jobs were removed during the pruning (respecting the retention periods), the Volume will be recycled and used.
 
 The recycling algorithm in this case is:
 
 -  If the Volume status is **Append** or **Recycle**, the volume will be used.
 
--  If **Recycle Current Volume**:sup:`Dir`:sub:`Pool`  = yes and the volume is marked **Full** or **Used**, Bareos will prune the volume (applying the retention period). If all Jobs are pruned from the volume, it will be recycled.
+-  If **Recycle Current Volume**:sup:`Dir`:sub:`Pool`\  = yes and the volume is marked **Full** or **Used**, Bareos will prune the volume (applying the retention period). If all Jobs are pruned from the volume, it will be recycled.
 
 This permits users to manually change the Volume every day and load tapes in an order different from what is in the catalog, and if the volume does not contain a current copy of your backup data, it will be used.
 
 A few points from Alan Brown to keep in mind:
 
--  If **Maximum Volumes**:sup:`Dir`:sub:`Pool`  is not set, Bareos will prefer to demand new volumes over forcibly purging older volumes.
+-  If **Maximum Volumes**:sup:`Dir`:sub:`Pool`\  is not set, Bareos will prefer to demand new volumes over forcibly purging older volumes.
 
 -  If volumes become free through pruning and the Volume retention period has expired, then they get marked as **Purged** and are immediately available for recycling - these will be used in preference to creating new volumes.
 
 Recycle Status
 --------------
 
-.. index::
-   single: Recycle Status
-
+:index:`[TAG=Recycle Status] <single: Recycle Status>`
 
 Each Volume inherits the Recycle status (yes or no) from the Pool resource record when the Media record is created (normally when the Volume is labeled). This Recycle status is stored in the Media record of the Catalog. Using the Console program, you may subsequently change the Recycle status for each Volume. For example in the following output from **list volumes**:
 
-.. raw:: latex
-
-   
 
 
+::
 
     +----------+-------+--------+---------+------------+--------+-----+
     | VolumeNa | Media | VolSta | VolByte | LastWritte | VolRet | Rec |
@@ -263,20 +236,16 @@ Each Volume inherits the Recycle status (yes or no) from the Pool resource recor
     | File0007 | File  | Purged | 1896466 | 2002-05-26 | 14400  | 1   |
     +----------+-------+--------+---------+------------+--------+-----+
 
-.. raw:: latex
 
-   
 
 all the volumes are marked as recyclable, and the last Volume, **File0007** has been purged, so it may be immediately recycled. The other volumes are all marked recyclable and when their Volume Retention period (14400 seconds or four hours) expires, they will be eligible for pruning, and possibly recycling. Even though Volume **File0007** has been purged, all the data on the Volume is still recoverable. A purged Volume simply means that there are no entries in the Catalog. Even if the Volume
 Status is changed to **Recycle**, the data on the Volume will be recoverable. The data is lost only when the Volume is re-labeled and re-written.
 
 To modify Volume **File0001** so that it cannot be recycled, you use the **update volume pool=File** command in the console program, or simply **update** and Bareos will prompt you for the information.
 
-.. raw:: latex
-
-   
 
 
+::
 
     +----------+------+-------+---------+-------------+-------+-----+
     | VolumeNa | Media| VolSta| VolByte | LastWritten | VolRet| Rec |
@@ -290,19 +259,15 @@ To modify Volume **File0001** so that it cannot be recycled, you use the **updat
     | File0007 | File | Purged| 1896466 | 2002-05-26  | 14400 | 1   |
     +----------+------+-------+---------+-------------+-------+-----+
 
-.. raw:: latex
 
-   
 
 In this case, **File0001** will never be automatically recycled. The same effect can be achieved by setting the Volume Status to Read-Only.
 
 As you have noted, the Volume Status (VolStatus) column in the catalog database contains the current status of the Volume, which is normally maintained automatically by Bareos. To give you an idea of some of the values it can take during the life cycle of a Volume, here is a picture created by Arno Lehmann:
 
-.. raw:: latex
-
-   
 
 
+::
 
     A typical volume life cycle is like this:
 
@@ -316,9 +281,7 @@ As you have noted, the Volume Status (VolStatus) column in the catalog database 
           Recycled <-------------------------------------- Purged
                          Volume is selected for reuse
 
-.. raw:: latex
 
-   
 
 Daily, Weekly, Monthly Tape Usage Example
 -----------------------------------------
@@ -352,11 +315,9 @@ So you have copies of any file (or your whole system) for at least a year, but a
 
 What would the Bareos configuration look like to implement such a scheme?
 
-.. raw:: latex
-
-   
 
 
+::
 
     Schedule {
       Name = "NightlySave"
@@ -419,31 +380,20 @@ What would the Bareos configuration look like to implement such a scheme?
       Recycle = yes
     }
 
-.. raw:: latex
 
-   
 
 .. _PruningExample:
 
 Automatic Pruning and Recycling Example
 ---------------------------------------
 
-.. index::
-   pair: Automatic; Pruning and Recycling Example
-.. index::
-    pair: Example; Automatic Pruning and Recycling
-
-.. index::
-    triple: Pruning; Automatic; Example;
- :raw-latex:`\index[general]{Recycle!Automatic!Example}`
+:index:`[TAG=Automatic->Pruning and Recycling Example] <pair: Automatic; Pruning and Recycling Example>` :index:`[TAG=Example->Automatic Pruning and Recycling] <pair: Example; Automatic Pruning and Recycling>` :index:`[TAG=Pruning->Automatic->Example] <triple: Pruning; Automatic; Example>` :index:`[TAG=Recycle->Automatic->Example] <triple: Recycle; Automatic; Example>`
 
 Perhaps the best way to understand the various resource records that come into play during automatic pruning and recycling is to run a Job that goes through the whole cycle. If you add the following resources to your Director’s configuration file:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Schedule {
       Name = "30 minute cycle"
@@ -493,19 +443,15 @@ Perhaps the best way to understand the various resource records that come into p
       Recycle = yes
     }
 
-.. raw:: latex
 
-   
 
 Where you will need to replace the **ffffffffff**\ ’s by the appropriate files to be saved for your configuration. For the FileSet Include, choose a directory that has one or two megabytes maximum since there will probably be approximately eight copies of the directory that **Bareos** will cycle through.
 
 In addition, you will need to add the following to your Storage daemon’s configuration file:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Device {
       Name = FileStorage
@@ -518,9 +464,7 @@ In addition, you will need to add the following to your Storage daemon’s confi
       AlwaysOpen = no;
     }
 
-.. raw:: latex
 
-   
 
 With the above resources, Bareos will start a Job every half hour that saves a copy of the directory you chose to /tmp/File0001 ... /tmp/File0012. After 4 hours, Bareos will start recycling the backup Volumes (/tmp/File0001 ...). You should see this happening in the output produced. Bareos will automatically create the Volumes (Files) the first time it uses them.
 
@@ -531,9 +475,7 @@ To turn it off, either delete all the resources you’ve added, or simply commen
 Manually Recycling Volumes
 --------------------------
 
-.. index::
-   pair: Recycle; Manual
-
+:index:`[TAG=Volume->Recycle->Manual] <triple: Volume; Recycle; Manual>` :index:`[TAG=Recycle->Manual] <pair: Recycle; Manual>`
 
 Although automatic recycling of Volumes is implemented (see the :ref:`RecyclingChapter` chapter of this manual), you may want to manually force reuse (recycling) of a Volume.
 
@@ -547,11 +489,9 @@ Once the Volume is marked Purged, it will be recycled the next time a Volume is 
 
 If you wish to reuse the tape by giving it a new name, use the :strong:`relabel` instead of the :strong:`purge` command.
 
-.. raw:: latex
 
-   
 .. warning:: 
-  The :strong:`delete` command can be dangerous. Once it is
+   The :strong:`delete` command can be dangerous. Once it is
    done, to recover the File records, you must either restore your database as it
    was before the :strong:`delete` command or use the :ref:`bscan` utility program to
-   scan the tape and recreate the database entries.
+   scan the tape and recreate the database entries.}

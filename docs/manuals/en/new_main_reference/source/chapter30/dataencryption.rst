@@ -6,19 +6,13 @@
 Data Encryption
 ===============
 
-.. index::
-   single: Data Encryption
-.. index::
-    pair: Encryption; Data
-
+:index:`[TAG=Data Encryption] <single: Data Encryption>` :index:`[TAG=Encryption->Data] <pair: Encryption; Data>`
 
 Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
 
-.. raw:: latex
 
-   
 .. warning:: 
-  These feature is only available, if Bareos is build against OpenSSL.
+   These feature is only available, if Bareos is build against OpenSSL.
 
 It is very important to specify what this implementation does NOT do:
 
@@ -32,10 +26,10 @@ The Master Keys should be backed up to a secure location, such as a CD placed in
 
 While less critical than the Master Keys, File Daemon Keys are also a prime candidate for off-site backups; burn the key pair to a CD and send the CD home with the owner of the machine.
 
-.. raw:: latex
 
-   \warning{If you lose your encryption keys, backups will be unrecoverable.
-   {\bf always} store a copy of your master keys in a secure, off-site location.}
+.. warning:: 
+   If you lose your encryption keys, backups will be unrecoverable.
+   {\bf always} store a copy of your master keys in a secure, off-site location.
 
 The basic algorithm used for each backup session (Job) is:
 
@@ -48,15 +42,13 @@ The basic algorithm used for each backup session (Job) is:
 Encryption Technical Details
 ----------------------------
 
-.. index::
-   pair: Encryption; Technical Details
+:index:`[TAG=Encryption->Technical Details] <pair: Encryption; Technical Details>`
 
-
-The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is user supplied. If you are running OpenSSL :math:`>=` 0.9.8, the signed file hash uses SHA-256, otherwise SHA-1 is used.
+The implementation uses 128bit AES-CBC, with RSA encrypted symmetric session keys. The RSA key is user supplied. If you are running OpenSSL >= 0.9.8, the signed file hash uses SHA-256, otherwise SHA-1 is used.
 
 End-user configuration settings for the algorithms are not currently exposed, only the algorithms listed above are used. However, the data written to Volume supports arbitrary symmetric, asymmetric, and digest algorithms for future extensibility, and the back-end implementation currently supports:
 
-
+::
 
     Symmetric Encryption:
         - 128, 192, and 256-bit AES-CBC
@@ -76,40 +68,30 @@ The various algorithms are exposed via an entirely re-usable, OpenSSL-agnostic A
 Generating Private/Public Encryption Keys
 -----------------------------------------
 
-.. index::
-   pair: Encryption; Generating Private/Public Encryption Keypairs
-
+:index:`[TAG=Encryption->Generating Private/Public Encryption Keypairs] <pair: Encryption; Generating Private/Public Encryption Keypairs>`
 
 Generate a Master Key Pair with:
 
-.. raw:: latex
-
-   
 
 
+::
 
       openssl genrsa -out master.key 2048
       openssl req -new -key master.key -x509 -out master.cert
 
-.. raw:: latex
 
-   
 
 Generate a File Daemon Key Pair for each FD:
 
-.. raw:: latex
-
-   
 
 
+::
 
       openssl genrsa -out fd-example.key 2048
       openssl req -new -key fd-example.key -x509 -out fd-example.cert
       cat fd-example.key fd-example.cert >fd-example.pem
 
-.. raw:: latex
 
-   
 
 Note, there seems to be a lot of confusion around the file extensions given to these keys. For example, a .pem file can contain all the following: private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates. It is the default format for OpenSSL. It stores data Base64 encoded DER format, surrounded by ASCII headers, so is suitable for text mode transfers between systems. A .pem file may contain any number of keys either public or private. We use it in cases where there is both a
 public and a private key.
@@ -119,22 +101,15 @@ Above we have used the .cert extension to refer to X509 certificate encoding tha
 Example Data Encryption Configurations (bareos-fd.conf)
 -------------------------------------------------------
 
-.. index::
-   pair: Example; Data Encryption Configuration File
+:index:`[TAG=Example->Data Encryption Configuration File] <pair: Example; Data Encryption Configuration File>`
 
+.. literalinclude:: ../../main/config/FdClientPki.conf
 
-.. raw:: latex
-
-   .. literalinclude:: ../../main/config/FdClientPki.conf
 
 Decrypting with a Master Key
 ----------------------------
 
-.. index::
-   single: Decrypting with a Master Key
-.. index::
-    pair: Encryption; Decrypting with a Master Key
-
+:index:`[TAG=Decrypting with a Master Key] <single: Decrypting with a Master Key>` :index:`[TAG=Encryption->Decrypting with a Master Key] <pair: Encryption; Decrypting with a Master Key>`
 
 It is preferable to retain a secure, non-encrypted copy of the client’s own encryption keypair. However, should you lose the client’s keypair, recovery with the master keypair is possible.
 
@@ -142,15 +117,16 @@ You must:
 
 -  Concatenate the master private and public key into a single keypair file, ie:
 
-
+   ::
 
        cat master.key master.cert > master.keypair
            
 
 -  Set the PKI Keypair statement in your bareos configuration file:
 
-
+   ::
 
           PKI Keypair = master.keypair
 
 -  Start the restore. The master keypair will be used to decrypt the file data.
+

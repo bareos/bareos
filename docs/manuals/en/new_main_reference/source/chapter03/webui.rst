@@ -3,7 +3,7 @@
 
 This chapter addresses the installation process of the |bareosWebui|.
 
-Since 15.2.0 |bareosWebui| is part of the Bareos project and available for a number of platforms.
+Since :index:`Version >= 15.2.0 <pair: bareos-15.2.0; bareos-webui>` |bareosWebui| is part of the Bareos project and available for a number of platforms.
 
 |image|
 
@@ -51,34 +51,34 @@ System Requirements
 
 -  A working Bareos environment.
 
--  |bareosDir| version :math:`>=` |bareosWebui| version.
+-  |bareosDir| version >= |bareosWebui| version.
 
 -  The |bareosWebui| can be installed on any host. It does not have to be installed on the same as the |bareosDir|.
 
 -  The default installation uses an Apache webserver with mod-rewrite, mod-php and mod-setenv.
 
--  PHP :math:`>`\ = 5.3.23
+-  PHP >= 5.3.23
 
 -  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12.
 
-Version :math:`<` 16.2
-----------------------
+Version < 16.2
+--------------
 
-|bareosWebui| 16.2.4 incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
+|bareosWebui| :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-webui incorporates Zend Framework 2>` incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
 
 -  RHEL, CentOS
 
-   -  `https://fedoraproject.org/wiki/EPEL <https://fedoraproject.org/wiki/EPEL>`_
+   -  https://fedoraproject.org/wiki/EPEL
 
-   -  `https://apps.fedoraproject.org/packages/php-ZendFramework2 <https://apps.fedoraproject.org/packages/php-ZendFramework2>`_
+   -  https://apps.fedoraproject.org/packages/php-ZendFramework2
 
 -  Fedora
 
-   -  `https://apps.fedoraproject.org/packages/php-ZendFramework2 <https://apps.fedoraproject.org/packages/php-ZendFramework2>`_
+   -  https://apps.fedoraproject.org/packages/php-ZendFramework2
 
 -  SUSE, Debian, Ubuntu
 
-   -  `http://download.bareos.org/bareos <http://download.bareos.org/bareos>`_
+   -  http://download.bareos.org/bareos
 
 Also be aware, that older versions of |bareosDir| do not support the :ref:`section-SubdirectoryConfigurationScheme` and therefore Bareos configuration resource files must be included manually.
 
@@ -97,41 +97,25 @@ After adding the repository simply install the bareos-webui package via your pac
 
 -  RHEL, CentOS and Fedora
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        yum install bareos-webui
 
    or
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        dnf install bareos-webui
 
 -  SUSE Linux Enterprise Server (SLES), openSUSE
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        zypper install bareos-webui
 
 -  Debian, Ubuntu
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        apt-get install bareos-webui
 
@@ -142,11 +126,7 @@ This assumes, |bareosDir| and |bareosWebui| are installed on the same host.
 
 #. If you are using SELinux, allow HTTPD scripts and modules make network connections:
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        setsebool -P httpd_can_network_connect on
 
@@ -156,19 +136,17 @@ This assumes, |bareosDir| and |bareosWebui| are installed on the same host.
 
 #. 
 
-.. _`item-webui-create-user}` Use :program:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in **webui-admin`: item-webui-create-user**:sup:`Dir`:sub:`Profile`  Use :program:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in :raw-latex:`\resourcename{Dir}{Profile}{webui-admin:
+.. _item:webui-create-user
+ Use :program:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in **webui-admin**:sup:`Dir`:sub:`Profile` :
 
+   .. code-block:: sh
+   :caption: add a named console
 
-
-       
-.. code-block:: sh
-    :caption: add a named console
-
-       *configure add console name=admin password=secret profile=webui-admin
+       *<input>configure add console name=admin password=secret profile=webui-admin</input>
 
    Of course, you can choose other names and passwords. For details, see :ref:`section-webui-console`.
 
-#. Login to http://HOSTNAME/bareos-webui with username and password as created in `<item-webui-create-user>`_.
+#. Login to http://HOSTNAME/bareos-webui with username and password as created in \ref{item:webui-create-user}.
 
 Configuration Details
 ---------------------
@@ -178,19 +156,16 @@ Configuration Details
 Create a restricted consoles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is not need, that |bareosWebui| itself provide a user management. Instead it uses so named :sup:`Dir` :strong:`Console` defined in the |bareosDir|. You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
+There is not need, that |bareosWebui| itself provide a user management. Instead it uses so named :sup:`Dir`\ :strong:`Console` defined in the |bareosDir|. You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
 
-At least one :sup:`Dir` :strong:`Console` is required to use the |bareosWebui|.
+At least one :sup:`Dir`\ :strong:`Console` is required to use the |bareosWebui|.
 
 To allow a user with name **admin** and password **secret** to access the |bareosDir| with permissions defined in the **webui-admin**:sup:`Dir`:sub:`Profile`  (see :ref:`section-webui-profile`), either
 
 -  create a file :file:`/etc/bareos/bareos-dir.d/console/admin.conf` with following content:
 
-
-
-       
-.. code-block:: sh
-    :caption: bareos-dir console admin
+   .. code-block:: sh
+   :caption: bareos-dir.d/console/admin.conf
 
        Console {
          Name = "admin"
@@ -202,13 +177,10 @@ To allow a user with name **admin** and password **secret** to access the |bareo
 
 -  or use the :program:`bconsole`:
 
+   .. code-block:: sh
+   :caption: add console
 
-
-       
-.. code-block:: sh
-    :caption: add console
-
-       *configure add console name=admin password=secret profile=webui-admin
+       *<input>configure add console name=admin password=secret profile=webui-admin</input>
 
 For details, please read :ref:`DirectorResourceConsole`.
 
@@ -223,11 +195,8 @@ If your |bareosWebui| is installed on another system than the |bareosDir|, you h
 
 This is the default profile, giving access to all Bareos resources and allowing all commands used by the |bareosWebui|:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir profile webui-admin
+   :caption: bareos-dir.d/profile/webui-admin.conf
 
     Profile {
       Name = webui-admin
@@ -243,7 +212,7 @@ This is the default profile, giving access to all Bareos resources and allowing 
       Plugin Options ACL = *all*
     }
 
-The :sup:`Dir` :strong:`Profile` itself does not give any access to the |bareosDir|, but can be used by :sup:`Dir` :strong:`Console`, which do give access to the |bareosDir|, see :ref:`section-webui-console`.
+The :sup:`Dir`\ :strong:`Profile` itself does not give any access to the |bareosDir|, but can be used by :sup:`Dir`\ :strong:`Console`, which do give access to the |bareosDir|, see :ref:`section-webui-console`.
 
 For details, please read :ref:`DirectorResourceProfile`.
 
@@ -252,28 +221,21 @@ For details, please read :ref:`DirectorResourceProfile`.
 SELinux
 ~~~~~~~
 
-.. index::
-   pair: SELinux; bareos-webui
-
+:index:`[TAG=SELinux->bareos-webui] <pair: SELinux; bareos-webui>`
 
 To use |bareosDir| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
 
     setsebool -P httpd_can_network_connect on
 
 Configure your Apache Webserver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Apache; bareos-webui
- 
+:index:`[TAG=Apache->bareos-webui] <pair: Apache; bareos-webui>` 
 
-.. _`section-webui-apache`: section-webui-apache
+.. _section-webui-apache
+
 
 The package **bareos-webui** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf` or :file:`/etc/apache2/available-conf/bareos-webui.conf`.
 
@@ -282,21 +244,17 @@ The required Apache modules, :strong:`setenv`, :strong:`rewrite` and :strong:`ph
 Configure your /etc/bareos-webui/directors.ini
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Configuration; WebUI
- 
+:index:`[TAG=Configuration->WebUI] <pair: Configuration; WebUI>` 
 
-.. _`section-webui-configuration-files`: section-webui-configuration-files
+.. _section-webui-configuration-files
+
 
 Configure your directors in :file:`/etc/bareos-webui/directors.ini` to match your settings.
 
 The configuration file :file:`/etc/bareos-webui/directors.ini` should look similar to this:
 
-
-
-    
 .. code-block:: sh
-    :caption: /etc/bareos-webui/directors.ini
+   :caption: /etc/bareos-webui/directors.ini
 
     ;
     ; Bareos WebUI Configuration File
@@ -379,13 +337,10 @@ You can add as many directors as you want, also the same host with a different n
 Configure your /etc/bareos-webui/configuration.ini
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since 16.2.2 you are able to configure some parameters of the |bareosWebui| to your needs.
+Since :index:`Version >= 16.2.2 <pair: bareos-16.2.2; /etc/bareos-webui/configuration.ini>` you are able to configure some parameters of the |bareosWebui| to your needs.
 
-
-
-    
 .. code-block:: sh
-    :caption: /etc/bareos-webui/configuration.ini
+   :caption: /etc/bareos-webui/configuration.ini
 
     ;
     ; Bareos WebUI Configuration File
@@ -442,7 +397,7 @@ Console/Profile changes
 
 The |bareosWebui| Director profile shipped with Bareos 15.2 (**webui**:sup:`Dir`:sub:`Profile`  in the file :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf`) is not sufficient to use the |bareosWebui| 16.2. This has several reasons:
 
-#. The handling of :strong:`Acl` s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :strong:`.bvfs_*` to :strong:`.bvfs_.*` in your **Command ACL**:sup:`Dir`:sub:`Profile`  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
+#. The handling of :strong:`Acl`s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :strong:`.bvfs_*` to :strong:`.bvfs_.*` in your **Command ACL**:sup:`Dir`:sub:`Profile`\  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
 
 #. The |bareosWebui| 16.2 uses following additional commands:
 
@@ -469,7 +424,7 @@ If you used an unmodified :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf` f
 directors.ini
 -------------
 
-Since MyCatalog will be used. Please see :ref:`section-webui-configuration-files` for more details.
+Since :index:`Version >= 16.2.0 <pair: bareos-16.2.0; Webui offers limited support for multiple catalogs>` it is possible to work with different catalogs. Therefore the catalog parameter has been introduced. If you don’t set a catalog explicitly the default **MyCatalog**:sup:`Dir`:sub:`Catalog`  will be used. Please see :ref:`section-webui-configuration-files` for more details.
 
 configuration.ini
 -----------------
@@ -482,17 +437,12 @@ Additional information
 NGINX
 -----
 
-.. index::
-   pair: nginx; bareos-webui
-
+:index:`[TAG=nginx->bareos-webui] <pair: nginx; bareos-webui>`
 
 If you prefer to use |bareosWebui| on Nginx with php5-fpm instead of Apache, a basic working configuration could look like this:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-webui on nginx
+   :caption: bareos-webui on nginx
 
     server {
 
@@ -530,3 +480,4 @@ This will make the |bareosWebui| accessible at http://bareos:9100/ (assuming you
 
 .. |image| image:: \idir bareos-webui-jobs
    :width: 80.0%
+

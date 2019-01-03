@@ -29,29 +29,23 @@ By using Passive Client, the initialization of the datachannel is reversed, so t
 Usage
 -----
 
-To use this new feature, just configure **Passive**:sup:`Dir`:sub:`Client` =yes in the client definition of the |bareosDir|:
+To use this new feature, just configure **Passive**:sup:`Dir`:sub:`Client`\ =yes in the client definition of the |bareosDir|:
 
-
-
-    
 .. code-block:: sh
-    :caption: Enable passive mode in bareos-dir.conf
+   :caption: Enable passive mode in bareos-dir.conf
 
     Client {
        Name = client1-fd
        Password = "secretpassword"
-       Passive = yes
+       <input>Passive = yes</input>
        [...]
     }
 
-Also, prior to bareos version 15, you need to set **Compatible**:sup:`Fd`:sub:`Client` =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
+Also, prior to bareos version 15, you need to set **Compatible**:sup:`Fd`:sub:`Client`\ =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
 
-
-
-    
 .. code-block:: sh
-    :caption: Disable compatible mode for the \bareosFd in bareos-fd.conf
- 
+   :caption: Disable compatible mode for the |bareosFd| in bareos-fd.conf
+
     Director {
       Name = bareos-dir
       Password = "secretpassword"
@@ -60,8 +54,9 @@ Also, prior to bareos version 15, you need to set **Compatible**:sup:`Fd`:sub:`C
     Client {
        Name = client1-fd
        [...]
-       Compatible = no
+       <input>Compatible = no</input>
     }
 
 .. |image| image:: \idir passive-client-communication
    :width: 60.0%
+

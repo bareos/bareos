@@ -3,30 +3,36 @@
 
 
 
-.. _`releasenotes}` :raw-latex:`\index[general]{Releases`: releasenotes}` :raw-latex:`\index[general]{Releases
+.. _releasenotes
+ :index:`[TAG=Releases] <single: Releases>`
 
-The technical changelog is automatically generated from the Bareos bug tracking system, see `http://bugs.bareos.org/changelog_page.php <http://bugs.bareos.org/changelog_page.php>`_.
+The technical changelog is automatically generated from the Bareos bug tracking system, see http://bugs.bareos.org/changelog_page.php.
 
 Please note, that some of the subreleases are only internal development releases.
 
-Open issues for a specific version are shown at `http://bugs.bareos.org/roadmap_page.php <http://bugs.bareos.org/roadmap_page.php>`_.
+Open issues for a specific version are shown at http://bugs.bareos.org/roadmap_page.php.
 
-The overview about new feature of a release are shown at `https://github.com/bareos/bareos} and in the :ref:`index <https://github.com/bareos/bareos` and in the \nameref{index>`_ of this document.
+The overview about new feature of a release are shown at https://github.com/bareos/bareos and in the :ref:`index` of this document.
 
 This chapter concentrates on things to do when updating an existing Bareos installation.
 
 
 .. warning:: 
-  While all the source code is published on `GitHub <https://github.com/bareos/bareos>`_, the releases of packages on \verb|URL:http://download.bareos.org is limited to the initial versions of a major release. Later maintenance releases are only published on https://download.bareos.com.\|
+   While all the source code is published on `GitHub <https://github.com/bareos/bareos>`_, the releases of packages on `<http://download.bareos.org>`_ is limited to the initial versions of a major release. Later maintenance releases are only published on `<https://download.bareos.com>`_.
 
-.. raw:: latex
+\releasenoteSection{Bareos-17.2}
 
-   \releasenoteSection{Bareos-17.2}
+\releasenote{17.2.7}{
 
-.. raw:: latex
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2018-07-13\\
+   Database Version  & 2171 (unchanged)\\
+   Release Ticket    & \ticket{966}\\
+   Url               & \releaseUrlDownloadBareosCom{17.2} \\
+   \end{tabular}\end{verbatim}
 
-   \releasenote{17.2.7}{
-
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-07-13\\
    Database Version  & 2171 (unchanged)\\
@@ -38,18 +44,25 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    \begin{itemize}
        \item \ticket{892} \package{bareos-storage-droplet}: improve error handling on unavailable backend.
        \item \ticket{902} \package{bareos-storage-droplet}: improve job status handling (terminate job after all data is written).
-       \item \ticket{967} :strong:`Windows`: overwrite symbolic links on restore.
+       \item \ticket{967} \os{Windows}{}: overwrite symbolic links on restore.
        \item \ticket{983} \bareosSd: prevent sporadic crash when \linkResourceDirectiveValue{Sd}{Storage}{Collect Job Statistics}{yes}.
-       \item :strong:`SLES 12sp2` and :strong:`SLES 12sp3`: provide \package{bareos-storage-ceph} and \package{bareos-filedaemon-ceph-plugin} packages.
+       \item \os{SLES}{12sp2} and \os{SLES}{12sp3}: provide \package{bareos-storage-ceph} and \package{bareos-filedaemon-ceph-plugin} packages.
     
    \end{itemize}
 
    }
 
-.. raw:: latex
+\releasenote{17.2.6}{
 
-   \releasenote{17.2.6}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2018-06-21\\
+   Database Version  & 2171 (unchanged)\\
+   Release Ticket    & \ticket{916}\\
+   Url               & \releaseUrlDownloadBareosCom{17.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-06-21\\
    Database Version  & 2171 (unchanged)\\
@@ -59,8 +72,8 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    This release contains several bugfixes and enhancements. Excerpt:
    \begin{itemize}
-       \item added platforms: :strong:`Fedora 27`, :strong:`Fedora 28`, :strong:`openSUSE 15.0`, :strong:`Ubuntu 18.04` and :strong:`Univention 4.3`.
-       \item :strong:`Univention 4.3`: fixes integration.
+       \item added platforms: \os{Fedora}{27}, \os{Fedora}{28}, \os{openSUSE}{15.0}, \os{Ubuntu}{18.04} and \os{Univention}{4.3}.
+       \item \os{Univention}{4.3}: fixes integration.
        \item \ticket{872} adapted to new Ceph API.
        \item \ticket{943} use \package{tirpc} if Sun-RPC is not provided.
        \item \ticket{964} fixes the predefined queries.
@@ -73,10 +86,17 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    }
 
-.. raw:: latex
+\releasenote{17.2.5}{
 
-   \releasenote{17.2.5}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2018-02-16\\
+   Database Version  & 2171 (unchanged)\\
+   Release Ticket    & \ticket{910}\\
+   Url               & \releaseUrlDownloadBareosCom{17.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-02-16\\
    Database Version  & 2171 (unchanged)\\
@@ -86,31 +106,39 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    This release contains several bugfixes and enhancements. Excerpt:
    \begin{itemize}
-       \item \bareosFd is ready for :strong:`AIX 7.1.0.0`.
-       \item :ref:`VMwarePlugin` is also provided for :strong:`Debian 9`.
+       \item \bareosFd is ready for \os{AIX}{7.1.0.0}.
+       \item \nameref{VMwarePlugin} is also provided for \os{Debian}{9}.
        \item NDMP fixes
        \item Virtual Backup fixes
        \item \package{bareos-storage-droplet}: improvements
-       \item \command{bareos-dbcheck} improvements and fixes: with older versions it could happen, that it destroys structures required by :strong:`.bvfs_*`.
-       \item \ticket{850} fixes a bug on :strong:`Univention`: fixes a problem of regenerating passwords when resyncing settings.
-       \item \ticket{890} :strong:`.bvfs_update` fix. Before there have been cases where it did not update the cache.
-       \item :strong:`.bvfs_lsdirs` make limit- and offset-option work correctly.
-       \item :strong:`.bvfs_lsdirs` show special directory (like \verb|path:@bpipe@/|) on the same level as \verb|path:/|.
+       \item \command{bareos-dbcheck} improvements and fixes: with older versions it could happen, that it destroys structures required by \bcommand{.bvfs_*}{}.
+       \item \ticket{850} fixes a bug on \os{Univention}{}: fixes a problem of regenerating passwords when resyncing settings.
+       \item \ticket{890} \bcommand{.bvfs_update}{} fix. Before there have been cases where it did not update the cache.
+       \item \bcommand{.bvfs_lsdirs}{} make limit- and offset-option work correctly.
+       \item \bcommand{.bvfs_lsdirs}{} show special directory (like \verb|path:@bpipe@/|) on the same level as \verb|path:/|.
        \item \ticket{895} added description to the output of \bcommand{show}{filesets}.
        \item \bareosWebui: Restore Browser fixes
        \begin{itemize}
            \item There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports \ticket{887} and \ticket{893} for details.
            \item \ticket{905} fixes a problem with file names containing quotes.
        \end{itemize}
-       \item **NDMP Block Size**:sup:`Dir`:sub:`Client`  changed type from \dt{Pint32} to \dt{Size32}. This should not affect any configuration, but is more consistent with other block size configuration directives.
+       \item \linkResourceDirective{Dir}{Client}{NDMP Block Size} changed type from \dt{Pint32} to \dt{Size32}. This should not affect any configuration, but is more consistent with other block size configuration directives.
    \end{itemize}
 
    }
 
-.. raw:: latex
+\releasenote{17.2.4}{
 
-   \releasenote{17.2.4}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2017-12-14\\
+   Database Version  & 2171\\
+   Release Ticket    & \ticket{861}\\
+   Url               & \releaseUrlDownloadBareosOrg{17.2} \\
+                     & \releaseUrlDownloadBareosCom{17.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-12-14\\
    Database Version  & 2171\\
@@ -127,36 +155,34 @@ This chapter concentrates on things to do when updating an existing Bareos insta
        \item \package{bareos-storage-droplet} is a storage backend for the droplet library.
            Most notably it allows backup and restores to a S3 environment.
            \betaSince{sd}{bareos-storage-droplet}{17.2.4}
-       \item \package{bat} has been removed, see section :ref:`bat`.
+       \item \package{bat} has been removed, see section \nameref{bat}.
        \item platforms:
        \begin{itemize}
            \item Windows Clients are still supported since Windows Vista.
            \item MacOS: added to build chain.
            \item \bareosFd is ready for HP-UX 11.31 (ia64).
-           \item Linux Distribution: Bareos tries to provide packages for all current platforms. For details, refer to :ref:`section-packages`.
+           \item Linux Distribution: Bareos tries to provide packages for all current platforms. For details, refer to \nameref{section-packages}.
        \end{itemize}
-       \item Linux RPM packages: allow read access to /etc/bareos/ for all users (however, relevant files are still only readable for the user **bareos**).
+       \item Linux RPM packages: allow read access to /etc/bareos/ for all users (however, relevant files are still only readable for the user \user{bareos}).
            This allows other programs associated with Bareos to also use this directory.
      \end{itemize}
 
-     \item Denormalization of the **File** database table
+     \item Denormalization of the \dbtable{File} database table
      \begin{itemize}
-       \item The denormalization of the **File** database table leads to enormous performance improvements in installation, which covering a  lot of file (millions and more).
+       \item The denormalization of the \dbtable{File} database table leads to enormous performance improvements in installation, which covering a  lot of file (millions and more).
        \item For the denormalization the database schema must be modified.
-             
-.. warning:: 
-  Updating the database to schema version ≥ 2170 will increase the required disk space.
-                   Especially it will require around twice the amount of the current database disk space during the migration.
-       \item The **Filename} database table does no longer exists. Therefore the :strong:`.bvfs_*` commands do no longer output the \dbcolumn{FilenameId** column.
+             \warning{Updating the database to schema version >= 2170 will increase the required disk space.
+                   Especially it will require around twice the amount of the current database disk space during the migration.}
+       \item The \dbtable{Filename} database table does no longer exists. Therefore the \bcommand{.bvfs_*}{} commands do no longer output the \dbcolumn{FilenameId} column.
      \end{itemize}
 
-     \item NDMP\_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see :ref:`section-NdmpNative`.
-     \item Updated the package \package{bareos-vmware-plugin} to utilize the Virtual Disk Development Kit (VDDK) 6.5.x. This includes support for \vSphere 6.5 and the next major release (except new features) and backward compatible with \vSphere 5.5 and 6.0. For details see :ref:`VMwarePlugin`.
+     \item NDMP\_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see \nameref{section-NdmpNative}.
+     \item Updated the package \package{bareos-vmware-plugin} to utilize the Virtual Disk Development Kit (VDDK) 6.5.x. This includes support for \vSphere 6.5 and the next major release (except new features) and backward compatible with \vSphere 5.5 and 6.0. For details see \nameref{VMwarePlugin}.
      \item Soft Quota: automatic quota grace period reset if a job does not exceed the quota.
      \item \command{bareos-dbcheck}: disable all interactive questions in batch mode.
      \item \bcommand{list}{files}: also show deleted files (accurate mode).
      \item \bcommand{list}{jobstatastics}: added.
-     \item :strong:`purge`: added confirmation.
+     \item \bcommand{purge}{}: added confirmation.
      \item \bcommand{list}{volumes}: fix limit and offset handling.
      \item \ticket{629} Windows: restore directory attributes.
      \item \ticket{639} tape: fix block size handling, AWS VTL iSCSI devices
@@ -167,14 +193,19 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    }
 
-.. raw:: latex
+\releasenoteSection{Bareos-16.2}
 
-   \releasenoteSection{Bareos-16.2}
+\releasenote{16.2.8}{
 
-.. raw:: latex
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2018-07-06\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{863}\\
+   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   \end{tabular}\end{verbatim}
 
-   \releasenote{16.2.8}{
-
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-07-06\\
    Database Version  & 2004 (unchanged)\\
@@ -199,10 +230,17 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    \end{itemize}
    }
 
-.. raw:: latex
+\releasenote{16.2.7}{
 
-   \releasenote{16.2.7}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2017-10-09\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{836}\\
+   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-10-09\\
    Database Version  & 2004 (unchanged)\\
@@ -213,9 +251,9 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    This release contains several bugfixes and enhancements. Excerpt:
    \begin{itemize}
        \item Fixes a Director crash, when enabling debugging output
-       \item :strong:`.bvfs_lsdirs`: improve performance, especially when having a large number of directories
+       \item \bcommand{.bvfs_lsdirs}{}: improve performance, especially when having a large number of directories
        \begin{itemize}
-         \item To optimize the performance of the SQL query used by :strong:`.bvfs_lsdirs`, it is important to
+         \item To optimize the performance of the SQL query used by \bcommand{.bvfs_lsdirs}{}, it is important to
          have the following indexes:
          \item PostgreSQL
            \begin{itemize}
@@ -230,7 +268,7 @@ This chapter concentrates on things to do when updating an existing Bareos insta
                \sqlcommand{DROP INDEX PathId_JobId_FileIndex_FileNameId ON File;}
            \end{itemize}
        \end{itemize}
-       \item Utilize OpenSSL ≥ 1.1 if available
+       \item Utilize OpenSSL >= 1.1 if available
        \item Windows: fixes silent upgrade (\command{winbareos-*.exe /S})
        \item Windows: restore attributes also on directories (not only on files)
        \item Fixes problem with SHA1 signature when compiled without OpenSSL (not relevant for bareos.org/bareos.com packages)
@@ -240,10 +278,17 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    }
 
-.. raw:: latex
+\releasenote{16.2.6}{
 
-   \releasenote{16.2.6}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2017-06-22\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{794}\\
+   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-06-22\\
    Database Version  & 2004 (unchanged)\\
@@ -253,16 +298,16 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    This release contains several bugfixes and enhancements. Excerpt:
    \begin{itemize}
-     \item Prevent from director crash when using incorrect paramaters of :strong:`.bvfs_*` commands.
+     \item Prevent from director crash when using incorrect paramaters of \bcommand{.bvfs_*}{} commands.
      \item Director now closes all configuration files when reloading failed.
      \item Storage daemon now closes the network connection when MaximumConcurrentJobs reached.
-     \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See :ref:`LanAddress` for details.
+     \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See \nameref{LanAddress} for details.
      \item A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
      \item The device spool size calculation when using secure erase was fixed.
-     \item :strong:`.bvfs_lsdirs` no longer shows empty directories from accurate jobs.
+     \item \bcommand{.bvfs_lsdirs}{} no longer shows empty directories from accurate jobs.
        \begin{itemize}
            \item \warning{This decreases performance if your environment has a large numbers of directories. Creating an index improves the performance.}
-           %In Bareos 16.2.6 the SQL Query used by :strong:`.bvfs_lsdirs` was changed to not show
+           %In Bareos 16.2.6 the SQL Query used by \bcommand{.bvfs_lsdirs}{} was changed to not show
            %empty directories from accurate jobs. It turned out that that the changed
            %query causes performance issues when larger amounts of directories were backed up.\\
            \item \postgresql
@@ -283,7 +328,7 @@ This chapter concentrates on things to do when updating an existing Bareos insta
                    \path!echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos!
 
                \item  However, with larger amounts of directories and/or involved jobs, even with this index
-                   the performance of :strong:`.bvfs_lsdirs` may still be insufficient. We are working on optimizing
+                   the performance of \bcommand{.bvfs_lsdirs}{} may still be insufficient. We are working on optimizing
                    the SQL query for MySQL/MariaDB to solve this problem.
            \end{itemize}
        \end{itemize}
@@ -293,15 +338,22 @@ This chapter concentrates on things to do when updating an existing Bareos insta
      \item WebUI: The post install script of the bareos-webui RPM package for RHEL/CentOS was fixed, it no longer tries to run a2enmod which does not exist on RHEL/CentOS.
      \item WebUI: The login form no longer allows redirects to arbitrary URLs
      \item WebUI: The used ZendFramework components were updated from version 2.4.10 to 2.4.11.
-     \item WebUI: jQuery was updated from version 1.12.4 to version 3.2.0., some outdated browsers like Internet Explorer 6-8, Opera 12.1x or Safari 5.1+ will no longer be supported, see `jQuery Browser Support <http://jquery.com/browser-support/>`_ for details.
+     \item WebUI: jQuery was updated from version 1.12.4 to version 3.2.0., some outdated browsers like Internet Explorer 6-8, Opera 12.1x or Safari 5.1+ will no longer be supported, see \elink{jQuery Browser Support}{http://jquery.com/browser-support/} for details.
    \end{itemize}
 
    }
 
-.. raw:: latex
+\releasenote{16.2.5}{
 
-   \releasenote{16.2.5}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2017-03-03\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{734}\\
+   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-03-03\\
    Database Version  & 2004 (unchanged)\\
@@ -320,10 +372,18 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    }
 
-.. raw:: latex
+\releasenote{16.2.4}{
 
-   \releasenote{16.2.4}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2016-10-28\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{698}\\
+   Url               & \releaseUrlDownloadBareosOrg{16.2} \\
+                     & \releaseUrlDownloadBareosCom{16.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-10-28\\
    Database Version  & 2004 (unchanged)\\
@@ -337,8 +397,8 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    \begin{itemize}
    \item Configuration
         \begin{itemize}
-        \item Bareos packages contain the default configuration in :ref:`section-ConfigurationSubdirectories`. Please read :ref:`section-UpdateToConfigurationSubdirectories` before updating (make a copy of your configuration directories for your \bareosDir and \bareosSd before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
-        \item The default configuration does no longer name the \resourcetype{Dir}{Director} and \resourcetype{Sd}{Storage} resources after the systems hostname (\verb|path:$HOSTNAME-dir| resp. \verb|path:$HOSTNAME-sd|) but use \resourcename{Dir}{Director}{bareos-dir} resp. \resourcename{Sd}{Storage}{bareos-sd} as defaults. The prior solution had the disadvantage, that \verb|path:$HOSTNAME-dir| has also been set on \bareosFd not running on the \bareosDir, which almost ever did require changing this setting. Also the new approach aligns better with :ref:`section-ConfigurationSubdirectories`.
+        \item Bareos packages contain the default configuration in \nameref{section-ConfigurationSubdirectories}. Please read \nameref{section-UpdateToConfigurationSubdirectories} before updating (make a copy of your configuration directories for your \bareosDir and \bareosSd before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
+        \item The default configuration does no longer name the \resourcetype{Dir}{Director} and \resourcetype{Sd}{Storage} resources after the systems hostname (\verb|path:$HOSTNAME-dir| resp. \verb|path:$HOSTNAME-sd|) but use \resourcename{Dir}{Director}{bareos-dir} resp. \resourcename{Sd}{Storage}{bareos-sd} as defaults. The prior solution had the disadvantage, that \verb|path:$HOSTNAME-dir| has also been set on \bareosFd not running on the \bareosDir, which almost ever did require changing this setting. Also the new approach aligns better with \nameref{section-ConfigurationSubdirectories}.
         \item Due to limitation of the build system, the default resource \resourcename{Dir}{FileSet}{Linux All} have been renamed to \resourcename{Dir}{FileSet}{LinuxAll} (no space between Linux and All).
         \item The configuration of the \package{bareos-traymonitor} has also been split into resource files.
            Additional, these resource files are now packaged in other packages:
@@ -346,7 +406,7 @@ This chapter concentrates on things to do when updating an existing Bareos insta
                \item \verb|path:CONFIGDIR/tray-monitor.d/monitor/bareos-mon.conf|: \package{bareos-traymonitor}
                \item \verb|path:CONFIGDIR/tray-monitor.d/client/FileDaemon-local.conf|: \package{bareos-filedaemon}
                \item \verb|path:CONFIGDIR/tray-monitor.d/storage/StorageDaemon-local.conf|: \package{bareos-storage}
-               \item \verb|path:CONFIGDIR/tray-monitor.d/director/Director-local.conf|: :file:`bareos-director`
+               \item \verb|path:CONFIGDIR/tray-monitor.d/director/Director-local.conf|: \file{bareos-director}
            \end{itemize}
             This way, the \package{bareos-traymonitor} will be configured automatically for the installed components.
         \end{itemize}
@@ -359,21 +419,26 @@ This chapter concentrates on things to do when updating an existing Bareos insta
         \end{itemize}
    \item \bareosWebui
         \begin{itemize}
-        \item Updating from Bareos 15.2: Adapt \resourcename{Dir}{Profile}{webui} (from bareos 15.2) to allow all commands of \resourcename{Dir}{Profile}{webui-admin} (**Command ACL**:sup:`Dir`:sub:`Console` ).
+        \item Updating from Bareos 15.2: Adapt \resourcename{Dir}{Profile}{webui} (from bareos 15.2) to allow all commands of \resourcename{Dir}{Profile}{webui-admin} (\linkResourceDirective{Dir}{Console}{Command ACL}).
         Alternately modify all \resourcetype{Dir}{Console}s currently using \resourcename{Dir}{Profile}{webui} to use \resourcename{Dir}{Profile}{webui-admin} instead.
-        \item While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package \package{bareos-webui} is not available for these platforms, as the required ZendFramework 2.4 do require PHP $>=$ 5.3.17 (5.3.23). However, it is possible to use \package{bareos-webui} 15.2 against \package{bareos-director} 16.2. Also here, the profile must be adapted.
+        \item While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package \package{bareos-webui} is not available for these platforms, as the required ZendFramework 2.4 do require PHP >= 5.3.17 (5.3.23). However, it is possible to use \package{bareos-webui} 15.2 against \package{bareos-director} 16.2. Also here, the profile must be adapted.
         \end{itemize}
    \end{itemize}
    }
 
-.. raw:: latex
+\releasenoteSection{Bareos-15.2}
 
-   \releasenoteSection{Bareos-15.2}
+\releasenote{15.2.4}{
 
-.. raw:: latex
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2016-06-10\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{641} \\
+   Url               & \releaseUrlDownloadBareosCom{15.2} \\
+   \end{tabular}\end{verbatim}
 
-   \releasenote{15.2.4}{
-
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-06-10\\
    Database Version  & 2004 (unchanged)\\
@@ -392,10 +457,17 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    \end{itemize}
    }
 
-.. raw:: latex
+\releasenote{15.2.3}{
 
-   \releasenote{15.2.3}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2016-03-11\\
+   Database Version  & 2004 (unchanged)\\
+   Release Ticket    & \ticket{625} \\
+   Url               & \releaseUrlDownloadBareosCom{15.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-03-11\\
    Database Version  & 2004 (unchanged)\\
@@ -418,14 +490,23 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    \end{itemize}
    }
 
-.. raw:: latex
+\releasenote{15.2.2}{
 
-   \releasenote{15.2.2}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-11-19\\
+   Database Version  & 2004\\
+                     & Database update required (if coming from bareos-14.2). See the \nameref{bareos-update} section.\\
+   Release Ticket    & \ticket{554} \\
+   Url               & \releaseUrlDownloadBareosOrg{15.2} \\
+                     & \releaseUrlDownloadBareosCom{15.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-11-19\\
    Database Version  & 2004\\
-                     & Database update required (if coming from bareos-14.2). See the :ref:`bareos-update` section.\\
+                     & Database update required (if coming from bareos-14.2). See the \nameref{bareos-update} section.\\
    Release Ticket    & \ticket{554} \\
    Url               & \releaseUrlDownloadBareosOrg{15.2} \\
                      & \releaseUrlDownloadBareosCom{15.2} \\
@@ -435,21 +516,29 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    When coming from bareos-14.2.x, the following things have changed (same as in bareos-15.2.1):
    \begin{itemize}
-       \item The default setting for the Bacula Compatbile mode in  **Compatible**:sup:`Fd`:sub:`Client`  and **Compatible**:sup:`Sd`:sub:`Storage`  have been changed from \argument{yes} to \argument{no}.
+       \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \argument{yes} to \argument{no}.
        \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
-       Before bareos-15.2, options have been configured as part of the **Archive Device**:sup:`Sd`:sub:`Device`  directive, while now the Archive Device contains only information text and options are defined via the **Device Options**:sup:`Sd`:sub:`Device`  directive. See examples in **Device Options**:sup:`Sd`:sub:`Device` .
+       Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
    \end{itemize}
 
    }
 
-.. raw:: latex
+\releasenoteUnstable{15.2.1}{
 
-   \releasenoteUnstable{15.2.1}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-09-16\\
+   Database Version  & 2004\\
+                     & Database update required, see the \nameref{bareos-update} section.\\
+   Release Ticket    & \ticket{501} \\
+   Url               & \releaseUrlDownloadBareosOrg{15.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-09-16\\
    Database Version  & 2004\\
-                     & Database update required, see the :ref:`bareos-update` section.\\
+                     & Database update required, see the \nameref{bareos-update} section.\\
    Release Ticket    & \ticket{501} \\
    Url               & \releaseUrlDownloadBareosOrg{15.2} \\
    \end{tabular}
@@ -457,9 +546,9 @@ This chapter concentrates on things to do when updating an existing Bareos insta
    Beta release.
 
    \begin{itemize}
-       \item The default setting for the Bacula Compatbile mode in  **Compatible**:sup:`Fd`:sub:`Client`  and **Compatible**:sup:`Sd`:sub:`Storage`  have been changed from \argument{yes} to \argument{no}.
+       \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \argument{yes} to \argument{no}.
        \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
-       Before bareos-15.2, options have been configured as part of the **Archive Device**:sup:`Sd`:sub:`Device`  directive, while now the Archive Device contains only information text and options are defined via the **Device Options**:sup:`Sd`:sub:`Device`  directive. See examples in **Device Options**:sup:`Sd`:sub:`Device` .
+       Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
    % # Old syntax:
    % #    Archive Device = /etc/ceph/ceph.conf:poolname
    % #
@@ -470,16 +559,21 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
    }
 
-.. raw:: latex
+\releasenoteSection{Bareos-14.2}
 
-   \releasenoteSection{Bareos-14.2}
+It is known, that :program:`drop_database` scripts will not longer work on PostgreSQL < 8.4. However, as :program:`drop_database` scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
 
-It is known, that :program:`drop_database` scripts will not longer work on PostgreSQL :math:`<` 8.4. However, as :program:`drop_database` scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL :math:`>=` 8.4. We plan to ensure this in future version of Bareos.
+\releasenote{14.2.7}{
 
-.. raw:: latex
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2016-07-11\\
+   Database Version  & 2003 (unchanged)\\
+   Release Ticket    & \ticket{584} \\
+   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   \end{tabular}\end{verbatim}
 
-   \releasenote{14.2.7}{
-
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-07-11\\
    Database Version  & 2003 (unchanged)\\
@@ -530,10 +624,17 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{itemize}
    }
 
-.. raw:: latex
+\releasenote{14.2.6}{
 
-   \releasenote{14.2.6}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-12-03\\
+   Database Version  & 2003 (unchanged)\\
+   Release Ticket    & \ticket{474} \\
+   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-12-03\\
    Database Version  & 2003 (unchanged)\\
@@ -544,10 +645,17 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    This release contains several bugfixes.
    }
 
-.. raw:: latex
+\releasenote{14.2.5}{
 
-   \releasenote{14.2.5}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-06-01\\
+   Database Version  & 2003 (unchanged)\\
+   Release Ticket    & \ticket{447} \\
+   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-06-01\\
    Database Version  & 2003 (unchanged)\\
@@ -555,13 +663,20 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    Url               & \releaseUrlDownloadBareosCom{14.2} \\
    \end{tabular}
 
-   This release contains several bugfixes and added the platforms :strong:`Debian 8` and :strong:`Fedora 21`.
+   This release contains several bugfixes and added the platforms \os{Debian}{8} and \os{Fedora}{21}.
    }
 
-.. raw:: latex
+\releasenote{14.2.4}{
 
-   \releasenote{14.2.4}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-03-23 \\
+   Database Version  & 2003 (unchanged)\\
+   Release Ticket    & \ticket{420} \\
+   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-03-23 \\
    Database Version  & 2003 (unchanged)\\
@@ -590,10 +705,17 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    proper full backup of all files.
    }
 
-.. raw:: latex
+\releasenote{14.2.3}{
 
-   \releasenote{14.2.3}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-02-02 \\
+   Database Version  & 2003 (unchanged)\\
+   Release Ticket    & \ticket{393}\\
+   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-02-02 \\
    Database Version  & 2003 (unchanged)\\
@@ -603,15 +725,24 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
 
    }
 
-.. raw:: latex
+\releasenote{14.2.2}{
 
-   \releasenote{14.2.2}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2014-12-12 \\
+   Database Version  & 2003 (unchanged)\\
+                     & Database update required if updating from version < 14.2.\\
+                     & See the \nameref{bareos-update} section for details.\\
+   Url               & \releaseUrlDownloadBareosOrg{14.2} \\
+                     & \releaseUrlDownloadBareosCom{14.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2014-12-12 \\
    Database Version  & 2003 (unchanged)\\
-                     & Database update required if updating from version $<$ 14.2.\\
-                     & See the :ref:`bareos-update` section for details.\\
+                     & Database update required if updating from version < 14.2.\\
+                     & See the \nameref{bareos-update} section for details.\\
    Url               & \releaseUrlDownloadBareosOrg{14.2} \\
                      & \releaseUrlDownloadBareosCom{14.2} \\
    \end{tabular}
@@ -619,28 +750,39 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    First stable release of the Bareos 14.2 branch.
    }
 
-.. raw:: latex
+\releasenoteUnstable{14.2.1}{
 
-   \releasenoteUnstable{14.2.1}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release & 2014-09-22 \\
+   Database Version  & 2003\\
+                     & Database update required, see the \nameref{bareos-update} section.\\
+   Url               & \releaseUrlDownloadBareosOrg{14.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release & 2014-09-22 \\
    Database Version  & 2003\\
-                     & Database update required, see the :ref:`bareos-update` section.\\
+                     & Database update required, see the \nameref{bareos-update} section.\\
    Url               & \releaseUrlDownloadBareosOrg{14.2} \\
    \end{tabular}
 
    Beta release.
    }
 
-.. raw:: latex
+\releasenoteSection{Bareos-13.2}
 
-   \releasenoteSection{Bareos-13.2}
+\releasenote{13.2.5}{
 
-.. raw:: latex
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-12-03 \\
+   Database Version  & 2002 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosCom{13.2} \\
+   \end{tabular}\end{verbatim}
 
-   \releasenote{13.2.5}{
-
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-12-03 \\
    Database Version  & 2002 (unchanged)\\
@@ -650,10 +792,16 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    This release contains several bugfixes.
    }
 
-.. raw:: latex
+\releasenote{13.2.4}{
 
-   \releasenote{13.2.4}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2014-11-05 \\
+   Database Version  & 2002 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosCom{13.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2014-11-05 \\
    Database Version  & 2002 (unchanged)\\
@@ -661,24 +809,38 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenote{13.2.3}{
 
-   \releasenote{13.2.3}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2014-03-11 \\
+   Database Version  & 2002\\
+                     & Database update required, see the \nameref{bareos-update} section.\\
+   Url               & \releaseUrlDownloadBareosCom{13.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2014-03-11 \\
    Database Version  & 2002\\
-                     & Database update required, see the :ref:`bareos-update` section.\\
+                     & Database update required, see the \nameref{bareos-update} section.\\
    Url               & \releaseUrlDownloadBareosCom{13.2} \\
    \end{tabular}
 
-   It is known, that \command{drop_database} scripts will not longer work on PostgreSQL $<$ 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL $>=$ 8.4. We plan to ensure this in future version of Bareos.
+   It is known, that \command{drop_database} scripts will not longer work on PostgreSQL < 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
    }
 
-.. raw:: latex
+\releasenote{13.2.2}{
 
-   \releasenote{13.2.2}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-11-19 \\
+   Database Version  & 2001 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosOrg{13.2} \\
+                     & \releaseUrlDownloadBareosCom{13.2} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-11-19 \\
    Database Version  & 2001 (unchanged)\\
@@ -687,14 +849,18 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenoteSection{Bareos-12.4}
 
-   \releasenoteSection{Bareos-12.4}
+\releasenote{12.4.8}{
 
-.. raw:: latex
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2015-11-18 \\
+   Database Version  & 2001 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosCom{12.4} \\
+   \end{tabular}\end{verbatim}
 
-   \releasenote{12.4.8}{
-
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-11-18 \\
    Database Version  & 2001 (unchanged)\\
@@ -704,10 +870,17 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    This release contains several bugfixes.
    }
 
-.. raw:: latex
+\releasenote{12.4.6}{
 
-   \releasenote{12.4.6}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-11-19 \\
+   Database Version  & 2001 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
+                     & \releaseUrlDownloadBareosCom{12.4} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-11-19 \\
    Database Version  & 2001 (unchanged)\\
@@ -716,10 +889,16 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenote{12.4.5}{
 
-   \releasenote{12.4.5}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-09-10 \\
+   Database Version  & 2001 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosCom{12.4} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-09-10 \\
    Database Version  & 2001 (unchanged)\\
@@ -727,10 +906,17 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenote{12.4.4}{
 
-   \releasenote{12.4.4}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-06-17 \\
+   Database Version  & 2001 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
+                     & \releaseUrlDownloadBareosCom{12.4} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-06-17 \\
    Database Version  & 2001 (unchanged)\\
@@ -739,10 +925,17 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenote{12.4.3}{
 
-   \releasenote{12.4.3}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-04-15 \\
+   Database Version  & 2001 (unchanged)\\
+   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
+                     & \releaseUrlDownloadBareosCom{12.4} \\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-04-15 \\
    Database Version  & 2001 (unchanged)\\
@@ -751,20 +944,30 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenote{12.4.2}{
 
-   \releasenote{12.4.2}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-03-03 \\
+   Database Version  & 2001 (unchanged)\\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-03-03 \\
    Database Version  & 2001 (unchanged)\\
    \end{tabular}
    }
 
-.. raw:: latex
+\releasenote{12.4.1}{
 
-   \releasenote{12.4.1}{
+   # original Latex tabular
+   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+   Code Release      & 2013-02-06 \\
+   Database Version  & 2001 (initial)\\
+   \end{tabular}\end{verbatim}
 
+   # converted Latex tabular
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-02-06 \\
    Database Version  & 2001 (initial)\\
@@ -772,5 +975,6 @@ It is known, that :program:`drop_database` scripts will not longer work on Postg
 
    This have been the initial release of Bareos.
 
-   Information about migrating from Bacula to Bareos are available at `Howto upgrade from Bacula to Bareos <http://www.bareos.org/en/HOWTO/articles/upgrade_bacula_bareos.html>`_ and in section :ref:`compat-bacula`.
+   Information about migrating from Bacula to Bareos are available at \elink{Howto upgrade from Bacula to Bareos}{http://www.bareos.org/en/HOWTO/articles/upgrade_bacula_bareos.html} and in section \nameref{compat-bacula}.
    }
+

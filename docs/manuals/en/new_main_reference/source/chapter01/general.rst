@@ -44,7 +44,8 @@ Bareos Director
 
 The Director is the central control program for all the other daemons. It schedules and supervises all the backup, restore, verify and archive operations. The system administrator uses the Bareos Director to schedule backups and to recover files. The Director runs as a daemon (or service) in the background. 
 
-.. _`UADef`: UADef
+.. _UADef
+
 
 Bareos Console
 ~~~~~~~~~~~~~~
@@ -88,11 +89,27 @@ To perform a successful save or restore, the following four daemons must be conf
 Bareos Version Numbers and Releases
 -----------------------------------
 
-.. index::
-   single: Version numbers}` :raw-latex:`\index[general]{Releases
-
+:index:`[TAG=Version numbers] <single: Version numbers>` :index:`[TAG=Releases] <single: Releases>`
 
 Bareos version numbers consists of three parts: YY.Q.C
+
+# original Latex tabular
+
+::
+
+    \begin{tabular}{p{0.1\textwidth} p{0.8\textwidth}}
+    YY & year (last two digits) \\
+    Q  & quarter of the year \\
+    YY.Q & year and quarter of the code freeze.
+            After this, as a general rule, no new feature should get introduced to this Bareos branch.
+            Subsequent release are for bugfixing. \\
+    C & Release counter. For every subsequent release, this counter is incremented.
+            Beginning with 16.2, numbers from 1 to 3 represents the month of the quarter during development.
+            After the code freeze, the number is set to 4. So, stable releases get number from 4 onwards.
+            Maintenance releases get numbers starting from 5 onwards. \\
+    \end{tabular}
+
+# converted Latex tabular
 
 +------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | YY   | year (last two digits)                                                                                                                                                                                                                                                                                                               |
@@ -118,6 +135,52 @@ Bareos Packages
 ---------------
 
 Following Bareos Linux packages are available (release 17.2.4):
+
+# original Latex tabular
+
+::
+
+    \begin{tabular}{ | l | l | }
+    \hline
+    :strong:`Package Name` & :strong:`Description` \\
+    \hline
+    bareos & Backup Archiving REcovery Open Sourced - metapackage \\
+    bareos-bconsole & Bareos administration console (CLI) \\
+    bareos-client & Bareos client Meta-All-In-One package \\
+    bareos-common & Common files, required by multiple Bareos packages \\
+    bareos-database-common & Generic abstraction libs and files to connect to a database \\
+    bareos-database-mysql & Libs and tools for mysql catalog \\
+    bareos-database-postgresql & Libs and tools for postgresql catalog \\
+    bareos-database-sqlite3 & Libs and tools for sqlite3 catalog \\
+    bareos-database-tools & Bareos CLI tools with database dependencies (bareos-dbcheck, bscan) \\
+    bareos-devel & Devel headers \\
+    bareos-director & Bareos Director daemon \\
+    bareos-director-python-plugin & Python plugin for Bareos Director daemon \\
+    bareos-filedaemon & Bareos File daemon (backup and restore client) \\
+    bareos-filedaemon-ceph-plugin & CEPH plugin for Bareos File daemon \\
+    bareos-filedaemon-glusterfs-plugin & GlusterFS plugin for Bareos File daemon \\
+    bareos-filedaemon-ldap-python-plugin & LDAP Python plugin for Bareos File daemon \\
+    bareos-filedaemon-python-plugin & Python plugin for Bareos File daemon \\
+    bareos-regress-config & Required files for bareos-regress \\
+    bareos-storage & Bareos Storage daemon \\
+    bareos-storage-ceph & CEPH support for the Bareos Storage daemon \\
+    bareos-storage-droplet & Object Storage support (through libdroplet) for the Bareos Storage daemon \\
+    bareos-storage-fifo & FIFO support for the Bareos Storage backend \\
+    bareos-storage-glusterfs & GlusterFS support for the Bareos Storage daemon \\
+    bareos-storage-python-plugin & Python plugin for Bareos Storage daemon \\
+    bareos-storage-tape & Tape support for the Bareos Storage daemon \\
+    bareos-tools & Bareos CLI tools (bcopy, bextract, bls, bregex, bwild) \\
+    bareos-traymonitor & Bareos Tray Monitor (QT) \\
+    bareos-vadp-dumper & VADP Dumper - vStorage APIs for Data Protection Dumper program \\
+    bareos-vmware-plugin & Bareos VMware plugin \\
+    bareos-vmware-plugin-compat & Bareos VMware plugin compatibility \\
+    bareos-vmware-vix-disklib & VMware vix disklib distributable libraries \\
+    bareos-webui & Bareos Web User Interface \\
+    python-bareos & Backup Archiving REcovery Open Sourced - Python module \\
+    \hline
+    \end{tabular}
+
+# converted Latex tabular
 
 +--------------------------------------+---------------------------------------------------------------------------+
 | **Package Name**                     | **Description**                                                           |
@@ -191,7 +254,7 @@ Following Bareos Linux packages are available (release 17.2.4):
 
 Not all packages (especially optional backends and plugins) are available on all platforms. For details, see :ref:`section-packages`.
 
-Additionally, packages containing debug information are available. These are named differently depending on the distribution (**bareos-debuginfo** or **bareos-dbg** or :math:`\ldots`).
+Additionally, packages containing debug information are available. These are named differently depending on the distribution (**bareos-debuginfo** or **bareos-dbg** or ...).
 
 Not all packages are required to run Bareos.
 
@@ -212,147 +275,99 @@ To get Bareos up and running quickly, the author recommends that you first scan 
 Terminology
 -----------
 
-.. index::
-   single: Terminology
-
+:index:`[TAG=Terminology] <single: Terminology>`
 
 Administrator
-.. index::
-       single: Administrator
- The person or persons responsible for administrating the Bareos system.
+    :index:`[TAG=Administrator] <single: Administrator>` The person or persons responsible for administrating the Bareos system.
 
 Backup
-.. index::
-       single: Backup
- The term Backup refers to a Bareos Job that saves files.
+    :index:`[TAG=Backup] <single: Backup>` The term Backup refers to a Bareos Job that saves files.
 
 Bootstrap File
-.. index::
-       single: Bootstrap File
- The bootstrap file is an ASCII file containing a compact form of commands that allow Bareos or the stand-alone file extraction utility (bextract) to restore the contents of one or more Volumes, for example, the current state of a system just backed up. With a bootstrap file, Bareos can restore your system without a Catalog. You can create a bootstrap file from a Catalog to extract any file or files you wish.
+    :index:`[TAG=Bootstrap File] <single: Bootstrap File>` The bootstrap file is an ASCII file containing a compact form of commands that allow Bareos or the stand-alone file extraction utility (bextract) to restore the contents of one or more Volumes, for example, the current state of a system just backed up. With a bootstrap file, Bareos can restore your system without a Catalog. You can create a bootstrap file from a Catalog to extract any file or files you wish.
 
 Catalog
-.. index::
-       single: Catalog
- The Catalog is used to store summary information about the Jobs, Clients, and Files that were backed up and on what Volume or Volumes. The information saved in the Catalog permits the administrator or user to determine what jobs were run, their status as well as the important characteristics of each file that was backed up, and most importantly, it permits you to choose what files to restore. The Catalog is an online resource, but does not contain the
+    :index:`[TAG=Catalog] <single: Catalog>` The Catalog is used to store summary information about the Jobs, Clients, and Files that were backed up and on what Volume or Volumes. The information saved in the Catalog permits the administrator or user to determine what jobs were run, their status as well as the important characteristics of each file that was backed up, and most importantly, it permits you to choose what files to restore. The Catalog is an online resource, but does not contain the
     data for the files backed up. Most of the information stored in the catalog is also stored on the backup volumes (i.e. tapes). Of course, the tapes will also have a copy of the file data in addition to the File Attributes (see below).
 
     The catalog feature is one part of Bareos that distinguishes it from simple backup and archive programs such as dump and tar.
 
 Client
-.. index::
-       single: Client}` :raw-latex:`\index[general]{File Daemon|see{Client}
- In Bareos’s terminology, the word Client refers to the machine being backed up, and it is synonymous with the File services or File daemon, and quite often, it is referred to it as the FD. A Client is defined in a configuration file resource.
+    :index:`[TAG=Client] <single: Client>` :index:`[TAG=File Daemon|see{Client}] <single: File Daemon|see{Client}>` In Bareos’s terminology, the word Client refers to the machine being backed up, and it is synonymous with the File services or File daemon, and quite often, it is referred to it as the FD. A Client is defined in a configuration file resource.
 
 Console
-.. index::
-       single: Console
- The program that interfaces to the Director allowing the user or system administrator to control Bareos.
+    :index:`[TAG=Console] <single: Console>` The program that interfaces to the Director allowing the user or system administrator to control Bareos.
 
 Daemon
-.. index::
-       single: Daemon
- Unix terminology for a program that is always present in the background to carry out a designated task. On Windows systems, as well as some Unix systems, daemons are called Services.
+    :index:`[TAG=Daemon] <single: Daemon>` Unix terminology for a program that is always present in the background to carry out a designated task. On Windows systems, as well as some Unix systems, daemons are called Services.
 
 Directive
-.. index::
-       single: Directive
- The term directive is used to refer to a statement or a record within a Resource in a configuration file that defines one specific setting. For example, the **Name** directive defines the name of the Resource.
+    :index:`[TAG=Directive] <single: Directive>` The term directive is used to refer to a statement or a record within a Resource in a configuration file that defines one specific setting. For example, the **Name** directive defines the name of the Resource.
 
 Director
-.. index::
-       single: Director
- The main Bareos server daemon that schedules and directs all Bareos operations. Occasionally, the project refers to the Director as DIR.
+    :index:`[TAG=Director] <single: Director>` The main Bareos server daemon that schedules and directs all Bareos operations. Occasionally, the project refers to the Director as DIR.
 
 Differential
-.. index::
-       single: Differential
- A backup that includes all files changed since the last Full save started. Note, other backup programs may define this differently.
+    :index:`[TAG=Differential] <single: Differential>` A backup that includes all files changed since the last Full save started. Note, other backup programs may define this differently.
 
 File Attributes
-.. index::
-       single: File Attributes
- The File Attributes are all the information necessary about a file to identify it and all its properties such as size, creation date, modification date, permissions, etc. Normally, the attributes are handled entirely by Bareos so that the user never needs to be concerned about them. The attributes do not include the file’s data.
+    :index:`[TAG=File Attributes] <single: File Attributes>` The File Attributes are all the information necessary about a file to identify it and all its properties such as size, creation date, modification date, permissions, etc. Normally, the attributes are handled entirely by Bareos so that the user never needs to be concerned about them. The attributes do not include the file’s data.
 
 File daemon
-.. index::
-       single: File Daemon
- The daemon running on the client computer to be backed up. This is also referred to as the File services, and sometimes as the Client services or the FD.
+    :index:`[TAG=File Daemon] <single: File Daemon>` The daemon running on the client computer to be backed up. This is also referred to as the File services, and sometimes as the Client services or the FD.
 
     
 
-.. _`FileSetDef`: FileSetDef
+.. _FileSetDef
+
 
 FileSet
     A FileSet is a Resource contained in a configuration file that defines the files to be backed up. It consists of a list of included files or directories, a list of excluded files, and how the file is to be stored (compression, encryption, signatures). For more details, see the :ref:`DirectorResourceFileSet` in the Director chapter of this document.
 
 Incremental
-.. index::
-       single: Incremental
- A backup that includes all files changed since the last Full, Differential, or Incremental backup started. It is normally specified on the **Level** directive within the Job resource definition, or in a Schedule resource.
+    :index:`[TAG=Incremental] <single: Incremental>` A backup that includes all files changed since the last Full, Differential, or Incremental backup started. It is normally specified on the **Level** directive within the Job resource definition, or in a Schedule resource.
 
     
 
-.. _`JobDef`: JobDef
+.. _JobDef
+
 
 Job
-.. index::
-       single: Job
- A Bareos Job is a configuration resource that defines the work that Bareos must perform to backup or restore a particular Client. It consists of the **Type** (backup, restore, verify, etc), the **Level** (full, differential, incremental, etc.), the **FileSet**, and **Storage** the files are to be backed up (Storage device, Media Pool). For more details, see the :ref:`DirectorResourceJob` in the Director chapter of this document.
+    :index:`[TAG=Job] <single: Job>` A Bareos Job is a configuration resource that defines the work that Bareos must perform to backup or restore a particular Client. It consists of the **Type** (backup, restore, verify, etc), the **Level** (full, differential, incremental, etc.), the **FileSet**, and **Storage** the files are to be backed up (Storage device, Media Pool). For more details, see the :ref:`DirectorResourceJob` in the Director chapter of this document.
 
 Monitor
-.. index::
-       single: Monitor
- The program that interfaces to all the daemons allowing the user or system administrator to monitor Bareos status.
+    :index:`[TAG=Monitor] <single: Monitor>` The program that interfaces to all the daemons allowing the user or system administrator to monitor Bareos status.
 
 Resource
-.. index::
-       single: Resource
- A resource is a part of a configuration file that defines a specific unit of information that is available to Bareos. It consists of several directives (individual configuration statements). For example, the **Job** resource defines all the properties of a specific Job: name, schedule, Volume pool, backup type, backup level, ...
+    :index:`[TAG=Resource] <single: Resource>` A resource is a part of a configuration file that defines a specific unit of information that is available to Bareos. It consists of several directives (individual configuration statements). For example, the **Job** resource defines all the properties of a specific Job: name, schedule, Volume pool, backup type, backup level, ...
 
 Restore
-.. index::
-       single: Restore
- A restore is a configuration resource that describes the operation of recovering a file from backup media. It is the inverse of a save, except that in most cases, a restore will normally have a small set of files to restore, while normally a Save backs up all the files on the system. Of course, after a disk crash, Bareos can be called upon to do a full Restore of all files that were on the system.
+    :index:`[TAG=Restore] <single: Restore>` A restore is a configuration resource that describes the operation of recovering a file from backup media. It is the inverse of a save, except that in most cases, a restore will normally have a small set of files to restore, while normally a Save backs up all the files on the system. Of course, after a disk crash, Bareos can be called upon to do a full Restore of all files that were on the system.
 
 Schedule
-.. index::
-       single: Schedule
- A Schedule is a configuration resource that defines when the Bareos Job will be scheduled for execution. To use the Schedule, the Job resource will refer to the name of the Schedule. For more details, see the :ref:`DirectorResourceSchedule` in the Director chapter of this document.
+    :index:`[TAG=Schedule] <single: Schedule>` A Schedule is a configuration resource that defines when the Bareos Job will be scheduled for execution. To use the Schedule, the Job resource will refer to the name of the Schedule. For more details, see the :ref:`DirectorResourceSchedule` in the Director chapter of this document.
 
 Service
-.. index::
-       single: Service
- This is a program that remains permanently in memory awaiting instructions. In Unix environments, services are also known as **daemons**.
+    :index:`[TAG=Service] <single: Service>` This is a program that remains permanently in memory awaiting instructions. In Unix environments, services are also known as **daemons**.
 
 Storage Coordinates
-.. index::
-       single: Storage Coordinates
- The information returned from the Storage Services that uniquely locates a file on a backup medium. It consists of two parts: one part pertains to each file saved, and the other part pertains to the whole Job. Normally, this information is saved in the Catalog so that the user doesn’t need specific knowledge of the Storage Coordinates. The Storage Coordinates include the File Attributes (see above) plus the unique location of the information
+    :index:`[TAG=Storage Coordinates] <single: Storage Coordinates>` The information returned from the Storage Services that uniquely locates a file on a backup medium. It consists of two parts: one part pertains to each file saved, and the other part pertains to the whole Job. Normally, this information is saved in the Catalog so that the user doesn’t need specific knowledge of the Storage Coordinates. The Storage Coordinates include the File Attributes (see above) plus the unique location of the information
     on the backup Volume.
 
 Storage Daemon
-.. index::
-       single: Storage Daemon
- The Storage daemon, sometimes referred to as the SD, is the code that writes the attributes and data to a storage Volume (usually a tape or disk).
+    :index:`[TAG=Storage Daemon] <single: Storage Daemon>` The Storage daemon, sometimes referred to as the SD, is the code that writes the attributes and data to a storage Volume (usually a tape or disk).
 
 Session
-.. index::
-       single: Session
- Normally refers to the internal conversation between the File daemon and the Storage daemon. The File daemon opens a **session** with the Storage daemon to save a FileSet or to restore it. A session has a one-to-one correspondence to a Bareos Job (see above).
+    :index:`[TAG=Session] <single: Session>` Normally refers to the internal conversation between the File daemon and the Storage daemon. The File daemon opens a **session** with the Storage daemon to save a FileSet or to restore it. A session has a one-to-one correspondence to a Bareos Job (see above).
 
 Verify
-.. index::
-       single: Verify
- A verify is a job that compares the current file attributes to the attributes that have previously been stored in the Bareos Catalog. This feature can be used for detecting changes to critical system files similar to what a file integrity checker like Tripwire does. One of the major advantages of using Bareos to do this is that on the machine you want protected such as a server, you can run just the File daemon, and the Director, Storage daemon, and
+    :index:`[TAG=Verify] <single: Verify>` A verify is a job that compares the current file attributes to the attributes that have previously been stored in the Bareos Catalog. This feature can be used for detecting changes to critical system files similar to what a file integrity checker like Tripwire does. One of the major advantages of using Bareos to do this is that on the machine you want protected such as a server, you can run just the File daemon, and the Director, Storage daemon, and
     Catalog reside on a different machine. As a consequence, if your server is ever compromised, it is unlikely that your verification database will be tampered with.
 
     Verify can also be used to check that the most recent Job data written to a Volume agrees with what is stored in the Catalog (i.e. it compares the file attributes), \*or it can check the Volume contents against the original files on disk.
 
 Retention Period
-.. index::
-       single: Retention Period
- There are various kinds of retention periods that Bareos recognizes. The most important are the **File** Retention Period, **Job** Retention Period, and the **Volume** Retention Period. Each of these retention periods applies to the time that specific records will be kept in the Catalog database. This should not be confused with the time that the data saved to a Volume is valid.
+    :index:`[TAG=Retention Period] <single: Retention Period>` There are various kinds of retention periods that Bareos recognizes. The most important are the **File** Retention Period, **Job** Retention Period, and the **Volume** Retention Period. Each of these retention periods applies to the time that specific records will be kept in the Catalog database. This should not be confused with the time that the data saved to a Volume is valid.
 
     The File Retention Period determines the time that File records are kept in the catalog database. This period is important for two reasons: the first is that as long as File records remain in the database, you can "browse" the database with a console program and restore any individual file. Once the File records are removed or pruned from the database, the individual files of a backup job can no longer be "browsed". The second reason for carefully choosing the File Retention Period is
     because the volume of the database File records use the most storage space in the database. As a consequence, you must ensure that regular "pruning" of the database file records is done to keep your database from growing too large. (See the Console **prune** command for more details on this subject).
@@ -363,15 +378,11 @@ Retention Period
     overwritten, the Catalog database may become enormous. To keep the Catalog to a manageable size, the backup information should be removed from the Catalog after the defined File Retention Period. Bareos provides the mechanisms for the catalog to be automatically pruned according to the retention periods defined.
 
 Scan
-.. index::
-       single: Scan
- A Scan operation causes the contents of a Volume or a series of Volumes to be scanned. These Volumes with the information on which files they contain are restored to the Bareos Catalog. Once the information is restored to the Catalog, the files contained on those Volumes may be easily restored. This function is particularly useful if certain Volumes or Jobs have exceeded their retention period and have been pruned or purged from the Catalog. Scanning data
+    :index:`[TAG=Scan] <single: Scan>` A Scan operation causes the contents of a Volume or a series of Volumes to be scanned. These Volumes with the information on which files they contain are restored to the Bareos Catalog. Once the information is restored to the Catalog, the files contained on those Volumes may be easily restored. This function is particularly useful if certain Volumes or Jobs have exceeded their retention period and have been pruned or purged from the Catalog. Scanning data
     from Volumes into the Catalog is done by using the **bscan** program. See the :ref:`bscan section <bscan>` of the Bareos Utilities chapter of this manual for more details.
 
 Volume
-.. index::
-       single: Volume
- A Volume is an archive unit, normally a tape or a named disk file where Bareos stores the data from one or more backup jobs. All Bareos Volumes have a software label written to the Volume by Bareos so that it identifies what Volume it is really reading. (Normally there should be no confusion with disk files, but with tapes, it is easy to mount the wrong one.)
+    :index:`[TAG=Volume] <single: Volume>` A Volume is an archive unit, normally a tape or a named disk file where Bareos stores the data from one or more backup jobs. All Bareos Volumes have a software label written to the Volume by Bareos so that it identifies what Volume it is really reading. (Normally there should be no confusion with disk files, but with tapes, it is easy to mount the wrong one.)
 
 What Bareos is Not
 ------------------
@@ -387,3 +398,4 @@ The following block diagram shows the typical interactions between the Bareos Se
 
 .. |image| image:: \idir flow
    :width: 80.0%
+

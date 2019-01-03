@@ -6,9 +6,7 @@
 Critical Items to Implement Before Production
 =============================================
 
-.. index::
-   single: Critical Items to Implement Before Production
-
+:index:`[TAG=Production->Critical Items to Implement Before] <pair: Production; Critical Items to Implement Before>` :index:`[TAG=Critical Items to Implement Before Production] <single: Critical Items to Implement Before Production>`
 
 We recommend you take your time before implementing a production on a Bareos backup system since Bareos is a rather complex program, and if you make a mistake, you may suddenly find that you cannot restore your files in case of a disaster. This is especially true if you have not previously used a major backup product.
 
@@ -16,14 +14,13 @@ If you follow the instructions in this chapter, you will have covered most of th
 
 
 
-.. _`Critical`: Critical
+.. _Critical
+
 
 Critical Items
 --------------
 
-.. index::
-   single: Critical Items
-
+:index:`[TAG=Critical Items] <single: Critical Items>`
 
 The following assumes that you have installed Bareos, you more or less understand it, you have at least worked through the tutorial or have equivalent experience, and that you have set up a basic production configuration. If you haven’t done the above, please do so and then come back here. The following is a sort of checklist that points with perhaps a brief explanation of why you should do it. In most cases, you will find the details elsewhere in the manual. The order is more or less the order
 you would use in setting up a production system (if you already are in production, use the checklist anyway).
@@ -34,7 +31,7 @@ you would use in setting up a production system (if you already are in productio
 
 -  Do at least one restore of files. If you backup multiple OS types (Linux, Solaris, HP, MacOS, FreeBSD, Win32, ...), restore files from each system type. The :ref:`Restoring Files <RestoreChapter>` chapter shows you how.
 
--  Write a bootstrap file to a separate system for each backup job. See **Write Bootstrap**:sup:`Dir`:sub:`Job`  directive and more details are available in the :ref:`BootstrapChapter` chapter. Also, the default :file:`bareos-dir.conf` comes with a Write Bootstrap directive defined. This allows you to recover the state of your system as of the last backup.
+-  Write a bootstrap file to a separate system for each backup job. See **Write Bootstrap**:sup:`Dir`:sub:`Job`\  directive and more details are available in the :ref:`BootstrapChapter` chapter. Also, the default :file:`bareos-dir.conf` comes with a Write Bootstrap directive defined. This allows you to recover the state of your system as of the last backup.
 
 -  Backup your catalog. An example of this is found in the default bareos-dir.conf file. The backup script is installed by default and should handle any database, though you may want to make your own local modifications. See also :ref:`Backing Up Your Bareos Database <BackingUpBareos>` for more information.
 
@@ -50,9 +47,7 @@ you would use in setting up a production system (if you already are in productio
 Recommended Items
 -----------------
 
-.. index::
-   single: Recommended Items
-
+:index:`[TAG=Recommended Items] <single: Recommended Items>`
 
 Although these items may not be critical, they are recommended and will help you avoid problems.
 
@@ -72,3 +67,4 @@ If you absolutely must implement a system where you write a different tape each 
 -  Write a bootstrap file of your backed up data and a bootstrap file of your catalog backup to a external media like CDROM or USB stick, and take that with the tape. If this is not possible, try to write those files to another computer or offsite computer, or send them as email to a friend. If none of that is possible, at least print the bootstrap files and take that offsite with the tape. Having the bootstrap files will make recovery much easier.
 
 -  It is better not to force Bareos to load a particular tape each day. Instead, let Bareos choose the tape. If you need to know what tape to mount, you can print a list of recycled and appendable tapes daily, and select any tape from that list. Bareos may propose a particular tape for use that it considers optimal, but it will accept any valid tape from the correct pool.
+

@@ -9,18 +9,14 @@ There are a number of different licenses that are used in Bareos.
 FDL
 ---
 
-.. index::
-   pair: License; FDL
-
+:index:`[TAG=License->FDL] <pair: License; FDL>`
 
 The :ref:`GNU Free Documentation License (FDL) <fdl>` is used for this manual, which is a free and open license. This means that you may freely reproduce it and even make changes to it.
 
 AGPL
 ----
 
-.. index::
-   pair: License; AGPL
-
+:index:`[TAG=License->AGPL] <pair: License; AGPL>`
 
 The vast bulk of the source code is released under the :ref:`GNU Affero General Public License (AGPL) version 3 <agpl>`.
 
@@ -33,38 +29,30 @@ Portions may be copyrighted by other people. These files are released under diff
 LGPL
 ----
 
-.. index::
-   pair: License; LGPL
-
+:index:`[TAG=License->LGPL] <pair: License; LGPL>`
 
 Some of the Bareos library source code is released under the :ref:`GNU Lesser General Public License (LGPL) <lgpl>`. This permits third parties to use these parts of our code in their proprietary programs to interface to Bareos.
 
 Public Domain
 -------------
 
-.. index::
-   pair: License; Public Domain
-
+:index:`[TAG=License->Public Domain] <pair: License; Public Domain>`
 
 Some of the Bareos code, or code that Bareos references, has been released to the public domain. E.g. md5.c, SQLite.
 
 Trademark
 ---------
 
-.. index::
-   single: Trademark
+:index:`[TAG=Trademark] <single: Trademark>`
 
+Bareos\raisebox{.6ex}{\textsuperscript{\textregistered}} is a registered trademark of Bareos GmbH & Co. KG.
 
-Bareos:raw-latex:`\raisebox{.6ex}{\textsuperscript{\textregistered}}` is a registered trademark of Bareos GmbH & Co. KG.
-
-Bacula:raw-latex:`\raisebox{.6ex}{\textsuperscript{\textregistered}}` is a registered trademark of Kern Sibbald.
+Bacula\raisebox{.6ex}{\textsuperscript{\textregistered}} is a registered trademark of Kern Sibbald.
 
 Disclaimer
 ----------
 
-.. index::
-   single: Disclaimer
-
+:index:`[TAG=Disclaimer] <single: Disclaimer>`
 
 NO WARRANTY
 
@@ -78,3 +66,4 @@ Other Copyrights and Trademarks
 -------------------------------
 
 Certain words and/or products are Copyrighted or Trademarked such as Windows (by Microsoft). Since they are numerous, and we are not necessarily aware of the details of each, we don’t try to list them here. However, we acknowledge all such Copyrights and Trademarks, and if any copyright or trademark holder wishes a specific acknowledgment, notify us, and we will be happy to add it where appropriate.
+

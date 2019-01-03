@@ -8,7 +8,8 @@ Messages Resource
 
 
 
-.. _`ResourceMessages}` :raw-latex:`\index[general]{Resource!Messages}` :raw-latex:`\index[general]{Messages Resource`: ResourceMessages}` :raw-latex:`\index[general]{Resource!Messages}` :raw-latex:`\index[general]{Messages Resource
+.. _ResourceMessages
+ :index:`[TAG=Resource->Messages] <pair: Resource; Messages>` :index:`[TAG=Messages Resource] <single: Messages Resource>`
 
 The Messages resource defines how messages are to be handled and destinations to which they should be sent.
 
@@ -19,7 +20,7 @@ Each message that Bareos generates (i.e. that each daemon generates) has an asso
 
 In general, messages are attached to a Job and are included in the Job report. There are some rare cases, where this is not possible, e.g. when no job is running, or if a communications error occurs between a daemon and the director. In those cases, the message may remain in the system, and should be flushed at the end of the next Job.
 
-The records contained in a Messages resource consist of a **destination** specification followed by a list of **message-types** in the format: :raw-latex:`\index[dir]{Messages!destination}`
+The records contained in a Messages resource consist of a **destination** specification followed by a list of **message-types** in the format: :index:`[TAG=Messages->destination] <pair: Messages; destination>`
 
 destination = message-type1, message-type2, message-type3, ... 
 
@@ -30,7 +31,7 @@ destination = address = message-type1, message-type2, message-type3, ...
     | where
 
     destination
-        is one of a predefined set of keywords that define where the message is to be sent (**Append**:sup:`Dir`:sub:`Messages` , **Console**:sup:`Dir`:sub:`Messages` , **File**:sup:`Dir`:sub:`Messages` , **Mail**:sup:`Dir`:sub:`Messages` , ...),
+        is one of a predefined set of keywords that define where the message is to be sent (**Append**:sup:`Dir`:sub:`Messages`\ , **Console**:sup:`Dir`:sub:`Messages`\ , **File**:sup:`Dir`:sub:`Messages`\ , **Mail**:sup:`Dir`:sub:`Messages`\ , ...),
 
     address
         varies according to the **destination** keyword, but is typically an email address or a filename,
@@ -47,67 +48,64 @@ For any destination, the **message-type** field is a comma separated list of the
 
 info
     | 
-    | :raw-latex:`\index[general]{Messages!type!info}` General information messages.
+    | :index:`[TAG=Messages->type->info] <triple: Messages; type; info>` General information messages.
 
 warning
     | 
-    | :raw-latex:`\index[general]{Messages!type!warning}` Warning messages. Generally this is some unusual condition but not expected to be serious.
+    | :index:`[TAG=Messages->type->warning] <triple: Messages; type; warning>` Warning messages. Generally this is some unusual condition but not expected to be serious.
 
 error
     | 
-    | :raw-latex:`\index[general]{Messages!type!error}` Non-fatal error messages. The job continues running. Any error message should be investigated as it means that something went wrong.
+    | :index:`[TAG=Messages->type->error] <triple: Messages; type; error>` Non-fatal error messages. The job continues running. Any error message should be investigated as it means that something went wrong.
 
 fatal
     | 
-    | :raw-latex:`\index[general]{Messages!type!fatal}` Fatal error messages. Fatal errors cause the job to terminate.
+    | :index:`[TAG=Messages->type->fatal] <triple: Messages; type; fatal>` Fatal error messages. Fatal errors cause the job to terminate.
 
 terminate
     | 
-    | :raw-latex:`\index[general]{Messages!type!terminate}` Message generated when the daemon shuts down.
+    | :index:`[TAG=Messages->type->terminate] <triple: Messages; type; terminate>` Message generated when the daemon shuts down.
 
 notsaved
     | 
-    | :raw-latex:`\index[general]{Messages!type!notsaved}` Files not saved because of some error. Usually because the file cannot be accessed (i.e. it does not exist or is not mounted).
+    | :index:`[TAG=Messages->type->notsaved] <triple: Messages; type; notsaved>` Files not saved because of some error. Usually because the file cannot be accessed (i.e. it does not exist or is not mounted).
 
 skipped
     | 
-    | :raw-latex:`\index[general]{Messages!type!skipped}` Files that were skipped because of a user supplied option such as an incremental backup or a file that matches an exclusion pattern. This is not considered an error condition such as the files listed for the **notsaved** type because the configuration file explicitly requests these types of files to be skipped. For example, any unchanged file during an incremental backup, or any subdirectory if the no recursion option is specified.
+    | :index:`[TAG=Messages->type->skipped] <triple: Messages; type; skipped>` Files that were skipped because of a user supplied option such as an incremental backup or a file that matches an exclusion pattern. This is not considered an error condition such as the files listed for the **notsaved** type because the configuration file explicitly requests these types of files to be skipped. For example, any unchanged file during an incremental backup, or any subdirectory if the no recursion option is specified.
 
 mount
     | 
-    | :raw-latex:`\index[general]{Messages!type!mount}` Volume mount or intervention requests from the Storage daemon. These requests require a specific operator intervention for the job to continue.
+    | :index:`[TAG=Messages->type->mount] <triple: Messages; type; mount>` Volume mount or intervention requests from the Storage daemon. These requests require a specific operator intervention for the job to continue.
 
 restored
     | 
-    | :raw-latex:`\index[general]{Messages!type!restored}` The **ls** style listing generated for each file restored is sent to this message class.
+    | :index:`[TAG=Messages->type->restored] <triple: Messages; type; restored>` The **ls** style listing generated for each file restored is sent to this message class.
 
 all
     | 
-    | :raw-latex:`\index[general]{Messages!type!all}` All message types.
+    | :index:`[TAG=Messages->type->all] <triple: Messages; type; all>` All message types.
 
 security
     | 
-    | :raw-latex:`\index[general]{Messages!type!security}` Security info/warning messages principally from unauthorized connection attempts.
+    | :index:`[TAG=Messages->type->security] <triple: Messages; type; security>` Security info/warning messages principally from unauthorized connection attempts.
 
 alert
     | 
-    | :raw-latex:`\index[general]{Messages!type!alert}` Alert messages. These are messages generated by tape alerts.
+    | :index:`[TAG=Messages->type->alert] <triple: Messages; type; alert>` Alert messages. These are messages generated by tape alerts.
 
 volmgmt
     | 
-    | :raw-latex:`\index[general]{Messages!type!volmgmt}` Volume management messages. Currently there are no volume management messages generated.
+    | :index:`[TAG=Messages->type->volmgmt] <triple: Messages; type; volmgmt>` Volume management messages. Currently there are no volume management messages generated.
 
 audit
     | 
-    | :raw-latex:`\index[general]{Messages!type!audit}` :raw-latex:`\index[general]{auditing}` Audit messages. Interacting with the Bareos Director will be audited. Can be configured with in resource **Auditing**:sup:`Dir`:sub:`Director` .
+    | :index:`[TAG=Messages->type->audit] <triple: Messages; type; audit>` :index:`[TAG=auditing] <single: auditing>` Audit messages. Interacting with the Bareos Director will be audited. Can be configured with in resource **Auditing**:sup:`Dir`:sub:`Director`\ .
 
 The following is an example of a valid Messages resource definition, where all messages except files explicitly skipped or daemon termination messages are sent by email to backupoperator@example.com. In addition all mount messages are sent to the operator (i.e. emailed to backupoperator@example.com). Finally all messages other than explicitly skipped files and files saved are sent to the console:
 
-
-
-    
 .. code-block:: sh
-    :caption: Message resource
+   :caption: Message resource
 
     Messages {
       Name = Standard
@@ -118,11 +116,8 @@ The following is an example of a valid Messages resource definition, where all m
 
 With the exception of the email address, an example Director’s Messages resource is as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: Message resource
+   :caption: Message resource
 
     Messages {
       Name = Standard

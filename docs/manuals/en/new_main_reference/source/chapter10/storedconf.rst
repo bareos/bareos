@@ -6,13 +6,7 @@
 Storage Daemon Configuration
 ============================
 
-.. index::
-   single: Configuration
-.. index::
-    pair: Storage Daemon; Configuration
-.. index::
-    pair: Configuration; Storage Daemon
-
+:index:`[TAG=Configuration] <single: Configuration>` :index:`[TAG=Storage Daemon->Configuration] <pair: Storage Daemon; Configuration>` :index:`[TAG=Configuration->Storage Daemon] <pair: Configuration; Storage Daemon>`
 
 The |bareosSd| configuration file has relatively few resource definitions. However, due to the great variation in backup media and system capabilities, the storage daemon must be highly configurable. As a consequence, there are quite a large number of directives in the Device Resource definition that allow you to define all the characteristics of your Storage device (normally a tape drive). Fortunately, with modern storage devices, the defaults are sufficient, and very few directives
 are actually needed.
@@ -38,21 +32,14 @@ Following resources are optional:
 Storage Resource
 ----------------
 
-.. index::
-   pair: Resource; Storage
-.. index::
-    pair: Storage; Resource
-
+:index:`[TAG=Resource->Storage] <pair: Resource; Storage>` :index:`[TAG=Storage->Resource] <pair: Storage; Resource>`
 
 In general, the properties specified under the Storage resource define global properties of the Storage daemon. Each Storage daemon configuration file must have one and only one Storage resource definition.
 
 The following is a typical Storage daemon storage resource definition.
 
-
-
-    
 .. code-block:: sh
-    :caption: Storage daemon storage definition
+   :caption: Storage daemon storage definition
 
     #
     # "Global" Storage daemon configuration specifications appear
@@ -68,21 +55,14 @@ The following is a typical Storage daemon storage resource definition.
 Director Resource
 -----------------
 
-.. index::
-   pair: Resource; Director
-.. index::
-    pair: Director; Resource
-
+:index:`[TAG=Resource->Director] <pair: Resource; Director>` :index:`[TAG=Director->Resource] <pair: Director; Resource>`
 
 The Director resource specifies the Name of the Director which is permitted to use the services of the Storage daemon. There may be multiple Director resources. The Director Name and Password must match the corresponding values in the Director’s configuration file.
 
 The following is an example of a valid Director resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Storage daemon Director definition
+   :caption: Storage daemon Director definition
 
     Director {
       Name = MainDirector
@@ -96,7 +76,8 @@ NDMP Resource
 
 
 
-.. _`StorageResourceNDMP}` :raw-latex:`\index[sd]{Resource!NDMP}` :raw-latex:`\index[sd]{NDMP!Resource`: StorageResourceNDMP}` :raw-latex:`\index[sd]{Resource!NDMP}` :raw-latex:`\index[sd]{NDMP!Resource
+.. _StorageResourceNDMP
+ :index:`[TAG=Resource->NDMP] <pair: Resource; NDMP>` :index:`[TAG=NDMP->Resource] <pair: NDMP; Resource>`
 
 The NDMP Resource specifies the authentication details of each NDMP client. There may be multiple NDMP resources for a single Storage daemon. In general, the properties specified within the NDMP resource are specific to one client.
 
@@ -105,30 +86,23 @@ The NDMP Resource specifies the authentication details of each NDMP client. Ther
 Device Resource
 ---------------
 
-.. index::
-   pair: Resource; Device
-.. index::
-    pair: Device; Resource
-
+:index:`[TAG=Resource->Device] <pair: Resource; Device>` :index:`[TAG=Device->Resource] <pair: Device; Resource>`
 
 The Device Resource specifies the details of each device (normally a tape drive) that can be used by the Storage daemon. There may be multiple Device resources for a single Storage daemon. In general, the properties specified within the Device resource are specific to the Device.
 
 Edit Codes for Mount and Unmount Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   single: Edit Codes for Mount and Unmount Directives}` :raw-latex:`\index[general]{Mount and Unmount: use variables in directives
- 
+:index:`[TAG=Edit Codes for Mount and Unmount Directives] <single: Edit Codes for Mount and Unmount Directives>` :index:`[TAG=Mount and Unmount: use variables in directives] <single: Mount and Unmount: use variables in directives>` 
 
-.. _`mountcodes`: mountcodes
+.. _mountcodes
+
 
 Before submitting the **Mount Command**, or **Unmount Command** directives to the operating system, Bareos performs character substitution of the following characters:
 
-.. raw:: latex
-
-   
 
 
+::
 
         %% = %
         %a = Archive device name
@@ -137,85 +111,67 @@ Before submitting the **Mount Command**, or **Unmount Command** directives to th
         %m = mount point
         %v = last part name (i.e. filename)
 
-.. raw:: latex
 
-   
 
 Devices that require a mount (USB)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   single: Devices that require a mount (USB)
+:index:`[TAG=Devices that require a mount (USB)] <single: Devices that require a mount (USB)>`
 
-
-.. raw:: latex
-
-   \begin{description}
-   \item **Requires Mount**:sup:`Sd`:sub:`Device` 
+\begin{description}
+   \item **Requires Mount**:sup:`Sd`:sub:`Device`\ 
    You must set this directive to {\bf yes} for removable devices such as
    USB unless they are automounted, and to {\bf no} for all other devices
    (tapes/files).  This directive indicates if the device requires to be
    mounted to be read, and if it must be written in a special way.  If it
-   set, **Mount Point**:sup:`Sd`:sub:`Device` , 
-   **Mount Command**:sup:`Sd`:sub:`Device`  and 
-   **Unmount Command**:sup:`Sd`:sub:`Device` 
+   set, **Mount Point**:sup:`Sd`:sub:`Device`\ , 
+   **Mount Command**:sup:`Sd`:sub:`Device`\  and 
+   **Unmount Command**:sup:`Sd`:sub:`Device`\ 
    directives must also be defined.
 
-   \item **Mount Point**:sup:`Sd`:sub:`Device` 
+   \item **Mount Point**:sup:`Sd`:sub:`Device`\ 
    Directory where the device can be mounted.
 
-   \item **Mount Command**:sup:`Sd`:sub:`Device` 
+   \item **Mount Command**:sup:`Sd`:sub:`Device`\ 
    Command that must be executed to mount the device. Before the command is
    executed, \%a is replaced with the Archive Device, and \%m with the Mount
    Point.
 
    Most frequently, you will define it as follows:
 
-   \
-.. code-block:: sh
-    :caption: 
-
+   \begin{verbatim}\begin{bconfig}{}
    Mount Command = "/bin/mount -t iso9660 -o ro %a %m"
-   \
+   \end{bconfig}\end{verbatim}
 
    For some media, you may need multiple commands.  If so, it is recommended
    that you use a shell script instead of putting them all into the Mount
    Command.  For example, instead of this:
 
-   \
-.. code-block:: sh
-    :caption: 
-
+   \begin{verbatim}\begin{bconfig}{}
    Mount Command = "/usr/local/bin/mymount"
-   \
+   \end{bconfig}\end{verbatim}
 
    Where that script contains:
 
-   \
-.. code-block:: sh
-    :caption: 
-
+   \begin{verbatim}\begin{commands}{}
    #!/bin/sh
    ndasadmin enable -s 1 -o w
    sleep 2
    mount /dev/ndas-00323794-0p1 /backup
-   \
+   \end{commands}\end{verbatim}
 
    Similar consideration should be given to all other Command parameters.
 
-   \item **Unmount Command**:sup:`Sd`:sub:`Device` 
+   \item **Unmount Command**:sup:`Sd`:sub:`Device`\ 
    Command that must be executed to unmount the device. Before the command  is
    executed, \%a is replaced with the Archive Device, and \%m with the  Mount
    Point.
 
    Most frequently, you will define it as follows:
 
-   \
-.. code-block:: sh
-    :caption: 
-
+   \begin{verbatim}\begin{bconfig}{}
    Unmount Command = "/bin/umount %m"
-   \
+   \end{bconfig}\end{verbatim}
 
      If you need to specify multiple commands, create a shell script.
 
@@ -226,11 +182,7 @@ Devices that require a mount (USB)
 Messages Resource
 -----------------
 
-.. index::
-   pair: Resource; Messages
-.. index::
-    pair: Messages; Resource
-
+:index:`[TAG=Resource->Messages] <pair: Resource; Messages>` :index:`[TAG=Messages->Resource] <pair: Messages; Resource>`
 
 For a description of the Messages Resource, please see the :ref:`MessagesChapter` chapter of this manual.
 
@@ -241,6 +193,5 @@ Example Storage Daemon Configuration File
 
 A example Storage Daemon configuration file might be the following:
 
-.. raw:: latex
+.. literalinclude:: ../../main/bareos-sd.conf}
 
-   .. literalinclude:: ../../main/bareos-sd.conf

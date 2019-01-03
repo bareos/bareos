@@ -4,11 +4,10 @@
 Plugins
 =======
 
-.. index::
-   single: Plugin
- 
+:index:`[TAG=Plugin] <single: Plugin>` 
 
-.. _`section-plugins`: section-plugins
+.. _section-plugins
+
 
 The functionality of Bareos can be extended by plugins. They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
 
@@ -25,20 +24,16 @@ File Daemon Plugins
 
 File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`File Set <directive-fileset-plugin>`.
 
-.. raw:: latex
 
-   
 .. warning:: 
-  Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
+   Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
 
 .. _bpipe:
 
 bpipe Plugin
 ~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; bpipe
-
+:index:`[TAG=Plugin->bpipe] <pair: Plugin; bpipe>`
 
 The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump. By using different command lines to bpipe, you can backup any kind of data (ASCII or binary) depending on the program called.
 
@@ -48,11 +43,8 @@ The bpipe plugin is so simple and flexible, you may call it the "Swiss Army Knif
 
 The bpipe plugin is specified in the Include section of your Job’s FileSet resource in your :file:`bareos-dir.conf`.
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe fileset
+   :caption: bpipe fileset
 
     FileSet {
       Name = "MyFileSet"
@@ -67,11 +59,8 @@ The bpipe plugin is specified in the Include section of your Job’s FileSet res
 
 The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes. The full syntax of the plugin directive as interpreted by the bpipe plugin is:
 
-
-
-    
 .. code-block:: sh
-    :caption: bpipe directive
+   :caption: bpipe directive
 
     Plugin = "<plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
 
@@ -111,48 +100,35 @@ See chapter :ref:`MSSQL`.
 LDAP Plugin
 ~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; ldap
+:index:`[TAG=Plugin->ldap] <pair: Plugin; ldap>`
 
-
-This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (15.2.0) contains an example configuration file, that must be adapted to your envirnoment.
+This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; LDAP Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Cephfs Plugin
 ~~~~~~~~~~~~~
 
-.. index::
-   pair: Ceph; Cephfs Plugin
+:index:`[TAG=Plugin->ceph->cephfs] <triple: Plugin; ceph; cephfs>` :index:`[TAG=Ceph->Cephfs Plugin] <pair: Ceph; Cephfs Plugin>`
 
-
-Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (15.2.0) contains an example configuration file, that must be adapted to your envirnoment.
+Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media. The package **bareos-filedaemon-ceph-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; Cephfs Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
 
 Rados Plugin
 ~~~~~~~~~~~~
 
-.. index::
-   pair: Ceph; Rados Plugin
+:index:`[TAG=Plugin->ceph->rados] <triple: Plugin; ceph; rados>` :index:`[TAG=Ceph->Rados Plugin] <pair: Ceph; Rados Plugin>`
 
-
-Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (15.2.0) contains an example configuration file, that must be adapted to your envirnoment.
+Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; CEPH Rados Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
 
 GlusterFS Plugin
 ~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; glusterfs
-.. index::
-    pair: GlusterFS; Plugin
+:index:`[TAG=Plugin->glusterfs] <pair: Plugin; glusterfs>` :index:`[TAG=GlusterFS->Plugin] <pair: GlusterFS; Plugin>`
 
-
-Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (15.2.0) contains an example configuration file, that must be adapted to your envirnoment.
+Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:index:`Version >= 15.2.0 <pair: bareos-15.2.0; GlusterFS Plugin>`) contains an example configuration file, that must be adapted to your envirnoment.
 
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
 
-
-.. index::
-   triple: Plugin; Python; File Daemon;
-
+:index:`[TAG=Plugin->Python->File Daemon] <triple: Plugin; Python; File Daemon>`
 
 The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package bareos-filedaemon-python-plugin. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
 
@@ -163,11 +139,8 @@ Command Plugins
 
 Command plugins are used to replace or extend the FileSet definition in the File Section. If you have a command-plugin, you can use it like in this example:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir.conf: Python FD command plugins
+   :caption: bareos-dir.conf: Python FD command plugins
 
     FileSet {
       Name = "mysql"
@@ -180,9 +153,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
       }
     } 
 
-.. index::
-   pair: MySQL; Backup
- This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
+:index:`[TAG=MySQL->Backup] <pair: MySQL; Backup>` This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
 
 Option Plugins
 ^^^^^^^^^^^^^^
@@ -191,11 +162,8 @@ Option plugins are activated in the Options resource of a FileSet definition.
 
 Example:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir.conf: Python FD option plugins
+   :caption: bareos-dir.conf: Python FD option plugins
 
     FileSet {
       Name = "option"
@@ -209,7 +177,7 @@ Example:
       }
     }
 
-This plugin bareos-fd-file-interact from `https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/options-plugin-sample <https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/options-plugin-sample>`_ has a method that is called before and after each file that goes into the backup, it can be used as a template for whatever plugin wants to interact with files before or after backup.
+This plugin bareos-fd-file-interact from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/options-plugin-sample has a method that is called before and after each file that goes into the backup, it can be used as a template for whatever plugin wants to interact with files before or after backup.
 
 .. _sdPlugins:
 
@@ -221,9 +189,7 @@ Storage Daemon Plugins
 autoxflate-sd
 ~~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; autoxflate-sd
-
+:index:`[TAG=Plugin->autoxflate-sd] <pair: Plugin; autoxflate-sd>`
 
 This plugin is part of the **bareos-storage** package.
 
@@ -235,9 +201,9 @@ Therefore the autoxflate plugin inserts a inflate and a deflate function block i
 
 Each stream passes first the inflate function block, then the deflate function block.
 
-The inflate blocks are controlled by the setting of the **Auto Inflate**:sup:`Sd`:sub:`Device`  directive.
+The inflate blocks are controlled by the setting of the **Auto Inflate**:sup:`Sd`:sub:`Device`\  directive.
 
-The deflate blocks are controlled by the setting of the **Auto Deflate**:sup:`Sd`:sub:`Device` , **Auto Deflate Algorithm**:sup:`Sd`:sub:`Device`  and **Auto Deflate Level**:sup:`Sd`:sub:`Device`  directives.
+The deflate blocks are controlled by the setting of the **Auto Deflate**:sup:`Sd`:sub:`Device`\ , **Auto Deflate Algorithm**:sup:`Sd`:sub:`Device`\  and **Auto Deflate Level**:sup:`Sd`:sub:`Device`\  directives.
 
 The inflate blocks, if enabled, will uncompress data if it is compressed using the algorithm that was used during compression.
 
@@ -257,29 +223,27 @@ Multi-core cpus will be utilized when using parallel jobs as the compression is 
 
 When the autoxflate plugin is configured, it will write some status information into the joblog.
 
+.. code-block:: sh
+   :caption: used compression algorithm
 
-
-    {used compression algorithm}
     autodeflation: compressor on device FileStorage is FZ4H
 
+.. code-block:: sh
+   :caption: configured inflation and deflation blocks
 
-
-    {configured inflation and deflation blocks}
     autoxflate-sd.c: FileStorage OUT:[SD->inflate=yes->deflate=yes->DEV] IN:[DEV->inflate=yes->deflate=yes->SD]
 
+.. code-block:: sh
+   :caption: overall deflation/inflation ratio
 
-
-    {overall deflation/inflation ratio}
     autoxflate-sd.c: deflate ratio: 50.59%
 
-Additional **Auto XFlate On Replication**:sup:`Sd`:sub:`Storage`  can be configured at the Storage resource.
+Additional **Auto XFlate On Replication**:sup:`Sd`:sub:`Storage`\  can be configured at the Storage resource.
 
 scsicrypto-sd
 ~~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; scsicrypto-sd
-
+:index:`[TAG=Plugin->scsicrypto-sd] <pair: Plugin; scsicrypto-sd>`
 
 This plugin is part of the **bareos-storage-tape** package.
 
@@ -340,11 +304,7 @@ The initial setup of SCSI crypto looks something like this:
 
 -  Generate a Key Encryption Key e.g.
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        bscrypto -g -
 
@@ -360,36 +320,28 @@ The following additional security is needed for the following operating systems:
 Linux (SG_IO ioctl interface):
                               
 
-The user running the storage daemon needs the following additional capabilities: :raw-latex:`\index[sd]{Platform!Linux!Privileges}`
+The user running the storage daemon needs the following additional capabilities: :index:`[TAG=Platform->Linux->Privileges] <triple: Platform; Linux; Privileges>`
 
--                 :option:`CAP_SYS_RAWIO` (see capabilities(7))
+-  :option:`CAP_SYS_RAWIO` (see capabilities(7))
 
-   -  On older kernels you might need                :option:`CAP_SYS_ADMIN`. Try                :option:`CAP_SYS_RAWIO` first and if that doesn’t work try                :option:`CAP_SYS_ADMIN`
+   -  On older kernels you might need :option:`CAP_SYS_ADMIN`. Try :option:`CAP_SYS_RAWIO` first and if that doesn’t work try :option:`CAP_SYS_ADMIN`
 
--  If you are running the storage daemon as another user than root (which has the                :option:`CAP_SYS_RAWIO` capability), you need to add it to the current set of capabilities.
+-  If you are running the storage daemon as another user than root (which has the :option:`CAP_SYS_RAWIO` capability), you need to add it to the current set of capabilities.
 
 -  If you are using systemd, you could add this additional capability to the CapabilityBoundingSet parameter.
 
-   -  For systemd add the following to the bareos-sd.service:                :option:`Capabilities=cap_sys_rawio+ep`
+   -  For systemd add the following to the bareos-sd.service: :option:`Capabilities=cap_sys_rawio+ep`
 
 You can also set up the extra capability on :program:`bscrypto` and :program:`bareos-sd` by running the following commands:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
 
     setcap cap_sys_rawio=ep bscrypto
     setcap cap_sys_rawio=ep bareos-sd
 
 Check the setting with
 
-
-
-    
 .. code-block:: sh
-    :caption: 
 
     getcap -v bscrypto
     getcap -v bareos-sd
@@ -401,19 +353,16 @@ If :program:`bareos-sd` does not have the appropriate capabilities, all other ta
 Solaris (USCSI ioctl interface):
                                 
 
-The user running the storage daemon needs the following additional privileges: :raw-latex:`\index[sd]{Platform!Solaris!Privileges}`
+The user running the storage daemon needs the following additional privileges: :index:`[TAG=Platform->Solaris->Privileges] <triple: Platform; Solaris; Privileges>`
 
--                 :option:`PRIV_SYS_DEVICES` (see privileges(5))
+-  :option:`PRIV_SYS_DEVICES` (see privileges(5))
 
-If you are running the storage daemon as another user than root (which has the                :option:`PRIV_SYS_DEVICES` privilege), you need to add it to the current set of privileges. This can be set up by setting this either as a project for the user, or as a set of extra privileges in the SMF definition starting the storage daemon. The SMF setup is the cleanest one.
+If you are running the storage daemon as another user than root (which has the :option:`PRIV_SYS_DEVICES` privilege), you need to add it to the current set of privileges. This can be set up by setting this either as a project for the user, or as a set of extra privileges in the SMF definition starting the storage daemon. The SMF setup is the cleanest one.
 
 For SMF make sure you have something like this in the instance block:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     <method_context working_directory=":default"> <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/> </method_context>
 
@@ -422,37 +371,34 @@ Changes in bareos-sd.conf
 
 -  Set the Key Encryption Key
 
-   -  **Key Encryption Key**:sup:`Sd`:sub:`Director`  = :strong:`passphrase`
+   -  **Key Encryption Key**:sup:`Sd`:sub:`Director`\  = :strong:`passphrase`
 
 -  Enable the loading of storage daemon plugins
 
-   -  **Plugin Directory**:sup:`Sd`:sub:`Storage`  = :file:`path_to_sd_plugins`
+   -  **Plugin Directory**:sup:`Sd`:sub:`Storage`\  = :file:`path_to_sd_plugins`
 
 -  Enable the SCSI encryption option
 
-   -  **Drive Crypto Enabled**:sup:`Sd`:sub:`Device`  = yes
+   -  **Drive Crypto Enabled**:sup:`Sd`:sub:`Device`\  = yes
 
 -  Enable this, if you want the plugin to probe the encryption status of the drive when it needs to clear a pending key
 
-   -  **Query Crypto Status**:sup:`Sd`:sub:`Device`  = yes
+   -  **Query Crypto Status**:sup:`Sd`:sub:`Device`\  = yes
 
 Changes in bareos-dir.conf
 ''''''''''''''''''''''''''
 
 -  Set the Key Encryption Key
 
-   -  **Key Encryption Key**:sup:`Dir`:sub:`Director`  = :strong:`passphrase`
+   -  **Key Encryption Key**:sup:`Dir`:sub:`Director`\  = :strong:`passphrase`
 
 Testing
 ^^^^^^^
 
 Restart the Storage Daemon and the Director. After this you can label new volumes with the encrypt option, e.g.
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     label slots=1-5 barcodes encrypt
 
@@ -467,14 +413,10 @@ For Disaster Recovery (DR) you need the following information:
 
 This data needs to be availabe as a so called crypto cache file which is used by the plugin when no connection to the director can be made to do a lookup (most likely on DR).
 
-Most of the times the needed information, e.g. the bootstrap info, is available on recently written volumes and most of the time the encryption cache will contain the most recent data, so a recent copy of the :file:`bareos-sd.<portnr>.cryptoc` file in the working directory is enough most of the time. You can also save the info from database in a safe place and use bscrypto to populate this info (VolumeName ->EncryptKey) into the crypto cache file used by
+Most of the times the needed information, e.g. the bootstrap info, is available on recently written volumes and most of the time the encryption cache will contain the most recent data, so a recent copy of the :file:`bareos-sd.<portnr>.cryptoc` file in the working directory is enough most of the time. You can also save the info from database in a safe place and use bscrypto to populate this info (VolumeName -> EncryptKey) into the crypto cache file used by
 :program:`bextract` and :program:`bscan`. You can use :program:`bscrypto` with the following flags to create a new or update an existing crypto cache file e.g.:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
 
     bscrypto -p /var/lib/bareos/bareos-sd.<portnr>.cryptoc
 
@@ -482,11 +424,7 @@ Most of the times the needed information, e.g. the bootstrap info, is available 
 
 -  Recover the database in the normal way e.g. for postgresql:
 
-
-
-       
-.. code-block:: sh
-    :caption: 
+   .. code-block:: sh
 
        bextract -D <director_name> -c bareos-sd.conf -V <volname> \ /dev/nst0 /tmp -b bootstrap.bsr
        /usr/lib64/bareos/create_bareos_database
@@ -501,19 +439,14 @@ of AME which may for big libraries be easier, although the overhead of using AME
 scsitapealert-sd
 ~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Plugin; scsitapealert-sd
-
+:index:`[TAG=Plugin->scsitapealert-sd] <pair: Plugin; scsitapealert-sd>`
 
 This plugin is part of the **bareos-storage-tape** package.
 
 python-sd Plugin
 ~~~~~~~~~~~~~~~~
 
-
-.. index::
-   triple: Plugin; Python; Storage Daemon;
-
+:index:`[TAG=Plugin->Python->Storage Daemon] <triple: Plugin; Python; Storage Daemon>`
 
 The **python-sd** plugin behaves similar to the :ref:`director-python-plugin`.
 
@@ -527,10 +460,7 @@ Director Plugins
 python-dir Plugin
 ~~~~~~~~~~~~~~~~~
 
-
-.. index::
-   triple: Plugin; Python; Director;
-
+:index:`[TAG=Plugin->Python->Director] <triple: Plugin; Python; Director>`
 
 The **python-dir** plugin is intended to extend the functionality of the Bareos Director by Python code. A working example is included.
 
@@ -551,7 +481,7 @@ The **python-dir** plugin is intended to extend the functionality of the Bareos 
 Loading plugins
 ^^^^^^^^^^^^^^^
 
-Since 14.4.0}` multiple Python plugins can be loaded and plugin names can be arbitrary. Before this, the Python plugin always loads the file :raw-latex:`\file{bareos-dir.py.
+Since :index:`Version >= 14.4.0 <pair: bareos-14.4.0; multiple Python plugins>` multiple Python plugins can be loaded and plugin names can be arbitrary. Before this, the Python plugin always loads the file :file:`bareos-dir.py`.
 
 The director plugins are configured in the Job-Resource (or JobDefs resource). To load a Python plugin you need
 
@@ -565,11 +495,8 @@ The director plugins are configured in the Job-Resource (or JobDefs resource). T
 
 Single Python Plugin Loading Example:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir.conf: Single Python Plugin Loading Example
+   :caption: bareos-dir.conf: Single Python Plugin Loading Example
 
     Director {
       # ...
@@ -590,11 +517,8 @@ Single Python Plugin Loading Example:
 
 Multiple Python Plugin Loading Example:
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir.conf: Multiple Python Plugin Loading Example
+   :caption: bareos-dir.conf: Multiple Python Plugin Loading Example
 
     Director {
       # ...
@@ -617,8 +541,9 @@ Multiple Python Plugin Loading Example:
 Write your own Python Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Some plugin examples are available on `https://github.com/bareos/bareos-contrib <https://github.com/bareos/bareos-contrib>`_. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:raw-latex:`\index[general]{Icinga}` or
-Nagios:raw-latex:`\index[general]{Nagios|see{Icinga}}` using the NSCA protocol.
+Some plugin examples are available on https://github.com/bareos/bareos-contrib. The class-based approach lets you easily reuse stuff already defined in the baseclass BareosDirPluginBaseclass, which ships with the **bareos-director-python-plugin** package. The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga:index:`[TAG=Icinga] <single: Icinga>` or
+Nagios:index:`[TAG=Nagios|see{Icinga}] <single: Nagios|see{Icinga}>` using the NSCA protocol.
 
 .. |image| image:: \idir autoxflate-functionblocks
    :width: 80.0%
+

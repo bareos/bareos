@@ -4,37 +4,26 @@
 Catalog Tables
 ==============
 
-.. index::
-   single: Catalog
-
+:index:`[TAG=Catalog] <single: Catalog>`
 
 Bareos stores its information in a database, named Catalog. It is configured by :ref:`DirectorResourceCatalog`.
 
 Job
 ---
 
-.. index::
-   pair: Catalog; Job
-.. index::
-    pair: Job; Catalog
-
+:index:`[TAG=Catalog->Job] <pair: Catalog; Job>` :index:`[TAG=Job->Catalog] <pair: Job; Catalog>`
 
 JobStatus
 ~~~~~~~~~
 
-.. index::
-   pair: Job; JobStatus
-
-.. index::
-    triple: Catalog; Job; JobStatus;
-
+:index:`[TAG=Job->JobStatus] <pair: Job; JobStatus>` :index:`[TAG=Catalog->Job->JobStatus] <triple: Catalog; Job; JobStatus>`
 
 The status of a Bareos job is stored as abbreviation in the Catalog database table Job. It is also displayed by some bconsole commands, eg. :strong:`list jobs`.
 
 This table lists the abbreviations together with its description and weight. The weight is used, when multiple states are applicable for a job. In this case, only the status with the highest weight/priority is applied.
 
 +-----------+--------------------------------------------------------+------------+
-| **Abbr.** | :raw-latex:`\multicolumn{1}{c|}{\textbf{Description}}` | **Weight** |
+| **Abbr.** | :strong:`:strong:`Description``  | **Weight** |
 +===========+========================================================+============+
 | C         | Created, not yet running                               | 15         |
 +-----------+--------------------------------------------------------+------------+
@@ -88,3 +77,4 @@ This table lists the abbreviations together with its description and weight. The
 +-----------+--------------------------------------------------------+------------+
 | a         | SD despooling attributes                               | 15         |
 +-----------+--------------------------------------------------------+------------+
+

@@ -6,9 +6,7 @@
 Client/File Daemon Configuration
 ================================
 
-.. index::
-   single: Client/File daemon Configuration
-
+:index:`[TAG=Configuration->Client/File daemon] <pair: Configuration; Client/File daemon>` :index:`[TAG=Client/File daemon Configuration] <single: Client/File daemon Configuration>`
 
 The Client (or File Daemon) Configuration is one of the simpler ones to specify. Generally, other than changing the Client name so that error messages are easily identified, you will not need to modify the default Client configuration file.
 
@@ -25,9 +23,7 @@ For a general discussion of configuration file and resources including the data 
 Client Resource
 ---------------
 
-.. index::
-   single: Client Resource
-
+:index:`[TAG=Resource->Client] <pair: Resource; Client>` :index:`[TAG=Client Resource] <single: Client Resource>`
 
 The Client Resource (or FileDaemon) resource defines the name of the Client (as used by the Director) as well as the port on which the Client listens for Director connections.
 
@@ -35,30 +31,22 @@ Start of the Client records. There must be one and only one Client resource in t
 
 The following is an example of a valid Client resource definition:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Client {                              # this is me
       Name = rufus-fd
     }
 
-.. raw:: latex
 
-   
 
 .. _ClientResourceDirector:
 
 Director Resource
 -----------------
 
-.. index::
-   single: Director Resource
-.. index::
-    pair: Resource; Director
-
+:index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <pair: Resource; Director>`
 
 The Director resource defines the name and password of the Directors that are permitted to contact this Client.
 
@@ -66,11 +54,9 @@ Thus multiple Directors may be authorized to use this Client’s services. Each 
 
 The following is an example of a valid Director resource definition:
 
-.. raw:: latex
-
-   
 
 
+::
 
     #
     # List Directors who are permitted to contact the File daemon
@@ -85,20 +71,14 @@ The following is an example of a valid Director resource definition:
       Monitor = Yes
     }
 
-.. raw:: latex
 
-   
 
 .. _MessagesResource3:
 
 Messages Resource
 -----------------
 
-.. index::
-   single: Messages Resource
-.. index::
-    pair: Resource; Messages
-
+:index:`[TAG=Messages Resource] <single: Messages Resource>` :index:`[TAG=Resource->Messages] <pair: Resource; Messages>`
 
 Please see the :ref:`Messages Resource <MessagesChapter>` Chapter of this manual for the details of the Messages Resource.
 
@@ -111,11 +91,9 @@ Example Client Configuration File
 
 An example File Daemon configuration file might be the following:
 
-.. raw:: latex
-
-   
 
 
+::
 
     #
     # Default  Bareos File Daemon Configuration file
@@ -161,6 +139,5 @@ An example File Daemon configuration file might be the following:
       director = client1-dir = all, !skipped, !restored
     }
 
-.. raw:: latex
+\normalsize
 
-   

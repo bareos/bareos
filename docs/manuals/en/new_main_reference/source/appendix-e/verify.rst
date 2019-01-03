@@ -6,43 +6,31 @@
 Verify File Integrity with Bareos
 =================================
 
-.. index::
-   pair: Security; Using Bareos to Improve Computer
-.. index::
-    pair: Verify; File Integrity
-
+:index:`[TAG=Security->Using Bareos to Improve Computer] <pair: Security; Using Bareos to Improve Computer>` :index:`[TAG=Verify->File Integrity] <pair: Verify; File Integrity>`
 
 Since Bareos maintains a catalog of files, their attributes, and either SHA1 or MD5 signatures, it can be an ideal tool for improving computer security. This is done by making a snapshot of your system files with a **Verify** Job and then checking the current state of your system against the snapshot, on a regular basis (e.g. nightly).
 
 The first step is to set up a **Verify** Job and to run it with:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Level = InitCatalog
 
-.. raw:: latex
 
-   
 
 The **InitCatalog** level tells **Bareos** simply to get the information on the specified files and to put it into the catalog. That is your database is initialized and no comparison is done. The **InitCatalog** is normally run one time manually.
 
 Thereafter, you will run a Verify Job on a daily (or whatever) basis with:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Level = Catalog
 
-.. raw:: latex
 
-   
 
 The **Level = Catalog** level tells Bareos to compare the current state of the files on the Client to the last **InitCatalog** that is stored in the catalog and to report any differences. See the example below for the format of the output.
 
@@ -53,9 +41,7 @@ Then you decide what attributes of each file you want compared by specifying com
 The Details
 -----------
 
-.. index::
-   pair: Verify; Details
-
+:index:`[TAG=Verify->Details] <pair: Verify; Details>`
 
 In the discussion that follows, we will make reference to the Verify Configuration Example that is included below in the **A Verify Configuration Example** section. You might want to look it over now to get an idea of what it does.
 
@@ -78,19 +64,15 @@ me). On the other hand, as long as I don’t load any new packages, none of thes
 Running the Verify
 ------------------
 
-.. index::
-   pair: Verify; Running
-
+:index:`[TAG=Verify->Running] <pair: Verify; Running>`
 
 The first thing you will want to do is to run an **InitCatalog** level Verify Job. This will initialize the catalog to contain the file information that will later be used as a basis for comparisons with the actual file system, thus allowing you to detect any changes (and possible intrusions into your system).
 
 The easiest way to run the **InitCatalog** is manually with the console program by simply entering **run**. You will be presented with a list of Jobs that can be run, and you will choose the one that corresponds to your Verify Job, **MatouVerify** in this example.
 
-.. raw:: latex
-
-   
 
 
+::
 
     The defined Job resources are:
          1: MatouVerify
@@ -99,17 +81,13 @@ The easiest way to run the **InitCatalog** is manually with the console program 
          4: usersave
     Select Job resource (1-4): 1
 
-.. raw:: latex
 
-   
 
 Next, the console program will show you the basic parameters of the Job and ask you:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Run Verify job
     JobName:  MatouVerify
@@ -121,17 +99,13 @@ Next, the console program will show you the basic parameters of the Job and ask 
     Verify List: /tmp/regress/working/MatouVerify.bsr
     OK to run? (yes/mod/no): mod
 
-.. raw:: latex
 
-   
 
 Here, you want to respond **mod** to modify the parameters because the Level is by default set to **Catalog** and we want to run an **InitCatalog** Job. After responding **mod**, the console will ask:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Parameters to modify:
          1: Level
@@ -145,17 +119,13 @@ Here, you want to respond **mod** to modify the parameters because the Level is 
          9: Verify Job
     Select parameter to modify (1-5): 1
 
-.. raw:: latex
 
-   
 
 you should select number 2 to modify the **Level**, and it will display:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Levels:
          1: Initialize Catalog
@@ -165,17 +135,13 @@ you should select number 2 to modify the **Level**, and it will display:
          5: Verify Volume Data (not yet implemented)
     Select level (1-4): 1
 
-.. raw:: latex
 
-   
 
 Choose item 1, and you will see the final display:
 
-.. raw:: latex
-
-   
 
 
+::
 
     Run Verify job
     JobName:  MatouVerify
@@ -187,9 +153,7 @@ Choose item 1, and you will see the final display:
     Verify List: /tmp/regress/working/MatouVerify.bsr
     OK to run? (yes/mod/no): yes
 
-.. raw:: latex
 
-   
 
 at which point you respond **yes**, and the Job will begin.
 
@@ -197,7 +161,7 @@ Thereafter the Job will automatically start according to the schedule you have d
 
 To use a previous job, you can add ``jobid=xxx`` option in run command line. It will run the Verify job against the specified job.
 
-
+::
 
     *run jobid=1 job=MatouVerify
     Run Verify job
@@ -216,17 +180,13 @@ To use a previous job, you can add ``jobid=xxx`` option in run command line. It 
 What To Do When Differences Are Found
 -------------------------------------
 
-.. index::
-   pair: Verify; Differences
-
+:index:`[TAG=Verify->Differences] <pair: Verify; Differences>`
 
 If you have setup your messages correctly, you should be notified if there are any differences and exactly what they are. For example, below is the email received after doing an update of OpenSSH:
 
-.. raw:: latex
-
-   
 
 
+::
 
     HeadMan: Start Verify JobId 83 Job=RufusVerify.2002-06-25.21:41:05
     HeadMan: Verifying against Init JobId 70 run 2002-06-21 18:58:51
@@ -294,9 +254,7 @@ If you have setup your messages correctly, you should be notified if there are a
     Files Examined:         4,258
     Termination:            Verify Differences
 
-.. raw:: latex
 
-   
 
 At this point, it was obvious that these files were modified during installation of the RPMs. If you want to be super safe, you should run a **Verify Level=Catalog** immediately before installing new software to verify that there are no differences, then run a **Verify Level=InitCatalog** immediately after the installation.
 
@@ -309,15 +267,11 @@ The FileSet that is shown below is what I use on my Red Hat 7.3 system. With a b
 A Verify Configuration Example
 ------------------------------
 
-.. index::
-   pair: Verify; Example
+:index:`[TAG=Verify->Example] <pair: Verify; Example>`
 
 
-.. raw:: latex
 
-   
-
-
+::
 
     Schedule {
       Name = "VerifyCycle"
@@ -386,6 +340,5 @@ A Verify Configuration Example
       dbname = verify; user = bareos; password = ""
     }
 
-.. raw:: latex
+\normalsize
 
-   

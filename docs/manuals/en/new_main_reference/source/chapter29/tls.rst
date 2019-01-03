@@ -8,7 +8,8 @@ Transport Encryption
 
 
 
-.. _`section-TransportEncryption}` :raw-latex:`\index[general]{Communications Encryption}` :raw-latex:`\index[general]{Encryption!Communication}` :raw-latex:`\index[general]{Encryption!Transport}` :raw-latex:`\index[general]{Transport Encryption}` :raw-latex:`\index[general]{TLS}` :raw-latex:`\index[general]{SSL`: section-TransportEncryption}` :raw-latex:`\index[general]{Communications Encryption}` :raw-latex:`\index[general]{Encryption!Communication}` :raw-latex:`\index[general]{Encryption!Transport}` :raw-latex:`\index[general]{Transport Encryption}` :raw-latex:`\index[general]{TLS}` :raw-latex:`\index[general]{SSL
+.. _section-TransportEncryption
+ :index:`[TAG=Communications Encryption] <single: Communications Encryption>` :index:`[TAG=Encryption->Communication] <pair: Encryption; Communication>` :index:`[TAG=Encryption->Transport] <pair: Encryption; Transport>` :index:`[TAG=Transport Encryption] <single: Transport Encryption>` :index:`[TAG=TLS] <single: TLS>` :index:`[TAG=SSL] <single: SSL>`
 
 Bareos TLS (Transport Layer Security) is built-in network encryption code to provide secure network transport similar to that offered by :program:`stunnel` or :program:`ssh`. The data written to Volumes by the Storage daemon is not encrypted by this code. For data encryption, please see the :ref:`DataEncryption` chapter.
 
@@ -33,22 +34,20 @@ TLS Configuration Directives
 
 Additional configuration directives have been added to all the daemons (Director, File daemon, and Storage daemon) as well as the various different Console programs. These directives are defined as follows:
 
-.. raw:: latex
-
-   \begin{description}
-   \directive{dir}{TLS Enable}{yes{\textbar}no}{}{no}{}%
-   Enable TLS support. Without setting \configdirective{TLS Require}=yes,
+\begin{description}
+   \directive{dir}{TLS Enable}{yes|no}{}{no}{}%
+   Enable TLS support. Without setting :strong:`TLS Require`=yes,
    the connection can fall back to unencrypted connection,
    if the other side does not support TLS.
 
-   \directive{dir}{TLS Require}{yes{\textbar}no}{}{no}{}%
+   \directive{dir}{TLS Require}{yes|no}{}{no}{}%
    Require TLS connections.
    If TLS is not required,
    then Bareos will connect with other daemons either with or without TLS depending
    on what the other daemon requests.
    If TLS is required,
    then Bareos will refuse any connection that does not use TLS.
-   \configdirective{TLS Require}=yes  implicitly sets \configdirective{TLS Enable}=yes.
+   :strong:`TLS Require`=yes  implicitly sets :strong:`TLS Enable`=yes.
 
    \directive{dir}{TLS Certificate}{filename}{}{}{}%
    The full path and filename of a PEM encoded TLS certificate.  It can be
@@ -59,21 +58,21 @@ Additional configuration directives have been added to all the daemons (Director
 
    \directive{dir}{TLS Key}{filename}{}{}{}%
    The full path and filename of a PEM encoded TLS private key.  It must
-   correspond to the certificate specified in the \configdirective{TLS Certificate} configuration directive.
+   correspond to the certificate specified in the :strong:`TLS Certificate` configuration directive.
 
-   \directive{dir}{TLS Verify Peer}{yes{\textbar}no}{}{}{}%
+   \directive{dir}{TLS Verify Peer}{yes|no}{}{}{}%
    Request and verify the peers certificate.
 
-   In server context, unless the \configdirective{TLS Allowed CN} configuration directive is specified,
+   In server context, unless the :strong:`TLS Allowed CN` configuration directive is specified,
    any client certificate signed by a known-CA will be accepted.
 
    In client context, the server certificate CommonName attribute is checked against
-   the \configdirective{Address} and \configdirective{TLS Allowed CN} configuration directives.
+   the :strong:`Address` and :strong:`TLS Allowed CN` configuration directives.
 
 
    \directive{dir}{TLS Allowed CN}{stringlist}{}{}{}%
    Common name attribute of allowed peer certificates.
-   If \configdirective{TLS Verify Peer}=yes, all connection request certificates
+   If :strong:`TLS Verify Peer`=yes, all connection request certificates
    will be checked against this list.
 
    This directive may be specified more than once.
@@ -85,10 +84,10 @@ Additional configuration directives have been added to all the daemons (Director
    permitted in the file.
 
    In a client context, one of
-   \configdirective{TLS CA Certificate File} or \configdirective{TLS CA Certificate Dir}
+   :strong:`TLS CA Certificate File` or :strong:`TLS CA Certificate Dir`
    is required.
 
-   In a server context, it is only required if \configdirective{TLS Verify Peer} is used.
+   In a server context, it is only required if :strong:`TLS Verify Peer` is used.
 
    \directive{dir}{TLS CA Certificate Dir}{directory}{}{}{}%
    Full path to TLS CA certificate directory.  In the current implementation,
@@ -96,10 +95,10 @@ Additional configuration directives have been added to all the daemons (Director
    which is the subject name's hash and an extension of {\bf .0}.
 
    In a client context, one of
-   \configdirective{TLS CA Certificate File} or \configdirective{TLS CA Certificate Dir}
+   :strong:`TLS CA Certificate File` or :strong:`TLS CA Certificate Dir`
    is required.
 
-   In a server context, it is only required if \configdirective{TLS Verify Peer} is used.
+   In a server context, it is only required if :strong:`TLS Verify Peer` is used.
 
 
    \directive{dir}{TLS DH File}{filename}{}{}{}%
@@ -115,12 +114,9 @@ Additional configuration directives have been added to all the daemons (Director
    To generate the parameter file, you
    may use openssl:
 
-   \
-.. code-block:: sh
-    :caption: create DH key
-
+   \begin{verbatim}\begin{commands}{create DH key}
    openssl dhparam -out dh1024.pem -5 1024
-   \
+   \end{commands}\end{verbatim}
 
    \end{description}
 
@@ -136,9 +132,7 @@ You can use programs like `xca <http://xca.sourceforge.net/>`_ or TinyCA to easi
 Example TLS Configuration Files
 -------------------------------
 
-.. index::
-   single: TLS Configuration Files
-
+:index:`[TAG=Example->TLS Configuration Files] <pair: Example; TLS Configuration Files>` :index:`[TAG=TLS Configuration Files] <single: TLS Configuration Files>`
 
 An example of the TLS portions of the configuration files are listed below.
 
@@ -147,11 +141,8 @@ Another example can be found at `Bareos Regression Testing Base Configuration <h
 Bareos Director
 ~~~~~~~~~~~~~~~
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir director bareos-dir
+   :caption: bareos-dir.d/director/bareos-dir.conf
 
     Director {                            # define myself
         Name = bareos-dir
@@ -168,11 +159,8 @@ Bareos Director
         TLS Allowed CN = "administrator@example.com"
     }
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir storage File
+   :caption: bareos-dir.d/storage/File.conf
 
     Storage {
         Name = File
@@ -187,11 +175,8 @@ Bareos Director
         TLS Allowed CN = bareos-sd1.example.com
     }
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-dir client client1-fd
+   :caption: bareos-dir.d/client/client1-fd.conf
 
     Client {
         Name = client1-fd
@@ -208,11 +193,8 @@ Bareos Director
 Bareos Storage Daemon
 ~~~~~~~~~~~~~~~~~~~~~
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-sd storage bareos-sd1
+   :caption: bareos-sd.d/storage/bareos-sd1.conf
 
     Storage {
         Name = bareos-sd1
@@ -234,11 +216,8 @@ Bareos Storage Daemon
         TLS Verify Peer = no
     }
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-sd director bareos-dir
+   :caption: bareos-sd.d/director/bareos-dir.conf
 
     Director {
         Name = bareos-dir
@@ -259,11 +238,8 @@ Bareos Storage Daemon
 Bareos File Daemon
 ~~~~~~~~~~~~~~~~~~
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-fd client myself
+   :caption: bareos-fd.d/client/myself.conf
 
     Client {
         Name = client1-fd
@@ -280,11 +256,8 @@ Bareos File Daemon
         TLS Allowed CN = bareos-sd1.example.com
     }
 
-
-
-    
 .. code-block:: sh
-    :caption: bareos-fd director bareos-dir
+   :caption: bareos-fd.d/director/bareos-dir.conf
 
     Director {
         Name = bareos-dir

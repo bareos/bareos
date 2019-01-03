@@ -8,7 +8,11 @@ Data Spooling
 
 
 
-.. _`section-spooling}` :raw-latex:`\label{section-DataSpooling}` :raw-latex:`\index[general]{Data Spooling}` :raw-latex:`\index[general]{Spooling!Data`: section-spooling}` :raw-latex:`\label{section-DataSpooling}` :raw-latex:`\index[general]{Data Spooling}` :raw-latex:`\index[general]{Spooling!Data
+.. _section-spooling
+ 
+
+.. _section-DataSpooling
+ :index:`[TAG=Data Spooling] <single: Data Spooling>` :index:`[TAG=Spooling->Data] <pair: Spooling; Data>`
 
 Bareos allows you to specify that you want the Storage daemon to initially write your data to disk and then subsequently to tape. This serves several important purposes.
 
@@ -27,44 +31,40 @@ The remainder of this chapter explains the various directives that you can use i
 Data Spooling Directives
 ------------------------
 
-.. index::
-   pair: Data Spooling; Directives
-
+:index:`[TAG=Data Spooling->Directives] <pair: Data Spooling; Directives>`
 
 The following directives can be used to control data spooling.
 
--  Turn data spooling on/off at the Job level: **Spool Data**:sup:`Dir`:sub:`Job`  = :strong:`Yes|No`
+-  Turn data spooling on/off at the Job level: **Spool Data**:sup:`Dir`:sub:`Job`\  = :strong:`Yes|No`
 
--  This setting can be overwritten in a Schedule **Run**:sup:`Dir`:sub:`Schedule`  directive:                :option:`SpoolData=`:strong:`Yes|No`
+-  This setting can be overwritten in a Schedule **Run**:sup:`Dir`:sub:`Schedule`\  directive: :option:`SpoolData=`:strong:`Yes|No`
 
--  To override the Job specification in a bconsole session using the :strong:`run` command:                :option:`SpoolData=`:strong:`Yes|No`
+-  To override the Job specification in a bconsole session using the :strong:`run` command: :option:`SpoolData=`:strong:`Yes|No`
 
    Please note that this does not refer to a configuration statement, but to an argument for the run command.
 
--  To limit the the maximum spool file size for a particular job: **Spool Size**:sup:`Dir`:sub:`Job` 
+-  To limit the the maximum spool file size for a particular job: **Spool Size**:sup:`Dir`:sub:`Job`\ 
 
--  To limit the maximum total size of the spooled data for a particular device: **Maximum Spool Size**:sup:`Sd`:sub:`Device` 
+-  To limit the maximum total size of the spooled data for a particular device: **Maximum Spool Size**:sup:`Sd`:sub:`Device`\ 
 
--  To limit the maximum total size of the spooled data for a particular device for a single job: **Maximum Job Spool Size**:sup:`Sd`:sub:`Device` 
+-  To limit the maximum total size of the spooled data for a particular device for a single job: **Maximum Job Spool Size**:sup:`Sd`:sub:`Device`\ 
 
--  To specify the spool directory for a particular device: **Spool Directory**:sup:`Sd`:sub:`Device` 
+-  To specify the spool directory for a particular device: **Spool Directory**:sup:`Sd`:sub:`Device`\ 
 
 Additional Notes
 ~~~~~~~~~~~~~~~~
 
 -  
 
-
-
-      
+   
 .. warning:: 
-  Exclude your the spool directory from any backup,
+   Exclude your the spool directory from any backup,
       otherwise, your job will write enormous amounts of data to the Volume, and
       most probably terminate in error. This is because in attempting to backup the
       spool file, the backup data will be written a second time to the spool file,
       and so on ad infinitum.
 
--  Another advice is to always specify the **Maximum Spool Size**:sup:`Sd`:sub:`Device`  so that your disk doesn’t completely fill up. In principle, data spooling will properly detect a full disk, and despool data allowing the job to continue. However, attribute spooling is not so kind to the user. If the disk on which attributes are being spooled fills, the job will be canceled. In addition, if your working directory is on the same partition as the spool directory, then
+-  Another advice is to always specify the **Maximum Spool Size**:sup:`Sd`:sub:`Device`\  so that your disk doesn’t completely fill up. In principle, data spooling will properly detect a full disk, and despool data allowing the job to continue. However, attribute spooling is not so kind to the user. If the disk on which attributes are being spooled fills, the job will be canceled. In addition, if your working directory is on the same partition as the spool directory, then
    Bareos jobs will fail possibly in bizarre ways when the spool fills.
 
 -  When data spooling is enabled, Bareos automatically turns on attribute spooling. In other words, it also spools the catalog entries to disk. This is done so that in case the job fails, there will be no catalog entries pointing to non-existent tape backups.
@@ -78,3 +78,4 @@ Additional Notes
 -  It is probably best to provide as large a spool file as possible to avoid repeatedly spooling/despooling. Also, while a job is despooling to tape, the File daemon must wait (i.e. spooling stops for the job while it is despooling).
 
 -  If you are running multiple simultaneous jobs, Bareos will continue spooling other jobs while one is despooling to tape, provided there is sufficient spool file space.
+

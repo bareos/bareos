@@ -8,15 +8,14 @@ Director Configuration
 
 
 
-.. _`DirectorConfChapter}` :raw-latex:`\index[general]{Director!Configuration}` :raw-latex:`\index[general]{Configuration!Director`: DirectorConfChapter}` :raw-latex:`\index[general]{Director!Configuration}` :raw-latex:`\index[general]{Configuration!Director
+.. _DirectorConfChapter
+ :index:`[TAG=Director->Configuration] <pair: Director; Configuration>` :index:`[TAG=Configuration->Director] <pair: Configuration; Director>`
 
 Of all the configuration files needed to run Bareos, the Director’s is the most complicated and the one that you will need to modify the most often as you add clients or modify the FileSets.
 
 For a general discussion of configuration files and resources including the recognized data types see :ref:`ConfigureChapter`.
 
-.. index::
-   single: Resource Types
-
+:index:`[TAG=Types->Director Resource] <pair: Types; Director Resource>` :index:`[TAG=Director->Resource Types] <pair: Director; Resource Types>` :index:`[TAG=Resource Types] <single: Resource Types>`
 
 Everything revolves around a job and is tied to a job in one way or another.
 
@@ -47,21 +46,14 @@ The |bareosDir| knows about following resource types:
 Director Resource
 -----------------
 
-.. index::
-   single: Director Resource
-.. index::
-    pair: Resource; Director
-
+:index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <pair: Resource; Director>`
 
 The Director resource defines the attributes of the Directors running on the network. Only a single Director resource is allowed.
 
 The following is an example of a valid Director resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Director Resource example
+   :caption: Director Resource example
 
     Director {
       Name = bareos-dir
@@ -78,7 +70,8 @@ Job Resource
 
 
 
-.. _`JobResource}` :raw-latex:`\index[general]{Resource!Job}` :raw-latex:`\index[general]{Job!Resource`: JobResource}` :raw-latex:`\index[general]{Resource!Job}` :raw-latex:`\index[general]{Job!Resource
+.. _JobResource
+ :index:`[TAG=Resource->Job] <pair: Resource; Job>` :index:`[TAG=Job->Resource] <pair: Job; Resource>`
 
 The Job resource defines a Job (Backup, Restore, ...) that Bareos must perform. Each Job resource definition contains the name of a Client and a FileSet to backup, the Schedule for the Job, where the data are to be stored, and what media Pool can be used. In effect, each Job resource must specify What, Where, How, and When or FileSet, Storage, Backup/Restore/Level, and Schedule respectively. Note, the FileSet must be specified for a restore job for historical reasons, but it is no longer used.
 
@@ -91,11 +84,8 @@ definitions (the names must be different, but the contents of the FileSets may b
 
 The following is an example of a valid Job resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Job Resource Example
+   :caption: Job Resource Example
 
     Job {
       Name = "Minou"
@@ -114,11 +104,7 @@ The following is an example of a valid Job resource definition:
 JobDefs Resource
 ----------------
 
-.. index::
-   pair: Job; JobDefs Resource
-.. index::
-    pair: Resource; JobDefs
-
+:index:`[TAG=Job->JobDefs Resource] <pair: Job; JobDefs Resource>` :index:`[TAG=Resource->JobDefs] <pair: Resource; JobDefs>`
 
 The JobDefs resource permits all the same directives that can appear in a Job resource. However, a JobDefs resource does not create a Job, rather it can be referenced within a Job to provide defaults for that Job. This permits you to concisely define several nearly identical Jobs, each one referencing a JobDefs resource which contains the defaults. Only the changes from the defaults need to be mentioned in each Job.
 
@@ -127,11 +113,7 @@ The JobDefs resource permits all the same directives that can appear in a Job re
 Schedule Resource
 -----------------
 
-.. index::
-   pair: Resource; Schedule
-.. index::
-    pair: Schedule; Resource
-
+:index:`[TAG=Resource->Schedule] <pair: Resource; Schedule>` :index:`[TAG=Schedule->Resource] <pair: Schedule; Resource>`
 
 The Schedule resource provides a means of automatically scheduling a Job as well as the ability to override the default Level, Pool, Storage and Messages resources. If a Schedule resource is not referenced in a Job, the Job can only be run manually. In general, you specify an action to be taken and when.
 
@@ -141,11 +123,8 @@ According to the NIST (US National Institute of Standards and Technology), 12am 
 
 An example schedule resource that is named **WeeklyCycle** and runs a job with level full each Sunday at 2:05am and an incremental job Monday through Saturday at 2:05am is:
 
-
-
-    
 .. code-block:: sh
-    :caption: Schedule Example
+   :caption: Schedule Example
 
     Schedule {
       Name = "WeeklyCycle"
@@ -155,11 +134,8 @@ An example schedule resource that is named **WeeklyCycle** and runs a job with l
 
 An example of a possible monthly cycle is as follows:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     Schedule {
       Name = "MonthlyCycle"
@@ -170,11 +146,8 @@ An example of a possible monthly cycle is as follows:
 
 The first of every month:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     Schedule {
       Name = "First"
@@ -184,11 +157,8 @@ The first of every month:
 
 The last friday of the month (i.e. the last friday in the last week of the month)
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     Schedule {
       Name = "Last Friday"
@@ -197,11 +167,8 @@ The last friday of the month (i.e. the last friday in the last week of the month
 
 Every 10 minutes:
 
-
-
-    
 .. code-block:: sh
-    :caption: 
+   :caption: 
 
     Schedule {
       Name = "TenMinutes"
@@ -216,11 +183,8 @@ Every 10 minutes:
 The **modulo scheduler** makes it easy to specify schedules like odd or even days/weeks, or more generally every n days or weeks. It is called modulo scheduler because it uses the modulo to determine if the schedule must be run or not. The second variable behind the slash lets you determine in which cycle of days/weeks a job should be run. The first part determines on which day/week the job should be run first. E.g. if you want to run a backup in a 5-week-cycle, starting on week 3, you set it up
 as w03/w05.
 
-
-
-    
 .. code-block:: sh
-    :caption: Schedule Examples: modulo
+   :caption: Schedule Examples: modulo
 
     Schedule {
       Name = "Odd Days"
@@ -250,9 +214,7 @@ as w03/w05.
 Technical Notes on Schedules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. index::
-   pair: Schedule; Technical Notes on Schedules
-
+:index:`[TAG=Schedule->Technical Notes on Schedules] <pair: Schedule; Technical Notes on Schedules>`
 
 Internally Bareos keeps a schedule as a bit mask. There are six masks and a minute field to each schedule. The masks are hour, day of the month (mday), month, day of the week (wday), week of the month (wom), and week of the year (woy). The schedule is initialized to have the bits of each of these masks set, which means that at the beginning of every hour, the job will run. When you specify a month for the first time, the mask will be cleared and the bit corresponding to your selected month will
 be selected. If you specify a second month, the bit corresponding to it will also be added to the mask. Thus when Bareos checks the masks to see if the bits are set corresponding to the current time, your job will run only in the two months you have set. Likewise, if you set a time (hour), the hour mask will be cleared, and the hour you specify will be set in the bit mask and the minutes will be stored in the minute field.
@@ -266,7 +228,8 @@ FileSet Resource
 
 
 
-.. _`FileSetResource}` :raw-latex:`\index[general]{Resource!FileSet}` :raw-latex:`\index[general]{FileSet!Resource`: FileSetResource}` :raw-latex:`\index[general]{Resource!FileSet}` :raw-latex:`\index[general]{FileSet!Resource
+.. _FileSetResource
+ :index:`[TAG=Resource->FileSet] <pair: Resource; FileSet>` :index:`[TAG=FileSet->Resource] <pair: FileSet; Resource>`
 
 The FileSet resource defines what files are to be included or excluded in a backup job. A **FileSet** resource is required for each backup Job. It consists of a list of files or directories to be included, a list of files or directories to be excluded and the various backup options such as compression, encryption, and signatures that are to be applied to each file.
 
@@ -277,19 +240,14 @@ Any change to the list of the included files will cause Bareos to automatically 
 Client Resource
 ---------------
 
-.. index::
-   single: Client Resource
-
+:index:`[TAG=Resource->Client] <pair: Resource; Client>` :index:`[TAG=Client Resource] <single: Client Resource>`
 
 The Client (or FileDaemon) resource defines the attributes of the Clients that are served by this Director; that is the machines that are to be backed up. You will need one Client resource definition for each machine to be backed up.
 
 The following is an example of a valid Client resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Minimal client resource definition in bareos-dir.conf
+   :caption: Minimal client resource definition in bareos-dir.conf
 
     Client {
       Name = client1-fd
@@ -299,11 +257,8 @@ The following is an example of a valid Client resource definition:
 
 The following is an example of a Quota Configuration in Client resource:
 
-
-
-    
 .. code-block:: sh
-    :caption: Quota Configuration in Client resource
+   :caption: Quota Configuration in Client resource
 
     Client {
       Name = client1-fd
@@ -323,19 +278,14 @@ The following is an example of a Quota Configuration in Client resource:
 Storage Resource
 ----------------
 
-.. index::
-   single: Storage Resource
-
+:index:`[TAG=Resource->Storage] <pair: Resource; Storage>` :index:`[TAG=Storage Resource] <single: Storage Resource>`
 
 The Storage resource defines which Storage daemons are available for use by the Director.
 
 The following is an example of a valid Storage resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Storage resource (tape) example
+   :caption: Storage resource (tape) example
 
     Storage {
       Name = DLTDrive
@@ -350,9 +300,7 @@ The following is an example of a valid Storage resource definition:
 Pool Resource
 -------------
 
-.. index::
-   single: Pool Resource
-
+:index:`[TAG=Resource->Pool] <pair: Resource; Pool>` :index:`[TAG=Pool Resource] <single: Pool Resource>`
 
 The Pool resource defines the set of storage Volumes (tapes or files) to be used by Bareos to write the data. By configuring different Pools, you can determine which set of Volumes (media) receives the backup data. This permits, for example, to store all full backup data on one set of Volumes and all incremental backups on another set of Volumes. Alternatively, you could assign a different set of Volumes to each machine that you backup. This is most easily done by defining multiple Pools.
 
@@ -362,11 +310,11 @@ Job. Bareos will not automatically search for the correct Pool.
 To use a Pool, there are three distinct steps. First the Pool must be defined in the Director’s configuration. Then the Pool must be written to the Catalog database. This is done automatically by the Director each time that it starts. Finally, if you change the Pool definition in the Director’s configuration file and restart Bareos, the pool will be updated alternatively you can use the :strong:`update pool` console command to refresh the database image. It is this database image
 rather than the Director’s resource image that is used for the default Volume attributes. Note, for the pool to be automatically created or updated, it must be explicitly referenced by a Job resource.
 
-If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :strong:`label` command in the console program or using the :program:`btape` program. The preferred method is to use the :strong:`label` command in the console program. Generally, automatic labeling is enabled for **Device Type**:sup:`Sd`:sub:`Device` = **File**
-and disabled for **Device Type**:sup:`Sd`:sub:`Device` = **Tape**.
+If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :strong:`label` command in the console program or using the :program:`btape` program. The preferred method is to use the :strong:`label` command in the console program. Generally, automatic labeling is enabled for **Device Type**:sup:`Sd`:sub:`Device`\ = **File**
+and disabled for **Device Type**:sup:`Sd`:sub:`Device`\ = **Tape**.
 
-Finally, you must add Volume names (and their attributes) to the Pool. For Volumes to be used by Bareos they must be of the same **Media Type**:sup:`Sd`:sub:`Device`  as the archive device specified for the job (i.e. if you are going to back up to a DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be mounted on a DLT drive). The **Media Type**:sup:`Sd`:sub:`Device`  has particular importance if you are backing up to files.
-When running a Job, you must explicitly specify which Pool to use. Bareos will then automatically select the next Volume to use from the Pool, but it will ensure that the **Media Type**:sup:`Sd`:sub:`Device`  of any Volume selected from the Pool is identical to that required by the Storage resource you have specified for the Job.
+Finally, you must add Volume names (and their attributes) to the Pool. For Volumes to be used by Bareos they must be of the same **Media Type**:sup:`Sd`:sub:`Device`\  as the archive device specified for the job (i.e. if you are going to back up to a DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be mounted on a DLT drive). The **Media Type**:sup:`Sd`:sub:`Device`\  has particular importance if you are backing up to files.
+When running a Job, you must explicitly specify which Pool to use. Bareos will then automatically select the next Volume to use from the Pool, but it will ensure that the **Media Type**:sup:`Sd`:sub:`Device`\  of any Volume selected from the Pool is identical to that required by the Storage resource you have specified for the Job.
 
 If you use the :strong:`label` command in the console program to label the Volumes, they will automatically be added to the Pool, so this last step is not normally required.
 
@@ -378,11 +326,8 @@ The Pool Resource defined in the Director’s configuration may contain the foll
 
 The following is an example of a valid Pool resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Pool resource example
+   :caption: Pool resource example
 
     Pool {
       Name = Default
@@ -394,11 +339,7 @@ The following is an example of a valid Pool resource definition:
 Scratch Pool
 ~~~~~~~~~~~~
 
-.. index::
-   single: Scratch Pool
-.. index::
-    pair: Pool; Scratch
-
+:index:`[TAG=Scratch Pool] <single: Scratch Pool>` :index:`[TAG=Pool->Scratch] <pair: Pool; Scratch>`
 
 In general, you can give your Pools any name you wish, but there is one important restriction: the Pool named **Scratch**, if it exists behaves like a scratch pool of Volumes in that when Bareos needs a new Volume for writing and it cannot find one, it will look in the Scratch pool, and if it finds an available Volume, it will move it out of the Scratch pool into the Pool currently being used by the job.
 
@@ -407,9 +348,7 @@ In general, you can give your Pools any name you wish, but there is one importan
 Catalog Resource
 ----------------
 
-.. index::
-   single: Catalog Resource
-
+:index:`[TAG=Resource->Catalog] <pair: Resource; Catalog>` :index:`[TAG=Catalog Resource] <single: Catalog Resource>`
 
 The Catalog Resource defines what catalog to use for the current job. Currently, Bareos can only handle a single database server (SQLite, MySQL, PostgreSQL) that is defined when configuring **Bareos**. However, there may be as many Catalogs (databases) defined as you wish. For example, you may want each Client to have its own Catalog database, or you may want backup jobs to use one database and verify or restore jobs to use another database.
 
@@ -417,11 +356,8 @@ Since SQLite is compiled in, it always runs on the same machine as the Director 
 
 The following is an example of a valid Catalog resource definition:
 
-
-
-    
 .. code-block:: sh
-    :caption: Catalog Resource for Sqlite
+   :caption: Catalog Resource for Sqlite
 
     Catalog
     {
@@ -434,11 +370,8 @@ The following is an example of a valid Catalog resource definition:
 
 or for a Catalog on another machine:
 
-
-
-    
 .. code-block:: sh
-    :caption: Catalog Resource for remote MySQL
+   :caption: Catalog Resource for remote MySQL
 
     Catalog
     {
@@ -456,9 +389,7 @@ or for a Catalog on another machine:
 Messages Resource
 -----------------
 
-.. index::
-   single: Messages Resource
-
+:index:`[TAG=Resource->Messages] <pair: Resource; Messages>` :index:`[TAG=Messages Resource] <single: Messages Resource>`
 
 For the details of the Messages Resource, please see the :ref:`MessagesChapter` of this manual.
 
@@ -467,32 +398,20 @@ For the details of the Messages Resource, please see the :ref:`MessagesChapter` 
 Console Resource
 ----------------
 
-.. index::
-   single: Console Resource
-.. index::
-    pair: Resource; Console
-
+:index:`[TAG=Console Resource] <single: Console Resource>` :index:`[TAG=Resource->Console] <pair: Resource; Console>`
 
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 
 Default Console
-.. index::
-       pair: Console; Default Console
- the first console type is an :emphasis:`anonymous` or :emphasis:`default` console, which has full privileges. There is no console resource necessary for this type since the password is specified in the Director’s resource and consequently such consoles do not have a name as defined on a :strong:`Name` directive. Typically you would use it only for administrators.
+    :index:`[TAG=Console->Default Console] <pair: Console; Default Console>` the first console type is an :emphasis:`anonymous` or :emphasis:`default` console, which has full privileges. There is no console resource necessary for this type since the password is specified in the Director’s resource and consequently such consoles do not have a name as defined on a :strong:`Name` directive. Typically you would use it only for administrators.
 
 Named Console
-.. index::
-       single: Named Console
-.. index::
-    pair: Console; Named Console
-.. index::
-    pair: Console; Restricted Console
- the second type of console, is a :emphasis:`named` console (also called :emphasis:`Restricted Console`) defined within a Console resource in both the Director’s configuration file and in the Console’s configuration file. Both the names and the passwords in these two entries must match much as is the case for Client programs.
+    :index:`[TAG=Named Console] <single: Named Console>` :index:`[TAG=Console->Named Console] <pair: Console; Named Console>` :index:`[TAG=Console->Restricted Console] <pair: Console; Restricted Console>` the second type of console, is a :emphasis:`named` console (also called :emphasis:`Restricted Console`) defined within a Console resource in both the Director’s configuration file and in the Console’s configuration file. Both the names and the passwords in these two entries must match much as is the case for Client programs.
 
     This second type of console begins with absolutely no privileges except those explicitly specified in the Director’s Console resource. Thus you can have multiple Consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to commands and resources by specifying access control lists in the Director’s Console resource. The ACLs
     are specified by a directive followed by a list of access names. Examples of this are shown below.
 
-    -  The third type of console is similar to the above mentioned one in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the **Name**:sup:`Dir`:sub:`Console`  directive, is the same as a Client name, that console is permitted to use the :strong:`SetIP` command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits
+    -  The third type of console is similar to the above mentioned one in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the **Name**:sup:`Dir`:sub:`Console`\  directive, is the same as a Client name, that console is permitted to use the :strong:`SetIP` command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits
        portables or other machines using DHCP (non-fixed IP addresses) to "notify" the Director of their current IP address.
 
 The Console resource is optional and need not be specified. The following directives are permitted within these resources:
@@ -504,36 +423,27 @@ The example at :ref:`section-ConsoleAccessExample` shows how to use a console re
 Profile Resource
 ----------------
 
-.. index::
-   single: Profile Resource
-.. index::
-    pair: Resource; Profile
+:index:`[TAG=Profile Resource] <single: Profile Resource>` :index:`[TAG=Resource->Profile] <pair: Resource; Profile>`
 
-
-The Profile Resource defines a set of ACLs. :ref:`DirectorResourceConsole`s can be tight to one or more profiles (**Profile**:sup:`Dir`:sub:`Console` ), making it easier to use a common set of ACLs.
+The Profile Resource defines a set of ACLs. :ref:`DirectorResourceConsole`s can be tight to one or more profiles (**Profile**:sup:`Dir`:sub:`Console`\ ), making it easier to use a common set of ACLs.
 
 .. _DirectorResourceCounter:
 
 Counter Resource
 ----------------
 
-.. index::
-   single: Counter Resource
+:index:`[TAG=Resource->Counter] <pair: Resource; Counter>` :index:`[TAG=Counter Resource] <single: Counter Resource>`
 
-
-The Counter Resource defines a counter variable that can be accessed by variable expansion used for creating Volume labels with the **Label Format**:sup:`Dir`:sub:`Pool`  directive.
+The Counter Resource defines a counter variable that can be accessed by variable expansion used for creating Volume labels with the **Label Format**:sup:`Dir`:sub:`Pool`\  directive.
 
 .. _SampleDirectorConfiguration:
 
 Example Director Configuration File
 -----------------------------------
 
-.. index::
-   single: Configuration File Example
-
+:index:`[TAG=Configuration->Director->Example] <triple: Configuration; Director; Example>` :index:`[TAG=Configuration File Example] <single: Configuration File Example>`
 
 See below an example of a full Director configuration file:
 
-.. raw:: latex
+.. literalinclude:: ../../main/bareos-dir.conf.in}
 
-   .. literalinclude:: ../../main/bareos-dir.conf.in
