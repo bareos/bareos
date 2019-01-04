@@ -654,11 +654,11 @@ bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringLi
   return EvaluateResponseMessageId(message, id_out, args_out);
 }
 
-bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments)
+bool BareosSocket::FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_arguments)
 {
   std::string m = std::to_string(id);
   m += AsciiControlCharacters::RecordSeparator();
-  m += list_of_agruments.Join(AsciiControlCharacters::RecordSeparator());
+  m += list_of_arguments.Join(AsciiControlCharacters::RecordSeparator());
 
   StartTimer(30); //30 seconds
   if (send(m.c_str(), m.size()) <=0 ) {
