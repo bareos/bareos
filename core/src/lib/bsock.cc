@@ -623,10 +623,9 @@ void BareosSocket::GetCipherMessageString(std::string &str) const
      std::string m;
      m = " Encryption: ";
      m += tls_conn->TlsCipherGetName();
-     m += "\n";
      str = m;
    } else {
-     str = " Encryption: None\n";
+     str = " Encryption: None";
    }
 }
 
@@ -634,6 +633,7 @@ void BareosSocket::OutputCipherMessageString(std::function<void(const char *)> o
 {
    std::string str;
    GetCipherMessageString(str);
+   str += '\n';
    output_cb(str.c_str());
 }
 

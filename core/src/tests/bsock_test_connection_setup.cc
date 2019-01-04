@@ -145,6 +145,7 @@ static void CheckEncryption(const BareosSocket *UA_sock,
      EXPECT_TRUE(UA_sock->tls_conn.get());
      std::string cipher;
      UA_sock->GetCipherMessageString(cipher);
+     cipher += '\n';
      std::cout << cipher;
    }
 }

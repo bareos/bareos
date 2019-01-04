@@ -183,6 +183,7 @@ static void SendInfoChosenCipher(JobControlRecord *jcr, UaContext *ua)
 {
    std::string str;
    jcr->file_bsock->GetCipherMessageString(str);
+   str += '\n';
    if (jcr->JobId != 0) {
       Jmsg(jcr, M_INFO, 0, str.c_str());
    }
