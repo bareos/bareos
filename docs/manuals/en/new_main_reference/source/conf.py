@@ -57,8 +57,6 @@ extensions = ['sphinx.ext.todo',
     'sphinxcontrib.actdiag',
     'sphinx_issues',
     ]
-plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
-#plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/java/plantuml.jar'
 
 issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
 issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
@@ -78,7 +76,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Bareos Main Reference'
-copyright = '2018, Bareos GmbH & Co. KG and others'
+copyright = '2019, Bareos GmbH & Co. KG and others'
 author = 'Bareos GmbH & Co. KG'
 
 
