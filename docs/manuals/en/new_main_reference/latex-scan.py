@@ -19,11 +19,12 @@ import sys
 #    pass
 
 class PData(object):
-    def __init__(self, text, parsed = None, replace = None):
+    def __init__(self, text, parsed = None, replace = None, keep = None):
         self.data = {
             'source': text,
             'parsed': parsed,
-            'replace': replace
+            'replace': replace,
+            'keep': keep
         }
 
     def get(self):
@@ -100,15 +101,164 @@ class ParsedResults(object):
         return result
 
 
+class RegexDefs(object):
+    def __init__(self):
+
+        #elif self.parseRegex(r'$\geq$', r'>='):
+        #    pass
+        # done in pre_conversion_changes.sh, as it has been easier there.
+        #elif self.parseRegex(r'{\textbar}', r'|'):
+        #    pass
+        #elif self.parseRegex(r'{\textless}', r'<'):
+        #    pass
+        #elif self.parseRegex(r'{\textgreater}', r'>'):
+        #    pass
+
+        self.regexOpts = re.MULTILINE | re.DOTALL | re.VERBOSE
+
+        self.regex = {
+            'Path': {
+                'pattern': r'``path:(.*?)``',
+                'flags':   re.VERBOSE,
+                'replace': r':file:`\1`'
+            },
+            'AtHash': {
+                'pattern': r'@\\\#',
+                'flags':   re.VERBOSE,
+                'replace': r'@#'
+            },
+            'idir': {
+                'pattern': r'\\idir\ *(.*?)\n',
+                'flags':   re.VERBOSE,
+                'replace': r'images/\1.*\n'
+            },
+            'EnvBareosConfigResource': {
+                'pattern': r'::\n\n\s*\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1.d/\2/\3.conf\n\n\4'
+            },
+            #${PERL} 's#\{bareosConfigResource\}\{(.*?)\}\{(.*?)\}\{(.*?)\}#\n.. code-block:: sh\n    :caption: \1 \2 \3\n#g'   ${DESTFILE}
+            'EnvBconfig0':  {
+                'pattern': r'::\n\n\s*\\begin{bconfig}{}\s*\n(.*?)\n\s*\\end{bconfig}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n\n\1'
+            },
+            'EnvBconfig':  {
+                'pattern': r'::\n\n\s*\\begin{bconfig}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconfig}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            #${PERL} 's#\{bconfig\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
+            'EnvBconsole0': {
+                'pattern': r'::\n\n\s*\\begin{bconsole}{}\s*\n(.*?)\n\s*\\end{bconsole}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n\n\1'
+            },
+            'EnvBconsole': {
+                'pattern': r'::\n\n\s*\\begin{bconsole}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconsole}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            #${PERL} 's#\{bconsole\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
+            'EnvBmessage0': {
+                'pattern': r'::\n\n\s*\\begin{bmessage}{}\s*\n(.*?)\n\s*\\end{bmessage}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n\n\1'
+            },
+            'EnvBmessage': {
+                'pattern': r'::\n\n\s*\\begin{bmessage}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bmessage}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            'EnvCommands0': {
+                'pattern': r'::\n\n\s*\\begin{commands}{}\s*\n(.*?)\n\s*\\end{commands}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n\n\1'
+            },
+            'EnvCommands': {
+                'pattern': r'::\n\n\s*\\begin{commands}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commands}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            #${PERL} 's#\{commands\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}d
+            'EnvCommandOut': {
+                'pattern': r'::\n\n\s*\\begin{commandOut}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commandOut}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            #${PERL} 's#\{commandOut\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
+            'EnvConfig0': {
+                'pattern': r'::\n\n\s*\\begin{config}{}\s*\n(.*?)\n\s*\\end{config}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n\n\1'
+            },
+            'EnvConfig': {
+                'pattern': r'::\n\n\s*\\begin{config}{([^}]+?)}\s*\n(.*?)\n\s*\\end{config}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            #${PERL} 's#\{config\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
+            'EnvLogging': {
+                'pattern': r'::\n\n\s*\\begin{logging}{([^}]+?)}\s*\n(.*?)\n\s*\\end{logging}',
+                'flags':   self.regexOpts, 
+                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+            },
+            #${PERL} 's#\{logging\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
+            'ImageReference': {
+                'pattern': r'\ *\|image\|',
+                'flags':   self.regexOpts,
+                #'replace': None,
+                'extraHandling': True
+            },
+            'ImageBlock': {
+                'pattern': r'\.\.\s\|image\|\simage::\s\\idir\s(.*?)$(.*?)(?=\n[^\s]|^$)',
+                'flags':   self.regexOpts, 
+                'replace': r'',
+                'return':  r'.. image:: images/\1.*\2\n\n',
+                'extraHandling': True
+            },
+        }
+
+        for key in self.regex.keys():
+            self.regex[key]['compiled'] = re.compile(self.regex[key]['pattern'], self.regex[key]['flags'])
+
+
+    def __iter__(self):
+        return self.regex.__iter__()
+
+    def getPattern(self, key):
+        return self.regex[key]['compiled']
+
+    def getPatternString(self, key):
+        return self.regex[key]['pattern']
+
+    def getReplaceTemplate(self, key):
+        return self.regex[key]['replace']
+
+    def getMatch(self, key, text):
+        return self.getPattern(key).match(text)
+
+    def getReturnValue(self, key, match):
+        result = None
+        if 'return' in self.regex[key]:
+            result = match.expand(self.regex[key]['return'])
+        return result
+
+    def needsSpecialTreatment(self, key):
+        return 'extraHandling' in self.regex[key]
+
+
 class Parser(object):
 
-    def __init__(self, string):
-        self.data = string
+    def __init__(self):
+        self.data = None
         self.start = 0
         self.pos = 0
-        self.length = len(self.data)
-        self.functions = []
+        self.length = 0
+        self.regex = RegexDefs()
+        self.images = []
         self.result = ParsedResults()
+
 
     def getChar(self):
         if not self.isEod():
@@ -145,12 +295,18 @@ class Parser(object):
         return True
 
     def getSourceItem(self, start = None, modifier = 0):
+        logger = logging.getLogger()
         if start is None:
             start = self.start
         if self.isEod():
-            result = self.data[start:(self.length + modifier)]
+            if modifier:
+                modifier -= 1
+            result = self.data[start:(self.pos + modifier)]
+            #logger.debug('eod, mod: {}, {}, full: {} ({}, {}, {})'.format(modifier, result, self.data[start:], start, self.pos, self.length))
         else:
             result = self.data[start:(self.pos + modifier)]
+            #logger.debug('mod: {}, {}'.format(modifier, result))
+
         return result
 
     def isEqual(self, string):
@@ -198,6 +354,7 @@ class Parser(object):
             self.nextChar()
         return [ self.getSourceItem(start, -1) ]
 
+
     def getParameter(self):
         if self.isEod():
             return None
@@ -238,6 +395,7 @@ class Parser(object):
             'parameters': []
         }
         result['name'] = self.getFunctionName()
+        #logger.debug("function: {}, {} {}".format(result['name'], self.start, self.data[self.start:self.start+30]))
         result['optional'] = self.getOptionalParameters()
         result['parameters'] = self.getParameters()
         self.result.append(PFunction(self.getSourceItem(), result))
@@ -285,78 +443,107 @@ class Parser(object):
         return True
 
 
-    def parseRegex(self, regex, repl):
+    def parseRegex(self, key):
         logger = logging.getLogger()
-        match = re.match(regex, self.data[self.pos:], re.MULTILINE | re.DOTALL | re.VERBOSE)
+
+        match = self.regex.getMatch(key, self.data[self.pos:])
         if not match:
             return False
         self.appendPriorText()
         self.start = self.pos
         result = {
-            'regex': regex,
+            'regex': self.regex.getPatternString(key),
             'parameters': match.groups()
         }
-        replace = match.expand(repl)
         #logger.debug('pos: {}, end: {}'.format(self.pos, match.end()))
+        replace = match.expand(self.regex.getReplaceTemplate(key))
+        self.pos += match.end()
+        self.result.append(PRegex(self.getSourceItem(), result, replace))
+        self.start = self.pos
+        return True
+
+    def parseImageReferenceRegex(self):
+        logger = logging.getLogger()
+        key = 'ImageReference'
+
+        if len(self.images) == 0:
+            return False
+
+        match = self.regex.getMatch(key, self.data[self.pos:])
+        if not match:
+            return False
+        self.appendPriorText()
+        self.start = self.pos
+        result = {
+            'regex': self.regex.getPatternString(key),
+            'parameters': match.groups()
+        }
+        #logger.debug('pos: {}, end: {}'.format(self.pos, match.end()))
+        replace = match.expand(self.images.pop(0))
         self.pos += match.end()
         self.result.append(PRegex(self.getSourceItem(), result, replace))
         self.start = self.pos
         return True
 
 
-    def parse(self):
+    def parseRegexReturnMatch(self, key):
+        logger = logging.getLogger()
+
+        match = self.regex.getMatch(key, self.data[self.pos:])
+        if not match:
+            return False
+        self.appendPriorText()
+        self.start = self.pos
+        result = {
+            'regex': self.regex.getPatternString(key),
+            'parameters': match.groups()
+        }
+        #logger.debug('pos: {}, end: {}'.format(self.pos, match.end()))
+        replace = match.expand(self.regex.getReplaceTemplate(key))
+        result = self.regex.getReturnValue(key, match)
+        self.pos += match.end()
+        self.result.append(PRegex(self.getSourceItem(), result, replace, result))
+        self.start = self.pos
+        return self.regex.getReturnValue(key, match)
+
+
+
+    def parseAllRegex(self):
+        logger = logging.getLogger()
+
+        for key in self.regex:
+            if not self.regex.needsSpecialTreatment(key):
+                if self.parseRegex(key):
+                    return True
+
+        value = self.parseRegexReturnMatch('ImageBlock')
+        if value:
+            logger.debug('adding image:\n{}'.format(value))
+            self.images.append(value)
+            return True
+
+        if self.parseImageReferenceRegex():
+            return True
+
+        return False
+
+
+    def parse(self, string):
+
+        self.data = string
+        self.start = 0
+        self.pos = 0
+        self.length = len(self.data)
+        self.result = ParsedResults()
+
+
         while not self.isEod():
             if self.parseRawLatexBlock():
                 pass
             elif self.parseRawLatex():
                 pass
-            elif self.parseRegex(r'``path:(.*?)``', r':file:`\1`'):
+            elif self.parseAllRegex():
                 pass
-            elif self.parseRegex(r'@\\\#', r'@#'):
-                pass
-
-            #elif self.parseRegex(r'$\geq$', r'>='):
-            #    pass
-            # done in pre_conversion_changes.sh, as it has been easier there.
-            #elif self.parseRegex(r'{\textbar}', r'|'):
-            #    pass
-            #elif self.parseRegex(r'{\textless}', r'<'):
-            #    pass
-            #elif self.parseRegex(r'{\textgreater}', r'>'):
-            #    pass
-
-            elif self.parseRegex(r'::\n\n\s*\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}', r'.. code-block:: sh\n   :caption: \1.d/\2/\3.conf\n\n\4'):
-                #${PERL} 's#\{bareosConfigResource\}\{(.*?)\}\{(.*?)\}\{(.*?)\}#\n.. code-block:: sh\n    :caption: \1 \2 \3\n#g'   ${DESTFILE}
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{bconfig}{(.*?)}\s*\n(.*?)\n\s*\\end{bconfig}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                #${PERL} 's#\{bconfig\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{bconsole}{(.*?)}\s*\n(.*?)\n\s*\\end{bconsole}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                #${PERL} 's#\{bconsole\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{bmessage}{(.*?)}\s*\n(.*?)\n\s*\\end{bmessage}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{commands}{}\s*\n(.*?)\n\s*\\end{commands}', r'.. code-block:: sh\n\n\1'):
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{commands}{(.*?)}\s*\n(.*?)\n\s*\\end{commands}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                #${PERL} 's#\{commands\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}d
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{commandOut}{(.*?)}\s*\n(.*?)\n\s*\\end{commandOut}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                #${PERL} 's#\{commandOut\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{config}{(.*?)}\s*\n(.*?)\n\s*\\end{config}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                #${PERL} 's#\{config\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
-                pass
-            elif self.parseRegex(r'::\n\n\s*\\begin{logging}{(.*?)}\s*\n(.*?)\n\s*\\end{logging}', r'.. code-block:: sh\n   :caption: \1\n\n\2'):
-                #${PERL} 's#\{logging\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
-                pass
-            #elif self.parseRegex(r'(::\n\n\s*(\\begin{tabular}.*?\\end{tabular}))', r'\2\n\n\1'):
-                # tabulars do not work well, especially, when content is replaced by postconvert.
-                # Therefore double the tabular:
-                # 1. verbatim Latex tabular
-                # 2. Latex tabular, to be converted by pandoc
-                #pass
-
             elif self.getChar() == '\\':
                 self.appendPriorText()
                 self.parseFunction()
@@ -1046,24 +1233,24 @@ def parseAndTranslate(data):
     inputdata = ''
     outputdata = data
     counter = 1
+    parser = Parser()
 
     while inputdata != outputdata:
         inputdata = outputdata
-        parsed = Parser(inputdata)
         try:
-            parsedResult = parsed.parse()
+            parsedResult = parser.parse(inputdata)
         except IndexError:
-            print(parsed.result.getDump())
+            print(parser.result.getDump())
             raise
 
         for item in parsedResult:
-            if type(item) == PFunction:
-                # if Translate class has a method with the name of the latex function,
-                # call it.
-                if hasattr(Translate, item.getName()) and callable(getattr(Translate, item.getName())):
-                    getattr(Translate, item.getName())(item)
-                else:
-                    logger.warning("WARNING: no translation found for {}".format(item.get()))
+           if type(item) == PFunction:
+               # if Translate class has a method with the name of the latex function,
+               # call it.
+               if hasattr(Translate, item.getName()) and callable(getattr(Translate, item.getName())):
+                   getattr(Translate, item.getName())(item)
+               else:
+                   logger.warning("WARNING: no translation found for {}".format(item.get()))
 
         outputdata = parsedResult.getTranslated()
 
@@ -1074,6 +1261,7 @@ def parseAndTranslate(data):
         counter += 1
 
     return outputdata
+
 
 def pandocfilter(key, value, xformat, meta):
     '''
