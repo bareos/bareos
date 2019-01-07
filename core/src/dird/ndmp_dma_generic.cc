@@ -707,7 +707,7 @@ bail_out:
    /*
     * Free the param block.
     */
-   free(ndmp_sess.param->log_tag);
+   if (ndmp_sess.param->log_tag) { free(ndmp_sess.param->log_tag); }
    free(ndmp_sess.param);
    free(nis);
    ndmp_sess.param = NULL;
