@@ -617,11 +617,10 @@ extern "C" void ndmp_log_delivery_cb_to_ua(struct ndmlog *log, char *tag, int le
  * operation. Callback is the above NdmpClientStatusHandler which prints
  * the data to the user context.
  */
-void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel, ndmca_query_callbacks* query_cbs)
+void NdmpDoQuery(UaContext *ua, JobControlRecord *jcr, ndm_job_param *ndmp_job, int NdmpLoglevel, ndmca_query_callbacks* query_cbs)
 {
    NIS *nis;
    struct ndm_session ndmp_sess;
-
    JobControlRecord *local_jcr = nullptr;
    /*
     * Initialize a new NDMP session
@@ -643,10 +642,10 @@ void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel, ndmca
       local_jcr = ua->jcr;
       ndmp_sess.param->log.deliver = ndmp_log_delivery_cb_to_ua;
 
-   /* } else if (jcr) { */
-   /*    local_jcr = jcr; */
-   /*    nis->jcr = jcr; */
-   /*    ndmp_sess.param->log.deliver = ndmp_log_delivery_cb_to_dmsg; */
+   } else if (jcr) {
+      nis->jcr = jcr;
+      local_jcr = jcr;
+      ndmp_sess.param->log.deliver = ndmp_log_delivery_cb_to_dmsg;
 
    } else  {
       goto bail_out;
@@ -667,7 +666,7 @@ void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel, ndmca
     * Copy the actual job to perform.
     */
    memcpy(&ndmp_sess.control_acb->job, ndmp_job, sizeof(struct ndm_job_param));
-   if (!NdmpValidateJob(ua->jcr, &ndmp_sess.control_acb->job)) {
+   if (!NdmpValidateJob(local_jcr, &ndmp_sess.control_acb->job)) {
       goto cleanup;
    }
 
@@ -736,7 +735,7 @@ void DoNdmpClientStatus(UaContext *ua, ClientResource *client, char *cmd)
    }
 
    ndmca_query_callbacks *query_cbs = nullptr;
-   NdmpDoQuery(ua, &ndmp_job,
+   NdmpDoQuery(ua, NULL, &ndmp_job,
                  (client->ndmp_loglevel > me->ndmp_loglevel) ? client->ndmp_loglevel :
                                                                me->ndmp_loglevel, query_cbs);
 }

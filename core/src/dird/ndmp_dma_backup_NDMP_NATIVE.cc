@@ -145,10 +145,10 @@ int NdmpLoadNext(struct ndm_session *sess) {
          goto bail_out;
       }
 
-      slot_number_t slotnumber = GetBareosSlotNumberByElementAddress(&store->rss->storage_mapping, slot_type_storage, mr.Slot);
+      slot_number_t slotnumber = GetElementAddressByBareosSlotNumber(&store->rss->storage_mapping, slot_type_storage, mr.Slot);
       /* check for success */
       if ( slotnumber < 0 ) {
-         Jmsg(jcr, M_FATAL, 0, _("get_element_addr_by_slotnumber failed\n"));
+         Jmsg(jcr, M_FATAL, 0, _("GetElementAddressByBareosSlotNumber failed\n"));
          goto bail_out;
       }
 

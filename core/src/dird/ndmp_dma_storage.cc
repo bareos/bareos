@@ -167,7 +167,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord *jcr, StorageRe
    query_callbacks.get_tape_info = get_tape_info_cb;
    ndmca_query_callbacks *query_cbs = &query_callbacks;
 
-   NdmpDoQuery(NULL, &ndmp_job, me->ndmp_loglevel, query_cbs);
+   NdmpDoQuery(NULL, jcr, &ndmp_job, me->ndmp_loglevel, query_cbs);
 
    /*
     * Debug output
@@ -175,6 +175,9 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord *jcr, StorageRe
 
    if (store->rss->ndmp_deviceinfo) {
       Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n", store->name(), store->rss->smc_ident);
+   } else {
+      Jmsg(jcr, M_INFO, 0, "No NDMP Devices for storage %s:(%s)\n", store->name(), store->rss->smc_ident);
+      return false;
    }
    for (auto devinfo = store->rss->ndmp_deviceinfo->begin();
          devinfo != store->rss->ndmp_deviceinfo->end();
@@ -209,7 +212,7 @@ void DoNdmpNativeStorageStatus(UaContext *ua, StorageResource *store, char *cmd)
    query_callbacks.get_tape_info = get_tape_info_cb;
    ndmca_query_callbacks *query_cbs = &query_callbacks;
 
-   NdmpDoQuery(ua, &ndmp_job, me->ndmp_loglevel, query_cbs);
+   NdmpDoQuery(ua, NULL, &ndmp_job, me->ndmp_loglevel, query_cbs);
 
    ndmp_deviceinfo_t *deviceinfo = NULL;
    int i = 0;
