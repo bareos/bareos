@@ -2395,7 +2395,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile module/Application/language/Makefile public/js/locale/Makefile"
+ac_config_files="$ac_config_files Makefile module/Application/language/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3116,7 +3116,6 @@ do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "module/Application/language/Makefile") CONFIG_FILES="$CONFIG_FILES module/Application/language/Makefile" ;;
-    "public/js/locale/Makefile") CONFIG_FILES="$CONFIG_FILES public/js/locale/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
