@@ -1,4 +1,4 @@
-SUBDIRS = module/Application/language public/js/locale
+SUBDIRS = module/Application/language
 
 install: install-am
 	mkdir -p $(DESTDIR)$(pkgdatadir)
