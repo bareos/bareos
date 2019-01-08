@@ -1,0 +1,1 @@
+../../../../../module/Application/language/pt_BR.mo
