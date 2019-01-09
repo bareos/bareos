@@ -15,6 +15,7 @@ Bareos Developer Guide
  developers/porting.rst
  developers/api.rst
  developers/tls-techdoc.rst
+ developers/pam-techdoc.rst
  developers/regression.rst
  developers/mempool.rst
  developers/netprotocol.rst

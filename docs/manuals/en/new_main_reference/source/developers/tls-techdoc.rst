@@ -1,255 +1,164 @@
 TLS
 ===
 
-Written by Landon Fuller
+Introduction
+------------
 
-Introduction to TLS
--------------------
+Bareos uses TLS to ensure data encryption for all TCP connections between Bareos components. Implemented and working is only OpenSSL.
 
-This patch includes all the back-end code necessary to add complete TLS
-data encryption support to Bareos. In addition, support for TLS in
-Console/Director communications has been added as a proof of concept.
-Adding support for the remaining daemons will be straight-forward.
-Supported features of this patchset include:
+Starting from Bareos 18.2 every BareosSocket TCP connection has its own SSL_CTX and SSL object. In other words, every time when establishing a new connection a new SSL_CTX object is initialized to create a new SSL object.
 
--  Client/Server TLS Requirement Negotiation
+For a first overview the following diagram shows the connection sequence of a Bareos Console to a Bareos Director.
 
--  TLSv1 Connections with Server and Client Certificate Validation
+.. uml::
+  :caption: Initiation of a TLS connection
 
--  Forward Secrecy Support via Diffie-Hellman Ephemeral Keying
+  hide footbox
 
-This document will refer to both “server” and “client” contexts. These
-terms refer to the accepting and initiating peer, respectively.
+  actor user
+  participant "B-Console" as console
+  participant "Director" as director
 
-Diffie-Hellman anonymous ciphers are not supported by this patchset. The
-use of DH anonymous ciphers increases the code complexity and places
-explicit trust upon the two-way Cram-MD5 implementation. Cram-MD5 is
-subject to known plaintext attacks, and is should be considered
-considerably less secure than PKI certificate-based authentication.
+  user -> console: start bconsole
+  console <-> director: initiate TCP connection
+  console <-> director: initiate a secure TLS connection (cert/psk)
+  console <-> director: secondary CRAM/MD5 authentication
+
+  ... do something with console ...
+
+  user -> console: quit session ('q'; Ctrl + D)
+  console <-> director: Shutdown TLS
+  console <-> director: Finish TCP connection
+
+
+TLS Handshake before Bareos 18.2
+--------------------------------
+
+.. uml::
+  :caption: Initiation of a TLS connection prior to Bareos 18.2
+
+  actor "Console\nWebUI" as W
+  participant "director\ndaemon" as D
+
+  W <-> D: Open TCP connection
+  
+  W -> D: "Hello [*UserAgent*|name] calling"
+  note right of D: *UserAgent*: root console\nname: named console
+  autonumber 1 "[cram 0:]"
+  W <- D: "auth cram-md5[c] <password-md5> ssl=<0,1,2>"
+  note right of D: 0:=cleartext\n1:=TLS-Cert possible\n2:=TLS-Cert required
+  W -> D: "<password-md5>"
+  W <- D: "1000 OK auth"
+
+  W -> D: "auth cram-md5[c] <password-md5> ssl=<0,1,2>"
+  W <- D: "<password-md5>"
+  W -> D: "1000 OK auth"
+
+  autonumber stop
+
+  W <-> D: [ssl=1,2: TLS Cert Handshake]
+  W <- D: 1000 OK: <director-name> Version: <version> (<date>)
+
+  ... run some console commands ...
+
+  W <-> D: [ssl=1,2: Close TLS connection]
+  W <-> D: Close TCP connection
+
+
+TLS Configuration Implementation
+--------------------------------
+TLS configuration directives will be transfered from the configuration into dedicated classes as follows.
+
+.. uml::
+  :caption: Bareos TLS config internal class relations
+
+  package "Bareos Config as defined in lib/parse_conf.h" #EEEEEE {
+  class TLS_COMMON_CONFIG << (B, #FF7700) >> {
+    + CFG_TYPE_BOOL TlsAuthenticate <tls_cert.authenticate>
+    + CFG_TYPE_BOOL TlsEnable <tls_cert.enable>
+    + CFG_TYPE_BOOL TlsRequire <tls_cert.require>
+    + CFG_TYPE_STR TlsCipherList <tls_cert.cipherlist>
+    + CFG_TYPE_STDSTRDIR TlsDhFile <tls_cert.dhfile>
+  }
+
+  class TLS_CERT_CONFIG << (B, #FF7700) >> {
+    + CFG_TYPE_BOOL VerifyPeer <tls_cert.VerifyPeer>
+    + CFG_TYPE_STDSTRDIR TlsCaCertificateFilec <tls_cert.CaCertfile>
+    + CFG_TYPE_STDSTRDIR TlsCaCertificateDir <tls_cert.CaCertfile>
+    + CFG_TYPE_STDSTRDIR TlsCertificateRevocationList <tls_cert.crlfile>
+    + CFG_TYPE_STDSTRDIR TlsCertificate <tls_cert.certfile>
+    + CFG_TYPE_STDSTRDIR TlsKey <tls_cert.keyfile>
+    + CFG_TYPE_ALIST_STR TlsAllowedCn <tls_cert.AllowedCns>
+  }
+  }
+
+  TlsResource *- TlsConfigCert: > initializes
+
+  class TlsResource {
+    + s_password password_
+    + TlsConfigCert tls_cert_
+    + std::string *cipherlist_
+    + bool authenticate_
+    + bool tls_enable_;
+    + bool tls_require_;
+  }
+
+  class TlsConfigCert {
+     + bool verify_peer_
+     + std::string *ca_certfile_
+     + std::string *ca_certdir_
+     + std::string *crlfile_
+     + std::string *certfile_
+     + std::string *keyfile_
+     + std::string *dhfile_
+     + alist *allowed_certificate_common_names_;
+
+     + std::string *pem_message_;
+  }
+
+  TLS_COMMON_CONFIG --> TlsResource : initializes\n during config load
+  TLS_CERT_CONFIG --> TlsResource : initializes\n during config load
+
 
 TLS API Implementation
 ----------------------
+The following diagramm shows the interface of the *TlsOpenSsl* class and its aggregation in the *BareosSocket* class. During initialization and handshake of a TLS connection *tls_conn_init* will be used and *tls_conn* is invalid. As soon as the TLS connection is established the pointer from *tls_conn_init* will be moved to *tls_conn* and *tls_conn_init* will become invalid.
+
+.. uml::
+  :caption: TLS OpenSSL Class overview (simplified)
+
+  class BareosSocket {
+    + std::shared_ptr<Tls> tls_conn
+    + std::unique_ptr<Tls> tls_conn_init (see text)
+  }
+
+  abstract class Tls {
+    + new_tls_context()
+    + FreeTlsContext()
+    + TlsPostconnectVerifyHost()
+    + TlsPostconnectVerifyCn()
+    + TlsBsockAccept()
+    + TlsBsockWriten()
+    + TlsBsockReadn()
+    + TlsBsockConnect()
+    + TlsBsockShutdown()
+    + FreeTlsConnection()
+  }
+
+  class "TlsOpenSsl" as OpenSsl {
+    - const char *default_ciphers
+    - SSL_CTX *openssl_
+    - SSL *openssl_
+    - CRYPTO_PEM_PASSWD_CB *pem_callback
+    - const void *pem_userdata
+    + new_tls_psk_client_context()
+    + new_tls_psk_server_context()
+    + TlsCipherGetName()
+    + TlsLogConninfo()
+    + TlsPolicyHandshake()
+  }
+
+  OpenSsl --|> Tls
+
+  BareosSocket o- Tls : initialize >
 
-Appropriate autoconf macros have been added to detect and use OpenSSL.
-Two additional preprocessor defines have been added: ``HAVE_TLS`` and
-``HAVE_OPENSSL``. All changes not specific to OpenSSL rely on
-``HAVE_TLS``. In turn, a generic TLS API is exported.
-
-Library Initialization and Cleanup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    int init_tls(void);
-
-Performs TLS library initialization, including seeding of the PRNG. PRNG
-seeding has not yet been implemented for win32.
-
-::
-
-    int cleanup_tls(void);
-
-Performs TLS library cleanup.
-
-Manipulating TLS Contexts
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    TLS_CONTEXT  *new_tls_context(const char *ca_certfile,
-            const char *ca_certdir, const char *certfile,
-            const char *keyfile, const char *dhfile, bool verify_peer);
-
-Allocates and initalizes a new opaque *TLS_CONTEXT* structure. The
-*TLS_CONTEXT* structure maintains default TLS settings from which
-*TLS_CONNECTION* structures are instantiated. In the future the
-*TLS_CONTEXT* structure may be used to maintain the TLS session cache.
-*ca_certfile* and *ca_certdir* arguments are used to initialize the CA
-verification stores. The *certfile* and *keyfile* arguments are used to
-initialize the local certificate and private key. If *dhfile* is
-non-NULL, it is used to initialize Diffie-Hellman ephemeral keying. If
-*verify_peer* is *true* , client certificate validation is enabled.
-
-::
-
-    void free_tls_context(TLS_CONTEXT *ctx);
-
-Deallocated a previously allocated *TLS_CONTEXT* structure.
-
-Performing Post-Connection Verification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    bool tls_postconnect_verify_host(TLS_CONNECTION *tls, const char *host);
-
-Performs post-connection verification of the peer-supplied x509
-certificate. Checks whether the *subjectAltName* and *commonName*
-attributes match the supplied *host* string. Returns *true* if there is
-a match, *false* otherwise.
-
-::
-
-    bool tls_postconnect_verify_cn(TLS_CONNECTION *tls, alist *verify_list);
-
-Performs post-connection verification of the peer-supplied x509
-certificate. Checks whether the *commonName* attribute matches any
-strings supplied via the *verify_list* parameter. Returns *true* if
-there is a match, *false* otherwise.
-
-Manipulating TLS Connections
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd);
-
-Allocates and initializes a new *TLS_CONNECTION* structure with context
-*ctx* and file descriptor *fd*.
-
-::
-
-    void free_tls_connection(TLS_CONNECTION *tls);
-
-Deallocates memory associated with the *tls* structure.
-
-::
-
-    bool tls_bsock_connect(BSOCK *bsock);
-
-Negotiates a a TLS client connection via *bsock*. Returns *true* if
-successful, *false* otherwise. Will fail if there is a TLS protocol
-error or an invalid certificate is presented
-
-::
-
-    bool tls_bsock_accept(BSOCK *bsock);
-
-Accepts a TLS client connection via *bsock*. Returns *true* if
-successful, *false* otherwise. Will fail if there is a TLS protocol
-error or an invalid certificate is presented.
-
-::
-
-    bool tls_bsock_shutdown(BSOCK *bsock);
-
-Issues a blocking TLS shutdown request to the peer via *bsock*. This
-function may not wait for the peer’s reply.
-
-::
-
-    int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes);
-
-Writes *nbytes* from *ptr* via the *TLS_CONNECTION* associated with
-*bsock*. Due to OpenSSL’s handling of *EINTR*, *bsock* is set
-non-blocking at the start of the function, and restored to its original
-blocking state before the function returns. Less than *nbytes* may be
-written if an error occurs. The actual number of bytes written will be
-returned.
-
-::
-
-    int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes);
-
-Reads *nbytes* from the *TLS_CONNECTION* associated with *bsock* and
-stores the result in *ptr*. Due to OpenSSL’s handling of *EINTR*,
-*bsock* is set non-blocking at the start of the function, and restored
-to its original blocking state before the function returns. Less than
-*nbytes* may be read if an error occurs. The actual number of bytes read
-will be returned.
-
-Bnet API Changes
-----------------
-
-A minimal number of changes were required in the Bnet socket API. The
-BSOCK structure was expanded to include an associated TLS_CONNECTION
-structure, as well as a flag to designate the current blocking state of
-the socket. The blocking state flag is required for win32, where it does
-not appear possible to discern the current blocking state of a socket.
-
-Negotiating a TLS Connection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*bnet_tls_server()* and *bnet_tls_client()* were both implemented using
-the new TLS API as follows:
-
-::
-
-    int bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock);
-
-Negotiates a TLS session via *bsock* using the settings from *ctx*.
-Returns 1 if successful, 0 otherwise.
-
-::
-
-    int bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list);
-
-Accepts a TLS client session via *bsock* using the settings from *ctx*.
-If *verify_list* is non-NULL, it is passed to
-*tls_postconnect_verify_cn()* for client certificate verification.
-
-Manipulating Socket Blocking State
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Three functions were added for manipulating the blocking state of a
-socket on both Win32 and Unix-like systems. The Win32 code was written
-according to the MSDN documentation, but has not been tested.
-
-These functions are prototyped as follows:
-
-::
-
-    int bnet_set_nonblocking(BSOCK *bsock);
-
-Enables non-blocking I/O on the socket associated with *bsock*. Returns
-a copy of the socket flags prior to modification.
-
-::
-
-    int bnet_set_blocking(BSOCK *bsock);
-
-Enables blocking I/O on the socket associated with *bsock*. Returns a
-copy of the socket flags prior to modification.
-
-::
-
-    void bnet_restore_blocking(BSOCK *bsock, int flags);
-
-Restores blocking or non-blocking IO setting on the socket associated
-with *bsock*. The *flags* argument must be the return value of either
-*bnet_set_blocking()* or *bnet_restore_blocking()*.
-
-Authentication Negotiation
---------------------------
-
-Backwards compatibility with the existing SSL negotiation hooks
-implemented in src/lib/cram-md5.c have been maintained. The
-*cram_md5_get_auth()* function has been modified to accept an integer
-pointer argument, tls_remote_need. The TLS requirement advertised by the
-remote host is returned via this pointer.
-
-After exchanging cram-md5 authentication and TLS requirements, both the
-client and server independently decide whether to continue:
-
-::
-
-    if (!cram_md5_get_auth(dir, password, &tls_remote_need) ||
-            !cram_md5_auth(dir, password, tls_local_need)) {
-    [snip]
-    /* Verify that the remote host is willing to meet our TLS requirements */
-    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK &&
-            tls_remote_need != BNET_TLS_OK) {
-       sendit(_("Authorization problem:"
-                " Remote server did not advertise required TLS support.\n"));
-       auth_success = false;
-       goto auth_done;
-    }
-
-    /* Verify that we are willing to meet the remote host's requirements */
-    if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK &&
-            tls_remote_need != BNET_TLS_OK) {
-       sendit(_("Authorization problem:"
-                " Remote server requires TLS.\n"));
-       auth_success = false;
-       goto auth_done;
-    }
