@@ -26,6 +26,7 @@ and in the :ref:`bareos-1824rc2-updatefaq`
    index-part-4
    index-developer-guide
    developers/releasenotes.rst
+   webui-tls.rst
 
 
 Indices and tables

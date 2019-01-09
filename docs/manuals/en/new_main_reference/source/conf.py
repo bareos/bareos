@@ -36,7 +36,7 @@ rst_epilog = '''
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
 .. |bconsole| replace:: Bareos Console
-
+.. |webui| replace:: Bareos WebUI
 '''
 
 # If your documentation needs a minimal Sphinx version, state it here.
