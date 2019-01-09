@@ -3,8 +3,8 @@ Bareos WebUI Translation
 
 ### Where do I find the translation?
 
-The localization files are located in `module/Application/language` and `public/js/locale`.
-You can find the languages that are currently in translation in our online project, which is addressed in the next section.
+The localization files are located in `module/Application/language`. You can find the languages that are currently
+in translation in our online project, which is addressed in the next section.
 
 ### How should I edit translation files?
 
