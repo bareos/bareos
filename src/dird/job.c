@@ -1071,11 +1071,11 @@ bool get_level_since_time(JCR *jcr)
     * differential or incremental save.
     */
    JobLevel = jcr->getJobLevel();
+   POOLMEM *last_full_stime = get_pool_memory(PM_MESSAGE);
+   POOLMEM *last_diff_stime = get_pool_memory(PM_MESSAGE);
    switch (JobLevel) {
    case L_DIFFERENTIAL:
    case L_INCREMENTAL:
-      POOLMEM *stime = get_pool_memory(PM_MESSAGE);
-
       /*
        * Look up start time of last Full job
        */
@@ -1090,9 +1090,9 @@ bool get_level_since_time(JCR *jcr)
          do_full = true;
       }
 
-      have_full = jcr->db->find_last_job_start_time(jcr, &jcr->jr, stime, prev_job, L_FULL);
+      have_full = jcr->db->find_last_job_start_time(jcr, &jcr->jr, last_full_stime, prev_job, L_FULL);
       if (have_full) {
-         last_full_time = str_to_utime(stime);
+         last_full_time = str_to_utime(last_full_stime);
       } else {
          do_full = true;               /* No full, upgrade to one */
       }
@@ -1107,13 +1107,14 @@ bool get_level_since_time(JCR *jcr)
          /*
           * Lookup last diff job
           */
-         if (jcr->db->find_last_job_start_time(jcr, &jcr->jr, stime, prev_job, L_DIFFERENTIAL)) {
-            last_diff_time = str_to_utime(stime);
+         if (jcr->db->find_last_job_start_time(jcr, &jcr->jr, last_diff_stime, prev_job, L_DIFFERENTIAL)) {
+            last_diff_time = str_to_utime(last_diff_stime);
             /*
              * If no Diff since Full, use Full time
              */
             if (last_diff_time < last_full_time) {
                last_diff_time = last_full_time;
+               bsnprintf(last_diff_stime, sizeof_pool_memory(last_diff_stime), last_full_stime);
             }
             Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n", last_diff_time,
                   last_full_time);
@@ -1122,6 +1123,7 @@ bool get_level_since_time(JCR *jcr)
              * No last differential, so use last full time
              */
             last_diff_time = last_full_time;
+            bsnprintf(last_diff_stime, sizeof_pool_memory(last_diff_stime), last_full_stime);
             Dmsg1(50, "No last_diff_time setting to full_time=%lld\n", last_full_time);
          }
          do_diff = ((now - last_diff_time) >= jcr->res.job->MaxDiffInterval);
@@ -1136,7 +1138,6 @@ bool get_level_since_time(JCR *jcr)
       } else if (have_full && jcr->res.job->MaxVFullInterval > 0) {
          do_vfull = ((now - last_full_time) >= jcr->res.job->MaxVFullInterval);
       }
-      free_pool_memory(stime);
 
       if (do_full) {
          /*
@@ -1169,7 +1170,10 @@ bool get_level_since_time(JCR *jcr)
           * No recent diff job found, so upgrade this one to Diff
           */
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
+         bsnprintf(jcr->stime, sizeof_pool_memory(jcr->stime), last_diff_stime);
          bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+         bstrncat(jcr->since, _(", since="), sizeof(jcr->since));
+         bstrncat(jcr->since, jcr->stime, sizeof(jcr->since));
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
          pool_updated = true;
       } else {
@@ -1177,6 +1181,10 @@ bool get_level_since_time(JCR *jcr)
             if (jcr->db->find_failed_job_since(jcr, &jcr->jr, jcr->stime, JobLevel)) {
                Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"), level_to_str(JobLevel));
                bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
+               if (JobLevel == L_DIFFERENTIAL) {
+                  bstrncat(jcr->since, _(", since="), sizeof(jcr->since));
+                  bstrncat(jcr->since, jcr->stime, sizeof(jcr->since));
+               }
                jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
                jcr->jr.JobId = jcr->JobId;
                pool_updated = true;
@@ -1201,6 +1209,8 @@ bool get_level_since_time(JCR *jcr)
 
       break;
    }
+   free_pool_memory(last_diff_stime);
+   free_pool_memory(last_full_stime);
 
    Dmsg3(100, "Level=%c last start time=%s job=%s\n", JobLevel, jcr->stime, jcr->PrevJob);
 
