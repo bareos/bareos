@@ -1,26 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-08 15:42+0100\n"
-"PO-Revision-Date: 2017-07-08 22:07+0200\n"
-"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>\n"
-"Language-Team: \n"
-"Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.7.1\n"
-"X-Poedit-Basepath: ../..\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Poedit-SourceCharset: UTF-8\n"
-"X-Poedit-KeywordsList: translate;_;setLabel;setValue;setLegend\n"
-"X-Poedit-SearchPath-0: .\n"
-
-#: ../../../module/Application/config/module.config.php:125
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
-msgid "Dashboard"
-msgstr "Nástěnka"
+"X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: cs\n"
 
 #: ../../../module/Application/config/module.config.php:130
 #: ../../../module/Dashboard/view/partial/JobTotals.phtml:40
@@ -110,29 +95,6 @@ msgstr "Svazky"
 msgid "Director"
 msgstr "Řídící část"
 
-#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
-msgid ""
-"Sorry, it seems you are not authorized to run this module. If you think this "
-"is an error, please contact your local administrator."
-msgstr ""
-"Je nám líto, ale zdá se že nejste pověření ke spouštění tohoto modulu. Pokud "
-"si myslíte, že se jedná o chybu, kontaktujte svého správce systémů."
-
-#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid ""
-"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-"documentation</a> for any additional information on how to configure the "
-"Command ACL directive of your Console/Profile resources. Following is a list "
-"of required commands which need to be in your Command ACL to run this module "
-"properly:"
-msgstr ""
-"Přečtěte si <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
-"reference.html#sec:webui-console\" target=\"_blank\">dokumentaci k Bareos</"
-"a>, ze které získáte informace o tom jak nastavit ACL direktivu příkazu "
-"zdrojů své konzole/profilu. Následující je seznam potřebných příkazů, které "
-"je třeba mít ve svém ACL příkazu aby tento modul fungoval správně:"
-
 #: ../../../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
 msgstr "Došlo k chybě 404"
@@ -142,8 +104,7 @@ msgid "The requested controller was unable to dispatch the request."
 msgstr "Požadovaný řadič nebyl schopen vyřídit požadavek."
 
 #: ../../../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
+msgid "The requested controller could not be mapped to an existing controller class."
 msgstr "Požadovaný řadič nemohl být namapován na existující třídu řadiče."
 
 #: ../../../module/Application/view/error/404.phtml:18
@@ -163,7 +124,6 @@ msgid "Controller"
 msgstr "Řadič"
 
 #: ../../../module/Application/view/error/404.phtml:43
-#, php-format
 msgid "resolves to %s"
 msgstr "překládá se na %s"
 
@@ -187,22 +147,10 @@ msgstr "Soubor"
 msgid "Message"
 msgstr "Zpráva"
 
-#: ../../../module/Application/view/error/404.phtml:66
-#: ../../../module/Application/view/error/404.phtml:90
-#: ../../../module/Application/view/error/index.phtml:22
-#: ../../../module/Application/view/error/index.phtml:46
-msgid "Stack trace"
-msgstr "Stack trace"
-
 #: ../../../module/Application/view/error/404.phtml:76
 #: ../../../module/Application/view/error/index.phtml:32
 msgid "Previous exceptions"
 msgstr "Předchozí vyjímka"
-
-#: ../../../module/Application/view/error/404.phtml:105
-#: ../../../module/Application/view/error/index.phtml:61
-msgid "No Exception available"
-msgstr "Nejsou k dispozici žádné výjimky"
 
 #: ../../../module/Application/view/error/index.phtml:4
 msgid "An error occurred"
@@ -216,10 +164,6 @@ msgstr "Dokumentace"
 msgid "Mailinglists"
 msgstr "E-mailová konference"
 
-#: ../../../module/Application/view/layout/layout.phtml:99
-msgid "Bugtracker"
-msgstr "Systém pro správu hlášení chyb"
-
 #: ../../../module/Application/view/layout/layout.phtml:100
 msgid "Support"
 msgstr "Podpora"
@@ -231,10 +175,6 @@ msgstr "Předplatné"
 #: ../../../module/Application/view/layout/layout.phtml:103
 msgid "Logout"
 msgstr "Odhlásit"
-
-#: ../../../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "Podrobnosti o klientovi"
 
 #: ../../../module/Client/view/client/client/details.phtml:32
 #: ../../../module/Client/view/client/client/index.phtml:32
@@ -249,6 +189,14 @@ msgstr "Podrobnosti o klientovi"
 #: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
 msgid "Show"
 msgstr "Zobrazit"
+
+#: ../../../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "Stav klienta"
+
+#: ../../../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Podrobnosti o klientovi"
 
 #: ../../../module/Client/view/client/client/details.phtml:43
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
@@ -311,18 +259,6 @@ msgstr "Doba uchovávání úloh"
 #: ../../../module/Storage/view/storage/storage/index.phtml:57
 msgid "Actions"
 msgstr "Akce"
-
-#: ../../../module/Client/view/client/client/details.phtml:69
-msgid "Last successful backups"
-msgstr "Nedávné úspěšné zálohy"
-
-#: ../../../module/Client/view/client/client/details.phtml:76
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../../../module/Job/view/job/job/details.phtml:57
-#: ../../../module/Job/view/job/job/index.phtml:74
-#: ../../../module/Media/view/media/media/details.phtml:86
-msgid "Job ID"
-msgstr "Identifikátor úlohy"
 
 #: ../../../module/Client/view/client/client/details.phtml:77
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:39
@@ -401,21 +337,6 @@ msgstr "Bajtů"
 msgid "Status"
 msgstr "Stav"
 
-#: ../../../module/Client/view/client/client/details.phtml:172
-#: ../../../module/Client/view/client/client/details.phtml:221
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:184
-#: ../../../module/Job/view/job/job/index.phtml:201
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
-#: ../../../module/Job/view/job/job/index.phtml:272
-#: ../../../module/Job/view/job/job/index.phtml:293
-#: ../../../module/Job/view/job/job/index.phtml:295
-#: ../../../module/Job/view/job/job/index.phtml:299
-#: ../../../module/Job/view/job/job/index.phtml:301
-#, fuzzy
-msgid "View Job Details"
-msgstr "Celkově úloh"
-
 #: ../../../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr "Zobrazit soubory"
@@ -435,13 +356,6 @@ msgstr "Zobrazit soubory"
 msgid "Close"
 msgstr "Zavřít"
 
-#: ../../../module/Client/view/client/client/index.phtml:206
-#: ../../../module/Job/view/job/job/actions.phtml:127
-#: ../../../module/Media/view/media/media/details.phtml:342
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:131
-msgid "Enabled"
-msgstr "Zapnuto"
-
 #: ../../../module/Client/view/client/client/index.phtml:209
 #: ../../../module/Job/view/job/job/actions.phtml:130
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:134
@@ -460,16 +374,9 @@ msgstr "Vypnout"
 msgid "Enable"
 msgstr "Zapnout"
 
-#: ../../../module/Client/view/client/client/status.phtml:20
-msgid "Client Status"
-msgstr "Stav klienta"
-
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:255
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
-"Není k dispozici dostatek údajů pro odhad postupu nebo je vypnuté "
-"shromažďování statistik."
+msgid "Not enough data to estimate progress or statistics collection is disabled."
+msgstr "Není k dispozici dostatek údajů pro odhad postupu nebo je vypnuté shromažďování statistik."
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:263
 msgid "There are no jobs running."
@@ -478,10 +385,6 @@ msgstr "V tuto chvíli neprobíhají žádné úlohy."
 #: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
 msgid "Job Totals"
 msgstr "Celkově úloh"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "Stav nejnovějších úloh pro jednotlivé názvy úloh"
 
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
 #: ../../../module/Job/view/job/job/details.phtml:163
@@ -494,10 +397,6 @@ msgstr "Start"
 #: ../../../module/Job/view/job/job/index.phtml:168
 msgid "End"
 msgstr "Konec"
-
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
-msgid "Jobs started during the past 24 hours"
-msgstr "Úlohy spuštěné v průběhu minulých 24 hodin"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:46
 #: ../../../public/js/custom-functions.js:348
@@ -523,15 +422,6 @@ msgstr "Čekající"
 msgid "Successful"
 msgstr "Úspěšné"
 
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../../../public/js/custom-functions.js:444
-msgid "Warning"
-msgstr "Varování"
-
-#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:90
-msgid "Failed"
-msgstr "Nezdařilo se"
-
 #: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
 msgstr "Aktuální hlášení z řídící části"
@@ -554,13 +444,8 @@ msgid "Console"
 msgstr "Konzole"
 
 #: ../../../module/Director/view/director/director/console.phtml:42
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (dávkové zpracování) – zacházejte opatrně"
-
-#: ../../../module/Director/view/director/director/console.phtml:42
 msgid "All commands have to be a one liner, dialogs are not working."
-msgstr ""
-"Je třeba, aby veškeré příkazy byly pouze jednořádkové – dialogy nefungují."
+msgstr "Je třeba, aby veškeré příkazy byly pouze jednořádkové – dialogy nefungují."
 
 #: ../../../module/Director/view/director/director/console.phtml:42
 msgid "Type help for a list of commands."
@@ -578,13 +463,9 @@ msgstr "Aktualizovat"
 msgid "Director messages"
 msgstr "Zprávy z řídící části"
 
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Podrobnosti o sadě souborů"
-
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
-msgid "Id"
-msgstr "Identifikátor"
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Sady souborů"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:47
 msgid "MD5 checksum"
@@ -594,10 +475,6 @@ msgstr "MD5 kontrolní součet"
 msgid "Creation time"
 msgstr "Okamžik vytvoření"
 
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Sady souborů"
-
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 msgid "jobname"
 msgstr "Název úlohy"
@@ -605,26 +482,6 @@ msgstr "Název úlohy"
 #: ../../../module/Job/src/Job/Form/JobForm.php:71
 msgid "Time period"
 msgstr "Časové období"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:73
-msgid "last 24 hours"
-msgstr "uplynulých 24 hodin"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:74
-msgid "last 3 days"
-msgstr "uplynulé 3 dny"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:75
-msgid "last week"
-msgstr "uplynulý týden"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:76
-msgid "last month"
-msgstr "uplynulý měsíc"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:77
-msgid "last year"
-msgstr "uplynulý rok"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:78
 msgid "unlimited"
@@ -646,19 +503,6 @@ msgstr "spuštěné"
 msgid "waiting"
 msgstr "čekající"
 
-#: ../../../module/Job/src/Job/Form/JobForm.php:100
-msgid "terminated unsuccessfully"
-msgstr "ukončeno s nezdarem"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:101
-msgid "terminated successfully"
-msgstr "ukončeno úspěšně"
-
-#: ../../../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
-msgid "warning"
-msgstr "Varování"
-
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../../../module/Job/view/job/job/details.phtml:49
@@ -677,6 +521,14 @@ msgstr "Úložiště"
 msgid "Priority"
 msgstr "Priorita"
 
+#: ../../../module/Job/src/Job/Form/RunJobForm.php:330
+msgid "When"
+msgstr "Kdy"
+
+#: ../../../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Akce úlohy"
+
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:281
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:297
 #: ../../../module/Job/view/job/job/details.phtml:60
@@ -689,19 +541,6 @@ msgstr "Priorita"
 #: ../../../module/Pool/view/pool/pool/index.phtml:56
 msgid "Type"
 msgstr "Typ"
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:330
-msgid "When"
-msgstr "Kdy"
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:345
-#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
-msgid "Submit"
-msgstr "Promítnout"
-
-#: ../../../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "Akce úlohy"
 
 #: ../../../module/Job/view/job/job/details.phtml:64
 #: ../../../module/Job/view/job/job/index.phtml:81
@@ -719,15 +558,6 @@ msgstr "Využité svazky"
 msgid "Volume"
 msgstr "Svazek"
 
-#: ../../../module/Job/view/job/job/details.phtml:126
-#: ../../../module/Job/view/job/job/index.phtml:107
-#: ../../../module/Media/view/media/media/details.phtml:119
-#: ../../../module/Media/view/media/media/index.phtml:86
-#: ../../../module/Pool/view/pool/pool/details.phtml:118
-#: ../../../module/Restore/view/restore/restore/index.phtml:39
-msgid "Failed to retrieve data from Bareos director"
-msgstr "Nepodařilo se získat data z Bareos řídící komponenty"
-
 #: ../../../module/Job/view/job/job/details.phtml:129
 #: ../../../module/Job/view/job/job/index.phtml:111
 #: ../../../module/Media/view/media/media/details.phtml:122
@@ -742,9 +572,7 @@ msgstr "Chybové hlášení obdržené z řídící komponenty:"
 #: ../../../module/Media/view/media/media/index.phtml:90
 #: ../../../module/Pool/view/pool/pool/details.phtml:122
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr ""
-"Nepodařilo se poslat výsledek jak json. Možná je výsledná zpráva příliš "
-"dlouhá?"
+msgstr "Nepodařilo se poslat výsledek jak json. Možná je výsledná zpráva příliš dlouhá?"
 
 #: ../../../module/Job/view/job/job/details.phtml:159
 #: ../../../module/Job/view/job/job/index.phtml:160
@@ -783,13 +611,6 @@ msgstr "Storno"
 #: ../../../module/Job/view/job/job/index.phtml:66
 msgid "Job list"
 msgstr "Seznam úloh"
-
-#: ../../../module/Job/view/job/job/index.phtml:110
-msgid ""
-"Please try to reduce the amount of data to display, e.g. reduce time period."
-msgstr ""
-"Pokuste se zmenšit množství údajů které zobrazit, např. zkraťte časové "
-"období."
 
 #: ../../../module/Media/view/media/media/details.phtml:26
 msgid "Volume details"
@@ -910,14 +731,6 @@ msgstr "Identifikátor fondu svazku"
 #: ../../../module/Media/view/media/media/details.phtml:318
 msgid "In changer"
 msgstr "V měniči"
-
-#: ../../../module/Media/view/media/media/details.phtml:322
-msgid "Volume Files"
-msgstr "Soubory svazku"
-
-#: ../../../module/Media/view/media/media/details.phtml:326
-msgid "Max. volume jobs"
-msgstr "Úloh svazku nejvýše"
 
 #: ../../../module/Media/view/media/media/details.phtml:330
 msgid "Volume mounts"
@@ -1052,9 +865,7 @@ msgstr "Ne"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:361
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr ""
-"Sloučit všechny související úlohy do nejnovější úplné zálohy označené "
-"zálohovací úlohy"
+msgstr "Sloučit všechny související úlohy do nejnovější úplné zálohy označené zálohovací úlohy"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:380
 msgid "Merge jobs"
@@ -1063,10 +874,6 @@ msgstr "Sloučit úlohy"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:400
 msgid "Replace files on client"
 msgstr "Nahradit soubory na klientovi"
-
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:402
-msgid "always"
-msgstr "Vždy"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:403
 #: ../../../public/js/custom-functions.js:253
@@ -1112,11 +919,6 @@ msgstr "Související úlohy pro nejnovější úplnou obnovu"
 msgid "Error message received:"
 msgstr "Obdrženo chybové hlášení:"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:59
-#: ../../../module/Storage/view/storage/storage/details.phtml:51
-msgid "Director message"
-msgstr "Zpráva řídící součásti"
-
 #: ../../../module/Restore/view/restore/restore/index.phtml:122
 msgid "File selection"
 msgstr "Výběr souboru"
@@ -1129,27 +931,14 @@ msgstr "Velikost"
 msgid "Date"
 msgstr "Datum"
 
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "Podrobnosti o plánu"
-
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "Stav plánovače"
-
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "Stav plánovače"
-
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
 #: ../../../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "Jednotka datového úložiště"
+
+#: ../../../module/Storage/view/storage/storage/status.phtml:24
+msgid "Storage Status"
+msgstr "Stav úložiště"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1168,10 +957,6 @@ msgstr "Přiřadit médium do tohoto fondu."
 msgid "Use this drive for labeling."
 msgstr "Použít tuto mechaniku pro štítkování."
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:103
-msgid "Import/Export Slots"
-msgstr "Importní/exportní pozice"
-
 #: ../../../module/Storage/view/storage/storage/details.phtml:107
 msgid "Import all"
 msgstr "Importovat vše"
@@ -1179,10 +964,6 @@ msgstr "Importovat vše"
 #: ../../../module/Storage/view/storage/storage/details.phtml:121
 msgid "Drives"
 msgstr "Jednotky"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:127
-msgid "Loaded"
-msgstr "Médium vloženo"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:141
 msgid "Slots"
@@ -1228,9 +1009,17 @@ msgstr "Automatický měnič médií"
 msgid "Manage autochanger"
 msgstr "Spravovat automatický měnič médií"
 
-#: ../../../module/Storage/view/storage/storage/status.phtml:24
-msgid "Storage Status"
-msgstr "Stav úložiště"
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Podrobnosti o plánu"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "Stav plánovače"
 
 #: ../../../public/js/custom-functions.js:101
 msgid "Backup"
@@ -1310,41 +1099,13 @@ msgstr "Katalog"
 msgid "InitCatalog"
 msgstr "Inicializovat katalog"
 
-#: ../../../public/js/custom-functions.js:163
-msgid "VolumeToCatalog"
-msgstr "Svazek na katalog"
-
-#: ../../../public/js/custom-functions.js:165
-msgid "DiskToCatalog"
-msgstr "Jednotka datového úložiště na katalog"
-
 #: ../../../public/js/custom-functions.js:167
 msgid "Data"
 msgstr "Data"
 
-#: ../../../public/js/custom-functions.js:169
-msgid "None"
-msgstr "Žádné"
-
-#: ../../../public/js/custom-functions.js:177
-msgid "year(s)"
-msgstr "let"
-
-#: ../../../public/js/custom-functions.js:180
-msgid "month(s)"
-msgstr "měsíců"
-
-#: ../../../public/js/custom-functions.js:183
-msgid "day(s)"
-msgstr "dnů"
-
 #: ../../../public/js/custom-functions.js:186
 msgid "hour(s)"
 msgstr "hodin"
-
-#: ../../../public/js/custom-functions.js:189
-msgid "second(s)"
-msgstr "sekund"
 
 #: ../../../public/js/custom-functions.js:197
 #: ../../../public/js/custom-functions.js:227
@@ -1371,18 +1132,6 @@ msgstr "dny"
 msgid "today"
 msgstr "dnes"
 
-#: ../../../public/js/custom-functions.js:265
-msgid "day(s) ago"
-msgstr "dny předtím"
-
-#: ../../../public/js/custom-functions.js:268
-msgid "month(s) ago"
-msgstr "měsíce předtím"
-
-#: ../../../public/js/custom-functions.js:271
-msgid "year(s) ago"
-msgstr "roky předtím"
-
 #: ../../../public/js/custom-functions.js:304
 msgid "enabled"
 msgstr "zapnuto"
@@ -1391,37 +1140,15 @@ msgstr "zapnuto"
 msgid "disabled"
 msgstr "vypnuto"
 
-#: ../../../public/js/custom-functions.js:328
-msgid "Non-fatal error"
-msgstr ""
-
 #: ../../../public/js/custom-functions.js:329
 #: ../../../public/js/custom-functions.js:334
 #: ../../../public/js/custom-functions.js:339
 msgid "Failure"
 msgstr "Nezdar"
 
-#: ../../../public/js/custom-functions.js:333
-msgid "Job terminated in error"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:338
-msgid "Fatal error"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:343
-#, fuzzy
-msgid "Terminated normally"
-msgstr "ukončeno s nezdarem"
-
 #: ../../../public/js/custom-functions.js:344
 msgid "Success"
 msgstr "Úspěch"
-
-#: ../../../public/js/custom-functions.js:353
-#, fuzzy
-msgid "Created but not yet running"
-msgstr "V tuto chvíli neprobíhají žádné úlohy."
 
 #: ../../../public/js/custom-functions.js:354
 msgid "Queued"
@@ -1432,95 +1159,22 @@ msgstr "Zařazeno do fronty"
 msgid "Blocked"
 msgstr "Blokováno"
 
-#: ../../../public/js/custom-functions.js:363
-#, fuzzy
-msgid "Verify differences"
-msgstr "Ověřit nalezené rozdíly"
-
 #: ../../../public/js/custom-functions.js:364
 msgid "Verify found differences"
 msgstr "Ověřit nalezené rozdíly"
-
-#: ../../../public/js/custom-functions.js:368
-#, fuzzy
-msgid "Canceled by user"
-msgstr "Zrušeno"
 
 #: ../../../public/js/custom-functions.js:369
 msgid "Canceled"
 msgstr "Zrušeno"
 
-#: ../../../public/js/custom-functions.js:373
-msgid "Waiting on File daemon"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:378
-msgid "Waiting on the Storage daemon"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:383
-msgid "Waiting for new media"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:388
-msgid "Waiting for Mount"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:393
-msgid "Waiting for storage resource"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:398
-msgid "Waiting for job resource"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:403
-msgid "Waiting for Client resource"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:408
-msgid "Waiting for maximum jobs"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:413
-msgid "Waiting for start time"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:418
-msgid "Waiting for higher priority jobs to finish"
-msgstr ""
-
-#: ../../../public/js/custom-functions.js:423
-#: ../../../public/js/custom-functions.js:424
-msgid "SD despooling attributes"
-msgstr "Atributy úložného procesu vybírání z fronty"
-
-#: ../../../public/js/custom-functions.js:428
-#: ../../../public/js/custom-functions.js:429
-msgid "Doing batch insert file records"
-msgstr "Dávkové vkládání souborových záznamů"
-
-#: ../../../public/js/custom-functions.js:433
-#, fuzzy
-msgid "Incomplete Job"
-msgstr "Neúplné"
-
 #: ../../../public/js/custom-functions.js:434
 msgid "Incomplete"
 msgstr "Neúplné"
 
-#: ../../../public/js/custom-functions.js:438
-#, fuzzy
-msgid "Committing data (last despool)"
-msgstr "Odesílání dat"
-
-#: ../../../public/js/custom-functions.js:439
-msgid "Committing data"
-msgstr "Odesílání dat"
-
-#: ../../../public/js/custom-functions.js:443
-msgid "Terminated normally with warnings"
-msgstr ""
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../../../public/js/custom-functions.js:444
+msgid "Warning"
+msgstr "Varování"
 
 #: ../../../public/js/custom-functions.js:448
 #: ../../../public/js/custom-functions.js:449
@@ -1531,3 +1185,36 @@ msgstr "Vybírání dat z fronty"
 #: ../../../public/js/custom-functions.js:454
 msgid "Queued waiting for device"
 msgstr "Čekání na zařízení zařazeno do fronty"
+
+#: ../../../public/js/custom-functions.js:328
+msgid "Non-fatal error"
+msgstr "Nefatální chyba"
+
+#: ../../../public/js/custom-functions.js:338
+msgid "Fatal error"
+msgstr "Fatální chyba"
+
+#: ../../../public/js/custom-functions.js:378
+msgid "Waiting on the Storage daemon"
+msgstr "Čeká na proces služby úložiště"
+
+#: ../../../public/js/custom-functions.js:383
+msgid "Waiting for new media"
+msgstr "Čeká na nové médium"
+
+#: ../../../public/js/custom-functions.js:393
+msgid "Waiting for storage resource"
+msgstr "Čeká na úložný prostředek"
+
+#: ../../../public/js/custom-functions.js:403
+msgid "Waiting for Client resource"
+msgstr "Čeká na prostředek klienta"
+
+#: ../../../public/js/custom-functions.js:413
+msgid "Waiting for start time"
+msgstr "Čeká na čas zahájení"
+
+#: ../../../public/js/custom-functions.js:418
+msgid "Waiting for higher priority jobs to finish"
+msgstr "Čeká na dokončení úloh s vyšší prioritou"
+
