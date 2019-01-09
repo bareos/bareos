@@ -80,7 +80,7 @@ struct s_kw {
    { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_require_), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
          "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
+   { "TlsCipherList", CFG_TYPE_STDSTRDIR, ITEM(res.cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
          "List of valid TLS Ciphers." }, \
    { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert_.dhfile_), 0, 0, NULL, NULL, \
          "Path to PEM encoded Diffie-Hellman parameter file. " \
