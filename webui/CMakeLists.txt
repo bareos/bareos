@@ -80,9 +80,6 @@ ELSE()
   SET(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
 ENDIF()
 
-
-CONFIGURE_FILE(module/Application/language/Makefile.in module/Application/language/Makefile @ONLY)
-CONFIGURE_FILE(public/js/locale/Makefile.in public/js/locale/Makefile @ONLY)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php.in ${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php @ONLY)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini @ONLY)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini @ONLY)
