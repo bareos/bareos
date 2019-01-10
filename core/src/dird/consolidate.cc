@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -350,6 +350,7 @@ void ConsolidateCleanup(JobControlRecord *jcr, int TermCode)
         "  Scheduled time:         %s\n"
         "  Start time:             %s\n"
         "  End time:               %s\n"
+        "  Bareos binary info:     %s\n"
         "  Termination:            %s\n\n"),
         edt,
         jcr->jr.JobId,
@@ -357,6 +358,7 @@ void ConsolidateCleanup(JobControlRecord *jcr, int TermCode)
         schedt,
         sdt,
         edt,
+        BAREOS_JOBLOG_MESSAGE,
         TermMsg);
 
    Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");

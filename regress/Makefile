@@ -72,6 +72,7 @@ install:
 
 clean:
 	rm -Rf build
+	rm -Rf build-webui
 	rm -Rf CMakeFiles
 	rm -f tmp/file-list
 	rm -fr tmp/* working/* dumps/* Testing

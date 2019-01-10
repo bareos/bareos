@@ -46,7 +46,10 @@ endif()
 
 set(CMAKE_MODULE_PATH
          ${CMAKE_MODULE_PATH}
-         ${PROJECT_SOURCE_DIR}/cmake)
+         ${PROJECT_SOURCE_DIR}/../../SOURCES
+         ${PROJECT_SOURCE_DIR}/../SOURCES
+         ${PROJECT_SOURCE_DIR}/cmake
+         )
 
 SET(host ${CMAKE_SYSTEM})
 
@@ -72,6 +75,7 @@ execute_process(
 INCLUDE(BareosExtractVersionInfo)
 add_definitions(-DVERSION="${BAREOS_FULL_VERSION}")
 
+INCLUDE(BareosLocalBuildDefinitions RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
 
 INCLUDE(BareosFindAllLibraries)
 
@@ -184,6 +188,8 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    add_definitions(-DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION})
    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
 ENDIF()
+
+
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically
 # Taken from  https://cmake.org/pipermail/cmake/2013-July/055374.html
@@ -712,6 +718,7 @@ message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
 message("   DEVELOPER:                    ${developer}")
+message("   LocalBuildDefinitionsFile     ${BareosLocalBuildDefinitionsFile}")
 
 IF(HAVE_WIN32)
    message("   WINDOWS_VERSION:              ${WINDOWS_VERSION}")

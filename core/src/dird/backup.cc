@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1216,6 +1216,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "  Last Volume Bytes:      %s (%sB)\n"
         "%s"                                        /* Daemon status info */
         "%s"                                        /* SecureErase status */
+        "  Bareos binary info:     %s\n"
         "  Termination:            %s\n\n"),
         BAREOS, my_name, VERSION, LSMDATE,
         HOST_OS, DISTNAME, DISTVER,
@@ -1243,6 +1244,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         edit_uint64_with_suffix(mr.VolBytes, ec8),
         daemon_status.c_str(),
         secure_erase_status.c_str(),
+        BAREOS_JOBLOG_MESSAGE,
         TermMsg);
 }
 } /* namespace directordaemon */

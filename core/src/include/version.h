@@ -1,14 +1,33 @@
-#ifndef  VERSION
-#define VERSION "18.2.4rc2"
+#ifndef VERSION
+#define VERSION "18.2.4"
 #endif
 
-#define BDATE   "18 Dec 2018"
-#define LSMDATE "18Dec18"
+#define BDATE   "10 January 2019"
+#define LSMDATE "10Jan19"
 
-#define PROG_COPYRIGHT "Copyright (C) 2013-2019 Bareos GmbH & Co. KG\n" \
+#ifndef BAREOS_BINARY_INFO
+#define BAREOS_BINARY_INFO "self-compiled"
+#endif
+
+#ifndef BAREOS_SERVICES_MESSAGE
+#define BAREOS_SERVICES_MESSAGE "self-compiled binaries are UNSUPPORTED by bareos.com.\nGet official binaries and vendor support on https://www.bareos.com"
+#endif
+
+#ifndef BAREOS_JOBLOG_MESSAGE
+#define BAREOS_JOBLOG_MESSAGE "self-compiled: Get official binaries and vendor support on bareos.com"
+#endif
+
+
+
+
+#define PROG_COPYRIGHT "\n" \
+                       BAREOS_SERVICES_MESSAGE \
+                       "\n" \
+                       "Copyright (C) 2013-2019 Bareos GmbH & Co. KG\n" \
                        "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2010-2017 Planets Communications B.V.\n"
-#define BYEAR "2018"       /* year for copyright messages in programs */
+#define BYEAR "2019"       /* year for copyright messages in programs */
+
 
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced

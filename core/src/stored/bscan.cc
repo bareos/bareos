@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1413,7 +1413,7 @@ static bool UpdateJobRecord(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *elabel
       }
       bstrftime(sdt, sizeof(sdt), mjcr->start_time);
       bstrftime(edt, sizeof(edt), mjcr->end_time);
-      Pmsg14(000,  _("%s\n"
+      Pmsg15(000,  _("%s\n"
 "JobId:                  %d\n"
 "Job:                    %s\n"
 "FileSet:                %s\n"
@@ -1426,6 +1426,7 @@ static bool UpdateJobRecord(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *elabel
 "Volume Session Id:      %d\n"
 "Volume Session Time:    %d\n"
 "Last Volume Bytes:      %s\n"
+"Bareos binary info:     %s\n"
 "Termination:            %s\n\n"),
         edt,
         mjcr->JobId,
@@ -1440,6 +1441,7 @@ static bool UpdateJobRecord(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *elabel
         mjcr->VolSessionId,
         mjcr->VolSessionTime,
         edit_uint64_with_commas(mr.VolBytes, ec3),
+        BAREOS_BINARY_INFO,
         TermMsg);
    }
    FreeJcr(mjcr);
