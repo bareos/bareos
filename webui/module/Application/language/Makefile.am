@@ -2,7 +2,8 @@ all: update-pot update-all msgfmt-all
 
 update-pot:
 	@(echo 'Updating webui.pot ...';)
-	@(find ../../../ -regextype posix-egrep -regex '.*(php|phtml)$$' | grep -v vendor | grep -v tests | xargs xgettext --keyword=translate -L PHP --from-code=UTF-8 -o webui.pot;)
+	@(find ../../../ -regextype posix-egrep -regex '.*(php|phtml)$$' | grep -v vendor | grep -v tests | xargs xgettext --language=PHP --keyword=translate --from-code=UTF-8 -o webui.pot;)
+	@(find ../../../ -regextype posix-egrep -regex '.*(functions.js)$$' | xargs xgettext --keyword=gettext --from-code=UTF-8 -j -o webui.pot;)
 
 update-po: $(PO)
 	@(echo 'Updating $(PO) file ...';)

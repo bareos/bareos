@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-07-04 16:00+0200\n"
+"POT-Creation-Date: 2019-01-08 14:59+0100\n"
 "PO-Revision-Date: 2017-02-03 13:05+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -53,6 +53,7 @@ msgstr "Spustiť"
 #: ../../../module/Job/view/job/job/index.phtml:264
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
 #: ../../../module/Restore/view/restore/restore/index.phtml:26
+#: ../../../public/js/custom-functions.js:110
 msgid "Restore"
 msgstr "Obnova"
 
@@ -501,10 +502,22 @@ msgid "Jobs started during the past 24 hours"
 msgstr "Úloha bola spustená behom posledných 24 hodín"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:46
+#: ../../../public/js/custom-functions.js:348
+#: ../../../public/js/custom-functions.js:349
 msgid "Running"
 msgstr "Beží"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:57
+#: ../../../public/js/custom-functions.js:374
+#: ../../../public/js/custom-functions.js:379
+#: ../../../public/js/custom-functions.js:384
+#: ../../../public/js/custom-functions.js:389
+#: ../../../public/js/custom-functions.js:394
+#: ../../../public/js/custom-functions.js:399
+#: ../../../public/js/custom-functions.js:404
+#: ../../../public/js/custom-functions.js:409
+#: ../../../public/js/custom-functions.js:414
+#: ../../../public/js/custom-functions.js:419
 msgid "Waiting"
 msgstr "Čaká"
 
@@ -513,6 +526,7 @@ msgid "Successful"
 msgstr ""
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../../../public/js/custom-functions.js:444
 #, fuzzy
 msgid "Warning"
 msgstr "beží"
@@ -1031,6 +1045,7 @@ msgstr "Zlúčiť všetky filesety klientov"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
 #: ../../../module/Storage/view/storage/storage/index.phtml:107
+#: ../../../public/js/custom-functions.js:315
 msgid "Yes"
 msgstr "Áno"
 
@@ -1039,6 +1054,7 @@ msgstr "Áno"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
 #: ../../../module/Storage/view/storage/storage/index.phtml:105
+#: ../../../public/js/custom-functions.js:318
 msgid "No"
 msgstr "Nie"
 
@@ -1059,6 +1075,7 @@ msgid "always"
 msgstr "vždy"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:403
+#: ../../../public/js/custom-functions.js:253
 msgid "never"
 msgstr "nikdy"
 
@@ -1222,8 +1239,311 @@ msgstr "Manažment autozmeny"
 msgid "Storage Status"
 msgstr "Stav Úložiska"
 
+#: ../../../public/js/custom-functions.js:101
+#, fuzzy
+msgid "Backup"
+msgstr "Zálohy"
+
+#: ../../../public/js/custom-functions.js:104
+msgid "Migrated"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:107
+msgid "Verify"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:113
+#, fuzzy
+msgid "Console program"
+msgstr "Konzola"
+
+#: ../../../public/js/custom-functions.js:116
+msgid "Internal system job"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:119
+msgid "Admin"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:122
+msgid "Archive"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:125
+msgid "Copy of a job"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:128
+msgid "Copy job"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:131
+#, fuzzy
+msgid "Migration job"
+msgstr "Expirácia"
+
+#: ../../../public/js/custom-functions.js:134
+msgid "Scan"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:137
+#, fuzzy
+msgid "Consolidate"
+msgstr "Konzola"
+
+#: ../../../public/js/custom-functions.js:149
+#: ../../../public/js/custom-functions.js:197
+#: ../../../public/js/custom-functions.js:227
+msgid "Full"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:151
+msgid "Differential"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:153
+msgid "Incremental"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:155
+msgid "VirtualFull"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:157
+msgid "Base"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:159
+msgid "Catalog"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:161
+#, fuzzy
+msgid "InitCatalog"
+msgstr "nie je v katalógu"
+
+#: ../../../public/js/custom-functions.js:163
+#, fuzzy
+msgid "VolumeToCatalog"
+msgstr "Detaily množstva"
+
+#: ../../../public/js/custom-functions.js:165
+msgid "DiskToCatalog"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:167
+msgid "Data"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:169
+msgid "None"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:177
+msgid "year(s)"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:180
+msgid "month(s)"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:183
+msgid "day(s)"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:186
+msgid "hour(s)"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:189
+msgid "second(s)"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:197
+#: ../../../public/js/custom-functions.js:227
+msgid "Used"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:209
+msgid "expired"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:213
+msgid "expires in 1 day"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:217
+#, fuzzy
+msgid "expires in"
+msgstr "Expirácia"
+
+#: ../../../public/js/custom-functions.js:217
+msgid "days"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:262
+msgid "today"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:265
+msgid "day(s) ago"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:268
+msgid "month(s) ago"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:271
+msgid "year(s) ago"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:304
+#, fuzzy
+msgid "enabled"
+msgstr "Povolené"
+
+#: ../../../public/js/custom-functions.js:307
+#, fuzzy
+msgid "disabled"
+msgstr "Zakázané"
+
+#: ../../../public/js/custom-functions.js:328
+msgid "Non-fatal error"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:329
+#: ../../../public/js/custom-functions.js:334
+#: ../../../public/js/custom-functions.js:339
+msgid "Failure"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:333
+msgid "Job terminated in error"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:338
+msgid "Fatal error"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:343
+#, fuzzy
+msgid "Terminated normally"
+msgstr "Ukončenie zlyhalo"
+
+#: ../../../public/js/custom-functions.js:344
+msgid "Success"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:353
+msgid "Created but not yet running"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:354
+msgid "Queued"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:358
+#: ../../../public/js/custom-functions.js:359
+#, fuzzy
+msgid "Blocked"
+msgstr "Koniec bloku"
+
+#: ../../../public/js/custom-functions.js:363
+msgid "Verify differences"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:364
+msgid "Verify found differences"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:368
+msgid "Canceled by user"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:369
+#, fuzzy
+msgid "Canceled"
+msgstr "Zrušiť"
+
+#: ../../../public/js/custom-functions.js:373
+msgid "Waiting on File daemon"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:378
+msgid "Waiting on the Storage daemon"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:383
+msgid "Waiting for new media"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:388
+msgid "Waiting for Mount"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:393
+msgid "Waiting for storage resource"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:398
+msgid "Waiting for job resource"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:403
+msgid "Waiting for Client resource"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:408
+msgid "Waiting for maximum jobs"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:413
+msgid "Waiting for start time"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:418
+msgid "Waiting for higher priority jobs to finish"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:423
+#: ../../../public/js/custom-functions.js:424
+msgid "SD despooling attributes"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:428
+#: ../../../public/js/custom-functions.js:429
+msgid "Doing batch insert file records"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:433
+msgid "Incomplete Job"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:434
+msgid "Incomplete"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:438
+msgid "Committing data (last despool)"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:439
+msgid "Committing data"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:443
+msgid "Terminated normally with warnings"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:448
+#: ../../../public/js/custom-functions.js:449
+msgid "Doing data despooling"
+msgstr ""
+
+#: ../../../public/js/custom-functions.js:453
+#: ../../../public/js/custom-functions.js:454
+msgid "Queued waiting for device"
+msgstr ""
+
 #~ msgid "Terminated successfully"
 #~ msgstr "Úspešne ukončené"
-
-#~ msgid "Terminated unsuccessfully"
-#~ msgstr "Ukončenie zlyhalo"
