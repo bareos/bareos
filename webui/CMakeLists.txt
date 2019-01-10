@@ -23,7 +23,12 @@ INCLUDE(GNUInstallDirs)
 
 set(CMAKE_MODULE_PATH
          ${CMAKE_MODULE_PATH}
-         ${PROJECT_SOURCE_DIR}/cmake)
+         ${PROJECT_SOURCE_DIR}/../../SOURCES
+         ${PROJECT_SOURCE_DIR}/../SOURCES
+         ${PROJECT_SOURCE_DIR}/cmake
+         )
+
+INCLUDE(BareosLocalBuildDefinitions RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
 
 IF (NOT DEFINED VERSION_STRING)
   # try to get version info from version.h
@@ -63,11 +68,12 @@ set(WEBUICONFDIR "${webuiconfdir}")
 
 
 MESSAGE("   PHP is ${PHP} ")
-MESSAGE("   Install system config files:  ${sysconfdir} ")
-MESSAGE("   Install Bareos config dir:    ${confdir} ")
-MESSAGE("   Install BareosWebui configdir:${webuiconfdir} ")
-MESSAGE("   VERSION_STRING is ${VERSION_STRING} ")
-MESSAGE("   BAREOS_FULL_VERSION is ${BAREOS_FULL_VERSION} ")
+MESSAGE("   Install system config files:   ${sysconfdir} ")
+MESSAGE("   Install Bareos config dir:     ${confdir} ")
+MESSAGE("   Install BareosWebui configdir: ${webuiconfdir} ")
+MESSAGE("   VERSION_STRING:                ${VERSION_STRING} ")
+MESSAGE("   BAREOS_FULL_VERSION:           ${BAREOS_FULL_VERSION} ")
+message("   LocalBuildDefinitionsFile:     ${BareosLocalBuildDefinitionsFile}")
 
 IF (EXISTS ${sysconfdir}/httpd/conf.d)
   SET(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
@@ -81,18 +87,18 @@ ELSE()
   SET(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
 ENDIF()
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php.in ${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php @ONLY)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini @ONLY)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini @ONLY)
+CONFIGURE_FILE(config/autoload/global.php.in ${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php @ONLY)
+CONFIGURE_FILE(install/directors.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini @ONLY)
+CONFIGURE_FILE(install/configuration.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini @ONLY)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
-
+CONFIGURE_FILE(version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
+CONFIGURE_FILE(module/Application/view/layout/layout.phtml.in ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/layout.phtml @ONLY)
+CONFIGURE_FILE(module/Application/view/layout/login.phtml.in ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/login.phtml @ONLY)
 
 SET(WEBUI_DIR  ${SHARE_INSTALL_PREFIX}/bareos-webui)
 SET(WEBUI_TESTS_DIR  ${WEBUI_DIR}/tests/regress)
 IF (PHP)
  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test.in ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test @ONLY)
- # FILE(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/../regress/DartTestfile.txt.in "ADD_TEST(disk:webui-bsock-connection-test \"../webui/tests/regress/webui-bsock-connection-test\")")
 ELSE()
  MESSAGE("PHP not found")
 ENDIF()

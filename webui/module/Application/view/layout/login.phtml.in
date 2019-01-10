@@ -71,7 +71,11 @@ echo $this->doctype();
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />
-      <p class="text-muted">Bareos WebUI <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />GNU Affero General Public License Version 3</p>
+      <p class="text-muted">
+         <a href="@BareosComSubscriptionLink@" title="@BareosComSubscriptionLink@" target="_blank">@BareosGetOfficialBinariesAndSupportOnBareosComLoginPage@</a><br/>
+         Version <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />
+         GNU Affero General Public License Version 3
+      </p>
    </div>
 
    <?php echo $this->inlineScript() ?>
@@ -79,4 +83,3 @@ echo $this->doctype();
 </body>
 
 </html>
-

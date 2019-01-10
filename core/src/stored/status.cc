@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -487,8 +487,8 @@ static void ListStatusHeader(StatusPacket *sp)
 
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
 
-   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d.\n"),
-              dt, num_jobs_run, JobCount());
+   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d, %s binary\n"),
+              dt, num_jobs_run, JobCount(), BAREOS_BINARY_INFO);
    sendit(msg, len, sp);
 
 #if defined(HAVE_WIN32)

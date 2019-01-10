@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -569,6 +569,7 @@ void VerifyCleanup(JobControlRecord *jcr, int TermCode)
            "  Non-fatal FD errors:    %d\n"
            "  FD termination status:  %s\n"
            "  SD termination status:  %s\n"
+           "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
@@ -586,6 +587,7 @@ void VerifyCleanup(JobControlRecord *jcr, int TermCode)
            jcr->JobErrors,
            fd_term_msg,
            sd_term_msg,
+           BAREOS_JOBLOG_MESSAGE,
            TermMsg);
       break;
    default:
@@ -603,6 +605,7 @@ void VerifyCleanup(JobControlRecord *jcr, int TermCode)
            "  Files Examined:         %s\n"
            "  Non-fatal FD errors:    %d\n"
            "  FD termination status:  %s\n"
+           "  Bareos binary info:     %s\n"
            "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
@@ -618,6 +621,7 @@ void VerifyCleanup(JobControlRecord *jcr, int TermCode)
            edit_uint64_with_commas(jcr->JobFiles, ec1),
            jcr->JobErrors,
            fd_term_msg,
+           BAREOS_JOBLOG_MESSAGE,
            TermMsg);
       break;
    }

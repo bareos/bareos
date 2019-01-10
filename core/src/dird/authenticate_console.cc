@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -203,7 +203,12 @@ bool ConsoleAuthenticatorFrom_18_2::SendResponseMessage(uint32_t response_id, bo
 
 bool ConsoleAuthenticatorFrom_18_2::SendInfoMessage()
 {
-  std::string message {"You are "};
+  std::string message;
+  message += BAREOS_BINARY_INFO;
+  message += " binary\n";
+  message += BAREOS_SERVICES_MESSAGE;
+  message += "\n";
+  message += "You are ";
   if (ua_->cons) {
     message += "logged in as: ";
     message += ua_->cons->name();

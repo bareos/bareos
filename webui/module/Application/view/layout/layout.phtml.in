@@ -26,6 +26,8 @@
 
 echo $this->doctype();
 
+include 'version.php';
+
 ?>
 
 <html lang="en">
@@ -84,6 +86,12 @@ echo $this->doctype();
          <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
          <ul class="nav navbar-nav navbar-right">
             <li class="dropdown">
+               <a href="@BareosComSubscriptionLink@" title="@BareosComSubscriptionLink@" target="_blank">@BareosGetOfficialBinariesAndSupportOnBareosComMainPage@</a>
+            </li>
+            <li class="dropdown">
+               <a href="#"><?php echo 'Version: ' . $bareos_full_version; ?></a>
+            </li>
+            <li class="dropdown">
                <?php echo $this->UpdateAlert($_SESSION['bareos']['product-updates-status'],$_SESSION['bareos']['dird-update-available']); ?>
             </li>
             <li class="dropdown">
@@ -128,4 +136,3 @@ echo $this->doctype();
 </body>
 
 </html>
-
