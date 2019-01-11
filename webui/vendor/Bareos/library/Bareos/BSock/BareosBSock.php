@@ -86,6 +86,14 @@ class BareosBSock implements BareosBSockInterface
    private $socket = null;
 
    /**
+    * Setter for testing purposes
+    */
+   public function set_config_param($key, $value)
+   {
+      $this->config[$key] = $value;
+   }
+
+   /**
     * Authenticate
     */
    public function connect_and_authenticate()
