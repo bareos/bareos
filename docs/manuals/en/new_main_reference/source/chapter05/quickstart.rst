@@ -6,7 +6,8 @@ Understanding Jobs and Schedules
 
 :index:`[TAG=Schedule->Understanding Schedules] <pair: Schedule; Understanding Schedules>` 
 
-.. _JobsandSchedules
+.. _JobsandSchedules:
+
 
 
 In order to make Bareos as flexible as possible, the directions given to Bareos are specified in several pieces. The main instruction is the job resource, which defines a job. A backup job generally consists of a FileSet, a Client, a Schedule for one or several levels or times of backups, a Pool, as well as additional instructions. Another way of looking at it is the FileSet is what to backup; the Client is who to backup; the Schedule defines when, and the Pool defines where (i.e. what Volume).
@@ -21,10 +22,11 @@ Understanding Pools, Volumes and Labels
 
 :index:`[TAG=Pools->Understanding] <pair: Pools; Understanding>` :index:`[TAG=Volumes->Understanding] <pair: Volumes; Understanding>` :index:`[TAG=Label->Understanding Labels] <pair: Label; Understanding Labels>` 
 
-.. _PoolsVolsLabels
+.. _PoolsVolsLabels:
 
 
-If you have been using a program such as :program:`tar` to backup your system, Pools, Volumes, and labeling may be a bit confusing at first. A Volume is a single physical tape (or possibly a single file) on which Bareos will write your backup data. Pools group together Volumes so that a backup is not restricted to the length of a single Volume (tape). Consequently, rather than explicitly naming Volumes in your Job, you specify a Pool, and Bareos will select the next appendable Volume
+
+If you have been using a program such as :command:`tar` to backup your system, Pools, Volumes, and labeling may be a bit confusing at first. A Volume is a single physical tape (or possibly a single file) on which Bareos will write your backup data. Pools group together Volumes so that a backup is not restricted to the length of a single Volume (tape). Consequently, rather than explicitly naming Volumes in your Job, you specify a Pool, and Bareos will select the next appendable Volume
 from the Pool and mounts it.
 
 Although the basic Pool options are specified in the Director’s :ref:`Pool <DirectorResourcePool>` resource, the real Pool is maintained in the Bareos Catalog. It contains information taken from the Pool resource (configuration file) as well as information on all the Volumes that have been added to the Pool.
@@ -53,7 +55,7 @@ Testing your Configuration Files
 
 :index:`[TAG=Testing->Configuration Files] <pair: Testing; Configuration Files>`
 
-You can test if your configuration file is syntactically correct by running the appropriate daemon with the :option:`-t` option. The daemon will process the configuration file and print any error messages then terminate.
+You can test if your configuration file is syntactically correct by running the appropriate daemon with the ``-t`` option. The daemon will process the configuration file and print any error messages then terminate.
 
 As the |bareosDir| and |bareosSd| runs as user **bareos**, testing the configuration should be done as **bareos**.
 
@@ -62,8 +64,8 @@ This is especially required to test the |bareosDir|, as it also connects to the 
 .. code-block:: sh
    :caption: Testing Configuration Files
 
-    su bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t"
-    su bareos -s /bin/sh -c "/usr/sbin/bareos-sd -t"
-    bareos-fd -t
-    bconsole -t
-    bareos-tray-monitor -t
+   su bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t"
+   su bareos -s /bin/sh -c "/usr/sbin/bareos-sd -t"
+   bareos-fd -t
+   bconsole -t
+   bareos-tray-monitor -t

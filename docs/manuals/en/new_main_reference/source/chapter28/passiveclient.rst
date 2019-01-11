@@ -24,7 +24,11 @@ By using Passive Client, the initialization of the datachannel is reversed, so t
 
 -  The client never needs any name resolution and is totally independent from any resolving issues.
 
-|image|
+.. image:: images/passive-client-communication.*
+   :width: 60.0%
+
+
+
 
 Usage
 -----
@@ -34,29 +38,27 @@ To use this new feature, just configure **Passive**:sup:`Dir`:sub:`Client`\ =yes
 .. code-block:: sh
    :caption: Enable passive mode in bareos-dir.conf
 
-    Client {
-       Name = client1-fd
-       Password = "secretpassword"
-       <input>Passive = yes</input>
-       [...]
-    }
+   Client {
+      Name = client1-fd
+      Password = "secretpassword"
+      <input>Passive = yes</input>
+      [...]
+   }
 
 Also, prior to bareos version 15, you need to set **Compatible**:sup:`Fd`:sub:`Client`\ =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
 
 .. code-block:: sh
    :caption: Disable compatible mode for the |bareosFd| in bareos-fd.conf
 
-    Director {
-      Name = bareos-dir
-      Password = "secretpassword"
-    }
+   Director {
+     Name = bareos-dir
+     Password = "secretpassword"
+   }
 
-    Client {
-       Name = client1-fd
-       [...]
-       <input>Compatible = no</input>
-    }
+   Client {
+      Name = client1-fd
+      [...]
+      <input>Compatible = no</input>
+   }
 
-.. |image| image:: \idir passive-client-communication
-   :width: 60.0%
 

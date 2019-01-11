@@ -52,26 +52,26 @@ Assuming you have installed the packages, to start the three daemons, from your 
 .. code-block:: sh
    :caption: start services
 
-    service bareos-dir start
-    service bareos-sd start
-    service bareos-fd start
+   service bareos-dir start
+   service bareos-sd start
+   service bareos-fd start
 
 .. _section-TuturialBconsole:
 
 Using the Director to Query and Start Jobs
 ------------------------------------------
 
-To communicate with the |bareosDir| and to query the state of Bareos or run jobs, the :program:`bconsole` program can be used as a textual interface. Alternatively, for most purposes, also the :ref:`|bareosWebui| <section-webui>` can be used, but for simplicity, here we will describe only the :program:`bconsole` program.
+To communicate with the |bareosDir| and to query the state of Bareos or run jobs, the :command:`bconsole` program can be used as a textual interface. Alternatively, for most purposes, also the :ref:`|bareosWebui| <section-webui>` can be used, but for simplicity, here we will describe only the :command:`bconsole` program.
 
-The :program:`bconsole` runs the Bareos Console program, which connects to the |bareosDir|. Since Bareos is a network program, you can run the Console program anywhere on your network. Most frequently, however, one runs it on the same machine as the |bareosDir|. Normally, the Console program will print something similar to the following:
+The :command:`bconsole` runs the Bareos Console program, which connects to the |bareosDir|. Since Bareos is a network program, you can run the Console program anywhere on your network. Most frequently, however, one runs it on the same machine as the |bareosDir|. Normally, the Console program will print something similar to the following:
 
 .. code-block:: sh
    :caption: bconsole
 
-    <command>bconsole</command>
-    Connecting to Director bareos:9101
-    Enter a period to cancel a command.
-    *
+   <command>bconsole</command>
+   Connecting to Director bareos:9101
+   Enter a period to cancel a command.
+   *
 
 The asterisk is the console command prompt.
 
@@ -80,55 +80,55 @@ Type :strong:`help` to see a list of available commands:
 .. code-block:: sh
    :caption: help
 
-    *<input>help</input>
-      Command       Description
-      =======       ===========
-      add           Add media to a pool
-      autodisplay   Autodisplay console messages
-      automount     Automount after label
-      cancel        Cancel a job
-      create        Create DB Pool from resource
-      delete        Delete volume, pool or job
-      disable       Disable a job
-      enable        Enable a job
-      estimate      Performs FileSet estimate, listing gives full listing
-      exit          Terminate Bconsole session
-      export        Export volumes from normal slots to import/export slots
-      gui           Non-interactive gui mode
-      help          Print help on specific command
-      import        Import volumes from import/export slots to normal slots
-      label         Label a tape
-      list          List objects from catalog
-      llist         Full or long list like list command
-      messages      Display pending messages
-      memory        Print current memory usage
-      mount         Mount storage
-      move          Move slots in an autochanger
-      prune         Prune expired records from catalog
-      purge         Purge records from catalog
-      quit          Terminate Bconsole session
-      query         Query catalog
-      restore       Restore files
-      relabel       Relabel a tape
-      release       Release storage
-      reload        Reload conf file
-      rerun         Rerun a job
-      run           Run a job
-      status        Report status
-      setbandwidth  Sets bandwidth
-      setdebug      Sets debug level
-      setip         Sets new client address -- if authorized
-      show          Show resource records
-      sqlquery      Use SQL to query catalog
-      time          Print current time
-      trace         Turn on/off trace to file
-      unmount       Unmount storage
-      umount        Umount - for old-time Unix guys, see unmount
-      update        Update volume, pool or stats
-      use           Use specific catalog
-      var           Does variable expansion
-      version       Print Director version
-      wait          Wait until no jobs are running
+   *<input>help</input>
+     Command       Description
+     =======       ===========
+     add           Add media to a pool
+     autodisplay   Autodisplay console messages
+     automount     Automount after label
+     cancel        Cancel a job
+     create        Create DB Pool from resource
+     delete        Delete volume, pool or job
+     disable       Disable a job
+     enable        Enable a job
+     estimate      Performs FileSet estimate, listing gives full listing
+     exit          Terminate Bconsole session
+     export        Export volumes from normal slots to import/export slots
+     gui           Non-interactive gui mode
+     help          Print help on specific command
+     import        Import volumes from import/export slots to normal slots
+     label         Label a tape
+     list          List objects from catalog
+     llist         Full or long list like list command
+     messages      Display pending messages
+     memory        Print current memory usage
+     mount         Mount storage
+     move          Move slots in an autochanger
+     prune         Prune expired records from catalog
+     purge         Purge records from catalog
+     quit          Terminate Bconsole session
+     query         Query catalog
+     restore       Restore files
+     relabel       Relabel a tape
+     release       Release storage
+     reload        Reload conf file
+     rerun         Rerun a job
+     run           Run a job
+     status        Report status
+     setbandwidth  Sets bandwidth
+     setdebug      Sets debug level
+     setip         Sets new client address -- if authorized
+     show          Show resource records
+     sqlquery      Use SQL to query catalog
+     time          Print current time
+     trace         Turn on/off trace to file
+     unmount       Unmount storage
+     umount        Umount - for old-time Unix guys, see unmount
+     update        Update volume, pool or stats
+     use           Use specific catalog
+     var           Does variable expansion
+     version       Print Director version
+     wait          Wait until no jobs are running
 
 Details of the console program’s commands are explained in the :ref:`section-bconsole` chapter.
 
@@ -149,7 +149,7 @@ At this point, we assume you have done the following:
 
 -  Started Bareos Director, Storage Daemon and File Daemon
 
--  Invoked the Console program with :program:`bconsole`
+-  Invoked the Console program with :command:`bconsole`
 
 Furthermore, we assume for the moment you are using the default configuration files.
 
@@ -158,29 +158,29 @@ At this point, enter the :strong:`show filesets` and you should get something si
 .. code-block:: sh
    :caption: show filesets
 
-    *<input>show filesets</input>
-    ...
-    FileSet {
-      Name = "SelfTest"
-      Include {
-        Options {
-          Signature = MD5
-        }
-        File = "/usr/sbin"
-      }
-    }
+   *<input>show filesets</input>
+   ...
+   FileSet {
+     Name = "SelfTest"
+     Include {
+       Options {
+         Signature = MD5
+       }
+       File = "/usr/sbin"
+     }
+   }
 
-    FileSet {
-      Name = "Catalog"
-      Include {
-        Options {
-          Signature = MD5
-        }
-        File = "/var/lib/bareos/bareos.sql"
-        File = "/etc/bareos"
-      }
-    }
-    ...
+   FileSet {
+     Name = "Catalog"
+     Include {
+       Options {
+         Signature = MD5
+       }
+       File = "/var/lib/bareos/bareos.sql"
+       File = "/etc/bareos"
+     }
+   }
+   ...
 
 One of the FileSets is the pre-defined **SelfTest** FileSet that will backup the :file:`/usr/sbin` directory. For testing purposes, we have chosen a directory of moderate size (about 30 Megabytes) and complexity without being too big. The FileSet **Catalog** is used for backing up Bareos’s catalog and is not of interest to us for the moment. You can change what is backed up by editing the configuration and changing the :file:`File =` line in the
 :sup:`Dir`\ :strong:`FileSet` resource.
@@ -190,22 +190,22 @@ Now is the time to run your first backup job. We are going to backup your Bareos
 .. code-block:: sh
    :caption: status dir
 
-    *<input>status dir</input>
-    bareos-dir Version: 13.2.0 (09 April 2013) x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
-    Daemon started 23-May-13 13:17. Jobs: run=0, running=0 mode=0
-     Heap: heap=270,336 smbytes=59,285 max_bytes=59,285 bufs=239 max_bufs=239
+   *<input>status dir</input>
+   bareos-dir Version: 13.2.0 (09 April 2013) x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
+   Daemon started 23-May-13 13:17. Jobs: run=0, running=0 mode=0
+    Heap: heap=270,336 smbytes=59,285 max_bytes=59,285 bufs=239 max_bufs=239
 
-    Scheduled Jobs:
-    Level          Type     Pri  Scheduled          Name               Volume
-    ===================================================================================
-    Incremental    Backup    10  23-May-13 23:05    BackupClient1      testvol
-    Full           Backup    11  23-May-13 23:10    BackupCatalog      testvol
-    ====
+   Scheduled Jobs:
+   Level          Type     Pri  Scheduled          Name               Volume
+   ===================================================================================
+   Incremental    Backup    10  23-May-13 23:05    BackupClient1      testvol
+   Full           Backup    11  23-May-13 23:10    BackupCatalog      testvol
+   ====
 
-    Running Jobs:
-    Console connected at 23-May-13 13:34
-    No Jobs running.
-    ====
+   Running Jobs:
+   Console connected at 23-May-13 13:34
+   No Jobs running.
+   ====
 
 where the times and the Director’s name will be different according to your setup. This shows that an Incremental job is scheduled to run for the Job **BackupClient1**:sup:`Dir`:sub:`Job`  at 1:05am and that at 1:10, a **BackupCatalog**:sup:`Dir`:sub:`Job`  is scheduled to run.
 
@@ -214,19 +214,19 @@ Now enter:
 .. code-block:: sh
    :caption: status client
 
-    *<input>status client</input>
-    Automatically selected Client: bareos-fd
-    Connecting to Client bareos-fd at bareos:9102
+   *<input>status client</input>
+   Automatically selected Client: bareos-fd
+   Connecting to Client bareos-fd at bareos:9102
 
-    bareos-fd Version: 13.2.0 (09 April 2013)  x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
-    Daemon started 23-May-13 13:17. Jobs: run=0 running=0.
-     Heap: heap=135,168 smbytes=26,000 max_bytes=26,147 bufs=65 max_bufs=66
-     Sizeof: boffset_t=8 size_t=8 debug=0 trace=0 bwlimit=0kB/s
+   bareos-fd Version: 13.2.0 (09 April 2013)  x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
+   Daemon started 23-May-13 13:17. Jobs: run=0 running=0.
+    Heap: heap=135,168 smbytes=26,000 max_bytes=26,147 bufs=65 max_bufs=66
+    Sizeof: boffset_t=8 size_t=8 debug=0 trace=0 bwlimit=0kB/s
 
-    Running Jobs:
-    Director connected at: 23-May-13 13:58
-    No Jobs running.
-    ====
+   Running Jobs:
+   Director connected at: 23-May-13 13:58
+   No Jobs running.
+   ====
 
 In this case, the client is named **bareos-fd**:sup:`Dir`:sub:`Client`  your name might be different, but the line beginning with :file:`bareos-fd Version` is printed by your |bareosFd|, so we are now sure it is up and running.
 
@@ -235,29 +235,29 @@ Finally do the same for your |bareosSd| with:
 .. code-block:: sh
    :caption: status storage
 
-    *<input>status storage</input>
-    Automatically selected Storage: File
-    Connecting to Storage daemon File at bareos:9103
+   *<input>status storage</input>
+   Automatically selected Storage: File
+   Connecting to Storage daemon File at bareos:9103
 
-    bareos-sd Version: 13.2.0 (09 April 2013) x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
-    Daemon started 23-May-13 13:17. Jobs: run=0, running=0.
-     Heap: heap=241,664 smbytes=28,574 max_bytes=88,969 bufs=73 max_bufs=74
-     Sizes: boffset_t=8 size_t=8 int32_t=4 int64_t=8 mode=0 bwlimit=0kB/s
+   bareos-sd Version: 13.2.0 (09 April 2013) x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
+   Daemon started 23-May-13 13:17. Jobs: run=0, running=0.
+    Heap: heap=241,664 smbytes=28,574 max_bytes=88,969 bufs=73 max_bufs=74
+    Sizes: boffset_t=8 size_t=8 int32_t=4 int64_t=8 mode=0 bwlimit=0kB/s
 
-    Running Jobs:
-    No Jobs running.
-    ====
+   Running Jobs:
+   No Jobs running.
+   ====
 
-    Device status:
+   Device status:
 
-    Device "FileStorage" (/var/lib/bareos/storage) is not open.
-    ==
-    ====
+   Device "FileStorage" (/var/lib/bareos/storage) is not open.
+   ==
+   ====
 
-    Used Volume status:
-    ====
+   Used Volume status:
+   ====
 
-    ====
+   ====
 
 You will notice that the default |bareosSd| device is named **File**:sup:`Dir`:sub:`Storage`  and that it will use device :file:`/var/lib/bareos/storage`, which is not currently open.
 
@@ -268,7 +268,7 @@ Now, let’s actually run a job with:
 .. code-block:: sh
    :caption: run
 
-    run
+   run
 
 
 
@@ -279,42 +279,42 @@ you should get the following output:
 .. code-block:: sh
    :caption: select job
 
-    Automatically selected Catalog: MyCatalog
-    Using Catalog "MyCatalog"
-    A job name must be specified.
-    The defined Job resources are:
-         1: BackupClient1
-         2: BackupCatalog
-         3: RestoreFiles
-    Select Job resource (1-3):
+   Automatically selected Catalog: MyCatalog
+   Using Catalog "MyCatalog"
+   A job name must be specified.
+   The defined Job resources are:
+        1: BackupClient1
+        2: BackupCatalog
+        3: RestoreFiles
+   Select Job resource (1-3):
 
 
 
-Here, Bareos has listed the three different Jobs that you can run, and you should choose number **1** and type enter, at which point you will get:
+Here, Bareos has listed the three different Jobs that you can run, and you should choose number 1 and type enter, at which point you will get:
 
 
 
 .. code-block:: sh
    :caption: run job
 
-    Run Backup job
-    JobName:  BackupClient1
-    Level:    Incremental
-    Client:   bareos-fd
-    Format:   Native
-    FileSet:  SelfTest
-    Pool:     Full (From Job resource)
-    NextPool: *None* (From unknown source)
-    Storage:  File (From Job resource)
-    When:     2013-05-23 14:50:04
-    Priority: 10
-    OK to run? (yes/mod/no):
+   Run Backup job
+   JobName:  BackupClient1
+   Level:    Incremental
+   Client:   bareos-fd
+   Format:   Native
+   FileSet:  SelfTest
+   Pool:     Full (From Job resource)
+   NextPool: *None* (From unknown source)
+   Storage:  File (From Job resource)
+   When:     2013-05-23 14:50:04
+   Priority: 10
+   OK to run? (yes/mod/no):
 
 
 
 At this point, take some time to look carefully at what is printed and understand it. It is asking you if it is OK to run a job named **BackupClient1**:sup:`Dir`:sub:`job`\  with FileSet **SelfTest** as an Incremental job on your Client, and to use Storage **File**:sup:`Dir`:sub:`Storage`  and Pool **Full**:sup:`Dir`:sub:`pool`\ , and finally, it wants to run it now (the current time should be displayed by your console).
 
-Here we have the choice to run (**yes**), to modify one or more of the above parameters (**mod**), or to not run the job (**no**). Please enter **yes**, at which point you should immediately get the command prompt (an asterisk).
+Here we have the choice to run (yes), to modify one or more of the above parameters (mod), or to not run the job (no). Please enter yes, at which point you should immediately get the command prompt (an asterisk).
 
 If you wait a few seconds, then enter the command :strong:`messages` you will get back something like:
 
@@ -323,33 +323,33 @@ If you wait a few seconds, then enter the command :strong:`messages` you will ge
 .. code-block:: sh
    :caption: run
 
-    *<input>messages</input>
-    28-Apr-2003 14:30 bareos-sd: Wrote label to prelabeled Volume
-       "TestVolume001" on device /var/lib/bareos/storage
-    28-Apr-2003 14:30 rufus-dir: Bareos 1.30 (28Apr03): 28-Apr-2003 14:30
-    JobId:                  1
-    Job:                    BackupClient1.2003-04-28_14.22.33
-    FileSet:                Full Set
-    Backup Level:           Full
-    Client:                 bareos-fd
-    Start time:             28-Apr-2003 14:22
-    End time:               28-Apr-2003 14:30
-    Files Written:          1,444
-    Bytes Written:          38,988,877
-    Rate:                   81.2 KB/s
-    Software Compression:   None
-    Volume names(s):        TestVolume001
-    Volume Session Id:      1
-    Volume Session Time:    1051531381
-    Last Volume Bytes:      39,072,359
-    FD termination status:  OK
-    SD termination status:  OK
-    Termination:            Backup OK
-    28-Apr-2003 14:30 rufus-dir: Begin pruning Jobs.
-    28-Apr-2003 14:30 rufus-dir: No Jobs found to prune.
-    28-Apr-2003 14:30 rufus-dir: Begin pruning Files.
-    28-Apr-2003 14:30 rufus-dir: No Files found to prune.
-    28-Apr-2003 14:30 rufus-dir: End auto prune.
+   *<input>messages</input>
+   28-Apr-2003 14:30 bareos-sd: Wrote label to prelabeled Volume
+      "TestVolume001" on device /var/lib/bareos/storage
+   28-Apr-2003 14:30 rufus-dir: Bareos 1.30 (28Apr03): 28-Apr-2003 14:30
+   JobId:                  1
+   Job:                    BackupClient1.2003-04-28_14.22.33
+   FileSet:                Full Set
+   Backup Level:           Full
+   Client:                 bareos-fd
+   Start time:             28-Apr-2003 14:22
+   End time:               28-Apr-2003 14:30
+   Files Written:          1,444
+   Bytes Written:          38,988,877
+   Rate:                   81.2 KB/s
+   Software Compression:   None
+   Volume names(s):        TestVolume001
+   Volume Session Id:      1
+   Volume Session Time:    1051531381
+   Last Volume Bytes:      39,072,359
+   FD termination status:  OK
+   SD termination status:  OK
+   Termination:            Backup OK
+   28-Apr-2003 14:30 rufus-dir: Begin pruning Jobs.
+   28-Apr-2003 14:30 rufus-dir: No Jobs found to prune.
+   28-Apr-2003 14:30 rufus-dir: Begin pruning Files.
+   28-Apr-2003 14:30 rufus-dir: No Files found to prune.
+   28-Apr-2003 14:30 rufus-dir: End auto prune.
 
 If you don’t see the output immediately, you can keep entering :strong:`messages` until the job terminates.
 
@@ -358,20 +358,20 @@ Instead of typing :strong:`messages` multiple times, you can also ask bconsole t
 .. code-block:: sh
    :caption: wait
 
-    *<input>wait jobid=1</input>
+   *<input>wait jobid=1</input>
 
 or just :strong:`wait`, which waits for all running jobs to finish.
 
 Another useful command is :strong:`autodisplay on`. With autodisplay activated, messages will automatically be displayed as soon as they are ready.
 
-If you do an :program:`ls -l` of your :file:`/var/lib/bareos/storage` directory, you will see that you have the following item:
+If you do an :command:`ls -l` of your :file:`/var/lib/bareos/storage` directory, you will see that you have the following item:
 
 
 
 .. code-block:: sh
    :caption: volume
 
-    -rw-r-----    1 bareos bareos   39072153 Apr 28 14:30 Full-001
+   -rw-r-----    1 bareos bareos   39072153 Apr 28 14:30 Full-001
 
 
 
@@ -381,7 +381,8 @@ If you would like to stop here, you can simply enter :strong:`quit` in the Conso
 
 If you would like to try restoring the files that you just backed up, read the following section. 
 
-.. _restoring
+.. _restoring:
+
 
 
 Restoring Your Files
@@ -394,74 +395,74 @@ If you have run the default configuration and run the job as demonstrated above,
 .. code-block:: sh
    :caption: restore
 
-    *<input>restore all</input>
-    First you select one or more JobIds that contain files
-    to be restored. You will be presented several methods
-    of specifying the JobIds. Then you will be allowed to
-    select which files from those JobIds are to be restored.
+   *<input>restore all</input>
+   First you select one or more JobIds that contain files
+   to be restored. You will be presented several methods
+   of specifying the JobIds. Then you will be allowed to
+   select which files from those JobIds are to be restored.
 
-    To select the JobIds, you have the following choices:
-         1: List last 20 Jobs run
-         2: List Jobs where a given File is saved
-         3: Enter list of comma separated JobIds to select
-         4: Enter SQL list command
-         5: Select the most recent backup for a client
-         6: Select backup for a client before a specified time
-         7: Enter a list of files to restore
-         8: Enter a list of files to restore before a specified time
-         9: Find the JobIds of the most recent backup for a client
-        10: Find the JobIds for a backup for a client before a specified time
-        11: Enter a list of directories to restore for found JobIds
-        12: Select full restore to a specified Job date
-        13: Cancel
-    Select item:  (1-13):
+   To select the JobIds, you have the following choices:
+        1: List last 20 Jobs run
+        2: List Jobs where a given File is saved
+        3: Enter list of comma separated JobIds to select
+        4: Enter SQL list command
+        5: Select the most recent backup for a client
+        6: Select backup for a client before a specified time
+        7: Enter a list of files to restore
+        8: Enter a list of files to restore before a specified time
+        9: Find the JobIds of the most recent backup for a client
+       10: Find the JobIds for a backup for a client before a specified time
+       11: Enter a list of directories to restore for found JobIds
+       12: Select full restore to a specified Job date
+       13: Cancel
+   Select item:  (1-13):
 
-As you can see, there are a number of options, but for the current demonstration, please enter **5** to do a restore of the last backup you did, and you will get the following output:
+As you can see, there are a number of options, but for the current demonstration, please enter 5 to do a restore of the last backup you did, and you will get the following output:
 
 
 
 .. code-block:: sh
    :caption: select resource
 
-    Automatically selected Client: bareos-fd
-    The defined FileSet resources are:
-         1: Catalog
-         2: Full Set
-    Select FileSet resource (1-2): 
+   Automatically selected Client: bareos-fd
+   The defined FileSet resources are:
+        1: Catalog
+        2: Full Set
+   Select FileSet resource (1-2): 
 
 
 
-As you can see, Bareos knows what client you have, and since there was only one, it selected it automatically. Select **2**, because you want to restore files from the file set.
+As you can see, Bareos knows what client you have, and since there was only one, it selected it automatically. Select 2, because you want to restore files from the file set.
 
 
 
 .. code-block:: sh
    :caption: restore filesystem
 
-    +-------+-------+----------+------------+---------------------+---------------+
-    | jobid | level | jobfiles | jobbytes   | starttime           | volumename    |
-    +-------+-------+----------+------------+---------------------+---------------+
-    |     1 | F     |      166 | 19,069,526 | 2013-05-05 23:05:02 | TestVolume001 |
-    +-------+-------+----------+------------+---------------------+---------------+
-    You have selected the following JobIds: 1
+   +-------+-------+----------+------------+---------------------+---------------+
+   | jobid | level | jobfiles | jobbytes   | starttime           | volumename    |
+   +-------+-------+----------+------------+---------------------+---------------+
+   |     1 | F     |      166 | 19,069,526 | 2013-05-05 23:05:02 | TestVolume001 |
+   +-------+-------+----------+------------+---------------------+---------------+
+   You have selected the following JobIds: 1
 
-    Building directory tree for JobId(s) 1 ...  +++++++++++++++++++++++++++++++++++++++++
-    165 files inserted into the tree and marked for extraction.
+   Building directory tree for JobId(s) 1 ...  +++++++++++++++++++++++++++++++++++++++++
+   165 files inserted into the tree and marked for extraction.
 
-    You are now entering file selection mode where you add (mark) and
-    remove (unmark) files to be restored. No files are initially added, unless
-    you used the "all" keyword on the command line.
-    Enter "done" to leave this mode.
+   You are now entering file selection mode where you add (mark) and
+   remove (unmark) files to be restored. No files are initially added, unless
+   you used the "all" keyword on the command line.
+   Enter "done" to leave this mode.
 
-    cwd is: /
-    $ 
+   cwd is: /
+   $ 
 
 
 
 where I have truncated the listing on the right side to make it more readable.
 
-Then Bareos produced a listing containing all the jobs that form the current backup, in this case, there is only one, and the Storage daemon was also automatically chosen. Bareos then took all the files that were in Job number 1 and entered them into a **directory tree** (a sort of in memory representation of your filesystem). At this point, you can use the :strong:`cd` and :strong:`ls` or :strong:`dir` commands to walk up and down the directory
-tree and view what files will be restored. For example, if you enter :strong:`cd /usr/sbin` and then enter :strong:`dir` you will get a listing of all the files in the :file:`/usr/sbin/` directory. On your system, the path might be somewhat different. For more information on this, please refer to the :ref:`Restore Command Chapter <RestoreChapter>` of this manual for more details.
+Then Bareos produced a listing containing all the jobs that form the current backup, in this case, there is only one, and the Storage daemon was also automatically chosen. Bareos then took all the files that were in Job number 1 and entered them into a directory tree (a sort of in memory representation of your filesystem). At this point, you can use the :strong:`cd` and :strong:`ls` or :strong:`dir` commands to walk up and down the directory tree
+and view what files will be restored. For example, if you enter :strong:`cd /usr/sbin` and then enter :strong:`dir` you will get a listing of all the files in the :file:`/usr/sbin/` directory. On your system, the path might be somewhat different. For more information on this, please refer to the :ref:`Restore Command Chapter <RestoreChapter>` of this manual for more details.
 
 To exit this mode, simply enter:
 
@@ -470,7 +471,7 @@ To exit this mode, simply enter:
 .. code-block:: sh
    :caption: done
 
-    done
+   done
 
 
 
@@ -481,81 +482,81 @@ and you will get the following output:
 .. code-block:: sh
    :caption: job report
 
-    Bootstrap records written to
-       /home/user/bareos/testbin/working/restore.bsr
-    The restore job will require the following Volumes:
+   Bootstrap records written to
+      /home/user/bareos/testbin/working/restore.bsr
+   The restore job will require the following Volumes:
 
-       TestVolume001
-    1444 files selected to restore.
-    Run Restore job
-    JobName:         RestoreFiles
-    Bootstrap:      /home/user/bareos/testbin/working/restore.bsr
-    Where:          /tmp/bareos-restores
-    Replace:        always
-    FileSet:        Full Set
-    Backup Client:  rufus-fd
-    Restore Client: rufus-fd
-    Storage:        File
-    JobId:          *None*
-    When:           2005-04-28 14:53:54
-    OK to run? (yes/mod/no):
-    Bootstrap records written to /var/lib/bareos/bareos-dir.restore.1.bsr
+      TestVolume001
+   1444 files selected to restore.
+   Run Restore job
+   JobName:         RestoreFiles
+   Bootstrap:      /home/user/bareos/testbin/working/restore.bsr
+   Where:          /tmp/bareos-restores
+   Replace:        always
+   FileSet:        Full Set
+   Backup Client:  rufus-fd
+   Restore Client: rufus-fd
+   Storage:        File
+   JobId:          *None*
+   When:           2005-04-28 14:53:54
+   OK to run? (yes/mod/no):
+   Bootstrap records written to /var/lib/bareos/bareos-dir.restore.1.bsr
 
-    The job will require the following
-       Volume(s)                 Storage(s)                SD Device(s)
-    ===========================================================================
-       
-        TestVolume001             File                      FileStorage
+   The job will require the following
+      Volume(s)                 Storage(s)                SD Device(s)
+   ===========================================================================
+      
+       TestVolume001             File                      FileStorage
 
-    Volumes marked with "*" are online.
-
-
-    166 files selected to be restored.
-
-    Run Restore job
-    JobName:         RestoreFiles
-    Bootstrap:       /var/lib/bareos/bareos-dir.restore.1.bsr
-    Where:           /tmp/bareos-restores
-    Replace:         Always
-    FileSet:         Full Set
-    Backup Client:   bareos-fd
-    Restore Client:  bareos-fd
-    Format:          Native
-    Storage:         File
-    When:            2013-05-23 15:56:53
-    Catalog:         MyCatalog
-    Priority:        10
-    Plugin Options:  *None*
-    OK to run? (yes/mod/no): 
+   Volumes marked with "*" are online.
 
 
+   166 files selected to be restored.
 
-If you answer **yes** your files will be restored to :file:`/tmp/bareos-restores`. If you want to restore the files to their original locations, you must use the **mod** option and explicitly set **Where:** to nothing (or to /). We recommend you go ahead and answer **yes** and after a brief moment, enter :strong:`messages`, at which point you should get a listing of all the files that were restored as well as a summary of the job that looks similar to this:
+   Run Restore job
+   JobName:         RestoreFiles
+   Bootstrap:       /var/lib/bareos/bareos-dir.restore.1.bsr
+   Where:           /tmp/bareos-restores
+   Replace:         Always
+   FileSet:         Full Set
+   Backup Client:   bareos-fd
+   Restore Client:  bareos-fd
+   Format:          Native
+   Storage:         File
+   When:            2013-05-23 15:56:53
+   Catalog:         MyCatalog
+   Priority:        10
+   Plugin Options:  *None*
+   OK to run? (yes/mod/no): 
+
+
+
+If you answer yes your files will be restored to :file:`/tmp/bareos-restores`. If you want to restore the files to their original locations, you must use the mod option and explicitly set Where: to nothing (or to /). We recommend you go ahead and answer yes and after a brief moment, enter :strong:`messages`, at which point you should get a listing of all the files that were restored as well as a summary of the job that looks similar to this:
 
 
 
 .. code-block:: sh
    :caption: job report
 
-    23-May 15:24 bareos-dir JobId 2: Start Restore Job RestoreFiles.2013-05-23_15.24.01_10
-    23-May 15:24 bareos-dir JobId 2: Using Device "FileStorage" to read.
-    23-May 15:24 bareos-sd JobId 2: Ready to read from volume "TestVolume001" on device "FileStorage" (/var/lib/bareos/storage).
-    23-May 15:24 bareos-sd JobId 2: Forward spacing Volume "TestVolume001" to file:block 0:194.
-    23-May 15:58 bareos-dir JobId 3: Bareos bareos-dir 13.2.0 (09Apr13):
-      Build OS:               x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
-      JobId:                  2
-      Job:                    RestoreFiles.2013-05-23_15.58.48_11
-      Restore Client:         bareos-fd
-      Start time:             23-May-2013 15:58:50
-      End time:               23-May-2013 15:58:52
-      Files Expected:         166
-      Files Restored:         166
-      Bytes Restored:         19,069,526
-      Rate:                   9534.8 KB/s
-      FD Errors:              0
-      FD termination status:  OK
-      SD termination status:  OK
-      Termination:            Restore OK
+   23-May 15:24 bareos-dir JobId 2: Start Restore Job RestoreFiles.2013-05-23_15.24.01_10
+   23-May 15:24 bareos-dir JobId 2: Using Device "FileStorage" to read.
+   23-May 15:24 bareos-sd JobId 2: Ready to read from volume "TestVolume001" on device "FileStorage" (/var/lib/bareos/storage).
+   23-May 15:24 bareos-sd JobId 2: Forward spacing Volume "TestVolume001" to file:block 0:194.
+   23-May 15:58 bareos-dir JobId 3: Bareos bareos-dir 13.2.0 (09Apr13):
+     Build OS:               x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
+     JobId:                  2
+     Job:                    RestoreFiles.2013-05-23_15.58.48_11
+     Restore Client:         bareos-fd
+     Start time:             23-May-2013 15:58:50
+     End time:               23-May-2013 15:58:52
+     Files Expected:         166
+     Files Restored:         166
+     Bytes Restored:         19,069,526
+     Rate:                   9534.8 KB/s
+     FD Errors:              0
+     FD termination status:  OK
+     SD termination status:  OK
+     Termination:            Restore OK
 
 
 
@@ -564,7 +565,7 @@ After exiting the Console program, you can examine the files in :file:`/tmp/bare
 .. code-block:: sh
    :caption: remove restore directory
 
-    <command>rm</command> -rf /tmp/bareos-restore
+   <command>rm</command> -rf /tmp/bareos-restore
 
 Quitting the Console Program
 ----------------------------
@@ -580,19 +581,20 @@ Adding a Client
 
 
 
-.. _section-AddAClient
+.. _section-AddAClient:
+
  :index:`[TAG=Client->Adding a Second] <pair: Client; Adding a Second>` :index:`[TAG=Adding a Client] <single: Adding a Client>`
 
 If you have gotten the example shown above to work on your system, you may be ready to add a second Client (|bareosFd|). That is you have a second machine that you would like backed up. Lets assume, following settings about the machine you want to add to your backup environment:
 
 Hostname (FQDN)
-    :strong:`client2.example.com`
+   :strong:`client2.example.com`
 
 IP Address
-    192.168.0.2
+   192.168.0.2
 
 OS
-    Linux (otherwise the paths may differ)
+   Linux (otherwise the paths may differ)
 
 For this you have to make changes on the server side (|bareosDir|) and the client side.
 
@@ -606,18 +608,18 @@ Director: configure client
 
 Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; configure add>` offers the :ref:`configure add command <section-bcommandConfigure>` to add resources to the |bareosDir|.
 
-Start the :program:`bconsole` and use the :strong:`configure add client` command. Address must be a DNS resolvable name or an IP address.
+Start the :command:`bconsole` and use the :strong:`configure add client` command. Address must be a DNS resolvable name or an IP address.
 
 .. code-block:: sh
    :caption: add a client
 
-    *<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
-    Created resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf":
-    Client {
-      Name = client2-fd
-      Address = 192.168.0.2
-      Password = secret
-    }
+   *<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
+   Created resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf":
+   Client {
+     Name = client2-fd
+     Address = 192.168.0.2
+     Password = secret
+   }
 
 This creates two resource configuration files:
 
@@ -632,7 +634,7 @@ The :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/
 .. code-block:: sh
    :caption: Copy the bareos-fd director resource to the new client
 
-    scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/etc/bareos/bareos-fd.d/director/
+   scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/etc/bareos/bareos-fd.d/director/
 
 Manual configuration
 ^^^^^^^^^^^^^^^^^^^^
@@ -642,19 +644,19 @@ Alternatively you can configure your resources manually. On the |bareosDir| crea
 .. code-block:: sh
    :caption: bareos-dir.d/client/client2-fd.conf
 
-    Client {
-      Name = client2-fd
-      Address = 192.168.0.2
-      Password = secret
-    }
+   Client {
+     Name = client2-fd
+     Address = 192.168.0.2
+     Password = secret
+   }
 
 Reload or restart your |bareosDir|:
 
 .. code-block:: sh
    :caption: reload the Director configuration
 
-    *<input>reload</input>
-    reloaded
+   *<input>reload</input>
+   reloaded
 
 The corresponding |bareosFd| director resource can be created directly on the client, see below.
 
@@ -682,16 +684,16 @@ The package **bareos-filedaemon** :index:`Version >= 16.2.4 <pair: bareos-16.2.4
 In detail:
 
 :file:`client/myself.conf`
-    defines the name of the client. The default is :file:`<hostname>-fd`. Changes are only required, if you want to use another name or en- or disable special |bareosFd| features. See :ref:`ClientResourceClient`.
+   defines the name of the client. The default is :file:`<hostname>-fd`. Changes are only required, if you want to use another name or en- or disable special |bareosFd| features. See :ref:`ClientResourceClient`.
 
 :file:`director/bareos-dir.conf`
-    gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the **Password**:sup:`Fd`:sub:`Director`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-dir is the default |bareosDir| name>`.)
+   gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the **Password**:sup:`Fd`:sub:`Director`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-dir is the default |bareosDir| name>`.)
 
 :file:`director/bareos-mon.conf`
-    gives the |bareosDir| **bareos-mon** restricted access to this |bareosFd|. During installation, the **Password**:sup:`Fd`:sub:`Director`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
+   gives the |bareosDir| **bareos-mon** restricted access to this |bareosFd|. During installation, the **Password**:sup:`Fd`:sub:`Director`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
 
 :file:`messages/Standard.conf`
-    defines, how messages should be handled. The default sends all relevant messages to the |bareosDir|.
+   defines, how messages should be handled. The default sends all relevant messages to the |bareosDir|.
 
 If your |bareosDir| is named **bareos-dir**, the :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf` may already be overwritten by the file you copied from the |bareosDir|. If your Director has another name, an addition resource file will exists. You can define an arbitrary number of |bareosDir|’s in your |bareosFd| configuration. However, normally you will only have one :sup:`Fd`\ :strong:`Director` with
 full control of your |bareosFd| and optional one :sup:`Fd`\ :strong:`Director` for monitoring (used by the |bareosTrayMonitor|).
@@ -701,17 +703,17 @@ Anyhow, the resource will look similar to this:
 .. code-block:: sh
    :caption: bareos-fd.d/director/bareos-dir.conf
 
-    Director {
-      Name = bareos-dir
-      Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
-    }
+   Director {
+     Name = bareos-dir
+     Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
+   }
 
 After a restart of the |bareosFd| to reload the configuration this resource allows the access for a |bareosDir| with name **bareos-dir** and password **secret** (stored in MD5 format).
 
 .. code-block:: sh
    :caption: restart bareos-fd
 
-    service bareos-fd restart
+   service bareos-fd restart
 
 .. _manual-configuration-1:
 
@@ -723,12 +725,12 @@ If you have not created the :sup:`Fd`\ :strong:`Director` by :strong:`configure`
 .. code-block:: sh
    :caption: bareos-fd.d/director/bareos-dir.conf
 
-    Director {
-      Name = "bareos-dir"   # Name of your Bareos Director
-      Password = "secret"   # Password (cleartext or MD5) must be identical
-                            # to the password of your client reosurce in the Direcotr
-                            # (bareos-dir.d/client/client2-fd.conf)
-    }
+   Director {
+     Name = "bareos-dir"   # Name of your Bareos Director
+     Password = "secret"   # Password (cleartext or MD5) must be identical
+                           # to the password of your client reosurce in the Direcotr
+                           # (bareos-dir.d/client/client2-fd.conf)
+   }
 
 See the relation between resource names and password of the different Bareos components in :ref:`section-resource-relation`.
 
@@ -737,14 +739,14 @@ If your are not using the :ref:`section-SubdirectoryConfigurationScheme`, make s
 .. code-block:: sh
    :caption: show how bareos-fd would read the current configuration files
 
-    bareos-fd -xc
+   bareos-fd -xc
 
 After modifying the file, you have to restart the |bareosFd|:
 
 .. code-block:: sh
    :caption: restart bareos-fd
 
-    service bareos-fd restart
+   service bareos-fd restart
 
 Director: test client, add a job
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -766,27 +768,27 @@ The following example show how to
 .. code-block:: sh
    :caption: test the client and add a job resource
 
-    *<input>status client=client2-fd</input>
-    ...
-    *<input>configure add job name=client2-job client=client2-fd jobdefs=DefaultJob</input>
-    Created resource config file "/etc/bareos/bareos-dir.d/job/client2-job.conf":
-    Job {
-      Name = client2-job
-      Client = client2-fd
-      JobDefs = DefaultJob
-    }
-    *<input>estimate listing job=client2-job</input>
-    ...
-    *<input>run job=client2-job</input>
-    ...
-    *<input>wait jobid=...</input>
-    ...
-    *<input>list joblog jobid=...</input>
-    ...
-    *<input>list files jobid=...</input>
-    ...
-    *<input>list volumes</input>
-    ...
+   *<input>status client=client2-fd</input>
+   ...
+   *<input>configure add job name=client2-job client=client2-fd jobdefs=DefaultJob</input>
+   Created resource config file "/etc/bareos/bareos-dir.d/job/client2-job.conf":
+   Job {
+     Name = client2-job
+     Client = client2-fd
+     JobDefs = DefaultJob
+   }
+   *<input>estimate listing job=client2-job</input>
+   ...
+   *<input>run job=client2-job</input>
+   ...
+   *<input>wait jobid=...</input>
+   ...
+   *<input>list joblog jobid=...</input>
+   ...
+   *<input>list files jobid=...</input>
+   ...
+   *<input>list volumes</input>
+   ...
 
 Patience When Starting Daemons or Mounting Blank Tapes
 ------------------------------------------------------
@@ -817,15 +819,15 @@ When Bareos starts, it ensures that all Pool resource definitions have been reco
 .. code-block:: sh
    :caption: list pools
 
-    *<input>list pools</input>
-    +--------+--------------+---------+---------+----------+---------------+
-    | PoolId | Name         | NumVols | MaxVols | PoolType | LabelFormat   |
-    +--------+--------------+---------+---------+----------+---------------+
-    | 1      | Full         | 1       | 100     | Backup   | Full-         |
-    | 2      | Differential | 0       | 100     | Backup   | Differential- |
-    | 3      | Incremental  | 1       | 100     | Backup   | Incremental-  |
-    | 4      | Scratch      | 0       | 0       | Backup   | *             |
-    +--------+--------------+---------+---------+----------+---------------+
+   *<input>list pools</input>
+   +--------+--------------+---------+---------+----------+---------------+
+   | PoolId | Name         | NumVols | MaxVols | PoolType | LabelFormat   |
+   +--------+--------------+---------+---------+----------+---------------+
+   | 1      | Full         | 1       | 100     | Backup   | Full-         |
+   | 2      | Differential | 0       | 100     | Backup   | Differential- |
+   | 3      | Incremental  | 1       | 100     | Backup   | Incremental-  |
+   | 4      | Scratch      | 0       | 0       | Backup   | *             |
+   +--------+--------------+---------+---------+----------+---------------+
 
 Other Useful Console Commands
 -----------------------------
@@ -833,48 +835,48 @@ Other Useful Console Commands
 :index:`[TAG=Console->Commands->Useful] <triple: Console; Commands; Useful>`
 
 help
-    Show the list all all available commands.
+   Show the list all all available commands.
 
 help list
-    Show detail information about a specific command, in this case the command :strong:`list`.
+   Show detail information about a specific command, in this case the command :strong:`list`.
 
 status dir
-    :index:`[TAG=Console->Command->status dir] <triple: Console; Command; status dir>` Print a status of all running jobs and jobs scheduled in the next 24 hours.
+   :index:`[TAG=Console->Command->status dir] <triple: Console; Command; status dir>` Print a status of all running jobs and jobs scheduled in the next 24 hours.
 
 status
-    :index:`[TAG=Console->Command->status] <triple: Console; Command; status>` The console program will prompt you to select a daemon type, then will request the daemon’s status.
+   :index:`[TAG=Console->Command->status] <triple: Console; Command; status>` The console program will prompt you to select a daemon type, then will request the daemon’s status.
 
 status jobid=nn
-    :index:`[TAG=Console->Command->status jobid] <triple: Console; Command; status jobid>` Print a status of JobId nn if it is running. The Storage daemon is contacted and requested to print a current status of the job as well.
+   :index:`[TAG=Console->Command->status jobid] <triple: Console; Command; status jobid>` Print a status of JobId nn if it is running. The Storage daemon is contacted and requested to print a current status of the job as well.
 
 list pools
-    :index:`[TAG=Console->Command->list pools] <triple: Console; Command; list pools>` List the pools defined in the Catalog (normally only Default is used).
+   :index:`[TAG=Console->Command->list pools] <triple: Console; Command; list pools>` List the pools defined in the Catalog (normally only Default is used).
 
 list volumes
-    :index:`[TAG=Console->Command->list volumes] <triple: Console; Command; list volumes>` Lists all the media defined in the Catalog.
+   :index:`[TAG=Console->Command->list volumes] <triple: Console; Command; list volumes>` Lists all the media defined in the Catalog.
 
 list jobs
-    :index:`[TAG=Console->Command->list jobs] <triple: Console; Command; list jobs>` Lists all jobs in the Catalog that have run.
+   :index:`[TAG=Console->Command->list jobs] <triple: Console; Command; list jobs>` Lists all jobs in the Catalog that have run.
 
 list jobid=nn
-    :index:`[TAG=Console->Command->list jobid] <triple: Console; Command; list jobid>` Lists JobId nn from the Catalog.
+   :index:`[TAG=Console->Command->list jobid] <triple: Console; Command; list jobid>` Lists JobId nn from the Catalog.
 
 list jobtotals
-    :index:`[TAG=Console->Command->list jobtotals] <triple: Console; Command; list jobtotals>` Lists totals for all jobs in the Catalog.
+   :index:`[TAG=Console->Command->list jobtotals] <triple: Console; Command; list jobtotals>` Lists totals for all jobs in the Catalog.
 
 list files jobid=nn
-    :index:`[TAG=Console->Command->list files jobid] <triple: Console; Command; list files jobid>` List the files that were saved for JobId nn.
+   :index:`[TAG=Console->Command->list files jobid] <triple: Console; Command; list files jobid>` List the files that were saved for JobId nn.
 
 list jobmedia
-    :index:`[TAG=Console->Command->list jobmedia] <triple: Console; Command; list jobmedia>` List the media information for each Job run.
+   :index:`[TAG=Console->Command->list jobmedia] <triple: Console; Command; list jobmedia>` List the media information for each Job run.
 
 messages
-    :index:`[TAG=Console->Command->messages] <triple: Console; Command; messages>` Prints any messages that have been directed to the console.
+   :index:`[TAG=Console->Command->messages] <triple: Console; Command; messages>` Prints any messages that have been directed to the console.
 
 quit
-    :index:`[TAG=Console->Command->quit] <triple: Console; Command; quit>` Exit or quit the console program.
+   :index:`[TAG=Console->Command->quit] <triple: Console; Command; quit>` Exit or quit the console program.
 
-Most of the commands given above, with the exception of **list**, will prompt you for the necessary arguments if you simply enter the command name.
+Most of the commands given above, with the exception of list, will prompt you for the necessary arguments if you simply enter the command name.
 
 The full list of commands is shown in the chapter :ref:`section-ConsoleCommands`.
 

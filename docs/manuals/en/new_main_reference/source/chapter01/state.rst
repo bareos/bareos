@@ -41,11 +41,11 @@ What is Implemented
 
    -  Restore of one or more files selected interactively either for the current backup or a backup prior to a specified time and date.
 
-   -  Listing and Restoration of files using stand-alone :program:`bls` and :program:`bextract` tool programs. Among other things, this permits extraction of files when Bareos and/or the catalog are not available. Note, the recommended way to restore files is using the restore command in the Console. These programs are designed for use as a last resort.
+   -  Listing and Restoration of files using stand-alone :command:`bls` and :command:`bextract` tool programs. Among other things, this permits extraction of files when Bareos and/or the catalog are not available. Note, the recommended way to restore files is using the restore command in the Console. These programs are designed for use as a last resort.
 
    -  Ability to restore the catalog database rapidly by using bootstrap files (previously saved).
 
-   -  Ability to recreate the catalog database by scanning backup Volumes using the :program:`bscan` program.
+   -  Ability to recreate the catalog database by scanning backup Volumes using the :command:`bscan` program.
 
 -  SQL Catalog
 
@@ -61,7 +61,7 @@ What is Implemented
 
    -  Any number of Jobs and Clients can be backed up to a single Volume. That is, you can backup and restore Linux, Unix and Windows machines to the same Volume.
 
-   -  Multi-volume saves. When a Volume is full, **Bareos** automatically requests the next Volume and continues the backup.
+   -  Multi-volume saves. When a Volume is full, Bareos automatically requests the next Volume and continues the backup.
 
    -  :ref:`Pool and Volume <DirectorResourcePool>` library management providing Volume flexibility (e.g. monthly, weekly, daily Volume sets, Volume sets segregated by Client, ...).
 
@@ -75,7 +75,7 @@ What is Implemented
 
 -  Advanced Support for most Storage Devices
 
-   -  Autochanger support using a simple shell interface that can interface to virtually any autoloader program. A script for :program:`mtx` is provided.
+   -  Autochanger support using a simple shell interface that can interface to virtually any autoloader program. A script for :command:`mtx` is provided.
 
    -  Support for autochanger barcodes – automatic tape labeling from barcodes.
 
@@ -141,7 +141,8 @@ Current Implementation Restrictions
 
 -  
 
-.. _MultipleCatalogs
+.. _MultipleCatalogs:
+
  It is possible to configure the Bareos Director to use multiple Catalogs. However, this is neither advised, nor supported. Multiple catalogs require more management because in general you must know what catalog contains what data, e.g. currently, all Pools are defined in each catalog.
 
 -  Bareos can generally restore any backup made from one client to any other client. However, if the architecture is significantly different (i.e. 32 bit architecture to 64 bit or Win32 to Unix), some restrictions may apply (e.g. Solaris door files do not exist on other Unix/Linux machines; there are reports that Zlib compression written with 64 bit machines does not always read correctly on a 32 bit machine).
@@ -155,7 +156,7 @@ Design Limitations or Restrictions
 
 -  Names (resource names, volume names, and such) defined in Bareos configuration files are limited to a fixed number of characters. Currently the limit is defined as 127 characters. Note, this does not apply to filenames, which may be arbitrarily long.
 
--  Command line input to some of the stand alone tools – e.g. :program:`btape`, :program:`bconsole` is restricted to several hundred characters maximum. Normally, this is not a restriction, except in the case of listing multiple Volume names for programs such as :program:`bscan`. To avoid this command line length restriction, please use a **.bsr** file to specify the Volume names.
+-  Command line input to some of the stand alone tools – e.g. :command:`btape`, :command:`bconsole` is restricted to several hundred characters maximum. Normally, this is not a restriction, except in the case of listing multiple Volume names for programs such as :command:`bscan`. To avoid this command line length restriction, please use a .bsr file to specify the Volume names.
 
 -  Bareos configuration files for each of the components can be any length. However, the length of an individual line is limited to 500 characters after which it is truncated. If you need lines longer than 500 characters for directives such as ACLs where they permit a list of names are character strings simply specify multiple short lines repeating the directive on each line but with different list values.
 

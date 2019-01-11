@@ -14,27 +14,27 @@ Consider the following scheme:
 
 .. code-block:: sh
 
-       /-------------------\
-       |                   |    LAN 10.0.0.1/24
-       |                   |
-       |  FD_LAN   SD_LAN  |
-       |  .10         .20  |
-       |                   |
-       \___________________/
-                 |
-             NAT Firewall
-             FD: 8.8.8.10 -> 10.0.0.10
-             SD: 8.8.8.20 -> 10.0.0.20
-                 |
-       /-------------------\
-       |                   |
-       |                   |     WAN / Internet
-       |        DIR        |
-       |     8.8.8.100     |
-       |                   |
-       | FD_WAN   SD_WAN   |
-       | .30         .40   |
-       \___________________/
+      /-------------------\
+      |                   |    LAN 10.0.0.1/24
+      |                   |
+      |  FD_LAN   SD_LAN  |
+      |  .10         .20  |
+      |                   |
+      \___________________/
+                |
+            NAT Firewall
+            FD: 8.8.8.10 -> 10.0.0.10
+            SD: 8.8.8.20 -> 10.0.0.20
+                |
+      /-------------------\
+      |                   |
+      |                   |     WAN / Internet
+      |        DIR        |
+      |     8.8.8.100     |
+      |                   |
+      | FD_WAN   SD_WAN   |
+      | .30         .40   |
+      \___________________/
 
 The |bareosDir| can access the :strong:`FD_LAN` via the IP 8.8.8.10, which is forwarded to the IP 10.0.0.10 inside of the LAN.
 
@@ -49,40 +49,40 @@ Additionally, devices being in the LAN get the LAN address configured in the :st
 .. code-block:: sh
    :caption: bareos-dir.d/client/FD\_LAN.conf
 
-    Client {
-       Name = FD_LAN
-       Address = 8.8.8.10
-       LanAddress = 10.0.0.10
-       ...
-    }
+   Client {
+      Name = FD_LAN
+      Address = 8.8.8.10
+      LanAddress = 10.0.0.10
+      ...
+   }
 
 .. code-block:: sh
    :caption: bareos-dir.d/client/SD\_LAN.conf
 
-    Storage {
-       Name = SD_LAN
-       Address = 8.8.8.20
-       LanAddress = 10.0.0.20
-       ...
-    }
+   Storage {
+      Name = SD_LAN
+      Address = 8.8.8.20
+      LanAddress = 10.0.0.20
+      ...
+   }
 
 .. code-block:: sh
    :caption: bareos-dir.d/client/FD\_WAN.conf
 
-    Client {
-       Name = FD_WAN
-       Address = 8.8.8.30
-       ...
-    }
+   Client {
+      Name = FD_WAN
+      Address = 8.8.8.30
+      ...
+   }
 
 .. code-block:: sh
    :caption: bareos-dir.d/client/SD\_WAN.conf
 
-    Storage {
-       Name = SD_WAN
-       Address = 8.8.8.40
-       ...
-    }
+   Storage {
+      Name = SD_WAN
+      Address = 8.8.8.40
+      ...
+   }
 
 This way, backups and restores from each |bareosFd| using each |bareosSd| are possible as long as the firewall allows the needed network connections.
 

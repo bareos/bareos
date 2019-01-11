@@ -8,7 +8,7 @@ Bareos Console
 
 :index:`[TAG=Bareos Console] <single: Bareos Console>` :index:`[TAG=bconsole] <single: bconsole>` :index:`[TAG=Command->bconsole] <pair: Command; bconsole>`
 
-The **Bareos Console** (:program:`bconsole`) is a program that allows the user or the System Administrator, to interact with the Bareos Director daemon while the daemon is running.
+The Bareos Console (:command:`bconsole`) is a program that allows the user or the System Administrator, to interact with the Bareos Director daemon while the daemon is running.
 
 The current Bareos Console comes as a shell interface (TTY style). It permit the administrator or authorized users to interact with Bareos. You can determine the status of a particular job, examine the contents of the Catalog as well as perform certain tape manipulations with the Console program.
 
@@ -21,8 +21,8 @@ Console Configuration
 
 :index:`[TAG=Configuration->Console] <pair: Configuration; Console>` :index:`[TAG=Configuration->bconsole] <pair: Configuration; bconsole>`
 
-When the Console starts, it reads a standard Bareos configuration file named **bconsole.conf** unless you specify the **-c** command line option (see below). This file allows default configuration of the Console, and at the current time, the only Resource Record defined is the Director resource, which gives the Console the name and address of the Director. For more information on configuration of the Console program, please see the :ref:`Console Configuration <ConsoleConfChapter>`
-chapter of this document.
+When the Console starts, it reads a standard Bareos configuration file named bconsole.conf unless you specify the -c command line option (see below). This file allows default configuration of the Console, and at the current time, the only Resource Record defined is the Director resource, which gives the Console the name and address of the Director. For more information on configuration of the Console program, please see the :ref:`Console Configuration <ConsoleConfChapter>` chapter
+of this document.
 
 Running the Console Program
 ---------------------------
@@ -31,20 +31,21 @@ The console program can be run with the following options:
 
 :index:`[TAG=Command Line Options] <single: Command Line Options>`
 
-.. code-block:: sh
-   :caption: bconsole command line options}{}{bconsole -?
+::
 
-    Usage: bconsole [-s] [-c config_file] [-d debug_level]
-           -D <dir>    select a Director
-           -l          list Directors defined
-           -c <file>   set configuration file to file
-           -d <nn>     set debug level to <nn>
-           -dt         print timestamp in debug output
-           -n          no conio
-           -s          no signals
-           -u <nn>     set command execution timeout to <nn> seconds
-           -t          test - read configuration and exit
-           -?          print this message.
+   \begin{commandOut}{bconsole command line options}{}{bconsole -?}
+   Usage: bconsole [-s] [-c config_file] [-d debug_level]
+          -D <dir>    select a Director
+          -l          list Directors defined
+          -c <file>   set configuration file to file
+          -d <nn>     set debug level to <nn>
+          -dt         print timestamp in debug output
+          -n          no conio
+          -s          no signals
+          -u <nn>     set command execution timeout to <nn> seconds
+          -t          test - read configuration and exit
+          -?          print this message.
+   \end{commandOut}
 
 After launching the Console program (bconsole), it will prompt you for the next command with an asterisk (*). Generally, for all commands, you can simply enter the command name and the Console program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter the command followed by arguments. The general format is:
 
@@ -52,11 +53,11 @@ After launching the Console program (bconsole), it will prompt you for the next 
 
 ::
 
-     <command> <keyword1>[=<argument1>] <keyword2>[=<argument2>] ...
+    <command> <keyword1>[=<argument1>] <keyword2>[=<argument2>] ...
 
 
 
-where **command** is one of the commands listed below; **keyword** is one of the keywords listed below (usually followed by an argument); and **argument** is the value. The command may be abbreviated to the shortest unique form. If two commands have the same starting letters, the one that will be selected is the one that appears first in the **help** listing. If you want the second command, simply spell out the full command. None of the keywords following the command may be abbreviated.
+where command is one of the commands listed below; keyword is one of the keywords listed below (usually followed by an argument); and argument is the value. The command may be abbreviated to the shortest unique form. If two commands have the same starting letters, the one that will be selected is the one that appears first in the help listing. If you want the second command, simply spell out the full command. None of the keywords following the command may be abbreviated.
 
 For example:
 
@@ -64,7 +65,7 @@ For example:
 
 ::
 
-    list files jobid=23
+   list files jobid=23
 
 
 
@@ -74,7 +75,7 @@ will list all files saved for JobId 23. Or:
 
 ::
 
-    show pools
+   show pools
 
 
 
@@ -87,17 +88,18 @@ Exit the Console Program
 
 :index:`[TAG=Command->bconsole->exit] <triple: Command; bconsole; exit>`
 
-Normally, you simply enter **quit** or **exit** and the Console program will terminate. However, it waits until the Director acknowledges the command. If the Director is already doing a lengthy command (e.g. prune), it may take some time. If you want to immediately terminate the Console program, enter the **.quit** command.
+Normally, you simply enter quit or exit and the Console program will terminate. However, it waits until the Director acknowledges the command. If the Director is already doing a lengthy command (e.g. prune), it may take some time. If you want to immediately terminate the Console program, enter the .quit command.
 
-There is currently no way to interrupt a Console command once issued (i.e. Ctrl-C does not work). However, if you are at a prompt that is asking you to select one of several possibilities and you would like to abort the command, you can enter a period (**.**), and in most cases, you will either be returned to the main command prompt or if appropriate the previous prompt (in the case of nested prompts). In a few places such as where it is asking for a Volume name, the period will be taken to be
-the Volume name. In that case, you will most likely be able to cancel at the next prompt.
+There is currently no way to interrupt a Console command once issued (i.e. Ctrl-C does not work). However, if you are at a prompt that is asking you to select one of several possibilities and you would like to abort the command, you can enter a period (.), and in most cases, you will either be returned to the main command prompt or if appropriate the previous prompt (in the case of nested prompts). In a few places such as where it is asking for a Volume name, the period will be taken to be the
+Volume name. In that case, you will most likely be able to cancel at the next prompt.
 
 Running the Console from a Shell Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`[TAG=Console->Running from a Shell] <pair: Console; Running from a Shell>` 
 
-.. _scripting
+.. _scripting:
+
 
 
 You can automate many Console tasks by running the console program from a shell script. For example, if you have created a file containing the following commands:
@@ -106,14 +108,14 @@ You can automate many Console tasks by running the console program from a shell 
 
 ::
 
-     bconsole -c ./bconsole.conf <<END_OF_DATA
-     unmount storage=DDS-4
-     quit
-     END_OF_DATA
+    bconsole -c ./bconsole.conf <<END_OF_DATA
+    unmount storage=DDS-4
+    quit
+    END_OF_DATA
 
 
 
-when that file is executed, it will unmount the current DDS-4 storage device. You might want to run this command during a Job by using the **RunBeforeJob** or **RunAfterJob** records.
+when that file is executed, it will unmount the current DDS-4 storage device. You might want to run this command during a Job by using the RunBeforeJob or RunAfterJob records.
 
 It is also possible to run the Console program from file input where the file contains the commands as follows:
 
@@ -121,11 +123,11 @@ It is also possible to run the Console program from file input where the file co
 
 ::
 
-    bconsole -c ./bconsole.conf <filename
+   bconsole -c ./bconsole.conf <filename
 
 
 
-where the file named **filename** contains any set of console commands.
+where the file named filename contains any set of console commands.
 
 As a real example, the following script is part of the Bareos regression tests. It labels a volume (a disk volume), runs a backup, then does a restore of the files saved.
 
@@ -133,25 +135,25 @@ As a real example, the following script is part of the Bareos regression tests. 
 
 ::
 
-    bconsole <<END_OF_DATA
-    @output /dev/null
-    messages
-    @output /tmp/log1.out
-    label volume=TestVolume001
-    run job=Client1 yes
-    wait
-    messages
-    @#
-    @# now do a restore
-    @#
-    @output /tmp/log2.out
-    restore current all
-    yes
-    wait
-    messages
-    @output
-    quit
-    END_OF_DATA
+   bconsole <<END_OF_DATA
+   @output /dev/null
+   messages
+   @output /tmp/log1.out
+   label volume=TestVolume001
+   run job=Client1 yes
+   wait
+   messages
+   @#
+   @# now do a restore
+   @#
+   @output /tmp/log2.out
+   restore current all
+   yes
+   wait
+   messages
+   @output
+   quit
+   END_OF_DATA
 
 
 
@@ -161,10 +163,10 @@ The output from the backup is directed to /tmp/log1.out and the output from the 
 
 ::
 
-    grep "^ *Termination: *Backup OK" /tmp/log1.out
-    backupstat=$?
-    grep "^ *Termination: *Restore OK" /tmp/log2.out
-    restorestat=$?
+   grep "^ *Termination: *Backup OK" /tmp/log1.out
+   backupstat=$?
+   grep "^ *Termination: *Restore OK" /tmp/log2.out
+   restorestat=$?
 
 
 
@@ -177,140 +179,140 @@ Unless otherwise specified, each of the following keywords takes an argument, wh
 
 ::
 
-    jobid=536
+   jobid=536
 
 all
-    Permitted on the status and show commands to specify all components or resources respectively.
+   Permitted on the status and show commands to specify all components or resources respectively.
 
 allfrompool
-    Permitted on the update command to specify that all Volumes in the pool (specified on the command line) should be updated.
+   Permitted on the update command to specify that all Volumes in the pool (specified on the command line) should be updated.
 
 allfrompools
-    Permitted on the update command to specify that all Volumes in all pools should be updated.
+   Permitted on the update command to specify that all Volumes in all pools should be updated.
 
 before
-    Used in the restore command.
+   Used in the restore command.
 
 bootstrap
-    Used in the restore command.
+   Used in the restore command.
 
 catalog
-    Allowed in the use command to specify the catalog name to be used.
+   Allowed in the use command to specify the catalog name to be used.
 
 catalogs
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 client | fd
 clients
-    Used in the show, list, and llist commands. Takes no arguments.
+   Used in the show, list, and llist commands. Takes no arguments.
 
 counters
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 current
-    Used in the restore command. Takes no argument.
+   Used in the restore command. Takes no argument.
 
 days
-    Used to define the number of days the :strong:`list nextvol` command should consider when looking for jobs to be run. The days keyword can also be used on the :strong:`status dir` command so that it will display jobs scheduled for the number of days you want. It can also be used on the :strong:`rerun` command, where it will automatically select all failed jobids in the last number of days for rerunning.
+   Used to define the number of days the :strong:`list nextvol` command should consider when looking for jobs to be run. The days keyword can also be used on the :strong:`status dir` command so that it will display jobs scheduled for the number of days you want. It can also be used on the :strong:`rerun` command, where it will automatically select all failed jobids in the last number of days for rerunning.
 
 devices
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 director | dir
 directors
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 directory
-    Used in the restore command. Its argument specifies the directory to be restored.
+   Used in the restore command. Its argument specifies the directory to be restored.
 
 enabled
-    This keyword can appear on the :strong:`update volume` as well as the :strong:`update slots` commands, and can allows one of the following arguments: yes, true, no, false, archived, 0, 1, 2. Where 0 corresponds to no or false, 1 corresponds to yes or true, and 2 corresponds to archived. Archived volumes will not be used, nor will the Media record in the catalog be pruned. Volumes that are not enabled, will not be used for backup or restore.
+   This keyword can appear on the :strong:`update volume` as well as the :strong:`update slots` commands, and can allows one of the following arguments: yes, true, no, false, archived, 0, 1, 2. Where 0 corresponds to no or false, 1 corresponds to yes or true, and 2 corresponds to archived. Archived volumes will not be used, nor will the Media record in the catalog be pruned. Volumes that are not enabled, will not be used for backup or restore.
 
 done
-    Used in the restore command. Takes no argument.
+   Used in the restore command. Takes no argument.
 
 file
-    Used in the restore command.
+   Used in the restore command.
 
 files
-    Used in the list and llist commands. Takes no arguments.
+   Used in the list and llist commands. Takes no arguments.
 
 fileset
 filesets
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 help
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 hours
-    Used on the :strong:`rerun` command to select all failed jobids in the last number of hours for rerunning.
+   Used on the :strong:`rerun` command to select all failed jobids in the last number of hours for rerunning.
 
 jobs
-    Used in the show, list and llist commands. Takes no arguments.
+   Used in the show, list and llist commands. Takes no arguments.
 
 jobmedia
-    Used in the list and llist commands. Takes no arguments.
+   Used in the list and llist commands. Takes no arguments.
 
 jobtotals
-    Used in the list and llist commands. Takes no arguments.
+   Used in the list and llist commands. Takes no arguments.
 
 jobid
-    The JobId is the numeric jobid that is printed in the Job Report output. It is the index of the database record for the given job. While it is unique for all the existing Job records in the catalog database, the same JobId can be reused once a Job is removed from the catalog. Probably you will refer specific Jobs that ran using their numeric JobId.
+   The JobId is the numeric jobid that is printed in the Job Report output. It is the index of the database record for the given job. While it is unique for all the existing Job records in the catalog database, the same JobId can be reused once a Job is removed from the catalog. Probably you will refer specific Jobs that ran using their numeric JobId.
 
-    JobId can be used on the :strong:`rerun` command to select all jobs failed after and including the given jobid for rerunning.
+   JobId can be used on the :strong:`rerun` command to select all jobs failed after and including the given jobid for rerunning.
 
 job | jobname
-    The Job or Jobname keyword refers to the name you specified in the Job resource, and hence it refers to any number of Jobs that ran. It is typically useful if you want to list all jobs of a particular name.
+   The Job or Jobname keyword refers to the name you specified in the Job resource, and hence it refers to any number of Jobs that ran. It is typically useful if you want to list all jobs of a particular name.
 
 level
 listing
-    Permitted on the estimate command. Takes no argument.
+   Permitted on the estimate command. Takes no argument.
 
 limit
 messages
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 media
-    Used in the list and llist commands. Takes no arguments.
+   Used in the list and llist commands. Takes no arguments.
 
 nextvolume | nextvol
-    Used in the list and llist commands. Takes no arguments.
+   Used in the list and llist commands. Takes no arguments.
 
 on
-    Takes no keyword.
+   Takes no keyword.
 
 off
-    Takes no keyword.
+   Takes no keyword.
 
 pool
 pools
-    Used in the show, list, and llist commands. Takes no arguments.
+   Used in the show, list, and llist commands. Takes no arguments.
 
 select
-    Used in the restore command. Takes no argument.
+   Used in the restore command. Takes no argument.
 
 limit
-    Used in the setbandwidth command. Takes integer in KB/s unit.
+   Used in the setbandwidth command. Takes integer in KB/s unit.
 
 schedules
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 storage | store | sd
 storages
-    Used in the show command. Takes no arguments.
+   Used in the show command. Takes no arguments.
 
 ujobid
-    The ujobid is a unique job identification that is printed in the Job Report output. At the current time, it consists of the Job name (from the Name directive for the job) appended with the date and time the job was run. This keyword is useful if you want to completely identify the Job instance run.
+   The ujobid is a unique job identification that is printed in the Job Report output. At the current time, it consists of the Job name (from the Name directive for the job) appended with the date and time the job was run. This keyword is useful if you want to completely identify the Job instance run.
 
 volume
 volumes
-    Used in the list and llist commands. Takes no arguments.
+   Used in the list and llist commands. Takes no arguments.
 
 where
-    Used in the restore command.
+   Used in the restore command.
 
 yes
-    Used in the restore command. Takes no argument.
+   Used in the restore command. Takes no argument.
 
 .. _section-ConsoleCommands:
 
@@ -320,1113 +322,1126 @@ Console Commands
 The following commands are currently implemented:
 
 add
-    :index:`[TAG=Console->Command->add|textbf] <triple: Console; Command; add|textbf>` This command is used to add Volumes to an existing Pool. That is, it creates the Volume name in the catalog and inserts into the Pool in the catalog, but does not attempt to access the physical Volume. Once added, Bareos expects that Volume to exist and to be labeled. This command is not normally used since Bareos will automatically do the equivalent when Volumes are labeled. However, there may be times when you have removed a Volume
-    from the catalog and want to later add it back.
+   :index:`[TAG=Console->Command->add|textbf] <triple: Console; Command; add|textbf>` This command is used to add Volumes to an existing Pool. That is, it creates the Volume name in the catalog and inserts into the Pool in the catalog, but does not attempt to access the physical Volume. Once added, Bareos expects that Volume to exist and to be labeled. This command is not normally used since Bareos will automatically do the equivalent when Volumes are labeled. However, there may be times when you have removed a Volume
+   from the catalog and want to later add it back.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: add
+   .. code-block:: sh
+      :caption: add
 
-        add [pool=<pool-name>] [storage=<storage>] [jobid=<JobId>]
+      add [pool=<pool-name>] [storage=<storage>] [jobid=<JobId>]
 
-    Normally, the :strong:`label` command is used rather than this command because the :strong:`label` command labels the physical media (tape, disk,, ...) and does the equivalent of the :strong:`add` command. The :strong:`add` command affects only the Catalog and not the physical media (data on Volumes). The physical media must exist and be labeled before use (usually with the :strong:`label` command). This command
-    can, however, be useful if you wish to add a number of Volumes to the Pool that will be physically labeled at a later time. It can also be useful if you are importing a tape from another site. Please see the :strong:`label` command for the list of legal characters in a Volume name.
+   Normally, the :strong:`label` command is used rather than this command because the :strong:`label` command labels the physical media (tape, disk,, ...) and does the equivalent of the :strong:`add` command. The :strong:`add` command affects only the Catalog and not the physical media (data on Volumes). The physical media must exist and be labeled before use (usually with the :strong:`label` command). This command
+   can, however, be useful if you wish to add a number of Volumes to the Pool that will be physically labeled at a later time. It can also be useful if you are importing a tape from another site. Please see the :strong:`label` command for the list of legal characters in a Volume name.
 
 autodisplay
-    :index:`[TAG=Console->Command->autodisplay on/off] <triple: Console; Command; autodisplay on/off>` This command accepts **on** or **off** as an argument, and turns auto-display of messages on or off respectively. The default for the console program is **off**, which means that you will be notified when there are console messages pending, but they will not automatically be displayed.
+   :index:`[TAG=Console->Command->autodisplay on/off] <triple: Console; Command; autodisplay on/off>` This command accepts on or off as an argument, and turns auto-display of messages on or off respectively. The default for the console program is off, which means that you will be notified when there are console messages pending, but they will not automatically be displayed.
 
-    When autodisplay is turned off, you must explicitly retrieve the messages with the **messages** command. When autodisplay is turned on, the messages will be displayed on the console as they are received.
+   When autodisplay is turned off, you must explicitly retrieve the messages with the messages command. When autodisplay is turned on, the messages will be displayed on the console as they are received.
 
 automount
-    :index:`[TAG=Console->Command->automount on/off] <triple: Console; Command; automount on/off>` This command accepts **on** or **off** as the argument, and turns auto-mounting of the Volume after a **label** command on or off respectively. The default is **on**. If **automount** is turned off, you must explicitly **mount** tape Volumes after a label command to use it.
+   :index:`[TAG=Console->Command->automount on/off] <triple: Console; Command; automount on/off>` This command accepts on or off as the argument, and turns auto-mounting of the Volume after a label command on or off respectively. The default is on. If automount is turned off, you must explicitly mount tape Volumes after a label command to use it.
 
 cancel
-    :index:`[TAG=Console->Command->cancel jobid] <triple: Console; Command; cancel jobid>` This command is used to cancel a job and accepts **jobid=nnn** or **job=xxx** as an argument where nnn is replaced by the JobId and xxx is replaced by the job name. If you do not specify a keyword, the Console program will prompt you with the names of all the active jobs allowing you to choose one.
+   :index:`[TAG=Console->Command->cancel jobid] <triple: Console; Command; cancel jobid>` This command is used to cancel a job and accepts jobid=nnn or job=xxx as an argument where nnn is replaced by the JobId and xxx is replaced by the job name. If you do not specify a keyword, the Console program will prompt you with the names of all the active jobs allowing you to choose one.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: cancel
+   .. code-block:: sh
+      :caption: cancel
 
-        cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
+      cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
 
-    Once a Job is marked to be cancelled, it may take a bit of time (generally within a minute but up to two hours) before the Job actually terminates, depending on what operations it is doing. Don’t be surprised that you receive a Job not found message. That just means that one of the three daemons had already canceled the job. Messages numbered in the 1000’s are from the Director, 2000’s are from the File daemon and 3000’s from the Storage daemon.
+   Once a Job is marked to be cancelled, it may take a bit of time (generally within a minute but up to two hours) before the Job actually terminates, depending on what operations it is doing. Don’t be surprised that you receive a Job not found message. That just means that one of the three daemons had already canceled the job. Messages numbered in the 1000’s are from the Director, 2000’s are from the File daemon and 3000’s from the Storage daemon.
 
-    It is possible to cancel multiple jobs at once. Therefore, the following extra options are available for the job-selection:
+   It is possible to cancel multiple jobs at once. Therefore, the following extra options are available for the job-selection:
 
-    -  all jobs
+   -  all jobs
 
-    -  all jobs with a created state
+   -  all jobs with a created state
 
-    -  all jobs with a blocked state
+   -  all jobs with a blocked state
 
-    -  all jobs with a waiting state
+   -  all jobs with a waiting state
 
-    -  all jobs with a running state
+   -  all jobs with a running state
 
-    Usage:
+   Usage:
 
-    .. code-block:: sh
-   :caption: cancel all
+   .. code-block:: sh
+      :caption: cancel all
 
-        cancel all
-        cancel all state=<created|blocked|waiting|running>
+      cancel all
+      cancel all state=<created|blocked|waiting|running>
 
-    Sometimes the Director already removed the job from its running queue, but the storage daemon still thinks it is doing a backup (or another job) - so you cannot cancel the job from within a console anymore. Therefore it is possible to cancel a job by JobId on the storage daemon. It might be helpful to execute a :strong:`status storage` on the Storage Daemon to make sure what job you want to cancel.
+   Sometimes the Director already removed the job from its running queue, but the storage daemon still thinks it is doing a backup (or another job) - so you cannot cancel the job from within a console anymore. Therefore it is possible to cancel a job by JobId on the storage daemon. It might be helpful to execute a :strong:`status storage` on the Storage Daemon to make sure what job you want to cancel.
 
-    Usage:
+   Usage:
 
-    .. code-block:: sh
-   :caption: cancel on Storage Daemon
+   .. code-block:: sh
+      :caption: cancel on Storage Daemon
 
-        cancel storage=<Storage Daemon> Jobid=<JobId>
+      cancel storage=<Storage Daemon> Jobid=<JobId>
 
-    This way you can also remove a job that blocks any other jobs from running without the need to restart the whole storage daemon.
+   This way you can also remove a job that blocks any other jobs from running without the need to restart the whole storage daemon.
 
 create
-    :index:`[TAG=Console->Command->create pool] <triple: Console; Command; create pool>` This command is not normally used as the Pool records are automatically created by the Director when it starts based on what it finds in the configuration. If needed, this command can be used, to create a Pool record in the database using the Pool resource record defined in the Director’s configuration file. So in a sense, this command simply transfers the information from the Pool resource in the configuration file into the Catalog.
-    Normally this command is done automatically for you when the Director starts providing the Pool is referenced within a Job resource. If you use this command on an existing Pool, it will automatically update the Catalog to have the same information as the Pool resource. After creating a Pool, you will most likely use the **label** command to label one or more volumes and add their names to the Media database.
+   :index:`[TAG=Console->Command->create pool] <triple: Console; Command; create pool>` This command is not normally used as the Pool records are automatically created by the Director when it starts based on what it finds in the configuration. If needed, this command can be used, to create a Pool record in the database using the Pool resource record defined in the Director’s configuration file. So in a sense, this command simply transfers the information from the Pool resource in the configuration file into the Catalog.
+   Normally this command is done automatically for you when the Director starts providing the Pool is referenced within a Job resource. If you use this command on an existing Pool, it will automatically update the Catalog to have the same information as the Pool resource. After creating a Pool, you will most likely use the label command to label one or more volumes and add their names to the Media database.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: create
+   .. code-block:: sh
+      :caption: create
 
-        create [pool=<pool-name>]
+      create [pool=<pool-name>]
 
-    When starting a Job, if Bareos determines that there is no Pool record in the database, but there is a Pool resource of the appropriate name, it will create it for you. If you want the Pool record to appear in the database immediately, simply use this command to force it to be created.
+   When starting a Job, if Bareos determines that there is no Pool record in the database, but there is a Pool resource of the appropriate name, it will create it for you. If you want the Pool record to appear in the database immediately, simply use this command to force it to be created.
 
 configure
-    
+   
 
-.. _section-bcommandConfigure
+.. _section-bcommandConfigure:
 
 
-    Configures director resources during runtime. The first configure subcommands are :strong:`configure add` and :strong:`configure export`. Other subcommands may follow in later releases.
 
-    configure add
-        
+   Configures director resources during runtime. The first configure subcommands are :strong:`configure add` and :strong:`configure export`. Other subcommands may follow in later releases.
 
-.. _section-bcommandConfigureAdd
+   configure add
+      
+
+.. _section-bcommandConfigureAdd:
+
  :index:`[TAG=Console->Command->configure add] <triple: Console; Command; configure add>`
 
-        This command allows to add resources during runtime. Usage:
+      This command allows to add resources during runtime. Usage:
 
-        .. code-block:: sh
-   :caption: configure add usage
+      .. code-block:: sh
+         :caption: configure add usage
 
-            configure add <resourcetype> name=<resourcename> <directive1>=<value1> <directive2>=<value2> ...
+         configure add <resourcetype> name=<resourcename> <directive1>=<value1> <directive2>=<value2> ...
 
-        Values that must be quoted in the resulting configuration must be added as:
+      Values that must be quoted in the resulting configuration must be added as:
 
-        .. code-block:: sh
-   :caption: configure add usage with values containing spaces
+      .. code-block:: sh
+         :caption: configure add usage with values containing spaces
 
-            configure add <resourcetype> name=<resourcename> <directive1>="\"<value containing spaces>\"" ...
+         configure add <resourcetype> name=<resourcename> <directive1>="\"<value containing spaces>\"" ...
 
-        The command generates and loads a new valid resource. As the new resource is also stored at
+      The command generates and loads a new valid resource. As the new resource is also stored at
 
-        :file:`<CONFIGDIR>/bareos-dir.d/<resourcetype>/<resourcename>.conf`
+      :file:`<CONFIGDIR>/bareos-dir.d/<resourcetype>/<resourcename>.conf`
 
-        (see :ref:`section-ConfigurationResourceFileConventions`) it is persistent upon reload and restart.
+      (see :ref:`section-ConfigurationResourceFileConventions`) it is persistent upon reload and restart.
 
-        This feature requires :ref:`section-ConfigurationSubdirectories`.
+      This feature requires :ref:`section-ConfigurationSubdirectories`.
 
-        All kinds of resources can be added. When adding a client resource, the :ref:`ClientResourceDirector` for the |bareosFd| is also created and stored at:
+      All kinds of resources can be added. When adding a client resource, the :ref:`ClientResourceDirector` for the |bareosFd| is also created and stored at:
 
-        :file:`<CONFIGDIR>/bareos-dir-export/client/<clientname>/bareos-fd.d/director/<clientname>.conf`
+      :file:`<CONFIGDIR>/bareos-dir-export/client/<clientname>/bareos-fd.d/director/<clientname>.conf`
 
-        .. code-block:: sh
-   :caption: Example: adding a client and a job resource during runtime
+      .. code-block:: sh
+         :caption: Example: adding a client and a job resource during runtime
 
-            *<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
-            Created resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf":
-            Client {
-              Name = client2-fd
-              Address = 192.168.0.2
-              Password = secret
-            }
-            *<input>configure add job name=client2-job client=client2-fd jobdefs=DefaultJob</input>
-            Created resource config file "/etc/bareos/bareos-dir.d/job/client2-job.conf":
-            Job {
-              Name = client2-job
-              Client = client2-fd
-              JobDefs = DefaultJob
-            }
+         *<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
+         Created resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf":
+         Client {
+           Name = client2-fd
+           Address = 192.168.0.2
+           Password = secret
+         }
+         *<input>configure add job name=client2-job client=client2-fd jobdefs=DefaultJob</input>
+         Created resource config file "/etc/bareos/bareos-dir.d/job/client2-job.conf":
+         Job {
+           Name = client2-job
+           Client = client2-fd
+           JobDefs = DefaultJob
+         }
 
-        These two commands create three resource configuration files:
+      These two commands create three resource configuration files:
 
-        -  
+      -  
 
-           :file:`/etc/bareos/bareos-dir.d/client/client2-fd.conf`
+         :file:`/etc/bareos/bareos-dir.d/client/client2-fd.conf`
 
-        -  :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` (assuming your director resource is named **bareos-dir**)
+      -  :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf` (assuming your director resource is named **bareos-dir**)
 
-        -  
+      -  
 
-           :file:`/etc/bareos/bareos-dir.d/job/client2-job.conf`
+         :file:`/etc/bareos/bareos-dir.d/job/client2-job.conf`
 
-        The files in :file:`bareos-dir-export/client/` directory are not used by the |bareosDir|. However, they can be copied to new clients to configure these clients for the |bareosDir|.
+      The files in :file:`bareos-dir-export/client/` directory are not used by the |bareosDir|. However, they can be copied to new clients to configure these clients for the |bareosDir|.
 
-        
-.. warning:: 
-   Don't be confused by the extensive output of :strong:`help configure`. As :strong:`configure add` allows configuring arbitrary resources, the output of :strong:`help configure` lists all the resources, each with all valid directives. The same data is also used for :program:`bconsole` command line completion.
+      
 
-        Available since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; configure add>`.
+.. warning::
+   Don't be confused by the extensive output of :strong:`help configure`. As :strong:`configure add` allows configuring arbitrary resources, the output of :strong:`help configure` lists all the resources, each with all valid directives. The same data is also used for :command:`bconsole` command line completion.
 
-    configure export
-        
+      Available since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; configure add>`.
 
-.. _section-bcommandConfigureExport
+   configure export
+      
+
+.. _section-bcommandConfigureExport:
+
  :index:`[TAG=Console->Command->configure export] <triple: Console; Command; configure export>`
 
-        This command allows to export the :sup:`Fd`\ :strong:`Director` resource for clients already configured in the |bareosDir|.
+      This command allows to export the :sup:`Fd`\ :strong:`Director` resource for clients already configured in the |bareosDir|.
 
-        Usage:
+      Usage:
 
-        .. code-block:: sh
-   :caption: Export the bareos-fd Director resource for the client bareos-fd
+      .. code-block:: sh
+         :caption: Export the bareos-fd Director resource for the client bareos-fd
 
-            configure export client=bareos-fd
-            Exported resource file "/etc/bareos/bareos-dir-export/client/bareos-fd/bareos-fd.d/director/bareos-dir.conf":
-            Director {
-              Name = bareos-dir
-              Password = "[md5]932d1d3ef3c298047809119510f4bee6"
-            }
+         configure export client=bareos-fd
+         Exported resource file "/etc/bareos/bareos-dir-export/client/bareos-fd/bareos-fd.d/director/bareos-dir.conf":
+         Director {
+           Name = bareos-dir
+           Password = "[md5]932d1d3ef3c298047809119510f4bee6"
+         }
 
-        To use it, copy the :sup:`Fd`\ :strong:`Director` resource file to the client machine (on Linux: to :file:`/etc/bareos/bareos-fd.d/director/`) and restart the |bareosFd|.
+      To use it, copy the :sup:`Fd`\ :strong:`Director` resource file to the client machine (on Linux: to :file:`/etc/bareos/bareos-fd.d/director/`) and restart the |bareosFd|.
 
-        Available since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; configure export>`.
+      Available since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; configure export>`.
 
 delete
-    :index:`[TAG=Console->Command->delete] <triple: Console; Command; delete>` The delete command is used to delete a Volume, Pool or Job record from the Catalog as well as all associated catalog Volume records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.
+   :index:`[TAG=Console->Command->delete] <triple: Console; Command; delete>` The delete command is used to delete a Volume, Pool or Job record from the Catalog as well as all associated catalog Volume records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.
 
-    If the keyword **Volume** appears on the command line, the named Volume will be deleted from the catalog, if the keyword **Pool** appears on the command line, a Pool will be deleted, and if the keyword **Job** appears on the command line, a Job and all its associated records (File and JobMedia) will be deleted from the catalog.
+   If the keyword Volume appears on the command line, the named Volume will be deleted from the catalog, if the keyword Pool appears on the command line, a Pool will be deleted, and if the keyword Job appears on the command line, a Job and all its associated records (File and JobMedia) will be deleted from the catalog.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: delete
+   .. code-block:: sh
+      :caption: delete
 
-        delete pool=<pool-name>
-        delete volume=<volume-name> pool=<pool-name>
-        delete JobId=<job-id> JobId=<job-id2> ...
-        delete Job JobId=n,m,o-r,t ...
+      delete pool=<pool-name>
+      delete volume=<volume-name> pool=<pool-name>
+      delete JobId=<job-id> JobId=<job-id2> ...
+      delete Job JobId=n,m,o-r,t ...
 
-    The first form deletes a Pool record from the catalog database. The second form deletes a Volume record from the specified pool in the catalog database. The third form deletes the specified Job record from the catalog database. The last form deletes JobId records for JobIds n, m, o, p, q, r, and t. Where each one of the n,m,... is, of course, a number. That is a "delete jobid" accepts lists and ranges of jobids.
+   The first form deletes a Pool record from the catalog database. The second form deletes a Volume record from the specified pool in the catalog database. The third form deletes the specified Job record from the catalog database. The last form deletes JobId records for JobIds n, m, o, p, q, r, and t. Where each one of the n,m,... is, of course, a number. That is a "delete jobid" accepts lists and ranges of jobids.
 
 disable
-    :index:`[TAG=Console->Command->disable] <triple: Console; Command; disable>` This command permits you to disable a Job for automatic scheduling. The job may have been previously enabled with the Job resource **Enabled** directive or using the console **enable** command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |bareosDir| configuration.
+   :index:`[TAG=Console->Command->disable] <triple: Console; Command; disable>` This command permits you to disable a Job for automatic scheduling. The job may have been previously enabled with the Job resource Enabled directive or using the console enable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |bareosDir| configuration.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: disable
+   .. code-block:: sh
+      :caption: disable
 
-        disable job=<job-name>
+      disable job=<job-name>
 
 enable
-    :index:`[TAG=Console->Command->enable] <triple: Console; Command; enable>` This command permits you to enable a Job for automatic scheduling. The job may have been previously disabled with the Job resource **Enabled** directive or using the console **disable** command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |bareosDir| configuration.
+   :index:`[TAG=Console->Command->enable] <triple: Console; Command; enable>` This command permits you to enable a Job for automatic scheduling. The job may have been previously disabled with the Job resource Enabled directive or using the console disable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |bareosDir| configuration.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: enable
+   .. code-block:: sh
+      :caption: enable
 
-        enable job=<job-name>
+      enable job=<job-name>
 
-    
+   
 
-.. _estimate
+.. _estimate:
+
 
 
 estimate
-    :index:`[TAG=Console->Command->estimate] <triple: Console; Command; estimate>` Using this command, you can get an idea how many files will be backed up, or if you are unsure about your Include statements in your FileSet, you can test them without doing an actual backup. The default is to assume a Full backup. However, you can override this by specifying a **level=Incremental** or **level=Differential** on the command line. A Job name must be specified or you will be prompted for one, and optionally a Client and
-    FileSet may be specified on the command line. It then contacts the client which computes the number of files and bytes that would be backed up. Please note that this is an estimate calculated from the number of blocks in the file rather than by reading the actual bytes. As such, the estimated backup size will generally be larger than an actual backup.
+   :index:`[TAG=Console->Command->estimate] <triple: Console; Command; estimate>` Using this command, you can get an idea how many files will be backed up, or if you are unsure about your Include statements in your FileSet, you can test them without doing an actual backup. The default is to assume a Full backup. However, you can override this by specifying a level=Incremental or level=Differential on the command line. A Job name must be specified or you will be prompted for one, and optionally a Client and FileSet may
+   be specified on the command line. It then contacts the client which computes the number of files and bytes that would be backed up. Please note that this is an estimate calculated from the number of blocks in the file rather than by reading the actual bytes. As such, the estimated backup size will generally be larger than an actual backup.
 
-    The ``estimate`` command can use the accurate code to detect changes and give a better estimation. You can set the accurate behavior on command line using ``accurate=yes/no`` or use the Job setting as default value.
+   The ``estimate`` command can use the accurate code to detect changes and give a better estimation. You can set the accurate behavior on command line using ``accurate=yes/no`` or use the Job setting as default value.
 
-    Optionally you may specify the keyword **listing** in which case, all the files to be backed up will be listed. Note, it could take quite some time to display them if the backup is large. The full form is:
+   Optionally you may specify the keyword listing in which case, all the files to be backed up will be listed. Note, it could take quite some time to display them if the backup is large. The full form is:
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: estimate
+   .. code-block:: sh
+      :caption: estimate
 
-        estimate job=<job-name> listing client=<client-name> accurate=<yes|no> fileset=<fileset-name> level=<level-name>
+      estimate job=<job-name> listing client=<client-name> accurate=<yes|no> fileset=<fileset-name> level=<level-name>
 
-    Specification of the **job** is sufficient, but you can also override the client, fileset, accurate and/or level by specifying them on the estimate command line.
+   Specification of the job is sufficient, but you can also override the client, fileset, accurate and/or level by specifying them on the estimate command line.
 
-    As an example, you might do:
+   As an example, you might do:
 
-    .. code-block:: sh
-   :caption: estimate: redirected output
+   .. code-block:: sh
+      :caption: estimate: redirected output
 
-        @output /tmp/listing
-        estimate job=NightlySave listing level=Incremental
-        @output
+      @output /tmp/listing
+      estimate job=NightlySave listing level=Incremental
+      @output
 
-    which will do a full listing of all files to be backed up for the Job **NightlySave** during an Incremental save and put it in the file **/tmp/listing**. Note, the byte estimate provided by this command is based on the file size contained in the directory item. This can give wildly incorrect estimates of the actual storage used if there are sparse files on your systems. Sparse files are often found on 64 bit systems for certain system files. The size that is returned is the size Bareos will
-    backup if the sparse option is not specified in the FileSet. There is currently no way to get an estimate of the real file size that would be found should the sparse option be enabled.
+   which will do a full listing of all files to be backed up for the Job NightlySave during an Incremental save and put it in the file /tmp/listing. Note, the byte estimate provided by this command is based on the file size contained in the directory item. This can give wildly incorrect estimates of the actual storage used if there are sparse files on your systems. Sparse files are often found on 64 bit systems for certain system files. The size that is returned is the size Bareos will backup if
+   the sparse option is not specified in the FileSet. There is currently no way to get an estimate of the real file size that would be found should the sparse option be enabled.
 
 exit
-    :index:`[TAG=Console->Command->exit] <triple: Console; Command; exit>` This command terminates the console program.
+   :index:`[TAG=Console->Command->exit] <triple: Console; Command; exit>` This command terminates the console program.
 
 export
-    :index:`[TAG=Console->Command->export] <triple: Console; Command; export>` The export command is used to export tapes from an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
+   :index:`[TAG=Console->Command->export] <triple: Console; Command; export>` The export command is used to export tapes from an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: export
+   .. code-block:: sh
+      :caption: export
 
-        export storage=<storage-name> srcslots=<slot-selection> [dstslots=<slot-selection> volume=<volume-name> scan]
+      export storage=<storage-name> srcslots=<slot-selection> [dstslots=<slot-selection> volume=<volume-name> scan]
 
-    The export command does exactly the opposite of the import command. You can specify which slots should be transferred to import/export slots. The most useful application of the export command is the possibility to automatically transfer the volumes of a certain backup into the import/export slots for external storage.
+   The export command does exactly the opposite of the import command. You can specify which slots should be transferred to import/export slots. The most useful application of the export command is the possibility to automatically transfer the volumes of a certain backup into the import/export slots for external storage.
 
-    To be able to to this, the export command also accepts a list of volume names to be exported.
+   To be able to to this, the export command also accepts a list of volume names to be exported.
 
-    Example:
+   Example:
 
-    .. code-block:: sh
-   :caption: export volume
+   .. code-block:: sh
+      :caption: export volume
 
-        export volume=A00020L4|A00007L4|A00005L4
+      export volume=A00020L4|A00007L4|A00005L4
 
-    Instead of exporting volumes by names you can also select a number of slots via the srcslots keyword and export those to the slots you specify in dstslots. The export command will check if the slots have content (e.g. otherwise there is not much to export) and if there are enough export slots and if those are really import/export slots.
+   Instead of exporting volumes by names you can also select a number of slots via the srcslots keyword and export those to the slots you specify in dstslots. The export command will check if the slots have content (e.g. otherwise there is not much to export) and if there are enough export slots and if those are really import/export slots.
 
-    Example:
+   Example:
 
-    .. code-block:: sh
-   :caption: export slots
+   .. code-block:: sh
+      :caption: export slots
 
-        export srcslots=1-2 dstslots=37-38
+      export srcslots=1-2 dstslots=37-38
 
-    To automatically export the Volumes used by a certain backup job, you can use the following RunScript in that job:
+   To automatically export the Volumes used by a certain backup job, you can use the following RunScript in that job:
 
-    .. code-block:: sh
-   :caption: automatic export
+   .. code-block:: sh
+      :caption: automatic export
 
-        RunScript {
-            Console = "export storage=TandbergT40 volume=%V"
-            RunsWhen = After
-            RunsOnClient = no
-        }
+      RunScript {
+          Console = "export storage=TandbergT40 volume=%V"
+          RunsWhen = After
+          RunsOnClient = no
+      }
 
-    To send an e-mail notification via the Messages resource regarding export tapes you can use the Variable %V substitution in the Messages resource, which is implemented in Bareos 13.2. However, it does also work in earlier releases inside the job resources. So in versions prior to Bareos 13.2 the following workaround can be used:
+   To send an e-mail notification via the Messages resource regarding export tapes you can use the Variable %V substitution in the Messages resource, which is implemented in Bareos 13.2. However, it does also work in earlier releases inside the job resources. So in versions prior to Bareos 13.2 the following workaround can be used:
 
-    .. code-block:: sh
-   :caption: e-mail notification via messages resource regarding export tapes
+   .. code-block:: sh
+      :caption: e-mail notification via messages resource regarding export tapes
 
-        RunAfterJob = "/bin/bash -c \"/bin/echo Remove Tape %V | \
-        /usr/sbin/bsmtp -h localhost -f root@localhost -s 'Remove Tape %V' root@localhost \""
+      RunAfterJob = "/bin/bash -c \"/bin/echo Remove Tape %V | \
+      /usr/sbin/bsmtp -h localhost -f root@localhost -s 'Remove Tape %V' root@localhost \""
 
 gui
-    :index:`[TAG=Console->Command->gui] <triple: Console; Command; gui>` Invoke the non-interactive gui mode. This command is only used when :program:`bconsole` is commanded by an external program.
+   :index:`[TAG=Console->Command->gui] <triple: Console; Command; gui>` Invoke the non-interactive gui mode. This command is only used when :command:`bconsole` is commanded by an external program.
 
 help
-    :index:`[TAG=Console->Command->help] <triple: Console; Command; help>` This command displays the list of commands available.
+   :index:`[TAG=Console->Command->help] <triple: Console; Command; help>` This command displays the list of commands available.
 
 import
-    :index:`[TAG=Console->Command->import] <triple: Console; Command; import>` The import command is used to import tapes into an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
+   :index:`[TAG=Console->Command->import] <triple: Console; Command; import>` The import command is used to import tapes into an autochanger. Most Automatic Tapechangers offer special slots for importing new tape cartridges or exporting written tape cartridges. This can happen without having to set the device offline.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: import
+   .. code-block:: sh
+      :caption: import
 
-        import storage=<storage-name> [srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan]
+      import storage=<storage-name> [srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan]
 
-    To import new tapes into the autochanger, you only have to load the new tapes into the import/export slots and call import from the cmdline.
+   To import new tapes into the autochanger, you only have to load the new tapes into the import/export slots and call import from the cmdline.
 
-    The import command will automatically transfer the new tapes into free slots of the autochanger. The slots are filled in order of the slot numbers. To import all tapes, there have to be enough free slots to load all tapes.
+   The import command will automatically transfer the new tapes into free slots of the autochanger. The slots are filled in order of the slot numbers. To import all tapes, there have to be enough free slots to load all tapes.
 
-    Example with a Library with 36 Slots and 3 Import/Export Slots:
+   Example with a Library with 36 Slots and 3 Import/Export Slots:
 
-    .. code-block:: sh
-   :caption: import example
+   .. code-block:: sh
+      :caption: import example
 
-        *import storage=TandbergT40
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger "slots" command.
-        Device "Drive-1" has 39 slots.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger "listall" command.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger transfer command.
-        3308 Successfully transfered volume from slot 37 to 20.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger transfer command.
-        3308 Successfully transfered volume from slot 38 to 21.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger transfer command.
-        3308 Successfully transfered volume from slot 39 to 25.
+      *import storage=TandbergT40
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger "slots" command.
+      Device "Drive-1" has 39 slots.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger "listall" command.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger transfer command.
+      3308 Successfully transfered volume from slot 37 to 20.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger transfer command.
+      3308 Successfully transfered volume from slot 38 to 21.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger transfer command.
+      3308 Successfully transfered volume from slot 39 to 25.
 
-    You can also import certain slots when you don’t have enough free slots in your autochanger to put all the import/export slots in.
+   You can also import certain slots when you don’t have enough free slots in your autochanger to put all the import/export slots in.
 
-    Example with a Library with 36 Slots and 3 Import/Export Slots importing one slot:
+   Example with a Library with 36 Slots and 3 Import/Export Slots importing one slot:
 
-    .. code-block:: sh
-   :caption: import example
+   .. code-block:: sh
+      :caption: import example
 
-        *import storage=TandbergT40 srcslots=37 dstslots=20
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger "slots" command.
-        Device "Drive-1" has 39 slots.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger "listall" command.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger transfer command.
-        3308 Successfully transfered volume from slot 37 to 20.
+      *import storage=TandbergT40 srcslots=37 dstslots=20
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger "slots" command.
+      Device "Drive-1" has 39 slots.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger "listall" command.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger transfer command.
+      3308 Successfully transfered volume from slot 37 to 20.
 
 label
-    :index:`[TAG=Console->Command->label] <triple: Console; Command; label>` :index:`[TAG=Console->Command->relabel] <triple: Console; Command; relabel>` This command is used to label physical volumes. The full form of this command is:
+   :index:`[TAG=Console->Command->label] <triple: Console; Command; label>` :index:`[TAG=Console->Command->relabel] <triple: Console; Command; relabel>` This command is used to label physical volumes. The full form of this command is:
 
-    .. code-block:: sh
-   :caption: label
+   .. code-block:: sh
+      :caption: label
 
-        label storage=<storage-name> volume=<volume-name> slot=<slot>
+      label storage=<storage-name> volume=<volume-name> slot=<slot>
 
-    If you leave out any part, you will be prompted for it. The media type is automatically taken from the Storage resource definition that you supply. Once the necessary information is obtained, the Console program contacts the specified Storage daemon and requests that the Volume be labeled. If the Volume labeling is successful, the Console program will create a Volume record in the appropriate Pool.
+   If you leave out any part, you will be prompted for it. The media type is automatically taken from the Storage resource definition that you supply. Once the necessary information is obtained, the Console program contacts the specified Storage daemon and requests that the Volume be labeled. If the Volume labeling is successful, the Console program will create a Volume record in the appropriate Pool.
 
-    The Volume name is restricted to letters, numbers, and the special characters hyphen (**-**), underscore (**\_**), colon (**:**), and period (**.**). All other characters including a space are invalid. This restriction is to ensure good readability of Volume names to reduce operator errors.
+   The Volume name is restricted to letters, numbers, and the special characters hyphen (-), underscore (\_), colon (:), and period (.). All other characters including a space are invalid. This restriction is to ensure good readability of Volume names to reduce operator errors.
 
-    Please note, when labeling a blank tape, Bareos will get **read I/O error** when it attempts to ensure that the tape is not already labeled. If you wish to avoid getting these messages, please write an EOF mark on your tape before attempting to label it:
+   Please note, when labeling a blank tape, Bareos will get read I/O error when it attempts to ensure that the tape is not already labeled. If you wish to avoid getting these messages, please write an EOF mark on your tape before attempting to label it:
 
-    
+   
 
-    ::
+   ::
 
-               mt rewind
-               mt weof
+             mt rewind
+             mt weof
 
-    
+   
 
-    The label command can fail for a number of reasons:
+   The label command can fail for a number of reasons:
 
-    #. The Volume name you specify is already in the Volume database.
+   #. The Volume name you specify is already in the Volume database.
 
-    #. The Storage daemon has a tape or other Volume already mounted on the device, in which case you must **unmount** the device, insert a blank tape, then do the **label** command.
+   #. The Storage daemon has a tape or other Volume already mounted on the device, in which case you must unmount the device, insert a blank tape, then do the label command.
 
-    #. The Volume in the device is already a Bareos labeled Volume. (Bareos will never relabel a Bareos labeled Volume unless it is recycled and you use the **relabel** command).
+   #. The Volume in the device is already a Bareos labeled Volume. (Bareos will never relabel a Bareos labeled Volume unless it is recycled and you use the relabel command).
 
-    #. There is no Volume in the drive.
+   #. There is no Volume in the drive.
 
-    There are two ways to relabel a volume that already has a Bareos label. The brute force method is to write an end of file mark on the tape using the system **mt** program, something like the following:
+   There are two ways to relabel a volume that already has a Bareos label. The brute force method is to write an end of file mark on the tape using the system mt program, something like the following:
 
-    
+   
 
-    ::
+   ::
 
-               mt -f /dev/st0 rewind
-               mt -f /dev/st0 weof
+             mt -f /dev/st0 rewind
+             mt -f /dev/st0 weof
 
-    
+   
 
-    For a disk volume, you would manually delete the Volume.
+   For a disk volume, you would manually delete the Volume.
 
-    Then you use the **label** command to add a new label. However, this could leave traces of the old volume in the catalog.
+   Then you use the label command to add a new label. However, this could leave traces of the old volume in the catalog.
 
-    The preferable method to relabel a Volume is to first purge the volume, either automatically, or explicitly with the :strong:`purge` command, then use the :strong:`relabel` command described below.
+   The preferable method to relabel a Volume is to first purge the volume, either automatically, or explicitly with the :strong:`purge` command, then use the :strong:`relabel` command described below.
 
-    If your autochanger has barcode labels, you can label all the Volumes in your autochanger one after another by using the :strong:`label barcodes` command. For each tape in the changer containing a barcode, Bareos will mount the tape and then label it with the same name as the barcode. An appropriate Media record will also be created in the catalog. Any barcode that begins with the same characters as specified on the "CleaningPrefix=xxx" (default is "CLN") directive in the
-    Director’s Pool resource, will be treated as a cleaning tape, and will not be labeled. However, an entry for the cleaning tape will be created in the catalog. For example with:
+   If your autochanger has barcode labels, you can label all the Volumes in your autochanger one after another by using the :strong:`label barcodes` command. For each tape in the changer containing a barcode, Bareos will mount the tape and then label it with the same name as the barcode. An appropriate Media record will also be created in the catalog. Any barcode that begins with the same characters as specified on the "CleaningPrefix=xxx" (default is "CLN") directive in the
+   Director’s Pool resource, will be treated as a cleaning tape, and will not be labeled. However, an entry for the cleaning tape will be created in the catalog. For example with:
 
-    .. code-block:: sh
-   :caption: Cleaning Tape
+   .. code-block:: sh
+      :caption: Cleaning Tape
 
-        Pool {
-            Name ...
-            Cleaning Prefix = "CLN"
-        }
+      Pool {
+          Name ...
+          Cleaning Prefix = "CLN"
+      }
 
-    Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape and will not be mounted. Note, the full form of the command is:
+   Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape and will not be mounted. Note, the full form of the command is:
 
-    .. code-block:: sh
-   :caption: label
+   .. code-block:: sh
+      :caption: label
 
-        label storage=xxx pool=yyy slots=1-5,10 barcodes
+      label storage=xxx pool=yyy slots=1-5,10 barcodes
 
 list
-    :index:`[TAG=Console->Command->list] <triple: Console; Command; list>` The list command lists the requested contents of the Catalog. The various fields of each record are listed on a single line. The various forms of the list command are:
+   :index:`[TAG=Console->Command->list] <triple: Console; Command; list>` The list command lists the requested contents of the Catalog. The various fields of each record are listed on a single line. The various forms of the list command are:
 
-    .. code-block:: sh
-   :caption: list
+   .. code-block:: sh
+      :caption: list
 
-        list jobs
-        list jobid=<id>           (list jobid id)
-        list ujobid=<unique job name> (list job with unique name)
-        list job=<job-name>   (list all jobs with "job-name")
-        list jobname=<job-name>  (same as above)
-            In the above, you can add "limit=nn" to limit the output to nn jobs.
-        list joblog jobid=<id> (list job output if recorded in the catalog)
-        list jobmedia
-        list jobmedia jobid=<id>
-        list jobmedia job=<job-name>
-        list files jobid=<id>
-        list files job=<job-name>
-        list pools
-        list clients
-        list jobtotals
-        list volumes
-        list volumes jobid=<id>
-        list volumes pool=<pool-name>
-        list volumes job=<job-name>
-        list volume=<volume-name>
-        list nextvolume job=<job-name>
-        list nextvol job=<job-name>
-        list nextvol job=<job-name> days=nnn
+      list jobs
+      list jobid=<id>           (list jobid id)
+      list ujobid=<unique job name> (list job with unique name)
+      list job=<job-name>   (list all jobs with "job-name")
+      list jobname=<job-name>  (same as above)
+          In the above, you can add "limit=nn" to limit the output to nn jobs.
+      list joblog jobid=<id> (list job output if recorded in the catalog)
+      list jobmedia
+      list jobmedia jobid=<id>
+      list jobmedia job=<job-name>
+      list files jobid=<id>
+      list files job=<job-name>
+      list pools
+      list clients
+      list jobtotals
+      list volumes
+      list volumes jobid=<id>
+      list volumes pool=<pool-name>
+      list volumes job=<job-name>
+      list volume=<volume-name>
+      list nextvolume job=<job-name>
+      list nextvol job=<job-name>
+      list nextvol job=<job-name> days=nnn
 
-    What most of the above commands do should be more or less obvious. In general if you do not specify all the command line arguments, the command will prompt you for what is needed.
+   What most of the above commands do should be more or less obvious. In general if you do not specify all the command line arguments, the command will prompt you for what is needed.
 
-    The :strong:`list nextvol` command will print the Volume name to be used by the specified job. You should be aware that exactly what Volume will be used depends on a lot of factors including the time and what a prior job will do. It may fill a tape that is not full when you issue this command. As a consequence, this command will give you a good estimate of what Volume will be used but not a definitive answer. In addition, this command may have certain side effect because it
-    runs through the same algorithm as a job, which means it may automatically purge or recycle a Volume. By default, the job specified must run within the next two days or no volume will be found. You can, however, use the **days=nnn** specification to specify up to 50 days. For example, if on Friday, you want to see what Volume will be needed on Monday, for job MyJob, you would use :strong:`list nextvol job=MyJob days=3`.
+   The :strong:`list nextvol` command will print the Volume name to be used by the specified job. You should be aware that exactly what Volume will be used depends on a lot of factors including the time and what a prior job will do. It may fill a tape that is not full when you issue this command. As a consequence, this command will give you a good estimate of what Volume will be used but not a definitive answer. In addition, this command may have certain side effect because it
+   runs through the same algorithm as a job, which means it may automatically purge or recycle a Volume. By default, the job specified must run within the next two days or no volume will be found. You can, however, use the days=nnn specification to specify up to 50 days. For example, if on Friday, you want to see what Volume will be needed on Monday, for job MyJob, you would use :strong:`list nextvol job=MyJob days=3`.
 
-    If you wish to add specialized commands that list the contents of the catalog, you can do so by adding them to the :file:`query.sql` file. However, this takes some knowledge of programming SQL. Please see the :strong:`query` command below for additional information. See below for listing the full contents of a catalog record with the :strong:`llist` command.
+   If you wish to add specialized commands that list the contents of the catalog, you can do so by adding them to the :file:`query.sql` file. However, this takes some knowledge of programming SQL. Please see the :strong:`query` command below for additional information. See below for listing the full contents of a catalog record with the :strong:`llist` command.
 
-    As an example, the command **list pools** might produce the following output:
+   As an example, the command list pools might produce the following output:
 
-    .. code-block:: sh
-   :caption: list pools
+   .. code-block:: sh
+      :caption: list pools
 
-        *<input>list pools</input>
-        +------+---------+---------+---------+----------+-------------+
-        | PoId | Name    | NumVols | MaxVols | PoolType | LabelFormat |
-        +------+---------+---------+---------+----------+-------------+
-        |    1 | Default |       0 |       0 | Backup   | *           |
-        |    2 | Recycle |       0 |       8 | Backup   | File        |
-        +------+---------+---------+---------+----------+-------------+
+      *<input>list pools</input>
+      +------+---------+---------+---------+----------+-------------+
+      | PoId | Name    | NumVols | MaxVols | PoolType | LabelFormat |
+      +------+---------+---------+---------+----------+-------------+
+      |    1 | Default |       0 |       0 | Backup   | *           |
+      |    2 | Recycle |       0 |       8 | Backup   | File        |
+      +------+---------+---------+---------+----------+-------------+
 
-    As mentioned above, the **list** command lists what is in the database. Some things are put into the database immediately when Bareos starts up, but in general, most things are put in only when they are first used, which is the case for a Client as with Job records, etc.
+   As mentioned above, the list command lists what is in the database. Some things are put into the database immediately when Bareos starts up, but in general, most things are put in only when they are first used, which is the case for a Client as with Job records, etc.
 
-    Bareos should create a client record in the database the first time you run a job for that client. Doing a **status** will not cause a database record to be created. The client database record will be created whether or not the job fails, but it must at least start. When the Client is actually contacted, additional info from the client will be added to the client record (a "uname -a" output).
+   Bareos should create a client record in the database the first time you run a job for that client. Doing a status will not cause a database record to be created. The client database record will be created whether or not the job fails, but it must at least start. When the Client is actually contacted, additional info from the client will be added to the client record (a "uname -a" output).
 
-    If you want to see what Client resources you have available in your conf file, you use the Console command **show clients**.
+   If you want to see what Client resources you have available in your conf file, you use the Console command show clients.
 
 llist
-    :index:`[TAG=Console->Command->llist] <triple: Console; Command; llist>` The llist or "long list" command takes all the same arguments that the list command described above does. The difference is that the llist command list the full contents of each database record selected. It does so by listing the various fields of the record vertically, with one field per line. It is possible to produce a very large number of output lines with this command.
+   :index:`[TAG=Console->Command->llist] <triple: Console; Command; llist>` The llist or "long list" command takes all the same arguments that the list command described above does. The difference is that the llist command list the full contents of each database record selected. It does so by listing the various fields of the record vertically, with one field per line. It is possible to produce a very large number of output lines with this command.
 
-    If instead of the **list pools** as in the example above, you enter **llist pools** you might get the following output:
+   If instead of the list pools as in the example above, you enter llist pools you might get the following output:
 
-    .. code-block:: sh
-   :caption: llist pools
+   .. code-block:: sh
+      :caption: llist pools
 
-        *<input>llist pools</input>
-                  PoolId: 1
-                    Name: Default
-                 NumVols: 0
-                 MaxVols: 0
-                 UseOnce: 0
-              UseCatalog: 1
-         AcceptAnyVolume: 1
-            VolRetention: 1,296,000
-          VolUseDuration: 86,400
-              MaxVolJobs: 0
-             MaxVolBytes: 0
-               AutoPrune: 0
-                 Recycle: 1
-                PoolType: Backup
-             LabelFormat: *
+      *<input>llist pools</input>
+                PoolId: 1
+                  Name: Default
+               NumVols: 0
+               MaxVols: 0
+               UseOnce: 0
+            UseCatalog: 1
+       AcceptAnyVolume: 1
+          VolRetention: 1,296,000
+        VolUseDuration: 86,400
+            MaxVolJobs: 0
+           MaxVolBytes: 0
+             AutoPrune: 0
+               Recycle: 1
+              PoolType: Backup
+           LabelFormat: *
 
-                  PoolId: 2
-                    Name: Recycle
-                 NumVols: 0
-                 MaxVols: 8
-                 UseOnce: 0
-              UseCatalog: 1
-         AcceptAnyVolume: 1
-            VolRetention: 3,600
-          VolUseDuration: 3,600
-              MaxVolJobs: 1
-             MaxVolBytes: 0
-               AutoPrune: 0
-                 Recycle: 1
-                PoolType: Backup
-             LabelFormat: File
+                PoolId: 2
+                  Name: Recycle
+               NumVols: 0
+               MaxVols: 8
+               UseOnce: 0
+            UseCatalog: 1
+       AcceptAnyVolume: 1
+          VolRetention: 3,600
+        VolUseDuration: 3,600
+            MaxVolJobs: 1
+           MaxVolBytes: 0
+             AutoPrune: 0
+               Recycle: 1
+              PoolType: Backup
+           LabelFormat: File
 
 messages
-    :index:`[TAG=Console->Command->messages] <triple: Console; Command; messages>` This command causes any pending console messages to be immediately displayed.
+   :index:`[TAG=Console->Command->messages] <triple: Console; Command; messages>` This command causes any pending console messages to be immediately displayed.
 
 memory
-    :index:`[TAG=Console->Command->memory] <triple: Console; Command; memory>` Print current memory usage.
+   :index:`[TAG=Console->Command->memory] <triple: Console; Command; memory>` Print current memory usage.
 
 mount
-    :index:`[TAG=Console->Command->mount] <triple: Console; Command; mount>` The mount command is used to get Bareos to read a volume on a physical device. It is a way to tell Bareos that you have mounted a tape and that Bareos should examine the tape. This command is normally used only after there was no Volume in a drive and Bareos requests you to mount a new Volume or when you have specifically unmounted a Volume with the :strong:`unmount` console command, which causes Bareos to close the drive.
-    If you have an autoloader, the mount command will not cause Bareos to operate the autoloader unless you specify a **slot** and possibly a **drive**. The various forms of the mount command are:
+   :index:`[TAG=Console->Command->mount] <triple: Console; Command; mount>` The mount command is used to get Bareos to read a volume on a physical device. It is a way to tell Bareos that you have mounted a tape and that Bareos should examine the tape. This command is normally used only after there was no Volume in a drive and Bareos requests you to mount a new Volume or when you have specifically unmounted a Volume with the :strong:`unmount` console command, which causes Bareos to close the drive. If
+   you have an autoloader, the mount command will not cause Bareos to operate the autoloader unless you specify a slot and possibly a drive. The various forms of the mount command are:
 
-    .. code-block:: sh
-   :caption: mount
+   .. code-block:: sh
+      :caption: mount
 
-        mount storage=<storage-name> [slot=<num>] [drive=<num>]
-        mount [jobid=<id> | job=<job-name>]
+      mount storage=<storage-name> [slot=<num>] [drive=<num>]
+      mount [jobid=<id> | job=<job-name>]
 
-    If you have specified **Automatic  Mount**:sup:`Sd`:sub:`Device`\ = **yes**, under most circumstances, Bareos will automatically access the Volume unless you have explicitly :strong:`unmount`ed it in the Console program.
+   If you have specified **Automatic  Mount**:sup:`Sd`:sub:`Device`\ = **yes**, under most circumstances, Bareos will automatically access the Volume unless you have explicitly :strong:`unmount`ed it in the Console program.
 
 move
-    :index:`[TAG=Console->Command->move] <triple: Console; Command; move>` The move command allows to move volumes between slots in an autochanger without having to leave the bconsole.
+   :index:`[TAG=Console->Command->move] <triple: Console; Command; move>` The move command allows to move volumes between slots in an autochanger without having to leave the bconsole.
 
-    To move a volume from slot 32 to slots 33, use:
+   To move a volume from slot 32 to slots 33, use:
 
-    .. code-block:: sh
-   :caption: move
+   .. code-block:: sh
+      :caption: move
 
-        *<input>move storage=TandbergT40 srcslots=32 dstslots=33</input>
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger "slots" command.
-        Device "Drive-1" has 39 slots.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger "listall" command.
-        Connecting to Storage daemon TandbergT40 at bareos:9103 ...
-        3306 Issuing autochanger transfer command.
-        3308 Successfully transfered volume from slot 32 to 33.
+      *<input>move storage=TandbergT40 srcslots=32 dstslots=33</input>
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger "slots" command.
+      Device "Drive-1" has 39 slots.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger "listall" command.
+      Connecting to Storage daemon TandbergT40 at bareos:9103 ...
+      3306 Issuing autochanger transfer command.
+      3308 Successfully transfered volume from slot 32 to 33.
 
 prune
-    :index:`[TAG=Console->Command->prune] <triple: Console; Command; prune>` 
+   :index:`[TAG=Console->Command->prune] <triple: Console; Command; prune>` 
 
-.. _ManualPruning
+.. _ManualPruning:
+
  The Prune command allows you to safely remove expired database records from Jobs, Volumes and Statistics. This command works only on the Catalog database and does not affect data written to Volumes. In all cases, the Prune command applies a retention period to the specified records. You can Prune expired File entries from Job records; you can Prune expired Job records from the database, and you can Prune
-    both expired Job and File records from specified Volumes.
+   both expired Job and File records from specified Volumes.
 
-    .. code-block:: sh
-   :caption: prune
+   .. code-block:: sh
+      :caption: prune
 
-        prune files [client=<client>] [pool=<pool>] [yes] |
-              jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |
-              volume [=volume] [pool=<pool>] [yes] |
-              stats [yes]
+      prune files [client=<client>] [pool=<pool>] [yes] |
+            jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |
+            volume [=volume] [pool=<pool>] [yes] |
+            stats [yes]
 
-    For a Volume to be pruned, the volume status must be **Full**, **Used** or **Append** otherwise the pruning will not take place.
+   For a Volume to be pruned, the volume status must be **Full**, **Used** or **Append** otherwise the pruning will not take place.
 
 purge
-    :index:`[TAG=Console->Command->purge] <triple: Console; Command; purge>` 
+   :index:`[TAG=Console->Command->purge] <triple: Console; Command; purge>` 
 
-.. _bcommandPurge
+.. _bcommandPurge:
+
  The Purge command will delete associated catalog database records from Jobs and Volumes without considering the retention period. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing. The permitted forms of :strong:`purge` are:
 
-    .. code-block:: sh
-   :caption: purge
+   .. code-block:: sh
+      :caption: purge
 
-        purge [files [job=<job> | jobid=<jobid> | client=<client> | volume=<volume>]] |
-              [jobs [client=<client> | volume=<volume>]] |
-              [volume [=<volume>] [storage=<storage>] [pool=<pool>] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |
-              [quota [client=<client>]]
+      purge [files [job=<job> | jobid=<jobid> | client=<client> | volume=<volume>]] |
+            [jobs [client=<client> | volume=<volume>]] |
+            [volume [=<volume>] [storage=<storage>] [pool=<pool>] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |
+            [quota [client=<client>]]
 
-    For the :strong:`purge` command to work on volume catalog database records the volume status must be **Append**, **Full**, **Used** or **Error**.
+   For the :strong:`purge` command to work on volume catalog database records the volume status must be **Append**, **Full**, **Used** or **Error**.
 
-    The actual data written to the Volume will be unaffected by this command unless you are using the **Action On Purge**:sup:`Dir`:sub:`Pool`\ = **Truncate** option.
+   The actual data written to the Volume will be unaffected by this command unless you are using the **Action On Purge**:sup:`Dir`:sub:`Pool`\ = **Truncate** option.
 
-    To ask Bareos to truncate your **Purged** volumes, you need to use the following command in interactive mode:
+   To ask Bareos to truncate your **Purged** volumes, you need to use the following command in interactive mode:
 
-    .. code-block:: sh
-   :caption: purge example
+   .. code-block:: sh
+      :caption: purge example
 
-        *<input>purge volume action=truncate storage=File pool=Full</input>
+      *<input>purge volume action=truncate storage=File pool=Full</input>
 
-    However, normally you should use the :strong:`purge` command only to purge a volume from the catalog and use the :strong:`truncate` command to truncate the volume on the |bareosSd|.
+   However, normally you should use the :strong:`purge` command only to purge a volume from the catalog and use the :strong:`truncate` command to truncate the volume on the |bareosSd|.
 
 resolve
-    :index:`[TAG=Console->Command->resolve] <triple: Console; Command; resolve>` In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :strong:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
+   :index:`[TAG=Console->Command->resolve] <triple: Console; Command; resolve>` In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :strong:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
 
-    .. code-block:: sh
-   :caption: resolve example
+   .. code-block:: sh
+      :caption: resolve example
 
-        *<input>resolve www.bareos.com</input>
-        bareos-dir resolves www.bareos.com to host[ipv4:84.44.166.242]
+      *<input>resolve www.bareos.com</input>
+      bareos-dir resolves www.bareos.com to host[ipv4:84.44.166.242]
 
-        *<input>resolve client=client1-fd www.bareos.com</input>
-        client1-fd resolves www.bareos.com to host[ipv4:84.44.166.242]
+      *<input>resolve client=client1-fd www.bareos.com</input>
+      client1-fd resolves www.bareos.com to host[ipv4:84.44.166.242]
 
-        *<input>resolve storage=File www.bareos.com</input>
-        bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
+      *<input>resolve storage=File www.bareos.com</input>
+      bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
 
 query
-    :index:`[TAG=Console->Command->query] <triple: Console; Command; query>` 
+   :index:`[TAG=Console->Command->query] <triple: Console; Command; query>` 
 
-.. _section-bcommandQuery
+.. _section-bcommandQuery:
+
  This command reads a predefined SQL query from the query file (the name and location of the query file is defined with the QueryFile resource record in the Director’s configuration file). You are prompted to select a query from the file, and possibly enter one or more parameters, then the command is submitted to the Catalog database SQL engine.
 
 quit
-    :index:`[TAG=quit] <single: quit>` This command terminates the console program. The console program sends the **quit** request to the Director and waits for acknowledgment. If the Director is busy doing a previous command for you that has not terminated, it may take some time. You may quit immediately by issuing the **.quit** command (i.e. quit preceded by a period).
+   :index:`[TAG=quit] <single: quit>` This command terminates the console program. The console program sends the quit request to the Director and waits for acknowledgment. If the Director is busy doing a previous command for you that has not terminated, it may take some time. You may quit immediately by issuing the .quit command (i.e. quit preceded by a period).
 
 relabel
-    :index:`[TAG=Console->Command->relabel] <triple: Console; Command; relabel>` This command is used to label physical volumes.
+   :index:`[TAG=Console->Command->relabel] <triple: Console; Command; relabel>` This command is used to label physical volumes.
 
-    The full form of this command is:
+   The full form of this command is:
 
-    .. code-block:: sh
-   :caption: relabel
+   .. code-block:: sh
+      :caption: relabel
 
-        relabel storage=<storage-name> oldvolume=<old-volume-name> volume=<new-volume-name> pool=<pool-name> [encrypt]
+      relabel storage=<storage-name> oldvolume=<old-volume-name> volume=<new-volume-name> pool=<pool-name> [encrypt]
 
-    If you leave out any part, you will be prompted for it. In order for the Volume (old-volume-name) to be relabeled, it must be in the catalog, and the volume status must be marked **Purged** or **Recycle**. This happens automatically as a result of applying retention periods or you may explicitly purge the volume using the :strong:`purge` command.
+   If you leave out any part, you will be prompted for it. In order for the Volume (old-volume-name) to be relabeled, it must be in the catalog, and the volume status must be marked **Purged** or **Recycle**. This happens automatically as a result of applying retention periods or you may explicitly purge the volume using the :strong:`purge` command.
 
-    Once the volume is physically relabeled, the old data previously written on the Volume is lost and cannot be recovered.
+   Once the volume is physically relabeled, the old data previously written on the Volume is lost and cannot be recovered.
 
 release
-    :index:`[TAG=Console->Command->release] <triple: Console; Command; release>` This command is used to cause the Storage daemon to release (and rewind) the current tape in the drive, and to re-read the Volume label the next time the tape is used.
+   :index:`[TAG=Console->Command->release] <triple: Console; Command; release>` This command is used to cause the Storage daemon to release (and rewind) the current tape in the drive, and to re-read the Volume label the next time the tape is used.
 
-    .. code-block:: sh
-   :caption: release
+   .. code-block:: sh
+      :caption: release
 
-        release storage=<storage-name>
+      release storage=<storage-name>
 
-    After a release command, the device is still kept open by Bareos (unless **Always Open**:sup:`Sd`:sub:`Device`\ = **no**) so it cannot be used by another program. However, with some tape drives, the operator can remove the current tape and to insert a different one, and when the next Job starts, Bareos will know to re-read the tape label to find out what tape is mounted. If you want to be able to use the drive with another program (e.g. :program:`mt`), you
-    must use the :strong:`unmount` command to cause Bareos to completely release (close) the device.
+   After a release command, the device is still kept open by Bareos (unless **Always Open**:sup:`Sd`:sub:`Device`\ = **no**) so it cannot be used by another program. However, with some tape drives, the operator can remove the current tape and to insert a different one, and when the next Job starts, Bareos will know to re-read the tape label to find out what tape is mounted. If you want to be able to use the drive with another program (e.g. :command:`mt`), you
+   must use the :strong:`unmount` command to cause Bareos to completely release (close) the device.
 
 reload
-    :index:`[TAG=Console->Command->reload] <triple: Console; Command; reload>` The reload command causes the Director to re-read its configuration file and apply the new values. The new values will take effect immediately for all new jobs. However, if you change schedules, be aware that the scheduler pre-schedules jobs up to two hours in advance, so any changes that are to take place during the next two hours may be delayed. Jobs that have already been scheduled to run (i.e. surpassed their requested start time) will
-    continue with the old values. New jobs will use the new values. Each time you issue a reload command while jobs are running, the prior config values will queued until all jobs that were running before issuing the reload terminate, at which time the old config values will be released from memory. The Directory permits keeping up to ten prior set of configurations before it will refuse a reload command. Once at least one old set of config values has been released it will again accept new
-    reload commands.
+   :index:`[TAG=Console->Command->reload] <triple: Console; Command; reload>` The reload command causes the Director to re-read its configuration file and apply the new values. The new values will take effect immediately for all new jobs. However, if you change schedules, be aware that the scheduler pre-schedules jobs up to two hours in advance, so any changes that are to take place during the next two hours may be delayed. Jobs that have already been scheduled to run (i.e. surpassed their requested start time) will
+   continue with the old values. New jobs will use the new values. Each time you issue a reload command while jobs are running, the prior config values will queued until all jobs that were running before issuing the reload terminate, at which time the old config values will be released from memory. The Directory permits keeping up to ten prior set of configurations before it will refuse a reload command. Once at least one old set of config values has been released it will again accept new reload
+   commands.
 
-    While it is possible to reload the Director’s configuration on the fly, even while jobs are executing, this is a complex operation and not without side effects. Accordingly, if you have to reload the Director’s configuration while Bareos is running, it is advisable to restart the Director at the next convenient opportunity.
+   While it is possible to reload the Director’s configuration on the fly, even while jobs are executing, this is a complex operation and not without side effects. Accordingly, if you have to reload the Director’s configuration while Bareos is running, it is advisable to restart the Director at the next convenient opportunity.
 
 rerun
-    :index:`[TAG=Console->Command->rerun] <triple: Console; Command; rerun>` The rerun command allows you to re-run a Job with exactly the same setting as the original Job. In Bareos, the job configuration is often altered by job overrides. These overrides alter the configuration of the job just for one job run. If because of any reason, a job with overrides fails, it is not easy to restart a new job that is exactly configured as the job that failed. The whole job configuration is automatically set to the defaults
-    and it is hard to configure everything like it was.
+   :index:`[TAG=Console->Command->rerun] <triple: Console; Command; rerun>` The rerun command allows you to re-run a Job with exactly the same setting as the original Job. In Bareos, the job configuration is often altered by job overrides. These overrides alter the configuration of the job just for one job run. If because of any reason, a job with overrides fails, it is not easy to restart a new job that is exactly configured as the job that failed. The whole job configuration is automatically set to the defaults
+   and it is hard to configure everything like it was.
 
-    By using the rerun command, it is much easier to rerun a job exactly as it was configured. You only have to specify the JobId of the failed job.
+   By using the rerun command, it is much easier to rerun a job exactly as it was configured. You only have to specify the JobId of the failed job.
 
-    .. code-block:: sh
-   :caption: rerun
+   .. code-block:: sh
+      :caption: rerun
 
-        rerun jobid=<jobid> since_jobid=<jobid> days=<nr_days> hours=<nr_hours> yes
+      rerun jobid=<jobid> since_jobid=<jobid> days=<nr_days> hours=<nr_hours> yes
 
-    You can select the jobid(s) to rerun by using one of the selection criteria. Using jobid= will automatically select all jobs failed after and including the given jobid for rerunning. By using days= or hours=, you can select all failed jobids in the last number of days or number of hours respectively for rerunning.
+   You can select the jobid(s) to rerun by using one of the selection criteria. Using jobid= will automatically select all jobs failed after and including the given jobid for rerunning. By using days= or hours=, you can select all failed jobids in the last number of days or number of hours respectively for rerunning.
 
 restore
-    :index:`[TAG=Restore] <single: Restore>` :index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>` :index:`[TAG=Console->File Selection] <pair: Console; File Selection>` 
+   :index:`[TAG=Restore] <single: Restore>` :index:`[TAG=Console->Command->restore] <triple: Console; Command; restore>` :index:`[TAG=Console->File Selection] <pair: Console; File Selection>` 
 
-.. _bcommandRestore
+.. _bcommandRestore:
+
  The restore command allows you to select one or more Jobs (JobIds) to be restored using various methods. Once the JobIds are selected, the File records for those Jobs are placed in an internal Bareos directory tree, and the restore enters a file selection mode that allows you to interactively walk up and down the
-    file tree selecting individual files to be restored. This mode is somewhat similar to the standard Unix **restore** program’s interactive file selection mode.
+   file tree selecting individual files to be restored. This mode is somewhat similar to the standard Unix restore program’s interactive file selection mode.
 
-    .. code-block:: sh
-   :caption: restore
+   .. code-block:: sh
+      :caption: restore
 
-        restore storage=<storage-name> client=<backup-client-name>
-          where=<path> pool=<pool-name> fileset=<fileset-name>
-          restoreclient=<restore-client-name>
-          restorejob=<job-name>
-          select current all done
+      restore storage=<storage-name> client=<backup-client-name>
+        where=<path> pool=<pool-name> fileset=<fileset-name>
+        restoreclient=<restore-client-name>
+        restorejob=<job-name>
+        select current all done
 
-    Where **current**, if specified, tells the restore command to automatically select a restore to the most current backup. If not specified, you will be prompted. The **all** specification tells the restore command to restore all files. If it is not specified, you will be prompted for the files to restore. For details of the **restore** command, please see the :ref:`Restore Chapter <RestoreChapter>` of this manual.
+   Where current, if specified, tells the restore command to automatically select a restore to the most current backup. If not specified, you will be prompted. The all specification tells the restore command to restore all files. If it is not specified, you will be prompted for the files to restore. For details of the restore command, please see the :ref:`Restore Chapter <RestoreChapter>` of this manual.
 
-    The client keyword initially specifies the client from which the backup was made and the client to which the restore will be make. However, if the restoreclient keyword is specified, then the restore is written to that client.
+   The client keyword initially specifies the client from which the backup was made and the client to which the restore will be make. However, if the restoreclient keyword is specified, then the restore is written to that client.
 
-    The restore job rarely needs to be specified, as bareos installations commonly only have a single restore job configured. However, for certain cases, such as a varying list of RunScript specifications, multiple restore jobs may be configured. The restorejob argument allows the selection of one of these jobs.
+   The restore job rarely needs to be specified, as bareos installations commonly only have a single restore job configured. However, for certain cases, such as a varying list of RunScript specifications, multiple restore jobs may be configured. The restorejob argument allows the selection of one of these jobs.
 
-    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
+   For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
 run
-    :index:`[TAG=Console->Command->run] <triple: Console; Command; run>` This command allows you to schedule jobs to be run immediately.
+   :index:`[TAG=Console->Command->run] <triple: Console; Command; run>` This command allows you to schedule jobs to be run immediately.
 
-    The full form of the command is:
+   The full form of the command is:
 
-    .. code-block:: sh
-   :caption: run
+   .. code-block:: sh
+      :caption: run
 
-        run job=<job-name> client=<client-name> fileset=<fileset-name>
-           level=<level> storage=<storage-name> where=<directory-prefix>
-           when=<universal-time-specification> pool=<pool-name>
-           pluginoptions=<plugin-options-string> accurate=<yes|no>
-           comment=<text> spooldata=<yes|no> priority=<number>
-           jobid=<jobid> catalog=<catalog> migrationjob=<job-name> backupclient=<client-name>
-           backupformat=<format> nextpool=<pool-name> since=<universal-time-specification>
-           verifyjob=<job-name> verifylist=<verify-list> migrationjob=<complete_name>
-           yes
+      run job=<job-name> client=<client-name> fileset=<fileset-name>
+         level=<level> storage=<storage-name> where=<directory-prefix>
+         when=<universal-time-specification> pool=<pool-name>
+         pluginoptions=<plugin-options-string> accurate=<yes|no>
+         comment=<text> spooldata=<yes|no> priority=<number>
+         jobid=<jobid> catalog=<catalog> migrationjob=<job-name> backupclient=<client-name>
+         backupformat=<format> nextpool=<pool-name> since=<universal-time-specification>
+         verifyjob=<job-name> verifylist=<verify-list> migrationjob=<complete_name>
+         yes
 
-    Any information that is needed but not specified will be listed for selection, and before starting the job, you will be prompted to accept, reject, or modify the parameters of the job to be run, unless you have specified **yes**, in which case the job will be immediately sent to the scheduler.
+   Any information that is needed but not specified will be listed for selection, and before starting the job, you will be prompted to accept, reject, or modify the parameters of the job to be run, unless you have specified yes, in which case the job will be immediately sent to the scheduler.
 
-    If you wish to start a job at a later time, you can do so by setting the When time. Use the **mod** option and select **When** (no. 6). Then enter the desired start time in YYYY-MM-DD HH:MM:SS format.
+   If you wish to start a job at a later time, you can do so by setting the When time. Use the mod option and select When (no. 6). Then enter the desired start time in YYYY-MM-DD HH:MM:SS format.
 
-    The spooldata argument of the run command cannot be modified through the menu and is only accessible by setting its value on the intial command line. If no spooldata flag is set, the job, storage or schedule flag is used.
+   The spooldata argument of the run command cannot be modified through the menu and is only accessible by setting its value on the intial command line. If no spooldata flag is set, the job, storage or schedule flag is used.
 
 setbandwidth
-    :index:`[TAG=Console->Command->setbandwidth] <triple: Console; Command; setbandwidth>` This command (:index:`Version >= 12.4.1 <pair: bareos-12.4.1; setbandwidth>`) is used to limit the bandwidth of a running job or a client.
+   :index:`[TAG=Console->Command->setbandwidth] <triple: Console; Command; setbandwidth>` This command (:index:`Version >= 12.4.1 <pair: bareos-12.4.1; setbandwidth>`) is used to limit the bandwidth of a running job or a client.
 
-    .. code-block:: sh
-   :caption: setbandwidth
+   .. code-block:: sh
+      :caption: setbandwidth
 
-        setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
+      setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
 
 setdebug
-    
+   
 
-.. _bcommandSetdebug
+.. _bcommandSetdebug:
+
  :index:`[TAG=Console->Command->setdebug] <triple: Console; Command; setdebug>` :index:`[TAG=Debug->setdebug] <pair: Debug; setdebug>` :index:`[TAG=Debug->Windows] <pair: Debug; Windows>` :index:`[TAG=Windows->Debug] <pair: Windows; Debug>` This command is used to set the debug level in each daemon. The form of this command is:
 
-    .. code-block:: sh
-   :caption: setdebug
+   .. code-block:: sh
+      :caption: setdebug
 
-        setdebug level=nnn [trace=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
+      setdebug level=nnn [trace=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
 
-    Each of the daemons normally has debug compiled into the program, but disabled. There are two ways to enable the debug output.
+   Each of the daemons normally has debug compiled into the program, but disabled. There are two ways to enable the debug output.
 
-    One is to add the **-d nnn** option on the command line when starting the daemon. The **nnn** is the debug level, and generally anything between 50 and 200 is reasonable. The higher the number, the more output is produced. The output is written to standard output.
+   One is to add the -d nnn option on the command line when starting the daemon. The nnn is the debug level, and generally anything between 50 and 200 is reasonable. The higher the number, the more output is produced. The output is written to standard output.
 
-    The second way of getting debug output is to dynamically turn it on using the Console using the :program:`setdebug level=nnn` command. If none of the options are given, the command will prompt you. You can selectively turn on/off debugging in any or all the daemons (i.e. it is not necessary to specify all the components of the above command).
+   The second way of getting debug output is to dynamically turn it on using the Console using the :command:`setdebug level=nnn` command. If none of the options are given, the command will prompt you. You can selectively turn on/off debugging in any or all the daemons (i.e. it is not necessary to specify all the components of the above command).
 
-    If trace=1 is set, then tracing will be enabled, and the daemon will be placed in trace mode, which means that all debug output as set by the debug level will be directed to his trace file in the current directory of the daemon. When tracing, each debug output message is appended to the trace file. You must explicitly delete the file when you are done.
+   If trace=1 is set, then tracing will be enabled, and the daemon will be placed in trace mode, which means that all debug output as set by the debug level will be directed to his trace file in the current directory of the daemon. When tracing, each debug output message is appended to the trace file. You must explicitly delete the file when you are done.
 
-    .. code-block:: sh
-   :caption: set Director debug level to 100 and get messages written to his trace file
+   .. code-block:: sh
+      :caption: set Director debug level to 100 and get messages written to his trace file
 
-        *<input>setdebug level=100 trace=1 dir</input>
-        level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace
+      *<input>setdebug level=100 trace=1 dir</input>
+      level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace
 
 setip
-    
+   
 
-.. _bcommandSetIP
+.. _bcommandSetIP:
+
  :index:`[TAG=Console->Command->setip] <triple: Console; Command; setip>` Sets new client address – if authorized.
 
-    A console is authorized to use the **SetIP** command only if it has a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the **Name =** directive, must be the same as a Client name, the user of that console is permitted to use the **SetIP** command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits portables or other machines using DHCP (non-fixed IP addresses) to
-    "notify" the Director of their current IP address.
+   A console is authorized to use the SetIP command only if it has a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the Name = directive, must be the same as a Client name, the user of that console is permitted to use the SetIP command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits portables or other machines using DHCP (non-fixed IP addresses) to "notify" the
+   Director of their current IP address.
 
 show
-    :index:`[TAG=Console->Command->show] <triple: Console; Command; show>` The show command will list the Director’s resource records as defined in the Director’s configuration. This command is used mainly for debugging purposes by developers. The following keywords are accepted on the show command line: catalogs, clients, counters, devices, directors, filesets, jobs, messages, pools, schedules, storages, all, help. Please don’t confuse this command with the **list**, which displays the contents of the catalog.
+   :index:`[TAG=Console->Command->show] <triple: Console; Command; show>` The show command will list the Director’s resource records as defined in the Director’s configuration. This command is used mainly for debugging purposes by developers. The following keywords are accepted on the show command line: catalogs, clients, counters, devices, directors, filesets, jobs, messages, pools, schedules, storages, all, help. Please don’t confuse this command with the list, which displays the contents of the catalog.
 
 sqlquery
-    :index:`[TAG=Console->Command->sqlquery] <triple: Console; Command; sqlquery>` The sqlquery command puts the Console program into SQL query mode where each line you enter is concatenated to the previous line until a semicolon (;) is seen. The semicolon terminates the command, which is then passed directly to the SQL database engine. When the output from the SQL engine is displayed, the formation of a new SQL command begins. To terminate SQL query mode and return to the Console command prompt, you enter a period (.)
-    in column 1.
+   :index:`[TAG=Console->Command->sqlquery] <triple: Console; Command; sqlquery>` The sqlquery command puts the Console program into SQL query mode where each line you enter is concatenated to the previous line until a semicolon (;) is seen. The semicolon terminates the command, which is then passed directly to the SQL database engine. When the output from the SQL engine is displayed, the formation of a new SQL command begins. To terminate SQL query mode and return to the Console command prompt, you enter a period (.)
+   in column 1.
 
-    Using this command, you can query the SQL catalog database directly. Note you should really know what you are doing otherwise you could damage the catalog database. See the **query** command below for simpler and safer way of entering SQL queries.
+   Using this command, you can query the SQL catalog database directly. Note you should really know what you are doing otherwise you could damage the catalog database. See the query command below for simpler and safer way of entering SQL queries.
 
-    Depending on what database engine you are using (MySQL, PostgreSQL or SQLite), you will have somewhat different SQL commands available. For more detailed information, please refer to the MySQL, PostgreSQL or SQLite documentation.
+   Depending on what database engine you are using (MySQL, PostgreSQL or SQLite), you will have somewhat different SQL commands available. For more detailed information, please refer to the MySQL, PostgreSQL or SQLite documentation.
 
 status
-    :index:`[TAG=Console->Command->status] <triple: Console; Command; status>`
+   :index:`[TAG=Console->Command->status] <triple: Console; Command; status>`
 
-    This command will display the status of all components. For the director, it will display the next jobs that are scheduled during the next 24 hours as well as the status of currently running jobs. For the Storage Daemon, you will have drive status or autochanger content. The File Daemon will give you information about current jobs like average speed or file accounting. The full form of this command is:
+   This command will display the status of all components. For the director, it will display the next jobs that are scheduled during the next 24 hours as well as the status of currently running jobs. For the Storage Daemon, you will have drive status or autochanger content. The File Daemon will give you information about current jobs like average speed or file accounting. The full form of this command is:
 
-    .. code-block:: sh
-   :caption: status
+   .. code-block:: sh
+      :caption: status
 
-        status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
-                client=<client-name> | storage=<storage-name> slots | subscriptions]
+      status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
+              client=<client-name> | storage=<storage-name> slots | subscriptions]
 
-    If you do a **status dir**, the console will list any currently running jobs, a summary of all jobs scheduled to be run in the next 24 hours, and a listing of the last ten terminated jobs with their statuses. The scheduled jobs summary will include the Volume name to be used. You should be aware of two things: 1. to obtain the volume name, the code goes through the same code that will be used when the job runs, but it does not do pruning nor recycling of Volumes; 2. The Volume listed is at
-    best a guess. The Volume actually used may be different because of the time difference (more durations may expire when the job runs) and another job could completely fill the Volume requiring a new one.
+   If you do a status dir, the console will list any currently running jobs, a summary of all jobs scheduled to be run in the next 24 hours, and a listing of the last ten terminated jobs with their statuses. The scheduled jobs summary will include the Volume name to be used. You should be aware of two things: 1. to obtain the volume name, the code goes through the same code that will be used when the job runs, but it does not do pruning nor recycling of Volumes; 2. The Volume listed is at best a
+   guess. The Volume actually used may be different because of the time difference (more durations may expire when the job runs) and another job could completely fill the Volume requiring a new one.
 
-    In the Running Jobs listing, you may find the following types of information:
+   In the Running Jobs listing, you may find the following types of information:
 
-    .. code-block:: sh
-   :caption: 
+   .. code-block:: sh
 
-        2507 Catalog MatouVerify.2004-03-13_05.05.02 is waiting execution
-        5349 Full    CatalogBackup.2004-03-13_01.10.00 is waiting for higher
-                     priority jobs to finish
-        5348 Differe Minou.2004-03-13_01.05.09 is waiting on max Storage jobs
-        5343 Full    Rufus.2004-03-13_01.05.04 is running
+      2507 Catalog MatouVerify.2004-03-13_05.05.02 is waiting execution
+      5349 Full    CatalogBackup.2004-03-13_01.10.00 is waiting for higher
+                   priority jobs to finish
+      5348 Differe Minou.2004-03-13_01.05.09 is waiting on max Storage jobs
+      5343 Full    Rufus.2004-03-13_01.05.04 is running
 
-    Looking at the above listing from bottom to top, obviously JobId 5343 (Rufus) is running. JobId 5348 (Minou) is waiting for JobId 5343 to finish because it is using the Storage resource, hence the "waiting on max Storage jobs". JobId 5349 has a lower priority than all the other jobs so it is waiting for higher priority jobs to finish, and finally, JobId 2507 (MatouVerify) is waiting because only one job can run at a time, hence it is simply "waiting execution"
+   Looking at the above listing from bottom to top, obviously JobId 5343 (Rufus) is running. JobId 5348 (Minou) is waiting for JobId 5343 to finish because it is using the Storage resource, hence the "waiting on max Storage jobs". JobId 5349 has a lower priority than all the other jobs so it is waiting for higher priority jobs to finish, and finally, JobId 2507 (MatouVerify) is waiting because only one job can run at a time, hence it is simply "waiting execution"
 
-    If you do a **status dir**, it will by default list the first occurrence of all jobs that are scheduled today and tomorrow. If you wish to see the jobs that are scheduled in the next three days (e.g. on Friday you want to see the first occurrence of what tapes are scheduled to be used on Friday, the weekend, and Monday), you can add the **days=3** option. Note, a **days=0** shows the first occurrence of jobs scheduled today only. If you have multiple run statements, the first occurrence of
-    each run statement for the job will be displayed for the period specified.
+   If you do a status dir, it will by default list the first occurrence of all jobs that are scheduled today and tomorrow. If you wish to see the jobs that are scheduled in the next three days (e.g. on Friday you want to see the first occurrence of what tapes are scheduled to be used on Friday, the weekend, and Monday), you can add the days=3 option. Note, a days=0 shows the first occurrence of jobs scheduled today only. If you have multiple run statements, the first occurrence of each run
+   statement for the job will be displayed for the period specified.
 
-    If your job seems to be blocked, you can get a general idea of the problem by doing a **status dir**, but you can most often get a much more specific indication of the problem by doing a **status storage=xxx**. For example, on an idle test system, when I do **status storage=File**, I get:
+   If your job seems to be blocked, you can get a general idea of the problem by doing a status dir, but you can most often get a much more specific indication of the problem by doing a status storage=xxx. For example, on an idle test system, when I do status storage=File, I get:
 
-    .. code-block:: sh
-   :caption: status storage
+   .. code-block:: sh
+      :caption: status storage
 
-        *<input>status storage=File</input>
-        Connecting to Storage daemon File at 192.168.68.112:8103
+      *<input>status storage=File</input>
+      Connecting to Storage daemon File at 192.168.68.112:8103
 
-        rufus-sd Version: 1.39.6 (24 March 2006) i686-pc-linux-gnu redhat (Stentz)
-        Daemon started 26-Mar-06 11:06, 0 Jobs run since started.
+      rufus-sd Version: 1.39.6 (24 March 2006) i686-pc-linux-gnu redhat (Stentz)
+      Daemon started 26-Mar-06 11:06, 0 Jobs run since started.
 
-        Running Jobs:
-        No Jobs running.
-        ====
+      Running Jobs:
+      No Jobs running.
+      ====
 
-        Jobs waiting to reserve a drive:
-        ====
+      Jobs waiting to reserve a drive:
+      ====
 
-        Terminated Jobs:
-         JobId  Level   Files          Bytes Status   Finished        Name
-        ======================================================================
-            59  Full        234      4,417,599 OK       15-Jan-06 11:54 usersave
-        ====
+      Terminated Jobs:
+       JobId  Level   Files          Bytes Status   Finished        Name
+      ======================================================================
+          59  Full        234      4,417,599 OK       15-Jan-06 11:54 usersave
+      ====
 
-        Device status:
-        Autochanger "DDS-4-changer" with devices:
-           "DDS-4" (/dev/nst0)
-        Device "DDS-4" (/dev/nst0) is mounted with Volume="TestVolume002"
-        Pool="*unknown*"
-            Slot 2 is loaded in drive 0.
-            Total Bytes Read=0 Blocks Read=0 Bytes/block=0
-            Positioned at File=0 Block=0
+      Device status:
+      Autochanger "DDS-4-changer" with devices:
+         "DDS-4" (/dev/nst0)
+      Device "DDS-4" (/dev/nst0) is mounted with Volume="TestVolume002"
+      Pool="*unknown*"
+          Slot 2 is loaded in drive 0.
+          Total Bytes Read=0 Blocks Read=0 Bytes/block=0
+          Positioned at File=0 Block=0
 
-        Device "File" (/tmp) is not open.
-        ====
+      Device "File" (/tmp) is not open.
+      ====
 
-        In Use Volume status:
-        ====
+      In Use Volume status:
+      ====
 
-    Now, what this tells me is that no jobs are running and that none of the devices are in use. Now, if I **unmount** the autochanger, which will not be used in this example, and then start a Job that uses the File device, the job will block. When I re-issue the status storage command, I get for the Device status:
+   Now, what this tells me is that no jobs are running and that none of the devices are in use. Now, if I unmount the autochanger, which will not be used in this example, and then start a Job that uses the File device, the job will block. When I re-issue the status storage command, I get for the Device status:
 
-    .. code-block:: sh
-   :caption: status storage
+   .. code-block:: sh
+      :caption: status storage
 
-        *<input>status storage=File</input>
-        ...
-        Device status:
-        Autochanger "DDS-4-changer" with devices:
-           "DDS-4" (/dev/nst0)
-        Device "DDS-4" (/dev/nst0) is not open.
-            Device is BLOCKED. User unmounted.
-            Drive 0 is not loaded.
+      *<input>status storage=File</input>
+      ...
+      Device status:
+      Autochanger "DDS-4-changer" with devices:
+         "DDS-4" (/dev/nst0)
+      Device "DDS-4" (/dev/nst0) is not open.
+          Device is BLOCKED. User unmounted.
+          Drive 0 is not loaded.
 
-        Device "File" (/tmp) is not open.
-            Device is BLOCKED waiting for media.
-        ====
-        ...
+      Device "File" (/tmp) is not open.
+          Device is BLOCKED waiting for media.
+      ====
+      ...
 
-    Now, here it should be clear that if a job were running that wanted to use the Autochanger (with two devices), it would block because the user unmounted the device. The real problem for the Job I started using the "File" device is that the device is blocked waiting for media – that is Bareos needs you to label a Volume.
+   Now, here it should be clear that if a job were running that wanted to use the Autochanger (with two devices), it would block because the user unmounted the device. The real problem for the Job I started using the "File" device is that the device is blocked waiting for media – that is Bareos needs you to label a Volume.
 
-    The command :strong:`status scheduler` (:index:`Version >= 12.4.4 <pair: bareos-12.4.4; status scheduler>`) can be used to check when a certain schedule will trigger. This gives more information than :strong:`status director`.
+   The command :strong:`status scheduler` (:index:`Version >= 12.4.4 <pair: bareos-12.4.4; status scheduler>`) can be used to check when a certain schedule will trigger. This gives more information than :strong:`status director`.
 
-    Called without parameters, :strong:`status scheduler` shows a preview for all schedules for the next 14 days. It first shows a list of the known schedules and the jobs that will be triggered by these jobs, and next, a table with date (including weekday), schedule name and applied overrides is displayed:
+   Called without parameters, :strong:`status scheduler` shows a preview for all schedules for the next 14 days. It first shows a list of the known schedules and the jobs that will be triggered by these jobs, and next, a table with date (including weekday), schedule name and applied overrides is displayed:
 
-    .. code-block:: sh
-   :caption: status scheduler
+   .. code-block:: sh
+      :caption: status scheduler
 
-        *<input>status scheduler</input>
-        Scheduler Jobs:
+      *<input>status scheduler</input>
+      Scheduler Jobs:
 
-        Schedule               Jobs Triggered
-        ===========================================================
-        WeeklyCycle
-                               BackupClient1
+      Schedule               Jobs Triggered
+      ===========================================================
+      WeeklyCycle
+                             BackupClient1
 
-        WeeklyCycleAfterBackup
-                               BackupCatalog
+      WeeklyCycleAfterBackup
+                             BackupCatalog
 
-        ====
+      ====
 
-        Scheduler Preview for 14 days:
+      Scheduler Preview for 14 days:
 
-        Date                  Schedule                Overrides
-        ==============================================================
-        Di 04-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Di 04-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Mi 05-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Mi 05-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Do 06-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Do 06-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Fr 07-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Fr 07-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Sa 08-Jun-2013 21:00  WeeklyCycle             Level=Differential
-        Mo 10-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Mo 10-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Di 11-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Di 11-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Mi 12-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Mi 12-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Do 13-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Do 13-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Fr 14-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Fr 14-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        Sa 15-Jun-2013 21:00  WeeklyCycle             Level=Differential
-        Mo 17-Jun-2013 21:00  WeeklyCycle             Level=Incremental
-        Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-        ====
+      Date                  Schedule                Overrides
+      ==============================================================
+      Di 04-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Di 04-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Mi 05-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Mi 05-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Do 06-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Do 06-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Fr 07-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Fr 07-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Sa 08-Jun-2013 21:00  WeeklyCycle             Level=Differential
+      Mo 10-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Mo 10-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Di 11-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Di 11-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Mi 12-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Mi 12-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Do 13-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Do 13-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Fr 14-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Fr 14-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      Sa 15-Jun-2013 21:00  WeeklyCycle             Level=Differential
+      Mo 17-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+      Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+      ====
 
-    :strong:`status scheduler` accepts the following parameters:
+   :strong:`status scheduler` accepts the following parameters:
 
-    client=clientname
-        shows only the schedules that affect the given client.
+   client=clientname
+      shows only the schedules that affect the given client.
 
-    job=jobname
-        shows only the schedules that affect the given job.
+   job=jobname
+      shows only the schedules that affect the given job.
 
-    schedule=schedulename
-        shows only the given schedule.
+   schedule=schedulename
+      shows only the given schedule.
 
-    days=number
-        of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria. days= can be combined with the other selection criteria.
+   days=number
+      of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria. days= can be combined with the other selection criteria.
 
-    In case you are running a maintained version of Bareos, the command :strong:`status subscriptions` (:index:`Version >= 12.4.4 <pair: bareos-12.4.4; status subscriptions>`) can help you to keep the overview over the subscriptions that are used.
+   In case you are running a maintained version of Bareos, the command :strong:`status subscriptions` (:index:`Version >= 12.4.4 <pair: bareos-12.4.4; status subscriptions>`) can help you to keep the overview over the subscriptions that are used.
 
-    To enable this functionality, just add the configuration **Subscriptions**:sup:`Dir`:sub:`Director`\  directive and specify the number of subscribed clients, for example:
+   To enable this functionality, just add the configuration **Subscriptions**:sup:`Dir`:sub:`Director`\  directive and specify the number of subscribed clients, for example:
 
-    .. code-block:: sh
-   :caption: enable subscription check
+   .. code-block:: sh
+      :caption: enable subscription check
 
-        Director {
-           ...
-           Subscriptions = 50
-        }
+      Director {
+         ...
+         Subscriptions = 50
+      }
 
-    Using the console command :strong:`status subscriptions`, the status of the subscriptions can be checked any time interactively:
+   Using the console command :strong:`status subscriptions`, the status of the subscriptions can be checked any time interactively:
 
-    .. code-block:: sh
-   :caption: status subscriptions
+   .. code-block:: sh
+      :caption: status subscriptions
 
-        *<input>status subscriptions</input>
-        Ok: available subscriptions: 8 (42/50) (used/total)
+      *<input>status subscriptions</input>
+      Ok: available subscriptions: 8 (42/50) (used/total)
 
-    Also, the number of subscriptions is checked after every job. If the number of clients is bigger than the configured limit, a Job warning is created a message like this:
+   Also, the number of subscriptions is checked after every job. If the number of clients is bigger than the configured limit, a Job warning is created a message like this:
 
-    .. code-block:: sh
-   :caption: subscriptions warning
+   .. code-block:: sh
+      :caption: subscriptions warning
 
-        JobId 7: Warning: Subscriptions exceeded: (used/total) (51/50)
+      JobId 7: Warning: Subscriptions exceeded: (used/total) (51/50)
 
-    Please note: Nothing else than the warning is issued, no enforcement on backup, restore or any other operation will happen.
+   Please note: Nothing else than the warning is issued, no enforcement on backup, restore or any other operation will happen.
 
-    Setting the value for **Subscriptions**:sup:`Dir`:sub:`Director`\ = **0** disables this functionality:
+   Setting the value for **Subscriptions**:sup:`Dir`:sub:`Director`\ = **0** disables this functionality:
 
-    .. code-block:: sh
-   :caption: disable subscription check
+   .. code-block:: sh
+      :caption: disable subscription check
 
-        Director {
-           ...
-           Subscriptions = 0
-        }
+      Director {
+         ...
+         Subscriptions = 0
+      }
 
-    Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
+   Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
 
 time
-    :index:`[TAG=Console->Command->time] <triple: Console; Command; time>` The time command shows the current date, time and weekday.
+   :index:`[TAG=Console->Command->time] <triple: Console; Command; time>` The time command shows the current date, time and weekday.
 
 trace
-    :index:`[TAG=Console->Command->trace] <triple: Console; Command; trace>` Turn on/off trace to file.
+   :index:`[TAG=Console->Command->trace] <triple: Console; Command; trace>` Turn on/off trace to file.
 
 truncate
-    :index:`[TAG=Console->Command->truncate] <triple: Console; Command; truncate>` :index:`[TAG=Disk->Freeing disk space] <pair: Disk; Freeing disk space>` :index:`[TAG=Disk->Freeing disk space] <pair: Disk; Freeing disk space>` 
+   :index:`[TAG=Console->Command->truncate] <triple: Console; Command; truncate>` :index:`[TAG=Disk->Freeing disk space] <pair: Disk; Freeing disk space>` :index:`[TAG=Disk->Freeing disk space] <pair: Disk; Freeing disk space>` 
 
-.. _bcommandTruncate
+.. _bcommandTruncate:
 
 
-    If the status of a volume is **Purged**, it normally still contains data, even so it can not easily be accessed.
 
-    .. code-block:: sh
-   :caption: truncate
+   If the status of a volume is **Purged**, it normally still contains data, even so it can not easily be accessed.
 
-        truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
+   .. code-block:: sh
+      :caption: truncate
 
-    When using a disk volume (and other volume types also) the volume file still resides on the |bareosSd|. If you want to reclaim disk space, you can use the :strong:`truncate volstatus=Purged` command. When used on a volume, it rewrites the header and by this frees the rest of the disk space.
+      truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
 
-    If the volume you want to get rid of has not the **Purged** status, you first have to use the :strong:`prune volume` or even the :strong:`purge volume` command to free the volume from all remaining jobs.
+   When using a disk volume (and other volume types also) the volume file still resides on the |bareosSd|. If you want to reclaim disk space, you can use the :strong:`truncate volstatus=Purged` command. When used on a volume, it rewrites the header and by this frees the rest of the disk space.
 
-    This command is available since Bareos :index:`Version >= 16.2.5 <pair: bareos-16.2.5; truncate command>`.
+   If the volume you want to get rid of has not the **Purged** status, you first have to use the :strong:`prune volume` or even the :strong:`purge volume` command to free the volume from all remaining jobs.
+
+   This command is available since Bareos :index:`Version >= 16.2.5 <pair: bareos-16.2.5; truncate command>`.
 
 umount
-    :index:`[TAG=Console->Command->umount] <triple: Console; Command; umount>` Alias for :strong:`unmount`.
+   :index:`[TAG=Console->Command->umount] <triple: Console; Command; umount>` Alias for :strong:`unmount`.
 
 unmount
-    :index:`[TAG=Console->Command->unmount] <triple: Console; Command; unmount>` This command causes the indicated Bareos Storage daemon to unmount the specified device. The forms of the command are the same as the mount command:
+   :index:`[TAG=Console->Command->unmount] <triple: Console; Command; unmount>` This command causes the indicated Bareos Storage daemon to unmount the specified device. The forms of the command are the same as the mount command:
 
-    .. code-block:: sh
-   :caption: unmount
+   .. code-block:: sh
+      :caption: unmount
 
-        unmount storage=<storage-name> [drive=<num>]
-        unmount [jobid=<id> | job=<job-name>]
+      unmount storage=<storage-name> [drive=<num>]
+      unmount [jobid=<id> | job=<job-name>]
 
-    Once you unmount a storage device, Bareos will no longer be able to use it until you issue a mount command for that device. If Bareos needs to access that device, it will block and issue mount requests periodically to the operator.
+   Once you unmount a storage device, Bareos will no longer be able to use it until you issue a mount command for that device. If Bareos needs to access that device, it will block and issue mount requests periodically to the operator.
 
-    If the device you are unmounting is an autochanger, it will unload the drive you have specified on the command line. If no drive is specified, it will assume drive 1.
+   If the device you are unmounting is an autochanger, it will unload the drive you have specified on the command line. If no drive is specified, it will assume drive 1.
 
-    In most cases, it is preferable to use the :strong:`release` instead.
+   In most cases, it is preferable to use the :strong:`release` instead.
 
 update
-    :index:`[TAG=Console->Command->update] <triple: Console; Command; update>` 
+   :index:`[TAG=Console->Command->update] <triple: Console; Command; update>` 
 
-.. _UpdateCommand
+.. _UpdateCommand:
+
  This command will update the catalog for either a specific Pool record, a Volume record, or the Slots in an autochanger with barcode capability. In the case of updating a Pool record, the new information will be automatically taken from the corresponding Director’s configuration resource record. It can be used to increase the maximum number of volumes permitted or to set a maximum number of volumes. The
-    following main keywords may be specified:
+   following main keywords may be specified:
 
-    -  volume
+   -  volume
 
-    -  pool
+   -  pool
 
-    -  slots
+   -  slots
 
-    -  iobid
+   -  iobid
 
-    -  stats
+   -  stats
 
-    In the case of updating a Volume (:strong:`update volume`), you will be prompted for which value you wish to change. The following Volume parameters may be changed:
+   In the case of updating a Volume (:strong:`update volume`), you will be prompted for which value you wish to change. The following Volume parameters may be changed:
 
-    
+   
 
-    ::
+   ::
 
-           Volume Status
-           Volume Retention Period
-           Volume Use Duration
-           Maximum Volume Jobs
-           Maximum Volume Files
-           Maximum Volume Bytes
-           Recycle Flag
-           Recycle Pool
-           Slot
-           InChanger Flag
-           Pool
-           Volume Files
-           Volume from Pool
-           All Volumes from Pool
-           All Volumes from all Pools
+         Volume Status
+         Volume Retention Period
+         Volume Use Duration
+         Maximum Volume Jobs
+         Maximum Volume Files
+         Maximum Volume Bytes
+         Recycle Flag
+         Recycle Pool
+         Slot
+         InChanger Flag
+         Pool
+         Volume Files
+         Volume from Pool
+         All Volumes from Pool
+         All Volumes from all Pools
 
-    
+   
 
-    For slots :strong:`update slots`, Bareos will obtain a list of slots and their barcodes from the Storage daemon, and for each barcode found, it will automatically update the slot in the catalog Media record to correspond to the new value. This is very useful if you have moved cassettes in the magazine, or if you have removed the magazine and inserted a different one. As the slot of each Volume is updated, the InChanger flag for that Volume will also be set, and any other
-    Volumes in the Pool that were last mounted on the same Storage device will have their InChanger flag turned off. This permits Bareos to know what magazine (tape holder) is currently in the autochanger.
+   For slots :strong:`update slots`, Bareos will obtain a list of slots and their barcodes from the Storage daemon, and for each barcode found, it will automatically update the slot in the catalog Media record to correspond to the new value. This is very useful if you have moved cassettes in the magazine, or if you have removed the magazine and inserted a different one. As the slot of each Volume is updated, the InChanger flag for that Volume will also be set, and any other
+   Volumes in the Pool that were last mounted on the same Storage device will have their InChanger flag turned off. This permits Bareos to know what magazine (tape holder) is currently in the autochanger.
 
-    If you do not have barcodes, you can accomplish the same thing by using the :strong:`update slots scan` command. The :option:`scan` keyword tells Bareos to physically mount each tape and to read its VolumeName.
+   If you do not have barcodes, you can accomplish the same thing by using the :strong:`update slots scan` command. The ``scan`` keyword tells Bareos to physically mount each tape and to read its VolumeName.
 
-    For Pool :strong:`update pool`, Bareos will move the Volume record from its existing pool to the pool specified.
+   For Pool :strong:`update pool`, Bareos will move the Volume record from its existing pool to the pool specified.
 
-    For **Volume from Pool**, **All Volumes from Pool** and **All Volumes from all Pools**, the following values are updated from the Pool record: Recycle, RecyclePool, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, and MaxVolBytes.
+   For Volume from Pool, All Volumes from Pool and All Volumes from all Pools, the following values are updated from the Pool record: Recycle, RecyclePool, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, and MaxVolBytes.
 
-    For updating the statistics, use :strong:`updates stats`, see :ref:`section-JobStatistics`.
+   For updating the statistics, use :strong:`updates stats`, see :ref:`section-JobStatistics`.
 
-    The full form of the update command with all command line arguments is:
+   The full form of the update command with all command line arguments is:
 
-    .. code-block:: sh
-   :caption: update
+   .. code-block:: sh
+      :caption: update
 
-        update  volume=<volume-name> [volstatus=<status>]
-                [volretention=<time-def>] [pool=<pool-name>]
-                [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
-                pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
-                [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
-                [actiononpurge=<action>] |
-                slots [storage=<storage-name>] [scan] |
-                jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
-                [client=<client-name>] [filesetid=<fileset-id>]
-                [jobtype=<job-type>] |
-                stats [days=<number>]
+      update  volume=<volume-name> [volstatus=<status>]
+              [volretention=<time-def>] [pool=<pool-name>]
+              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
+              pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
+              [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
+              [actiononpurge=<action>] |
+              slots [storage=<storage-name>] [scan] |
+              jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
+              [client=<client-name>] [filesetid=<fileset-id>]
+              [jobtype=<job-type>] |
+              stats [days=<number>]
 
 use
-    :index:`[TAG=Console->Command->use] <triple: Console; Command; use>` This command allows you to specify which Catalog database to use. Normally, you will be using only one database so this will be done automatically. In the case that you are using more than one database, you can use this command to switch from one to another.
+   :index:`[TAG=Console->Command->use] <triple: Console; Command; use>` This command allows you to specify which Catalog database to use. Normally, you will be using only one database so this will be done automatically. In the case that you are using more than one database, you can use this command to switch from one to another.
 
-    .. code-block:: sh
-   :caption: use
+   .. code-block:: sh
+      :caption: use
 
-        use [catalog=<catalog>]
+      use [catalog=<catalog>]
 
 var
-    
+   
 
-.. _var
+.. _var:
+
  :index:`[TAG=Console->Command->var] <triple: Console; Command; var>` This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the **Label Format**:sup:`Dir`:sub:`Pool`\  string. The difference between the :strong:`var` command and the actual **Label Format**:sup:`Dir`:sub:`Pool`\  process is that during the var command, no job is running so dummy values are
-    used in place of Job specific variables.
+   used in place of Job specific variables.
 
 version
-    :index:`[TAG=Console->Command->version] <triple: Console; Command; version>` The command prints the Director’s version.
+   :index:`[TAG=Console->Command->version] <triple: Console; Command; version>` The command prints the Director’s version.
 
 wait
-    :index:`[TAG=Console->Command->wait] <triple: Console; Command; wait>` The wait command causes the Director to pause until there are no jobs running. This command is useful in a batch situation such as regression testing where you wish to start a job and wait until that job completes before continuing. This command now has the following options:
+   :index:`[TAG=Console->Command->wait] <triple: Console; Command; wait>` The wait command causes the Director to pause until there are no jobs running. This command is useful in a batch situation such as regression testing where you wish to start a job and wait until that job completes before continuing. This command now has the following options:
 
-    .. code-block:: sh
-   :caption: wait
+   .. code-block:: sh
+      :caption: wait
 
-        wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
+      wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
 
-    If specified with a specific JobId, ... the wait command will wait for that particular job to terminate before continuing.
+   If specified with a specific JobId, ... the wait command will wait for that particular job to terminate before continuing.
 
 .. _dotcommands:
 
@@ -1442,56 +1457,56 @@ There is a list of commands that are prefixed with a period (.). These commands 
 Special At (@) Commands
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Normally, all commands entered to the Console program are immediately forwarded to the Director, which may be on another machine, to be executed. However, there is a small list of **at** commands, all beginning with an at character (@), that will not be sent to the Director, but rather interpreted by the Console program directly. Note, these commands are implemented only in the TTY console program and not in the Bat Console. These commands are:
+Normally, all commands entered to the Console program are immediately forwarded to the Director, which may be on another machine, to be executed. However, there is a small list of at commands, all beginning with an at character (@), that will not be sent to the Director, but rather interpreted by the Console program directly. Note, these commands are implemented only in the TTY console program and not in the Bat Console. These commands are:
 
 @input <filename>
-    :index:`[TAG=Console->Command->@input <filename>] <triple: Console; Command; @input <filename>>` Read and execute the commands contained in the file specified.
+   :index:`[TAG=Console->Command->@input <filename>] <triple: Console; Command; @input <filename>>` Read and execute the commands contained in the file specified.
 
 @output <filename> <w|a>
-    :index:`[TAG=Console->Command->@output <filename> <w|a>] <triple: Console; Command; @output <filename> <w|a>>` Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter **@output** without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example during a regression test might be:
+   :index:`[TAG=Console->Command->@output <filename> <w|a>] <triple: Console; Command; @output <filename> <w|a>>` Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example during a regression test might be:
 
-    
+   
 
-    ::
+   ::
 
-            @output /dev/null
-            commands ...
-            @output
+          @output /dev/null
+          commands ...
+          @output
 
-    
+   
 
 @tee <filename> <w|a>
-    :index:`[TAG=Console->Command->@tee <filename> <w|a>] <triple: Console; Command; @tee <filename> <w|a>>` Send all subsequent output to both the specified file and the terminal. It is turned off by specifying **@tee** or **@output** without a filename.
+   :index:`[TAG=Console->Command->@tee <filename> <w|a>] <triple: Console; Command; @tee <filename> <w|a>>` Send all subsequent output to both the specified file and the terminal. It is turned off by specifying @tee or @output without a filename.
 
 @sleep <seconds>
-    :index:`[TAG=Console->Command->@sleep <seconds>] <triple: Console; Command; @sleep <seconds>>` Sleep the specified number of seconds.
+   :index:`[TAG=Console->Command->@sleep <seconds>] <triple: Console; Command; @sleep <seconds>>` Sleep the specified number of seconds.
 
 @time
-    :index:`[TAG=Console->Command->@time] <triple: Console; Command; @time>` Print the current time and date.
+   :index:`[TAG=Console->Command->@time] <triple: Console; Command; @time>` Print the current time and date.
 
 @version
-    :index:`[TAG=Console->Command->@version] <triple: Console; Command; @version>` Print the console’s version.
+   :index:`[TAG=Console->Command->@version] <triple: Console; Command; @version>` Print the console’s version.
 
 @quit
-    :index:`[TAG=Console->Command->@quit] <triple: Console; Command; @quit>` quit
+   :index:`[TAG=Console->Command->@quit] <triple: Console; Command; @quit>` quit
 
 @exit
-    :index:`[TAG=Console->Command->@exit] <triple: Console; Command; @exit>` quit
+   :index:`[TAG=Console->Command->@exit] <triple: Console; Command; @exit>` quit
 
 @# anything
-    :index:`[TAG=Console->Command->@# anything] <triple: Console; Command; @# anything>` Comment
+   :index:`[TAG=Console->Command->@# anything] <triple: Console; Command; @# anything>` Comment
 
 @help
-    :index:`[TAG=Console->Command->@help] <triple: Console; Command; @help>` Get the list of every special @ commands.
+   :index:`[TAG=Console->Command->@help] <triple: Console; Command; @help>` Get the list of every special @ commands.
 
 @separator <char>
-    :index:`[TAG=Console->Command->@separator] <triple: Console; Command; @separator>` When using bconsole with readline, you can set the command separator to one of those characters to write commands who require multiple input on one line, or to put multiple commands on a single line.
+   :index:`[TAG=Console->Command->@separator] <triple: Console; Command; @separator>` When using bconsole with readline, you can set the command separator to one of those characters to write commands who require multiple input on one line, or to put multiple commands on a single line.
 
-    ::
+   ::
 
-          !$%&'()*+,-/:;<>?[]^`{|}~
+        !$%&'()*+,-/:;<>?[]^`{|}~
 
-    Note, if you use a semicolon (;) as a separator character, which is common, you will not be able to use the **sql** command, which requires each command to be terminated by a semicolon.
+   Note, if you use a semicolon (;) as a separator character, which is common, you will not be able to use the sql command, which requires each command to be terminated by a semicolon.
 
 Adding Volumes to a Pool
 ------------------------
@@ -1500,9 +1515,9 @@ Adding Volumes to a Pool
 
 .. TODO: move to another chapter
 
-If you have used the **label** command to label a Volume, it will be automatically added to the Pool, and you will not need to add any media to the pool.
+If you have used the label command to label a Volume, it will be automatically added to the Pool, and you will not need to add any media to the pool.
 
-Alternatively, you may choose to add a number of Volumes to the pool without labeling them. At a later time when the Volume is requested by **Bareos** you will need to label it.
+Alternatively, you may choose to add a number of Volumes to the pool without labeling them. At a later time when the Volume is requested by Bareos you will need to label it.
 
 Before adding a volume, you must know the following information:
 
@@ -1518,14 +1533,14 @@ For example, to add media to a Pool, you would issue the following commands to t
 
 ::
 
-    *add
-    Enter name of Pool to add Volumes to: Default
-    Enter the Media Type: DLT8000
-    Enter number of Media volumes to create. Max=1000: 10
-    Enter base volume name: Save
-    Enter the starting number: 1
-    10 Volumes created in pool Default
-    *
+   *add
+   Enter name of Pool to add Volumes to: Default
+   Enter the Media Type: DLT8000
+   Enter number of Media volumes to create. Max=1000: 10
+   Enter base volume name: Save
+   Enter the starting number: 1
+   10 Volumes created in pool Default
+   *
 
 
 
@@ -1535,22 +1550,22 @@ To see what you have added, enter:
 
 ::
 
-    *list media pool=Default
-    +-------+----------+---------+---------+-------+------------------+
-    | MedId | VolumeNa | MediaTyp| VolStat | Bytes | LastWritten      |
-    +-------+----------+---------+---------+-------+------------------+
-    |    11 | Save0001 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    12 | Save0002 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    13 | Save0003 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    14 | Save0004 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    15 | Save0005 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    16 | Save0006 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    17 | Save0007 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    18 | Save0008 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    19 | Save0009 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    |    20 | Save0010 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-    +-------+----------+---------+---------+-------+------------------+
-    *
+   *list media pool=Default
+   +-------+----------+---------+---------+-------+------------------+
+   | MedId | VolumeNa | MediaTyp| VolStat | Bytes | LastWritten      |
+   +-------+----------+---------+---------+-------+------------------+
+   |    11 | Save0001 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    12 | Save0002 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    13 | Save0003 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    14 | Save0004 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    15 | Save0005 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    16 | Save0006 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    17 | Save0007 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    18 | Save0008 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    19 | Save0009 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   |    20 | Save0010 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
+   +-------+----------+---------+---------+-------+------------------+
+   *
 
 
 

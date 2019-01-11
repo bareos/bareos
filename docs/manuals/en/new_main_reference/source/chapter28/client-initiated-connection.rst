@@ -43,14 +43,14 @@ Using Client Initiated Connections has disadvantages. Without Client Initiated C
 .. code-block:: sh
    :caption: show waiting client connections
 
-    *<input>status dir</input>
-    ...
-    Client Initiated Connections (waiting for jobs):
-    Connect time        Protocol            Authenticated       Name
-    ====================================================================================================
-    19-Apr-16 21:50     54                  1                   client1.example.com
-    ...
-    ====
+   *<input>status dir</input>
+   ...
+   Client Initiated Connections (waiting for jobs):
+   Connect time        Protocol            Authenticated       Name
+   ====================================================================================================
+   19-Apr-16 21:50     54                  1                   client1.example.com
+   ...
+   ====
 
 When both connection directions are allowed, the |bareosDir| 
 
@@ -73,8 +73,8 @@ to the default message resource **Standard**:sup:`Fd`:sub:`Messages` :
 .. code-block:: sh
    :caption: bareos-fd.d/messages/Standard.conf
 
-    Messages {
-      Name = Standard
-      Director = bareos-dir = all, !skipped, !restored
-      Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored
-    }
+   Messages {
+     Name = Standard
+     Director = bareos-dir = all, !skipped, !restored
+     Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored
+   }

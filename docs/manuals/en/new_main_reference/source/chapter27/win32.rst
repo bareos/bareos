@@ -8,7 +8,8 @@ The Windows Version of Bareos
 
 
 
-.. _section-windows
+.. _section-windows:
+
  :index:`[TAG=Platform->Windows] <pair: Platform; Windows>` :index:`[TAG=Windows] <single: Windows>`
 
 The Windows version of Bareos is a native Win32 port, but there are very few source code changes to the Unix code, which means that the Windows version is for the most part running code that has long proved stable on Unix systems.
@@ -26,7 +27,8 @@ Windows Installation
 
 
 
-.. _Windows:Configuration:Files
+.. _Windows:Configuration:Files:
+
  :index:`[TAG=Installation->Windows] <pair: Installation; Windows>` :index:`[TAG=Windows->File Daemon->Installation] <triple: Windows; File Daemon; Installation>`
 
 Normally, you will install the Windows version of Bareos from the binaries. The **winbareos** binary packages are provided under http://download.bareos.org/bareos/release/latest/windows. Additionally, there are `OPSI <http://www.opsi.org>`_ packages available under http://download.bareos.org/bareos/release/latest/windows/opsi.
@@ -34,7 +36,7 @@ Normally, you will install the Windows version of Bareos from the binaries. The 
 This install is standard Windows .exe that runs an install wizard using the NSIS Free Software installer, so if you have already installed Windows software, it should be very familiar to you. Providing you do not already have Bareos installed, the installer installs the binaries and dlls in :file:`C:\Program Files\Bareos` and the configuration files in :file:`C:\ProgramData\Bareos` (for Windows XP and older:
 :file:`C:\Documents and Settings\All Users\Application Data\Bareos`).
 
-In addition, the **Start\->All Programs\->Bareos** menu item will be created during the installation, and on that menu, you will find items for editing the configuration files, displaying the document, and starting a user interface.
+In addition, the Start\->All Programs\->Bareos menu item will be created during the installation, and on that menu, you will find items for editing the configuration files, displaying the document, and starting a user interface.
 
 During installation you can decide, what Bareos components you want to install.
 
@@ -70,15 +72,25 @@ Here are the important steps.
 
 -  For a standard installation you may only select the "Tray-Monitor" and the "Open Firewall for Client" as additional optional components.
 
-   |image|
+.. image:: images/win-install-1.*
+   :width: 80.0%
+
+
 
 -  You need to fill in the name of your bareos director in the client configuration dialogue and the FQDN or ip address of your client.
 
-   |image|
+.. image:: images/win-install-2.*
+   :width: 80.0%
+
+
 
 -  Add the client resource to your Bareos Director Configuration and a job resource for the client as it is also described in the default bareos-dir.conf
 
-   |image|
+.. image:: images/win-install-3.*
+   :width: 80.0%
+
+
+
 
 Command Line (Silent) Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,52 +101,52 @@ Commandline Switches
 ''''''''''''''''''''
 
 /?
-    shows the list of available parameters.
+   shows the list of available parameters.
 
 /S
-    sets the installer to silent. The Installation is done without user interaction. This switch is also available for the uninstaller.
+   sets the installer to silent. The Installation is done without user interaction. This switch is also available for the uninstaller.
 
 /CLIENTADDRESS
-    network address of the client
+   network address of the client
 
 /CLIENTNAME
-    sets the name of the client resource
+   sets the name of the client resource
 
 /CLIENTMONITORPASSWORD
-    sets the password for monitor access
+   sets the password for monitor access
 
 /CLIENTPASSWORD
-    sets the password to access the client
+   sets the password to access the client
 
 /DBADMINUSER=user
-    sets the database admin user, default=postgres. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; DBADMINUSER>`
+   sets the database admin user, default=postgres. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; DBADMINUSER>`
 
 /DBADMINPASSWORD=password
-    sets the database admin password, default=\ *none*. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; DBADMINPASSWORD>`
+   sets the database admin password, default=\ *none*. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; DBADMINPASSWORD>`
 
 /DIRECTORADDRESS
-    sets network address of the director for bconsole or bat access
+   sets network address of the director for bconsole or bat access
 
 /DIRECTORNAME
-    sets the name of the director to access the client and of the director to accessed by bconsole and bat
+   sets the name of the director to access the client and of the director to accessed by bconsole and bat
 
 /DIRECTORPASSWORD
-    set the password to access the director
+   set the password to access the director
 
 /SILENTKEEPCONFIG
-    keep configuration files on silent uninstall and use exinsting config files during silent install. :index:`Version >= 12.4.4 <triple: bareos-12.4.4; Windows Installation; SILENTKEEPCONFIG>`
+   keep configuration files on silent uninstall and use exinsting config files during silent install. :index:`Version >= 12.4.4 <triple: bareos-12.4.4; Windows Installation; SILENTKEEPCONFIG>`
 
 /INSTALLDIRECTOR
-    install the Bareos Director (and bconsole). :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; INSTALLDIRECTOR>`
+   install the Bareos Director (and bconsole). :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; INSTALLDIRECTOR>`
 
 /INSTALLSTORAGE
-    install the Bareos Storage Daemon. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; INSTALLSTORAGE>`
+   install the Bareos Storage Daemon. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; INSTALLSTORAGE>`
 
 /WRITELOGS
-    makes also non-debug installer write a log file. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; WRITELOGS>`
+   makes also non-debug installer write a log file. :index:`Version >= 14.2.1 <triple: bareos-14.2.1; Windows Installation; WRITELOGS>`
 
 /D=:file:`C:\specify\installation\directory`
-    (Important: It has to be the last option!)
+   (Important: It has to be the last option!)
 
 By setting the Installation Parameters via commandline and using the silent installer, you can install the bareos client without having to do any configuration after the installation e.g. as follows:
 
@@ -142,7 +154,7 @@ By setting the Installation Parameters via commandline and using the silent inst
 
 ::
 
-    c:\winbareos.exe /S /CLIENTNAME=hostname-fd /CLIENTPASSWORD="verysecretpassword" /DIRECTORNAME=bareos-dir
+   c:\winbareos.exe /S /CLIENTNAME=hostname-fd /CLIENTPASSWORD="verysecretpassword" /DIRECTORNAME=bareos-dir
 
 
 
@@ -164,14 +176,14 @@ If turning off anti-virus software does not resolve your VSS problems, you might
 Enable Debuggging
 ~~~~~~~~~~~~~~~~~
 
-In case of problems, you can enable the creation of log files. For this you have to use the :program:`bconsole` :ref:`setdebug <bcommandSetdebug>` command:
+In case of problems, you can enable the creation of log files. For this you have to use the :command:`bconsole` :ref:`setdebug <bcommandSetdebug>` command:
 
 .. code-block:: sh
    :caption: Enable debug
 
-    *<input>setdebug client=bareos-fd level=200 trace=1</input>
-    Connecting to Client bareos-fd at bareos.example.com:9102
-    2000 OK setdebug=200 trace=1 hangup=0 tracefile=c:\bareos-fd.trace
+   *<input>setdebug client=bareos-fd level=200 trace=1</input>
+   Connecting to Client bareos-fd at bareos.example.com:9102
+   2000 OK setdebug=200 trace=1 hangup=0 tracefile=c:\bareos-fd.trace
 
 .. _Compatibility:
 
@@ -189,7 +201,7 @@ print an error message, so you will always know which files were not backed up. 
 Backing up the Windows Registry
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-During backup, Bareos doesn’t know about the system registry, so you will either need to write it out to an ASCII file using :program:`regedit /e` or use a program specifically designed to make a copy or backup the registry.
+During backup, Bareos doesn’t know about the system registry, so you will either need to write it out to an ASCII file using :command:`regedit /e` or use a program specifically designed to make a copy or backup the registry.
 
 Windows Reparse Points
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -212,27 +224,27 @@ The Volume Mount Points are a special case of a Junction Point. To make things e
 
 The Symbolic Links and the Junction Points are comparable to Symbolic Links in Unix/Linux. They are files that point to another location in the filesystem.
 
-Symbolic Links and Junction Points can be created with the Windows commandline command :program:`mklink`.
+Symbolic Links and Junction Points can be created with the Windows commandline command :command:`mklink`.
 
 When doing a directory listing in the commandline (cmd) in Windows, it shows the filetypes JUNCTION, SYMLINK or SYMLINKD and the target between the square brackets:
 
 .. code-block:: sh
    :caption: special files
 
-    C:\linktest>dir
-     Volume in drive C has no label.
-     Volume Serial Number is C8A3-971F
+   C:\linktest>dir
+    Volume in drive C has no label.
+    Volume Serial Number is C8A3-971F
 
-     Directory of C:\linktest
+    Directory of C:\linktest
 
-    08/07/2014  03:05 PM    <DIR>          .
-    08/07/2014  03:05 PM    <DIR>          ..
-    08/07/2014  02:59 PM    <SYMLINKD>     dirlink [C:\Program Files\Bareos]
-    08/07/2014  03:02 PM    <SYMLINK>      filelink [C:\Program Files\Bareos\bareos-dir.exe]
-    08/07/2014  03:00 PM    <JUNCTION>     junction [C:\Program Files\Bareos]
-    08/07/2014  03:05 PM    <JUNCTION>     volumemountpoint [\??\Volume{e960247d-09a1-11e3-93ec-005056add71d}\]
-                   1 File(s)              0 bytes
-                   5 Dir(s)  90,315,137,024 bytes free
+   08/07/2014  03:05 PM    <DIR>          .
+   08/07/2014  03:05 PM    <DIR>          ..
+   08/07/2014  02:59 PM    <SYMLINKD>     dirlink [C:\Program Files\Bareos]
+   08/07/2014  03:02 PM    <SYMLINK>      filelink [C:\Program Files\Bareos\bareos-dir.exe]
+   08/07/2014  03:00 PM    <JUNCTION>     junction [C:\Program Files\Bareos]
+   08/07/2014  03:05 PM    <JUNCTION>     volumemountpoint [\??\Volume{e960247d-09a1-11e3-93ec-005056add71d}\]
+                  1 File(s)              0 bytes
+                  5 Dir(s)  90,315,137,024 bytes free
 
 Symbolic Links. Directory Symbolic Links, and Junctions that are not a Volume MountPoint are treated by Bareos as symbolic links and are backed up and restored as they are, so the object is restored and points to where it pointed when it was backed up.
 
@@ -245,7 +257,7 @@ If :strong:`OneFS` is set to yes (default), the Volume Mount Point (VMP) is back
 .. code-block:: sh
    :caption: Warning on Volume Moint Point and OneFS=yes
 
-    C:/linktest/vmp is a different filesystem. Will not descend from C:/linktest into it.
+   C:/linktest/vmp is a different filesystem. Will not descend from C:/linktest into it.
 
 This is the normal behavior of the :strong:`OneFS` option.
 
@@ -265,14 +277,14 @@ The Job Log will show how many VMPs were found like this:
 .. code-block:: sh
    :caption: Volume Mount Points are added automatically to VSS snapshots (if onefs=no)
 
-    Volume Mount Points found: 7, added to snapshotset: 5
+   Volume Mount Points found: 7, added to snapshotset: 5
 
 Accordingly, if OneFS is set to yes, we do not need to handle Volume Mount Points this way. If OneFS is set to yes (default), the joblog will contain the following information:
 
 .. code-block:: sh
    :caption: Volume Mount Points are ignored on VSS snapshots (if onefs=yes)
 
-    VolumeMountpoints are not processed as onefs = yes.
+   VolumeMountpoints are not processed as onefs = yes.
 
 Hard Links
 ~~~~~~~~~~
@@ -299,29 +311,29 @@ The backup log shows a short information about the creation of the exludes like 
 .. code-block:: sh
    :caption: Excludes according to the FilesNotToBackup registry key
 
-    Created 28 wildcard excludes from FilesNotToBackup Registry key
+   Created 28 wildcard excludes from FilesNotToBackup Registry key
 
 More details can be found if the filedaemon is run in debug mode inside of the :file:`bareos-fd.trace` logfile. Each entry and the resulting wildcard are logged.
 
 .. code-block:: sh
    :caption: translation between registry key FilesNotToBackup and Bareos Exclude FileSet
 
-    client-win-fd: win32.c:465-0 (1) "WER" :
-    client-win-fd: win32.c:482-0         "C:\ProgramData\Microsoft\Windows\WER\* /s"
-    client-win-fd: win32.c:527-0     ->  "C:/ProgramData/Microsoft/Windows/WER/*"
-    client-win-fd: win32.c:465-0 (2) "Kernel Dumps" :
-    client-win-fd: win32.c:482-0         "C:\Windows\Minidump\* /s"
-    client-win-fd: win32.c:527-0     ->  "C:/Windows/Minidump/*"
-    client-win-fd: win32.c:482-0         "C:\Windows\memory.dmp"
-    client-win-fd: win32.c:527-0     ->  "C:/Windows/memory.dmp"
-    client-win-fd: win32.c:465-0 (3) "Power Management" :
-    client-win-fd: win32.c:482-0         "\hiberfil.sys"
-    client-win-fd: win32.c:527-0     ->  "[A-Z]:/hiberfil.sys"
-    client-win-fd: win32.c:465-0 (4) "MS Distributed Transaction Coordinator" :
-    client-win-fd: win32.c:482-0         "C:\Windows\system32\MSDtc\MSDTC.LOG"
-    client-win-fd: win32.c:527-0     ->  "C:/Windows/system32/MSDtc/MSDTC.LOG"
-    client-win-fd: win32.c:482-0         "C:\Windows\system32\MSDtc\trace\dtctrace.log"
-    client-win-fd: win32.c:527-0     ->  "C:/Windows/system32/MSDtc/trace/dtctrace.log"
+   client-win-fd: win32.c:465-0 (1) "WER" :
+   client-win-fd: win32.c:482-0         "C:\ProgramData\Microsoft\Windows\WER\* /s"
+   client-win-fd: win32.c:527-0     ->  "C:/ProgramData/Microsoft/Windows/WER/*"
+   client-win-fd: win32.c:465-0 (2) "Kernel Dumps" :
+   client-win-fd: win32.c:482-0         "C:\Windows\Minidump\* /s"
+   client-win-fd: win32.c:527-0     ->  "C:/Windows/Minidump/*"
+   client-win-fd: win32.c:482-0         "C:\Windows\memory.dmp"
+   client-win-fd: win32.c:527-0     ->  "C:/Windows/memory.dmp"
+   client-win-fd: win32.c:465-0 (3) "Power Management" :
+   client-win-fd: win32.c:482-0         "\hiberfil.sys"
+   client-win-fd: win32.c:527-0     ->  "[A-Z]:/hiberfil.sys"
+   client-win-fd: win32.c:465-0 (4) "MS Distributed Transaction Coordinator" :
+   client-win-fd: win32.c:482-0         "C:\Windows\system32\MSDtc\MSDTC.LOG"
+   client-win-fd: win32.c:527-0     ->  "C:/Windows/system32/MSDtc/MSDTC.LOG"
+   client-win-fd: win32.c:482-0         "C:\Windows\system32\MSDtc\trace\dtctrace.log"
+   client-win-fd: win32.c:527-0     ->  "C:/Windows/system32/MSDtc/trace/dtctrace.log"
 
 It is possible to disable this functionality by setting the FileSet option :strong:`AutoExclude` to no.
 
@@ -330,7 +342,7 @@ The JobLog will then show the following informational line:
 .. code-block:: sh
    :caption: AutoExclude disabled
 
-    Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key
+   Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key
 
 For more details about the Windows registry key see http://msdn.microsoft.com/en-us/library/windows/desktop/bb891959%28v=vs.85%29.aspx#filesnottobackup.
 
@@ -360,7 +372,8 @@ Volume Shadow Copy Service (VSS)
 
 :index:`[TAG=Windows->Volume Shadow Copy Service] <pair: Windows; Volume Shadow Copy Service>` :index:`[TAG=Windows->VSS] <pair: Windows; VSS>` 
 
-.. _VSS
+.. _VSS:
+
 
 
 VSS is available since Windows XP. From the perspective of a backup-solution for Windows, this is an extremely important step. VSS allows Bareos to backup open files and even to interact with applications like RDBMS to produce consistent file copies. VSS aware applications are called VSS Writers, they register with the OS so that when Bareos wants to do a Snapshot, the OS will notify the register Writer programs, which may then create a consistent state in their application, which will be backed
@@ -376,7 +389,7 @@ VSS can be turned on by placing an
 
 ::
 
-    Enable VSS = yes
+   Enable VSS = yes
 
 in your FileSet resource.
 
@@ -384,19 +397,19 @@ The VSS aware File daemon has the letters VSS on the signon line that it produce
 
 ::
 
-    Tibs-fd Version: 1.37.32 (22 July 2005) VSS Windows XP MVS NT 5.1.2600
+   Tibs-fd Version: 1.37.32 (22 July 2005) VSS Windows XP MVS NT 5.1.2600
 
 the VSS is shown in the line above. This only means that the File daemon is capable of doing VSS not that VSS is turned on for a particular backup. There are two ways of telling if VSS is actually turned on during a backup. The first is to look at the status output for a job, e.g.: 
 
 ::
 
-    Running Jobs:
-    JobId 1 Job NightlySave.2005-07-23_13.25.45 is running.
-        VSS Backup Job started: 23-Jul-05 13:25
-        Files=70,113 Bytes=3,987,180,650 Bytes/sec=3,244,247
-        Files Examined=75,021
-        Processing file: c:/Documents and Settings/user/My Documents/My Pictures/Misc1/Sans titre - 39.pdd
-        SDReadSeqNo=5 fd=352
+   Running Jobs:
+   JobId 1 Job NightlySave.2005-07-23_13.25.45 is running.
+       VSS Backup Job started: 23-Jul-05 13:25
+       Files=70,113 Bytes=3,987,180,650 Bytes/sec=3,244,247
+       Files Examined=75,021
+       Processing file: c:/Documents and Settings/user/My Documents/My Pictures/Misc1/Sans titre - 39.pdd
+       SDReadSeqNo=5 fd=352
 
 
 
@@ -406,14 +419,14 @@ The second way to know that the job was backed up with VSS is to look at the Job
 
 ::
 
-    23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
-    23-Jul 13:26 rufus-sd: Wrote label to prelabeled Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
-    23-Jul 13:26 rufus-sd: Spooling data ...
-    23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
-    23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
-    23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Bootable State)", State: 1 (VSS_WS_STABLE)
-    23-Jul 13:26 Tibs: VSS Writer: "WMI Writer", State: 1 (VSS_WS_STABLE)
-    23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Service State)", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
+   23-Jul 13:26 rufus-sd: Wrote label to prelabeled Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
+   23-Jul 13:26 rufus-sd: Spooling data ...
+   23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
+   23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Bootable State)", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 Tibs: VSS Writer: "WMI Writer", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Service State)", State: 1 (VSS_WS_STABLE)
 
 
 
@@ -424,9 +437,9 @@ VSS Problems
 
 :index:`[TAG=Windows->Problem->VSS] <triple: Windows; Problem; VSS>` :index:`[TAG=Windows->VSS->Problem] <triple: Windows; VSS; Problem>` :index:`[TAG=Windows->Problem->VSS] <triple: Windows; Problem; VSS>` :index:`[TAG=Problem->Windows->VSS] <triple: Problem; Windows; VSS>`
 
-If you are experiencing problems such as VSS hanging on MSDE, first try running **vssadmin** to check for problems, then try running **ntbackup** which also uses VSS to see if it has similar problems. If so, you know that the problem is in your Windows machine and not with Bareos.
+If you are experiencing problems such as VSS hanging on MSDE, first try running vssadmin to check for problems, then try running ntbackup which also uses VSS to see if it has similar problems. If so, you know that the problem is in your Windows machine and not with Bareos.
 
-The FD hang problems were reported with **MSDEwriter** when:
+The FD hang problems were reported with MSDEwriter when:
 
 -  a local firewall locked local access to the MSDE TCP port (MSDEwriter seems to use TCP/IP and not Named Pipes).
 
@@ -446,7 +459,7 @@ If you want to see if the File daemon has properly opened the port and is listen
 
 .. code-block:: sh
 
-    netstat -an | findstr 910[123]
+   netstat -an | findstr 910[123]
 
 Windows Restore Problems
 ------------------------
@@ -460,13 +473,13 @@ Windows Backup Problems
 
 :index:`[TAG=Problem->Windows Backup] <pair: Problem; Windows Backup>` :index:`[TAG=Windows->Backup Problems] <pair: Windows; Backup Problems>`
 
-If during a Backup, you get the message: **ERR=Access is denied** and you are using the portable option, you should try both adding both the non-portable (backup API) and the Volume Shadow Copy options to your Director’s conf file.
+If during a Backup, you get the message: ERR=Access is denied and you are using the portable option, you should try both adding both the non-portable (backup API) and the Volume Shadow Copy options to your Director’s conf file.
 
 In the Options resource: 
 
 ::
 
-    portable = no
+   portable = no
 
 
 
@@ -474,7 +487,7 @@ In the FileSet resource:
 
 ::
 
-    enablevss = yes
+   enablevss = yes
 
 
 
@@ -492,7 +505,7 @@ Windows Ownership and Permissions Problems
 :index:`[TAG=Problem->Windows Ownership and Permissions] <pair: Problem; Windows Ownership and Permissions>` :index:`[TAG=Windows->Ownership and Permissions Problems] <pair: Windows; Ownership and Permissions Problems>`
 
 If you restore files backed up from Windows to an alternate directory, Bareos may need to create some higher level directories that were not saved (or restored). In this case, the File daemon will create them under the SYSTEM account because that is the account that Bareos runs under as a service and with full access permission. However, there may be cases where you have problems accessing those files even if you run as administrator. In principle, Microsoft supplies you with the way to cease
-the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program **SetACL**, which can be found at `http://setacl.sourceforge.net/ <http://setacl.sourceforge.net/>`_.
+the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program SetACL, which can be found at `http://setacl.sourceforge.net/ <http://setacl.sourceforge.net/>`_.
 
 If you have not installed Bareos while running as Administrator and if Bareos is not running as a Process with the userid (User Name) SYSTEM, then it is very unlikely that it will have sufficient permission to access all your files.
 
@@ -514,7 +527,7 @@ This is configured in the Registry at
 
    ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd``
 
-You can use the command :program:`regedit` to modify the settings.
+You can use the command :command:`regedit` to modify the settings.
 
 E.g. to always start Bareos in debug mode, modify ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd`` :file:`ImagePath` from
 
@@ -522,7 +535,7 @@ E.g. to always start Bareos in debug mode, modify ``HKEY_LOCAL_MACHINE\SYSTEM\Cu
 
 ::
 
-    "C:\Program Files\Bareos\bareos-fd.exe" /service
+   "C:\Program Files\Bareos\bareos-fd.exe" /service
 
 to
 
@@ -530,7 +543,7 @@ to
 
 ::
 
-    "C:\Program Files\Bareos\bareos-fd.exe" /service -d200
+   "C:\Program Files\Bareos\bareos-fd.exe" /service -d200
 
 After restarting the service, you will find a file called :file:`C:\bareos-fd.trace` which will contain the debug output created by the daemon.
 
@@ -543,8 +556,8 @@ To create two bareos-fd services, you can call the following service create call
 
 .. code-block:: sh
 
-    sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd2.conf\""  depend= "tcpip/afd"
-    sc create bareosfd3 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd3.conf\""  depend= "tcpip/afd"
+   sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd2.conf\""  depend= "tcpip/afd"
+   sc create bareosfd3 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd3.conf\""  depend= "tcpip/afd"
 
 This will create two |bareosFd| services, one with the name bareosfd2 and the second with the name bareosfd3.
 
@@ -554,56 +567,52 @@ The services can be started by calling
 
 .. code-block:: sh
 
-    sc start bareosfd2
+   sc start bareosfd2
 
 and
 
 .. code-block:: sh
 
-    sc start bareosfd3
+   sc start bareosfd3
 
 Windows Specific Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`[TAG=Windows->File Daemon->Command Line Options] <triple: Windows; File Daemon; Command Line Options>`
 
-These options are not normally seen or used by the user, and are documented here only for information purposes. At the current time, to change the default options, you must either manually run **Bareos** or you must manually edit the system registry and modify the appropriate entries.
+These options are not normally seen or used by the user, and are documented here only for information purposes. At the current time, to change the default options, you must either manually run Bareos or you must manually edit the system registry and modify the appropriate entries.
 
-In order to avoid option clashes between the options necessary for **Bareos** to run on Windows and the standard Bareos options, all Windows specific options are signaled with a forward slash character (/), while as usual, the standard Bareos options are signaled with a minus (-), or a minus minus (``--``). All the standard Bareos options can be used on the Windows version. In addition, the following Windows only options are implemented:
+In order to avoid option clashes between the options necessary for Bareos to run on Windows and the standard Bareos options, all Windows specific options are signaled with a forward slash character (/), while as usual, the standard Bareos options are signaled with a minus (-), or a minus minus (``--``). All the standard Bareos options can be used on the Windows version. In addition, the following Windows only options are implemented:
 
 /service 
-    Start Bareos as a service
+   Start Bareos as a service
 
 /run 
-    Run the Bareos application
+   Run the Bareos application
 
 /install 
-    Install Bareos as a service in the system registry
+   Install Bareos as a service in the system registry
 
 /remove 
-    Uninstall Bareos from the system registry
+   Uninstall Bareos from the system registry
 
 /about 
-    Show the Bareos about dialogue box
+   Show the Bareos about dialogue box
 
 /status 
-    Show the Bareos status dialogue box
+   Show the Bareos status dialogue box
 
 /events 
-    Show the Bareos events dialogue box (not yet implemented)
+   Show the Bareos events dialogue box (not yet implemented)
 
 /kill 
-    Stop any running **Bareos**
+   Stop any running Bareos
 
 /help 
-    Show the Bareos help dialogue box
+   Show the Bareos help dialogue box
 
 It is important to note that under normal circumstances the user should never need to use these options as they are normally handled by the system automatically once Bareos is installed. However, you may note these options in some of the .bat files that have been created for your use.
 
-.. |image| image:: \idir win-install-1
-   :width: 80.0%
-.. |image| image:: \idir win-install-2
-   :width: 80.0%
-.. |image| image:: \idir win-install-3
-   :width: 80.0%
+
+
 

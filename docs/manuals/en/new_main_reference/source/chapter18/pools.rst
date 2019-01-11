@@ -44,7 +44,8 @@ The decision was to use three Pools: one for Full saves, one for Differential sa
 
 
 
-.. _FullPool
+.. _FullPool:
+
 
 
 Full Pool
@@ -57,26 +58,27 @@ Putting a single Full backup on each Volume, will require six Full save Volumes,
 .. code-block:: sh
    :caption: Full-Pool
 
-    Pool {
-      Name = Full-Pool
-      Pool Type = Backup
-      Recycle = yes
-      AutoPrune = yes
-      Volume Retention = 6 months
-      Maximum Volume Jobs = 1
-      Label Format = Full-
-      Maximum Volumes = 9
-    }
+   Pool {
+     Name = Full-Pool
+     Pool Type = Backup
+     Recycle = yes
+     AutoPrune = yes
+     Volume Retention = 6 months
+     Maximum Volume Jobs = 1
+     Label Format = Full-
+     Maximum Volumes = 9
+   }
 
 Since these are disk Volumes, no space is lost by having separate Volumes for each backup (done once a month in this case). The items to note are the retention period of six months (i.e. they are recycled after six months), that there is one job per volume (Maximum Volume Jobs = 1), the volumes will be labeled Full-0001, ... Full-0006 automatically. One could have labeled these manually from the start, but why not use the features of Bareos.
 
 Six months after the first volume is used, it will be subject to pruning and thus recycling, so with a maximum of 9 volumes, there should always be 3 volumes available (note, they may all be marked used, but they will be marked purged and recycled as needed).
 
-If you have two clients, you would want to set **Maximum Volume Jobs** to 2 instead of one, or set a limit on the size of the Volumes, and possibly increase the maximum number of Volumes.
+If you have two clients, you would want to set Maximum Volume Jobs to 2 instead of one, or set a limit on the size of the Volumes, and possibly increase the maximum number of Volumes.
 
 
 
-.. _DiffPool
+.. _DiffPool:
+
 
 
 Differential Pool
@@ -89,16 +91,16 @@ For the Differential backup Pool, we choose a retention period of a bit longer t
 .. code-block:: sh
    :caption: Differential Pool
 
-    Pool {
-      Name = Diff-Pool
-      Pool Type = Backup
-      Recycle = yes
-      AutoPrune = yes
-      Volume Retention = 40 days
-      Maximum Volume Jobs = 1
-      Label Format = Diff-
-      Maximum Volumes = 10
-    }
+   Pool {
+     Name = Diff-Pool
+     Pool Type = Backup
+     Recycle = yes
+     AutoPrune = yes
+     Volume Retention = 40 days
+     Maximum Volume Jobs = 1
+     Label Format = Diff-
+     Maximum Volumes = 10
+   }
 
 As you can see, the Differential Pool can grow to a maximum of 9 volumes, and the Volumes are retained 40 days and thereafter they can be recycled. Finally there is one job per volume. This, of course, could be tightened up a lot, but the expense here is a few GB which is not too serious.
 
@@ -108,7 +110,8 @@ See the discussion above concering the Full pool for how to handle multiple clie
 
 
 
-.. _IncPool
+.. _IncPool:
+
 
 
 Incremental Pool
@@ -121,16 +124,16 @@ Finally, here is the resource for the Incremental Pool:
 .. code-block:: sh
    :caption: Incremental Pool
 
-    Pool {
-      Name = Inc-Pool
-      Pool Type = Backup
-      Recycle = yes
-      AutoPrune = yes
-      Volume Retention = 20 days
-      Maximum Volume Jobs = 6
-      Label Format = Inc-
-      Maximum Volumes = 7
-    }
+   Pool {
+     Name = Inc-Pool
+     Pool Type = Backup
+     Recycle = yes
+     AutoPrune = yes
+     Volume Retention = 20 days
+     Maximum Volume Jobs = 6
+     Label Format = Inc-
+     Maximum Volumes = 7
+   }
 
 We keep the data for 20 days rather than just a week as the needs require. To reduce the proliferation of volume names, we keep a week’s worth of data (6 incremental backups) in each Volume. In practice, the retention period should be set to just a bit more than a week and keep only two or three volumes instead of five. Again, the lost is very little and as the system reaches the full steady state, we can adjust these values so that the total disk usage doesn’t exceed the disk capacity.
 
@@ -146,213 +149,213 @@ The Director’s configuration file is as follows:
 .. code-block:: sh
    :caption: bareos-dir.conf
 
-    Director {          # define myself
-      Name = bareos-dir
-      QueryFile = "/usr/lib/bareos/scripts/query.sql"
-      Maximum Concurrent Jobs = 1
-      Password = "*** CHANGE ME ***"
-      Messages = Standard
-    }
+   Director {          # define myself
+     Name = bareos-dir
+     QueryFile = "/usr/lib/bareos/scripts/query.sql"
+     Maximum Concurrent Jobs = 1
+     Password = "*** CHANGE ME ***"
+     Messages = Standard
+   }
 
-    JobDefs {
-      Name = "DefaultJob"
-      Type = Backup
-      Level = Incremental
-      Client = bareos-fd
-      FileSet = "Full Set"
-      Schedule = "WeeklyCycle"
-      Storage = File
-      Messages = Standard
-      Pool = Inc-Pool
-      Full Backup Pool = Full-Pool
-      Incremental Backup Pool = Inc-Pool
-      Differential Backup Pool = Diff-Pool
-      Priority = 10
-      Write Bootstrap = "/var/lib/bareos/%c.bsr"
-    }
+   JobDefs {
+     Name = "DefaultJob"
+     Type = Backup
+     Level = Incremental
+     Client = bareos-fd
+     FileSet = "Full Set"
+     Schedule = "WeeklyCycle"
+     Storage = File
+     Messages = Standard
+     Pool = Inc-Pool
+     Full Backup Pool = Full-Pool
+     Incremental Backup Pool = Inc-Pool
+     Differential Backup Pool = Diff-Pool
+     Priority = 10
+     Write Bootstrap = "/var/lib/bareos/%c.bsr"
+   }
 
-    Job {
-      Name = client
-      Client = client-fd
-      JobDefs = "DefaultJob"
-      FileSet = "Full Set"
-    }
+   Job {
+     Name = client
+     Client = client-fd
+     JobDefs = "DefaultJob"
+     FileSet = "Full Set"
+   }
 
-    # Backup the catalog database (after the nightly save)
-    Job {
-      Name = "BackupCatalog"
-      Client = client-fd
-      JobDefs = "DefaultJob"
-      Level = Full
-      FileSet="Catalog"
-      Schedule = "WeeklyCycleAfterBackup"
-      # This creates an ASCII copy of the catalog
-      # Arguments to make_catalog_backup.pl are:
-      #  make_catalog_backup.pl <catalog-name>
-      RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
-      # This deletes the copy of the catalog
-      RunAfterJob  = "/usr/lib/bareos/scripts/delete_catalog_backup"
-      # This sends the bootstrap via mail for disaster recovery.
-      # Should be sent to another system, please change recipient accordingly
-      Write Bootstrap = "|/usr/sbin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root@localhost"
-      Priority = 11                   # run after main backup
-    }
+   # Backup the catalog database (after the nightly save)
+   Job {
+     Name = "BackupCatalog"
+     Client = client-fd
+     JobDefs = "DefaultJob"
+     Level = Full
+     FileSet="Catalog"
+     Schedule = "WeeklyCycleAfterBackup"
+     # This creates an ASCII copy of the catalog
+     # Arguments to make_catalog_backup.pl are:
+     #  make_catalog_backup.pl <catalog-name>
+     RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+     # This deletes the copy of the catalog
+     RunAfterJob  = "/usr/lib/bareos/scripts/delete_catalog_backup"
+     # This sends the bootstrap via mail for disaster recovery.
+     # Should be sent to another system, please change recipient accordingly
+     Write Bootstrap = "|/usr/sbin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root@localhost"
+     Priority = 11                   # run after main backup
+   }
 
-    # Standard Restore template, to be changed by Console program
-    Job {
-      Name = "RestoreFiles"
-      Type = Restore
-      Client = client-fd
-      FileSet="Full Set"
-      Storage = File
-      Messages = Standard
-      Pool = Default
-      Where = /tmp/bareos-restores
-    }
+   # Standard Restore template, to be changed by Console program
+   Job {
+     Name = "RestoreFiles"
+     Type = Restore
+     Client = client-fd
+     FileSet="Full Set"
+     Storage = File
+     Messages = Standard
+     Pool = Default
+     Where = /tmp/bareos-restores
+   }
 
-    # List of files to be backed up
-    FileSet {
-      Name = "Full Set"
-      Include = {
-        Options {
-          signature=SHA1;
-          compression=GZIP9
-        }
-        File = /
-        File = /usr
-        File = /home
-        File = /boot
-        File = /var
-        File = /opt
-      }
-      Exclude = {
-        File = /proc
-        File = /tmp
-        File = /.journal
-        File = /.fsck
-        ...
-      }
-    }
+   # List of files to be backed up
+   FileSet {
+     Name = "Full Set"
+     Include = {
+       Options {
+         signature=SHA1;
+         compression=GZIP9
+       }
+       File = /
+       File = /usr
+       File = /home
+       File = /boot
+       File = /var
+       File = /opt
+     }
+     Exclude = {
+       File = /proc
+       File = /tmp
+       File = /.journal
+       File = /.fsck
+       ...
+     }
+   }
 
-    Schedule {
-      Name = "WeeklyCycle"
-      Run = Level=Full 1st sun at 2:05
-      Run = Level=Differential 2nd-5th sun at 2:05
-      Run = Level=Incremental mon-sat at 2:05
-    }
+   Schedule {
+     Name = "WeeklyCycle"
+     Run = Level=Full 1st sun at 2:05
+     Run = Level=Differential 2nd-5th sun at 2:05
+     Run = Level=Incremental mon-sat at 2:05
+   }
 
-    # This schedule does the catalog. It starts after the WeeklyCycle
-    Schedule {
-      Name = "WeeklyCycleAfterBackup"
-      Run = Level=Full sun-sat at 2:10
-    }
+   # This schedule does the catalog. It starts after the WeeklyCycle
+   Schedule {
+     Name = "WeeklyCycleAfterBackup"
+     Run = Level=Full sun-sat at 2:10
+   }
 
-    # This is the backup of the catalog
-    FileSet {
-      Name = "Catalog"
-      Include {
-        Options {
-          signature = MD5
-        }
-        File = "/var/lib/bareos/bareos.sql" # database dump
-        File = "/etc/bareos"                # configuration
-      }
-    }
+   # This is the backup of the catalog
+   FileSet {
+     Name = "Catalog"
+     Include {
+       Options {
+         signature = MD5
+       }
+       File = "/var/lib/bareos/bareos.sql" # database dump
+       File = "/etc/bareos"                # configuration
+     }
+   }
 
-    Client {
-      Name = client-fd
-      Address = client
-      FDPort = 9102
-      Password = " *** CHANGE ME ***"
-      AutoPrune = yes      # Prune expired Jobs/Files
-      Job Retention = 6 months
-      File Retention = 60 days
-    }
+   Client {
+     Name = client-fd
+     Address = client
+     FDPort = 9102
+     Password = " *** CHANGE ME ***"
+     AutoPrune = yes      # Prune expired Jobs/Files
+     Job Retention = 6 months
+     File Retention = 60 days
+   }
 
-    Storage {
-      Name = File
-      Address = localhost
-      Password = " *** CHANGE ME ***"
-      Device = FileStorage
-      Media Type = File
-    }
+   Storage {
+     Name = File
+     Address = localhost
+     Password = " *** CHANGE ME ***"
+     Device = FileStorage
+     Media Type = File
+   }
 
-    Catalog {
-      Name = MyCatalog
-      dbname = bareos; user = bareos; password = ""
-    }
+   Catalog {
+     Name = MyCatalog
+     dbname = bareos; user = bareos; password = ""
+   }
 
-    Pool {
-      Name = Full-Pool
-      Pool Type = Backup
-      Recycle = yes           # automatically recycle Volumes
-      AutoPrune = yes         # Prune expired volumes
-      Volume Retention = 6 months
-      Maximum Volume Jobs = 1
-      Label Format = Full-
-      Maximum Volumes = 9
-    }
+   Pool {
+     Name = Full-Pool
+     Pool Type = Backup
+     Recycle = yes           # automatically recycle Volumes
+     AutoPrune = yes         # Prune expired volumes
+     Volume Retention = 6 months
+     Maximum Volume Jobs = 1
+     Label Format = Full-
+     Maximum Volumes = 9
+   }
 
-    Pool {
-      Name = Inc-Pool
-      Pool Type = Backup
-      Recycle = yes           # automatically recycle Volumes
-      AutoPrune = yes         # Prune expired volumes
-      Volume Retention = 20 days
-      Maximum Volume Jobs = 6
-      Label Format = Inc-
-      Maximum Volumes = 7
-    }
+   Pool {
+     Name = Inc-Pool
+     Pool Type = Backup
+     Recycle = yes           # automatically recycle Volumes
+     AutoPrune = yes         # Prune expired volumes
+     Volume Retention = 20 days
+     Maximum Volume Jobs = 6
+     Label Format = Inc-
+     Maximum Volumes = 7
+   }
 
-    Pool {
-      Name = Diff-Pool
-      Pool Type = Backup
-      Recycle = yes
-      AutoPrune = yes
-      Volume Retention = 40 days
-      Maximum Volume Jobs = 1
-      Label Format = Diff-
-      Maximum Volumes = 10
-    }
+   Pool {
+     Name = Diff-Pool
+     Pool Type = Backup
+     Recycle = yes
+     AutoPrune = yes
+     Volume Retention = 40 days
+     Maximum Volume Jobs = 1
+     Label Format = Diff-
+     Maximum Volumes = 10
+   }
 
-    Messages {
-      Name = Standard
-      mailcommand = "bsmtp -h mail.domain.com -f \"\(Bareos\) %r\"
-          -s \"Bareos: %t %e of %c %l\" %r"
-      operatorcommand = "bsmtp -h mail.domain.com -f \"\(Bareos\) %r\"
-          -s \"Bareos: Intervention needed for %j\" %r"
-      mail = root@domain.com = all, !skipped
-      operator = root@domain.com = mount
-      console = all, !skipped, !saved
-      append = "/home/bareos/bin/log" = all, !skipped
-    }
+   Messages {
+     Name = Standard
+     mailcommand = "bsmtp -h mail.domain.com -f \"\(Bareos\) %r\"
+         -s \"Bareos: %t %e of %c %l\" %r"
+     operatorcommand = "bsmtp -h mail.domain.com -f \"\(Bareos\) %r\"
+         -s \"Bareos: Intervention needed for %j\" %r"
+     mail = root@domain.com = all, !skipped
+     operator = root@domain.com = mount
+     console = all, !skipped, !saved
+     append = "/home/bareos/bin/log" = all, !skipped
+   }
 
 and the Storage daemon’s configuration file is:
 
 .. code-block:: sh
    :caption: bareos-sd.conf
 
-    Storage {               # definition of myself
-      Name = bareos-sd
-    }
+   Storage {               # definition of myself
+     Name = bareos-sd
+   }
 
-    Director {
-      Name = bareos-dir
-      Password = " *** CHANGE ME ***"
-    }
+   Director {
+     Name = bareos-dir
+     Password = " *** CHANGE ME ***"
+   }
 
-    Device {
-      Name = FileStorage
-      Media Type = File
-      Archive Device = /var/lib/bareos/storage
-      LabelMedia = yes;    # lets Bareos label unlabeled media
-      Random Access = yes;
-      AutomaticMount = yes;   # when device opened, read it
-      RemovableMedia = no;
-      AlwaysOpen = no;
-    }
+   Device {
+     Name = FileStorage
+     Media Type = File
+     Archive Device = /var/lib/bareos/storage
+     LabelMedia = yes;    # lets Bareos label unlabeled media
+     Random Access = yes;
+     AutomaticMount = yes;   # when device opened, read it
+     RemovableMedia = no;
+     AlwaysOpen = no;
+   }
 
-    Messages {
-      Name = Standard
-      director = bareos-dir = all
-    }
+   Messages {
+     Name = Standard
+     director = bareos-dir = all
+   }

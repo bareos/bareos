@@ -6,7 +6,8 @@ File Deduplication using Base Jobs
 
 :index:`[TAG=Base Jobs] <single: Base Jobs>` :index:`[TAG=File Deduplication] <single: File Deduplication>` 
 
-.. _basejobs
+.. _basejobs:
+
  A base job is sort of like a Full save except that you will want the FileSet to contain only files that are unlikely to change in the future (i.e. a snapshot of most of your system after installing it). After the base job has been run, when you are doing a Full save, you specify one or more Base jobs to be used. All files that have been backed up in the Base job/jobs but not
 modified will then be excluded from the backup. During a restore, the Base jobs will be automatically pulled in where necessary.
 
@@ -16,18 +17,18 @@ A new Job directive :strong:`Base=JobX,JobY,...` permits to specify the list of 
 
 ::
 
-    Job {
-       Name = BackupLinux
-       Level= Base
-       ...
-    }
+   Job {
+      Name = BackupLinux
+      Level= Base
+      ...
+   }
 
-    Job {
-       Name = BackupZog4
-       Base = BackupZog4, BackupLinux
-       Accurate = yes
-       ...
-    }
+   Job {
+      Name = BackupZog4
+      Base = BackupZog4, BackupLinux
+      Accurate = yes
+      ...
+   }
 
 In this example, the job ``BackupZog4`` will use the most recent version of all files contained in ``BackupZog4`` and ``BackupLinux`` jobs. Base jobs should have run with :strong:`Level=Base` to be used.
 
@@ -35,19 +36,20 @@ By default, Bareos will compare permissions bits, user and group fields, modific
 
 ::
 
-    FileSet {
-      Name = Full
-      Include = {
-        Options {
-           BaseJob  = pmugcs5
-           Accurate = mcs
-           Verify   = pin5
-        }
-        File = /
-      }
-    }
+   FileSet {
+     Name = Full
+     Include = {
+       Options {
+          BaseJob  = pmugcs5
+          Accurate = mcs
+          Verify   = pin5
+       }
+       File = /
+     }
+   }
 
 
-.. warning:: 
+
+.. warning::
    The current implementation doesn't permit to scan
-   volume with :program:`bscan`. The result wouldn't permit to restore files easily.}
+   volume with :command:`bscan`. The result wouldn't permit to restore files easily.

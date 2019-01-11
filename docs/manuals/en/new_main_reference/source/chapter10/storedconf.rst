@@ -11,7 +11,7 @@ Storage Daemon Configuration
 The |bareosSd| configuration file has relatively few resource definitions. However, due to the great variation in backup media and system capabilities, the storage daemon must be highly configurable. As a consequence, there are quite a large number of directives in the Device Resource definition that allow you to define all the characteristics of your Storage device (normally a tape drive). Fortunately, with modern storage devices, the defaults are sufficient, and very few directives
 are actually needed.
 
-For a general discussion of configuration file and resources including the data types recognized by **Bareos**, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual. The following Storage Resource definitions must be defined:
+For a general discussion of configuration file and resources including the data types recognized by Bareos, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual. The following Storage Resource definitions must be defined:
 
 -  :ref:`Storage <StorageResourceStorage>` – to define the name of the Storage daemon.
 
@@ -41,14 +41,14 @@ The following is a typical Storage daemon storage resource definition.
 .. code-block:: sh
    :caption: Storage daemon storage definition
 
-    #
-    # "Global" Storage daemon configuration specifications appear
-    # under the Storage resource.
-    #
-    Storage {
-      Name = "Storage daemon"
-      Address = localhost
-    }
+   #
+   # "Global" Storage daemon configuration specifications appear
+   # under the Storage resource.
+   #
+   Storage {
+     Name = "Storage daemon"
+     Address = localhost
+   }
 
 .. _StorageResourceDirector:
 
@@ -64,10 +64,10 @@ The following is an example of a valid Director resource definition:
 .. code-block:: sh
    :caption: Storage daemon Director definition
 
-    Director {
-      Name = MainDirector
-      Password = my\_secret\_password
-    }
+   Director {
+     Name = MainDirector
+     Password = my\_secret\_password
+   }
 
 .. _NDMPResource:
 
@@ -76,7 +76,8 @@ NDMP Resource
 
 
 
-.. _StorageResourceNDMP
+.. _StorageResourceNDMP:
+
  :index:`[TAG=Resource->NDMP] <pair: Resource; NDMP>` :index:`[TAG=NDMP->Resource] <pair: NDMP; Resource>`
 
 The NDMP Resource specifies the authentication details of each NDMP client. There may be multiple NDMP resources for a single Storage daemon. In general, the properties specified within the NDMP resource are specific to one client.
@@ -95,21 +96,22 @@ Edit Codes for Mount and Unmount Directives
 
 :index:`[TAG=Edit Codes for Mount and Unmount Directives] <single: Edit Codes for Mount and Unmount Directives>` :index:`[TAG=Mount and Unmount: use variables in directives] <single: Mount and Unmount: use variables in directives>` 
 
-.. _mountcodes
+.. _mountcodes:
 
 
-Before submitting the **Mount Command**, or **Unmount Command** directives to the operating system, Bareos performs character substitution of the following characters:
+
+Before submitting the Mount Command, or Unmount Command directives to the operating system, Bareos performs character substitution of the following characters:
 
 
 
 ::
 
-        %% = %
-        %a = Archive device name
-        %e = erase (set if cannot mount and first part)
-        %n = part number
-        %m = mount point
-        %v = last part name (i.e. filename)
+       %% = %
+       %a = Archive device name
+       %e = erase (set if cannot mount and first part)
+       %n = part number
+       %m = mount point
+       %v = last part name (i.e. filename)
 
 
 
@@ -193,5 +195,5 @@ Example Storage Daemon Configuration File
 
 A example Storage Daemon configuration file might be the following:
 
-.. literalinclude:: ../../main/bareos-sd.conf}
+.. literalinclude:: ../../main/bareos-sd.conf
 

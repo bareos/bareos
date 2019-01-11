@@ -10,7 +10,7 @@ Console Configuration
 
 The Console configuration file is the simplest of all the configuration files, and in general, you should not need to change it except for the password. It simply contains the information necessary to contact the Director or Directors.
 
-For a general discussion of the syntax of configuration files and their resources including the data types recognized by **Bareos**, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual.
+For a general discussion of the syntax of configuration files and their resources including the data types recognized by Bareos, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual.
 
 The following Console Resource definition must be defined:
 
@@ -21,7 +21,7 @@ Director Resource
 
 :index:`[TAG=Director Resource] <single: Director Resource>` :index:`[TAG=Resource->Director] <pair: Resource; Director>`
 
-The Director resource defines the attributes of the Director running on the network. You may have multiple Director resource specifications in a single Console configuration file. If you have more than one, you will be prompted to choose one when you start the **Console** program.
+The Director resource defines the attributes of the Director running on the network. You may have multiple Director resource specifications in a single Console configuration file. If you have more than one, you will be prompted to choose one when you start the Console program.
 
 An actual example might be:
 
@@ -29,11 +29,11 @@ An actual example might be:
 
 ::
 
-    Director {
-      Name = HeadMan
-      address = rufus.cats.com
-      password = xyz1erploit
-    }
+   Director {
+     Name = HeadMan
+     address = rufus.cats.com
+     password = xyz1erploit
+   }
 
 
 
@@ -56,8 +56,8 @@ There are three different kinds of consoles, which the administrator or user can
 
    Thus you may define within the Director’s conf file multiple Consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands what so ever. You give them privileges or rather access to commands and resources by specifying access control lists in the Director’s Console resource. This gives the administrator fine grained control over what particular consoles (or users) can do.
 
--  The third type of console is similar to the above mentioned restricted console in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the **Name =** directive, is the same as a Client name, the user of that console is permitted to use the **SetIP** command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits portables or other machines using DHCP
-   (non-fixed IP addresses) to "notify" the Director of their current IP address.
+-  The third type of console is similar to the above mentioned restricted console in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the Name = directive, is the same as a Client name, the user of that console is permitted to use the SetIP command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits portables or other machines using DHCP (non-fixed IP
+   addresses) to "notify" the Director of their current IP address.
 
 The Console resource is optional and need not be specified. However, if it is specified, you can use ACLs (Access Control Lists) in the Director’s configuration file to restrict the particular console (or user) to see only information pertaining to his jobs or client machine.
 
@@ -76,13 +76,13 @@ A Console configuration file might look like this:
 .. code-block:: sh
    :caption: bconsole configuration
 
-    Director {
-      Name = "bareos.example.com-dir"
-      address = "bareos.example.com"
-      Password = "PASSWORD"
-    }
+   Director {
+     Name = "bareos.example.com-dir"
+     address = "bareos.example.com"
+     Password = "PASSWORD"
+   }
 
-With this configuration, the console program (e.g. :program:`bconsole`) will try to connect to a |bareosDir| named **bareos.example.com-dir** at the network address :strong:`bareos.example.com` and authenticate to the admin console using the password **PASSWORD**.
+With this configuration, the console program (e.g. :command:`bconsole`) will try to connect to a |bareosDir| named **bareos.example.com-dir** at the network address :strong:`bareos.example.com` and authenticate to the admin console using the password **PASSWORD**.
 
 .. _section-ConsoleAccessExample:
 
@@ -91,39 +91,39 @@ Using Named Consoles
 
 The following configuration files were supplied by Phil Stracchino.
 
-To use named consoles from :program:`bconsole`, use a :file:`bconsole.conf` configuration file like this:
+To use named consoles from :command:`bconsole`, use a :file:`bconsole.conf` configuration file like this:
 
 .. code-block:: sh
    :caption: bconsole: restricted-user
 
-    Director {
-       Name = bareos-dir
-       Address = myserver
-       Password = "XXXXXXXXXXX"
-    }
+   Director {
+      Name = bareos-dir
+      Address = myserver
+      Password = "XXXXXXXXXXX"
+   }
 
-    Console {
-       Name = restricted-user
-       Password = "RUPASSWORD"
-    }
+   Console {
+      Name = restricted-user
+      Password = "RUPASSWORD"
+   }
 
 Where the Password in the Director section is deliberately incorrect and the Console resource is given a name, in this case :strong:`restricted-user`. Then in the Director configuration (not directly accessible by the user), we define:
 
 .. code-block:: sh
    :caption: bareos-dir.d/console/restricted-user.conf
 
-    Console {
-      Name = restricted-user
-      Password = "RUPASSWORD"
-      JobACL = "Restricted Client Save"
-      ClientACL = restricted-client
-      StorageACL = main-storage
-      ScheduleACL = *all*
-      PoolACL = *all*
-      FileSetACL = "Restricted Client's FileSet"
-      CatalogACL = MyCatalog
-      CommandACL = run
-    }
+   Console {
+     Name = restricted-user
+     Password = "RUPASSWORD"
+     JobACL = "Restricted Client Save"
+     ClientACL = restricted-client
+     StorageACL = main-storage
+     ScheduleACL = *all*
+     PoolACL = *all*
+     FileSetACL = "Restricted Client's FileSet"
+     CatalogACL = MyCatalog
+     CommandACL = run
+   }
 
 The user login into the Director from his Console will get logged in as **restricted-user**:sup:`Dir`:sub:`Console`  and he will only be able to see or access a Job with the name **Restricted Client Save**:sup:`Dir`:sub:`Job` , a Client with the name **restricted-client**:sup:`Dir`:sub:`Client` , a storage device **main-storage**:sup:`Dir`:sub:`Storage` , any Schedule or Pool, a FileSet named
 **Restricted Client's FileSet**:sup:`Dir`:sub:`FileSet` , a Catalog named **MyCatalog**:sup:`Dir`:sub:`Catalog`  and the only command he can use in the Console is the :strong:`run` command. In other words, this user is rather limited in what he can see and do with Bareos. For details how to configure ACLs, see the :strong:`Acl` data type description.
@@ -133,45 +133,45 @@ The following is an example of a :file:`bconsole.conf` file that can access seve
 .. code-block:: sh
    :caption: bconsole: multiple consoles
 
-    Director {
-       Name = bareos-dir
-       Address = myserver
-       Password = "XXXXXXXXXXX"    # no, really.  this is not obfuscation.
-    }
+   Director {
+      Name = bareos-dir
+      Address = myserver
+      Password = "XXXXXXXXXXX"    # no, really.  this is not obfuscation.
+   }
 
-    Director {
-       Name = SecondDirector
-       Address = secondserver
-       Password = "XXXXXXXXXXX"    # no, really.  this is not obfuscation.
-    }
+   Director {
+      Name = SecondDirector
+      Address = secondserver
+      Password = "XXXXXXXXXXX"    # no, really.  this is not obfuscation.
+   }
 
-    Console {
-       Name = restricted-user
-       Password = "RUPASSWORD"
-       Director = MyDirector
-    }
+   Console {
+      Name = restricted-user
+      Password = "RUPASSWORD"
+      Director = MyDirector
+   }
 
-    Console {
-       Name = restricted-user2
-       Password = "OTHERPASSWORD"
-       Director = SecondDirector
-    }
+   Console {
+      Name = restricted-user2
+      Password = "OTHERPASSWORD"
+      Director = SecondDirector
+   }
 
 The second Director referenced at **secondserver**:sup:`Dir`:sub:`Director`  might look like the following:
 
 .. code-block:: sh
    :caption: bareos-dir.d/console/restricted-user2.conf
 
-    Console {
-      Name = restricted-user2
-      Password = "OTHERPASSWORD"
-      JobACL = "Restricted Client Save"
-      ClientACL = restricted-client
-      StorageACL = second-storage
-      ScheduleACL = *all*
-      PoolACL = *all*
-      FileSetACL = "Restricted Client's FileSet"
-      CatalogACL = RestrictedCatalog
-      CommandACL = run, restore
-      WhereACL = "/"
-    }
+   Console {
+     Name = restricted-user2
+     Password = "OTHERPASSWORD"
+     JobACL = "Restricted Client Save"
+     ClientACL = restricted-client
+     StorageACL = second-storage
+     ScheduleACL = *all*
+     PoolACL = *all*
+     FileSetACL = "Restricted Client's FileSet"
+     CatalogACL = RestrictedCatalog
+     CommandACL = run, restore
+     WhereACL = "/"
+   }

@@ -14,7 +14,8 @@ If you follow the instructions in this chapter, you will have covered most of th
 
 
 
-.. _Critical
+.. _Critical:
+
 
 
 Critical Items
@@ -39,10 +40,9 @@ you would use in setting up a production system (if you already are in productio
 
 -  Make a copy of the bareos-dir.conf, bareos-sd.conf, and bareos-fd.conf files that you are using on your server. Put it in a safe place (on another machine) as these files can be difficult to reconstruct if your server dies.
 
--  Bareos assumes all filenames are in UTF-8 format. This is important when saving the filenames to the catalog. For Win32 machine, Bareos will automatically convert from Unicode to UTF-8, but on Unix, Linux, \*BSD, and MacOS X machines, you must explicitly ensure that your locale is set properly. Typically this means that the **LANG** environment variable must end in **.UTF-8**. A full example is **en_US.UTF-8**. The exact syntax may vary a bit from OS to OS, and exactly how you define it will
-   also vary.
+-  Bareos assumes all filenames are in UTF-8 format. This is important when saving the filenames to the catalog. For Win32 machine, Bareos will automatically convert from Unicode to UTF-8, but on Unix, Linux, \*BSD, and MacOS X machines, you must explicitly ensure that your locale is set properly. Typically this means that the LANG environment variable must end in .UTF-8. A full example is en_US.UTF-8. The exact syntax may vary a bit from OS to OS, and exactly how you define it will also vary.
 
-   On most modern Win32 machines, you can edit the conf files with **notepad** and choose output encoding UTF-8.
+   On most modern Win32 machines, you can edit the conf files with notepad and choose output encoding UTF-8.
 
 Recommended Items
 -----------------

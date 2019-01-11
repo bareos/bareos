@@ -5,7 +5,11 @@ This chapter addresses the installation process of the |bareosWebui|.
 
 Since :index:`Version >= 15.2.0 <pair: bareos-15.2.0; bareos-webui>` |bareosWebui| is part of the Bareos project and available for a number of platforms.
 
-|image|
+.. image:: images/bareos-webui-jobs.*
+   :width: 80.0%
+
+
+
 
 Features
 ========
@@ -99,25 +103,25 @@ After adding the repository simply install the bareos-webui package via your pac
 
    .. code-block:: sh
 
-       yum install bareos-webui
+      yum install bareos-webui
 
    or
 
    .. code-block:: sh
 
-       dnf install bareos-webui
+      dnf install bareos-webui
 
 -  SUSE Linux Enterprise Server (SLES), openSUSE
 
    .. code-block:: sh
 
-       zypper install bareos-webui
+      zypper install bareos-webui
 
 -  Debian, Ubuntu
 
    .. code-block:: sh
 
-       apt-get install bareos-webui
+      apt-get install bareos-webui
 
 Minimal Configuration
 ---------------------
@@ -128,7 +132,7 @@ This assumes, |bareosDir| and |bareosWebui| are installed on the same host.
 
    .. code-block:: sh
 
-       setsebool -P httpd_can_network_connect on
+      setsebool -P httpd_can_network_connect on
 
    For details, see :ref:`section-webui-selinux`.
 
@@ -136,13 +140,14 @@ This assumes, |bareosDir| and |bareosWebui| are installed on the same host.
 
 #. 
 
-.. _item:webui-create-user
- Use :program:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in **webui-admin**:sup:`Dir`:sub:`Profile` :
+.. _item:webui-create-user:
+
+ Use :command:`bconsole` to create a user with name **admin** and password **secret** and permissions defined in **webui-admin**:sup:`Dir`:sub:`Profile` :
 
    .. code-block:: sh
-   :caption: add a named console
+      :caption: add a named console
 
-       *<input>configure add console name=admin password=secret profile=webui-admin</input>
+      *<input>configure add console name=admin password=secret profile=webui-admin</input>
 
    Of course, you can choose other names and passwords. For details, see :ref:`section-webui-console`.
 
@@ -165,22 +170,22 @@ To allow a user with name **admin** and password **secret** to access the |bareo
 -  create a file :file:`/etc/bareos/bareos-dir.d/console/admin.conf` with following content:
 
    .. code-block:: sh
-   :caption: bareos-dir.d/console/admin.conf
+      :caption: bareos-dir.d/console/admin.conf
 
-       Console {
-         Name = "admin"
-         Password = "secret"
-         Profile = "webui-admin"
-       }
+      Console {
+        Name = "admin"
+        Password = "secret"
+        Profile = "webui-admin"
+      }
 
    To enable this, reload or restart your |bareosDir|.
 
--  or use the :program:`bconsole`:
+-  or use the :command:`bconsole`:
 
    .. code-block:: sh
-   :caption: add console
+      :caption: add console
 
-       *<input>configure add console name=admin password=secret profile=webui-admin</input>
+      *<input>configure add console name=admin password=secret profile=webui-admin</input>
 
 For details, please read :ref:`DirectorResourceConsole`.
 
@@ -198,19 +203,19 @@ This is the default profile, giving access to all Bareos resources and allowing 
 .. code-block:: sh
    :caption: bareos-dir.d/profile/webui-admin.conf
 
-    Profile {
-      Name = webui-admin
-      CommandACL = !.bvfs_clear_cache, !.exit, !.sql, !configure, !create, !delete, !purge, !sqlquery, !umount, !unmount, *all*
-      Job ACL = *all*
-      Schedule ACL = *all*
-      Catalog ACL = *all*
-      Pool ACL = *all*
-      Storage ACL = *all*
-      Client ACL = *all*
-      FileSet ACL = *all*
-      Where ACL = *all*
-      Plugin Options ACL = *all*
-    }
+   Profile {
+     Name = webui-admin
+     CommandACL = !.bvfs_clear_cache, !.exit, !.sql, !configure, !create, !delete, !purge, !sqlquery, !umount, !unmount, *all*
+     Job ACL = *all*
+     Schedule ACL = *all*
+     Catalog ACL = *all*
+     Pool ACL = *all*
+     Storage ACL = *all*
+     Client ACL = *all*
+     FileSet ACL = *all*
+     Where ACL = *all*
+     Plugin Options ACL = *all*
+   }
 
 The :sup:`Dir`\ :strong:`Profile` itself does not give any access to the |bareosDir|, but can be used by :sup:`Dir`\ :strong:`Console`, which do give access to the |bareosDir|, see :ref:`section-webui-console`.
 
@@ -227,14 +232,15 @@ To use |bareosDir| on a system with SELinux enabled, permission must be given to
 
 .. code-block:: sh
 
-    setsebool -P httpd_can_network_connect on
+   setsebool -P httpd_can_network_connect on
 
 Configure your Apache Webserver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :index:`[TAG=Apache->bareos-webui] <pair: Apache; bareos-webui>` 
 
-.. _section-webui-apache
+.. _section-webui-apache:
+
 
 
 The package **bareos-webui** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf` or :file:`/etc/apache2/available-conf/bareos-webui.conf`.
@@ -246,7 +252,8 @@ Configure your /etc/bareos-webui/directors.ini
 
 :index:`[TAG=Configuration->WebUI] <pair: Configuration; WebUI>` 
 
-.. _section-webui-configuration-files
+.. _section-webui-configuration-files:
+
 
 
 Configure your directors in :file:`/etc/bareos-webui/directors.ini` to match your settings.
@@ -256,81 +263,81 @@ The configuration file :file:`/etc/bareos-webui/directors.ini` should look simil
 .. code-block:: sh
    :caption: /etc/bareos-webui/directors.ini
 
-    ;
-    ; Bareos WebUI Configuration File
-    ;
-    ; File: /etc/bareos-webui/directors.ini
-    ;
+   ;
+   ; Bareos WebUI Configuration File
+   ;
+   ; File: /etc/bareos-webui/directors.ini
+   ;
 
-    ;------------------------------------------------------------------------------
-    ; Section localhost-dir
-    ;------------------------------------------------------------------------------
-    [localhost-dir]
+   ;------------------------------------------------------------------------------
+   ; Section localhost-dir
+   ;------------------------------------------------------------------------------
+   [localhost-dir]
 
-    ; Enable or disable section. Possible values are "yes" or "no", the default is "yes".
-    enabled = "yes"
+   ; Enable or disable section. Possible values are "yes" or "no", the default is "yes".
+   enabled = "yes"
 
-    ; Fill in the IP-Address or FQDN of you director.
-    diraddress = "localhost"
+   ; Fill in the IP-Address or FQDN of you director.
+   diraddress = "localhost"
 
-    ; Default value is 9101
-    dirport = 9101
+   ; Default value is 9101
+   dirport = 9101
 
-    ; Set catalog to explicit value if you have multiple catalogs
-    ;catalog = "MyCatalog"
+   ; Set catalog to explicit value if you have multiple catalogs
+   ;catalog = "MyCatalog"
 
-    ; TLS verify peer
-    ; Possible values: true or false
-    tls_verify_peer = false
+   ; TLS verify peer
+   ; Possible values: true or false
+   tls_verify_peer = false
 
-    ; Server can do TLS
-    ; Possible values: true or false
-    server_can_do_tls = false
+   ; Server can do TLS
+   ; Possible values: true or false
+   server_can_do_tls = false
 
-    ; Server requires TLS
-    ; Possible values: true or false
-    server_requires_tls = false
+   ; Server requires TLS
+   ; Possible values: true or false
+   server_requires_tls = false
 
-    ; Client can do TLS
-    ; Possible values: true or false
-    client_can_do_tls = false
+   ; Client can do TLS
+   ; Possible values: true or false
+   client_can_do_tls = false
 
-    ; Client requires TLS
-    ; Possible value: true or false
-    client_requires_tls = false
+   ; Client requires TLS
+   ; Possible value: true or false
+   client_requires_tls = false
 
-    ; Path to the certificate authority file
-    ; E.g. ca_file = "/etc/bareos-webui/tls/BareosCA.crt"
-    ;ca_file = ""
+   ; Path to the certificate authority file
+   ; E.g. ca_file = "/etc/bareos-webui/tls/BareosCA.crt"
+   ;ca_file = ""
 
-    ; Path to the cert file which needs to contain the client certificate and the key in PEM encoding
-    ; E.g. ca_file = "/etc/bareos-webui/tls/restricted-named-console.pem"
-    ;cert_file = ""
+   ; Path to the cert file which needs to contain the client certificate and the key in PEM encoding
+   ; E.g. ca_file = "/etc/bareos-webui/tls/restricted-named-console.pem"
+   ;cert_file = ""
 
-    ; Passphrase needed to unlock the above cert file if set
-    ;cert_file_passphrase = ""
+   ; Passphrase needed to unlock the above cert file if set
+   ;cert_file_passphrase = ""
 
-    ; Allowed common names
-    ; E.g. allowed_cns = "host1.example.com"
-    ;allowed_cns = ""
+   ; Allowed common names
+   ; E.g. allowed_cns = "host1.example.com"
+   ;allowed_cns = ""
 
-    ;------------------------------------------------------------------------------
-    ; Section another-host-dir
-    ;------------------------------------------------------------------------------
-    [another-host-dir]
-    enabled = "no"
-    diraddress = "192.168.120.1"
-    dirport = 9101
-    ;catalog = "MyCatalog"
-    ;tls_verify_peer = false
-    ;server_can_do_tls = false
-    ;server_requires_tls = false
-    ;client_can_do_tls = false
-    ;client_requires_tls = false
-    ;ca_file = ""
-    ;cert_file = ""
-    ;cert_file_passphrase = ""
-    ;allowed_cns = ""
+   ;------------------------------------------------------------------------------
+   ; Section another-host-dir
+   ;------------------------------------------------------------------------------
+   [another-host-dir]
+   enabled = "no"
+   diraddress = "192.168.120.1"
+   dirport = 9101
+   ;catalog = "MyCatalog"
+   ;tls_verify_peer = false
+   ;server_can_do_tls = false
+   ;server_requires_tls = false
+   ;client_can_do_tls = false
+   ;client_requires_tls = false
+   ;ca_file = ""
+   ;cert_file = ""
+   ;cert_file_passphrase = ""
+   ;allowed_cns = ""
 
 You can add as many directors as you want, also the same host with a different name and different catalog, if you have multiple catalogs.
 
@@ -342,52 +349,52 @@ Since :index:`Version >= 16.2.2 <pair: bareos-16.2.2; /etc/bareos-webui/configur
 .. code-block:: sh
    :caption: /etc/bareos-webui/configuration.ini
 
-    ;
-    ; Bareos WebUI Configuration File
-    ;
-    ; File: /etc/bareos-webui/configuration.ini
-    ;
+   ;
+   ; Bareos WebUI Configuration File
+   ;
+   ; File: /etc/bareos-webui/configuration.ini
+   ;
 
-    ;------------------------------------------------------------------------------
-    ; SESSION SETTINGS
-    ;------------------------------------------------------------------------------
-    ;
-    [session]
-    ; Default: 3600 seconds
-    timeout=3600
+   ;------------------------------------------------------------------------------
+   ; SESSION SETTINGS
+   ;------------------------------------------------------------------------------
+   ;
+   [session]
+   ; Default: 3600 seconds
+   timeout=3600
 
-    ;------------------------------------------------------------------------------
-    ; DASHBOARD SETTINGS
-    ;------------------------------------------------------------------------------
-    [dashboard]
-    ; Autorefresh Interval
-    ; Default: 60000 milliseconds
-    autorefresh_interval=60000
+   ;------------------------------------------------------------------------------
+   ; DASHBOARD SETTINGS
+   ;------------------------------------------------------------------------------
+   [dashboard]
+   ; Autorefresh Interval
+   ; Default: 60000 milliseconds
+   autorefresh_interval=60000
 
-    ;------------------------------------------------------------------------------
-    ; TABLE SETTINGS
-    ;------------------------------------------------------------------------------
-    [tables]
-    ; Possible values for pagination
-    ; Default: 10,25,50,100
-    pagination_values=10,25,50,100
+   ;------------------------------------------------------------------------------
+   ; TABLE SETTINGS
+   ;------------------------------------------------------------------------------
+   [tables]
+   ; Possible values for pagination
+   ; Default: 10,25,50,100
+   pagination_values=10,25,50,100
 
-    ; Default number of rows per page
-    ; for possible values see pagination_values
-    ; Default: 25
-    pagination_default_value=25
+   ; Default number of rows per page
+   ; for possible values see pagination_values
+   ; Default: 25
+   pagination_default_value=25
 
-    ; State saving - restore table state on page reload.
-    ; Default: false
-    save_previous_state=false
+   ; State saving - restore table state on page reload.
+   ; Default: false
+   save_previous_state=false
 
-    ;------------------------------------------------------------------------------
-    ; VARIOUS SETTINGS
-    ;------------------------------------------------------------------------------
-    [autochanger]
-    ; Pooltype for label to use as filter.
-    ; Default: none
-    labelpooltype=scratch
+   ;------------------------------------------------------------------------------
+   ; VARIOUS SETTINGS
+   ;------------------------------------------------------------------------------
+   [autochanger]
+   ; Pooltype for label to use as filter.
+   ; Default: none
+   labelpooltype=scratch
 
 Upgrade from 15.2 to 16.2
 =========================
@@ -444,40 +451,38 @@ If you prefer to use |bareosWebui| on Nginx with php5-fpm instead of Apache, a b
 .. code-block:: sh
    :caption: bareos-webui on nginx
 
-    server {
+   server {
 
-            listen       9100;
-            server_name  bareos;
-            root         /var/www/bareos-webui/public;
+           listen       9100;
+           server_name  bareos;
+           root         /var/www/bareos-webui/public;
 
-            location / {
-                    index index.php;
-                    try_files $uri $uri/ /index.php?$query_string;
-            }
+           location / {
+                   index index.php;
+                   try_files $uri $uri/ /index.php?$query_string;
+           }
 
-            location ~ .php$ {
+           location ~ .php$ {
 
-                    include snippets/fastcgi-php.conf;
+                   include snippets/fastcgi-php.conf;
 
-                    # php5-cgi alone:
-                    # pass the PHP
-                    # scripts to FastCGI server
-                    # listening on 127.0.0.1:9000
-                    #fastcgi_pass 127.0.0.1:9000;
+                   # php5-cgi alone:
+                   # pass the PHP
+                   # scripts to FastCGI server
+                   # listening on 127.0.0.1:9000
+                   #fastcgi_pass 127.0.0.1:9000;
 
-                    # php5-fpm:
-                    fastcgi_pass unix:/var/run/php5-fpm.sock;
+                   # php5-fpm:
+                   fastcgi_pass unix:/var/run/php5-fpm.sock;
 
-                    # APPLICATION_ENV:  set to 'development' or 'production'
-                    #fastcgi_param APPLICATION_ENV development;
-                    fastcgi_param APPLICATION_ENV production;
+                   # APPLICATION_ENV:  set to 'development' or 'production'
+                   #fastcgi_param APPLICATION_ENV development;
+                   fastcgi_param APPLICATION_ENV production;
 
-            }
+           }
 
-    }
+   }
 
 This will make the |bareosWebui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).
 
-.. |image| image:: \idir bareos-webui-jobs
-   :width: 80.0%
 

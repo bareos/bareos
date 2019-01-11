@@ -6,7 +6,8 @@ Backward Compatibility
 
 :index:`[TAG=Compatibility->Backward] <pair: Compatibility; Backward>` 
 
-.. _backward-compatibility
+.. _backward-compatibility:
+
 
 
 Tape Formats
@@ -14,7 +15,8 @@ Tape Formats
 
 :index:`[TAG=Tape->Format] <pair: Tape; Format>` 
 
-.. _backward-compatibility-tape-format
+.. _backward-compatibility-tape-format:
+
 
 
 One of the major goals of Backup software is to ensure that you can restore tapes (the word tape should also include disk volumes) that you wrote years ago. This means that each new version of the software should be able to read old format tapes. The first problem you will have is to ensure that the hardware is still working some years down the road, and the second problem will be to ensure that the media will still be good, then your OS must be able to interface to the device, and finally
@@ -29,7 +31,8 @@ Compatibility between Bareos and Bacula
 
 :index:`[TAG=Compatibility->Bacula] <pair: Compatibility; Bacula>` :index:`[TAG=Bacula] <single: Bacula>` 
 
-.. _compat-bacula
+.. _compat-bacula:
+
 
 
 A Director and a Storage Daemon should (must) always run at the same version. This is true for Bareos as well as for Bacula. It is not possible to mix these components. This is because the protocol between Director and Storage Daemon itself is not versioned (also true for Bareos and Bacula). If you want to be able to switch back from Bareos to Bacula after using a Bareos director and storage daemon you have to enable the compatible mode in the Bareos storage daemon to have it write the data in
@@ -49,34 +52,31 @@ These combinations of Bareos and Bacula are know to work together:
 
 ::
 
-    \begin{tabular}[h]{|l|l|l|l|}
-      \hline
-      :strong:`Director` & :strong:`Storage Daemon` & :strong:`File Daemon` & :strong:`Remarks` \\
-      \hline
-      \hline
-      \bareoscolor & \bareoscolor & \bareoscolor & \\
-      \hline
-      \bareoscolor & \bareoscolor & 2.0 <= \baculacolor < 6.0 & \\
-      \hline
-      \baculacolor & \baculacolor & \baculacolor & \\
-      \hline
-      \baculacolor & \baculacolor & \bareoscolor (compatibility mode) & \\
-      \hline
-    \end{tabular}
+   \begin{tabular}[h]{|l|l|l|l|}
+     \hline
+     :strong:`Director` & :strong:`Storage Daemon` & :strong:`File Daemon` & :strong:`Remarks` \\
+     \hline
+     \hline
+     \bareoscolor & \bareoscolor & \bareoscolor & \\
+     \hline
+     \bareoscolor & \bareoscolor & 2.0 <= \baculacolor < 6.0 & \\
+     \hline
+     \baculacolor & \baculacolor & \baculacolor & \\
+     \hline
+     \baculacolor & \baculacolor & \bareoscolor (compatibility mode) & \\
+     \hline
+   \end{tabular}
 
 # converted Latex tabular
 
-+--------------+--------------------+-----------------------------+-------------+
-| **Director** | **Storage Daemon** | **File Daemon**             | **Remarks** |
-+==============+====================+=============================+=============+
-| Bareos       | Bareos             | Bareos                      |             |
-+--------------+--------------------+-----------------------------+-------------+
-| Bareos       | Bareos             | 2.0 <= Bacula < 6.0         |             |
-+--------------+--------------------+-----------------------------+-------------+
-| Bacula       | Bacula             | Bacula                      |             |
-+--------------+--------------------+-----------------------------+-------------+
-| Bacula       | Bacula             | Bareos (compatibility mode) |             |
-+--------------+--------------------+-----------------------------+-------------+
+============ ================== =========================== ===========
+**Director** **Storage Daemon** **File Daemon**             **Remarks**
+============ ================== =========================== ===========
+Bareos       Bareos             Bareos                     
+Bareos       Bareos             2.0 <= Bacula < 6.0        
+Bacula       Bacula             Bacula                     
+Bacula       Bacula             Bareos (compatibility mode)
+============ ================== =========================== ===========
 
 Other combinations like Bacula Director with |bareosSd| will not work. However this wasn’t even possible with different versions of bacula-dir and bacula-sd.
 
@@ -85,17 +85,20 @@ Upgrade from Bacula 5.2 to Bareos
 
 :index:`[TAG=Upgrade from Bacula to Bareos] <single: Upgrade from Bacula to Bareos>` :index:`[TAG=Bareos->Upgrading] <pair: Bareos; Upgrading>` 
 
-.. _upgrade-from-bacula-to-bareos
+.. _upgrade-from-bacula-to-bareos:
+
 
 
 Upgrade is supported from Bacula version 5.2.x. If you are running any older version of Bacula, please update to 5.2 first (see Bacula documentation).
 
 
-.. warning:: 
+
+.. warning::
    Updating from Bacula >= 7.0 to Bareos has not been tested.
 
 
-.. warning:: 
+
+.. warning::
    As Bareos and Bacula packages bring binaries with identical paths and names,
    it is on most platforms not possible to install components from both in parallel.
    Your package management tool will warn you about this.
@@ -109,8 +112,8 @@ The required commands should look something like this:
 
 .. code-block:: sh
 
-    usermod  -l bareos bacula
-    groupmod -n bareos bacula
+   usermod  -l bareos bacula
+   groupmod -n bareos bacula
 
 MySQL
 ^^^^^
@@ -123,7 +126,7 @@ Proceed with the following steps:
 
    .. code-block:: sh
 
-       mysqldump bacula > /tmp/bacula_5.2.sql
+      mysqldump bacula > /tmp/bacula_5.2.sql
 
 -  Make the user bareos have the same userid and the group bareos the same groupid as the user/group bacula had before. This will solve a lot of rights problems.
 
@@ -133,39 +136,39 @@ Proceed with the following steps:
 
    .. code-block:: sh
 
-       export db_name=bacula
-       /usr/lib/bareos/update_bareos_tables
-       unset db_name
+      export db_name=bacula
+      /usr/lib/bareos/update_bareos_tables
+      unset db_name
 
 -  Backup upgraded DB:
 
    .. code-block:: sh
 
-       mysqldump bacula > /tmp/bacula.sql
+      mysqldump bacula > /tmp/bacula.sql
 
 -  Create bareos database:
 
    .. code-block:: sh
 
-       /usr/lib/bareos/create_bareos_database
+      /usr/lib/bareos/create_bareos_database
 
 -  Insert backuped db into new database:
 
    .. code-block:: sh
 
-       cat /tmp/bacula.sql | mysql bareos
+      cat /tmp/bacula.sql | mysql bareos
 
 -  Grant permissions:
 
    .. code-block:: sh
 
-       /usr/lib/bareos/grant_mysql_privileges
+      /usr/lib/bareos/grant_mysql_privileges
 
 -  Adapt file permissions to bareos, if you have any file storage
 
 -  Adapt configs (not complete)
 
-   -  With bacula the default setting for pid files was :file:`/var/run`, which may not work if the bareos-director runs as user bareos. Best way is to comment out the entry :program:`Pid Directory = "/var/run"` in your director config. Bareos will set a working default value (supposed to be :file:`/var/lib/bareos/`)
+   -  With bacula the default setting for pid files was :file:`/var/run`, which may not work if the bareos-director runs as user bareos. Best way is to comment out the entry :command:`Pid Directory = "/var/run"` in your director config. Bareos will set a working default value (supposed to be :file:`/var/lib/bareos/`)
 
 PostgreSQL
 ^^^^^^^^^^
@@ -178,6 +181,6 @@ Renaming a postgresql database:
 
    .. code-block:: sh
 
-       ALTER DATABASE bacula RENAME TO bareos;
-       ALTER USER bacula RENAME TO bareos;
-       ALTER USER bareos UNENCRYPTED PASSWORD 'password';
+      ALTER DATABASE bacula RENAME TO bareos;
+      ALTER USER bacula RENAME TO bareos;
+      ALTER USER bareos UNENCRYPTED PASSWORD 'password';

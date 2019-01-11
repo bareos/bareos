@@ -55,13 +55,13 @@ Important Migration Considerations
 
 :index:`[TAG=Migration->Important Migration Considerations] <pair: Migration; Important Migration Considerations>`
 
--  Each Pool into which you migrate Jobs or Volumes **must** contain Volumes of only one **Media Type**:sup:`Dir`:sub:`Storage`\ .
+-  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one **Media Type**:sup:`Dir`:sub:`Storage`\ .
 
 -  Migration takes place on a JobId by JobId basis. That is each JobId is migrated in its entirety and independently of other JobIds. Once the Job is migrated, it will be on the new medium in the new Pool, but for the most part, aside from having a new JobId, it will appear with all the same characteristics of the original job (start, end time, ...). The column RealEndTime in the catalog Job table will contain the time and date that the Migration terminated, and by comparing it with the EndTime
    column you can tell whether or not the job was migrated. Also, the Job table contains a PriorJobId column which is set to the original JobId for migration jobs. For non-migration jobs this column is zero.
 
--  After a Job has been migrated, the File records are purged from the original Job. Moreover, the Type of the original Job is changed from "B" (backup) to "M" (migrated), and another Type "B" job record is added which refers to the new location of the data. Since the original Job record stays in the bareos catalog, it is still possible to restore from the old media by specifying the original JobId for the restore. However, no file selection is possible in this case, so one can only restore
-   **all** files this way.
+-  After a Job has been migrated, the File records are purged from the original Job. Moreover, the Type of the original Job is changed from "B" (backup) to "M" (migrated), and another Type "B" job record is added which refers to the new location of the data. Since the original Job record stays in the bareos catalog, it is still possible to restore from the old media by specifying the original JobId for the restore. However, no file selection is possible in this case, so one can only restore all
+   files this way.
 
 -  A Job will be migrated only if all Volumes on which the job is stored are marked Full, Used, or Error. In particular, Volumes marked Append will not be considered for migration which rules out the possibility that new files are appended to a migrated Volume. This policy also prevents deadlock situations, like attempting to read and write the same Volume from two jobs at the same time.
 
@@ -130,55 +130,55 @@ Assume a simple configuration with a single backup job as described below.
 .. code-block:: sh
    :caption: Backup Job
 
-    # Define the backup Job
-    Job {
-      Name = "NightlySave"
-      Type = Backup
-      Level = Incremental                 # default
-      Client=rufus-fd
-      FileSet="Full Set"
-      Schedule = "WeeklyCycle"
-      Messages = Standard
-      Pool = Default
-    }
+   # Define the backup Job
+   Job {
+     Name = "NightlySave"
+     Type = Backup
+     Level = Incremental                 # default
+     Client=rufus-fd
+     FileSet="Full Set"
+     Schedule = "WeeklyCycle"
+     Messages = Standard
+     Pool = Default
+   }
 
-    # Default pool definition
-    Pool {
-      Name = Default
-      Pool Type = Backup
-      AutoPrune = yes
-      Recycle = yes
-      Next Pool = Tape
-      Storage = File
-      LabelFormat = "File"
-    }
+   # Default pool definition
+   Pool {
+     Name = Default
+     Pool Type = Backup
+     AutoPrune = yes
+     Recycle = yes
+     Next Pool = Tape
+     Storage = File
+     LabelFormat = "File"
+   }
 
-    # Tape pool definition
-    Pool {
-      Name = Tape
-      Pool Type = Backup
-      AutoPrune = yes
-      Recycle = yes
-      Storage = DLTDrive
-    }
+   # Tape pool definition
+   Pool {
+     Name = Tape
+     Pool Type = Backup
+     AutoPrune = yes
+     Recycle = yes
+     Storage = DLTDrive
+   }
 
-    # Definition of File storage device
-    Storage {
-      Name = File
-      Address = rufus
-      Password = "secret"
-      Device = "File"          # same as Device in Storage daemon
-      Media Type = File        # same as MediaType in Storage daemon
-    }
+   # Definition of File storage device
+   Storage {
+     Name = File
+     Address = rufus
+     Password = "secret"
+     Device = "File"          # same as Device in Storage daemon
+     Media Type = File        # same as MediaType in Storage daemon
+   }
 
-    # Definition of DLT tape storage device
-    Storage {
-      Name = DLTDrive
-      Address = rufus
-      Password = "secret"
-      Device = "HP DLT 80"      # same as Device in Storage daemon
-      Media Type = DLT8000      # same as MediaType in Storage daemon
-    }
+   # Definition of DLT tape storage device
+   Storage {
+     Name = DLTDrive
+     Address = rufus
+     Password = "secret"
+     Device = "HP DLT 80"      # same as Device in Storage daemon
+     Media Type = DLT8000      # same as MediaType in Storage daemon
+   }
 
 Note that the backup job writes to the **Default**:sup:`Dir`:sub:`pool`\  pool, which corresponds to **File**:sup:`Dir`:sub:`Storage`  storage. There is no **Storage**:sup:`Dir`:sub:`Pool`\  directive in the Job resource while the two :sup:`Dir`\ :strong:`Pool` resources contain different **Storage**:sup:`Dir`:sub:`Pool`\  directives. Moreover, the **Default**:sup:`Dir`:sub:`pool`\  pool contains a
 **Next Pool**:sup:`Dir`:sub:`Pool`\  directive that refers to the **Tape**:sup:`Dir`:sub:`pool`\  pool.
@@ -188,14 +188,14 @@ In order to migrate jobs from the **Default**:sup:`Dir`:sub:`Pool`  pool to the 
 .. code-block:: sh
    :caption: migrate all volumes of a pool
 
-    Job {
-      Name = "migrate-volume"
-      Type = Migrate
-      Messages = Standard
-      Pool = Default
-      Selection Type = Volume
-      Selection Pattern = "."
-    }
+   Job {
+     Name = "migrate-volume"
+     Type = Migrate
+     Messages = Standard
+     Pool = Default
+     Selection Type = Volume
+     Selection Pattern = "."
+   }
 
 The **Selection Type**:sup:`Dir`:sub:`Job`\  and **Selection Pattern**:sup:`Dir`:sub:`Job`\  directives instruct Bareos to select all volumes of the given pool (**Default**:sup:`Dir`:sub:`pool`\ ) whose volume names match the given regular expression (:strong:`"."`), i.e., all volumes. Hence those jobs which were backed up to any volume in the **Default**:sup:`Dir`:sub:`pool`\  pool will be migrated. Because of the
 **Next Pool**:sup:`Dir`:sub:`Pool`\  directive of the **Default**:sup:`Dir`:sub:`pool`\  pool resource, the jobs will be migrated to tape storage.
@@ -205,14 +205,14 @@ Another way to accomplish the same is the following Job resource:
 .. code-block:: sh
    :caption: migrate all jobs named *Save
 
-    Job {
-      Name = "migrate"
-      Type = Migrate
-      Messages = Standard
-      Pool = Default
-      Selection Type = Job
-      Selection Pattern = ".*Save"
-    }
+   Job {
+     Name = "migrate"
+     Type = Migrate
+     Messages = Standard
+     Pool = Default
+     Selection Type = Job
+     Selection Pattern = ".*Save"
+   }
 
 This migrates all jobs ending with :strong:`Save` from the **Default**:sup:`Dir`:sub:`pool`\  pool to the **Tape**:sup:`Dir`:sub:`pool`\  pool, i.e., from File storage to Tape storage.
 
@@ -240,60 +240,60 @@ Example:
 .. code-block:: sh
    :caption: bareos-dir.conf: Copy Job between different Storage Daemons
 
-    #bareos-dir.conf
+   #bareos-dir.conf
 
-    # Fake fileset for copy jobs
-    Fileset {
-      Name = None
-      Include {
-        Options {
-          signature = MD5
-        }
-      }
-    }
+   # Fake fileset for copy jobs
+   Fileset {
+     Name = None
+     Include {
+       Options {
+         signature = MD5
+       }
+     }
+   }
 
-    # Fake client for copy jobs
-    Client {
-      Name = None
-      Address = localhost
-      Password = "NoNe"
-      Catalog = MyCatalog
-    }
+   # Fake client for copy jobs
+   Client {
+     Name = None
+     Address = localhost
+     Password = "NoNe"
+     Catalog = MyCatalog
+   }
 
-    # Source storage for migration
-    Storage {
-       Name = storage1
-       Address = sd1.example.com
-       Password = "secret1"
-       Device = File1
-       Media Type = File
-    }
+   # Source storage for migration
+   Storage {
+      Name = storage1
+      Address = sd1.example.com
+      Password = "secret1"
+      Device = File1
+      Media Type = File
+   }
 
-    # Target storage for migration
-    Storage {
-       Name = storage2
-       Address = sd2.example.com
-       Password = "secret2"
-       Device = File2
-       Media Type = File2   # Has to be different than in storage1
-    }
+   # Target storage for migration
+   Storage {
+      Name = storage2
+      Address = sd2.example.com
+      Password = "secret2"
+      Device = File2
+      Media Type = File2   # Has to be different than in storage1
+   }
 
-    Pool {
-       Name = pool1
-       Storage = storage1
-       Next Pool = pool2    # This points to the target storage
-    }
+   Pool {
+      Name = pool1
+      Storage = storage1
+      Next Pool = pool2    # This points to the target storage
+   }
 
-    Pool {
-       Name = pool2
-       Storage = storage2
-    }
+   Pool {
+      Name = pool2
+      Storage = storage2
+   }
 
-    Job {
-       Name = CopyToRemote
-       Type = Copy
-       Messages = Standard
-       Selection Type = PoolUncopiedJobs
-       Spool Data = Yes
-       Pool = pool1
-    }
+   Job {
+      Name = CopyToRemote
+      Type = Copy
+      Messages = Standard
+      Selection Type = PoolUncopiedJobs
+      Spool Data = Yes
+      Pool = pool1
+   }

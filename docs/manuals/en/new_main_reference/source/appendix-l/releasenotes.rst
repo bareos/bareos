@@ -3,7 +3,8 @@
 
 
 
-.. _releasenotes
+.. _releasenotes:
+
  :index:`[TAG=Releases] <single: Releases>`
 
 The technical changelog is automatically generated from the Bareos bug tracking system, see http://bugs.bareos.org/changelog_page.php.
@@ -17,7 +18,8 @@ The overview about new feature of a release are shown at https://github.com/bare
 This chapter concentrates on things to do when updating an existing Bareos installation.
 
 
-.. warning:: 
+
+.. warning::
    While all the source code is published on `GitHub <https://github.com/bareos/bareos>`_, the releases of packages on `<http://download.bareos.org>`_ is limited to the initial versions of a major release. Later maintenance releases are only published on `<https://download.bareos.com>`_.
 
 \releasenoteSection{Bareos-17.2}
@@ -561,7 +563,7 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \releasenoteSection{Bareos-14.2}
 
-It is known, that :program:`drop_database` scripts will not longer work on PostgreSQL < 8.4. However, as :program:`drop_database` scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
+It is known, that :command:`drop_database` scripts will not longer work on PostgreSQL < 8.4. However, as :command:`drop_database` scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
 
 \releasenote{14.2.7}{
 

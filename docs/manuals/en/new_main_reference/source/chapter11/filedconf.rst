@@ -10,7 +10,7 @@ Client/File Daemon Configuration
 
 The Client (or File Daemon) Configuration is one of the simpler ones to specify. Generally, other than changing the Client name so that error messages are easily identified, you will not need to modify the default Client configuration file.
 
-For a general discussion of configuration file and resources including the data types recognized by **Bareos**, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual. The following Client Resource definitions must be defined:
+For a general discussion of configuration file and resources including the data types recognized by Bareos, please see the :ref:`Configuration <ConfigureChapter>` chapter of this manual. The following Client Resource definitions must be defined:
 
 -  :ref:`Client <ClientResourceClient>` – to define what Clients are to be backed up.
 
@@ -35,9 +35,9 @@ The following is an example of a valid Client resource definition:
 
 ::
 
-    Client {                              # this is me
-      Name = rufus-fd
-    }
+   Client {                              # this is me
+     Name = rufus-fd
+   }
 
 
 
@@ -58,18 +58,18 @@ The following is an example of a valid Director resource definition:
 
 ::
 
-    #
-    # List Directors who are permitted to contact the File daemon
-    #
-    Director {
-      Name = HeadMan
-      Password = very_good                # password HeadMan must supply
-    }
-    Director {
-      Name = Worker
-      Password = not_as_good
-      Monitor = Yes
-    }
+   #
+   # List Directors who are permitted to contact the File daemon
+   #
+   Director {
+     Name = HeadMan
+     Password = very_good                # password HeadMan must supply
+   }
+   Director {
+     Name = Worker
+     Password = not_as_good
+     Monitor = Yes
+   }
 
 
 
@@ -95,49 +95,49 @@ An example File Daemon configuration file might be the following:
 
 ::
 
-    #
-    # Default  Bareos File Daemon Configuration file
-    #
-    #  For Bareos release 12.4.4 (12 June 2013)
-    #
-    # There is not much to change here except perhaps the
-    # File daemon Name to
-    #
+   #
+   # Default  Bareos File Daemon Configuration file
+   #
+   #  For Bareos release 12.4.4 (12 June 2013)
+   #
+   # There is not much to change here except perhaps the
+   # File daemon Name to
+   #
 
-    #
-    # List Directors who are permitted to contact this File daemon
-    #
-    Director {
-      Name = bareos-dir
-      Password = "aEODFz89JgUbWpuG6hP4OTuAoMvfM1PaJwO+ShXGqXsP"
-    }
+   #
+   # List Directors who are permitted to contact this File daemon
+   #
+   Director {
+     Name = bareos-dir
+     Password = "aEODFz89JgUbWpuG6hP4OTuAoMvfM1PaJwO+ShXGqXsP"
+   }
 
-    #
-    # Restricted Director, used by tray-monitor to get the
-    #   status of the file daemon
-    #
-    Director {
-      Name = client1-mon
-      Password = "8BoVwTju2TQlafdHFExRIJmUcHUMoIyIqPJjbvcSO61P"
-      Monitor = yes
-    }
+   #
+   # Restricted Director, used by tray-monitor to get the
+   #   status of the file daemon
+   #
+   Director {
+     Name = client1-mon
+     Password = "8BoVwTju2TQlafdHFExRIJmUcHUMoIyIqPJjbvcSO61P"
+     Monitor = yes
+   }
 
-    #
-    # "Global" File daemon configuration specifications
-    #
-    FileDaemon {                          # this is me
-      Name = client1-fd
-      Maximum Concurrent Jobs = 20
+   #
+   # "Global" File daemon configuration specifications
+   #
+   FileDaemon {                          # this is me
+     Name = client1-fd
+     Maximum Concurrent Jobs = 20
 
-      # remove comment in next line to load plugins from specified directory
-      # Plugin Directory = /usr/lib64/bareos/plugins
-    }
+     # remove comment in next line to load plugins from specified directory
+     # Plugin Directory = /usr/lib64/bareos/plugins
+   }
 
-    # Send all messages except skipped files back to Director
-    Messages {
-      Name = Standard
-      director = client1-dir = all, !skipped, !restored
-    }
+   # Send all messages except skipped files back to Director
+   Messages {
+     Name = Standard
+     director = client1-dir = all, !skipped, !restored
+   }
 
 \normalsize
 
