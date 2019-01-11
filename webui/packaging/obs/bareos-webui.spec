@@ -108,15 +108,13 @@ cmake . \
      -DBUILD_SHARED_LIBS:BOOL=ON \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{_sysconfdir}/bareos \
-  -Dwebuiconfdir=%{_sysconfdir}/bareos-webui
+  -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
+  -DFULLVERSION=%version
 
 make
 
 %install
 make DESTDIR=%{buildroot} install
-
-# write version to version file
-echo %version | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > %{buildroot}/%_datadir/%name/version.txt
 
 # With the introduction of config subdirectories (bareos-16.2)
 # some config files have been renamed (or even splitted into multiple files).

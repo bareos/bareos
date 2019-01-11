@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2014-2016 Bareos GmbH & Co. KG
+ * @copyright Copyright (c) 2014-2019 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -601,9 +601,11 @@ class BareosBSock implements BareosBSockInterface
     */
    private function login()
    {
+      include 'version.php';
+
       if(isset($this->config['console_name'])) {
          $bashed_console_name = self::bash_spaces($this->config['console_name']);
-         $DIR_HELLO = "Hello " . $bashed_console_name . " calling\n";
+         $DIR_HELLO = "Hello " . $bashed_console_name . " calling version $bareos_version_short\n";
       } else {
          $DIR_HELLO = "Hello *UserAgent* calling\n";
       }

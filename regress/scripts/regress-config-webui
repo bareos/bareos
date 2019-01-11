@@ -20,46 +20,19 @@ else
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_INSTALL_PREFIX:PATH=${1}/usr \
       -DCMAKE_INSTALL_LIBDIR:PATH=${1}/usr/lib \
-      -DINCLUDE_INSTALL_DIR:PATH=${1}/usr/include \
-      -DLIB_INSTALL_DIR:PATH=${1}/usr/lib \
-      -DSYSCONF_INSTALL_DIR:PATH=${1}/etc \
       -DSHARE_INSTALL_PREFIX:PATH=${1}/usr/share \
-      -DBUILD_SHARED_LIBS:BOOL=ON \
     -Dbindir=${1}/bin \
     -Dsbindir=${1}/bin \
     -Dlibdir=${1}/bin \
     -Dsysconfdir=${1}/bin \
-    -Dscriptdir=${1}/bin \
     -Dconfdir=${1}/bin \
     -Dwebuiconfdir=${1}/bin \
     -Dmandir=${1}/bin \
     -Ddocdir=${1}/bin/html \
     -Dhtmldir=${1}/bin/html \
-    -Dlogdir=${1}/working \
-    -Dpiddir=${1}/working \
-    -Dsubsys-dir=${1}/working \
-    -Dplugindir=${1}/bin/plugins \
-    -Dsmartalloc=yes\
-    -Dlockmgr=yes \
-    -Dconio=no \
-    -Dworkingdir=${1}/working \
-    -Darchivedir=${1}/tmp \
-    -Ddump_email=${EMAIL} \
-    -Djob_email=${EMAIL} \
-    -Dsmtp_host=${SMTP_HOST} \
-    -Ddb_name=regress \
-    -Ddb_user=regress \
     ${PASSWD} \
-    ${OPENSSL} \
-    ${TCPWRAPPERS} \
-    ${SCSICRYPTO} \
-    ${TESTPLUGIN} \
-    ${WHICHDB} \
     -Dbaseport=${BASEPORT}\
-    ${DEVELOPER}\
     ${COVERAGE} \
-    -Ddynamic-cats-backends=yes \
-    -Ddynamic-storage-backends=yes \
     ${TRAYMON}
 
 fi

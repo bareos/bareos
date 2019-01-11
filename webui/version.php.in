@@ -1,0 +1,4 @@
+<?php
+   $bareos_version_long = "@FULLVERSION@";
+   $bareos_version_short = "@VERSION@";
+?>

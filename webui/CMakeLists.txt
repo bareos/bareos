@@ -1,6 +1,6 @@
 #   BAREOS�� - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2016 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,6 +20,19 @@ cmake_minimum_required(VERSION 3.0)
 project(bareos-webui)
 
 INCLUDE(GNUInstallDirs)
+
+set(CMAKE_MODULE_PATH
+         ${CMAKE_MODULE_PATH}
+         ${PROJECT_SOURCE_DIR}/cmake)
+
+IF (NOT DEFINED FULLVERSION)
+  # try to get version info from version.h
+  INCLUDE(BareosExtractVersionInfo)
+ELSE()
+  # we got FULLVERSION from cmake commandline
+  string(REGEX MATCH [0-9.]+ VERSION ${FULLVERSION})
+ENDIF()
+
 
 find_program(apxs APXS)
 
@@ -49,6 +62,9 @@ set(WEBUICONFDIR "${webuiconfdir}")
 MESSAGE("   Install system config files:  ${sysconfdir} ")
 MESSAGE("   Install Bareos config dir:    ${confdir} ")
 MESSAGE("   Install BareosWebui configdir:${webuiconfdir} ")
+MESSAGE("   Version is ${VERSION} ")
+STRING(REGEX REPLACE "\"" "" FULLVERSION  ${FULLVERSION} )
+MESSAGE("   FullVersion is ${FULLVERSION} ")
 
 
 IF (EXISTS ${sysconfdir}/httpd/conf.d)
@@ -70,10 +86,9 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config/autoload/global.php.in ${CMAKE
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/directors.ini @ONLY)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini.in ${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini @ONLY)
 
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
 
-
-
-INSTALL(FILES version.txt init_autoloader.php DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
+INSTALL(FILES version.php init_autoloader.php DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
 INSTALL(DIRECTORY config data module public vendor DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
 
 INSTALL(FILES install/bareos/bareos-dir.d/console/admin.conf.example DESTINATION ${confdir}/bareos-dir.d/console/)
