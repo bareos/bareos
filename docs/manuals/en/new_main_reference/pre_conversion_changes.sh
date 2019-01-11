@@ -16,8 +16,7 @@ DESTFILE=$2
     | perl -pe 's#\\begin\{bconfig\}#\\begin{verbatim}\\begin{bconfig}#g' \
     | perl -pe 's#\\end\{bconfig\}#\\end{bconfig}\\end{verbatim}#g' \
 \
-    | perl -pe 's#\\begin\{commands\}#\\begin{verbatim}\\begin{commands}#g' \
-    | perl -pe 's#\\end\{commands\}#\\end{commands}\\end{verbatim}#g' \
+    | perl -0 -pe 's|(\\begin\{commands\}.*?\\end\{commands\})|\\begin{verbatim}\1\\end{verbatim}|smg' \
 \
     | perl -pe 's#\\begin\{bareosConfigResource\}#\\begin{verbatim}\\begin{bareosConfigResource}#g' \
     | perl -pe 's#\\end\{bareosConfigResource\}#\\end{bareosConfigResource}\\end{verbatim}#g' \

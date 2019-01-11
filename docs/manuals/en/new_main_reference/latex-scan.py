@@ -133,9 +133,9 @@ class RegexDefs(object):
                 'replace': r'images/\1.*\n'
             },
             'EnvBareosConfigResource': {
-                'pattern': r'::\n\n\s*\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
+                'pattern': r'::\n\n(\s*)\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1.d/\2/\3.conf\n\n\4'
+                'replace': r'.. code-block:: sh\n\1:caption: \2.d/\3/\4.conf\n\n\5'
             },
             #${PERL} 's#\{bareosConfigResource\}\{(.*?)\}\{(.*?)\}\{(.*?)\}#\n.. code-block:: sh\n    :caption: \1 \2 \3\n#g'   ${DESTFILE}
             'EnvBconfig0':  {
@@ -144,9 +144,9 @@ class RegexDefs(object):
                 'replace': r'.. code-block:: sh\n\n\1'
             },
             'EnvBconfig':  {
-                'pattern': r'::\n\n\s*\\begin{bconfig}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconfig}',
+                'pattern': r'::\n\n(\s*)\\begin{bconfig}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconfig}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{bconfig\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvBconsole0': {
@@ -155,9 +155,9 @@ class RegexDefs(object):
                 'replace': r'.. code-block:: sh\n\n\1'
             },
             'EnvBconsole': {
-                'pattern': r'::\n\n\s*\\begin{bconsole}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconsole}',
+                'pattern': r'::\n\n(\s*)\\begin{bconsole}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bconsole}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{bconsole\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvBmessage0': {
@@ -166,9 +166,9 @@ class RegexDefs(object):
                 'replace': r'.. code-block:: sh\n\n\1'
             },
             'EnvBmessage': {
-                'pattern': r'::\n\n\s*\\begin{bmessage}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bmessage}',
+                'pattern': r'::\n\n(\s*)\\begin{bmessage}{([^}]+?)}\s*\n(.*?)\n\s*\\end{bmessage}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             'EnvCommands0': {
                 'pattern': r'::\n\n\s*\\begin{commands}{}\s*\n(.*?)\n\s*\\end{commands}',
@@ -176,15 +176,15 @@ class RegexDefs(object):
                 'replace': r'.. code-block:: sh\n\n\1'
             },
             'EnvCommands': {
-                'pattern': r'::\n\n\s*\\begin{commands}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commands}',
+                'pattern': r'::\n\n(\s*)\\begin{commands}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commands}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{commands\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}d
             'EnvCommandOut': {
-                'pattern': r'::\n\n\s*\\begin{commandOut}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commandOut}',
+                'pattern': r'::\n\n(\s*)\\begin{commandOut}{([^}]+?)}\s*\n(.*?)\n\s*\\end{commandOut}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{commandOut\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvConfig0': {
@@ -193,15 +193,15 @@ class RegexDefs(object):
                 'replace': r'.. code-block:: sh\n\n\1'
             },
             'EnvConfig': {
-                'pattern': r'::\n\n\s*\\begin{config}{([^}]+?)}\s*\n(.*?)\n\s*\\end{config}',
+                'pattern': r'::\n\n(\s*)\\begin{config}{([^}]+?)}\s*\n(.*?)\n\s*\\end{config}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{config\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'EnvLogging': {
-                'pattern': r'::\n\n\s*\\begin{logging}{([^}]+?)}\s*\n(.*?)\n\s*\\end{logging}',
+                'pattern': r'::\n\n(\s*)\\begin{logging}{([^}]+?)}\s*\n(.*?)\n\s*\\end{logging}',
                 'flags':   self.regexOpts, 
-                'replace': r'.. code-block:: sh\n   :caption: \1\n\n\2'
+                'replace': r'.. code-block:: sh\n\1:caption: \2\n\n\3'
             },
             #${PERL} 's#\{logging\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
             'ImageReference': {
@@ -656,7 +656,7 @@ class Translate(object):
 
     @staticmethod
     def command(item):
-        item.replace(r':program:`{0}`'.format(*item.getParameters()))
+        item.replace(r':command:`{0}`'.format(*item.getParameters()))
 
 
     #
@@ -892,7 +892,8 @@ class Translate(object):
 
     @staticmethod
     def parameter(item):
-        item.replace(b':option:`{0}`'.format(*item.getParameters()))
+        # don't use :option:, as this has a special behavior, that we don't use.
+        item.replace(b'``{0}``'.format(*item.getParameters()))
         #${PERL} 's#(\s+)\\parameter\{(.*?)\}(\s*)#\1                  :option:`\2`\3#g' ${DESTFILE}
 
     @staticmethod
@@ -1026,7 +1027,18 @@ class Translate(object):
     #
     @staticmethod
     def warning(item):
-        item.replace(b'\n.. warning:: \n   {0}'.format(*item.getParameters()))
+        # TODO: prepand indention level (\s*, \s*|\s, arbitrary text)
+        #item.replace(b'\n.. warning::\n   {0}'.format(*item.getParameters()))
+        text = item.getParameters()[0]
+        indenttext = '   '
+        # get indention of 2. line
+        match = re.match(r'.*?\n(\s*).*', text)
+        if match:
+            indenttext = match.expand(r'\1')
+        indentwarning = ''
+        if len(indenttext) >= 3:
+            indentwarning = ' ' * (len(indenttext) - 3)
+        item.replace(b'\n\n{0}.. warning::\n{1}{2}'.format(indentwarning, indenttext, text))
         ## warning
         #${PERL0} 's#:raw-latex:`\\warning${BRACKET}`#\n.. warning:: \n  \1#ims' ${DESTFILE}
         ##${PERL0} 's#\\warning\{(.*?)\}#\n.. warning:: \n  \1#ims'  ${DESTFILE}
@@ -1055,7 +1067,7 @@ class Translate(object):
 
     @staticmethod
     def label(item):
-        item.replace(b'\n\n.. _{0}\n'.format(*item.getParameters()))
+        item.replace(b'\n\n.. _{0}:\n\n'.format(*item.getParameters()))
         #${PERL} 's#:raw-latex:`\\label\{(.*)\}`#\n\n.. _`\1`: \1#g'   ${DESTFILE}
 
 
