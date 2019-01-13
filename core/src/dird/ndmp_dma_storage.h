@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,8 @@
 
 #ifndef BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 #define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
+
+struct ndm_job_param;
 
 namespace directordaemon {
 

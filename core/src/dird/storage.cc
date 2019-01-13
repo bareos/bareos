@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,11 @@
 #include "dird/dird.h"
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
+
+#if HAVE_NDMP
 #include "ndmp/ndmagents.h"
+#endif
+
 #include "dird/ndmp_dma_storage.h"
 #include "dird/storage.h"
 
