@@ -3408,8 +3408,8 @@ extern "C" char *job_code_callback_director(JobControlRecord *jcr, const char *p
       }
       break;
    case 'w':
-      if (jcr->res.wstore) {
-         return jcr->res.wstore->name();
+      if (jcr->res.write_storage) {
+         return jcr->res.write_storage->name();
       }
       break;
    case 'x':

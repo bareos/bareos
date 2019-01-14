@@ -169,20 +169,20 @@ bool DoNativeVbackup(JobControlRecord *jcr)
    char ed1[100];
    int JobLevel_of_first_job;
 
-   if (!jcr->res.rstorage) {
+   if (!jcr->res.read_storage_list) {
       Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
       return false;
    }
 
-   if (!jcr->res.wstorage) {
+   if (!jcr->res.write_storage_list) {
       Jmsg(jcr, M_FATAL, 0, _("No storage for writing given.\n"));
       return false;
    }
 
-   Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->res.rstorage, jcr->res.wstorage);
+   Dmsg2(100, "read_storage_list=%p write_storage_list=%p\n", jcr->res.read_storage_list, jcr->res.write_storage_list);
    Dmsg2(100, "Read store=%s, write store=%s\n",
-         ((StorageResource *)jcr->res.rstorage->first())->name(),
-         ((StorageResource *)jcr->res.wstorage->first())->name());
+         ((StorageResource *)jcr->res.read_storage_list->first())->name(),
+         ((StorageResource *)jcr->res.write_storage_list->first())->name());
 
    /*
     * Print Job Start message
@@ -289,7 +289,7 @@ bool DoNativeVbackup(JobControlRecord *jcr)
    /*
     * Now start a job with the Storage daemon
     */
-   if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, jcr->res.wstorage, /* send_bsr */ true)) {
+   if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, jcr->res.write_storage_list, /* send_bsr */ true)) {
       goto bail_out;
    }
    Dmsg0(100, "Storage daemon connection OK\n");

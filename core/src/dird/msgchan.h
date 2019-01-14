@@ -24,7 +24,7 @@
 
 namespace directordaemon {
 
-bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore,
+bool StartStorageDaemonJob(JobControlRecord *jcr, alist *read_storage, alist *write_storage,
                               bool send_bsr = false);
 bool StartStorageDaemonMessageThread(JobControlRecord *jcr);
 int BgetDirmsg(BareosSocket *bs, bool allow_any_msg = false);

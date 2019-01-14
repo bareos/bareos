@@ -119,20 +119,20 @@ static int job_item(JobControlRecord *jcr,
       str = jcr->res.pool->name();
       break;
    case 9:                            /* Storage */
-      if (jcr->res.wstore) {
-         str = jcr->res.wstore->name();
+      if (jcr->res.write_storage) {
+         str = jcr->res.write_storage->name();
       } else {
-         str = jcr->res.rstore->name();
+         str = jcr->res.read_storage->name();
       }
       break;
    case 10:                           /* Catalog */
       str = jcr->res.catalog->name();
       break;
    case 11:                           /* MediaType */
-      if (jcr->res.wstore) {
-         str = jcr->res.wstore->media_type;
+      if (jcr->res.write_storage) {
+         str = jcr->res.write_storage->media_type;
       } else {
-         str = jcr->res.rstore->media_type;
+         str = jcr->res.read_storage->media_type;
       }
       break;
    case 12:                           /* JobName */

@@ -150,7 +150,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
       ok = jcr->db->GetPoolRecord(jcr, &pr);
       if (ok) {
          mr.PoolId = pr.PoolId;
-         SetStorageidInMr(jcr->res.wstore, &mr);
+         SetStorageidInMr(jcr->res.write_storage, &mr);
          mr.ScratchPoolId = pr.ScratchPoolId;
          ok = FindNextVolumeForAppend(jcr, &mr, index, unwanted_volumes.c_str(), fnv_create_vol, fnv_prune);
          Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
@@ -191,7 +191,7 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
              */
             if (mr.PoolId != jcr->jr.PoolId) {
                reason = _("not in Pool");
-            } else if (!bstrcmp(mr.MediaType, jcr->res.wstore->media_type)) {
+            } else if (!bstrcmp(mr.MediaType, jcr->res.write_storage->media_type)) {
                reason = _("not correct MediaType");
             } else {
                /*
@@ -292,12 +292,12 @@ void CatalogRequest(JobControlRecord *jcr, BareosSocket *bs)
        * However, do so only if we are writing the tape, i.e.
        * the number of VolWrites has increased.
        */
-      if (jcr->res.wstore && sdmr.VolWrites > mr.VolWrites) {
-         Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId, jcr->res.wstore->StorageId);
+      if (jcr->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
+         Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId, jcr->res.write_storage->StorageId);
          /*
           * Update StorageId after write
           */
-         SetStorageidInMr(jcr->res.wstore, &mr);
+         SetStorageidInMr(jcr->res.write_storage, &mr);
       } else {
          /*
           * Nothing written, reset same StorageId

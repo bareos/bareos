@@ -743,13 +743,13 @@ static bool RescheduleJob(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
          njcr->res.run_next_pool_override = jcr->res.run_next_pool_override;
          njcr->JobStatus = -1;
          njcr->setJobStatus(jcr->JobStatus);
-         if (jcr->res.rstore) {
-            CopyRstorage(njcr, jcr->res.rstorage, _("previous Job"));
+         if (jcr->res.read_storage) {
+            CopyRstorage(njcr, jcr->res.read_storage_list, _("previous Job"));
          } else {
             FreeRstorage(njcr);
          }
-         if (jcr->res.wstore) {
-            CopyWstorage(njcr, jcr->res.wstorage, _("previous Job"));
+         if (jcr->res.write_storage) {
+            CopyWstorage(njcr, jcr->res.write_storage_list, _("previous Job"));
          } else {
             FreeWstorage(njcr);
          }
@@ -816,17 +816,17 @@ static bool AcquireResources(JobControlRecord *jcr)
     * autochanger), and in principle, the SD reservation system
     * should detect these deadlocks, so push the work off on it.
     */
-   if (jcr->res.rstore && jcr->res.rstore == jcr->res.wstore) { /* possible deadlock */
+   if (jcr->res.read_storage && jcr->res.read_storage == jcr->res.write_storage) { /* possible deadlock */
       Jmsg(jcr, M_FATAL, 0, _("Job canceled. Attempt to read and write same device.\n"
            "    Read storage \"%s\" (From %s) -- Write storage \"%s\" (From %s)\n"),
-           jcr->res.rstore->name(), jcr->res.rstore_source, jcr->res.wstore->name(), jcr->res.wstore_source);
+           jcr->res.read_storage->name(), jcr->res.rstore_source, jcr->res.write_storage->name(), jcr->res.wstore_source);
       jcr->setJobStatus(JS_Canceled);
 
       return false;
    }
 #endif
 
-   if (jcr->res.rstore) {
+   if (jcr->res.read_storage) {
       if (!IncReadStore(jcr)) {
          jcr->setJobStatus(JS_WaitStoreRes);
 
@@ -834,7 +834,7 @@ static bool AcquireResources(JobControlRecord *jcr)
       }
    }
 
-   if (jcr->res.wstore) {
+   if (jcr->res.write_storage) {
       if (!IncWriteStore(jcr)) {
          DecReadStore(jcr);
          jcr->setJobStatus(JS_WaitStoreRes);
@@ -944,11 +944,11 @@ bool IncReadStore(JobControlRecord *jcr)
    }
 
    P(mutex);
-   if (jcr->res.rstore->rss->NumConcurrentJobs < jcr->res.rstore->MaxConcurrentJobs) {
-      jcr->res.rstore->rss->NumConcurrentReadJobs++;
-      jcr->res.rstore->rss->NumConcurrentJobs++;
+   if (jcr->res.read_storage->rss->NumConcurrentJobs < jcr->res.read_storage->MaxConcurrentJobs) {
+      jcr->res.read_storage->rss->NumConcurrentReadJobs++;
+      jcr->res.read_storage->rss->NumConcurrentJobs++;
       Dmsg2(50, "Inc Rstore=%s rncj=%d\n",
-            jcr->res.rstore->name(), jcr->res.rstore->rss->NumConcurrentJobs);
+            jcr->res.read_storage->name(), jcr->res.read_storage->rss->NumConcurrentJobs);
       V(mutex);
 
       return true;
@@ -956,28 +956,28 @@ bool IncReadStore(JobControlRecord *jcr)
    V(mutex);
 
    Dmsg2(50, "Fail to acquire Rstore=%s rncj=%d\n",
-         jcr->res.rstore->name(), jcr->res.rstore->rss->NumConcurrentJobs);
+         jcr->res.read_storage->name(), jcr->res.read_storage->rss->NumConcurrentJobs);
 
    return false;
 }
 
 void DecReadStore(JobControlRecord *jcr)
 {
-   if (jcr->res.rstore && !jcr->IgnoreStorageConcurrency) {
+   if (jcr->res.read_storage && !jcr->IgnoreStorageConcurrency) {
       P(mutex);
-      jcr->res.rstore->rss->NumConcurrentReadJobs--;
-      jcr->res.rstore->rss->NumConcurrentJobs--;
+      jcr->res.read_storage->rss->NumConcurrentReadJobs--;
+      jcr->res.read_storage->rss->NumConcurrentJobs--;
       Dmsg2(50, "Dec Rstore=%s rncj=%d\n",
-            jcr->res.rstore->name(), jcr->res.rstore->rss->NumConcurrentJobs);
+            jcr->res.read_storage->name(), jcr->res.read_storage->rss->NumConcurrentJobs);
 
-      if (jcr->res.rstore->rss->NumConcurrentReadJobs < 0) {
+      if (jcr->res.read_storage->rss->NumConcurrentReadJobs < 0) {
          Jmsg(jcr, M_FATAL, 0, _("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
-              jcr->res.rstore->name(), jcr->res.rstore->rss->NumConcurrentReadJobs);
+              jcr->res.read_storage->name(), jcr->res.read_storage->rss->NumConcurrentReadJobs);
       }
 
-      if (jcr->res.rstore->rss->NumConcurrentJobs < 0) {
+      if (jcr->res.read_storage->rss->NumConcurrentJobs < 0) {
          Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Rstore=%s rncj=%d\n"),
-              jcr->res.rstore->name(), jcr->res.rstore->rss->NumConcurrentJobs);
+              jcr->res.read_storage->name(), jcr->res.read_storage->rss->NumConcurrentJobs);
       }
       V(mutex);
    }
@@ -990,10 +990,10 @@ static bool IncWriteStore(JobControlRecord *jcr)
    }
 
    P(mutex);
-   if (jcr->res.wstore->rss->NumConcurrentJobs < jcr->res.wstore->MaxConcurrentJobs) {
-      jcr->res.wstore->rss->NumConcurrentJobs++;
+   if (jcr->res.write_storage->rss->NumConcurrentJobs < jcr->res.write_storage->MaxConcurrentJobs) {
+      jcr->res.write_storage->rss->NumConcurrentJobs++;
       Dmsg2(50, "Inc Wstore=%s wncj=%d\n",
-            jcr->res.wstore->name(), jcr->res.wstore->rss->NumConcurrentJobs);
+            jcr->res.write_storage->name(), jcr->res.write_storage->rss->NumConcurrentJobs);
       V(mutex);
 
       return true;
@@ -1001,22 +1001,22 @@ static bool IncWriteStore(JobControlRecord *jcr)
    V(mutex);
 
    Dmsg2(50, "Fail to acquire Wstore=%s wncj=%d\n",
-         jcr->res.wstore->name(), jcr->res.wstore->rss->NumConcurrentJobs);
+         jcr->res.write_storage->name(), jcr->res.write_storage->rss->NumConcurrentJobs);
 
    return false;
 }
 
 static void DecWriteStore(JobControlRecord *jcr)
 {
-   if (jcr->res.wstore && !jcr->IgnoreStorageConcurrency) {
+   if (jcr->res.write_storage && !jcr->IgnoreStorageConcurrency) {
       P(mutex);
-      jcr->res.wstore->rss->NumConcurrentJobs--;
+      jcr->res.write_storage->rss->NumConcurrentJobs--;
       Dmsg2(50, "Dec Wstore=%s wncj=%d\n",
-            jcr->res.wstore->name(), jcr->res.wstore->rss->NumConcurrentJobs);
+            jcr->res.write_storage->name(), jcr->res.write_storage->rss->NumConcurrentJobs);
 
-      if (jcr->res.wstore->rss->NumConcurrentJobs < 0) {
+      if (jcr->res.write_storage->rss->NumConcurrentJobs < 0) {
          Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Wstore=%s wncj=%d\n"),
-              jcr->res.wstore->name(), jcr->res.wstore->rss->NumConcurrentJobs);
+              jcr->res.write_storage->name(), jcr->res.write_storage->rss->NumConcurrentJobs);
       }
       V(mutex);
    }

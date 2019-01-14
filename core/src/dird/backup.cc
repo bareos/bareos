@@ -115,12 +115,12 @@ char* ClientAddressToContact(ClientResource *client, StorageResource *store)
  * use wstores' LanAddress to connect to.
  *
  */
-char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore)
+char* StorageAddressToContact(StorageResource *read_storage, StorageResource *write_storage)
 {
-   if (rstore->lanaddress && wstore->lanaddress) {
-      return wstore->lanaddress;
+   if (read_storage->lanaddress && write_storage->lanaddress) {
+      return write_storage->lanaddress;
    } else {
-      return wstore->address;
+      return write_storage->address;
    }
 }
 
@@ -128,7 +128,7 @@ static inline bool ValidateStorage(JobControlRecord *jcr)
 {
    StorageResource *store = nullptr;
 
-   foreach_alist(store, jcr->res.wstorage) {
+   foreach_alist(store, jcr->res.write_storage_list) {
       switch (store->Protocol) {
       case APT_NATIVE:
          continue;
@@ -162,7 +162,7 @@ bool DoNativeBackupInit(JobControlRecord *jcr)
     * If pool storage specified, use it instead of job storage
     */
    CopyWstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
-   if (!jcr->res.wstorage) {
+   if (!jcr->res.write_storage_list) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
       return false;
    }
@@ -454,7 +454,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
    /*
     * Now start a job with the Storage daemon
     */
-   if (!StartStorageDaemonJob(jcr, NULL, jcr->res.wstorage)) {
+   if (!StartStorageDaemonJob(jcr, NULL, jcr->res.write_storage_list)) {
       return false;
    }
 
@@ -538,7 +538,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
    }
 
    client = jcr->res.client;
-   store = jcr->res.wstore;
+   store = jcr->res.write_storage;
    char *connection_target_address;
 
    /*
@@ -1225,7 +1225,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         jcr->res.fileset->name(), jcr->FSCreateTime,
         jcr->res.pool->name(), jcr->res.pool_source,
         jcr->res.catalog->name(), jcr->res.catalog_source,
-        jcr->res.wstore->name(), jcr->res.wstore_source,
+        jcr->res.write_storage->name(), jcr->res.wstore_source,
         schedt,
         sdt,
         edt,

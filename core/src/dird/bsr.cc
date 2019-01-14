@@ -733,7 +733,7 @@ bool OpenBootstrapFile(JobControlRecord *jcr, bootstrap_info &info)
    if (!jcr->RestoreBootstrap) {
       return false;
    }
-   bstrncpy(info.storage, jcr->res.rstore->name(), MAX_NAME_LENGTH);
+   bstrncpy(info.storage, jcr->res.read_storage->name(), MAX_NAME_LENGTH);
 
    bs = fopen(jcr->RestoreBootstrap, "rb");
    if (!bs) {
@@ -788,7 +788,7 @@ static inline bool IsOnSameStorage(JobControlRecord *jcr, char *new_one)
    /*
     * Same name
     */
-   if (bstrcmp(new_one, jcr->res.rstore->name())) {
+   if (bstrcmp(new_one, jcr->res.read_storage->name())) {
       return true;
    }
 
@@ -803,8 +803,8 @@ static inline bool IsOnSameStorage(JobControlRecord *jcr, char *new_one)
     * If Port and Hostname/IP are same, we are talking to the same
     * Storage Daemon
     */
-   if (jcr->res.rstore->SDport != new_store->SDport ||
-       !bstrcmp(jcr->res.rstore->address, new_store->address)) {
+   if (jcr->res.read_storage->SDport != new_store->SDport ||
+       !bstrcmp(jcr->res.read_storage->address, new_store->address)) {
       return false;
    }
 

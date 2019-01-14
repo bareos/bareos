@@ -61,7 +61,7 @@ static inline bool update_database(UaContext *ua,
        * Update existing media record.
        */
       mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
-      SetStorageidInMr(ua->jcr->res.wstore, mr);
+      SetStorageidInMr(ua->jcr->res.write_storage, mr);
       if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
           ua->ErrorMsg("%s", ua->db->strerror());
           retval = false;
@@ -73,7 +73,7 @@ static inline bool update_database(UaContext *ua,
       SetPoolDbrDefaultsInMediaDbr(mr, pr);
       mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
       mr->Enabled = 1;
-      SetStorageidInMr(ua->jcr->res.wstore, mr);
+      SetStorageidInMr(ua->jcr->res.write_storage, mr);
 
       if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
          ua->InfoMsg(_("Catalog record for Volume \"%s\", Slot %hd successfully created.\n"),
@@ -114,7 +114,7 @@ static inline bool native_send_label_request(UaContext *ua,
       return false;
    }
 
-   bstrncpy(dev_name, ua->jcr->res.wstore->dev_name(), sizeof(dev_name));
+   bstrncpy(dev_name, ua->jcr->res.write_storage->dev_name(), sizeof(dev_name));
    BashSpaces(dev_name);
    BashSpaces(mr->VolumeName);
    BashSpaces(mr->MediaType);
@@ -299,7 +299,7 @@ static inline bool IsCleaningTape(UaContext *ua, MediaDbRecord *mr, PoolDbRecord
 static void label_from_barcodes(UaContext *ua, drive_number_t drive,
                                 bool label_encrypt, bool yes)
 {
-   StorageResource *store = ua->jcr->res.wstore;
+   StorageResource *store = ua->jcr->res.write_storage;
    PoolDbRecord pr;
    MediaDbRecord mr;
    vol_list_t *vl;
@@ -310,7 +310,7 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
 
    memset(&mr, 0, sizeof(mr));
 
-   max_slots = GetNumSlots(ua, ua->jcr->res.wstore);
+   max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
    if (max_slots <= 0) {
       ua->WarningMsg(_("No slots in changer to scan.\n"));
       return;

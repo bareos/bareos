@@ -251,7 +251,7 @@ bool DoVerify(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, NULL, /* send_bsr */ true)) {
          return false;
       }
 
@@ -336,7 +336,7 @@ bool DoVerify(JobControlRecord *jcr)
       }
 
       if (!jcr->passive_client) {
-         StorageResource *store = jcr->res.rstore;
+         StorageResource *store = jcr->res.read_storage;
 
          /*
           * Send Storage daemon address to the File daemon

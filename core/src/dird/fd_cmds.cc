@@ -493,7 +493,7 @@ static bool SendFileset(JobControlRecord *jcr)
 {
    FilesetResource *fileset = jcr->res.fileset;
    BareosSocket *fd = jcr->file_bsock;
-   StorageResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.write_storage;
    int num;
    bool include = true;
 

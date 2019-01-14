@@ -155,7 +155,7 @@ bool DoNdmpBackupInit(JobControlRecord *jcr)
     */
    CopyWstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
-   if (!jcr->res.wstorage) {
+   if (!jcr->res.write_storage_list) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
       return false;
    }
@@ -239,7 +239,7 @@ bool DoNdmpBackup(JobControlRecord *jcr)
     * data mover which moves the data from the NDMP DATA AGENT to the NDMP
     * TAPE AGENT.
     */
-   if (jcr->res.wstore->paired_storage) {
+   if (jcr->res.write_storage->paired_storage) {
       SetPairedStorage(jcr);
 
       jcr->setJobStatus(JS_WaitSD);
@@ -250,7 +250,7 @@ bool DoNdmpBackup(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, NULL, jcr->res.wstorage)) {
+      if (!StartStorageDaemonJob(jcr, NULL, jcr->res.write_storage_list)) {
          return false;
       }
 
@@ -281,7 +281,7 @@ bool DoNdmpBackup(JobControlRecord *jcr)
     * and reuse the job definition for each separate sub-backup we perform as
     * part of the whole job. We only free the env_table between every sub-backup.
     */
-   if (!NdmpBuildClientJob(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_BACKUP, &ndmp_job)) {
+   if (!NdmpBuildClientJob(jcr, jcr->res.client, jcr->res.paired_read_write_storage, NDM_JOB_OP_BACKUP, &ndmp_job)) {
       goto bail_out;
    }
 

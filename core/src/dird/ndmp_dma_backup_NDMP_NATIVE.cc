@@ -78,7 +78,7 @@ int NdmpLoadNext(struct ndm_session *sess) {
    bool prune = false;
    struct ndmmedia *media;
    int index = 1;
-   StorageResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.write_storage;
 
    /*
     * get the poolid for pool name
@@ -217,7 +217,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
     */
 
    status = 0;
-   StorageResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.write_storage;
    int drive = 0;
 
    /*
@@ -225,7 +225,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
     * and reuse the job definition for each separate sub-backup we perform as
     * part of the whole job. We only free the env_table between every sub-backup.
     */
-   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.wstore, jcr->res.client,
+   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.write_storage, jcr->res.client,
             true, /* init_tape */
             true, /* init_robot */
             NDM_JOB_OP_BACKUP, &ndmp_job)) {
@@ -521,7 +521,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord *jcr)
     */
    CopyWstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
-   if (!jcr->res.wstorage) {
+   if (!jcr->res.write_storage_list) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
       return false;
    }
@@ -573,7 +573,7 @@ static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
        * translate Physical to Logical Slot before storing into database
        */
 
-      media->slot_addr = LookupStorageMapping(jcr->res.wstore, slot_type_normal,
+      media->slot_addr = LookupStorageMapping(jcr->res.write_storage, slot_type_normal,
                                                   PHYSICAL_TO_LOGICAL, media->slot_addr);
 #if 0
       Jmsg(jcr, M_INFO, 0, _("Physical Slot is %d\n"), media->slot_addr);

@@ -61,7 +61,7 @@ void SetStorageidInMr(StorageResource *store, MediaDbRecord *mr)
  *
  *  mr.PoolId must be set
  *  mr.ScratchPoolId could be set (used if create==true)
- *  jcr->wstore
+ *  jcr->write_storage
  *  jcr->db
  *  jcr->pool
  *  MediaDbRecord mr with PoolId set
@@ -75,7 +75,7 @@ int FindNextVolumeForAppend(JobControlRecord *jcr, MediaDbRecord *mr, int index,
    int retry = 0;
    bool ok;
    bool InChanger;
-   StorageResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.write_storage;
 
    bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
    Dmsg3(debuglevel, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",

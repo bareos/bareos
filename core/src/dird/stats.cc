@@ -194,7 +194,7 @@ void *statistics_thread(void *arg)
             continue;
          }
 
-         jcr->res.rstore = store;
+         jcr->res.read_storage = store;
          if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
             UnlockRes(my_config);
             continue;

@@ -247,9 +247,9 @@ struct Resources {
    directordaemon::JobResource *job;         /**< Job resource */
    directordaemon::JobResource *verify_job;  /**< Job resource of verify previous job */
    directordaemon::JobResource *previous_job;/**< Job resource of migration previous job */
-   directordaemon::StorageResource *rstore;  /**< Selected read storage */
-   directordaemon::StorageResource *wstore;  /**< Selected write storage */
-   directordaemon::StorageResource *pstore;  /**< Selected paired storage (saved wstore or rstore) */
+   directordaemon::StorageResource *read_storage;  /**< Selected read storage */
+   directordaemon::StorageResource *write_storage;  /**< Selected write storage */
+   directordaemon::StorageResource *paired_read_write_storage;  /**< Selected paired storage (saved write_storage or read_storage) */
    directordaemon::ClientResource *client;   /**< Client resource */
    directordaemon::PoolResource *pool;       /**< Pool resource = write for migration */
    directordaemon::PoolResource *rpool;      /**< Read pool. Used only in migration */
@@ -267,9 +267,9 @@ struct Resources {
    POOLMEM *rstore_source;                /**< Where read storage came from */
    POOLMEM *wstore_source;                /**< Where write storage came from */
    POOLMEM *catalog_source;               /**< Where catalog came from */
-   alist *rstorage;                       /**< Read storage possibilities */
-   alist *wstorage;                       /**< Write storage possibilities */
-   alist *pstorage;                       /**< Paired storage possibilities (saved wstorage or rstorage) */
+   alist *read_storage_list;              /**< Read storage possibilities */
+   alist *write_storage_list;             /**< Write storage possibilities */
+   alist *paired_read_write_storage_list; /**< Paired storage possibilities (saved write_storage_list or read_storage_list) */
    bool run_pool_override;                /**< Pool override was given on run cmdline */
    bool run_full_pool_override;           /**< Full pool override was given on run cmdline */
    bool run_vfull_pool_override;          /**< Virtual Full pool override was given on run cmdline */

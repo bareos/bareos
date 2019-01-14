@@ -242,7 +242,7 @@ bool SetupJob(JobControlRecord *jcr, bool suppress_output)
       goto bail_out;
    }
 
-   if (jcr->JobReads() && !jcr->res.rstorage) {
+   if (jcr->JobReads() && !jcr->res.read_storage_list) {
       if (jcr->res.job->storage) {
          CopyRwstorage(jcr, jcr->res.job->storage, _("Job resource"));
       } else {

@@ -1119,7 +1119,7 @@ static void UpdateSlots(UaContext *ua)
       have_enabled = false;
    }
 
-   max_slots = GetNumSlots(ua, ua->jcr->res.wstore);
+   max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
    Dmsg1(100, "max_slots=%d\n", max_slots);
    if (max_slots <= 0) {
       ua->WarningMsg(_("No slots in changer to scan.\n"));

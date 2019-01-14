@@ -296,8 +296,8 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
 
 
    int drive=0;
-   ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.rstore, drive);
-   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.rstore, jcr->res.client,
+   ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.read_storage, drive);
+   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.read_storage, jcr->res.client,
             true, /* init_tape */
             true, /* init_robot */
             NDM_JOB_OP_EXTRACT, &ndmp_job)) {
@@ -325,7 +325,7 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
       goto cleanup_ndmp;
    }
 
-   ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.rstore, drive);
+   ndmp_job.tape_device = lookup_ndmp_drive(jcr->res.read_storage, drive);
    ndmp_job.record_size = jcr->res.client->ndmp_blocksize;
    Jmsg(jcr, M_INFO, 0, _("Record size is %d\n"), ndmp_job.record_size);
 
@@ -342,7 +342,7 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
 
    for (ndmmedia *media = ndmp_sess.control_acb->job.media_tab.head; media; media = media->next) {
 
-      if (!NdmpUpdateStorageMappings(jcr, jcr->res.rstore )){
+      if (!NdmpUpdateStorageMappings(jcr, jcr->res.read_storage )){
          Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpUpdateStorageMappings\n"));
       }
       /*
@@ -350,7 +350,7 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
        */
       Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label, media->slot_addr);
 
-      ndmp_slot = LookupStorageMapping(jcr->res.rstore, slot_type_normal, LOGICAL_TO_PHYSICAL, media->slot_addr);
+      ndmp_slot = LookupStorageMapping(jcr->res.read_storage, slot_type_normal, LOGICAL_TO_PHYSICAL, media->slot_addr);
       media->slot_addr = ndmp_slot;
 
       Jmsg(jcr, M_INFO, 0, _("Physical(NDMP) slot for volume %s is %d\n"), media->label, media->slot_addr);
@@ -364,7 +364,7 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
     * Set the robot to use
     */
    ndmp_sess.control_acb->job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_sess.control_acb->job.robot_target, jcr->res.rstore->ndmp_changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_sess.control_acb->job.robot_target, jcr->res.read_storage->ndmp_changer_device) != 0) {
       Actuallyfree(ndmp_sess.control_acb->job.robot_target);
       Dmsg0(100,"no robot to use\n");
       goto bail_out;

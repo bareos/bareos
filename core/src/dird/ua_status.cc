@@ -835,8 +835,8 @@ static void PrtRuntime(UaContext *ua, sched_pkt *sp)
       }
       if (ok) {
          mr.PoolId = jcr->jr.PoolId;
-         jcr->res.wstore = sp->store;
-         SetStorageidInMr(jcr->res.wstore, &mr);
+         jcr->res.write_storage = sp->store;
+         SetStorageidInMr(jcr->res.write_storage, &mr);
          Dmsg0(250, "call FindNextVolumeForAppend\n");
          /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
          ok = FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol, fnv_no_prune);
@@ -1056,10 +1056,10 @@ static void ListRunningJobs(UaContext *ua)
          break;
       case JS_WaitSD:
          emsg = (char *) GetPoolMemory(PM_FNAME);
-         if (jcr->res.wstore) {
-            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->res.wstore->name());
-         } else if (jcr->res.rstore) {
-            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->res.rstore->name());
+         if (jcr->res.write_storage) {
+            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->res.write_storage->name());
+         } else if (jcr->res.read_storage) {
+            Mmsg(emsg, _("is waiting on Storage \"%s\""), jcr->res.read_storage->name());
          } else {
             Mmsg(emsg, _("is waiting on Storage"));
          }
@@ -1141,11 +1141,11 @@ static void ListRunningJobs(UaContext *ua)
              * client initiated connection
              */
             Mmsg(emsg, _("is waiting for Client to connect (Client Initiated Connection)"));
-         } else if (!jcr->res.client || !jcr->res.wstore) {
+         } else if (!jcr->res.client || !jcr->res.write_storage) {
             Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
          } else {
             Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-                 jcr->res.client->name(), jcr->res.wstore->name());
+                 jcr->res.client->name(), jcr->res.write_storage->name());
         }
         msg = emsg;
         break;
@@ -1641,7 +1641,7 @@ static void StatusSlots(UaContext *ua, StorageResource *store)
    slot_number_t max_slots;
    changer_vol_list_t *vol_list = NULL;
 
-   ua->jcr->res.wstore = store;
+   ua->jcr->res.write_storage = store;
 
    /*
     * Slot | Volume | Status | MediaType | Pool

@@ -149,7 +149,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord *jcr, BareosSocket *sd
 
 /** Start a job with the Storage daemon
  */
-bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, bool send_bsr)
+bool StartStorageDaemonJob(JobControlRecord *jcr, alist *read_storage, alist *write_storage, bool send_bsr)
 {
    bool ok = true;
    StorageResource *storage = nullptr;
@@ -273,7 +273,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
     *
     */
    /* Do read side of storage daemon */
-   if (ok && rstore) {
+   if (ok && read_storage) {
       /* For the moment, only migrate, copy and vbackup have rpool */
       if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
          (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
@@ -285,7 +285,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
       }
       BashSpaces(pool_type);
       BashSpaces(pool_name);
-      foreach_alist(storage, rstore) {
+      foreach_alist(storage, read_storage) {
          Dmsg1(100, "Rstore=%s\n", storage->name());
          PmStrcpy(StoreName, storage->name());
          BashSpaces(StoreName);
@@ -293,7 +293,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
          BashSpaces(media_type);
          sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
-         Dmsg1(100, "rstore >stored: %s", sd->msg);
+         Dmsg1(100, "read_storage >stored: %s", sd->msg);
          DeviceResource *dev = nullptr;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
@@ -318,12 +318,12 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
    }
 
    /* Do write side of storage daemon */
-   if (ok && wstore) {
+   if (ok && write_storage) {
       PmStrcpy(pool_type, jcr->res.pool->pool_type);
       PmStrcpy(pool_name, jcr->res.pool->name());
       BashSpaces(pool_type);
       BashSpaces(pool_name);
-      foreach_alist(storage, wstore) {
+      foreach_alist(storage, write_storage) {
          PmStrcpy(StoreName, storage->name());
          BashSpaces(StoreName);
          PmStrcpy(media_type, storage->media_type);
@@ -331,7 +331,7 @@ bool StartStorageDaemonJob(JobControlRecord *jcr, alist *rstore, alist *wstore, 
          sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
-         Dmsg1(100, "wstore >stored: %s", sd->msg);
+         Dmsg1(100, "write_storage >stored: %s", sd->msg);
          DeviceResource *dev = nullptr;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {

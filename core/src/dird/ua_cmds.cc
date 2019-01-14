@@ -474,8 +474,8 @@ bool Do_a_command(UaContext *ua)
       return false;
    }
 
-   while (ua->jcr->res.wstorage && ua->jcr->res.wstorage->size()) {
-      ua->jcr->res.wstorage->remove(0);
+   while (ua->jcr->res.write_storage_list && ua->jcr->res.write_storage_list->size()) {
+      ua->jcr->res.write_storage_list->remove(0);
    }
 
    len = strlen(ua->argk[0]);
@@ -879,7 +879,7 @@ static inline bool setbwlimit_stored(UaContext *ua, StorageResource *store,
    /*
     * Connect to Storage daemon
     */
-   ua->jcr->res.wstore = store;
+   ua->jcr->res.write_storage = store;
    ua->jcr->max_bandwidth = limit;
 
    /*
@@ -904,7 +904,7 @@ static inline bool setbwlimit_stored(UaContext *ua, StorageResource *store,
    ua->jcr->store_bsock->close();
    delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
-   ua->jcr->res.wstore = NULL;
+   ua->jcr->res.write_storage = NULL;
    ua->jcr->max_bandwidth = 0;
 
    return true;
@@ -962,7 +962,7 @@ static bool SetbwlimitCmd(UaContext *ua, const char *cmd)
          switch (jcr->getJobType()) {
          case JT_COPY:
          case JT_MIGRATE:
-            store = jcr->res.rstore;
+            store = jcr->res.read_storage;
             break;
          default:
             client = jcr->res.client;
@@ -2066,13 +2066,13 @@ static bool DoTruncate(UaContext *ua, MediaDbRecord &mr)
    /*
     * Choose storage
     */
-   ua->jcr->res.wstore = ua->GetStoreResWithName(storage_dbr.Name);
-   if (!ua->jcr->res.wstore) {
+   ua->jcr->res.write_storage = ua->GetStoreResWithName(storage_dbr.Name);
+   if (!ua->jcr->res.write_storage) {
       ua->ErrorMsg("failed to determine storage resource by name %s\n", storage_dbr.Name);
       goto bail_out;
    }
 
-   if (SendLabelRequest(ua, ua->jcr->res.wstore,
+   if (SendLabelRequest(ua, ua->jcr->res.write_storage,
                           &mr, &mr,
                           &pool_dbr,
                           /* bool media_record_exists */
@@ -2088,7 +2088,7 @@ static bool DoTruncate(UaContext *ua, MediaDbRecord &mr)
    }
 
 bail_out:
-   ua->jcr->res.wstore = NULL;
+   ua->jcr->res.write_storage = NULL;
    return retval;
 }
 
@@ -2416,7 +2416,7 @@ static void DoMountCmd(UaContext *ua, const char *cmd)
    if (!do_alldrives) {
       DoAutochangerVolumeOperation(ua, store.store, cmd, drive, slot);
    } else {
-      nr_drives = GetNumDrives(ua, ua->jcr->res.wstore);
+      nr_drives = GetNumDrives(ua, ua->jcr->res.write_storage);
       for (drive_number_t i = 0; i < nr_drives; i++) {
          DoAutochangerVolumeOperation(ua, store.store, cmd, i, slot);
       }

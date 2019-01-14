@@ -163,7 +163,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
       if (!SelectNextRstore(jcr, info)) {
          goto bail_out;
       }
-      store = jcr->res.rstore;
+      store = jcr->res.read_storage;
 
       /**
        * Open a message channel connection with the Storage
@@ -185,7 +185,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, NULL)) {
          goto bail_out;
       }
 
