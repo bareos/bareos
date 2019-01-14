@@ -76,7 +76,7 @@ BareosSocket::BareosSocket()
     , last_tick_{0}
     , tls_established_(false)
 {
-  Dmsg0(100, "Contruct BareosSocket\n");
+  Dmsg0(100, "Construct BareosSocket\n");
 }
 
 BareosSocket::BareosSocket(const BareosSocket &other)
@@ -606,7 +606,13 @@ bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
       std::string code;
       BareosVersionNumber version = BareosVersionNumber::kUndefined;
       if (GetNameAndResourceTypeAndVersionFromHello(received, name, code, version)) {
-        Dmsg3(200, "Identified from cleartext handshake: %s-%s recognized version: %d\n", name.c_str(), code.c_str(), version);
+        if (version > BareosVersionNumber::kUndefined) {
+          BareosVersionToMajorMinor v(version);
+          Dmsg4(200, "Identified from Bareos handshake: %s-%s recognized version: %d.%d\n",
+                name.c_str(), code.c_str(), v.major, v.minor);
+        } else {
+          Dmsg2(200, "Identified from Bareos handshake: %s-%s version not recognized\n", name.c_str(), code.c_str());
+        }
         client_name_out = name;
         r_code_str_out = code;
         version_out = version;

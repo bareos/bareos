@@ -317,7 +317,7 @@ private:
    bool my_thread_killable;               /**< Can we kill the thread? */
 public:
       JobControlRecord() {
-            Dmsg0(100, "Contruct JobControlRecord\n");
+            Dmsg0(100, "Construct JobControlRecord\n");
       }
 
       ~JobControlRecord() {

@@ -214,3 +214,12 @@ TEST(Util, version_number_test)
   EXPECT_NE(BareosVersionNumber::kRelease_18_2, static_cast<BareosVersionNumber>(1702));
   EXPECT_GT(BareosVersionNumber::kRelease_18_2, BareosVersionNumber::kUndefined);
 }
+
+TEST(Util, version_number_major_minor)
+{
+  BareosVersionNumber version = BareosVersionNumber::kRelease_18_2;
+  BareosVersionToMajorMinor v(version);
+  EXPECT_EQ(v.major, 18);
+  EXPECT_EQ(v.minor,  2);
+}
+
