@@ -28,15 +28,16 @@ rst_epilog = '''
 .. |bareosFd| replace:: Bareos File Daemon
 .. |bareosSd| replace:: Bareos Storage Daemon
 .. |bareosDir| replace:: Bareos Director Daemon
+.. |bconsole| replace:: Bareos Console
 .. |bareosTraymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
+.. |webui| replace:: Bareos WebUI
 .. |mysql| replace:: MySQL/MariaDB
 .. |postgresql| replace:: PostgreSQL
 .. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
-.. |bconsole| replace:: Bareos Console
-.. |webui| replace:: Bareos WebUI
+
 '''
 
 # If your documentation needs a minimal Sphinx version, state it here.

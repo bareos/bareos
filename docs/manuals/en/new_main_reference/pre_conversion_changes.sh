@@ -26,7 +26,13 @@ DESTFILE=$2
 \
     | perl -0 -pe 's|(\\begin\{bconsole\}.*?\\end\{bconsole\})|\\begin{verbatim}\1\\end{verbatim}|smg' \
 \
-    | perl -0 -pe 's|(\\begin\{tabular\}.*?\\end\{tabular\})|\# original Latex tabular\n\\begin{verbatim}\1\\end{verbatim}\n\n\# converted Latex tabular\n\1|smg' \
+    | perl -0 -pe 's|(\\begin\{tabular\}.*?\\end\{tabular\})|\# Tabular in LaTex format (original)\n\\begin{verbatim}\1\\end{verbatim}\n\n\# Tabular converted from LaTeX to RST (or empty, in case of problems):\n\1|smg' \
+\
+    | perl -0 -pe 's|\\releasenoteSection\{(.*?)\}|\\section*{\1}\n\n|smg' \
+\
+    | perl -0 -pe 's|\\releasenote\{(.*?)\}|\\subsection*{bareos-\1}\n\\index[general]{bareos-\1!Release Notes}\n\n|smg' \
+\
+    | perl -0 -pe 's|\\releasenoteUnstable\{(.*?)\}|\\subsection*{\\textit{bareos-\1 (unstable)}}\n\n|smg' \
 \
     | perl -pe 's#\\variable\{\$#\\textbf\{\\\$#g' \
     | perl -pe 's#sec:#section-#g' \
@@ -38,6 +44,7 @@ DESTFILE=$2
     | perl -pe 's#\$PATH#PATH#g'\
     | perl -pe 's#\\hide\{\$\}##g' \
     | perl -pe 's#\\path\|#\\verb\|path:#g' \
+    | perl -pe 's#\\path\!#\\verb\!path:#g' \
     | perl -pe 's#\\hypertarget#\textbf#g' \
     | perl -pe 's#\\bquote\{\\bconsoleOutput\{Building directory tree ...\}\}#\\bquote{Building directory tree ...}#g' \
     | perl -pe 's#\$\\ldots\$#...#g' \
@@ -54,6 +61,17 @@ DESTFILE=$2
     | perl -pe 's#\{\\textless\}#<#g' \
     | perl -pe 's#\{\\textgreater\}#>#g' \
     > ${DESTFILE}
+
+
+
+# \newcommand{\releasenote}[2]{
+#     \subsection*{bareos-#1}
+#     \addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
+#     \label{bareos-#1}
+#     \index[general]{bareos-#1!Release Notes}%
+#     #2
+# }
+
 
 #    | perl -pe 's#\\begin\{bconsole\}#\\begin{verbatim}\\begin{bconsole}#g' \
 #    | perl -pe 's#\\end\{bconsole\}#\\end{bconsole}\\end{verbatim}#g' \

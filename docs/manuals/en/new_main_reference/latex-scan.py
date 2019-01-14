@@ -122,6 +122,11 @@ class RegexDefs(object):
                 'flags':   re.VERBOSE,
                 'replace': r':file:`\1`'
             },
+            'VerbPath': {
+                'pattern': r'\\verb\|path:(.*?)\|',
+                'flags':   re.VERBOSE,
+                'replace': r':file:`\1`'
+            },
             'AtHash': {
                 'pattern': r'@\\\#',
                 'flags':   re.VERBOSE,
@@ -574,6 +579,12 @@ class Translate(object):
         logger.warning("Unknown daemon type {}".format(source))
 
 
+    @staticmethod
+    def getRstPath(path):
+        # replace all single '\' (written as '\\' in Python) by '\\' (written as '\\\\' in Python), as required by RST
+        newpath = re.sub(r'\\(?=[^\\])', r'\\\\', path)
+        return r':file:`{0}`'.format(newpath)
+
 
     #
     # a
@@ -655,6 +666,10 @@ class Translate(object):
         item.replace(b':strong:`{0}`'.format(*item.getParameters()))
 
     @staticmethod
+    def contribDownloadBareosOrg(item):
+        item.replace(r'`<http://download.bareos.org/bareos/contrib/>`_'.format(*item.getParameters()))
+
+    @staticmethod
     def command(item):
         item.replace(r':command:`{0}`'.format(*item.getParameters()))
 
@@ -680,7 +695,7 @@ class Translate(object):
 
     @staticmethod
     def directory(item):
-        item.replace(b':file:`{0}`'.format(*item.getParameters()))
+        item.replace(Translate.getRstPath(item.getParameters()[0]))
 
     @staticmethod
     def dt(item):
@@ -712,7 +727,7 @@ class Translate(object):
     #
     @staticmethod
     def file(item):
-        item.replace(b':file:`{0}`'.format(*item.getParameters()))
+        item.replace(Translate.getRstPath(item.getParameters()[0]))
 
     @staticmethod
     def fileset(item):
@@ -913,6 +928,14 @@ class Translate(object):
         item.replace(r'``{0}``'.format(*item.getParameters()))
 
     @staticmethod
+    def releaseUrlDownloadBareosOrg(item):
+        item.replace(r'`<http://download.bareos.org/bareos/release/{0}/>`_'.format(*item.getParameters()))
+
+    @staticmethod
+    def releaseUrlDownloadBareosCom(item):
+        item.replace(r'`<http://download.bareos.com/bareos/release/{0}/>`_'.format(*item.getParameters()))
+
+    @staticmethod
     def resourcename(item):
         item.replace(b'**{2}**:sup:`{0}`:sub:`{1}` '.format(*item.getParameters()))
 
@@ -988,6 +1011,10 @@ class Translate(object):
         item.replace(b'->')
         #${PERL} 's#:raw-latex:`\\textrightarrow`#->#g' ${DESTFILE}
         #${PERL} 's#:raw-latex:`\\textrightarrow `#->#g' ${DESTFILE}
+
+    @staticmethod
+    def ticket(item):
+        item.replace(r':issue:`{0}`'.format(*item.getParameters()))
 
     @staticmethod
     def TODO(item):
