@@ -34,7 +34,7 @@ ELSE()
 ENDIF()
 
 
-find_program(apxs APXS)
+find_program(PHP php)
 
 # set defaults
 IF(NOT DEFINED sysconfdir)
@@ -59,6 +59,7 @@ set(CONFDIR "${confdir}")
 set(WEBUICONFDIR "${webuiconfdir}")
 
 
+MESSAGE("   PHP is ${PHP} ")
 MESSAGE("   Install system config files:  ${sysconfdir} ")
 MESSAGE("   Install Bareos config dir:    ${confdir} ")
 MESSAGE("   Install BareosWebui configdir:${webuiconfdir} ")
@@ -88,8 +89,18 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini.in ${CMAKE_
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
 
+
+IF (PHP)
+ SET(WEBUI_DIR  ${SHARE_INSTALL_PREFIX}/bareos-webui)
+ SET(WEBUI_TESTS_DIR  ${WEBUI_DIR}/tests/regress)
+ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test.in ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test @ONLY)
+ # FILE(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/../regress/DartTestfile.txt.in "ADD_TEST(disk:webui-bsock-connection-test \"../webui/tests/regress/webui-bsock-connection-test\")")
+ELSE()
+ MESSAGE("PHP not found")
+ENDIF()
+
 INSTALL(FILES version.php init_autoloader.php DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
-INSTALL(DIRECTORY config data module public vendor DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
+INSTALL(DIRECTORY tests config data module public vendor DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui)
 
 INSTALL(FILES install/bareos/bareos-dir.d/console/admin.conf.example DESTINATION ${confdir}/bareos-dir.d/console/)
 INSTALL(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf DESTINATION ${confdir}/bareos-dir.d/profile/)

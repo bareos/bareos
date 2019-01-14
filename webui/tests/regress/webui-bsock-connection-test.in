@@ -6,6 +6,10 @@
 #
 TestName="webui-bsock-connection-test"
 
+PHP=@PHP@
+WEBUI_TESTS_DIR=@WEBUI_TESTS_DIR@
+WEBUI_DIR=@WEBUI_DIR@
+
 . scripts/functions
 
 scripts/cleanup
@@ -16,8 +20,9 @@ start_test
 
 run_bareos
 
-cp ./usr/share/bareos-webui/version.php .
-php tests/webui-bsock-connection-test.php
+cd ${WEBUI_DIR}
+${PHP} ${WEBUI_TESTS_DIR}/webui-bsock-connection-test.php
+cd -
 
 estat_plain=$?
 
