@@ -199,7 +199,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord *jcr)
          if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
             goto bail_out;
          }
-         SendJobInfo(jcr);
+         SendJobInfoToFileDaemon(jcr);
          fd = jcr->file_bsock;
 
          if (!SendSecureEraseReqToFd(jcr)) {

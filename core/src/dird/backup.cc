@@ -491,7 +491,7 @@ bool DoNativeBackup(JobControlRecord *jcr)
       goto bail_out;
    }
    Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
-   SendJobInfo(jcr);
+   SendJobInfoToFileDaemon(jcr);
    fd = jcr->file_bsock;
 
    /*

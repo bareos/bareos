@@ -35,6 +35,7 @@
 #include "filed/authenticate.h"
 #include "filed/dir_cmd.h"
 #include "filed/estimate.h"
+#include "filed/evaluate_job_command.h"
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/socket_server.h"
@@ -191,7 +192,6 @@ static char setbandwidthcmd[]     = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[]       = "setdebug=%d trace=%d";
 static char setdebugv1cmd[]       = "setdebug=%d trace=%d hangup=%d";
 static char setdebugv2cmd[]       = "setdebug=%d trace=%d hangup=%d timestamp=%d";
-static char jobcmd[]              = "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
 static char storaddrv0cmd[]       = "storage address=%s port=%d ssl=%d";
 static char storaddrv1cmd[]       = "storage address=%s port=%d ssl=%d Authorization=%100s";
 static char sessioncmd[]          = "session %127s %ld %ld %ld %ld %ld %ld\n";
@@ -917,23 +917,31 @@ static bool EstimateCmd(JobControlRecord *jcr)
 static bool job_cmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
-   PoolMem sd_auth_key(PM_MESSAGE);
-   sd_auth_key.check_size(dir->message_length);
-   const char *os_version;
 
-  if (sscanf(dir->msg, jobcmd, &jcr->JobId, jcr->Job, &jcr->VolSessionId, &jcr->VolSessionTime,
-              sd_auth_key.c_str()) != 5) {
-      PmStrcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s"), jcr->errmsg);
-      dir->fsend(BADjob);
-      return false;
+   JobCommand command(dir->msg);
+
+   if (!command.EvaluationSuccesful()) {
+     PmStrcpy(jcr->errmsg, dir->msg);
+     Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s"), jcr->errmsg);
+     dir->fsend(BADjob);
+     return false;
    }
-   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), jcr->sd_tls_policy);
-   Dmsg2(120, "JobId=%d Auth=%s\n", jcr->JobId, jcr->sd_auth_key);
+
+   jcr->JobId = command.job_id_;
+   strncpy(jcr->Job, command.job_, sizeof(jcr->Job));
+   jcr->VolSessionId = command.vol_session_id_;
+   jcr->VolSessionTime = command.vol_session_time_;
+
+   TlsPolicy tls_policy = command.protocol_version_ == JobCommand::ProtocolVersion::KVersionBefore_18_2 ?
+                          TlsPolicy::kBnetTlsNone : command.tls_policy_;
+
+   SetStorageAuthKeyAndTlsPolicy(jcr, command.sd_auth_key_, tls_policy);
+   Dmsg3(120, "JobId=%d Auth=%s TlsPolicy=%d\n", jcr->JobId, jcr->sd_auth_key, tls_policy);
    Mmsg(jcr->errmsg, "JobId=%d Job=%s", jcr->JobId, jcr->Job);
    NewPlugins(jcr);                  /* instantiate plugins for this jcr */
    GeneratePluginEvent(jcr, bEventJobStart, (void *)jcr->errmsg);
 
+   const char *os_version;
 #ifdef HAVE_WIN32
    os_version = win_os;
 #else

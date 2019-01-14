@@ -1768,7 +1768,7 @@ static bool EstimateCmd(UaContext *ua, const char *cmd)
       return false;
    }
 
-   if (!SendJobInfo(jcr)) {
+   if (!SendJobInfoToFileDaemon(jcr)) {
       ua->ErrorMsg(_("Failed to connect to Client.\n"));
       return false;
    }

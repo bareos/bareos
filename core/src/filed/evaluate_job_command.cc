@@ -19,68 +19,48 @@
    02110-1301, USA.
 */
 
-#include "filed/dir_cmd.h"
+#include "filed/evaluate_job_command.h"
 #include "include/bareos.h"
-
-const std::string EvaluateJobcommand::jobcmd { "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s" };
-const std::string EvaluateJobcommand::jobcmdssl { "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s ssl=%d\n" };
 
 namespace filedaemon {
 
-class EvaluateJobcommand
+const std::string JobCommand::jobcmd_{"JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s"};
+const std::string JobCommand::jobcmdssl_{
+    "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s ssl=%d\n"};
+
+JobCommand::JobCommand(const char *msg) : job_{0}, sd_auth_key_{0}
 {
-  public:
-    EvaluateJobcommand();
-     : uint32_t JobId(0)
-     , Job[24]
-     , VolSessionId(0)
-     , VolSessionTime(0)
-    PoolMem sd_auth_key;
-     , tls_policy(TlsPolicy::kBnetTlsUnknown)
+  ProtocolVersion protocol = ProtocolVersion::kVersionUndefinded;
 
+  std::vector<ProtocolVersion> implemented_protocols{ProtocolVersion::kVersionFrom_18_2,
+                                                     ProtocolVersion::KVersionBefore_18_2};
 
-    uint32_t JobId;
-    char Job[24];
-    uint32_t VolSessionId;
-    uint32_t VolSessionTime;
-    PoolMem sd_auth_key;
-    TlsPolicy tls_policy = TlsPolicy::kBnetTlsUnknown;
-
-  private:
-    std::string jobcmd { "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s" };
-    std::string jobcmdssl { "JobId=%d Job=%127s SDid=%u SDtime=%u Authorization=%100s ssl=%d\n" };
-};
-
-JobMessageProtocolVersion EvaluateJobcommand(const POOLMEM *msg,
-                                             uint32_t &JobId,
-                                             char *Job,
-                                             uint32_t &VolSessionId,
-                                             uint32_t &VolSessionTime,
-                                             PoolMem &sd_auth_key,
-                                             TlsPolicy &tls_policy)
-{
-  int tries = 2;
-  JobMessageProtocolVersion successful_protocol = JobMessageProtocolVersion::kVersionUndefinded;
-
-  for (int protocol_try = 1; !successful_protocol && protocol_try <= tries; protocol_try++) {
+  for (auto protocol_try : implemented_protocols) {
     switch (protocol_try) {
-      case JobMessageProtocolVersion::kVersionFrom_18_2:
-        if (sscanf(msg, jobcmdssl, &JobId, Job, &VolSessionId, &VolSessionTime,
-                   sd_auth_key.c_str(), &tls_policy) == 6) {
-          successful_protocol = static_cast<JobMessageProtocolVersion>(protocol_try);
+      case ProtocolVersion::kVersionFrom_18_2:
+        if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_, &vol_session_time_, sd_auth_key_,
+                   &tls_policy_) == 6) {
+          protocol = protocol_try;
         }
         break;
-      case JobMessageProtocolVersion::KVersionBefore_18_2:
-        if (sscanf(msg, jobcmd, &JobId, Job, &VolSessionId, &VolSessionTime,
-                   sd_auth_key.c_str()) == 5) {
-          successful_protocol = static_cast<JobMessageProtocolVersion>(protocol_try);
+      case ProtocolVersion::KVersionBefore_18_2:
+        if (sscanf(msg, jobcmd_.c_str(), &job_id_, job_, &vol_session_id_, &vol_session_time_, sd_auth_key_) ==
+            5) {
+          protocol = protocol_try;
         }
         break;
       default:
+        /* never */
         break;
-    }
-  }
-  return successful_protocol;
+    } /* switch () */
+    if (protocol != ProtocolVersion::kVersionUndefinded) { break; }
+  } /* for ( auto.. */
+  protocol_version_ = protocol;
 }
 
-} /* namespace filedamon */
+bool JobCommand::EvaluationSuccesful() const
+{
+  return protocol_version_ != ProtocolVersion::kVersionUndefinded;
+}
+
+}  // namespace filedaemon

@@ -34,6 +34,8 @@
 #include "lib/util.h"
 #include "lib/bstringlist.h"
 
+#include <algorithm>
+
 static constexpr int debuglevel = 50;
 
 BareosSocket::BareosSocket()
@@ -606,6 +608,7 @@ bool BareosSocket::EvaluateCleartextBareosHello(bool &cleartext_hello,
       std::string code;
       BareosVersionNumber version = BareosVersionNumber::kUndefined;
       if (GetNameAndResourceTypeAndVersionFromHello(received, name, code, version)) {
+        name.erase(std::remove(name.begin(), name.end(), '\n'), name.end());
         if (version > BareosVersionNumber::kUndefined) {
           BareosVersionToMajorMinor v(version);
           Dmsg4(200, "Identified from Bareos handshake: %s-%s recognized version: %d.%d\n",

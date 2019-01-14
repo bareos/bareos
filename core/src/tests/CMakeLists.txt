@@ -60,6 +60,7 @@ add_executable(test_lib
     htable_test.cc
     qualified_resource_name_type_converter_test.cc
     lib_tests.cc
+    ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
     )
 
 target_link_libraries(test_lib

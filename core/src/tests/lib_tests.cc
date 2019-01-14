@@ -223,3 +223,48 @@ TEST(Util, version_number_major_minor)
   EXPECT_EQ(v.minor,  2);
 }
 
+#include "filed/evaluate_job_command.h"
+
+TEST(Filedaemon, evaluate_jobcommand_from_18_2_test)
+{
+  /* command with ssl argument */
+  static const char jobcmd_kVersionFrom_18_2[]      = "JobId=111 Job=FirstJob SDid=222 SDtime=333 Authorization=SecretOne ssl=4\n";
+
+  filedaemon::JobCommand eval(jobcmd_kVersionFrom_18_2);
+
+  EXPECT_TRUE(eval.EvaluationSuccesful());
+  EXPECT_EQ(eval.protocol_version_, filedaemon::JobCommand::ProtocolVersion::kVersionFrom_18_2);
+  EXPECT_EQ(eval.job_id_, 111);
+  EXPECT_STREQ(eval.job_, "FirstJob");
+  EXPECT_EQ(eval.vol_session_id_, 222);
+  EXPECT_EQ(eval.vol_session_time_, 333);
+  EXPECT_STREQ(eval.sd_auth_key_, "SecretOne");
+  EXPECT_EQ(eval.tls_policy_, 4);
+}
+
+TEST(Filedaemon, evaluate_jobcommand_before_18_2_test)
+{
+  /* command without ssl argument */
+  static char jobcmdssl_KVersionBefore_18_2[] = "JobId=123 Job=SecondJob SDid=456 SDtime=789 Authorization=SecretTwo";
+
+  filedaemon::JobCommand eval(jobcmdssl_KVersionBefore_18_2);
+
+  EXPECT_TRUE(eval.EvaluationSuccesful());
+  EXPECT_EQ(eval.protocol_version_, filedaemon::JobCommand::ProtocolVersion::KVersionBefore_18_2);
+  EXPECT_EQ(eval.job_id_, 123);
+  EXPECT_STREQ(eval.job_, "SecondJob");
+  EXPECT_EQ(eval.vol_session_id_, 456);
+  EXPECT_EQ(eval.vol_session_time_, 789);
+  EXPECT_STREQ(eval.sd_auth_key_, "SecretTwo");
+}
+
+TEST(Filedaemon, evaluate_jobcommand_wrong_format_test)
+{
+  /* malformed command  */
+  static char jobcmdssl_KVersionBefore_18_2[] = "JobId=123 Job=Foo";
+
+  filedaemon::JobCommand eval(jobcmdssl_KVersionBefore_18_2);
+
+  EXPECT_FALSE(eval.EvaluationSuccesful());
+  EXPECT_EQ(eval.protocol_version_, filedaemon::JobCommand::ProtocolVersion::kVersionUndefinded);
+}

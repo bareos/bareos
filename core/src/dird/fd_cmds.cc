@@ -55,6 +55,8 @@ static char filesetcmd[] =
    "fileset%s\n"; /* set full fileset */
 static char jobcmd[] =
    "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+static char jobcmdssl[] =
+   "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
 /* Note, mtime_only is not used here -- implemented as file option */
 static char levelcmd[] =
    "level = %s%s%s mtime_only=%d %s%s\n";
@@ -308,7 +310,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    return success;
 }
 
-int SendJobInfo(JobControlRecord *jcr)
+int SendJobInfoToFileDaemon(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
    char ed1[30];
@@ -320,8 +322,28 @@ int SendJobInfo(JobControlRecord *jcr)
       jcr->sd_auth_key = bstrdup("dummy");
    }
 
-   fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
-             jcr->VolSessionTime, jcr->sd_auth_key);
+   StorageResource *storage;
+   if (jcr->res.write_storage) {
+      storage = jcr->res.write_storage;
+   } else if (jcr->res.read_storage) {
+      storage = jcr->res.read_storage;
+   } else {
+      Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
+      jcr->setJobStatus(JS_ErrorTerminated);
+      return 0;
+   }
+
+   if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
+      /* client before Bareos 18.2 */
+      fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+                jcr->VolSessionTime, jcr->sd_auth_key);
+   } else {
+      /* client onwards Bareos 18.2 */
+      TlsPolicy tls_policy;
+      tls_policy = storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+      fd->fsend(jobcmdssl, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+                jcr->VolSessionTime, jcr->sd_auth_key, tls_policy);
+   }
 
    if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));

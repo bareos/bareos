@@ -26,9 +26,10 @@ IF(HAVE_WIN32)
       )
 ENDIF()
 
-set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmds.cc verify.cc
-    accurate_htable.cc backup.cc dir_cmd.cc filed.cc filed_globals.cc heartbeat.cc socket_server.cc 
-    verify_vol.cc accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)
+set(FDSRCS accurate.cc authenticate.cc crypto.cc evaluate_job_command.cc fd_plugins.cc fileset.cc
+    sd_cmds.cc verify.cc accurate_htable.cc backup.cc dir_cmd.cc filed.cc filed_globals.cc heartbeat.cc
+    socket_server.cc verify_vol.cc accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc
+    restore.cc status.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND FDSRCS
