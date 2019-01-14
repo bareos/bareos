@@ -244,15 +244,16 @@ $this->headTitle($title);
                   $('.rjc-panel-'+i).append('<a href="<?php echo $this->basePath() . '/job/cancel/'; ?>' + data[id].jobid + '"><span class="pull-right text-danger glyphicon glyphicon-remove" aria-hidden="true" title="Cancel"></span></a>');
                   $('.rjc-panel-'+i).append('</p>');
                   $('.rjc-panel-'+i).append('<strong>Job ID: </strong><a href="<?php echo $this->basePath() . '/job/details/'; ?>' + data[id].jobid + '">' + data[id].jobid + '</a> ');
-                  $('.rjc-panel-'+i).append('<strong>Files: </strong>' + data[id].jobfiles + ' ');
-                  $('.rjc-panel-'+i).append('<strong>Bytes: </strong>' + formatBytes(data[id].jobbytes) + ' ');
-                  $('.rjc-panel-'+i).append('<strong>Bytes/s: </strong>' + formatBytes(data[id].speed) + ' ');
                   if(data[id].lastbackupsize > 0) {
+                     $('.rjc-panel-'+i).append('<strong>Files: </strong>' + data[id].jobfiles + ' ');
+                     $('.rjc-panel-'+i).append('<strong>Bytes: </strong>' + formatBytes(data[id].jobbytes) + ' ');
+                     $('.rjc-panel-'+i).append('<strong>Bytes/s: </strong>' + formatBytes(data[id].speed) + ' ');
                      $('.rjc-panel-'+i).append('<div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="'+data[id].progress+'" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em; width: '+data[id].progress+'%">'+data[id].progress+'%</div></div>');
                   }
                   else {
-                     $('.rjc-panel-'+i).append('<div class="progress" id="progress" data-toggle="tooltip" data-placement="top"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em; width: 100%"></div></div>');
-                     $('.rjc-panel-'+i).append('<span class="text-muted"><i>(<?php echo $this->translate("Not enough data to estimate progress or statistics collection is disabled."); ?>)</i></span>');
+                     // do not display any progress bar if statistic collection is disabled for now, may change in future releases
+                     //$('.rjc-panel-'+i).append('<div class="progress" id="progress" data-toggle="tooltip" data-placement="top"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em; width: 100%"></div></div>');
+                     //$('.rjc-panel-'+i).append('<span class="text-muted"><i>(<?php echo $this->translate("Not enough data to estimate progress or statistics collection is disabled."); ?>)</i></span>');
                   }
                   $('.rjc-panel-'+i).append('</div></div>');
                   i++;
