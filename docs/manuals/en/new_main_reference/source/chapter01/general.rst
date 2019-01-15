@@ -94,7 +94,7 @@ Bareos Version Numbers and Releases
 
 Bareos version numbers consists of three parts: YY.Q.C
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -110,7 +110,7 @@ Bareos version numbers consists of three parts: YY.Q.C
            Maintenance releases get numbers starting from 5 onwards. \\
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ==== ====================================================================================================================================================================================================================================================================================================================================
 YY   year (last two digits)
@@ -134,7 +134,7 @@ Bareos Packages
 
 Following Bareos Linux packages are available (release 17.2.4):
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -178,7 +178,7 @@ Following Bareos Linux packages are available (release 17.2.4):
    \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ==================================== =========================================================================
 **Package Name**                     **Description**

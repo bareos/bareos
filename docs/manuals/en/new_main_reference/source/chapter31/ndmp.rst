@@ -164,7 +164,7 @@ When using NDMP_BAREOS, the |bareosSd| acts as Tape Agent.
 
 When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. Some storage vendors provide it with there storages, or offer it as an option, e.g. Isilon with their :emphasis:`Isilon Backup Accelerator`.
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -189,7 +189,7 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
    \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================================================================= ================================================== =================================================
 \                                                                             :ref:`NDMP_BAREOS <section-NdmpBareos>`  :ref:`NDMP_NATIVE <section-NdmpNative>` 
@@ -915,7 +915,7 @@ data is restored in a different directory, but into the same filesystem. If the 
 
 Example:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -923,12 +923,12 @@ Example:
    \hline
    original file name &  where &  restored file \\
    \hline
-   \verb|path:/ifs/home/admin/.zshrc| & \verb|path:/bareos-restores|           & \verb|path:/ifs/home/bareos-restores/admin/.zshrc| \\
-   \verb|path:/ifs/home/admin/.zshrc| & \textasciicircum\verb|path:/ifs/data/bareos-restores| & \verb|path:/ifs/data/bareos-restores/admin/.zshrc| \\
+   :file:`/ifs/home/admin/.zshrc` & :file:`/bareos-restores`           & :file:`/ifs/home/bareos-restores/admin/.zshrc` \\
+   :file:`/ifs/home/admin/.zshrc` & \textasciicircum\verb|path:/ifs/data/bareos-restores| & :file:`/ifs/data/bareos-restores/admin/.zshrc` \\
    \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 =============================== ===================================== ===============================================
 original file name              where                                 restored file
@@ -1931,7 +1931,7 @@ NDMP Backup Level
 
 The trailing number in the main backup file (after the :file:`%` character) indicates the NDMP backup level:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -1945,7 +1945,7 @@ The trailing number in the main backup file (after the :file:`%` character) indi
    \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ===== =========================================
 Level Description
@@ -2038,7 +2038,7 @@ Tested Environments
 
 Bareos NDMP support have been tested against:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -2055,7 +2055,7 @@ Bareos NDMP support have been tested against:
    \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ========== ============================= ==================== ============== ============================ ======== ==================================
 Vendor     Product                       NDMP Subsystem       Bareos version Tape Agent  Features Remarks

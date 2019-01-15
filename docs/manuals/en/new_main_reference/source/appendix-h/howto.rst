@@ -870,7 +870,7 @@ Following settings must be done on the Bareos client (|bareosFd|):
 
 -  install and enable the |bareosFd| Python plugin
 
--  install the Python MySQL plugin (for some platforms it is available prepackaged from \contribDownloadBareosOrg, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+-  install the Python MySQL plugin (for some platforms it is available prepackaged from `<http://download.bareos.org/bareos/contrib/>`_, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
 
 -  disable bacula compatibility (default for Bareos >= 15.2)
 

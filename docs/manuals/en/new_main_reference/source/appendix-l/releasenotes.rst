@@ -22,961 +22,1213 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 .. warning::
    While all the source code is published on `GitHub <https://github.com/bareos/bareos>`_, the releases of packages on `<http://download.bareos.org>`_ is limited to the initial versions of a major release. Later maintenance releases are only published on `<https://download.bareos.com>`_.
 
-\releasenoteSection{Bareos-17.2}
+Bareos-17.2
+===========
 
-\releasenote{17.2.7}{
+bareos-17.2.7
+-------------
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2018-07-13\\
-   Database Version  & 2171 (unchanged)\\
-   Release Ticket    & \ticket{966}\\
-   Url               & \releaseUrlDownloadBareosCom{17.2} \\
-   \end{tabular}\end{verbatim}
+:index:`[TAG=bareos-17.2.7->Release Notes] <pair: bareos-17.2.7; Release Notes>`
 
-   # converted Latex tabular
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-07-13\\
    Database Version  & 2171 (unchanged)\\
-   Release Ticket    & \ticket{966}\\
-   Url               & \releaseUrlDownloadBareosCom{17.2} \\
+   Release Ticket    & :issue:`966`\\
+   Url               & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-       \item \ticket{892} \package{bareos-storage-droplet}: improve error handling on unavailable backend.
-       \item \ticket{902} \package{bareos-storage-droplet}: improve job status handling (terminate job after all data is written).
-       \item \ticket{967} \os{Windows}{}: overwrite symbolic links on restore.
-       \item \ticket{983} \bareosSd: prevent sporadic crash when \linkResourceDirectiveValue{Sd}{Storage}{Collect Job Statistics}{yes}.
-       \item \os{SLES}{12sp2} and \os{SLES}{12sp3}: provide \package{bareos-storage-ceph} and \package{bareos-filedaemon-ceph-plugin} packages.
-    
-   \end{itemize}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   }
+================ ===============================================
+Code Release     2018-07-13
+Database Version 2171 (unchanged)
+Release Ticket   :issue:`966`
+Url              `<http://download.bareos.com/bareos/release/17.2/>`_
+================ ===============================================
 
-\releasenote{17.2.6}{
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2018-06-21\\
-   Database Version  & 2171 (unchanged)\\
-   Release Ticket    & \ticket{916}\\
-   Url               & \releaseUrlDownloadBareosCom{17.2} \\
-   \end{tabular}\end{verbatim}
+-  :issue:`892` **bareos-storage-droplet**: improve error handling on unavailable backend.
 
-   # converted Latex tabular
+-  :issue:`902` **bareos-storage-droplet**: improve job status handling (terminate job after all data is written).
+
+-  :issue:`967` :strong:`Windows`: overwrite symbolic links on restore.
+
+-  :issue:`983` |bareosSd|: prevent sporadic crash when **Collect Job Statistics**:sup:`Sd`:sub:`Storage`\ = **yes**.
+
+-  :strong:`SLES 12sp2` and :strong:`SLES 12sp3`: provide **bareos-storage-ceph** and **bareos-filedaemon-ceph-plugin** packages.
+
+bareos-17.2.6
+-------------
+
+:index:`[TAG=bareos-17.2.6->Release Notes] <pair: bareos-17.2.6; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-06-21\\
    Database Version  & 2171 (unchanged)\\
-   Release Ticket    & \ticket{916}\\
-   Url               & \releaseUrlDownloadBareosCom{17.2} \\
+   Release Ticket    & :issue:`916`\\
+   Url               & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-       \item added platforms: \os{Fedora}{27}, \os{Fedora}{28}, \os{openSUSE}{15.0}, \os{Ubuntu}{18.04} and \os{Univention}{4.3}.
-       \item \os{Univention}{4.3}: fixes integration.
-       \item \ticket{872} adapted to new Ceph API.
-       \item \ticket{943} use \package{tirpc} if Sun-RPC is not provided.
-       \item \ticket{964} fixes the predefined queries.
-       \item \ticket{969} fixes a problem of restoring more files then selected in \bareosWebui/BVFS.
-       \item \bareosDir: fixes for a crash after reload in the statistics thread (\ticket{695}, \ticket{903}).
-       \item \command{bareos-dbcheck}: cleanup and speedup for some some of the checks.
-       \item adapted for \postgresql 10.
-       \item gfapi: stale file handles are treated as warnings
-   \end{itemize}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   }
+================ ===============================================
+Code Release     2018-06-21
+Database Version 2171 (unchanged)
+Release Ticket   :issue:`916`
+Url              `<http://download.bareos.com/bareos/release/17.2/>`_
+================ ===============================================
 
-\releasenote{17.2.5}{
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2018-02-16\\
-   Database Version  & 2171 (unchanged)\\
-   Release Ticket    & \ticket{910}\\
-   Url               & \releaseUrlDownloadBareosCom{17.2} \\
-   \end{tabular}\end{verbatim}
+-  added platforms: :strong:`Fedora 27`, :strong:`Fedora 28`, :strong:`openSUSE 15.0`, :strong:`Ubuntu 18.04` and :strong:`Univention 4.3`.
 
-   # converted Latex tabular
+-  :strong:`Univention 4.3`: fixes integration.
+
+-  :issue:`872` adapted to new Ceph API.
+
+-  :issue:`943` use **tirpc** if Sun-RPC is not provided.
+
+-  :issue:`964` fixes the predefined queries.
+
+-  :issue:`969` fixes a problem of restoring more files then selected in |bareosWebui|/BVFS.
+
+-  |bareosDir|: fixes for a crash after reload in the statistics thread (:issue:`695`, :issue:`903`).
+
+-  :command:`bareos-dbcheck`: cleanup and speedup for some some of the checks.
+
+-  adapted for |postgresql| 10.
+
+-  gfapi: stale file handles are treated as warnings
+
+bareos-17.2.5
+-------------
+
+:index:`[TAG=bareos-17.2.5->Release Notes] <pair: bareos-17.2.5; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-02-16\\
    Database Version  & 2171 (unchanged)\\
-   Release Ticket    & \ticket{910}\\
-   Url               & \releaseUrlDownloadBareosCom{17.2} \\
+   Release Ticket    & :issue:`910`\\
+   Url               & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-       \item \bareosFd is ready for \os{AIX}{7.1.0.0}.
-       \item \nameref{VMwarePlugin} is also provided for \os{Debian}{9}.
-       \item NDMP fixes
-       \item Virtual Backup fixes
-       \item \package{bareos-storage-droplet}: improvements
-       \item \command{bareos-dbcheck} improvements and fixes: with older versions it could happen, that it destroys structures required by \bcommand{.bvfs_*}{}.
-       \item \ticket{850} fixes a bug on \os{Univention}{}: fixes a problem of regenerating passwords when resyncing settings.
-       \item \ticket{890} \bcommand{.bvfs_update}{} fix. Before there have been cases where it did not update the cache.
-       \item \bcommand{.bvfs_lsdirs}{} make limit- and offset-option work correctly.
-       \item \bcommand{.bvfs_lsdirs}{} show special directory (like \verb|path:@bpipe@/|) on the same level as \verb|path:/|.
-       \item \ticket{895} added description to the output of \bcommand{show}{filesets}.
-       \item \bareosWebui: Restore Browser fixes
-       \begin{itemize}
-           \item There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports \ticket{887} and \ticket{893} for details.
-           \item \ticket{905} fixes a problem with file names containing quotes.
-       \end{itemize}
-       \item \linkResourceDirective{Dir}{Client}{NDMP Block Size} changed type from \dt{Pint32} to \dt{Size32}. This should not affect any configuration, but is more consistent with other block size configuration directives.
-   \end{itemize}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   }
+================ ===============================================
+Code Release     2018-02-16
+Database Version 2171 (unchanged)
+Release Ticket   :issue:`910`
+Url              `<http://download.bareos.com/bareos/release/17.2/>`_
+================ ===============================================
 
-\releasenote{17.2.4}{
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2017-12-14\\
-   Database Version  & 2171\\
-   Release Ticket    & \ticket{861}\\
-   Url               & \releaseUrlDownloadBareosOrg{17.2} \\
-                     & \releaseUrlDownloadBareosCom{17.2} \\
-   \end{tabular}\end{verbatim}
+-  |bareosFd| is ready for :strong:`AIX 7.1.0.0`.
 
-   # converted Latex tabular
+-  :ref:`VMwarePlugin` is also provided for :strong:`Debian 9`.
+
+-  NDMP fixes
+
+-  Virtual Backup fixes
+
+-  **bareos-storage-droplet**: improvements
+
+-  :command:`bareos-dbcheck` improvements and fixes: with older versions it could happen, that it destroys structures required by :strong:`.bvfs_*`.
+
+-  :issue:`850` fixes a bug on :strong:`Univention`: fixes a problem of regenerating passwords when resyncing settings.
+
+-  :issue:`890` :strong:`.bvfs_update` fix. Before there have been cases where it did not update the cache.
+
+-  :strong:`.bvfs_lsdirs` make limit- and offset-option work correctly.
+
+-  :strong:`.bvfs_lsdirs` show special directory (like :file:`@bpipe@/`) on the same level as :file:`/`.
+
+-  :issue:`895` added description to the output of :strong:`show filesets`.
+
+-  |bareosWebui|: Restore Browser fixes
+
+   -  There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports :issue:`887` and :issue:`893` for details.
+
+   -  :issue:`905` fixes a problem with file names containing quotes.
+
+-  **NDMP Block Size**:sup:`Dir`:sub:`Client`\  changed type from :strong:`Pint32` to :strong:`Size32`. This should not affect any configuration, but is more consistent with other block size configuration directives.
+
+bareos-17.2.4
+-------------
+
+:index:`[TAG=bareos-17.2.4->Release Notes] <pair: bareos-17.2.4; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-12-14\\
    Database Version  & 2171\\
-   Release Ticket    & \ticket{861}\\
-   Url               & \releaseUrlDownloadBareosOrg{17.2} \\
-                     & \releaseUrlDownloadBareosCom{17.2} \\
+   Release Ticket    & :issue:`861`\\
+   Url               & `<http://download.bareos.org/bareos/release/17.2/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/17.2/>`_ \\
    \end{tabular}
 
-   This release contains several enhancements. Excerpt:
-   \begin{itemize}
-     \item Bareos Distribution (packages)
-     \begin{itemize}
-       \item \package{python-bareos} is included in the core distribution.
-       \item \package{bareos-storage-droplet} is a storage backend for the droplet library.
-           Most notably it allows backup and restores to a S3 environment.
-           \betaSince{sd}{bareos-storage-droplet}{17.2.4}
-       \item \package{bat} has been removed, see section \nameref{bat}.
-       \item platforms:
-       \begin{itemize}
-           \item Windows Clients are still supported since Windows Vista.
-           \item MacOS: added to build chain.
-           \item \bareosFd is ready for HP-UX 11.31 (ia64).
-           \item Linux Distribution: Bareos tries to provide packages for all current platforms. For details, refer to \nameref{section-packages}.
-       \end{itemize}
-       \item Linux RPM packages: allow read access to /etc/bareos/ for all users (however, relevant files are still only readable for the user \user{bareos}).
-           This allows other programs associated with Bareos to also use this directory.
-     \end{itemize}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-     \item Denormalization of the \dbtable{File} database table
-     \begin{itemize}
-       \item The denormalization of the \dbtable{File} database table leads to enormous performance improvements in installation, which covering a  lot of file (millions and more).
-       \item For the denormalization the database schema must be modified.
-             \warning{Updating the database to schema version >= 2170 will increase the required disk space.
-                   Especially it will require around twice the amount of the current database disk space during the migration.}
-       \item The \dbtable{Filename} database table does no longer exists. Therefore the \bcommand{.bvfs_*}{} commands do no longer output the \dbcolumn{FilenameId} column.
-     \end{itemize}
+================ ===============================================
+Code Release     2017-12-14
+Database Version 2171
+Release Ticket   :issue:`861`
+Url              `<http://download.bareos.org/bareos/release/17.2/>`_
+\                `<http://download.bareos.com/bareos/release/17.2/>`_
+================ ===============================================
 
-     \item NDMP\_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see \nameref{section-NdmpNative}.
-     \item Updated the package \package{bareos-vmware-plugin} to utilize the Virtual Disk Development Kit (VDDK) 6.5.x. This includes support for \vSphere 6.5 and the next major release (except new features) and backward compatible with \vSphere 5.5 and 6.0. For details see \nameref{VMwarePlugin}.
-     \item Soft Quota: automatic quota grace period reset if a job does not exceed the quota.
-     \item \command{bareos-dbcheck}: disable all interactive questions in batch mode.
-     \item \bcommand{list}{files}: also show deleted files (accurate mode).
-     \item \bcommand{list}{jobstatastics}: added.
-     \item \bcommand{purge}{}: added confirmation.
-     \item \bcommand{list}{volumes}: fix limit and offset handling.
-     \item \ticket{629} Windows: restore directory attributes.
-     \item \ticket{639} tape: fix block size handling, AWS VTL iSCSI devices
-     \item \ticket{705} support for MySQL 5.7
-     \item \ticket{719} allow long JSON messages (has been increased from 100KB to 2GB).
-     \item \ticket{793} Virtual Backups: skip jobs with no files.
-   \end{itemize}
+This release contains several enhancements. Excerpt:
 
-   }
+-  Bareos Distribution (packages)
 
-\releasenoteSection{Bareos-16.2}
+   -  **python-bareos** is included in the core distribution.
 
-\releasenote{16.2.8}{
+   -  **bareos-storage-droplet** is a storage backend for the droplet library. Most notably it allows backup and restores to a S3 environment. \betaSince{sd}{bareos-storage-droplet}{17.2.4}
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2018-07-06\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{863}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
-   \end{tabular}\end{verbatim}
+   -  **bat** has been removed, see section :ref:`bat`.
 
-   # converted Latex tabular
+   -  platforms:
+
+      -  Windows Clients are still supported since Windows Vista.
+
+      -  MacOS: added to build chain.
+
+      -  |bareosFd| is ready for HP-UX 11.31 (ia64).
+
+      -  Linux Distribution: Bareos tries to provide packages for all current platforms. For details, refer to :ref:`section-packages`.
+
+   -  Linux RPM packages: allow read access to /etc/bareos/ for all users (however, relevant files are still only readable for the user **bareos**). This allows other programs associated with Bareos to also use this directory.
+
+-  Denormalization of the **File** database table
+
+   -  The denormalization of the **File** database table leads to enormous performance improvements in installation, which covering a lot of file (millions and more).
+
+   -  For the denormalization the database schema must be modified. 
+
+                   .. warning::
+                      Updating the database to schema version >= 2170 will increase the required disk space.
+                      Especially it will require around twice the amount of the current database disk space during the migration.
+
+   -  The **Filename** database table does no longer exists. Therefore the :strong:`.bvfs_*` commands do no longer output the \dbcolumn{FilenameId} column.
+
+-  NDMP_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see :ref:`section-NdmpNative`.
+
+-  Updated the package **bareos-vmware-plugin** to utilize the Virtual Disk Development Kit (VDDK) 6.5.x. This includes support for |vsphere| 6.5 and the next major release (except new features) and backward compatible with |vsphere| 5.5 and 6.0. For details see :ref:`VMwarePlugin`.
+
+-  Soft Quota: automatic quota grace period reset if a job does not exceed the quota.
+
+-  :command:`bareos-dbcheck`: disable all interactive questions in batch mode.
+
+-  :strong:`list files`: also show deleted files (accurate mode).
+
+-  :strong:`list jobstatastics`: added.
+
+-  :strong:`purge`: added confirmation.
+
+-  :strong:`list volumes`: fix limit and offset handling.
+
+-  :issue:`629` Windows: restore directory attributes.
+
+-  :issue:`639` tape: fix block size handling, AWS VTL iSCSI devices
+
+-  :issue:`705` support for MySQL 5.7
+
+-  :issue:`719` allow long JSON messages (has been increased from 100KB to 2GB).
+
+-  :issue:`793` Virtual Backups: skip jobs with no files.
+
+Bareos-16.2
+===========
+
+bareos-16.2.8
+-------------
+
+:index:`[TAG=bareos-16.2.8->Release Notes] <pair: bareos-16.2.8; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2018-07-06\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{863}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   Release Ticket    & :issue:`863`\\
+   Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-      \item gfapi-fd Plugin
-      \begin{itemize}
-         \item Allow to use non-accurate backups with glusterfind
-         \item Fix backups with empty glusterfind filelist.
-         \item Explicitly close glfs fd on IO-open
-         \item Don't reinitialize the connection to gluster
-         \item Fix parsing of missing basedir argument
-         \item Handle non-fatal Gluster problems properly
-      \end{itemize}
-      \item Reset JobStatus to previous JobStatus in status SD and FD loops to fix status all output
-      \item Backport ceph: ported cephfs-fd and \command{cephfs_device} to new api
-      \item \ticket{967} Windows: Symbolic links are now replaceable during restore
-   \end{itemize}
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{16.2.7}{
+================ ===============================================
+Code Release     2018-07-06
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`863`
+Url              `<http://download.bareos.com/bareos/release/16.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2017-10-09\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{836}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # converted Latex tabular
+-  gfapi-fd Plugin
+
+   -  Allow to use non-accurate backups with glusterfind
+
+   -  Fix backups with empty glusterfind filelist.
+
+   -  Explicitly close glfs fd on IO-open
+
+   -  Don’t reinitialize the connection to gluster
+
+   -  Fix parsing of missing basedir argument
+
+   -  Handle non-fatal Gluster problems properly
+
+-  Reset JobStatus to previous JobStatus in status SD and FD loops to fix status all output
+
+-  Backport ceph: ported cephfs-fd and :command:`cephfs_device` to new api
+
+-  :issue:`967` Windows: Symbolic links are now replaceable during restore
+
+bareos-16.2.7
+-------------
+
+:index:`[TAG=bareos-16.2.7->Release Notes] <pair: bareos-16.2.7; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-10-09\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{836}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   Release Ticket    & :issue:`836`\\
+   Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-       \item Fixes a Director crash, when enabling debugging output
-       \item \bcommand{.bvfs_lsdirs}{}: improve performance, especially when having a large number of directories
-       \begin{itemize}
-         \item To optimize the performance of the SQL query used by \bcommand{.bvfs_lsdirs}{}, it is important to
-         have the following indexes:
-         \item PostgreSQL
-           \begin{itemize}
-             \item \sqlcommand{CREATE INDEX file_jpfnidpart_idx ON File(PathId,JobId,FilenameId) WHERE FileIndex = 0;}
-             \item If the index \sqlcommand{file_jfnidpart_idx} mentioned in 16.2.6 release notes exist, drop it:\\
-               \sqlcommand{DROP INDEX file_jfnidpart_idx;}
-           \end{itemize}
-         \item MySQL/MariaDB
-           \begin{itemize}
-             \item \sqlcommand{CREATE INDEX PathId_JobId_FileNameId_FileIndex ON File(PathId,JobId,FilenameId,FileIndex);}
-             \item If the index \sqlcommand{PathId_JobId_FileIndex_FileNameId} mentioned in 16.2.6 release notes exist, drop it:\\
-               \sqlcommand{DROP INDEX PathId_JobId_FileIndex_FileNameId ON File;}
-           \end{itemize}
-       \end{itemize}
-       \item Utilize OpenSSL >= 1.1 if available
-       \item Windows: fixes silent upgrade (\command{winbareos-*.exe /S})
-       \item Windows: restore attributes also on directories (not only on files)
-       \item Fixes problem with SHA1 signature when compiled without OpenSSL (not relevant for bareos.org/bareos.com packages)
-       \item Packages for openSUSE Leap 42.3 and Fedora 26 have been added.
-       \item Packages for AIX and current HP-UX 11.31
-   \end{itemize}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   }
+================ ===============================================
+Code Release     2017-10-09
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`836`
+Url              `<http://download.bareos.com/bareos/release/16.2/>`_
+================ ===============================================
 
-\releasenote{16.2.6}{
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2017-06-22\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{794}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
-   \end{tabular}\end{verbatim}
+-  Fixes a Director crash, when enabling debugging output
 
-   # converted Latex tabular
+-  :strong:`.bvfs_lsdirs`: improve performance, especially when having a large number of directories
+
+   -  To optimize the performance of the SQL query used by :strong:`.bvfs_lsdirs`, it is important to have the following indexes:
+
+   -  PostgreSQL
+
+      -  
+
+         \sqlcommand{CREATE INDEX file_jpfnidpart_idx ON File(PathId,JobId,FilenameId) WHERE FileIndex = 0;}
+
+      -  | If the index \sqlcommand{file_jfnidpart_idx} mentioned in 16.2.6 release notes exist, drop it:
+         | \sqlcommand{DROP INDEX file_jfnidpart_idx;}
+
+   -  MySQL/MariaDB
+
+      -  
+
+         \sqlcommand{CREATE INDEX PathId_JobId_FileNameId_FileIndex ON File(PathId,JobId,FilenameId,FileIndex);}
+
+      -  | If the index \sqlcommand{PathId_JobId_FileIndex_FileNameId} mentioned in 16.2.6 release notes exist, drop it:
+         | \sqlcommand{DROP INDEX PathId_JobId_FileIndex_FileNameId ON File;}
+
+-  Utilize OpenSSL >= 1.1 if available
+
+-  Windows: fixes silent upgrade (:command:`winbareos-*.exe /S`)
+
+-  Windows: restore attributes also on directories (not only on files)
+
+-  Fixes problem with SHA1 signature when compiled without OpenSSL (not relevant for bareos.org/bareos.com packages)
+
+-  Packages for openSUSE Leap 42.3 and Fedora 26 have been added.
+
+-  Packages for AIX and current HP-UX 11.31
+
+bareos-16.2.6
+-------------
+
+:index:`[TAG=bareos-16.2.6->Release Notes] <pair: bareos-16.2.6; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-06-22\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{794}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   Release Ticket    & :issue:`794`\\
+   Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-     \item Prevent from director crash when using incorrect paramaters of \bcommand{.bvfs_*}{} commands.
-     \item Director now closes all configuration files when reloading failed.
-     \item Storage daemon now closes the network connection when MaximumConcurrentJobs reached.
-     \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See \nameref{LanAddress} for details.
-     \item A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
-     \item The device spool size calculation when using secure erase was fixed.
-     \item \bcommand{.bvfs_lsdirs}{} no longer shows empty directories from accurate jobs.
-       \begin{itemize}
-           \item \warning{This decreases performance if your environment has a large numbers of directories. Creating an index improves the performance.}
-           %In Bareos 16.2.6 the SQL Query used by \bcommand{.bvfs_lsdirs}{} was changed to not show
-           %empty directories from accurate jobs. It turned out that that the changed
-           %query causes performance issues when larger amounts of directories were backed up.\\
-           \item \postgresql
-           \begin{itemize}
-               \item When using PostgreSQL, creating the following partial improves the performance sufficiently:\\
-                   \sqlcommand{CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0;}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-               \item Run following command to create the partial index:\\
-                   \path!su - postgres -c 'echo "CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0; ANALYZE File;" | psql bareos'!
+================ ===============================================
+Code Release     2017-06-22
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`794`
+Url              `<http://download.bareos.com/bareos/release/16.2/>`_
+================ ===============================================
 
-           \end{itemize}
-           \item \mysql
-           \begin{itemize}
-               \item When using MySQL or MariaDB, creating the following index improves the performance:\\
-                   \sqlcommand{CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);}
+This release contains several bugfixes and enhancements. Excerpt:
 
-               \item Run following command to create the index:\\
-                   \path!echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos!
+-  Prevent from director crash when using incorrect paramaters of :strong:`.bvfs_*` commands.
 
-               \item  However, with larger amounts of directories and/or involved jobs, even with this index
-                   the performance of \bcommand{.bvfs_lsdirs}{} may still be insufficient. We are working on optimizing
-                   the SQL query for MySQL/MariaDB to solve this problem.
-           \end{itemize}
-       \end{itemize}
+-  Director now closes all configuration files when reloading failed.
 
-     \item Packages for Univention UCS 4.2 have been added.
-     \item Packages for Debian 9 (Stretch) have been added.
-     \item WebUI: The post install script of the bareos-webui RPM package for RHEL/CentOS was fixed, it no longer tries to run a2enmod which does not exist on RHEL/CentOS.
-     \item WebUI: The login form no longer allows redirects to arbitrary URLs
-     \item WebUI: The used ZendFramework components were updated from version 2.4.10 to 2.4.11.
-     \item WebUI: jQuery was updated from version 1.12.4 to version 3.2.0., some outdated browsers like Internet Explorer 6-8, Opera 12.1x or Safari 5.1+ will no longer be supported, see \elink{jQuery Browser Support}{http://jquery.com/browser-support/} for details.
-   \end{itemize}
+-  Storage daemon now closes the network connection when MaximumConcurrentJobs reached.
 
-   }
+-  New directive :strong:`LanAddress` was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See :ref:`LanAddress` for details.
 
-\releasenote{16.2.5}{
+-  A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2017-03-03\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{734}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
-   \end{tabular}\end{verbatim}
+-  The device spool size calculation when using secure erase was fixed.
 
-   # converted Latex tabular
+-  :strong:`.bvfs_lsdirs` no longer shows empty directories from accurate jobs.
+
+   -  
+
+      
+
+.. warning::
+   This decreases performance if your environment has a large numbers of directories. Creating an index improves the performance.
+
+   -  
+
+      |postgresql|
+
+      -  | When using PostgreSQL, creating the following partial improves the performance sufficiently:
+         | \sqlcommand{CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0;}
+
+      -  | Run following command to create the partial index:
+         | :file:`su - postgres -c 'echo "CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0; ANALYZE File;" | psql bareos'`
+
+   -  
+
+      |mysql|
+
+      -  | When using MySQL or MariaDB, creating the following index improves the performance:
+         | \sqlcommand{CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);}
+
+      -  | Run following command to create the index:
+         | :file:`echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos`
+
+      -  However, with larger amounts of directories and/or involved jobs, even with this index the performance of :strong:`.bvfs_lsdirs` may still be insufficient. We are working on optimizing the SQL query for MySQL/MariaDB to solve this problem.
+
+-  Packages for Univention UCS 4.2 have been added.
+
+-  Packages for Debian 9 (Stretch) have been added.
+
+-  WebUI: The post install script of the bareos-webui RPM package for RHEL/CentOS was fixed, it no longer tries to run a2enmod which does not exist on RHEL/CentOS.
+
+-  WebUI: The login form no longer allows redirects to arbitrary URLs
+
+-  WebUI: The used ZendFramework components were updated from version 2.4.10 to 2.4.11.
+
+-  WebUI: jQuery was updated from version 1.12.4 to version 3.2.0., some outdated browsers like Internet Explorer 6-8, Opera 12.1x or Safari 5.1+ will no longer be supported, see `jQuery Browser Support <http://jquery.com/browser-support/>`_ for details.
+
+bareos-16.2.5
+-------------
+
+:index:`[TAG=bareos-16.2.5->Release Notes] <pair: bareos-16.2.5; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2017-03-03\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{734}\\
-   Url               & \releaseUrlDownloadBareosCom{16.2} \\
+   Release Ticket    & :issue:`734`\\
+   Url               & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-     \item NDMP: critical bugfix when restoring large files.
-     \item truncate command allows to free space on disk storages (replaces an purged volume by an empty volume).
-     \item Some fixes were added regarding director crashes, Windows backups (VSS), soft-quota reset and API (bvfs) problems.
-     \item WebUI: handle file names containing special characters, hostnames starting with numbers and long logfiles.
-     \item WebUI: adds translations for Chinese, Italian and Spanish.
-   \end{itemize}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   }
+================ ===============================================
+Code Release     2017-03-03
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`734`
+Url              `<http://download.bareos.com/bareos/release/16.2/>`_
+================ ===============================================
 
-\releasenote{16.2.4}{
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2016-10-28\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{698}\\
-   Url               & \releaseUrlDownloadBareosOrg{16.2} \\
-                     & \releaseUrlDownloadBareosCom{16.2} \\
-   \end{tabular}\end{verbatim}
+-  NDMP: critical bugfix when restoring large files.
 
-   # converted Latex tabular
+-  truncate command allows to free space on disk storages (replaces an purged volume by an empty volume).
+
+-  Some fixes were added regarding director crashes, Windows backups (VSS), soft-quota reset and API (bvfs) problems.
+
+-  WebUI: handle file names containing special characters, hostnames starting with numbers and long logfiles.
+
+-  WebUI: adds translations for Chinese, Italian and Spanish.
+
+bareos-16.2.4
+-------------
+
+:index:`[TAG=bareos-16.2.4->Release Notes] <pair: bareos-16.2.4; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-10-28\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{698}\\
-   Url               & \releaseUrlDownloadBareosOrg{16.2} \\
-                     & \releaseUrlDownloadBareosCom{16.2} \\
+   Release Ticket    & :issue:`698`\\
+   Url               & `<http://download.bareos.org/bareos/release/16.2/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/16.2/>`_ \\
    \end{tabular}
 
-   First stable release of the Bareos 16.2 branch.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   \begin{itemize}
-   \item Configuration
-        \begin{itemize}
-        \item Bareos packages contain the default configuration in \nameref{section-ConfigurationSubdirectories}. Please read \nameref{section-UpdateToConfigurationSubdirectories} before updating (make a copy of your configuration directories for your \bareosDir and \bareosSd before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
-        \item The default configuration does no longer name the \resourcetype{Dir}{Director} and \resourcetype{Sd}{Storage} resources after the systems hostname (\verb|path:$HOSTNAME-dir| resp. \verb|path:$HOSTNAME-sd|) but use \resourcename{Dir}{Director}{bareos-dir} resp. \resourcename{Sd}{Storage}{bareos-sd} as defaults. The prior solution had the disadvantage, that \verb|path:$HOSTNAME-dir| has also been set on \bareosFd not running on the \bareosDir, which almost ever did require changing this setting. Also the new approach aligns better with \nameref{section-ConfigurationSubdirectories}.
-        \item Due to limitation of the build system, the default resource \resourcename{Dir}{FileSet}{Linux All} have been renamed to \resourcename{Dir}{FileSet}{LinuxAll} (no space between Linux and All).
-        \item The configuration of the \package{bareos-traymonitor} has also been split into resource files.
-           Additional, these resource files are now packaged in other packages:
-           \begin{itemize}
-               \item \verb|path:CONFIGDIR/tray-monitor.d/monitor/bareos-mon.conf|: \package{bareos-traymonitor}
-               \item \verb|path:CONFIGDIR/tray-monitor.d/client/FileDaemon-local.conf|: \package{bareos-filedaemon}
-               \item \verb|path:CONFIGDIR/tray-monitor.d/storage/StorageDaemon-local.conf|: \package{bareos-storage}
-               \item \verb|path:CONFIGDIR/tray-monitor.d/director/Director-local.conf|: \file{bareos-director}
-           \end{itemize}
-            This way, the \package{bareos-traymonitor} will be configured automatically for the installed components.
-        \end{itemize}
-   \item Strict ACL handling
-        \begin{itemize}
-        \item Bareos Console \dt{Acl}s do no longer automatically matches substrings
-           (to avoid that e.g. \linkResourceDirectiveValue{Dir}{Console}{Pool ACL}{Full} also matches \pool{VirtualFull}).
-           To configure the ACL to work as before, \linkResourceDirectiveValue{Dir}{Console}{Pool ACL}{.*Full.*} must be set.
-           Unfortunately the \bareosWebui 15.2 \resourcename{Dir}{Profile}{webui} did use \linkResourceDirectiveValue{Dir}{Console}{Command ACL}{.bvfs*}, which is also no longer works as intended. Moreover, to use all of \bareosWebui 16.2 features, some additional commands must be permitted, so best use the new \resourcename{Dir}{Profile}{webui-admin}.
-        \end{itemize}
-   \item \bareosWebui
-        \begin{itemize}
-        \item Updating from Bareos 15.2: Adapt \resourcename{Dir}{Profile}{webui} (from bareos 15.2) to allow all commands of \resourcename{Dir}{Profile}{webui-admin} (\linkResourceDirective{Dir}{Console}{Command ACL}).
-        Alternately modify all \resourcetype{Dir}{Console}s currently using \resourcename{Dir}{Profile}{webui} to use \resourcename{Dir}{Profile}{webui-admin} instead.
-        \item While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package \package{bareos-webui} is not available for these platforms, as the required ZendFramework 2.4 do require PHP >= 5.3.17 (5.3.23). However, it is possible to use \package{bareos-webui} 15.2 against \package{bareos-director} 16.2. Also here, the profile must be adapted.
-        \end{itemize}
-   \end{itemize}
-   }
+================ ===============================================
+Code Release     2016-10-28
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`698`
+Url              `<http://download.bareos.org/bareos/release/16.2/>`_
+\                `<http://download.bareos.com/bareos/release/16.2/>`_
+================ ===============================================
 
-\releasenoteSection{Bareos-15.2}
+First stable release of the Bareos 16.2 branch.
 
-\releasenote{15.2.4}{
+-  Configuration
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2016-06-10\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{641} \\
-   Url               & \releaseUrlDownloadBareosCom{15.2} \\
-   \end{tabular}\end{verbatim}
+   -  Bareos packages contain the default configuration in :ref:`section-ConfigurationSubdirectories`. Please read :ref:`section-UpdateToConfigurationSubdirectories` before updating (make a copy of your configuration directories for your |bareosDir| and |bareosSd| before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
 
-   # converted Latex tabular
+   -  The default configuration does no longer name the :sup:`Dir`\ :strong:`Director` and :sup:`Sd`\ :strong:`Storage` resources after the systems hostname (:file:`$HOSTNAME-dir` resp. :file:`$HOSTNAME-sd`) but use **bareos-dir**:sup:`Dir`:sub:`Director`  resp. **bareos-sd**:sup:`Sd`:sub:`Storage`  as defaults. The prior solution had the disadvantage, that :file:`$HOSTNAME-dir` has also been set on |bareosFd| not running on the
+      |bareosDir|, which almost ever did require changing this setting. Also the new approach aligns better with :ref:`section-ConfigurationSubdirectories`.
+
+   -  Due to limitation of the build system, the default resource **Linux All**:sup:`Dir`:sub:`FileSet`  have been renamed to **LinuxAll**:sup:`Dir`:sub:`FileSet`  (no space between Linux and All).
+
+   -  The configuration of the **bareos-traymonitor** has also been split into resource files. Additional, these resource files are now packaged in other packages:
+
+      -  :file:`CONFIGDIR/tray-monitor.d/monitor/bareos-mon.conf`: **bareos-traymonitor**
+
+      -  :file:`CONFIGDIR/tray-monitor.d/client/FileDaemon-local.conf`: **bareos-filedaemon**
+
+      -  :file:`CONFIGDIR/tray-monitor.d/storage/StorageDaemon-local.conf`: **bareos-storage**
+
+      -  :file:`CONFIGDIR/tray-monitor.d/director/Director-local.conf`: :file:`bareos-director`
+
+      This way, the **bareos-traymonitor** will be configured automatically for the installed components.
+
+-  Strict ACL handling
+
+   -  Bareos Console :strong:`Acl`s do no longer automatically matches substrings (to avoid that e.g. **Pool ACL**:sup:`Dir`:sub:`Console`\ = **Full** also matches **VirtualFull**:sup:`Dir`:sub:`pool`\ ). To configure the ACL to work as before, **Pool ACL**:sup:`Dir`:sub:`Console`\ = **.*Full.*** must be set. Unfortunately the |bareosWebui| 15.2 **webui**:sup:`Dir`:sub:`Profile`  did use
+      **Command ACL**:sup:`Dir`:sub:`Console`\ = **.bvfs***, which is also no longer works as intended. Moreover, to use all of |bareosWebui| 16.2 features, some additional commands must be permitted, so best use the new **webui-admin**:sup:`Dir`:sub:`Profile` .
+
+-  
+
+   |bareosWebui|
+
+   -  Updating from Bareos 15.2: Adapt **webui**:sup:`Dir`:sub:`Profile`  (from bareos 15.2) to allow all commands of **webui-admin**:sup:`Dir`:sub:`Profile`  (**Command ACL**:sup:`Dir`:sub:`Console`\ ). Alternately modify all :sup:`Dir`\ :strong:`Console`s currently using **webui**:sup:`Dir`:sub:`Profile`  to use **webui-admin**:sup:`Dir`:sub:`Profile`  instead.
+
+   -  While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package **bareos-webui** is not available for these platforms, as the required ZendFramework 2.4 do require PHP >= 5.3.17 (5.3.23). However, it is possible to use **bareos-webui** 15.2 against **bareos-director** 16.2. Also here, the profile must be adapted.
+
+Bareos-15.2
+===========
+
+bareos-15.2.4
+-------------
+
+:index:`[TAG=bareos-15.2.4->Release Notes] <pair: bareos-15.2.4; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-06-10\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{641} \\
-   Url               & \releaseUrlDownloadBareosCom{15.2} \\
+   Release Ticket    & :issue:`641` \\
+   Url               & `<http://download.bareos.com/bareos/release/15.2/>`_ \\
    \end{tabular}
 
-   For upgrading from 14.2, please see release notes for 15.2.1.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-    \item Automatic mount of disks by SD
-    \item NDMP performance enhancements
-    \item Windows: sparse file restore
-    \item Director memory leak caused by frequent bconsole calls
-   \end{itemize}
-   }
+================ ===============================================
+Code Release     2016-06-10
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`641`
+Url              `<http://download.bareos.com/bareos/release/15.2/>`_
+================ ===============================================
 
-\releasenote{15.2.3}{
+For upgrading from 14.2, please see release notes for 15.2.1.
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2016-03-11\\
-   Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{625} \\
-   Url               & \releaseUrlDownloadBareosCom{15.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # converted Latex tabular
+-  Automatic mount of disks by SD
+
+-  NDMP performance enhancements
+
+-  Windows: sparse file restore
+
+-  Director memory leak caused by frequent bconsole calls
+
+bareos-15.2.3
+-------------
+
+:index:`[TAG=bareos-15.2.3->Release Notes] <pair: bareos-15.2.3; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-03-11\\
    Database Version  & 2004 (unchanged)\\
-   Release Ticket    & \ticket{625} \\
-   Url               & \releaseUrlDownloadBareosCom{15.2} \\
+   Release Ticket    & :issue:`625` \\
+   Url               & `<http://download.bareos.com/bareos/release/15.2/>`_ \\
    \end{tabular}
 
-   For upgrading from 14.2, please see releasenotes for 15.2.1.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   This release contains several bugfixes and enhancements. Excerpt:
-   \begin{itemize}
-    \item VMWare plugin can now restore to VMDK file 
-    \item Ceph support for SLES12 included
-    \item Multiple gfapi and ceph enhancements 
-    \item NDMP enhancements and bugfixes
-    \item Windows: multiple VSS Jobs can now run concurrently in one FD, installer fixes
-    \item bpipe: fix stderr/stdout problems
-    \item reload command enhancements (limitations eliminated)
-    \item label barcodes now can run without interaction 
-   \end{itemize}
-   }
+================ ===============================================
+Code Release     2016-03-11
+Database Version 2004 (unchanged)
+Release Ticket   :issue:`625`
+Url              `<http://download.bareos.com/bareos/release/15.2/>`_
+================ ===============================================
 
-\releasenote{15.2.2}{
+For upgrading from 14.2, please see releasenotes for 15.2.1.
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-11-19\\
-   Database Version  & 2004\\
-                     & Database update required (if coming from bareos-14.2). See the \nameref{bareos-update} section.\\
-   Release Ticket    & \ticket{554} \\
-   Url               & \releaseUrlDownloadBareosOrg{15.2} \\
-                     & \releaseUrlDownloadBareosCom{15.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes and enhancements. Excerpt:
 
-   # converted Latex tabular
+-  VMWare plugin can now restore to VMDK file
+
+-  Ceph support for SLES12 included
+
+-  Multiple gfapi and ceph enhancements
+
+-  NDMP enhancements and bugfixes
+
+-  Windows: multiple VSS Jobs can now run concurrently in one FD, installer fixes
+
+-  bpipe: fix stderr/stdout problems
+
+-  reload command enhancements (limitations eliminated)
+
+-  label barcodes now can run without interaction
+
+bareos-15.2.2
+-------------
+
+:index:`[TAG=bareos-15.2.2->Release Notes] <pair: bareos-15.2.2; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-11-19\\
    Database Version  & 2004\\
-                     & Database update required (if coming from bareos-14.2). See the \nameref{bareos-update} section.\\
-   Release Ticket    & \ticket{554} \\
-   Url               & \releaseUrlDownloadBareosOrg{15.2} \\
-                     & \releaseUrlDownloadBareosCom{15.2} \\
+                     & Database update required (if coming from bareos-14.2). See the :ref:`bareos-update` section.\\
+   Release Ticket    & :issue:`554` \\
+   Url               & `<http://download.bareos.org/bareos/release/15.2/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/15.2/>`_ \\
    \end{tabular}
 
-   First stable release of the Bareos 15.2 branch.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   When coming from bareos-14.2.x, the following things have changed (same as in bareos-15.2.1):
-   \begin{itemize}
-       \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \argument{yes} to \argument{no}.
-       \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
-       Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
-   \end{itemize}
+================ ============================================================================================================
+Code Release     2015-11-19
+Database Version 2004
+\                Database update required (if coming from bareos-14.2). See the :ref:`bareos-update` section.
+Release Ticket   :issue:`554`
+Url              `<http://download.bareos.org/bareos/release/15.2/>`_
+\                `<http://download.bareos.com/bareos/release/15.2/>`_
+================ ============================================================================================================
 
-   }
+First stable release of the Bareos 15.2 branch.
 
-\releasenoteUnstable{15.2.1}{
+When coming from bareos-14.2.x, the following things have changed (same as in bareos-15.2.1):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-09-16\\
-   Database Version  & 2004\\
-                     & Database update required, see the \nameref{bareos-update} section.\\
-   Release Ticket    & \ticket{501} \\
-   Url               & \releaseUrlDownloadBareosOrg{15.2} \\
-   \end{tabular}\end{verbatim}
+-  The default setting for the Bacula Compatbile mode in **Compatible**:sup:`Fd`:sub:`Client`\  and **Compatible**:sup:`Sd`:sub:`Storage`\  have been changed from :strong:`yes` to :strong:`no`.
 
-   # converted Latex tabular
+-  The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed. Before bareos-15.2, options have been configured as part of the **Archive Device**:sup:`Sd`:sub:`Device`\  directive, while now the Archive Device contains only information text and options are defined via the **Device Options**:sup:`Sd`:sub:`Device`\  directive. See examples in **Device Options**:sup:`Sd`:sub:`Device`\ .
+
+*bareos-15.2.1 (unstable)*
+--------------------------
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-09-16\\
    Database Version  & 2004\\
-                     & Database update required, see the \nameref{bareos-update} section.\\
-   Release Ticket    & \ticket{501} \\
-   Url               & \releaseUrlDownloadBareosOrg{15.2} \\
+                     & Database update required, see the :ref:`bareos-update` section.\\
+   Release Ticket    & :issue:`501` \\
+   Url               & `<http://download.bareos.org/bareos/release/15.2/>`_ \\
    \end{tabular}
 
-   Beta release.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   \begin{itemize}
-       \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \argument{yes} to \argument{no}.
-       \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
-       Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
-   % # Old syntax:
-   % #    Archive Device = /etc/ceph/ceph.conf:poolname
-   % #
-   % # New syntax:
-   % #    Archive Device = <text>
-   % #    Device Options = "conffile=/etc/ceph/ceph.conf,poolname=poolname"
-   \end{itemize}
+================ ===============================================================================
+Code Release     2015-09-16
+Database Version 2004
+\                Database update required, see the :ref:`bareos-update` section.
+Release Ticket   :issue:`501`
+Url              `<http://download.bareos.org/bareos/release/15.2/>`_
+================ ===============================================================================
 
-   }
+Beta release.
 
-\releasenoteSection{Bareos-14.2}
+-  The default setting for the Bacula Compatbile mode in **Compatible**:sup:`Fd`:sub:`Client`\  and **Compatible**:sup:`Sd`:sub:`Storage`\  have been changed from :strong:`yes` to :strong:`no`.
+
+-  The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed. Before bareos-15.2, options have been configured as part of the **Archive Device**:sup:`Sd`:sub:`Device`\  directive, while now the Archive Device contains only information text and options are defined via the **Device Options**:sup:`Sd`:sub:`Device`\  directive. See examples in **Device Options**:sup:`Sd`:sub:`Device`\ .
+
+Bareos-14.2
+===========
 
 It is known, that :command:`drop_database` scripts will not longer work on PostgreSQL < 8.4. However, as :command:`drop_database` scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
 
-\releasenote{14.2.7}{
+bareos-14.2.7
+-------------
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2016-07-11\\
-   Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{584} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
-   \end{tabular}\end{verbatim}
+:index:`[TAG=bareos-14.2.7->Release Notes] <pair: bareos-14.2.7; Release Notes>`
 
-   # converted Latex tabular
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2016-07-11\\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{584} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   Release Ticket    & :issue:`584` \\
+   Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes. Excerpt:
-   \begin{itemize}
-       \item bareos-dir
-       \begin{itemize}
-           \item Fixes pretty printing of Fileset options block \\
-               \ticket{591}: config pretty-printer does not print filesets correctly
-           \item run command: fixes changing the pool when changing the backup level in interactive mode \\
-               \ticket{633}: Interactive run doesn't update pool on level change
-           \item Ignore the Fileset option DriveType on non Windows systems \\
-               \ticket{644}: Setting DriveType causes empty backups on Linux
-           \item Suppress already queued jobs for disabled schedules \\
-               \ticket{659}: Suppress already queued jobs for disabled schedules
-       \end{itemize}
-       \item NDMP
-       \begin{itemize}
-           \item Fixes cancel of NDMP jobs\\
-               \ticket{604}: Cancel a NDMP Job causes the sd to crash
-       \end{itemize}
-       \item bpipe-fd plugin
-       \begin{itemize}
-           \item Only take stdout into account, ignore stderr (like earlier versions) \\
-               \ticket{632}: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
-       \end{itemize}
-       \item win32
-       \begin{itemize}
-           \item Fix symlink and junction support\\
-               \ticket{575}: charset problem in symlinks/junctions windows restore \\
-               \ticket{615}: symlinks/junctions wrong target path on restore (wide chars)
-           \item Fixes quoting for bmail.exe in bareos-dir.conf \\
-               \ticket{581}: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
-           \item Fix crash on restore of sparse files \\
-               \ticket{640}: File daemon crashed after restoring sparse file on windows
-       \end{itemize}
-       \item win32 mssql plugin
-       \begin{itemize}
-           \item Allow connecting to non default instance \\
-               \ticket{383}: mssqldvi problem with connection to mssql not default instance
-           \item Fix backup/restore of incremental backups \\
-               \ticket{588}: Incremental MSSQL backup fails when database name contains spaces
-       \end{itemize}
-   \end{itemize}
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{14.2.6}{
+================ ===============================================
+Code Release     2016-07-11
+Database Version 2003 (unchanged)
+Release Ticket   :issue:`584`
+Url              `<http://download.bareos.com/bareos/release/14.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-12-03\\
-   Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{474} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes. Excerpt:
 
-   # converted Latex tabular
+-  bareos-dir
+
+   -  | Fixes pretty printing of Fileset options block
+      | :issue:`591`: config pretty-printer does not print filesets correctly
+
+   -  | run command: fixes changing the pool when changing the backup level in interactive mode
+      | :issue:`633`: Interactive run doesn’t update pool on level change
+
+   -  | Ignore the Fileset option DriveType on non Windows systems
+      | :issue:`644`: Setting DriveType causes empty backups on Linux
+
+   -  | Suppress already queued jobs for disabled schedules
+      | :issue:`659`: Suppress already queued jobs for disabled schedules
+
+-  NDMP
+
+   -  | Fixes cancel of NDMP jobs
+      | :issue:`604`: Cancel a NDMP Job causes the sd to crash
+
+-  bpipe-fd plugin
+
+   -  | Only take stdout into account, ignore stderr (like earlier versions)
+      | :issue:`632`: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
+
+-  win32
+
+   -  | Fix symlink and junction support
+      | :issue:`575`: charset problem in symlinks/junctions windows restore
+      | :issue:`615`: symlinks/junctions wrong target path on restore (wide chars)
+
+   -  | Fixes quoting for bmail.exe in bareos-dir.conf
+      | :issue:`581`: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
+
+   -  | Fix crash on restore of sparse files
+      | :issue:`640`: File daemon crashed after restoring sparse file on windows
+
+-  win32 mssql plugin
+
+   -  | Allow connecting to non default instance
+      | :issue:`383`: mssqldvi problem with connection to mssql not default instance
+
+   -  | Fix backup/restore of incremental backups
+      | :issue:`588`: Incremental MSSQL backup fails when database name contains spaces
+
+bareos-14.2.6
+-------------
+
+:index:`[TAG=bareos-14.2.6->Release Notes] <pair: bareos-14.2.6; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-12-03\\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{474} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   Release Ticket    & :issue:`474` \\
+   Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{14.2.5}{
+================ ===============================================
+Code Release     2015-12-03
+Database Version 2003 (unchanged)
+Release Ticket   :issue:`474`
+Url              `<http://download.bareos.com/bareos/release/14.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-06-01\\
-   Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{447} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes.
 
-   # converted Latex tabular
+bareos-14.2.5
+-------------
+
+:index:`[TAG=bareos-14.2.5->Release Notes] <pair: bareos-14.2.5; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-06-01\\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{447} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   Release Ticket    & :issue:`447` \\
+   Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes and added the platforms \os{Debian}{8} and \os{Fedora}{21}.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{14.2.4}{
+================ ===============================================
+Code Release     2015-06-01
+Database Version 2003 (unchanged)
+Release Ticket   :issue:`447`
+Url              `<http://download.bareos.com/bareos/release/14.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-03-23 \\
-   Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{420} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes and added the platforms :strong:`Debian 8` and :strong:`Fedora 21`.
 
-   # converted Latex tabular
+bareos-14.2.4
+-------------
+
+:index:`[TAG=bareos-14.2.4->Release Notes] <pair: bareos-14.2.4; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-03-23 \\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{420} \\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   Release Ticket    & :issue:`420` \\
+   Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes, including one major bugfix (\ticket{437}), relevant for those of you using backup to disk with autolabeling enabled.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   It can lead to loss of a 64k block of data when all of this conditions apply:
-   \begin{itemize}
-    \item backups are written to disk (tape backups are not affected)
-    \item autolabelling is enabled
-    \item a backup spans over multiple volumes
-    \item the additional volumes are newly created and labeled during the backup
-   \end{itemize}
-   If existing volumes are used for backups spanning over multiple volumes, the problem does not occur.
+================ ===============================================
+Code Release     2015-03-23
+Database Version 2003 (unchanged)
+Release Ticket   :issue:`420`
+Url              `<http://download.bareos.com/bareos/release/14.2/>`_
+================ ===============================================
 
-   We recommend to update to the latest packages as soon as possible.
+This release contains several bugfixes, including one major bugfix (:issue:`437`), relevant for those of you using backup to disk with autolabeling enabled.
 
-   If an update is not possible immediately,
-   autolabeling should be disabled and volumes should be labelled manually
-   until the update can be installed. 
+It can lead to loss of a 64k block of data when all of this conditions apply:
 
-   If you are affected by the 64k bug, we recommend that you schedule a full backup after fixing the problem in order to get a
-   proper full backup of all files.
-   }
+-  backups are written to disk (tape backups are not affected)
 
-\releasenote{14.2.3}{
+-  autolabelling is enabled
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-02-02 \\
-   Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{393}\\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
-   \end{tabular}\end{verbatim}
+-  a backup spans over multiple volumes
 
-   # converted Latex tabular
+-  the additional volumes are newly created and labeled during the backup
+
+If existing volumes are used for backups spanning over multiple volumes, the problem does not occur.
+
+We recommend to update to the latest packages as soon as possible.
+
+If an update is not possible immediately, autolabeling should be disabled and volumes should be labelled manually until the update can be installed.
+
+If you are affected by the 64k bug, we recommend that you schedule a full backup after fixing the problem in order to get a proper full backup of all files.
+
+bareos-14.2.3
+-------------
+
+:index:`[TAG=bareos-14.2.3->Release Notes] <pair: bareos-14.2.3; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-02-02 \\
    Database Version  & 2003 (unchanged)\\
-   Release Ticket    & \ticket{393}\\
-   Url               & \releaseUrlDownloadBareosCom{14.2} \\
+   Release Ticket    & :issue:`393`\\
+   Url               & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{14.2.2}{
+================ ===============================================
+Code Release     2015-02-02
+Database Version 2003 (unchanged)
+Release Ticket   :issue:`393`
+Url              `<http://download.bareos.com/bareos/release/14.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2014-12-12 \\
-   Database Version  & 2003 (unchanged)\\
-                     & Database update required if updating from version < 14.2.\\
-                     & See the \nameref{bareos-update} section for details.\\
-   Url               & \releaseUrlDownloadBareosOrg{14.2} \\
-                     & \releaseUrlDownloadBareosCom{14.2} \\
-   \end{tabular}\end{verbatim}
+bareos-14.2.2
+-------------
 
-   # converted Latex tabular
+:index:`[TAG=bareos-14.2.2->Release Notes] <pair: bareos-14.2.2; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2014-12-12 \\
    Database Version  & 2003 (unchanged)\\
                      & Database update required if updating from version < 14.2.\\
-                     & See the \nameref{bareos-update} section for details.\\
-   Url               & \releaseUrlDownloadBareosOrg{14.2} \\
-                     & \releaseUrlDownloadBareosCom{14.2} \\
+                     & See the :ref:`bareos-update` section for details.\\
+   Url               & `<http://download.bareos.org/bareos/release/14.2/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   First stable release of the Bareos 14.2 branch.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenoteUnstable{14.2.1}{
+================ =================================================================
+Code Release     2014-12-12
+Database Version 2003 (unchanged)
+\                Database update required if updating from version < 14.2.
+\                See the :ref:`bareos-update` section for details.
+Url              `<http://download.bareos.org/bareos/release/14.2/>`_
+\                `<http://download.bareos.com/bareos/release/14.2/>`_
+================ =================================================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release & 2014-09-22 \\
-   Database Version  & 2003\\
-                     & Database update required, see the \nameref{bareos-update} section.\\
-   Url               & \releaseUrlDownloadBareosOrg{14.2} \\
-   \end{tabular}\end{verbatim}
+First stable release of the Bareos 14.2 branch.
 
-   # converted Latex tabular
+*bareos-14.2.1 (unstable)*
+--------------------------
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release & 2014-09-22 \\
    Database Version  & 2003\\
-                     & Database update required, see the \nameref{bareos-update} section.\\
-   Url               & \releaseUrlDownloadBareosOrg{14.2} \\
+                     & Database update required, see the :ref:`bareos-update` section.\\
+   Url               & `<http://download.bareos.org/bareos/release/14.2/>`_ \\
    \end{tabular}
 
-   Beta release.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenoteSection{Bareos-13.2}
+================ ===============================================================================
+Code Release     2014-09-22
+Database Version 2003
+\                Database update required, see the :ref:`bareos-update` section.
+Url              `<http://download.bareos.org/bareos/release/14.2/>`_
+================ ===============================================================================
 
-\releasenote{13.2.5}{
+Beta release.
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-12-03 \\
-   Database Version  & 2002 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{13.2} \\
-   \end{tabular}\end{verbatim}
+Bareos-13.2
+===========
 
-   # converted Latex tabular
+bareos-13.2.5
+-------------
+
+:index:`[TAG=bareos-13.2.5->Release Notes] <pair: bareos-13.2.5; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-12-03 \\
    Database Version  & 2002 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{13.2} \\
+   Url               & `<http://download.bareos.com/bareos/release/13.2/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{13.2.4}{
+================ ===============================================
+Code Release     2015-12-03
+Database Version 2002 (unchanged)
+Url              `<http://download.bareos.com/bareos/release/13.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2014-11-05 \\
-   Database Version  & 2002 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{13.2} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes.
 
-   # converted Latex tabular
+bareos-13.2.4
+-------------
+
+:index:`[TAG=bareos-13.2.4->Release Notes] <pair: bareos-13.2.4; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2014-11-05 \\
    Database Version  & 2002 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{13.2} \\
+   Url               & `<http://download.bareos.com/bareos/release/13.2/>`_ \\
    \end{tabular}
-   }
 
-\releasenote{13.2.3}{
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2014-03-11 \\
-   Database Version  & 2002\\
-                     & Database update required, see the \nameref{bareos-update} section.\\
-   Url               & \releaseUrlDownloadBareosCom{13.2} \\
-   \end{tabular}\end{verbatim}
+================ ===============================================
+Code Release     2014-11-05
+Database Version 2002 (unchanged)
+Url              `<http://download.bareos.com/bareos/release/13.2/>`_
+================ ===============================================
 
-   # converted Latex tabular
+bareos-13.2.3
+-------------
+
+:index:`[TAG=bareos-13.2.3->Release Notes] <pair: bareos-13.2.3; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2014-03-11 \\
    Database Version  & 2002\\
-                     & Database update required, see the \nameref{bareos-update} section.\\
-   Url               & \releaseUrlDownloadBareosCom{13.2} \\
+                     & Database update required, see the :ref:`bareos-update` section.\\
+   Url               & `<http://download.bareos.com/bareos/release/13.2/>`_ \\
    \end{tabular}
 
-   It is known, that \command{drop_database} scripts will not longer work on PostgreSQL < 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{13.2.2}{
+================ ===============================================================================
+Code Release     2014-03-11
+Database Version 2002
+\                Database update required, see the :ref:`bareos-update` section.
+Url              `<http://download.bareos.com/bareos/release/13.2/>`_
+================ ===============================================================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-11-19 \\
-   Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{13.2} \\
-                     & \releaseUrlDownloadBareosCom{13.2} \\
-   \end{tabular}\end{verbatim}
+It is known, that :command:`drop_database` scripts will not longer work on PostgreSQL < 8.4. However, as :command:`drop_database` scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL >= 8.4. We plan to ensure this in future version of Bareos.
 
-   # converted Latex tabular
+bareos-13.2.2
+-------------
+
+:index:`[TAG=bareos-13.2.2->Release Notes] <pair: bareos-13.2.2; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-11-19 \\
    Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{13.2} \\
-                     & \releaseUrlDownloadBareosCom{13.2} \\
+   Url               & `<http://download.bareos.org/bareos/release/13.2/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/13.2/>`_ \\
    \end{tabular}
-   }
 
-\releasenoteSection{Bareos-12.4}
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{12.4.8}{
+================ ===============================================
+Code Release     2013-11-19
+Database Version 2001 (unchanged)
+Url              `<http://download.bareos.org/bareos/release/13.2/>`_
+\                `<http://download.bareos.com/bareos/release/13.2/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Bareos-12.4
+===========
+
+bareos-12.4.8
+-------------
+
+:index:`[TAG=bareos-12.4.8->Release Notes] <pair: bareos-12.4.8; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
+   \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2015-11-18 \\
    Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{12.4} \\
-   \end{tabular}\end{verbatim}
-
-   # converted Latex tabular
-   \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2015-11-18 \\
-   Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{12.4} \\
+   Url               & `<http://download.bareos.com/bareos/release/12.4/>`_ \\
    \end{tabular}
 
-   This release contains several bugfixes.
-   }
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-\releasenote{12.4.6}{
+================ ===============================================
+Code Release     2015-11-18
+Database Version 2001 (unchanged)
+Url              `<http://download.bareos.com/bareos/release/12.4/>`_
+================ ===============================================
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-11-19 \\
-   Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
-                     & \releaseUrlDownloadBareosCom{12.4} \\
-   \end{tabular}\end{verbatim}
+This release contains several bugfixes.
 
-   # converted Latex tabular
+bareos-12.4.6
+-------------
+
+:index:`[TAG=bareos-12.4.6->Release Notes] <pair: bareos-12.4.6; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-11-19 \\
    Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
-                     & \releaseUrlDownloadBareosCom{12.4} \\
+   Url               & `<http://download.bareos.org/bareos/release/12.4/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/12.4/>`_ \\
    \end{tabular}
-   }
 
-\releasenote{12.4.5}{
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-09-10 \\
-   Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{12.4} \\
-   \end{tabular}\end{verbatim}
+================ ===============================================
+Code Release     2013-11-19
+Database Version 2001 (unchanged)
+Url              `<http://download.bareos.org/bareos/release/12.4/>`_
+\                `<http://download.bareos.com/bareos/release/12.4/>`_
+================ ===============================================
 
-   # converted Latex tabular
+bareos-12.4.5
+-------------
+
+:index:`[TAG=bareos-12.4.5->Release Notes] <pair: bareos-12.4.5; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-09-10 \\
    Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosCom{12.4} \\
+   Url               & `<http://download.bareos.com/bareos/release/12.4/>`_ \\
    \end{tabular}
-   }
 
-\releasenote{12.4.4}{
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-06-17 \\
-   Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
-                     & \releaseUrlDownloadBareosCom{12.4} \\
-   \end{tabular}\end{verbatim}
+================ ===============================================
+Code Release     2013-09-10
+Database Version 2001 (unchanged)
+Url              `<http://download.bareos.com/bareos/release/12.4/>`_
+================ ===============================================
 
-   # converted Latex tabular
+bareos-12.4.4
+-------------
+
+:index:`[TAG=bareos-12.4.4->Release Notes] <pair: bareos-12.4.4; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-06-17 \\
    Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
-                     & \releaseUrlDownloadBareosCom{12.4} \\
+   Url               & `<http://download.bareos.org/bareos/release/12.4/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/12.4/>`_ \\
    \end{tabular}
-   }
 
-\releasenote{12.4.3}{
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-04-15 \\
-   Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
-                     & \releaseUrlDownloadBareosCom{12.4} \\
-   \end{tabular}\end{verbatim}
+================ ===============================================
+Code Release     2013-06-17
+Database Version 2001 (unchanged)
+Url              `<http://download.bareos.org/bareos/release/12.4/>`_
+\                `<http://download.bareos.com/bareos/release/12.4/>`_
+================ ===============================================
 
-   # converted Latex tabular
+bareos-12.4.3
+-------------
+
+:index:`[TAG=bareos-12.4.3->Release Notes] <pair: bareos-12.4.3; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-04-15 \\
    Database Version  & 2001 (unchanged)\\
-   Url               & \releaseUrlDownloadBareosOrg{12.4} \\
-                     & \releaseUrlDownloadBareosCom{12.4} \\
+   Url               & `<http://download.bareos.org/bareos/release/12.4/>`_ \\
+                     & `<http://download.bareos.com/bareos/release/12.4/>`_ \\
    \end{tabular}
-   }
 
-\releasenote{12.4.2}{
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-03-03 \\
-   Database Version  & 2001 (unchanged)\\
-   \end{tabular}\end{verbatim}
+================ ===============================================
+Code Release     2013-04-15
+Database Version 2001 (unchanged)
+Url              `<http://download.bareos.org/bareos/release/12.4/>`_
+\                `<http://download.bareos.com/bareos/release/12.4/>`_
+================ ===============================================
 
-   # converted Latex tabular
+bareos-12.4.2
+-------------
+
+:index:`[TAG=bareos-12.4.2->Release Notes] <pair: bareos-12.4.2; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-03-03 \\
    Database Version  & 2001 (unchanged)\\
    \end{tabular}
-   }
 
-\releasenote{12.4.1}{
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   # original Latex tabular
-   \begin{verbatim}\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-   Code Release      & 2013-02-06 \\
-   Database Version  & 2001 (initial)\\
-   \end{tabular}\end{verbatim}
+================ ================
+Code Release     2013-03-03
+Database Version 2001 (unchanged)
+================ ================
 
-   # converted Latex tabular
+bareos-12.4.1
+-------------
+
+:index:`[TAG=bareos-12.4.1->Release Notes] <pair: bareos-12.4.1; Release Notes>`
+
+# Tabular in LaTex format (original)
+
+::
+
    \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
    Code Release      & 2013-02-06 \\
    Database Version  & 2001 (initial)\\
    \end{tabular}
 
-   This have been the initial release of Bareos.
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
-   Information about migrating from Bacula to Bareos are available at \elink{Howto upgrade from Bacula to Bareos}{http://www.bareos.org/en/HOWTO/articles/upgrade_bacula_bareos.html} and in section \nameref{compat-bacula}.
-   }
+================ ==============
+Code Release     2013-02-06
+Database Version 2001 (initial)
+================ ==============
+
+This have been the initial release of Bareos.
+
+Information about migrating from Bacula to Bareos are available at `Howto upgrade from Bacula to Bareos <http://www.bareos.org/en/HOWTO/articles/upgrade_bacula_bareos.html>`_ and in section :ref:`compat-bacula`.
 

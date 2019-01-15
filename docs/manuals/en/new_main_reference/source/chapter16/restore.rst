@@ -483,7 +483,7 @@ You can use several expressions separated by a commas.
 Examples
 ^^^^^^^^
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -503,7 +503,7 @@ Examples
 
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ==================== ===================== ================================= ==============================
 Orignal filename     New filename          RegexWhere                        Comments

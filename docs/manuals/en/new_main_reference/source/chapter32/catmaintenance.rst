@@ -71,7 +71,7 @@ Manual Configuration
 
 Bareos comes with a number of scripts to prepare and update the databases. All these scripts are located in the Bareos script directory, normally at :file:`/usr/lib/bareos/scripts/`.
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -95,7 +95,7 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
    \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================================= ============== ===================================================
 **Script**                                    **Stage**      **Description**
@@ -127,7 +127,7 @@ The database preparation scripts have following configuration options:
    % \hline
    % \end{tabular}\end{verbatim}
 
-   # converted Latex tabular
+   # Tabular converted from LaTeX to RST (or empty, in case of problems):
    \begin{tabular}{| l | l | l |}
    % \hline
    % :strong:`Parameter`      & :strong:`Values` & :strong:`Default` \\

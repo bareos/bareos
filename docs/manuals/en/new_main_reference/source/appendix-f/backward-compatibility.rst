@@ -48,7 +48,7 @@ A |bareosDir| can only talk to Bacula file daemons of version 2.0 or higher. Thr
 
 These combinations of Bareos and Bacula are know to work together:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -67,7 +67,7 @@ These combinations of Bareos and Bacula are know to work together:
      \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============ ================== =========================== ===========
 **Director** **Storage Daemon** **File Daemon**             **Remarks**

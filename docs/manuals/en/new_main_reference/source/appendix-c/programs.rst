@@ -501,7 +501,7 @@ where device-name is the Archive Device (raw device name or full filename) of th
 
 .. warning::
    On Windows systems, if you specify a prefix of say d:/tmp, any file that
-   would have been restored to \verb|path:C:/My Documents| will be restored to \verb|path:D:/tmp/My Documents|.
+   would have been restored to :file:`C:/My Documents` will be restored to :file:`D:/tmp/My Documents`.
    That is, the original drive specification will be
    stripped. If no prefix is specified, the file will be restored to the original
    drive.
@@ -558,7 +558,7 @@ Extracting Under Windows
 .. warning::
    If you use :command:`bextract` under Windows, the ordering of the parameters is essential.
 
-To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\ProgrammData\Bareos\bareos-sd.conf`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
+To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\\ProgrammData\\Bareos\\bareos-sd.conf`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
 
 After installing, :command:`bextract` can be called via command line:
 

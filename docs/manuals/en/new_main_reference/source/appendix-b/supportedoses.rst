@@ -5,7 +5,7 @@ The Bareos project provides and supports packages that have been released at htt
 
 However, the following tabular gives an overview, what components are expected on which platforms to run:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -87,7 +87,7 @@ However, the following tabular gives an overview, what components are expected o
      \hline
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
 **Operating Systems**                                                                        **Version** **Client Daemon**                                                             **Director Daemon**                                                           **Storage Daemon**
@@ -123,7 +123,7 @@ Solaris :index:`[TAG=Platform->Solaris] <pair: Platform; Solaris>`              
 True64                                                                                                   \*                                                                                                                                                           
 ============================================================================================ =========== ============================================================================= ============================================================================= =============================================================================
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -135,7 +135,7 @@ True64                                                                          
    :strong:`*` & has been reported to work by the community\\
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============ =============================================================================================================================
 **vVV.V**    starting with Bareos version VV.V, this platform is official supported by the Bareos.org project

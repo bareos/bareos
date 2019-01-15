@@ -98,7 +98,7 @@ When subdirectory configuration is used, all files matching :file:`PATH/COMPONEN
 Relation between Bareos components and configuration
 ''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -138,7 +138,7 @@ Relation between Bareos components and configuration
 
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ==================================================== ========================================= ==============================================
 Bareos component                                                                              
@@ -259,7 +259,7 @@ Updates from Bareos < 16.2.4
 
                   .. warning::
                      Problems can occur if you have implemented an own wildcard mechanism to load your configuration
-                     from the same subdirectories as used by the new packages (\verb|path:CONFIGDIR/COMPONENT.d/*/*.conf|).
+                     from the same subdirectories as used by the new packages (:file:`CONFIGDIR/COMPONENT.d/*/*.conf`).
                      In this case, newly installed configuration resource files can alter
                      your current configuration by adding resources.
 
@@ -272,7 +272,7 @@ Updates from Bareos < 16.2.4
    -  For migrating the |bareosDir| configuration, the script `bareos-migrate-config.sh <https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh>`_ exists. Being called, it connects via :command:`bconsole` to a running |bareosDir| and creates subdirectories with the resource configuration files.
 
       .. code-block:: sh
-         :caption: `bareos-migrate-config.sh <https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh>`_
+         :caption: bareos-migrate-config.sh
 
          # prepare temporary directory
          mkdir /tmp/baroes-dir.d
@@ -844,7 +844,7 @@ Variable Expansion on Volume Labels
 
 When labeling a new volume (see **Label Format**:sup:`Dir`:sub:`Pool`\ ), following Bareos internal variables can be used:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -871,7 +871,7 @@ When labeling a new volume (see **Label Format**:sup:`Dir`:sub:`Pool`\ ), follow
    :strong:`\$MediaType` &  Type of the media
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ===================== ========================================
 **Internal Variable** **Description**
@@ -905,7 +905,7 @@ Variable Expansion in Autochanger Commands
 
 At the configuration of autochanger commands the following variables can be used:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -922,7 +922,7 @@ At the configuration of autochanger commands the following variables can be used
    ``\%v`` & Volume Name
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================ ===================
 **Variable**                 **Description**
@@ -942,7 +942,7 @@ Variable Expansion in Mount Commands
 
 At the configuration of mount commands the following variables can be used:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -955,7 +955,7 @@ At the configuration of mount commands the following variables can be used:
    ``\%v`` & Last Part Name
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================ ===================
 **Variable**                 **Description**
@@ -976,7 +976,7 @@ Variable Expansion in Mail and Operator Commands
 
 At the configuration of mail and operator commands the following variables can be used:
 
-# original Latex tabular
+# Tabular in LaTex format (original)
 
 ::
 
@@ -999,7 +999,7 @@ At the configuration of mail and operator commands the following variables can b
    ``\%F`` & Job Files
    \end{tabular}
 
-# converted Latex tabular
+# Tabular converted from LaTeX to RST (or empty, in case of problems):
 
 ============================ ==================================
 **Variable**                 **Description**
