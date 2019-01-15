@@ -140,7 +140,7 @@ int read_dev_volume_label(DCR *dcr)
    empty_block(dcr->block);
 
    Dmsg0(130, "Big if statement in read_volume_label\n");
-   if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+   if (DCR::ReadStatus::Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
       Mmsg(jcr->errmsg, _("Requested Volume \"%s\" on %s is not a Bareos "
            "labeled Volume, because: ERR=%s"), NPRT(VolName),
            dev->print_name(), dev->print_errmsg());

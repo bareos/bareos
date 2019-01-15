@@ -191,8 +191,11 @@ bool read_next_block_from_device(DCR *dcr,
    DEV_RECORD *trec;
 
    while (1) {
-      if (!dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
-         if (dcr->dev->at_eot()) {
+      switch(dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
+         case DCR::ReadStatus::Ok:
+            // no handling required if read was successful
+            break;
+         case DCR::ReadStatus::EndOfTape:
             Jmsg(jcr, M_INFO, 0, _("End of Volume at file %u on device %s, Volume \"%s\"\n"),
                  dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
 
@@ -239,26 +242,27 @@ bool read_next_block_from_device(DCR *dcr,
              * After reading label, we must read first data block
              */
             continue;
-         } else if (dcr->dev->at_eof()) {
+         case DCR::ReadStatus::EndOfFile:
             Dmsg3(200, "End of file %u on device %s, Volume \"%s\"\n",
                   dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
             continue;
-         } else if (dcr->dev->is_short_block()) {
-            Jmsg1(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
-            continue;
-         } else {
-            /*
-             * I/O error or strange end of tape
-             */
-            display_tape_error_status(jcr, dcr->dev);
-            if (forge_on || jcr->ignore_label_errors) {
-               dcr->dev->fsr(1);           /* try skipping bad record */
-               Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
+         default:
+            if (dcr->dev->is_short_block()) {
+               Jmsg1(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
                continue;
+            } else {
+               /*
+                * I/O error or strange end of tape
+                */
+               display_tape_error_status(jcr, dcr->dev);
+               if (forge_on || jcr->ignore_label_errors) {
+                  dcr->dev->fsr(1);           /* try skipping bad record */
+                  Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
+                  continue;
+               }
+               *status = false;
+               return false;
             }
-            *status = false;
-            return false;
-         }
       }
 
       Dmsg2(dbglvl, "Read new block at pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);

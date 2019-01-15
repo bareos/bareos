@@ -291,13 +291,15 @@ static void do_blocks(char *infname)
    DEV_BLOCK *block = dcr->block;
    char buf1[100], buf2[100];
    for ( ;; ) {
-      if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
-         Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
-         if (dev->at_eot()) {
+      switch(dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
+         case DCR::ReadStatus::Ok:
+            // no special handling required
+            break;
+         case DCR::ReadStatus::EndOfTape:
             if (!mount_next_read_volume(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
                   dev->file, dev->print_name(), dcr->VolumeName);
-               break;
+               return;
             }
             /* Read and discard Volume label */
             DEV_RECORD *record;
@@ -307,19 +309,22 @@ static void do_blocks(char *infname)
             get_session_record(dev, record, &sessrec);
             free_record(record);
             Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
-         } else if (dev->at_eof()) {
+            break;
+         case DCR::ReadStatus::EndOfFile:
             Jmsg(jcr, M_INFO, 0, _("End of file %u on device %s, Volume \"%s\"\n"),
                dev->file, dev->print_name(), dcr->VolumeName);
             Dmsg0(20, "read_record got eof. try again\n");
             continue;
-         } else if (dev->is_short_block()) {
-            Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
-            continue;
-         } else {
-            /* I/O error */
-            display_tape_error_status(jcr, dev);
-            break;
-         }
+         default:
+            Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
+            if (dev->is_short_block()) {
+               Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
+               continue;
+            } else {
+               /* I/O error */
+               display_tape_error_status(jcr, dev);
+               return;
+            }
       }
       if (!match_bsr_block(bsr, block)) {
          Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
