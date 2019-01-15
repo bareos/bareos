@@ -863,7 +863,7 @@ static bool re_read_block_test()
       goto bail_out;
    }
    Pmsg0(0, _("Backspace record OK.\n"));
-   if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+   if (Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
       berrno be;
       Pmsg1(0, _("Read block failed! ERR=%s\n"), be.bstrerror(dev->dev_errno));
       goto bail_out;
@@ -1236,7 +1236,7 @@ static bool write_read_test()
     */
    for (uint32_t i = 1; i <= 2 * num_recs; i++) {
 read_again:
-      if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+      if (Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
          berrno be;
          if (dev->at_eof()) {
             Pmsg0(-1, _("Got EOF on tape.\n"));
@@ -1354,7 +1354,7 @@ static bool position_test()
          goto bail_out;
       }
 read_again:
-      if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+      if (Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
          berrno be;
          if (dev->at_eof()) {
             Pmsg0(-1, _("Got EOF on tape.\n"));
@@ -2066,9 +2066,11 @@ static void scan_blocks()
    dev->update_pos(dcr);
    tot_files = dev->file;
    for (;;) {
-      if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
-         Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
-         if (dev->at_eot()) {
+      switch(dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
+         case Ok:
+            // no special handling required
+            break;
+         case EndOfTape:
             if (blocks > 0) {
                if (blocks==1) {
                   printf(_("1 block of %d bytes in file %d\n"), block_size, dev->file);
@@ -2079,8 +2081,7 @@ static void scan_blocks()
                blocks = 0;
             }
             goto bail_out;
-         }
-         if (dev->at_eof()) {
+         case EndOfFile:
             if (blocks > 0) {
                if (blocks==1) {
                   printf(_("1 block of %d bytes in file %d\n"), block_size, dev->file);
@@ -2092,22 +2093,23 @@ static void scan_blocks()
             }
             printf(_("End of File mark.\n"));
             continue;
-         }
-         if (bit_is_set(ST_SHORT, dev->state)) {
-            if (blocks > 0) {
-               if (blocks==1) {
-                  printf(_("1 block of %d bytes in file %d\n"), block_size, dev->file);
+         default:
+            Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
+            if (bit_is_set(ST_SHORT, dev->state)) {
+               if (blocks > 0) {
+                  if (blocks==1) {
+                     printf(_("1 block of %d bytes in file %d\n"), block_size, dev->file);
+                  }
+                  else {
+                     printf(_("%d blocks of %d bytes in file %d\n"), blocks, block_size, dev->file);
+                  }
+                  blocks = 0;
                }
-               else {
-                  printf(_("%d blocks of %d bytes in file %d\n"), blocks, block_size, dev->file);
-               }
-               blocks = 0;
+               printf(_("Short block read.\n"));
+               continue;
             }
-            printf(_("Short block read.\n"));
-            continue;
-         }
-         printf(_("Error reading block. ERR=%s\n"), dev->bstrerror());
-         goto bail_out;
+            printf(_("Error reading block. ERR=%s\n"), dev->bstrerror());
+            goto bail_out;
       }
       if (block->block_len != block_size) {
          if (blocks > 0) {
@@ -2600,7 +2602,7 @@ static bool do_unfill()
       goto bail_out;
    }
    Pmsg1(-1, _("Reading block %u.\n"), last_block_num);
-   if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
+   if (Ok != dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
       Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2652,7 +2654,7 @@ static bool do_unfill()
       goto bail_out;
    }
    Pmsg1(-1, _("Reading block %d.\n"), dev->block_num);
-   if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
+   if (Ok != dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
       Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2668,7 +2670,7 @@ static bool do_unfill()
       goto bail_out;
    }
    Pmsg1(-1, _("Reading block %d.\n"), dev->block_num);
-   if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
+   if (Ok != dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
       Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }

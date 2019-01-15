@@ -772,7 +772,7 @@ static void reread_last_block(DCR *dcr)
           * Note, this can destroy dev->errmsg
           */
          dcr->block = lblock;
-         if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+         if (Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
             Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"), dev->errmsg);
          } else {
             /*
@@ -923,16 +923,16 @@ static bool do_new_file_bookkeeping(DCR *dcr)
 /**
  * Read block with locking
  */
-bool DCR::read_block_from_device(bool check_block_numbers)
+ReadStatus DCR::read_block_from_device(bool check_block_numbers)
 {
-   bool ok;
+   ReadStatus status;
 
    Dmsg0(250, "Enter read_block_from_device\n");
    dev->rLock();
-   ok = read_block_from_dev(check_block_numbers);
+   status = read_block_from_dev(check_block_numbers);
    dev->Unlock();
    Dmsg0(250, "Leave read_block_from_device\n");
-   return ok;
+   return status;
 }
 
 /**
@@ -940,7 +940,7 @@ bool DCR::read_block_from_device(bool check_block_numbers)
  *  the block header.  For a file, the block may be partially
  *  or completely in the current buffer.
  */
-bool DCR::read_block_from_dev(bool check_block_numbers)
+ReadStatus DCR::read_block_from_dev(bool check_block_numbers)
 {
    ssize_t status;
    int looping;
@@ -950,13 +950,13 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
    if (job_canceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
       block->read_len = 0;
-      return false;
+      return Error;
    }
 
    if (dev->at_eot()) {
       Mmsg(dev->errmsg, _("Attempt to read past end of tape or file.\n"));
       block->read_len = 0;
-      return false;
+      return EndOfTape;
    }
    looping = 0;
    Dmsg1(250, "Full read in read_block_from_device() len=%d\n",
@@ -967,7 +967,7 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
          dev->fd(), dev->file, dev->block_num, dev->print_name());
       Jmsg(dcr->jcr, M_WARNING, 0, "%s", dev->errmsg);
       block->read_len = 0;
-      return false;
+      return Error;
     }
 
 reread:
@@ -977,7 +977,7 @@ reread:
          dev->print_name());
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       block->read_len = 0;
-      return false;
+      return Error;
    }
 
    retry = 0;
@@ -1008,10 +1008,11 @@ reread:
       generate_plugin_event(jcr, bsdEventReadError, dcr);
 
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
-      if (dev->at_eof()) {        /* EOF just seen? */
-         dev->set_eot();          /* yes, error => EOT */
+      if (device->eof_on_error_is_eot && dev->at_eof()) { /* EOF just seen? */
+         dev->set_eot();                                  /* yes, error => EOT */
+         return EndOfTape;
       }
-      return false;
+      return Error;
    }
 
    Dmsg3(250, "Read device got %d bytes at %u:%u\n", status,
@@ -1024,10 +1025,10 @@ reread:
          dev->file, dev->block_num, dev->print_name());
       if (dev->at_eof()) {       /* EOF already read? */
          dev->set_eot();         /* yes, 2 EOFs => EOT */
-         return 0;
+         return EndOfTape;
       }
       dev->set_ateof();
-      return false;             /* return eof */
+      return EndOfFile;
    }
 
    /*
@@ -1051,7 +1052,7 @@ reread:
       dev->set_short_block();
       block->read_len = block->binbuf = 0;
       Dmsg2(200, "set block=%p binbuf=%d\n", block, block->binbuf);
-      return false;             /* return error */
+      return Error;
    }
 
 // BlockNumber = block->BlockNumber + 1;
@@ -1061,7 +1062,7 @@ reread:
          dev->file_size += block->read_len;
          goto reread;
       }
-      return false;
+      return Error;
    }
 
    /*
@@ -1084,7 +1085,7 @@ reread:
             Mmsg(dev->errmsg, "%s", dev->bstrerror());
             Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
             block->read_len = 0;
-            return false;
+            return Error;
          }
       } else {
          Dmsg0(250, "Seek to beginning of block for reread.\n");
@@ -1115,7 +1116,7 @@ reread:
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       dev->set_short_block();
       block->read_len = block->binbuf = 0;
-      return false;             /* return error */
+      return Error;
    }
 
    dev->clear_short_block();
@@ -1177,5 +1178,5 @@ reread:
    Dmsg2(250, "Exit read_block read_len=%d block_len=%d\n",
       block->read_len, block->block_len);
    block->block_read = true;
-   return true;
+   return Ok;
 }

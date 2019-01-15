@@ -75,6 +75,16 @@ enum {
 };
 
 /**
+ * Return values for read_block_from_device()
+ */
+enum ReadStatus {
+   Error = 0,
+   Ok,
+   EndOfFile,
+   EndOfTape,
+};
+
+/**
  * Arguments to open_dev()
  */
 enum {
@@ -753,8 +763,8 @@ public:
     */
    bool write_block_to_device();
    bool write_block_to_dev();
-   bool read_block_from_device(bool check_block_numbers);
-   bool read_block_from_dev(bool check_block_numbers);
+   ReadStatus read_block_from_device(bool check_block_numbers);
+   ReadStatus read_block_from_dev(bool check_block_numbers);
 
    /*
     * Methods in label.c
