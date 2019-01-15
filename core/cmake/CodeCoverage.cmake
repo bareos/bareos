@@ -72,7 +72,7 @@ include(CMakeParseArguments)
 find_program( GCOV_PATH gcov )
 find_program( LCOV_PATH  NAMES lcov lcov.bat lcov.exe lcov.perl)
 find_program( GENHTML_PATH NAMES genhtml genhtml.perl genhtml.bat )
-find_program( GCOVR_PATH gcovr PATHS ${CMAKE_SOURCE_DIR}/scripts/test)
+find_program( GCOVR_PATH gcovr PATHS ${PROJECT_SOURCE_DIR}/scripts/test)
 find_program( SIMPLE_PYTHON_EXECUTABLE python )
 
 if(NOT GCOV_PATH)
@@ -216,7 +216,7 @@ function(SETUP_TARGET_FOR_COVERAGE_COBERTURA)
         ${Coverage_EXECUTABLE}
 
         # Running gcovr
-        COMMAND ${GCOVR_PATH} -x -r ${CMAKE_SOURCE_DIR} ${COBERTURA_EXCLUDES}
+        COMMAND ${GCOVR_PATH} -x -r ${PROJECT_SOURCE_DIR} ${COBERTURA_EXCLUDES}
             -o ${Coverage_NAME}.xml
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         DEPENDS ${Coverage_DEPENDENCIES}

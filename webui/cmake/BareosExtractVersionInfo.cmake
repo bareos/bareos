@@ -1,4 +1,4 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
@@ -19,7 +19,7 @@
 
 
 # extract version number from version.h
-file(STRINGS ${CMAKE_SOURCE_DIR}/../core/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
+file(STRINGS ${PROJECT_SOURCE_DIR}/../core/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
 string(REGEX MATCH [0-9.]+ VERSION ${VERSION_INFO})
 string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_INFO})
 string(REGEX MATCH \".*\" FULLVERSION ${VERSION_INFO})

@@ -1,4 +1,4 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
 #

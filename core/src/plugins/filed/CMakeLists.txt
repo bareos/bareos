@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,20 +19,20 @@
 
 IF(HAVE_WIN32)
    include_directories(
-      ${CMAKE_SOURCE_DIR}/src/win32
-      ${CMAKE_SOURCE_DIR}/src/win32/include
-      ${CMAKE_SOURCE_DIR}/src/win32/filed
-      ${CMAKE_SOURCE_DIR}/src/win32/plugins/filed
-      ${CMAKE_SOURCE_DIR}/src/win32/compat/include
-      ${CMAKE_SOURCE_DIR}/src/win32/vdi/include
-      ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
-      ${CMAKE_SOURCE_DIR}/src/include
-      ${CMAKE_SOURCE_DIR}/src
-      ${CMAKE_SOURCE_DIR}/src/filed
-      ${CMAKE_SOURCE_DIR}/src/plugins/filed
+      ${PROJECT_SOURCE_DIR}/src/win32
+      ${PROJECT_SOURCE_DIR}/src/win32/include
+      ${PROJECT_SOURCE_DIR}/src/win32/filed
+      ${PROJECT_SOURCE_DIR}/src/win32/plugins/filed
+      ${PROJECT_SOURCE_DIR}/src/win32/compat/include
+      ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
+      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
+      ${PROJECT_SOURCE_DIR}/src/include
+      ${PROJECT_SOURCE_DIR}/src
+      ${PROJECT_SOURCE_DIR}/src/filed
+      ${PROJECT_SOURCE_DIR}/src/plugins/filed
       )
 
-   link_directories(${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS})
+   link_directories(${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS})
    add_definitions(-DMS_WIN${WINDOWS_BITS})
 ELSE()
    include_directories(/usr/include/python2.7)

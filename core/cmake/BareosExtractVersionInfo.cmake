@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,17 +19,17 @@
 
 
 # extract version number from version.h
-file(STRINGS ${CMAKE_SOURCE_DIR}/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
+file(STRINGS ${PROJECT_SOURCE_DIR}/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
 string(REGEX MATCH [0-9.]+ VERSION ${VERSION_INFO})
 string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_INFO})
 string(REGEX MATCH \".*\" FULLVERSION ${VERSION_INFO})
 
 # extract date from version.h
-file(STRINGS ${CMAKE_SOURCE_DIR}/src/include/version.h DATE_INFO REGEX define.*BDATE.*)
+file(STRINGS ${PROJECT_SOURCE_DIR}/src/include/version.h DATE_INFO REGEX define.*BDATE.*)
 string(REGEX MATCH \".*\" DATE ${DATE_INFO})
 string(REGEX REPLACE "\"" "" DATE ${DATE})
 
 
 # extract  db version from cats.h
-file(STRINGS ${CMAKE_SOURCE_DIR}/src/cats/cats.h DB_VERSION_INFO REGEX .*BDB_VERSION.*)
+file(STRINGS ${PROJECT_SOURCE_DIR}/src/cats/cats.h DB_VERSION_INFO REGEX .*BDB_VERSION.*)
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_INFO})

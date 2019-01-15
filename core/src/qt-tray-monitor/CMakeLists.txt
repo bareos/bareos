@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -35,8 +35,8 @@ find_package(Qt5 COMPONENTS Core Widgets)
 
 IF(HAVE_WIN32)
    include_directories(
-      ${CMAKE_SOURCE_DIR}/src/win32/include
-      ${CMAKE_SOURCE_DIR}/src/win32/lib
+      ${PROJECT_SOURCE_DIR}/src/win32/include
+      ${PROJECT_SOURCE_DIR}/src/win32/lib
       )
 ENDIF()
 
@@ -76,7 +76,7 @@ install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
-INSTALL(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake)
+INSTALL(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake)
 
 INSTALL(FILES bareos-tray-monitor.desktop DESTINATION ${datarootdir}/applications/)
 INSTALL(FILES bareos-tray-monitor.desktop DESTINATION ${sysconfdir}/xdg/autostart/ )

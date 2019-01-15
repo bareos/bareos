@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -136,5 +136,5 @@ IF(${nr_db_backends} EQUAL 1)
    install(CODE "set(VERSION \"${VERSION}\")")
    install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
-   INSTALL(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/bareos-symlink-default-db-backend.cmake)
+   INSTALL(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/bareos-symlink-default-db-backend.cmake)
 ENDIF()
