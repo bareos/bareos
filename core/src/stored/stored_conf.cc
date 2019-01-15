@@ -260,6 +260,7 @@ static ResourceItem dev_items[] = {
      NULL},
     {"AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL, "13.4.0-", NULL},
     {"CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"EofOnErrorIsEot", CFG_TYPE_BOOL, ITEM(res_dev.eof_on_error_is_eot), 0, CFG_ITEM_DEFAULT, NULL, NULL, NULL},
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**

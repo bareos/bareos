@@ -399,7 +399,7 @@ static void RereadLastBlock(DeviceControlRecord *dcr)
           * Note, this can destroy dev->errmsg
           */
          dcr->block = lblock;
-         if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+         if (Ok != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
             Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"), dev->errmsg);
          } else {
             /*
@@ -934,16 +934,16 @@ bail_out:
 /**
  * Read block with locking
  */
-bool DeviceControlRecord::ReadBlockFromDevice(bool check_block_numbers)
+ReadStatus DeviceControlRecord::ReadBlockFromDevice(bool check_block_numbers)
 {
-   bool ok;
+   ReadStatus status;
 
    Dmsg0(250, "Enter ReadBlockFromDevice\n");
    dev->rLock();
-   ok = ReadBlockFromDev(check_block_numbers);
+   status = ReadBlockFromDev(check_block_numbers);
    dev->Unlock();
    Dmsg0(250, "Leave ReadBlockFromDevice\n");
-   return ok;
+   return status;
 }
 
 /**
@@ -951,7 +951,7 @@ bool DeviceControlRecord::ReadBlockFromDevice(bool check_block_numbers)
  *  the block header.  For a file, the block may be partially
  *  or completely in the current buffer.
  */
-bool DeviceControlRecord::ReadBlockFromDev(bool check_block_numbers)
+ReadStatus DeviceControlRecord::ReadBlockFromDev(bool check_block_numbers)
 {
    ssize_t status;
    int looping;
@@ -961,13 +961,13 @@ bool DeviceControlRecord::ReadBlockFromDev(bool check_block_numbers)
    if (JobCanceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
       block->read_len = 0;
-      return false;
+      return Error;
    }
 
    if (dev->AtEot()) {
       Mmsg(dev->errmsg, _("Attempt to read past end of tape or file.\n"));
       block->read_len = 0;
-      return false;
+      return EndOfTape;
    }
    looping = 0;
    Dmsg1(250, "Full read in ReadBlockFromDevice() len=%d\n",
@@ -978,7 +978,7 @@ bool DeviceControlRecord::ReadBlockFromDev(bool check_block_numbers)
          dev->fd(), dev->file, dev->block_num, dev->print_name());
       Jmsg(dcr->jcr, M_WARNING, 0, "%s", dev->errmsg);
       block->read_len = 0;
-      return false;
+      return Error;
     }
 
 reread:
@@ -988,7 +988,7 @@ reread:
          dev->print_name());
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       block->read_len = 0;
-      return false;
+      return Error;
    }
 
    retry = 0;
@@ -1019,10 +1019,11 @@ reread:
       GeneratePluginEvent(jcr, bsdEventReadError, dcr);
 
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
-      if (dev->AtEof()) {        /* EOF just seen? */
-         dev->SetEot();          /* yes, error => EOT */
+      if (device->eof_on_error_is_eot && dev->AtEof()) { /* EOF just seen? */
+         dev->SetEot();                                  /* yes, error => EOT */
+         return EndOfTape;
       }
-      return false;
+      return Error;
    }
 
    Dmsg3(250, "Read device got %d bytes at %u:%u\n", status,
@@ -1035,10 +1036,10 @@ reread:
          dev->file, dev->block_num, dev->print_name());
       if (dev->AtEof()) {       /* EOF already read? */
          dev->SetEot();         /* yes, 2 EOFs => EOT */
-         return 0;
+         return EndOfTape;
       }
       dev->SetAteof();
-      return false;             /* return eof */
+      return EndOfFile;
    }
 
    /*
@@ -1062,7 +1063,7 @@ reread:
       dev->SetShortBlock();
       block->read_len = block->binbuf = 0;
       Dmsg2(200, "set block=%p binbuf=%d\n", block, block->binbuf);
-      return false;             /* return error */
+      return Error;
    }
 
 // BlockNumber = block->BlockNumber + 1;
@@ -1072,7 +1073,7 @@ reread:
          dev->file_size += block->read_len;
          goto reread;
       }
-      return false;
+      return Error;
    }
 
    /*
@@ -1095,7 +1096,7 @@ reread:
             Mmsg(dev->errmsg, "%s", dev->bstrerror());
             Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
             block->read_len = 0;
-            return false;
+            return Error;
          }
       } else {
          Dmsg0(250, "Seek to beginning of block for reread.\n");
@@ -1126,7 +1127,7 @@ reread:
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       dev->SetShortBlock();
       block->read_len = block->binbuf = 0;
-      return false;             /* return error */
+      return Error;
    }
 
    dev->ClearShortBlock();
@@ -1188,7 +1189,7 @@ reread:
    Dmsg2(250, "Exit read_block read_len=%d block_len=%d\n",
       block->read_len, block->block_len);
    block->block_read = true;
-   return true;
+   return Ok;
 }
 
 } /* namespace storagedaemon */

@@ -196,8 +196,11 @@ bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
    DeviceRecord *trec;
 
    while (1) {
-      if (!dcr->ReadBlockFromDevice(CHECK_BLOCK_NUMBERS)) {
-         if (dcr->dev->AtEot()) {
+      switch(dcr->ReadBlockFromDevice(CHECK_BLOCK_NUMBERS)) {
+         case Ok:
+            // no handling required if read was successful
+            break;
+         case EndOfTape:
             Jmsg(jcr, M_INFO, 0, _("End of Volume at file %u on device %s, Volume \"%s\"\n"),
                  dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
 
@@ -244,26 +247,27 @@ bool ReadNextBlockFromDevice(DeviceControlRecord *dcr,
              * After reading label, we must read first data block
              */
             continue;
-         } else if (dcr->dev->AtEof()) {
+         case EndOfFile:
             Dmsg3(200, "End of file %u on device %s, Volume \"%s\"\n",
                   dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
             continue;
-         } else if (dcr->dev->IsShortBlock()) {
-            Jmsg1(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
-            continue;
-         } else {
-            /*
-             * I/O error or strange end of tape
-             */
-            DisplayTapeErrorStatus(jcr, dcr->dev);
-            if (forge_on || jcr->ignore_label_errors) {
-               dcr->dev->fsr(1);           /* try skipping bad record */
-               Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
+         default:
+            if (dcr->dev->IsShortBlock()) {
+               Jmsg1(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
                continue;
+            } else {
+               /*
+                * I/O error or strange end of tape
+                */
+               DisplayTapeErrorStatus(jcr, dcr->dev);
+               if (forge_on || jcr->ignore_label_errors) {
+                  dcr->dev->fsr(1);           /* try skipping bad record */
+                  Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
+                  continue;
+               }
+               *status = false;
+               return false;
             }
-            *status = false;
-            return false;
-         }
       }
 
       Dmsg2(debuglevel, "Read new block at pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);
