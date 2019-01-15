@@ -178,7 +178,7 @@ void read_context_set_record(DCR *dcr, READ_CTX *rctx)
  *
  * Returns:  true on success
  *           false on error
- e
+ *
  * Any fatal error sets the status bool to false.
  */
 bool read_next_block_from_device(DCR *dcr,
