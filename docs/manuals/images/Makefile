@@ -4,8 +4,8 @@ MKDIRCONV=mkdir -p conv/
 
 ORIG_EPS = $(wildcard *.eps)
 CONV_EPS = $(patsubst %.eps,conv/%.eps,$(ORIG_EPS))
-CONV_PNG = $(patsubst %.eps,conv/%.png,$(ORIG_EPS))
 ORIG_PNG = $(wildcard *.png)
+CONV_PNG = $(patsubst %.eps,conv/%.png,$(ORIG_EPS))
 COPY_PNG = $(patsubst %.png,conv/%.png,$(ORIG_PNG))
 ORIG_DOT = $(wildcard *.dot)
 COPY_DOT = $(patsubst %.dot,conv/%.dot,$(ORIG_DOT))
@@ -19,7 +19,7 @@ COPY_SVG = $(patsubst %.svg,conv/%.svg,$(ORIG_SVG))
 #CONV_FIG_EPS = $(patsubst %.fig,conv/%.eps,$(ORIG_FIG))
 
 
-all: $(CONV_PNG) $(COPY_PNG) $(COPY_DOT) $(COPY_SVG) conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/bareos-webui-jobs.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png conv/ndmp-backup.svg conv/ndmp-cfg.svg conv/passive-client-communication.png conv/univention-configuration-registry-settings.png conv/univention-ucs-overview-administration.png
+all: $(CONV_PNG) $(COPY_PNG) $(COPY_DOT) $(COPY_SVG) $(ORIG_PNG:conv/%.png=%.svg)  conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/bareos-webui-jobs.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png conv/ndmp-backup.svg conv/ndmp-cfg.svg conv/passive-client-communication.png conv/univention-configuration-registry-settings.png conv/univention-ucs-overview-administration.png
 
 # bareos-full-logo: png is of better quality than eps, therefore take that as source
 conv/bareos-full-logo.eps: bareos-full-logo.png
@@ -82,10 +82,11 @@ conv/univention-ucs-overview-administration.png: univention-ucs-overview-adminis
 	@$(MKDIRCONV)
 	$(COPY) univention-ucs-overview-administration.png conv/
 
-conv/%.png: %.png
-	@$(MKDIRCONV)
+
+#conv/%.png: %.png
+#	@$(MKDIRCONV)
 	#$(CONVERT) $< conv/`basename $< .eps`.png
-	$(COPY) $< conv/$<
+#	$(COPY) $< conv/$<
 
 conv/%.eps: %.eps
 	@$(MKDIRCONV)
@@ -103,5 +104,9 @@ conv/%.dot: %.dot
 	dot -Tpng -o conv/`basename $< .dot`.png $<
 	$(COPY) $< conv/$<
 
+conv/%.svg: %.png
+	@$(MKDIRCONV)
+	$(CONVERT) $< conv/`basename $< .png`.svg
+	$(COPY) $< conv/$<
 clean:
 	rm -f conv/*
