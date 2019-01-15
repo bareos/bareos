@@ -260,6 +260,9 @@ static ResourceItem dev_items[] = {
      NULL},
     {"AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL, "13.4.0-", NULL},
     {"CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
+    {"EofOnErrorIsEot", CFG_TYPE_BOOL, ITEM(res_dev.eof_on_error_is_eot), 0, CFG_ITEM_DEFAULT, NULL, "18.2.4-",
+     "If Yes, Bareos will treat any read error at an end-of-file mark as end-of-tape. You should only set "
+     "this option if your tape-drive fails to detect end-of-tape while reading."},
     {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
 
 /**

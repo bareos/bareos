@@ -755,8 +755,16 @@ public:
     */
    bool WriteBlockToDevice();
    bool WriteBlockToDev();
-   bool ReadBlockFromDevice(bool check_block_numbers);
-   bool ReadBlockFromDev(bool check_block_numbers);
+
+   enum ReadStatus {
+      Error = 0,
+      Ok,
+      EndOfFile,
+      EndOfTape
+   };
+
+   ReadStatus ReadBlockFromDevice(bool check_block_numbers);
+   ReadStatus ReadBlockFromDev(bool check_block_numbers);
 
    /*
     * Methods in label.c
