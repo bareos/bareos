@@ -28,6 +28,7 @@ rst_epilog = '''
 .. |bareosFd| replace:: Bareos File Daemon
 .. |bareosSd| replace:: Bareos Storage Daemon
 .. |bareosDir| replace:: Bareos Director Daemon
+.. |bconsole| replace:: Bareos Console
 .. |bareosTraymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
 .. |mysql| replace:: MySQL/MariaDB
@@ -35,7 +36,7 @@ rst_epilog = '''
 .. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
-.. |bconsole| replace:: Bareos Console
+.. |commandPrompt| replace:: ``root@linux:~#`` 
 
 '''
 

@@ -1,5 +1,7 @@
-Important Text Formats
-######################
+Specific Formatting
+###################
+
+
 
 Bconsole Command
 ----------------
@@ -46,76 +48,6 @@ The output should look like this:
 
 
 
-Bquote
-------
-
-If you want to quote a certain text, the following formatting should be used:
-
-.. \newcommand{\bquote}[1]{``#1''}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\bquote\{(.*?)\}`#:emphasis:`\1`#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   ''Application Managed''
-
-The output should look like this:
-
-''Application Managed''
-
-
-Warning
--------
-
-If you want to display a warning, the following formatting should be used:
-
-.. \newcommand{\warning}[1]{Please note! \textit{#1}}
-
-   Post Conversion Changes
-   ${PERL0} 's#:raw-latex:`\\warning\{(.*?)\}`#\n.. warning:: \n  \1#ims' ${DESTFILE}
-   ${PERL0} 's#\\warning\{(.*?)\}#\n.. warning:: \n  \1#ims'  ${DESTFILE}
-
-.. code-block:: sh
-
-   .. warning::
-
-   This record ignores retention periods!
-
-The output should look like this:
-
-.. warning::
-
-   This record ignores retention periods!
-
-
-Bareos Config Input
--------------------
-
-If you want to display the contents of a config file and it is present in some other folder, the following formatting should be used:
-
-.. \newcommand{\bconfigInput}[1]{
-    {
-        \footnotesize
-   %     \lstinputlisting[backgroundcolor=\color{colorConfig},frame=single,framerule=0pt,basicstyle=\ttfamily,keepspaces=true,columns=fullflexible,moredelim=[is][\it]{<input>}{</input>},moredelim=[is][\underline]{<strong>}{</strong>}]{#1}
-        \lstinputlisting[
-                backgroundcolor=\color{colorConfig},
-                frame=single,framerule=0pt,
-                basicstyle=\ttfamily,
-                columns=fullflexible,
-                keepspaces=true,
-                literate={-}{-}1
-            ]{#1}
-    }
-    ${PERL} 's#\\bconfigInput\{(.*?)\}#.. literalinclude:: ../../main/\1#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   .. literalinclude:: ../../main/config/SdDeviceDeviceOptionsRados1.conf
-
-The output should look like this:
-
-.. literalinclude:: ../../main/config/SdDeviceDeviceOptionsRados1.conf
 
 
 Bconsole session
@@ -138,80 +70,6 @@ The output should look like this:
 
    *list volumes
 
-
-Bareos Configuration
---------------------
-
-If you want to display bareos configuration that is part of configuration file, then it needs to be put in a code block.
-
-.. ${PERL} 's#\{bconfig\}\{(.*)\}#\n.. code-block:: sh\n    :caption: \1\n#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   .. code-block:: sh
-    :caption: Pool Ressource: setting Maximum Block Size
-
-    Pool {
-       Name = LTO-4-1M
-       Pool Type = Backup
-       Recycle = yes                       # Bareos can automatically recycle Volumes
-       AutoPrune = yes                     # Prune expired volumes
-       Volume Retention = 1 Month          # How long should the Full Backups be kept? (#06)
-       Maximum Block Size = 1048576
-       Recycle Pool = Scratch
-    }
-
-The output should look like this:
-
-.. code-block:: sh
-    :caption: Pool Resource: setting Maximum Block Size
-
-    Pool {
-       Name = LTO-4-1M
-       Pool Type = Backup
-       Recycle = yes                       # Bareos can automatically recycle Volumes
-       AutoPrune = yes                     # Prune expired volumes
-       Volume Retention = 1 Month          # How long should the Full Backups be kept? (#06)
-       Maximum Block Size = 1048576
-       Recycle Pool = Scratch
-    }
-
-
-Bareos Configuration Resource
------------------------------
-
-If you want to display a baeros specific resource configuration file, then it needs to be put in a code block.
-
-.. ${PERL} 's#\{bareosConfigResource\}\{(.*?)\}\{(.*?)\}\{(.*?)\}#\n.. code-block:: sh\n    :caption: \1 \2 \3\n#g'   ${DESTFILE}
-   perl -i -pe 's#\{bareosConfigResource\}\{(.*)\}\{(.*)\}\{(.*)\}#\n.. code-block:: sh\n    :caption: daemon:\1 resource:\2 name:\3\n#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   .. code-block:: sh
-    :caption: bareos-dir job example
-
-    Job {
-        ...
-        Accurate = yes
-        Always Incremental = yes
-        Always Incremental Job Retention = <timespec>
-        Always Incremental Keep Number = <number>
-        ...
-    }
-
-The output should look like this:
-
-   .. code-block:: sh
-    :caption: bareos-dir job example
-
-    Job {
-        ...
-        Accurate = yes
-        Always Incremental = yes
-        Always Incremental Job Retention = <timespec>
-        Always Incremental Keep Number = <number>
-        ...
-    }
 
 
 Configuration File
@@ -242,8 +100,8 @@ The output should look like this:
     ...
 
 
-Unix Commands
--------------
+Unix Command Session
+--------------------
 
 If you want to display a unix command, then it needs to be put in a code block.
 
@@ -266,7 +124,7 @@ The output should look like this:
     psql
 
 
-Unix Command Prompt
+Command Output
 -------------------
 
 If you want to display a unix command prompt session, then it needs to be put in a code block.
@@ -352,23 +210,6 @@ The output should look like this:
 :program:`cd ..`
 
 
-Directory
----------
-
-If you want to display a directory path, the following formatting should be followed:
-
-.. \newcommand{\directory}[1]{\path|#1|}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\directory\{(.*?)\}`#:file:`\1`#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   :file:`/var/lib/pgsql/data`
-
-The output should look like this:
-
-:file:`/var/lib/pgsql/data`
 
 
 Database Table
@@ -390,25 +231,6 @@ The output should look like this:
 **Media**
 
 
-File
-----
-
-If you want to display a configuration file name, the following formatting should be followed:
-
-.. \newcommand{\file}[1]{\path|#1|}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\file\{(.*?)\}`#:file:`\1`#g'   ${DESTFILE}
-   ${PERL} 's#\\file\{(.*?)\}#:file:`\1`#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   :file:`/etc/devfs.conf`
-
-The output should look like this:
-
-:file:`/etc/devfs.conf`
-
 
 File Set
 --------
@@ -429,23 +251,6 @@ The output should look like this:
 **LinuxAll**
 
 
-Host
-----
-
-If you want to display a hostname, the following formatting should be followed:
-
-.. \newcommand{\host}[1]{\path|#1|}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\host\{(.*?)\}`#:strong:`\1`#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   :strong:`localhost`
-
-The output should look like this:
-
-:strong:`localhost`
 
 
 Job Name
@@ -489,44 +294,6 @@ The output should look like this:
 **admin**
 
 
-User
-----
-
-If you want to display a user name, the following formatting should be followed:
-
-.. \newcommand{\user}[1]{\path|#1|}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\user\{(.*)\}`#**\1**#g'   ${DESTFILE}
-   ${PERL} 's#\\user\{(.*)\}#**\1**#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   **root**
-
-The output should look like this:
-
-**root**
-
-
-Package
--------
-
-If you want to display a linux package name, the following formatting should be used:
-
-.. \newcommand{\package}[1]{\index[general]{Package!#1}\path|#1|\xspace}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\package\{(.*?)\}`#**\1**#g'   ${DESTFILE}
-   ${PERL} 's#:raw-latex:`\\package\{(.*?)\}`#**\1**#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   **database-mysql**
-
-The output should look like this:
-
-**database-mysql**
 
 
 Parameter
@@ -565,30 +332,6 @@ The output should look like this:
 :strong:`unload`
 
 
-Resource Name
--------------
-
-If you want to display a resource name, the following formatting should be used:
-
-
-.. \newcommand{\resourcename}{[...]}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\resourcename\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
-   ${PERL} 's#:raw-latex:`\\resourcename\*\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   **Standard**:sup:`Fd`:sub:`Messages`
-
-* Superscript: The daemon to which the resource belongs to. There can be 3 types of daemons: 'Dir', 'Fd', 'Sd'
-* Subscript: The resource type of the resource.
-
-The output should look like this:
-
-**Standard**:sup:`Fd`:sub:`Messages`
-
-
 Argument
 --------
 
@@ -608,25 +351,6 @@ The output should look like this:
 :strong:`passphrase`
 
 
-Resource Type
--------------
-
-If you want to display a resource type, the following formatting should be used:
-
-.. \newcommand{\resourcetype}[2]{\path|#2|$^{\mbox{\tiny #1}}$}
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\resourcetype\{(.*?)\}\{(.*?)\}`#:sup:`\1`\ :strong:`\2`#g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   :sup:`Sd` :strong:`Storage`
-
-* Superscript: The resource type of the resource name mentioned. There can be 3 types of resources: 'Dir', 'Fd', 'Sd'
-
-The output should look like this:
-
-:sup:`Sd` :strong:`Storage`
 
 
 Pool
@@ -647,42 +371,6 @@ The output should look like this:
 
 **VirtualFull**:sup:`Dir`:sub:`pool`
 
-
-Registry Key
-------------
-
-If you want to display a path where registry key is defined, this formatting should be used.
-
-.. \newcommand{\registrykey}[1]{\path|#1|}
-
-   Pre Conversion Changes
-   perl -pe 's#registrykey#textbf#g'
-
-.. code-block:: sh
-
-   ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup``
-
-The output should look like this:
-
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup``
-
-
-Variable
---------
-
-If you want to display an environment variable name, the following formating should be followed:
-
-
-..   \newcommand{\variable}[1]{\path|#1|}
-  perl -pe 's#\\variable\{\$#\\textbf\{\\\$#g'
-
-.. code-block:: sh
-
-   **$HOSTNAME**
-
-The output should look like this:
-
-**$HOSTNAME**
 
 
 Volume Status
@@ -746,28 +434,6 @@ The output should look like this:
 :strong:`Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored`
 
 
-Operating System
-----------------
-
-If you want to display an operating system name, the following formatting should be used:
-
-.. \newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
-    \path|#1|\index[general]{Platform!#1}%
-    }{%
-    \path|#1 #2|\index[general]{Platform!#1!#2}%
-    }}
-
-    Post Conversion Changes
-    ${PERL} 's#\\os\{(.*?)\}\{}#:strong:`\1`#g' ${DESTFILE}
-    ${PERL} 's#\\os\{(.*?)\}\{(.*?)}#:strong:`\1 \2`#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   :strong:`Fedora 21`
-
-The output should look like this:
-
-:strong:`Fedora 21`
 
 
 Since Version
@@ -798,62 +464,3 @@ If you want to display since which version a particular a feature is present or 
 The output should look like this:
 
 Version >= 16.2.4
-
-
-Resource Directive
-------------------
-
-If you want to display a resource directive name, the following formatting should be used:
-
-.. \makeatletter
-   \newcommand{\linkResourceDirective}{%
-   \@ifstar{%
-   \linkResourceDirectiveStar%
-   }{%
-   \linkResourceDirectiveNostar%
-   }%
-   }
-   \makeatother
-    \newcommand{\linkResourceDirectiveStar}[3]{%
-   \linkResourceDirectiveOpt{#1}{#2}{#3}{#3}%
-   }
-   \newcommand{\linkResourceDirectiveNostar}[3]{%
-   \linkResourceDirectiveOpt{#1}{#2}{#3}{#3 $^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}%
-   }
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\linkResourceDirective\{([ \w]+)\}\{([ \w]+)\}\{([ \w]+)\}`#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
-   ${PERL} 's#:raw-latex:`\\linkResourceDirective\*\{([ \w]+)\}\{([ \w]+)\}\{([ \w]+)\}`#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
-   ${PERL} 's#\\linkResourceDirective\{([ \w]+)\}\{([ \w]+)\}\{([ \w]+)\}#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
-
-.. code-block:: sh
-
-   **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`
-
-
-* Superscript: The daemon to which the resource directive belongs to. There can be 3 types of daemons: 'Dir', 'Fd', 'Sd'
-* Subscript: The resource type of the directive.
-
-
-**Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`
-
-
-Resource Directive Value
-------------------------
-
-If you want to display a resource directive along with its value, the following formatting should be used:
-
-.. \newcommand{\linkResourceDirectiveValue}[4]{%
-   \linkResourceDirective{#1}{#2}{#3} \path|= #4|%
-   }
-
-   Post Conversion Changes
-   ${PERL} 's#:raw-latex:`\\linkResourceDirectiveValue\{(.*?)\}\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ = **\4**#g' ${DESTFILE}
-
-.. code-block:: sh
-
-   **Device Type**:sup:`Sd`:sub:`Device` = **File**
-
-The output should look like this:
-
-**Device Type**:sup:`Sd`:sub:`Device` = **File**
