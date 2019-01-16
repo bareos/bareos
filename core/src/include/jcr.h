@@ -456,6 +456,7 @@ public:
    POOLMEM *comment;                      /**< Comment for this Job */
    int64_t max_bandwidth;                 /**< Bandwidth limit for this Job */
    htable *path_list;                     /**< Directory list (used by findlib) */
+   bool is_passive_client_connection_probing;     /**< Set if director probes a passive client connection */
 
    /*
     * Daemon specific part of JobControlRecord

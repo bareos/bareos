@@ -41,6 +41,7 @@
 #include "lib/tls_openssl.h"
 #include "lib/tls_openssl_private.h"
 #include "lib/bstringlist.h"
+#include "include/jcr.h"
 
 #include "parse_conf.h"
 
@@ -326,16 +327,25 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket *bsock)
   SSL_free(d_->openssl_);
   d_->openssl_ = nullptr;
 
+
+  JobControlRecord *jcr = bsock->get_jcr();
+
+  if (jcr && jcr->is_passive_client_connection_probing) {
+    return;
+  }
+
+  std::string message {_("TLS shutdown failure.")};
+
   switch (ssl_error) {
     case SSL_ERROR_NONE:
       break;
     case SSL_ERROR_ZERO_RETURN:
       /* TLS connection was shut down on us via a TLS protocol-level closure */
-      OpensslPostErrors(bsock->get_jcr(), M_ERROR, _("TLS shutdown failure."));
+      OpensslPostErrors(jcr, M_ERROR, message.c_str());
       break;
     default:
       /* Socket Error Occurred */
-      OpensslPostErrors(bsock->get_jcr(), M_ERROR, _("TLS shutdown failure."));
+      OpensslPostErrors(jcr, M_ERROR, message.c_str());
       break;
   }
 }

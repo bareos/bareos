@@ -22,8 +22,8 @@
 #define BAREOS_LIB_CRYPTO_OPENSSL_H_
 
 #ifdef HAVE_OPENSSL
-void OpensslPostErrors(int code, const char *errstring);
-void OpensslPostErrors(JobControlRecord *jcr, int code, const char *errstring);
+void OpensslPostErrors(int type, const char *errstring);
+void OpensslPostErrors(JobControlRecord *jcr, int type, const char *errstring);
 int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 int OpensslSeedPrng(void);

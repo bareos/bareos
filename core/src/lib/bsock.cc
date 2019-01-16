@@ -562,10 +562,24 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert *local_tls_cert,
                     local_tls_cert->AllowedCertificateCommonNames())) {
     return true;
   }
-  if (jcr && jcr->JobId != 0) {
-    Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+
+  int message_type = 0;
+  std::string message;
+
+  if (jcr->is_passive_client_connection_probing) {
+     /* connection try */
+     message_type = M_INFO;
+     message = _("TLS negotiation failed (while probing client protocol)\n");
+  } else {
+     message_type = M_FATAL;
+     message = _("TLS negotiation failed\n");
   }
-  Dmsg0(debuglevel, "TLS negotiation failed.\n");
+
+  if (jcr && jcr->JobId != 0) {
+    Jmsg(jcr, message_type, 0, message.c_str());
+  }
+  Dmsg0(debuglevel, message.c_str());
+
   return false;
 }
 

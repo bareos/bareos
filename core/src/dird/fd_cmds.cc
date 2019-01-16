@@ -167,7 +167,7 @@ static void OutputMessageForConnectionTry(JobControlRecord *jcr, UaContext *ua)
 
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      m = "Probing... (result will be saved until config reload)";
+      m = "Probing client protocol... (result will be saved until config reload)";
    } else {
      return;
    }
@@ -247,9 +247,11 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
       } else {
          jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;
       }
+      jcr->is_passive_client_connection_probing = true;
    } else {
       /* if there is a stored mode from a previous connection then use this */
       jcr->connection_handshake_try_ = jcr->res.client->connection_successful_handshake_;
+      jcr->is_passive_client_connection_probing = false;
    }
 
    do { /* while (tcp_connect_failed ...) */
@@ -270,6 +272,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
            success = true;
            SendInfoSuccess(jcr, ua);
            SendInfoChosenCipher(jcr, ua);
+           jcr->is_passive_client_connection_probing = false;
            jcr->res.client->connection_successful_handshake_ = jcr->connection_handshake_try_;
         } else {
           /* authentication failed due to
