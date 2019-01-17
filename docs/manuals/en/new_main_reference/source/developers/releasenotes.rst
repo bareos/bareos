@@ -90,6 +90,59 @@ Backward compatibility
 * To maintain |bareosWebui| access to the |bareosDir|, it depends on the current configuration. 1. TLS certificates: Nothing to do. 2. No TLS configured: Set TlsEnable=false in the respective console config of the |bareosWebui| in the |bareosDir|
 ..  * |bconsole| < 18.2 can be used with minor drawbacks (no PAM authentication, no TLS-PSK)
 
+Full connection overview
+------------------------
+This diagram contains all possible connections between Bareos components
+that are virtually usable. The numbers in each component are the version 
+numbers of this component that can be used with a Bareos 18.2 system 
+(Director Daemon and Storage Daemon). However, to be able to use all feature
+it is recommended to use all components from version 18.2.
+
+For a detailed explanation of all connection modes see :ref:`ConnectionOverviewReference`. 
+
+.. uml::
+  :caption: Full overview of all Bareos connections possible with Bareos 18.2  
+
+  skinparam shadowing false
+
+  (Python 17,18) as Py1718
+  (Console 17,18) as Con1718
+  (WebUI 17,18) as Webui1718
+  (Tray Monitor 18) as Tray18
+
+  [Filedaemon 17,18] as FD1718
+  [Directordaemon 18] as Dir18
+  [Storagedaemon 18] as SD18
+  [Storagedaemon2 18] as SD218
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color> 
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment 
+
+  arrow(Con1718, right, Dir18, 1n)
+  arrow(Con1718, right, Dir18, 2r)
+
+  arrow(Py1718, up, Dir18, 3n)
+  arrow(Py1718, up, Dir18, 4r)
+
+  arrow(Webui1718, down, Dir18, 5n)
+  arrow(Webui1718, down, Dir18, 6r)
+
+  arrow(Dir18, up, FD1718, 7)
+  arrow(FD1718, down, Dir18, 8)
+
+  arrow(Dir18, right, SD18, 9a)
+
+  arrow(FD1718, down, SD18, 10)
+  arrow(SD18, down, FD1718, 11)
+
+  arrow(SD18, down, SD218, 12)
+  arrow(Dir18, down, SD218, 9b)
+
+  arrow(Tray18, down, Dir18, 13)
+  arrow(Tray18, down, FD1718, 14)
+  arrow(Tray18, down, SD18, 15)
+
 Deprecated and Removed Features
 -------------------------------
 * removed Bareos conio option, as the standard library readline is used instead

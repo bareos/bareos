@@ -1,3 +1,321 @@
+.. _ConnectionOverviewReference:
+
+Connection Overview
+===================
+The following diagrams show Bareos components with any possible
+network connections between them. Arrows point always from the TCP
+Client to the respective TCP Server, thus the direction of the connection
+initiation. This is not neccessarily the direction of the data flow. 
+
+Full connection overview
+------------------------
+This diagram contains all possible connections between Bareos components
+that are virtually usable. See the chapters :ref:`below for specific diagrams <ConnecionOverviewNamedConsoleAndDefaultConsole>` of the Bareos operating modes.
+
+.. uml::
+  :caption: Sequence diagram of a Bareos File Daemon connection
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  database Catalog
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow(Con, right, Dir, 1)
+  arrow(Con, right, Dir, 2)
+
+  arrow(Dir, up, FD, 3)
+  arrow(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow(FD, down, SD, 6)
+  arrow(SD, down, FD, 7)
+
+  arrow(SD, down, SD2, 8)
+  arrow(Dir, down, SD2, 5b)
+
+  arrow(Tray, down, Dir, 9)
+  arrow(Tray, down, FD, 10)
+  arrow(Tray, down, SD, 11)
+
+  arrow(Dir, down, Catalog, 12)
+
+.. _LegendForFullConnectionOverviewReference:
+
+.. csv-table:: Legend for full connection overview
+   :header: "Connection Number", "Description", "Type"
+   :widths: auto
+
+    1, "Named Console", "control channel"
+    2, "Default Console", "control channel"
+    3, "**Director to File Daemon (default)**", "control channel"
+    4, ":ref:`Client initiated <section-ClientInitiatedConnection>` File Daemon to Director", "control channel"
+   5a, "**Director to Storage (default)**", "control channel"
+   5b, "Director to 2nd Storage doing SD-SD copy or migrate", "control channel"
+    6, "**File Daemon to Storage Daemon (default)**", "data channel"
+    7, ":ref:`Passive Client <PassiveClient>` Storage Daemon to File Daemon", "data channel"
+    8, "Storage Daemon to Storage Daemon", "data channel"
+    9, "Tray Monitor to Director Daemon", "monitor channel"
+   10, "Tray Monitor to File Daemon", "monitor channel"
+   11, "Tray Monitor to Storage Daemon", "monitor channel"
+   12, "Director to catalog database", "database channel"
+
+.. _ConnecionOverviewNamedConsoleAndDefaultConsole:
+
+Named Console and Default Console
+---------------------------------
+
+.. _ConnectionDiagramNamedAndDefaultConsole:
+
+.. uml::
+  :caption: Diagram of Console to Director connection
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow(Con, right, Dir, 1)
+  arrow(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow_hidden(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Default Backup/Restore
+----------------------
+
+.. _ConnectionDiagramDefaultBackupOrRestoreOperation:
+
+.. uml::
+  :caption: Diagram of a default Backup or Restore operation
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Client Initiated Backup/Restore
+-------------------------------
+
+.. _ConnectionDiagramClientInitiatedBackupOrRestoreOperation:
+
+.. uml::
+  :caption: Diagram of a **client initiated** Backup or Restore operation
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Passive Client Backup/Restore
+-----------------------------
+
+.. _ConnectionDiagramPassiveClientBackupOrRestoreOperation:
+
+.. uml::
+  :caption: Diagram of a **passive client** Backup or Restore operation
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Storage-Storage Migration
+-------------------------
+
+.. _ConnectionDiagramStorageToStorageCopyOrMigrateOperation:
+
+.. uml::
+  :caption: Diagram of a Storage to Storage copy or migrate operation
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow(SD, down, SD2, 8)
+  arrow(Dir, down, SD2, 5b)
+
+  arrow_hidden(Tray, down, Dir, 9)
+  arrow_hidden(Tray, down, FD, 10)
+  arrow_hidden(Tray, down, SD, 11)
+
+Tray-Monitor
+------------
+
+.. _ConnectionDiagramAllTrayMonitorConnections:
+
+.. uml::
+  :caption: Diagram of all Tray Monitor Connections
+
+  skinparam shadowing false
+
+  (Console\nPython\nWebUI) as Con
+  (Tray Monitor) as Tray
+
+  [Filedaemon] as FD
+  [Directordaemon] as Dir
+  [Storagedaemon] as SD
+  [Storagedaemon2] as SD2
+
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
+
+  !define arrow(from,direction,to,comment) from -direction->to : comment
+
+  arrow_hidden(Con, right, Dir, 1)
+  arrow_hidden(Con, right, Dir, 2)
+
+  arrow_hidden(Dir, up, FD, 3)
+  arrow_hidden(FD, down, Dir, 4)
+
+  arrow_hidden(Dir, right, SD, 5a)
+
+  arrow_hidden(FD, down, SD, 6)
+  arrow_hidden(SD, down, FD, 7)
+
+  arrow_hidden(SD, down, SD2, 8)
+  arrow_hidden(Dir, down, SD2, 5b)
+
+  arrow(Tray, down, Dir, 9)
+  arrow(Tray, down, FD, 10)
+  arrow(Tray, down, SD, 11)
+
+
+.. _TLSConfigurationReferenceChapter:
+
 TLS Configuration Reference
 ===========================
 
@@ -14,6 +332,7 @@ In Bareos Version 18.2 the relevant resources for some connections had to be cha
     :widths: 20 35 10 35
 
 .. rubric:: Footnotes
+.. [#number] The connection number references this table: :ref:`LegendForFullConnectionOverviewReference`
 .. [#identity] From Version 18.2 onwards this is identical to the TLS-PSK Identitiy
 .. [#psk] From Version 18.2 onwards this is identical to the TLS-PSK Pre-Shared Key
 .. [#user_agent] The name of the default console is predefined and cannot be changed
@@ -105,9 +424,9 @@ PAM-Configuration
 Introduction
 ------------
 
-Before Bareos Version 18.2 authentication with a Bareos Director is done primarily by a named Console connection. Name and password are set in the regarding Bareos Console or Bareos Webui configuration resource. Starting with Bareos Version 18.2 it is also possible to use Pluggable Authentication Modules (PAM) to authenticate a user indenpendently from the Console Resource.
+Before Bareos Version 18.2 authentication with a Bareos Director is done primarily by a named Console connection. Name and password are set in the regarding Bareos Console or |WebUI| configuration resource. Starting with Bareos Version 18.2 it is also possible to use Pluggable Authentication Modules (PAM) to authenticate a user indenpendently from the Console Resource.
 
-As consequence a dedicated named Console or Webui configuration must be used to establish a connection to a Bareos Director Daemon. This connection has name and password credentials, but only to establish an encrypted connection to the Director. To be able to authenticate users with PAM using this console, each user needs an additional User configuration that holds the regarding name and the Access Control List (ACL) or ACL profile. The ACL will be loaded as soon as the User is authenticated.
+As consequence a dedicated named Console or |WebUI| configuration must be used to establish a connection to a Bareos Director Daemon. This connection has name and password credentials, but only to establish an encrypted connection to the Director. To be able to authenticate users with PAM using this console, each user needs an additional User configuration that holds the regarding name and the Access Control List (ACL) or ACL profile. The ACL will be loaded as soon as the User is authenticated.
 
 The credentials for user authentication comes from the PAM module which has been enabled for the Bareos Director Daemon.
 

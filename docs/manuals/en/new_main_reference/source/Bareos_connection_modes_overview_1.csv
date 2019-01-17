@@ -1,19 +1,19 @@
-**Config-Directive**,**TCP-Client**,,**TCP-Server**
+**Config Directive** / **Connection No.** [#number]_,**TCP-Client**,,**TCP-Server**
 ,,,
-,**Default Console**,→,**Director**
+:ref:`1 <LegendForFullConnectionOverviewReference>`,**Default Console**,→,**Director**
 *Name* [#identity]_,\*UserAgent* [#user_agent]_,,\*UserAgent* [#user_agent]_
 *Password* [#psk]_,Console-Director,,Director-Director
 *Certificate directives*,Console-Director,,Director-Director
 *Tls Enable / Tls Require*,Console-Director,,Director-Director
 ,,,
-,**Named Console**,→,**Director**
+:ref:`2 <LegendForFullConnectionOverviewReference>`,**Named Console**,→,**Director**
 *Name* [#identity]_,Console-Console,,Director-Console
 *Password* [#psk]_,Console-Console,,Director-Console
 "*Certificate directives* [#cert]_, Version 17.2:",Console-Console,,Director-**Console**
 "*Certificate directives* [#cert]_, Version 18.2:",Console-Console,,Director-**Director**
 *Tls Enable / Tls Require*,Console-Console,,Director-Console
 ,,,
-,**Director**,→,**File Daemon**
+:ref:`3 <LegendForFullConnectionOverviewReference>`,**Director**,→,**File Daemon**
 "*Name*, Version 17.2:",Director-**Client**,,Client-Director
 "*Name* [#identity]_, Version 18.2:",Director-**Director**,,Client-Director
 *Password* [#psk]_,Director-Client,,Client-Director
@@ -21,7 +21,7 @@
 "*Certificate directives* [#cert]_, Version 18.2:",Director-Client,,Client-**Client**
 *Tls Enable / Tls Require*,Director-Client,,Client-Director
 ,,,
-,**File Daemon**,→,**Director**
+:ref:`4 <LegendForFullConnectionOverviewReference>`,**File Daemon**,→,**Director**
 "*Name*, Version 17.2:",Client-**Director**,,Director-Client
 "*Name* [#identity]_, Version 18.2:",Client-**Client**,,Director-Client
 *Password* [#psk]_,Client-Director,,Director-Client
@@ -29,7 +29,7 @@
 "*Certificate directives* [#cert]_, Version 18.2:",Client-Director,,Director-Director
 *Tls Enable / Tls Require*,Client-Director,,Director-Client
 ,,,
-,**Director**,→,**Storage Daemon**
+":ref:`5a, 5b <LegendForFullConnectionOverviewReference>`",**Director**,→,**Storage Daemon**
 "*Name*, Version 17.2:",Director-**Storage**,,Storage-Director
 "*Name* [#identity]_, Version 18.2:",Director-**Director**,,Storage-Director
 *Password* [#psk]_,Director-Storage,,Storage-Director
@@ -37,7 +37,7 @@
 "*Certificate directives* [#cert]_, Version 18.2:",Director-Storage,,Storage-**Storage**
 *Tls Enable / Tls Require*,Director-Storage,,Storage-Director
 ,,,
-,**File Daemon**,→,**Storage Daemon**
+:ref:`6 <LegendForFullConnectionOverviewReference>`,**File Daemon**,→,**Storage Daemon**
 "*Name*, Version 17.2:",not defined,,not defined
 "*Name* [#identity]_, Version 18.2:",job name,,job name
 *Password* [#psk]_,job session key,,job session key
@@ -45,7 +45,7 @@
 "*Certificate directives* [#cert]_, Version 18.2:",Director-Storage,,Storage-**Storage**
 *Tls Enable / Tls Require*,Director-Storage,,Storage-Director
 ,,,
-,**Storage Daemon**,→,**File Daemon**
+:ref:`7 <LegendForFullConnectionOverviewReference>`,**Storage Daemon**,→,**File Daemon**
 "*Name*, Version 17.2:",not defined,,not defined
 "*Name* [#identity]_, Version 18.2:",job name,,job name
 *Password* [#psk]_,job session key,,job session key
@@ -53,27 +53,27 @@
 "*Certificate directives* [#cert]_, Version 18.2:",Storage-Storage,,Client-Client
 *Tls Enable / Tls Require*,Director-Client,,Client-Client
 ,,,
-,**Storage Daemon**,→,**Storage Daemon**
+:ref:`8 <LegendForFullConnectionOverviewReference>`,**Storage Daemon**,→,**Storage Daemon**
 "*Name*, Version 17.2:",not defined,,not defined
 "*Name* [#identity]_, Version 18.2:",job name,,job name
 *Password* [#psk]_,job session key,,job session key
 *Certificate directives* [#cert]_,Storage-Storage,,Storage-Storage
 *Tls Enable / Tls Require*,Director-W Storage,,Director-W Storage
 ,,,
-,**Traymon**,→,**Director**
+:ref:`9 <LegendForFullConnectionOverviewReference>`,**Traymon**,→,**Director**
 *Name* [#identity]_,Traymon-Traymon,,Director-Console
 *Password* [#psk]_,Traymon-Traymon,,Director-Console
 *Certificate directives* [#cert]_,Traymon-Director,,Director-Director
 *Tls Enable / Tls Require*,Traymon-Director,,Director-Console
 ,,,
-,**Traymon**,→,**SD**
-*Name* [#identity]_,Traymon-Traymon,,Storage-Director
-*Password* [#psk]_,Traymon-Storage,,Storage-Director
-*Certificate directives* [#cert]_,Traymon-Storage,,Storage-Storage
-*Tls Enable / Tls Require*,Traymon-Storage,,Storage-Director
-,,,
-,**Traymon**,→,**FD**
+:ref:`10 <LegendForFullConnectionOverviewReference>`,**Traymon**,→,**FD**
 *Name* [#identity]_,Traymon-Traymon,,Client-Director
 *Password* [#psk]_,Traymon-Client,,Client-Director
 *Certificate directives* [#cert]_,Traymon-Client,,Client-Client
 *Tls Enable / Tls Require*,Traymon-Client,,Client-Director
+,,,
+:ref:`11 <LegendForFullConnectionOverviewReference>`,**Traymon**,→,**SD**
+*Name* [#identity]_,Traymon-Traymon,,Storage-Director
+*Password* [#psk]_,Traymon-Storage,,Storage-Director
+*Certificate directives* [#cert]_,Traymon-Storage,,Storage-Storage
+*Tls Enable / Tls Require*,Traymon-Storage,,Storage-Director
