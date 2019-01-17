@@ -34,6 +34,7 @@
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <algorithm>
 
 /* static private */
 std::map<const SSL_CTX *, PskCredentials> TlsOpenSslPrivate::psk_client_credentials_;
@@ -455,14 +456,15 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL *ssl,
     Dmsg0(100, "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
     return 0;
   }
-
   int ret = Bsnprintf(identity, max_identity_len, "%s", credentials.get_identity().c_str());
 
   if (ret < 0 || (unsigned int)ret > max_identity_len) {
     Dmsg0(100, "Error, identify too long\n");
     return 0;
   }
-  Dmsg1(100, "psk_client_cb. identity: %s.\n", identity);
+  std::string identity_log = identity;
+  std::replace(identity_log.begin(), identity_log.end(), AsciiControlCharacters::RecordSeparator(), ' ');
+  Dmsg1(100, "psk_client_cb. identity: %s.\n", identity_log.c_str());
 
   ret = Bsnprintf((char *)psk, max_psk_len, "%s", credentials.get_psk().c_str());
   if (ret < 0 || (unsigned int)ret > max_psk_len) {
