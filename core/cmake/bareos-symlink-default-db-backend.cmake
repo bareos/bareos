@@ -19,5 +19,5 @@
 MESSAGE(STATUS "${CMAKE_COMMAND} -E create_symlink ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX} ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
    ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}
-   ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${VERSION}
+   ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${BAREOS_NUMERIC_VERSION}
    )

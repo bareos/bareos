@@ -26,6 +26,7 @@ DIRECTOR_DAEMON_USER = $(DAEMON_USER)
 STORAGE_DAEMON_USER = $(DAEMON_USER)
 FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
+BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | sed 's/Version: //g')
 
 define CONFIGURE_COMMON
   -Dsbin-perm=755 \
@@ -75,7 +76,8 @@ define CONFIGURE_COMMON
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dincludes=yes \
-  -Drpath=no
+  -Drpath=no \
+	-DVERSION_STRING=\"$(BAREOS_VERSION)\"
 endef
 
 #  --docdir="\$(_docdir)/bareos" \

@@ -25,12 +25,11 @@ set(CMAKE_MODULE_PATH
          ${CMAKE_MODULE_PATH}
          ${PROJECT_SOURCE_DIR}/cmake)
 
-IF (NOT DEFINED FULLVERSION)
+IF (NOT DEFINED VERSION_STRING)
   # try to get version info from version.h
   INCLUDE(BareosExtractVersionInfo)
 ELSE()
-  # we got FULLVERSION from cmake commandline
-  string(REGEX MATCH [0-9.]+ VERSION ${FULLVERSION})
+  # we got VERSION_STRING from cmake commandline
 ENDIF()
 
 
@@ -63,9 +62,9 @@ MESSAGE("   PHP is ${PHP} ")
 MESSAGE("   Install system config files:  ${sysconfdir} ")
 MESSAGE("   Install Bareos config dir:    ${confdir} ")
 MESSAGE("   Install BareosWebui configdir:${webuiconfdir} ")
-MESSAGE("   Version is ${VERSION} ")
-STRING(REGEX REPLACE "\"" "" FULLVERSION  ${FULLVERSION} )
-MESSAGE("   FullVersion is ${FULLVERSION} ")
+STRING(REGEX REPLACE "\"" "" BAREOS_FULL_VERSION  ${VERSION_STRING} )
+MESSAGE("   VERSION_STRING is ${VERSION_STRING} ")
+MESSAGE("   BAREOS_FULL_VERSION is ${BAREOS_FULL_VERSION} ")
 
 
 IF (EXISTS ${sysconfdir}/httpd/conf.d)

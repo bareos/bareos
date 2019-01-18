@@ -129,6 +129,7 @@ for flavor in %flavors; do
       -Dmon_fd_password=@mon_fd_password@ \
       -Dmon_sd_password=@mon_sd_password@ \
       -Dsd_password=@sd_password@ \
+      -DVERSION_STRING=\"%version\" \
       ..
 
    make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-%WINDOWS_BITS install

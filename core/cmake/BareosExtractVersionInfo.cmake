@@ -17,19 +17,33 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+# VERSION_STRING can override what is stored in version.h
+IF (NOT DEFINED VERSION_STRING)
+  MESSAGE("VERSION_STRING is not defined, extracting version from version.h")
+  # extract version number from version.h
+  file(STRINGS ${PROJECT_SOURCE_DIR}/src/include/version.h VERSION_STRING REGEX define.*VERSION.*)
+ENDIF()
 
-# extract version number from version.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
-string(REGEX MATCH [0-9.]+ VERSION ${VERSION_INFO})
-string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_INFO})
-string(REGEX MATCH \".*\" FULLVERSION ${VERSION_INFO})
+string(REGEX MATCH [0-9.]+ BAREOS_NUMERIC_VERSION ${VERSION_STRING})
+string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_STRING})
+string(REGEX MATCH \".*\" BAREOS_FULL_VERSION ${VERSION_STRING})
+
+
+MESSAGE("BAREOS_NUMERIC_VERSION is ${BAREOS_NUMERIC_VERSION}")
+MESSAGE("BAREOS_FULL_VERSION is ${BAREOS_FULL_VERSION}")
+MESSAGE("SOVERSION is ${SOVERSION}")
+
+IF (NOT BAREOS_FULL_VERSION)
+  MESSAGE(FATAL_ERROR BAREOS_FULL_VERSION is not set)
+ENDIF()
 
 # extract date from version.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/src/include/version.h DATE_INFO REGEX define.*BDATE.*)
-string(REGEX MATCH \".*\" DATE ${DATE_INFO})
+file(STRINGS ${PROJECT_SOURCE_DIR}/src/include/version.h DATE_STRING REGEX define.*BDATE.*)
+string(REGEX MATCH \".*\" DATE ${DATE_STRING})
 string(REGEX REPLACE "\"" "" DATE ${DATE})
 
 
 # extract  db version from cats.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/src/cats/cats.h DB_VERSION_INFO REGEX .*BDB_VERSION.*)
-string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_INFO})
+file(STRINGS ${PROJECT_SOURCE_DIR}/src/cats/cats.h DB_VERSION_STRING REGEX .*BDB_VERSION.*)
+string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
+

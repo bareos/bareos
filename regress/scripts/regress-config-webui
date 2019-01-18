@@ -33,7 +33,8 @@ else
     ${PASSWD} \
     -Dbaseport=${BASEPORT}\
     ${COVERAGE} \
-    ${TRAYMON}
+    ${TRAYMON}\
+    ${VERSION_STRING}
 
 fi
 

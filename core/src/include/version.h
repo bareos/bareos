@@ -1,9 +1,11 @@
-#undef  VERSION
+#ifndef  VERSION
 #define VERSION "18.2.4rc2"
+#endif
+
 #define BDATE   "18 Dec 2018"
 #define LSMDATE "18Dec18"
 
-#define PROG_COPYRIGHT "Copyright (C) 2013-2018 Bareos GmbH & Co. KG\n" \
+#define PROG_COPYRIGHT "Copyright (C) 2013-2019 Bareos GmbH & Co. KG\n" \
                        "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2010-2017 Planets Communications B.V.\n"
 #define BYEAR "2018"       /* year for copyright messages in programs */
@@ -13,7 +15,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public

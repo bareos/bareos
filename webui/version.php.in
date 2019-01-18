@@ -1,4 +1,3 @@
 <?php
-   $bareos_version_long = "@FULLVERSION@";
-   $bareos_version_short = "@VERSION@";
+   $bareos_full_version = "@BAREOS_FULL_VERSION@";
 ?>

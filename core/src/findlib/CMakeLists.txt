@@ -32,7 +32,7 @@ target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
 INSTALL(TARGETS bareosfind DESTINATION ${libdir})
 
-set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
+set_target_properties(bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )

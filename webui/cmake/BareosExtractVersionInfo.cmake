@@ -17,9 +17,11 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
-# extract version number from version.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/../core/src/include/version.h VERSION_INFO REGEX define.*VERSION.*)
-string(REGEX MATCH [0-9.]+ VERSION ${VERSION_INFO})
-string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_INFO})
-string(REGEX MATCH \".*\" FULLVERSION ${VERSION_INFO})
+# VERSION_STRING can override what is stored in version.h
+IF (NOT DEFINED VERSION_STRING)
+  # extract version number from version.h
+  file(STRINGS ${PROJECT_SOURCE_DIR}/../core/src/include/version.h VERSION_STRING REGEX define.*VERSION.*)
+ENDIF()
+string(REGEX MATCH [0-9.]+ BAREOS_NUMERIC_VERSION ${VERSION_STRING})
+string(REGEX MATCH [0-9]+ SOVERSION ${VERSION_STRING})
+string(REGEX MATCH \".*\" BAREOS_FULL_VERSION ${VERSION_STRING})

@@ -70,6 +70,8 @@ execute_process(
 )
 
 INCLUDE(BareosExtractVersionInfo)
+add_definitions(-DVERSION=${BAREOS_FULL_VERSION})
+
 
 INCLUDE(BareosFindAllLibraries)
 
@@ -604,7 +606,7 @@ MESSAGE("Configuration on ${NOW} : ")
 MESSAGE(" ")
 
 MESSAGE("   Host:                         ${host} -- ${DISTNAME} ${DISTVER} ")
-MESSAGE("   Bareos version:               ${BAREOS} ${VERSION} (${DATE}) ")
+MESSAGE("   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) ")
 MESSAGE("   Distribution:                 ${DISTNAME} OBS PROJECT:${OBS_PROJECT} OBS DIST:${OBS_DISTRIBUTION} OBS ARCH:${OBS_ARCH}")
 MESSAGE("   Source code location:         ${srcdir} ")
 MESSAGE("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")

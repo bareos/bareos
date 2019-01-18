@@ -70,7 +70,8 @@ else
     ${COVERAGE} \
     -Ddynamic-cats-backends=yes \
     -Ddynamic-storage-backends=yes \
-    ${TRAYMON}
+    ${TRAYMON}\
+    ${VERSION_STRING}
 
 fi
 

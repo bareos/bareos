@@ -613,7 +613,7 @@ class BareosBSock implements BareosBSockInterface
 
       if(isset($this->config['console_name'])) {
          $bashed_console_name = self::bash_spaces($this->config['console_name']);
-         $DIR_HELLO = "Hello " . $bashed_console_name . " calling version $bareos_version_short\n";
+         $DIR_HELLO = "Hello " . $bashed_console_name . " calling version $bareos_full_version\n";
       } else {
          $DIR_HELLO = "Hello *UserAgent* calling\n";
       }
