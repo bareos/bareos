@@ -2,11 +2,11 @@
 
 namespace Bareos\BSock;
 
-require_once '../webui/init_autoloader.php';
+require_once 'init_autoloader.php';
 
-require_once '../webui/vendor/Bareos/library/Bareos/BSock/BareosBase64.php';
-require_once '../webui/vendor/Bareos/library/Bareos/BSock/BareosBSockInterface.php';
-require_once '../webui/vendor/Bareos/library/Bareos/BSock/BareosBSock.php';
+require_once 'vendor/Bareos/library/Bareos/BSock/BareosBase64.php';
+require_once 'vendor/Bareos/library/Bareos/BSock/BareosBSockInterface.php';
+require_once 'vendor/Bareos/library/Bareos/BSock/BareosBSock.php';
 
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;

@@ -21,20 +21,20 @@ else
       -DCMAKE_INSTALL_PREFIX:PATH=${1}/usr \
       -DCMAKE_INSTALL_LIBDIR:PATH=${1}/usr/lib \
       -DSHARE_INSTALL_PREFIX:PATH=${1}/usr/share \
-    -Dbindir=${1}/bin \
-    -Dsbindir=${1}/bin \
-    -Dlibdir=${1}/bin \
     -Dsysconfdir=${1}/bin \
     -Dconfdir=${1}/bin \
     -Dwebuiconfdir=${1}/bin \
-    -Dmandir=${1}/bin \
-    -Ddocdir=${1}/bin/html \
-    -Dhtmldir=${1}/bin/html \
     ${PASSWD} \
     -Dbaseport=${BASEPORT}\
     ${COVERAGE} \
     ${TRAYMON}\
-    ${VERSION_STRING}
+    ${VERSION_STRING} \
+    -Dbindir=${1}/bin \
+    -Dsbindir=${1}/bin \
+    -Dlibdir=${1}/bin \
+    -Dmandir=${1}/bin \
+    -Ddocdir=${1}/bin/html \
+    -Dhtmldir=${1}/bin/html \
 
 fi
 

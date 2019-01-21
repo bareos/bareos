@@ -62,10 +62,8 @@ MESSAGE("   PHP is ${PHP} ")
 MESSAGE("   Install system config files:  ${sysconfdir} ")
 MESSAGE("   Install Bareos config dir:    ${confdir} ")
 MESSAGE("   Install BareosWebui configdir:${webuiconfdir} ")
-STRING(REGEX REPLACE "\"" "" BAREOS_FULL_VERSION  ${VERSION_STRING} )
 MESSAGE("   VERSION_STRING is ${VERSION_STRING} ")
 MESSAGE("   BAREOS_FULL_VERSION is ${BAREOS_FULL_VERSION} ")
-
 
 IF (EXISTS ${sysconfdir}/httpd/conf.d)
   SET(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
@@ -86,9 +84,9 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install/configuration.ini.in ${CMAKE_
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/version.php.in ${CMAKE_CURRENT_SOURCE_DIR}/version.php @ONLY)
 
 
+SET(WEBUI_DIR  ${SHARE_INSTALL_PREFIX}/bareos-webui)
+SET(WEBUI_TESTS_DIR  ${WEBUI_DIR}/tests/regress)
 IF (PHP)
- SET(WEBUI_DIR  ${SHARE_INSTALL_PREFIX}/bareos-webui)
- SET(WEBUI_TESTS_DIR  ${WEBUI_DIR}/tests/regress)
  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test.in ${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-bsock-connection-test @ONLY)
  # FILE(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/../regress/DartTestfile.txt.in "ADD_TEST(disk:webui-bsock-connection-test \"../webui/tests/regress/webui-bsock-connection-test\")")
 ELSE()
