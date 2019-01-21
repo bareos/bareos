@@ -32,6 +32,7 @@ chapter22/migration.tex
 chapter23/always-incremental.tex
 chapter24/basejob.tex
 chapter26/plugins.tex
+chapter26/plugins-vmware-plugin.tex
 chapter27/win32.tex
 chapter28/client-initiated-connection.tex
 chapter28/passiveclient.tex
