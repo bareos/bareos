@@ -109,7 +109,7 @@ cmake . \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{_sysconfdir}/bareos \
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
-  -DVERSION_STRING=\"%version\"
+  -DVERSION_STRING=%version
 
 make
 

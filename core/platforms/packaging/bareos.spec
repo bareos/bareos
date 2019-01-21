@@ -815,7 +815,7 @@ cmake  .. \
   -Dsystemd=yes \
 %endif
   -Dincludes=yes \
-  -DVERSION_STRING=\"%version\"
+  -DVERSION_STRING=%version
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};

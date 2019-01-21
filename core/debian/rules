@@ -77,7 +77,7 @@ define CONFIGURE_COMMON
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dincludes=yes \
   -Drpath=no \
-	-DVERSION_STRING=\"$(BAREOS_VERSION)\"
+	-DVERSION_STRING=$(BAREOS_VERSION)
 endef
 
 #  --docdir="\$(_docdir)/bareos" \

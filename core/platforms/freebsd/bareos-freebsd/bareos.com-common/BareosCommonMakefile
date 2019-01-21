@@ -132,7 +132,7 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dsd-group=$(STORAGE_DAEMON_GROUP) \
   -Dfd-user=$(FILE_DAEMON_USER) \
   -Dfd-group=$(DAEMON_GROUP) \
-  -DVERSION_STRING=\"$(DISTVERSION)\"
+  -DVERSION_STRING=$(DISTVERSION)
 
 post-install:
 	find ${STAGEDIR} -name '*.conf' -exec mv -v {} {}.sample \;

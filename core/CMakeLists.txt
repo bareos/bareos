@@ -70,7 +70,7 @@ execute_process(
 )
 
 INCLUDE(BareosExtractVersionInfo)
-add_definitions(-DVERSION=${BAREOS_FULL_VERSION})
+add_definitions(-DVERSION="${BAREOS_FULL_VERSION}")
 
 
 INCLUDE(BareosFindAllLibraries)

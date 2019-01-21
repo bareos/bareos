@@ -19,7 +19,7 @@ export DH_VERBOSE = 1
 export DH_OPTIONS = -v
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DSHARE_INSTALL_PREFIX:PATH=/usr/share -Dsysconfdir=/etc -Dconfdir=/etc/bareos -Dwebuiconfdir=/etc/bareos-webui -DVERSION_STRING=\"$(BAREOS_VERSION)\"
+	dh_auto_configure -- -DSHARE_INSTALL_PREFIX:PATH=/usr/share -Dsysconfdir=/etc -Dconfdir=/etc/bareos -Dwebuiconfdir=/etc/bareos-webui -DVERSION_STRING=$(BAREOS_VERSION)
 
 override_dh_install:
 	dh_install
