@@ -316,37 +316,46 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
 int SendJobInfoToFileDaemon(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
-   char ed1[30];
 
-   /*
-    * Now send JobId and authorization key
-    */
    if (jcr->sd_auth_key == NULL) {
       jcr->sd_auth_key = bstrdup("dummy");
    }
 
-   StorageResource *storage;
-   if (jcr->res.write_storage) {
-      storage = jcr->res.write_storage;
-   } else if (jcr->res.read_storage) {
-      storage = jcr->res.read_storage;
-   } else {
-      Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
-      jcr->setJobStatus(JS_ErrorTerminated);
-      return 0;
-   }
-
-   if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
-      /* client before Bareos 18.2 */
-      fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
-                jcr->VolSessionTime, jcr->sd_auth_key);
-   } else {
-      /* client onwards Bareos 18.2 */
-      TlsPolicy tls_policy;
-      tls_policy = storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+   if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kTlsFirst) {
+      /* client protocol onwards Bareos 18.2 */
+      TlsPolicy tls_policy = kBnetTlsUnknown;
+      int JobLevel = jcr->getJobLevel();
+      switch (JobLevel) {
+         case L_VERIFY_INIT:
+         case L_VERIFY_CATALOG:
+         case L_VERIFY_DISK_TO_CATALOG:
+            tls_policy = kBnetTlsUnknown;
+            break;
+         default:
+            StorageResource *storage = nullptr;
+            if (jcr->res.write_storage) {
+               storage = jcr->res.write_storage;
+            } else if (jcr->res.read_storage) {
+               storage = jcr->res.read_storage;
+            } else {
+               Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
+               jcr->setJobStatus(JS_ErrorTerminated);
+               return 0;
+            }
+            if (storage) {
+              tls_policy = storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+            }
+            break;
+      }
+      char ed1[30];
       fd->fsend(jobcmdssl, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
                 jcr->VolSessionTime, jcr->sd_auth_key, tls_policy);
-   }
+   } else { /* jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst */
+      /* client protocol before Bareos 18.2 */
+      char ed1[30];
+      fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+                jcr->VolSessionTime, jcr->sd_auth_key);
+   } /* if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kTlsFirst) */
 
    if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
