@@ -30,8 +30,12 @@ IF (NOT DEFINED VERSION_STRING)
   INCLUDE(BareosExtractVersionInfo)
 ELSE()
   # we got VERSION_STRING from cmake commandline
+  set(BAREOS_FULL_VERSION ${VERSION_STRING})
 ENDIF()
 
+IF (BAREOS_FULL_VERSION STREQUAL "")
+  MESSAGE(FATAL_ERROR BAREOS_FULL_VERSION is not set)
+ENDIF()
 
 find_program(PHP php)
 
