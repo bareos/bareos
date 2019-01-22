@@ -40,6 +40,8 @@ import re
 import os
 #import fcntl
 import struct
+import random
+import string
 
 
 def getArguments():
@@ -61,9 +63,13 @@ def getArguments():
     parser_restore = subparsers.add_parser(
         'rest', help="Restore a file or directory")
     parser_restore.add_argument('filename', help="File or directory to restore")
+    parser_restore.add_argument("-l","--lost", help=
+                                "Restore any lost file found in backup in directory given by filename argument", action='store_true', default=False)
     parser_restore.add_argument("-d", "--destination", help="Directory prefix for restore," +
-                                " default =None, will restore to original place in filesystem",
+                                " default =None, will restore to original place in filesystem. Ignored with -l",
                                 default=None)
+    parser_restore.add_argument("-o","--restoreoption", 
+                                help="Option-string added to restore command. Be careful", default='')
     parser_archive = subparsers.add_parser(
         'archive', help="Archive a list of files and / or directories")
     parser_archive.add_argument('filenames', nargs='+',
@@ -75,11 +81,21 @@ def getLostFiles(client, searchpath, recursive=False, printPrefix="./"):
     '''
     List all files in searchpath that exist in a backup but not in
     the filesystem. Use recursive=True to iterate through subdirectories
+    Return triple:
+    1. list of lost filenames
+    2. list of FileIds
+    3. Set of job ids
     '''
     lostFiles = []
+    lostFileIds = []
+    relevantJobIds = set()
     jobids = getClientJobs (client)
-    dirCommand = '.bvfs_lsfiles jobid={}'.format(','.join(jobids))
-    dirCommand += " path=" + searchpath
+    jobIdList = 'jobid={}'.format(','.join(jobids))
+    # first refresh bvfs_cache regarding needed jobids
+    dirCommand = ".bvfs_update %s" %jobIdList
+    logger.debug ("command: %s" %dirCommand)
+    jsonDirector.call(dirCommand)
+    dirCommand = ".bvfs_lsfiles %s path=%s" %(jobIdList, searchpath)
     res = jsonDirector.call(dirCommand)
     if 'files' in res:
         for file in res['files']:
@@ -87,16 +103,21 @@ def getLostFiles(client, searchpath, recursive=False, printPrefix="./"):
                 continue
             if not (os.path.lexists(searchpath + file['name'])):
                 lostFiles.append(printPrefix + file['name'])
-    dirCommand = '.bvfs_lsdirs jobid={}'.format(','.join(jobids))
-    dirCommand += " path=" + searchpath
+                lostFileIds.append(file['fileid'])
+                relevantJobIds.add(file['jobid'])
+    dirCommand = ".bvfs_lsdirs %s path=%s" %(jobIdList, searchpath)
     res = jsonDirector.call(dirCommand)
     if 'directories' in res:
         for dir in res['directories']:
             if dir['name'] == '.' or dir['name'] == '..':
                 continue
             if recursive:
-                lostFiles.extend(getLostFiles(client, searchpath + dir['name'], True, printPrefix + dir['name']))
-    return lostFiles
+                rLostFiles, rLostIds, rJobIds = getLostFiles(client, searchpath + dir['name'], 
+                                                             True, printPrefix + dir['name'])
+                lostFiles += rLostFiles
+                lostFileIds += rLostIds
+                relevantJobIds.update(rJobIds)
+    return (lostFiles, lostFileIds, relevantJobIds)
 
 def query(queryobject, client, query_recursive=False):
     '''
@@ -116,7 +137,8 @@ def query(queryobject, client, query_recursive=False):
         myPath = os.getcwd()
         if not myPath == '/':
             myPath += '/'
-        print ('\n'.join(getLostFiles(client, myPath, query_recursive)))
+        fileNames, fileIds, jobIds = getLostFiles(client, myPath, query_recursive)
+        print ('\n'.join(fileNames))
     else:
         logger.error("Unknown query object " + queryobject)
 
@@ -194,7 +216,27 @@ def incremental(client_joblist=None):
                 % (len(client_joblist), warnings, errors))
     return errors
 
-
+def restoreFiles(fileList, fileIds, jobIds, optionString=''):
+    '''
+    Restore a list of files with an optional relocationString
+    Arguments:
+    fileList: list of files
+    optionString: general options for the restore command, no error checking here
+    '''
+    tableId = "b2" + ''.join(random.choice(string.digits) for _ in range(9))
+    command = ".bvfs_restore fileid=%s jobid=%s path=%s" %(','.join(map(str,fileIds)), ','.join(map(str,jobIds)), tableId)
+    logger.debug("command: %s" %command)
+    result = jsonDirector.call(command)
+    command = "restore file=?%s client=%s %s" %(tableId, client_fd, optionString) 
+    logger.debug("command: %s" %command)
+    (jobId, jobResult) = runJob(command, True)
+    restoreResult = jobResult in ['T']
+    command = ".bvfs_cleanup path=%s" %tableId
+    logger.debug("command: %s" %command)
+    result = jsonDirector.call(command)
+    return restoreResult
+    
+    
 def restoreFile(filename, relocation=None):
     '''
     Restore a single file. Returns 0, if file got restored without errors, 1 otherwise
@@ -379,6 +421,16 @@ if __name__ == '__main__':
         exitCode = incremental(client_joblist)
         sys.exit(exitCode)
     elif args.command in ['restore', 'rest']:
+        if args.lost:
+            if not os.path.isdir(args.filename):
+                logger.error("Restore lost files requires directory as filename argument")
+                sys.exit(1)
+            lostFiles, fileIds, jobIds = getLostFiles(client_fd, args.filename, True, args.filename)
+            if lostFiles:
+                restoreFiles (lostFiles, fileIds, jobIds, args.restoreoption)
+            else:
+                logger.info ("no lost files found")
+            sys.exit(0)
         jobDone = restoreFile(args.filename, args.destination)
         if jobDone:
             sys.exit(0)
