@@ -136,5 +136,6 @@ echo "s%@GCOV@%${GCOV}%g" >>${out}
 echo "s%@PERL@%${PERL}%g" >>${out}
 
 if [ -n "${TRAYMON}" ] ; then
-  echo "s%#ADD_TEST(disk:tray-monitor-connection-test%ADD_TEST(disk:tray-monitor-connection-test%g" >> ${out}
+  echo "s%#ADD_TEST(disk:tray-monitor-connection-test-cleartext%ADD_TEST(disk:tray-monitor-connection-test-cleartext%g" >> ${out}
+  echo "s%#ADD_TEST(disk:tray-monitor-connection-test-tls-psk%ADD_TEST(disk:tray-monitor-connection-test-tls-psk%g" >> ${out}
 fi
