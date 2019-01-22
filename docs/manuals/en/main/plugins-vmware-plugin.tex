@@ -186,6 +186,60 @@ be used, for example
 
 Note that the backup will fail when specifying a transport method that is not available.
 
+Since \sinceVersion{fd}{VMware Plugin: non-ascii characters}{17.2.8} it is possible to use
+non-ascii characters and blanks in the configuration for \argument{folder} and \argument{vmname}.
+Also virtual disk file names or paths containing non-ascii characters are handled correctly now.
+For backing up VMs that are contained in vApps, it is now possible to use the vApp name like
+a folder component. For example, if we have the vApp named \command{Test vApp} in  the folder
+\path|/Test/Test Folder| and the vApp contains the two VMs \command{Test VM 01} and
+\command{Test VM 02}, then the configuration of the filesets should look like this:
+
+\begin{bconfig}{bareos-dir.conf: VMware Plugin FileSet definition for vApp}
+FileSet {
+  Name = "vApp_Test_vm_Test_VM_01_fileset"
+
+  Include {
+    Options {
+         signature = MD5
+         Compression = GZIP
+    }
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/Test/Test Folder/Test vApp:vmname=Test VM 01:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+  }
+}
+
+FileSet {
+  Name = "vApp_Test_vm_Test_VM_02_fileset"
+
+  Include {
+    Options {
+         signature = MD5
+         Compression = GZIP
+    }
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/Test/Test Folder/Test vApp:vmname=Test VM 02:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+  }
+}
+\end{bconfig}
+
+However, it is important to know that it is not possible to use non-ascii characters as an
+argument for the \configdirective{Name} of a job or fileset resource.
+
+Before this, it was only possible specify VMs contained in vApps by using the instance UUID with
+the \argument{uuid} instead of \argument{folder} and \argument{vmname} like this:
+
+\begin{bconfig}{bareos-dir.conf: VMware Plugin FileSet definition for vApp}
+FileSet {
+  Name = "vApp_Test_vm_Test_VM_01_fileset"
+    ...
+
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:uuid=502b112f-3954-d761-be08-5570c8a780e2:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+  }
+}
+\end{bconfig}
+
+Note that it must be the so called vSphere instance UUID, not the BIOS UUID which is shown inside a VM
+when using for example \command{dmidecode}. The \command{vmware_cbt_tool.py} utility was adapted
+accordingly (see below for details).
+
 \subsubsection{Backup}
 
 Before running the first backup, CBT (Changed Block Tracking) must be
@@ -199,8 +253,9 @@ in the bareos-vmware-plugin package:
 \begin{commands}{usage of vmware\_cbt\_tool.py}
 # <parameter>vmware_cbt_tool.py --help</parameter>
 usage: vmware_cbt_tool.py [-h] -s HOST [-o PORT] -u USER [-p PASSWORD] -d
-                          DATACENTER -f FOLDER -v VMNAME [--enablecbt]
-                          [--disablecbt] [--resetcbt] [--info]
+                          DATACENTER [-f FOLDER] [-v VMNAME]
+                          [--vm-uuid VM_UUID] [--enablecbt] [--disablecbt]
+                          [--resetcbt] [--info] [--listall]
 
 Process args for enabling/disabling/resetting CBT
 
@@ -214,15 +269,25 @@ optional arguments:
   -d DATACENTER, --datacenter DATACENTER
                         DataCenter Name
   -f FOLDER, --folder FOLDER
-                        Folder Name
+                        Folder Name (must start with /, use / for root folder
   -v VMNAME, --vmname VMNAME
                         Names of the Virtual Machines
+  --vm-uuid VM_UUID     Instance UUIDs of the Virtual Machines
   --enablecbt           Enable CBT
   --disablecbt          Disable CBT
   --resetcbt            Reset CBT (disable, then enable)
   --info                Show information (CBT supported and enabled or
                         disabled)
+  --listall             List all VMs in the given datacenter with UUID and
+                        containing folder
 \end{commands}
+
+Note: the options \command{--vm-uuid} and \command{--listall} have been added in
+version \sinceVersion{fd}{VMware Plugin: new options in vmware\_cbt\_tool.py}{17.2.8},
+the tool is also able now to process non-ascii character arguments for the
+\command{--folder} and \command{--vmname} arguments and vApp names can be used
+like folder name components. With \command{--listall} all VMs in the given datacenter
+are reported in a tabular output including instance UUID and containing Folder/vApp name.
 
 For the above configuration example, the command to enable CBT would be
 
@@ -247,8 +312,6 @@ the VM can be powered on.
 \subsubsection{Restore to local VMDK File}
 \index[general]{VMware Plugin!VMDK files}
 
-%Since \package{bareos-vadp-dumper} \sinceVersion{fd}{bareos-vadp-dumper}{15.2.2-15} and
-%\package{bareos-vmware-plugin} \sinceVersion{fd}{bareos-vmware-plugin}{15.2.2-27}
 Since \sinceVersion{fd}{VMware Plugin: restore to VMDK files}{15.2.3}
 it is possible to restore to local VMDK files. That means, instead of directly
 restoring a disk that belongs to the VM, the restore creates VMDK disk image files
