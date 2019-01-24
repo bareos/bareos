@@ -954,7 +954,11 @@ static void ListScheduledJobs(UaContext *ua)
          sp->pool = run->pool;
          GetJobStorage(&store, job, run);
          sp->store = store.store;
-         Dmsg3(250, "job=%s store=%s MediaType=%s\n", job->name(), sp->store->name(), sp->store->media_type);
+         if (sp->store) {
+            Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->name(), sp->store->name(), sp->store->media_type);
+         } else {
+            Dmsg1(250, "job=%s could not get job storage\n", job->name());
+         }
          sched.BinaryInsertMultiple(sp, CompareByRuntimePriority);
          num_jobs++;
       }
