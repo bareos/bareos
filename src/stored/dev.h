@@ -754,15 +754,15 @@ public:
    bool write_block_to_device();
    bool write_block_to_dev();
 
-   enum ReadStatus {
-      Error = 0,
-      Ok,
-      EndOfFile,
-      EndOfTape
-   };
+   typedef enum {
+      ReadStatus_Error = 0,
+      ReadStatus_Ok,
+      ReadStatus_EndOfFile,
+      ReadStatus_EndOfTape
+   } ReadStatus;
 
-   ReadStatus read_block_from_device(bool check_block_numbers);
-   ReadStatus read_block_from_dev(bool check_block_numbers);
+   DCR::ReadStatus read_block_from_device(bool check_block_numbers);
+   DCR::ReadStatus read_block_from_dev(bool check_block_numbers);
 
    /*
     * Methods in label.c

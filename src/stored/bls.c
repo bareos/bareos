@@ -292,10 +292,10 @@ static void do_blocks(char *infname)
    char buf1[100], buf2[100];
    for ( ;; ) {
       switch(dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
-         case DCR::ReadStatus::Ok:
+         case DCR::ReadStatus_Ok:
             // no special handling required
             break;
-         case DCR::ReadStatus::EndOfTape:
+         case DCR::ReadStatus_EndOfTape:
             if (!mount_next_read_volume(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
                   dev->file, dev->print_name(), dcr->VolumeName);
@@ -310,7 +310,7 @@ static void do_blocks(char *infname)
             free_record(record);
             Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
             break;
-         case DCR::ReadStatus::EndOfFile:
+         case DCR::ReadStatus_EndOfFile:
             Jmsg(jcr, M_INFO, 0, _("End of file %u on device %s, Volume \"%s\"\n"),
                dev->file, dev->print_name(), dcr->VolumeName);
             Dmsg0(20, "read_record got eof. try again\n");

@@ -1402,7 +1402,7 @@ bool generic_tape_device::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
       return fsr(rblock-block_num);
    } else {
       while (rblock > block_num) {
-         if (DCR::ReadStatus::Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+         if (DCR::ReadStatus_Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
             berrno be;
             dev_errno = errno;
             Dmsg2(30, "Failed to find requested block on %s: ERR=%s", prt_name, be.bstrerror());

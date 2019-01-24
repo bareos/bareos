@@ -772,7 +772,7 @@ static void reread_last_block(DCR *dcr)
           * Note, this can destroy dev->errmsg
           */
          dcr->block = lblock;
-         if (DCR::ReadStatus::Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
+         if (DCR::ReadStatus_Ok != dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
             Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"), dev->errmsg);
          } else {
             /*
@@ -925,7 +925,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
  */
 DCR::ReadStatus DCR::read_block_from_device(bool check_block_numbers)
 {
-   ReadStatus status;
+   DCR::ReadStatus status;
 
    Dmsg0(250, "Enter read_block_from_device\n");
    dev->rLock();
@@ -950,13 +950,13 @@ DCR::ReadStatus DCR::read_block_from_dev(bool check_block_numbers)
    if (job_canceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
       block->read_len = 0;
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
    }
 
    if (dev->at_eot()) {
       Mmsg(dev->errmsg, _("Attempt to read past end of tape or file.\n"));
       block->read_len = 0;
-      return ReadStatus::EndOfTape;
+      return DCR::ReadStatus_EndOfTape;
    }
    looping = 0;
    Dmsg1(250, "Full read in read_block_from_device() len=%d\n",
@@ -967,7 +967,7 @@ DCR::ReadStatus DCR::read_block_from_dev(bool check_block_numbers)
          dev->fd(), dev->file, dev->block_num, dev->print_name());
       Jmsg(dcr->jcr, M_WARNING, 0, "%s", dev->errmsg);
       block->read_len = 0;
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
     }
 
 reread:
@@ -977,7 +977,7 @@ reread:
          dev->print_name());
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       block->read_len = 0;
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
    }
 
    retry = 0;
@@ -1010,9 +1010,9 @@ reread:
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       if (device->eof_on_error_is_eot && dev->at_eof()) {
          dev->set_eot();
-         return ReadStatus::EndOfTape;
+         return DCR::ReadStatus_EndOfTape;
       }
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
    }
 
    Dmsg3(250, "Read device got %d bytes at %u:%u\n", status,
@@ -1025,10 +1025,10 @@ reread:
          dev->file, dev->block_num, dev->print_name());
       if (dev->at_eof()) { /* EOF already set before means end of tape */
          dev->set_eot();
-         return ReadStatus::EndOfTape;
+         return DCR::ReadStatus_EndOfTape;
       }
       dev->set_ateof();
-      return ReadStatus::EndOfFile;
+      return DCR::ReadStatus_EndOfFile;
    }
 
    /*
@@ -1053,7 +1053,7 @@ reread:
       dev->set_short_block();
       block->read_len = block->binbuf = 0;
       Dmsg2(200, "set block=%p binbuf=%d\n", block, block->binbuf);
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
    }
 
 // BlockNumber = block->BlockNumber + 1;
@@ -1063,7 +1063,7 @@ reread:
          dev->file_size += block->read_len;
          goto reread;
       }
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
    }
 
    /*
@@ -1086,7 +1086,7 @@ reread:
             Mmsg(dev->errmsg, "%s", dev->bstrerror());
             Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
             block->read_len = 0;
-            return ReadStatus::Error;
+            return DCR::ReadStatus_Error;
          }
       } else {
          Dmsg0(250, "Seek to beginning of block for reread.\n");
@@ -1117,7 +1117,7 @@ reread:
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       dev->set_short_block();
       block->read_len = block->binbuf = 0;
-      return ReadStatus::Error;
+      return DCR::ReadStatus_Error;
    }
 
    dev->clear_short_block();
@@ -1179,5 +1179,5 @@ reread:
    Dmsg2(250, "Exit read_block read_len=%d block_len=%d\n",
       block->read_len, block->block_len);
    block->block_read = true;
-   return ReadStatus::Ok;
+   return DCR::ReadStatus_Ok;
 }

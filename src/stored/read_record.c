@@ -192,10 +192,10 @@ bool read_next_block_from_device(DCR *dcr,
 
    while (1) {
       switch(dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
-         case DCR::ReadStatus::Ok:
+         case DCR::ReadStatus_Ok:
             // no handling required if read was successful
             break;
-         case DCR::ReadStatus::EndOfTape:
+         case DCR::ReadStatus_EndOfTape:
             Jmsg(jcr, M_INFO, 0, _("End of Volume at file %u on device %s, Volume \"%s\"\n"),
                  dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
 
@@ -242,7 +242,7 @@ bool read_next_block_from_device(DCR *dcr,
              * After reading label, we must read first data block
              */
             continue;
-         case DCR::ReadStatus::EndOfFile:
+         case DCR::ReadStatus_EndOfFile:
             Dmsg3(200, "End of file %u on device %s, Volume \"%s\"\n",
                   dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
             continue;
