@@ -95,7 +95,7 @@ def getLostFiles(client, searchpath, recursive=False, printPrefix="./"):
     dirCommand = ".bvfs_update %s" %jobIdList
     logger.debug ("command: %s" %dirCommand)
     jsonDirector.call(dirCommand)
-    dirCommand = ".bvfs_lsfiles %s path=%s" %(jobIdList, searchpath)
+    dirCommand = ".bvfs_lsfiles %s path=\"%s\"" %(jobIdList, searchpath)
     res = jsonDirector.call(dirCommand)
     if 'files' in res:
         for file in res['files']:
@@ -105,7 +105,7 @@ def getLostFiles(client, searchpath, recursive=False, printPrefix="./"):
                 lostFiles.append(printPrefix + file['name'])
                 lostFileIds.append(file['fileid'])
                 relevantJobIds.add(file['jobid'])
-    dirCommand = ".bvfs_lsdirs %s path=%s" %(jobIdList, searchpath)
+    dirCommand = ".bvfs_lsdirs %s path=\"%s\"" %(jobIdList, searchpath)
     res = jsonDirector.call(dirCommand)
     if 'directories' in res:
         for dir in res['directories']:
@@ -427,11 +427,12 @@ if __name__ == '__main__':
                 sys.exit(1)
             lostFiles, fileIds, jobIds = getLostFiles(client_fd, args.filename, True, args.filename)
             if lostFiles:
-                restoreFiles (lostFiles, fileIds, jobIds, args.restoreoption)
+                jobDone = restoreFiles (lostFiles, fileIds, jobIds, args.restoreoption)
             else:
                 logger.info ("no lost files found")
-            sys.exit(0)
-        jobDone = restoreFile(args.filename, args.destination)
+                jobDone = True
+        else:
+            jobDone = restoreFile(args.filename, args.destination)
         if jobDone:
             sys.exit(0)
         else:
