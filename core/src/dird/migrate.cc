@@ -1553,10 +1553,19 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
            write_storage->SDDport, tls_need, mig_jcr->sd_auth_key);
 
       if (!jcr->store_bsock->fsend(command.c_str())) {
-         FreePairedStorage(jcr);
-         return false;
+         goto bail_out;
       }
-   }
+
+      if (jcr->store_bsock->recv() <= 0) {
+         goto bail_out;
+      }
+
+      std::string OK_replicate {"3000 OK replicate\n"};
+      std::string received = jcr->store_bsock->msg;
+      if (received != OK_replicate) {
+         goto bail_out;
+      }
+  }
 
    /*
     * Start the job prior to starting the message thread below

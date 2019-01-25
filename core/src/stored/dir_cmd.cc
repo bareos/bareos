@@ -1567,9 +1567,36 @@ static bool ListenCmd(JobControlRecord *jcr)
    return DoListenRun(jcr);
 }
 
-/**
- * Get address of storage daemon from Director
- */
+enum class ReplicateCmdState {
+  kInit,
+  kConnected,
+  kTlsEstablished,
+  kAuthenticated,
+  kError
+};
+
+class ReplicateCmdConnectState
+{
+   JobControlRecord *jcr_;
+   ReplicateCmdState state_;
+
+public:
+   ReplicateCmdConnectState(JobControlRecord *jcr) : jcr_(jcr), state_(ReplicateCmdState::kInit) {}
+
+   ~ReplicateCmdConnectState() {
+      if (state_ == ReplicateCmdState::kInit || state_ == ReplicateCmdState::kError) {
+         if (!jcr_) { return; }
+         if (jcr_->dir_bsock) {
+            jcr_->dir_bsock->fsend(BADcmd, "replicate", jcr_->dir_bsock->msg);
+         }
+         jcr_->store_bsock = nullptr;
+      }
+   }
+   void operator() (ReplicateCmdState state) {
+      state_ = state;
+   }
+};
+
 static bool ReplicateCmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
@@ -1612,53 +1639,54 @@ static bool ReplicateCmd(JobControlRecord *jcr)
       storage_daemon_socket->SetBwlimitBursting();
    }
 
-   /*
-    * Open command communications with Storage daemon
-    */
+   ReplicateCmdConnectState connect_state(jcr);
+
    if (!storage_daemon_socket->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                     _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
            stored_addr, stored_port);
       Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
             stored_addr, stored_port);
+      connect_state(ReplicateCmdState::kError);
       return false;
    }
    Dmsg0(110, "Connection OK to SD.\n");
+   connect_state(ReplicateCmdState::kConnected);
 
    if (tls_policy == TlsPolicy::kBnetTlsAuto) {
-     std::string qualified_resource_name;
-     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-             JobName, R_JOB, qualified_resource_name)) {
-      return false;
-     }
-
-     if (!storage_daemon_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
-                                                qualified_resource_name.c_str(),
-                                                jcr->sd_auth_key, jcr)) {
-      return false;
-     }
+      std::string qualified_resource_name;
+      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                      JobName, R_JOB, qualified_resource_name)) {
+         connect_state(ReplicateCmdState::kError);
+         return false;
+      } else if (!storage_daemon_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
+                                                       qualified_resource_name.c_str(),
+                                                       jcr->sd_auth_key, jcr)) {
+         Dmsg0(110, "TLS direct handshake failed\n");
+         connect_state(ReplicateCmdState::kError);
+         return false;
+      } else {
+         connect_state(ReplicateCmdState::kTlsEstablished);
+      }
    }
 
    jcr->store_bsock = storage_daemon_socket.get();
 
    storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
+
    if (!AuthenticateWithStoragedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
-      jcr->store_bsock = nullptr;
+      connect_state(ReplicateCmdState::kError);
       return false;
+   } else {
+     connect_state(ReplicateCmdState::kAuthenticated);
+     Dmsg0(110, "Authenticated with SD.\n");
+
+     jcr->remote_replicate = true;
+
+     storage_daemon_socket.release(); /* jcr->store_bsock */
+     return dir->fsend(OK_replicate);
    }
-   Dmsg0(110, "Authenticated with SD.\n");
-
-   /*
-    * Keep track that we are replicating to a remote SD.
-    */
-   jcr->remote_replicate = true;
-
-   /*
-    * Send OK to Director
-    */
-   storage_daemon_socket.release(); /* jcr->store_bsock */
-   return dir->fsend(OK_replicate);
 }
 
 static bool RunCmd(JobControlRecord *jcr)
