@@ -527,6 +527,8 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
       const PskCredentials psk_cred(identity, password);
       tls_conn_init->SetTlsPskClientContext(psk_cred);
     }
+  } else {
+    Dmsg2(200, "Tls is not configured %s - %s\n", identity, tls_resource->name());
   }
 
   if (!tls_conn_init->init()) {
