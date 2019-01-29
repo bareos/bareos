@@ -114,7 +114,8 @@ ${PERL} 's#:raw-latex:`\\volumestatus\{(.*?)\}`#**\1**#g'   ${DESTFILE}
 ${PERL} 's#:raw-latex:`\\volumeparameter\{(.*?)\}\{(.*?)\}`#\1 = **\2**#g' ${DESTFILE}
 
 # remove nonsense lines
-${PERL} 's#   .. raw:: latex##g'   ${DESTFILE}
+${PERL} 's   .. raw:: latex##g'   ${DESTFILE}
+${PERL} 's#.. raw:: latex##g'   ${DESTFILE}
 
 # \parameter
 ${PERL} 's#(\s+):raw-latex:`\\parameter\{(.*?)\}(\s*)`#\1               :option:`\2`\3#g' ${DESTFILE}
@@ -187,6 +188,14 @@ ${PERL} 's#:raw-latex:`\\user\{(.*)\}`#**\1**#g'   ${DESTFILE}
 ${PERL} 's#\\user\{(.*)\}#**\1**#g'   ${DESTFILE}
 
 
+# \releaseUrlDownloadBareosOrg
+${PERL} 's#\\releaseUrlDownloadBareosOrg\{(.*?)\}#//http://download.bareos.org/bareos/release/\1/#g' ${DESTFILE}
+
+# \releaseUrlDownloadBareosCom
+${PERL} 's#\\releaseUrlDownloadBareosCom\{(.*?)\}#//https://download.bareos.com/bareos/release/\1/#g' ${DESTFILE}
+
+# \contribDownloadBareosOrg
+${PERL} 's#\\contribDownloadBareosOrg\{(.*?)\}#//http://download.bareos.org/bareos/contrib/#g' ${DESTFILE}
 
 # remove xml stuff
 
@@ -214,8 +223,14 @@ ${PERL} 's#\\dbtable\{(.*)\}#**\1**#g'   ${DESTFILE}
 ${PERL} 's#:raw-latex:`\\resourcename\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
 ${PERL} 's#:raw-latex:`\\resourcename\*\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ #g'   ${DESTFILE}
 
+# limitation
 
-
+#perl -i -0pe 's#\\limitation\{(.*?)\}\{(.*?)\}\{%(.*?)\}##g'   ${DESTFILE}
+#perl -i -0pe 's#\\limitation\*\{(.*?)\}\{(.*?)\}\{%(.*?)\}##g'   ${DESTFILE}
+#perl -i -0pe 's#   \\limitation\{(.*?)\}\{(.*?)\}#**\2**#g'   ${DESTFILE}
+#perl -i -0pe 's#   \\limitation\*\{(.*?)\}\{(.*?)\}#**\2**#g'   ${DESTFILE}
+perl -0777 -i -pe 's#   \\limitation\{(.*?)\}\{(.*?)\}\{%(.*?)\}#.. limitation:: **\2** \3#igs'   ${DESTFILE}
+perl -0777 -i -pe 's#   \\limitation\*\{(.*?)\}\{(.*?)\}\{%(.*?)\}#.. limitation:: **\2** \3#igs'   ${DESTFILE}
 
 
 ${PERL} 's#:raw-latex:`\\job\{(.*?)\}`#**\1**:sup:`Dir`:sub:`job`\ #g'   ${DESTFILE}

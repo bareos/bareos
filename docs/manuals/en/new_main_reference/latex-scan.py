@@ -65,6 +65,9 @@ class PFunction(PData):
     def getParameters(self):
         return self.data['parsed']['parameters']
 
+    def getOptionalParameters(self):
+        return self.data['parsed']['optional']
+
     def getNotEmptyParameters(self):
         return list(filter(None, self.data['parsed']['parameters']))
 
@@ -935,7 +938,12 @@ class Translate(object):
         # \index[general]{#1!Limitation!#2}%
         # }
         component, summary, text = item.getParameters()
-        item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n{2}\n'.format(component, summary, text))
+        if item.getOptionalParameters():
+            #item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n{2}\n'.format(component, summary, text))
+            item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n\n.. limitation:: **{1}.**\n{2}\n\n'.format(component, summary, text))
+        else:
+            item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n\n.. limitation:: **Limitation {0}: {1}.**\n{2}\n\n'.format(component, summary, text))
+
 
 
     #
