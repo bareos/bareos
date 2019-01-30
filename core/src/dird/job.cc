@@ -1062,11 +1062,12 @@ bool AllowDuplicateJob(JobControlRecord *jcr)
 }
 
 /**
- * This subroutine edits the last job start time into a
- * "since=date/time" buffer that is returned in the
- * variable since.  This is used for display purposes in
- * the job report.  The time in jcr->stime is later
- * passed to tell the File daemon what to do.
+ * This function determines the effective job level
+ * by honouring max incremental interval and max
+ * differential interval. It sets jcr->stime
+ * accordingly.
+ * The subroutine also sets jcr->since that is used
+ * for display purposes in the job report.
  */
 bool GetLevelSinceTime(JobControlRecord *jcr)
 {
@@ -1118,8 +1119,8 @@ bool GetLevelSinceTime(JobControlRecord *jcr)
       jcr->jr.JobId = 0;     /* flag to return since time */
 
       /*
-       * This is probably redundant, but some of the code below
-       * uses jcr->stime, so don't remove unless you are sure.
+       * This is the default case when doing an incremental because
+       * it initializes jcr->stime to the timestamp of the previous job
        */
       if (!jcr->db->FindJobStartTime(jcr, &jcr->jr, jcr->stime, jcr->PrevJob)) {
          do_full = true;
@@ -1129,7 +1130,7 @@ bool GetLevelSinceTime(JobControlRecord *jcr)
       if (have_full) {
          last_full_time = StrToUtime(last_full_stime);
       } else {
-         do_full = true;               /* No full, upgrade to one */
+         do_full = true;
       }
 
       Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
