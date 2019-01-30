@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,11 @@
 #include "dird/dird_globals.h"
 #include "dird/msgchan.h"
 #include "dird/next_vol.h"
+
+#if HAVE_NDMP
+#include "ndmp/ndmagents.h"
+#endif
+
 #include "dird/ndmp_dma_storage.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
@@ -61,7 +66,7 @@ static inline bool update_database(UaContext *ua,
        * Update existing media record.
        */
       mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
-      SetStorageidInMr(ua->jcr->res.wstore, mr);
+      SetStorageidInMr(ua->jcr->res.write_storage, mr);
       if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
           ua->ErrorMsg("%s", ua->db->strerror());
           retval = false;
@@ -73,7 +78,7 @@ static inline bool update_database(UaContext *ua,
       SetPoolDbrDefaultsInMediaDbr(mr, pr);
       mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
       mr->Enabled = 1;
-      SetStorageidInMr(ua->jcr->res.wstore, mr);
+      SetStorageidInMr(ua->jcr->res.write_storage, mr);
 
       if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
          ua->InfoMsg(_("Catalog record for Volume \"%s\", Slot %hd successfully created.\n"),
@@ -114,7 +119,7 @@ static inline bool native_send_label_request(UaContext *ua,
       return false;
    }
 
-   bstrncpy(dev_name, ua->jcr->res.wstore->dev_name(), sizeof(dev_name));
+   bstrncpy(dev_name, ua->jcr->res.write_storage->dev_name(), sizeof(dev_name));
    BashSpaces(dev_name);
    BashSpaces(mr->VolumeName);
    BashSpaces(mr->MediaType);
@@ -299,7 +304,7 @@ static inline bool IsCleaningTape(UaContext *ua, MediaDbRecord *mr, PoolDbRecord
 static void label_from_barcodes(UaContext *ua, drive_number_t drive,
                                 bool label_encrypt, bool yes)
 {
-   StorageResource *store = ua->jcr->res.wstore;
+   StorageResource *store = ua->jcr->res.write_storage;
    PoolDbRecord pr;
    MediaDbRecord mr;
    vol_list_t *vl;
@@ -310,7 +315,7 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
 
    memset(&mr, 0, sizeof(mr));
 
-   max_slots = GetNumSlots(ua, ua->jcr->res.wstore);
+   max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
    if (max_slots <= 0) {
       ua->WarningMsg(_("No slots in changer to scan.\n"));
       return;
@@ -335,10 +340,10 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
                   "Slot  Volume\n"
                   "==============\n"));
    foreach_dlist(vl, vol_list->contents) {
-      if (!vl->VolName || !BitIsSet(vl->Slot - 1, slot_list)) {
+      if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
          continue;
       }
-      ua->SendMsg("%4d  %s\n", vl->Slot, vl->VolName);
+      ua->SendMsg("%4d  %s\n", vl->bareos_slot_number, vl->VolName);
    }
 
    if (!yes &&
@@ -358,7 +363,7 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
     * Fire off the label requests
     */
    foreach_dlist(vl, vol_list->contents) {
-      if (!vl->VolName || !BitIsSet(vl->Slot - 1, slot_list)) {
+      if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
          continue;
       }
       memset(&mr, 0, sizeof(mr));
@@ -367,8 +372,8 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
       if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
          if (mr.VolBytes != 0) {
             ua->WarningMsg(_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
-                            vl->Slot, mr.VolumeName);
-            mr.Slot = vl->Slot;
+                            vl->bareos_slot_number, mr.VolumeName);
+            mr.Slot = vl->bareos_slot_number;
             mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
             SetStorageidInMr(store, &mr);
             if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
@@ -427,8 +432,8 @@ static void label_from_barcodes(UaContext *ua, drive_number_t drive,
          }
       }
 
-      mr.Slot = vl->Slot;
-      SendLabelRequest(ua, store, &mr, NULL, &pr, media_record_exists, false, drive, vl->Slot);
+      mr.Slot = vl->bareos_slot_number;
+      SendLabelRequest(ua, store, &mr, NULL, &pr, media_record_exists, false, drive, vl->bareos_slot_number);
    }
 
 bail_out:

@@ -22,35 +22,29 @@
 #ifndef BAREOS_LIB_TLS_CONF_CERT_H_
 #define BAREOS_LIB_TLS_CONF_CERT_H_
 
-class TlsConfigCert : public TlsConfigBase {
+class TlsConfigCert {
 public:
-   bool authenticate;         /* Authenticate with TLS */
-   bool VerifyPeer;           /* TLS Verify Peer Certificate */
-   std::string *CaCertfile;   /* TLS CA Certificate File */
-   std::string *CaCertdir;    /* TLS CA Certificate Directory */
-   std::string *crlfile;      /* TLS CA Certificate Revocation List File */
-   std::string *certfile;     /* TLS Client Certificate File */
-   std::string *keyfile;      /* TLS Client Key File */
-   std::string *cipherlist;   /* TLS Cipher List */
-   std::string *dhfile;       /* TLS Diffie-Hellman File */
+   bool verify_peer_;           /* TLS Verify Peer Certificate */
+   std::string *ca_certfile_;   /* TLS CA Certificate File */
+   std::string *ca_certdir_;    /* TLS CA Certificate Directory */
+   std::string *crlfile_;       /* TLS CA Certificate Revocation List File */
+   std::string *certfile_;      /* TLS Client Certificate File */
+   std::string *keyfile_;       /* TLS Client Key File */
+   std::string *dhfile_;        /* TLS Diffie-Hellman File */
    alist *allowed_certificate_common_names_;
 
-   std::string *pem_message;
+   std::string *pem_message_;
 
    TlsConfigCert()
-      : TlsConfigBase(), authenticate(false), VerifyPeer(0),
-        CaCertfile(nullptr), CaCertdir(nullptr), crlfile(nullptr), certfile(nullptr),
-        keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), allowed_certificate_common_names_(nullptr),
-        pem_message(nullptr) {}
+      : verify_peer_(0), ca_certfile_(nullptr), ca_certdir_(nullptr),
+        crlfile_(nullptr), certfile_(nullptr), keyfile_(nullptr), dhfile_(nullptr),
+        allowed_certificate_common_names_(nullptr), pem_message_(nullptr)
+        {}
    ~TlsConfigCert();
-
-   virtual uint32_t GetPolicy() const override;
 
    int (*TlsPemCallback)(char *buf, int size, const void *userdata);
 
-   bool GetVerifyPeer() const override { return VerifyPeer; }
-   std::vector<std::string> AllowedCertificateCommonNames() const override;
-   bool GetAuthenticate() const override { return authenticate; }
+   std::vector<std::string> AllowedCertificateCommonNames() const;
 };
 
 #endif /* BAREOS_LIB_TLS_CONF_CERT_H_ */

@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,15 +20,16 @@
 
 IF(HAVE_WIN32)
    include_directories(
-      ${CMAKE_SOURCE_DIR}/src/win32/generic
-      ${CMAKE_SOURCE_DIR}/src/win32/filed
-      ${CMAKE_SOURCE_DIR}/src/win32/vss/include
+      ${PROJECT_SOURCE_DIR}/src/win32/generic
+      ${PROJECT_SOURCE_DIR}/src/win32/filed
+      ${PROJECT_SOURCE_DIR}/src/win32/vss/include
       )
 ENDIF()
 
-set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmds.cc verify.cc
-    accurate_htable.cc backup.cc dir_cmd.cc filed.cc filed_globals.cc heartbeat.cc socket_server.cc 
-    verify_vol.cc accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)
+set(FDSRCS accurate.cc authenticate.cc crypto.cc evaluate_job_command.cc fd_plugins.cc fileset.cc
+    sd_cmds.cc verify.cc accurate_htable.cc backup.cc dir_cmd.cc filed.cc filed_globals.cc heartbeat.cc
+    socket_server.cc verify_vol.cc accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc
+    restore.cc status.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND FDSRCS
@@ -79,4 +80,4 @@ install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
-install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-filed-configfiles.cmake)
+install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake)

@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,5 +19,5 @@
 MESSAGE(STATUS "${CMAKE_COMMAND} -E create_symlink ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX} ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
    ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX}
-   ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${VERSION}
+   ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}.${BAREOS_NUMERIC_VERSION}
    )

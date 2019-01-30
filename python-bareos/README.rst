@@ -5,18 +5,38 @@ Python module to access a http://www.bareos.org backup system.
 
 `python-bareos` packages are included in the Bareos core distribution since bareos >= 17.2.
 
+TLS-PSK
+-------
+
+Since Bareos >= 18.2.4 can secure its connections via TLS-PSK (Transport-Layer-Security Pre-Shared-Key).
+
+This subset of TLS is currently not supported by the Python SSL module.
+To enable this feature in `python-bareos` the Python module 'sslpsk` must be installed:
+
+  * `pip install sslpsk`
+
+
+
+
 
 calling bareos-director user agent commands
------------------------------------------------
+-------------------------------------------
 
 .. code:: python
 
   import bareos.bsock
 
-  password=bareos.bsock.Password("secret")
-  directorconsole=bareos.bsock.DirectorConsole(address="localhost", port=9101, password=password)
-  print directorconsole.call("help")
+  password=bareos.bsock.Password('secret')
+  directorconsole=bareos.bsock.DirectorConsole(address='localhost', port=9101, password=password)
+  print directorconsole.call('help')
   ...
+
+To connected to a named console instead, use the `name` parameter:
+
+.. code:: python
+
+  directorconsole=bareos.bsock.DirectorConsole(address='localhost', port=9101, name='user1', password=password)
+
 
 
 simple version of the bconsole in Python
@@ -25,10 +45,17 @@ simple version of the bconsole in Python
 .. code:: python
 
   import bareos.bsock
-  password=bareos.bsock.Password("secret")
-  directorconsole=bareos.bsock.DirectorConsole(address="localhost", port=9101, password=password)
+  password=bareos.bsock.Password('secret')
+  directorconsole=bareos.bsock.DirectorConsole(address='localhost', port=9101, password=password)
   directorconsole.interactive()
   ...
+
+or use the included bconsole.py script:
+
+..
+
+  bconsole.py --debug --name=user1 --password=secret --port 9101 localhost
+
 
 use JSON objects of API mode 2
 ----------------------------------
@@ -38,7 +65,7 @@ Requires: bareos >= 15.2
 .. code:: python
 
   import bareos.bsock
-  password=bareos.bsock.Password("secret")
-  directorconsole=bareos.bsock.DirectorConsoleJson(address="localhost", port=9101, password=password)
-  directorconsole.call("list pools")
+  password=bareos.bsock.Password('secret')
+  directorconsole=bareos.bsock.DirectorConsoleJson(address='localhost', port=9101, password=password)
+  directorconsole.call('list pools')
   ...

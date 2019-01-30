@@ -40,35 +40,35 @@ public:
    /*
     * Interface from Device
     */
-   virtual void OpenDevice(DeviceControlRecord *dcr, int omode);
-   virtual char *StatusDev();
-   virtual bool eod(DeviceControlRecord *dcr);
-   virtual void SetAteof();
-   virtual void SetAteot();
-   virtual bool offline();
-   virtual bool weof(int num);
-   virtual bool fsf(int num);
-   virtual bool bsf(int num);
-   virtual bool fsr(int num);
-   virtual bool bsr(int num);
-   virtual bool LoadDev();
-   virtual void LockDoor();
-   virtual void UnlockDoor();
-   virtual void clrerror(int func);
-   virtual void SetOsDeviceParameters(DeviceControlRecord *dcr);
-   virtual int32_t GetOsTapeFile();
-   virtual bool rewind(DeviceControlRecord *dcr);
-   virtual bool UpdatePos(DeviceControlRecord *dcr);
-   virtual bool Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
-   virtual bool MountBackend(DeviceControlRecord *dcr, int timeout);
-   virtual bool UnmountBackend(DeviceControlRecord *dcr, int timeout);
-   virtual int d_close(int);
-   virtual int d_open(const char *pathname, int flags, int mode);
-   virtual int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
-   virtual ssize_t d_read(int fd, void *buffer, size_t count);
-   virtual ssize_t d_write(int fd, const void *buffer, size_t count);
-   virtual bool d_truncate(DeviceControlRecord *dcr);
+   virtual void OpenDevice(DeviceControlRecord *dcr, int omode) override;
+   virtual char *StatusDev() override;
+   virtual bool eod(DeviceControlRecord *dcr) override;
+   virtual void SetAteof() override;
+   virtual void SetAteot() override;
+   virtual bool offline() override;
+   virtual bool weof(int num) override;
+   virtual bool fsf(int num) override;
+   virtual bool bsf(int num) override;
+   virtual bool fsr(int num) override;
+   virtual bool bsr(int num) override;
+   virtual bool LoadDev() override;
+   virtual void LockDoor() override;
+   virtual void UnlockDoor() override;
+   virtual void clrerror(int func) override;
+   virtual void SetOsDeviceParameters(DeviceControlRecord *dcr) override;
+   virtual int32_t GetOsTapeFile() override;
+   virtual bool rewind(DeviceControlRecord *dcr) override;
+   virtual bool UpdatePos(DeviceControlRecord *dcr) override;
+   virtual bool Reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock) override;
+   virtual bool MountBackend(DeviceControlRecord *dcr, int timeout) override;
+   virtual bool UnmountBackend(DeviceControlRecord *dcr, int timeout) override;
+   virtual int d_close(int) override;
+   virtual int d_open(const char *pathname, int flags, int mode) override;
+   virtual int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL) override;
+   virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) override;
+   virtual ssize_t d_read(int fd, void *buffer, size_t count) override;
+   virtual ssize_t d_write(int fd, const void *buffer, size_t count) override;
+   virtual bool d_truncate(DeviceControlRecord *dcr) override;
 };
 
 } /* namespace storagedaemon */

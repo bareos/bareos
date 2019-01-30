@@ -383,12 +383,43 @@ extern int	ndmca_monitor_unload_last_tape (struct ndm_session *sess);
 extern int	ndmca_mon_wait_for_something (struct ndm_session *sess,
 			int32_t max_delay_secs);
 
+struct ndmca_jobcontrol_callbacks {
+   int (*is_job_canceled)(struct ndm_session *sess);
+};
+
+extern void ndmca_jobcontrol_register_callbacks (
+      struct ndm_session *sess,
+      struct ndmca_jobcontrol_callbacks *callbacks);
+
+extern void ndmca_jobcontrol_unregister_callbacks (
+      struct ndm_session *sess);
+
 /* ndma_cops_labels.c */
 extern int	ndmca_op_init_labels (struct ndm_session *sess);
 extern int	ndmca_op_list_labels (struct ndm_session *sess);
 
 
 /* ndma_cops_query.c */
+
+struct ndmca_query_callbacks {
+   int (*get_tape_info)(struct ndm_session *sess,
+         ndmp9_device_info *info,
+         unsigned n_info);
+/*
+   int (*get_host_info)(struct ndm_session *sess);
+   int (*get_fs_info)(struct ndm_session *sess);
+   int (*get_scsi_info)(struct ndm_session *sess);
+ */
+};
+
+extern void ndmca_query_register_callbacks (
+      struct ndm_session *sess,
+      struct ndmca_query_callbacks *callbacks);
+
+extern void ndmca_query_unregister_callbacks (
+      struct ndm_session *sess);
+
+
 extern int	ndmca_op_query (struct ndm_session *sess);
 extern int	ndmca_opq_data (struct ndm_session *sess);
 extern int	ndmca_opq_tape (struct ndm_session *sess);
@@ -1101,8 +1132,10 @@ struct ndm_session_param {
 
 struct ndm_session {
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
-	struct ndm_control_agent *control_acb;
-	struct ndmca_media_callbacks *nmc;
+  struct ndm_control_agent *control_acb;
+  struct ndmca_media_callbacks *media_cbs;
+  struct ndmca_query_callbacks *query_cbs;
+  struct ndmca_jobcontrol_callbacks *jobcontrol_cbs;
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
 	struct ndm_data_agent	*data_acb;

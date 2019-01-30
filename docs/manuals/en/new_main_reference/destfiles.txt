@@ -32,6 +32,7 @@ chapter22/migration.tex
 chapter23/always-incremental.tex
 chapter24/basejob.tex
 chapter26/plugins.tex
+chapter26/plugins-vmware-plugin.tex
 chapter27/win32.tex
 chapter28/client-initiated-connection.tex
 chapter28/passiveclient.tex
@@ -59,6 +60,7 @@ appendix-l/releasenotes.tex
 appendix-m/license.tex
 
 # developer guide (only copying from developers guide)
+developers/releasenotes.rst
 developers/api.rst
 developers/catalog.rst
 developers/daemonprotocol.rst

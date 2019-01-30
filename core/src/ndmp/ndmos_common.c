@@ -72,6 +72,7 @@ ndmos_sync_config_info (struct ndm_session *sess)
 		sess->config_info = (ndmp9_config_info *)NDMOS_API_MALLOC (sizeof (ndmp9_config_info));
 		if (!sess->config_info)
 			return;
+    NDMOS_MACRO_ZEROFILL(sess->config_info);
 	}
 
 	if (sess->config_info->hostname) {

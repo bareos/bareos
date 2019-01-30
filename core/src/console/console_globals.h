@@ -23,11 +23,14 @@
 #ifndef BAREOS_CONSOLE_CONSOLE_GLOBALS_H_
 #define BAREOS_CONSOLE_CONSOLE_GLOBALS_H_ 1
 
+class ConfigurationParser;
+
 namespace console {
 
 class ConsoleResource;
 class DirectorResource;
 
+extern ConfigurationParser *my_config;
 extern ConsoleResource *me;
 extern ConsoleResource *console_resource;
 extern DirectorResource *director_resource;

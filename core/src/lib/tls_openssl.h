@@ -56,14 +56,14 @@ class TlsOpenSsl : public Tls {
   void SetTlsPskServerContext(ConfigurationParser *config,
                                           GetTlsPskByFullyQualifiedResourceNameCb_t cb) override;
 
-  void SetCaCertfile(const std::string &ca_certfile) override;
+  void Setca_certfile_(const std::string &ca_certfile) override;
   void SetCaCertdir(const std::string &ca_certdir) override;
-  void SetCrlfile(const std::string &crlfile) override;
-  void SetCertfile(const std::string &certfile) override;
-  void SetKeyfile(const std::string &keyfile) override;
+  void SetCrlfile(const std::string &crlfile_) override;
+  void SetCertfile(const std::string &certfile_) override;
+  void SetKeyfile(const std::string &keyfile_) override;
   void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override;
   void SetPemUserdata(void *pem_userdata) override;
-  void SetDhFile(const std::string &dhfile) override;
+  void SetDhFile(const std::string &dhfile_) override;
   void SetVerifyPeer(const bool &verify_peer) override;
   void SetTcpFileDescriptor(const int &fd) override;
 

@@ -20,6 +20,8 @@
 */
 
 #include "qualified_resource_name_type_converter.h"
+#include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
 
 #include <sstream>
 #include <algorithm>
@@ -61,58 +63,26 @@ bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &nam
 {
   std::string r_name = ResourceTypeToString(r_type);
   if (r_name.empty()) { return false; }
-  str_out = r_name + record_separator_ + name_of_resource;
+  str_out = r_name + AsciiControlCharacters::RecordSeparator() + name_of_resource;
   return true;
-}
-
-bool QualifiedResourceNameTypeConverter::ResourceToString(const std::string &name_of_resource,
-                                                          const int &r_type,
-                                                          const int &job_id,
-                                                          std::string &str_out) const
-{
-  std::string r_name = ResourceTypeToString(r_type);
-  if (r_name.empty()) { return false; }
-  str_out = r_name + record_separator_ + name_of_resource + record_separator_ + std::to_string(job_id);
-  return true;
-}
-
-template <class Container>
-static void SplitStringIntoList(const std::string &str_in, Container &cont, char delim, int max_substring)
-{
-  std::stringstream ss(str_in);
-  std::string token;
-  int max = max_substring;
-  while (std::getline(ss, token, delim) && max) {
-    cont.push_back(token);
-    max--;
-  }
 }
 
 bool QualifiedResourceNameTypeConverter::StringToResource(std::string &name_of_resource,
                                                           int &r_type,
-                                                          int &job_id,
                                                           const std::string &str_in) const
 {
-  std::vector<std::string> string_list;
-  SplitStringIntoList(str_in, string_list, record_separator_, 3);
+  BStringList string_list(str_in, AsciiControlCharacters::RecordSeparator());
+
   if (string_list.size() < 2) { /* minimum of parameters are name_of_resource and r_type */
     return false;
   }
+
+  /* convert resource type */
   std::string r_type_str = string_list.at(0);
   int r_type_temp        = StringToResourceType(r_type_str);
   if (r_type_temp == -1) { return false; }
   r_type           = r_type_temp;
-  name_of_resource = string_list.at(1);
 
-  if (string_list.size() == 3) { /* str_in contains probably a job_id */
-    int job_id_temp;
-    std::string job_id_str = string_list.at(2);
-    try {
-      job_id_temp = std::stoi(job_id_str);
-    } catch (const std::exception &e) {
-      return false;
-    }
-    job_id = job_id_temp;
-  }
+  name_of_resource = string_list.at(1);
   return true;
 }

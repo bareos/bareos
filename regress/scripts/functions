@@ -6,7 +6,7 @@
 
 copy_configs()
 {
-    COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole"
+    COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole tray-monitor"
     CONFIGDIRS="BASE ${TestName} $@"
     FOUND=""
 

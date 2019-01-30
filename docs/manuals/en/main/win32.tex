@@ -330,7 +330,7 @@ Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key
 \end{bmessage}
 
 For more details about the Windows registry key see 
-\url{http://msdn.microsoft.com/en-us/library/windows/desktop/bb891959%28v=vs.85%29.aspx#filesnottobackup}.
+\url{http://msdn.microsoft.com/en-us/library/windows/desktop/bb891959\%28v=vs.85\%29.aspx#filesnottobackup}.
 
 \subsection{Windows dedup support}
 
@@ -595,13 +595,13 @@ The \bareosFd (and also the \bareosDir and \bareosSd) is started as a Windows se
 This is configured in the Registry at
 
 \begin{itemize}
-\item \path|Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd|
+\item \registrykey{HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd}
 \end{itemize}
 
 You can use the command \command{regedit} to modify the settings.
 
 E.g. to always start Bareos in debug mode,
-modify \path|Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd| \path|ImagePath|
+modify \registrykey{HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd} \path|ImagePath|
 from
 
 {

@@ -20,6 +20,8 @@
 */
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "tests/bareos_test_sockets.h"
+#include "tests/init_openssl.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <fstream>
@@ -36,6 +38,8 @@
 #include "dird/dird_globals.h"
 
 #include "lib/tls_openssl.h"
+#include "lib/bnet.h"
+#include "lib/bstringlist.h"
 
 #include "include/jcr.h"
 
@@ -61,6 +65,7 @@ static std::unique_ptr<console::ConsoleResource> cons_cons_config;
 
 void InitForTest()
 {
+  InitOpenSsl();
   dir_cons_config.reset(directordaemon::CreateAndInitializeNewConsoleResource());
   dir_dir_config.reset(directordaemon::CreateAndInitializeNewDirectorResource());
   cons_dir_config.reset(console::CreateAndInitializeNewDirectorResource());
@@ -81,78 +86,6 @@ void InitForTest()
   InitMsg(NULL, NULL);
 }
 
-int create_accepted_server_socket(int port)
-{
-  int server_fd, new_socket;
-  struct sockaddr_in address;
-  int opt = 1;
-  int addrlen = sizeof(address);
-
-  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-    perror("socket failed");
-    return -1;
-  }
-
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-    perror("setsockopt");
-    return -1;
-  }
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind failed");
-    return -1;
-  }
-
-  struct timeval timeout;
-  timeout.tv_sec  = 1;  // after 1 seconds connect() will timeout
-  timeout.tv_usec = 0;
-
-  if (setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-    perror("setsockopt");
-    return -1;
-  }
-
-  if (listen(server_fd, 3) < 0) {
-    perror("listen");
-    return -1;
-  }
-
-  if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
-    if (errno == EWOULDBLOCK || errno == EAGAIN) {
-      perror("Socket accept timeout");
-    }
-    return -1;
-  }
-  return new_socket;
-}
-
-BareosSocket *create_new_bareos_socket(int fd)
-{
-  BareosSocket *bs;
-  bs = New(BareosSocketTCP);
-  bs->sleep_time_after_authentication_error = 0;
-  bs->fd_ = fd;
-  bs->SetWho(bstrdup("client"));
-  memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
-  return bs;
-}
-
-
-#if 0
-static bool check_cipher(const TlsResource &tls, const std::string &cipher)
-{
-   bool success = false;
-   if (tls.tls_cert.IsActivated() && !tls.tls_psk.IsActivated()) { /* cert && !psk */
-      success = cipher.find("-RSA-") != std::string::npos;
-   } else if (!tls.tls_cert.IsActivated() && tls.tls_psk.IsActivated()) { /* !cert && psk */
-      success = cipher.find("-PSK-") != std::string::npos;
-   }
-   return success;
-}
-#endif
-
 static void clone_a_server_socket(BareosSocket* bs)
 {
    std::unique_ptr<BareosSocket> bs2(bs->clone());
@@ -162,11 +95,10 @@ static void clone_a_server_socket(BareosSocket* bs)
    bs->fsend("bareos-socket-1234567890");
 }
 
-void start_bareos_server(std::promise<bool> *promise, std::string console_name,
+static void start_bareos_server(std::promise<bool> *promise, std::string console_name,
                          std::string console_password, std::string server_address, int server_port)
 
 {
-  bool success = false;
   int newsockfd = create_accepted_server_socket(server_port);
 
   if (newsockfd < 0) {
@@ -180,6 +112,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   password->encoding = p_encoding_md5;
   password->value = (char *)console_password.c_str();
 
+  bool success = false;
   if (bs->recv() <= 0) {
     Dmsg1(10, _("Connection request from %s failed.\n"), bs->who());
   } else if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
@@ -197,7 +130,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
          Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
          cipher_server = cipher;
       }
-      if (dir_cons_config->tls_psk.IsActivated() || dir_cons_config->tls_cert.IsActivated()) {
+      if (dir_cons_config->IsTlsConfigured()) {
          Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n" : "Tls failed to establish\n");
          success = bs->TlsEstablished();
       } else {
@@ -216,7 +149,7 @@ void start_bareos_server(std::promise<bool> *promise, std::string console_name,
   promise->set_value(success);
 }
 
-void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
+static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 {
    std::string received_msg;
    std::string orig_msg2("cloned-bareos-socket-0987654321");
@@ -233,16 +166,14 @@ void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 }
 
 #if CLIENT_AS_A_THREAD
-int connect_to_server(std::string console_name, std::string console_password,
+static int connect_to_server(std::string console_name, std::string console_password,
                       std::string server_address, int server_port)
 #else
-bool connect_to_server(std::string console_name, std::string console_password,
+static bool connect_to_server(std::string console_name, std::string console_password,
                       std::string server_address, int server_port)
 #endif
 {
   utime_t heart_beat = 0;
-  char errmsg[1024];
-  int errmsg_len = sizeof(errmsg);
 
   JobControlRecord jcr;
   memset(&jcr, 0, sizeof(jcr));
@@ -264,10 +195,12 @@ bool connect_to_server(std::string console_name, std::string console_password,
     Dmsg0(10, "socket connect failed\n");
   } else {
     Dmsg0(10, "socket connect OK\n");
-
-    if (!UA_sock->AuthenticateWithDirector(&jcr, name, *password, errmsg, errmsg_len, cons_dir_config.get())) {
+    uint32_t response_id = kMessageIdUnknown;
+    BStringList response_args;
+    if (!UA_sock->ConsoleAuthenticateWithDirector(&jcr, name, *password, cons_dir_config.get(), response_args, response_id)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {
+      EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
       Dmsg0(10, "Authenticate Connect to Server successful!\n");
       std::string cipher;
       if (UA_sock->tls_conn) {
@@ -275,7 +208,7 @@ bool connect_to_server(std::string console_name, std::string console_password,
          Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
          cipher_client = cipher;
       }
-      if (cons_dir_config->tls_psk.IsActivated() || cons_dir_config->tls_cert.IsActivated()) {
+      if (cons_dir_config->IsTlsConfigured()) {
          Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n" : "Tls failed to establish\n");
          success = UA_sock->TlsEstablished();
       } else {
@@ -302,11 +235,9 @@ std::string client_cons_password;
 std::string server_cons_name;
 std::string server_cons_password;
 
-int port = BSOCK_TEST_PORT_NUMBER;
-
 TEST(bsock, auth_works)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -318,15 +249,15 @@ TEST(bsock, auth_works)
 
   InitForTest();
 
-  cons_dir_config->tls_psk.enable_ = false;
-  dir_cons_config->tls_psk.enable_ = false;
+  cons_dir_config->tls_enable_ = false;
+  dir_cons_config->tls_enable_ = false;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -335,7 +266,7 @@ TEST(bsock, auth_works)
 
 TEST(bsock, auth_works_with_different_names)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -347,15 +278,15 @@ TEST(bsock, auth_works_with_different_names)
 
   InitForTest();
 
-  cons_dir_config->tls_psk.enable_ = false;
-  dir_cons_config->tls_psk.enable_ = false;
+  cons_dir_config->tls_enable_ = false;
+  dir_cons_config->tls_enable_ = false;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -363,7 +294,7 @@ TEST(bsock, auth_works_with_different_names)
 
 TEST(bsock, auth_fails_with_different_passwords)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -375,15 +306,15 @@ TEST(bsock, auth_fails_with_different_passwords)
 
   InitForTest();
 
-  cons_dir_config->tls_psk.enable_ = false;
-  dir_cons_config->tls_psk.enable_ = false;
+  cons_dir_config->tls_enable_ = false;
+  dir_cons_config->tls_enable_ = false;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
-  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 
   server_thread.join();
   EXPECT_FALSE(future.get());
@@ -391,7 +322,7 @@ TEST(bsock, auth_fails_with_different_passwords)
 
 TEST(bsock, auth_works_with_tls_cert)
 {
-  port++;
+  listening_server_port_number++;
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -403,27 +334,57 @@ TEST(bsock, auth_works_with_tls_cert)
 
   InitForTest();
 
-  cons_dir_config->tls_psk.enable_ = true;
-  cons_dir_config->tls_cert.enable_ = true;
-  dir_cons_config->tls_cert.enable_ = true;
+  cons_dir_config->tls_enable_ = true;
+  dir_cons_config->tls_enable_ = true;
 
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name, server_cons_password,
-                            HOST, port);
+                            HOST, listening_server_port_number);
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
-  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password, HOST, port, cons_dir_config.get());
+  std::thread client_thread(connect_to_server, client_cons_name, client_cons_password,
+                            HOST, listening_server_port_number, cons_dir_config.get());
   client_thread.join();
 #else
-  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, port));
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST, listening_server_port_number));
 #endif
 
   server_thread.join();
 
   EXPECT_TRUE(cipher_server == cipher_client);
   EXPECT_TRUE(future.get());
+}
+
+class BareosSocketTCPMock : public BareosSocketTCP
+{
+public:
+  BareosSocketTCPMock(std::string &t)
+    : test_variable_(t) {}
+
+  virtual ~BareosSocketTCPMock() {
+    test_variable_ = "Destructor Called";
+  }
+  std::string &test_variable_;
+};
+
+TEST(bsock, create_bareos_socket_unique_ptr)
+{
+  std::string test_variable;
+  {
+    std::unique_ptr<BareosSocketTCPMock,std::function<void(BareosSocket*)>> p;
+    {
+      std::unique_ptr<BareosSocketTCPMock,std::function<void(BareosSocket*)>>
+                            p1(New(BareosSocketTCPMock(test_variable)), [](BareosSocket *p) {delete p;});
+      EXPECT_NE(p1.get(), nullptr);
+      p = std::move(p1);
+      EXPECT_EQ(p1.get(), nullptr);
+      EXPECT_TRUE(test_variable.empty());
+    }
+    EXPECT_NE(p.get(), nullptr);
+  }
+  EXPECT_STREQ(test_variable.c_str(), "Destructor Called");
 }
 
 #if 0
@@ -436,7 +397,7 @@ TEST(bsock, auth_works_with_tls_psk)
   InitForTest();
 
   cons_dir_config->tls_psk.enable = true;
-  cons_dir_config->tls_cert.enable = true;
+  cons_dir_config->tls_cert_.enable = true;
   dir_cons_config->tls_psk.enable = true;
 
   Dmsg0(10, "starting listen thread...\n");
@@ -470,7 +431,7 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   dir_cons_config->password.value = (char*)"verysecretpassword";
 
   cons_dir_config->tls_psk.enable = true;
-  cons_dir_config->tls_cert.enable = true;
+  cons_dir_config->tls_cert_.enable = true;
   dir_cons_config->tls_psk.enable = true;
 
   Dmsg0(10, "starting listen thread...\n");
@@ -492,3 +453,25 @@ TEST(bsock, auth_fails_with_different_names_with_tls_psk)
   EXPECT_FALSE(future.get());
 }
 #endif
+
+TEST(BNet, FormatAndSendResponseMessage)
+{
+  std::unique_ptr<TestSockets> test_sockets(create_connected_server_and_client_bareos_socket());
+  EXPECT_NE(test_sockets.get(), nullptr) << "Could not create Bareos test sockets.";
+  if (!test_sockets) { return; }
+
+  std::string m("Test123");
+
+  test_sockets->client->FormatAndSendResponseMessage(kMessageIdOk, m);
+
+  uint32_t id = kMessageIdUnknown;
+  BStringList args;
+  bool ok = test_sockets->server->ReceiveAndEvaluateResponseMessage(id, args);
+
+  EXPECT_TRUE(ok) << "ReceiveAndEvaluateResponseMessage errored.";
+  EXPECT_EQ(id, kMessageIdOk) << "Wrong MessageID received.";
+
+  std::string test("1000 Test123");
+  EXPECT_STREQ(args.JoinReadable().c_str(), test.c_str());
+}
+

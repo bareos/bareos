@@ -1003,3 +1003,38 @@ A very simple corresponding shell script (\command{bpipe-restore.sh}) to the met
 cat - > /tmp/dump.sql
 exit 0
 \end{bconfig}
+
+\section{Statistics Collection}
+\label{sec:StatisticCollection}
+
+Statistics Collection can be controlled by a number of configuration directives.
+If Statistics Collection is enabled, statistics are collected by the \bareosDir and stored into the Catalog database.
+So enabling this feature will increase your database size.
+
+The Statistics are used by the \bareosWebui to show the status of a running job.
+\index[general]{Webui!Configure Statistics Collection}
+
+\subsection{Director Configuration - Director Resource Directives}
+\begin{itemize}
+  \item \linkResourceDirective{Dir}{Director}{Statistics Collect Interval}
+  \item \linkResourceDirective{Dir}{Director}{Statistics Retention}
+\end{itemize}
+
+\subsection{Director Configuration - Storage Resource Directives}
+\begin{itemize}
+  \item \linkResourceDirective{Dir}{Storage}{Collect Statistics}
+\end{itemize}
+
+\subsection{Storage Configuration - Storage Resource Directives}
+\begin{itemize}
+  \item \linkResourceDirective{Sd}{Storage}{Collect Device Statistics}
+  \item \linkResourceDirective{Sd}{Storage}{Collect Job Statistics}
+  \item \linkResourceDirective{Sd}{Storage}{Statistics Collect Interval}
+\end{itemize}
+
+\subsection{Storage Configuration - Device Resource Directives}
+\begin{itemize}
+  \item \linkResourceDirective{Sd}{Device}{Collect Statistics}
+\end{itemize}
+
+See chapter \nameref{sec:JobStatistics} for additional information.

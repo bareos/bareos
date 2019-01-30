@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Run a simple connection test
+# with an instance of the webui
+# PHP BareosBSock class
+#
+TestName="webui-bsock-connection-test"
+
+PHP=@PHP@
+WEBUI_TESTS_DIR=@WEBUI_TESTS_DIR@
+WEBUI_DIR=@WEBUI_DIR@
+
+. scripts/functions
+
+scripts/cleanup
+
+copy_configs
+
+start_test
+
+run_bareos
+
+cd ${WEBUI_DIR}
+${PHP} ${WEBUI_TESTS_DIR}/webui-bsock-connection-test.php
+cd -
+
+estat_plain=$?
+
+stop_bareos
+
+export estat
+
+let estat=estat_plain
+
+end_test

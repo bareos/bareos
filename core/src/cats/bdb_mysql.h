@@ -44,30 +44,30 @@ private:
    /*
     * Methods.
     */
-   bool OpenDatabase(JobControlRecord *jcr);
-   void CloseDatabase(JobControlRecord *jcr);
-   bool ValidateConnection(void);
-   void ThreadCleanup(void);
-   void EscapeString(JobControlRecord *jcr, char *snew, char *old, int len);
-   char *EscapeObject(JobControlRecord *jcr, char *old, int len);
+   bool OpenDatabase(JobControlRecord *jcr) override;
+   void CloseDatabase(JobControlRecord *jcr) override;
+   bool ValidateConnection(void) override;
+   void ThreadCleanup(void) override;
+   void EscapeString(JobControlRecord *jcr, char *snew, char *old, int len) override;
+   char *EscapeObject(JobControlRecord *jcr, char *old, int len) override;
    void UnescapeObject(JobControlRecord *jcr, char *from, int32_t expected_len,
-                        POOLMEM *&dest, int32_t *len);
-   void StartTransaction(JobControlRecord *jcr);
-   void EndTransaction(JobControlRecord *jcr);
-   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx);
-   bool SqlQueryWithoutHandler(const char *query, int flags = 0);
-   void SqlFreeResult(void);
-   SQL_ROW SqlFetchRow(void);
-   const char *sql_strerror(void);
-   void SqlDataSeek(int row);
-   int SqlAffectedRows(void);
-   uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name);
-   SQL_FIELD *SqlFetchField(void);
-   bool SqlFieldIsNotNull(int field_type);
-   bool SqlFieldIsNumeric(int field_type);
-   bool SqlBatchStart(JobControlRecord *jcr);
-   bool SqlBatchEnd(JobControlRecord *jcr, const char *error);
-   bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar);
+                        POOLMEM *&dest, int32_t *len) override;
+   void StartTransaction(JobControlRecord *jcr) override;
+   void EndTransaction(JobControlRecord *jcr) override;
+   bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx) override;
+   bool SqlQueryWithoutHandler(const char *query, int flags = 0) override;
+   void SqlFreeResult(void) override;
+   SQL_ROW SqlFetchRow(void) override;
+   const char *sql_strerror(void) override;
+   void SqlDataSeek(int row) override;
+   int SqlAffectedRows(void) override;
+   uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name) override;
+   SQL_FIELD *SqlFetchField(void) override;
+   bool SqlFieldIsNotNull(int field_type) override;
+   bool SqlFieldIsNumeric(int field_type) override;
+   bool SqlBatchStart(JobControlRecord *jcr) override;
+   bool SqlBatchEnd(JobControlRecord *jcr, const char *error) override;
+   bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar) override;
 
 public:
    /*

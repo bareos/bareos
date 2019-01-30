@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 IF(HAVE_WIN32)
-   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends)
+   include_directories(${PROJECT_SOURCE_DIR}/src/win32/generic ${PROJECT_SOURCE_DIR}/src/win32/stored  ${PROJECT_SOURCE_DIR}/src/stored/backends)
 ENDIF()
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
@@ -29,9 +29,9 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 
    IF(HAVE_WIN32)
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
-         ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
-         ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
-         ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
+         ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
+         ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
+         ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
          )
    ELSE()
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
@@ -224,8 +224,8 @@ INSTALL(TARGETS bareos-sd bls bextract bscan btape bcopy DESTINATION "${sbindir}
 install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${CMAKE_SOURCE_DIR}\")")
-install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
+install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
+install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 
 INSTALL(DIRECTORY DESTINATION "../${archivedir}")
 

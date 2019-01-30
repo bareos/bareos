@@ -17,9 +17,21 @@ import random
 import re
 from   select import select
 import socket
+import ssl
 import struct
 import sys
 import time
+import warnings
+
+# Try to load the sslpsk module,
+# with implement TLS-PSK (Transport Layer Security - Pre-Shared-Key)
+# on top of the ssl module.
+# If it is not available, we continue anyway,
+# but don't use TLS-PSK.
+try:
+    import sslpsk
+except ImportError:
+    warnings.warn(u'Connection encryption via TLS-PSK is not available, as the module sslpsk is not installed.')
 
 class LowLevel(object):
     """
@@ -36,37 +48,110 @@ class LowLevel(object):
         self.dirname = None
         self.socket = None
         self.auth_credentials_valid = False
+        self.tls_psk_enable = True
+        self.tls_psk_require = False
         self.connection_type = None
+        # identity_prefix have to be set in each class
+        self.identity_prefix = u'R_NONE'
         self.receive_buffer = b''
 
-    def connect(self, address, port, dirname, type):
+
+    def connect(self, address, port, dirname, type, name = None, password = None):
         self.address = address
-        self.port = port
+        self.port = int(port)
         if dirname:
             self.dirname = dirname
         else:
             self.dirname = address
         self.connection_type = type
+        self.name = name
+        self.password = password
+
         return self.__connect()
 
 
     def __connect(self):
+        connected = False
+        if self.tls_psk_require and not self.is_tls_psk_available():
+            raise ConnectionError(u'TLS-PSK is required, but sslpsk module not loaded/available.')
+
+        if self.tls_psk_enable and self.is_tls_psk_available():
+            try:
+                self.__connect_tls_psk()
+            except (ConnectionError, ssl.SSLError) as e:
+                if self.tls_psk_require:
+                    raise
+                else:
+                    self.logger.warn(u'Failed to connect via TLS-PSK. Trying plain connection.')
+            else:
+                connected = True
+                self.logger.debug("Encryption: {}".format(self.socket.cipher()))
+
+        if not connected:
+            self.__connect_plain()
+            connected = True
+            self.logger.debug("Encryption: None")
+
+        return connected
+
+
+    def __connect_plain(self):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # initialize
         try:
-            self.socket = socket.create_connection((self.address, self.port))
+            #self.socket = socket.create_connection((self.address, self.port))
+            self.socket.connect((self.address, self.port))
         except socket.gaierror as e:
             self._handleSocketError(e)
             raise ConnectionError(
-                "failed to connect to host " + str(self.address) + ", port " + str(self.port) + ": " + str(e))
+                "failed to connect to host {}, port {}: {}".format(self.address, self.port, str(e)))
         else:
-            self.logger.debug("connected to " + str(self.address) + ":" + str(self.port))
+            self.logger.debug("connected to {}:{}".format(self.address, self.port))
+
         return True
 
 
+    def __connect_tls_psk(self):
+        '''
+        Connect and establish a TLS-PSK connection on top of the connection.
+        '''
+        self.__connect_plain()
+        # wrap socket with TLS-PSK
+        client_socket = self.socket
+        identity = self.get_tls_psk_identity()
+        if isinstance(self.password, Password):
+            password = self.password.md5()
+        else:
+            raise ConnectionError(u'No password provides.')
+        self.logger.debug("identity = {}, password = {}".format(identity, password))
+        try:
+            self.socket = sslpsk.wrap_socket(
+                client_socket,
+                psk=(password, identity),
+                ciphers='ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH',
+                #ssl_version=ssl.PROTOCOL_TLSv1_2,
+                server_side=False)
+        except ssl.SSLError as e:
+            # raise ConnectionError(
+            #     "failed to connect to host {}, port {}: {}".format(self.address, self.port, str(e)))
+            # Using a general raise keep more information about the type of error.
+            raise
+        return True
+
+
+    def get_tls_psk_identity(self):
+        '''Bareos TLS-PSK excepts the identiy is a specific format.'''
+        return u'{}{}{}'.format(self.identity_prefix, chr(0x1e), str(self.name))
+
+    def is_tls_psk_available(self):
+        '''Checks if we have all required modules for TLS-PSK.'''
+        return 'sslpsk' in sys.modules
+
     def auth(self, name, password, auth_success_regex):
         '''
-        login to the bareos-director
-        if the authenticate success return True else False
-        dir: the director location
+        Login to the Bareos Director.
+        If the authenticate succeeds return True else False.
+        dir: the director name
         name: own name.
         '''
         if not isinstance(password, Password):
@@ -97,7 +182,7 @@ class LowLevel(object):
 
 
     def disconnect(self):
-        ''' disconnect '''
+        '''disconnect'''
         # TODO
         pass
 

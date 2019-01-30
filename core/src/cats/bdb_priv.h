@@ -48,23 +48,23 @@ private:
    /*
     * Methods
     */
-   int SqlNumRows(void) { return num_rows_; }
-   void SqlFieldSeek(int field) { field_number_ = field; }
-   int SqlNumFields(void) { return num_fields_; }
-   virtual void SqlFreeResult(void) = 0;
-   virtual SQL_ROW SqlFetchRow(void) = 0;
-   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx) = 0;
-   virtual bool SqlQueryWithoutHandler(const char *query, int flags = 0) = 0;
-   virtual const char *sql_strerror(void) = 0;
-   virtual void SqlDataSeek(int row) = 0;
-   virtual int SqlAffectedRows(void) = 0;
-   virtual uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name) = 0;
-   virtual SQL_FIELD *SqlFetchField(void) = 0;
-   virtual bool SqlFieldIsNotNull(int field_type) = 0;
-   virtual bool SqlFieldIsNumeric(int field_type) = 0;
-   virtual bool SqlBatchStart(JobControlRecord *jcr) = 0;
-   virtual bool SqlBatchEnd(JobControlRecord *jcr, const char *error) = 0;
-   virtual bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar) = 0;
+   int SqlNumRows(void) override { return num_rows_; }
+   void SqlFieldSeek(int field) override { field_number_ = field; }
+   int SqlNumFields(void) override { return num_fields_; }
+   virtual void SqlFreeResult(void) override = 0;
+   virtual SQL_ROW SqlFetchRow(void) override = 0;
+   virtual bool SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *ResultHandler, void *ctx) override = 0;
+   virtual bool SqlQueryWithoutHandler(const char *query, int flags = 0) override = 0;
+   virtual const char *sql_strerror(void) override = 0;
+   virtual void SqlDataSeek(int row) override = 0;
+   virtual int SqlAffectedRows(void) override = 0;
+   virtual uint64_t SqlInsertAutokeyRecord(const char *query, const char *table_name) override = 0;
+   virtual SQL_FIELD *SqlFetchField(void) override = 0;
+   virtual bool SqlFieldIsNotNull(int field_type) override = 0;
+   virtual bool SqlFieldIsNumeric(int field_type) override = 0;
+   virtual bool SqlBatchStart(JobControlRecord *jcr) override = 0;
+   virtual bool SqlBatchEnd(JobControlRecord *jcr, const char *error) override = 0;
+   virtual bool SqlBatchInsert(JobControlRecord *jcr, AttributesDbRecord *ar) override = 0;
 
 public:
    /*

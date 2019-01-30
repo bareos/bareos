@@ -196,23 +196,36 @@ EOF
       )
       ;;
    FreeBSD)
-      setfacl -m d:user:$uid:r-x $d/acl-dir
-      setfacl -m d:user:root:-wx $d/acl-dir
-      setfacl -m user:nobody:--- $d/acl-dir
-      setfacl -m user:nobody:--- $d/bconsole
-      setfacl -m group:nogroup:--x $d/bconsole
+      rootfs=`mount -p | head -1 | awk '{print $3}'`
+
+      if [ "$rootfs" = "zfs" ]; then
+         setfacl -m u:$uid:rx::allow $d/acl-dir
+         setfacl -m u:root:wx::allow $d/acl-dir
+         setfacl -m u:nobody::deny $d/acl-dir
+         setfacl -m u:nobody::deny $d/bconsole
+         setfacl -m g:nogroup:x::allow $d/bconsole
+      fi
+
+      if [ "$rootfs" = "ufs" ]; then
+         setfacl -m u:$uid:rx $d/acl-dir
+         setfacl -m u:root:wx $d/acl-dir
+         setfacl -m u:nobody: $d/acl-dir
+         setfacl -m u:nobody: $d/bconsole
+         setfacl -m g:nogroup:x $d/bconsole
+      fi
+
       cp ${bin}/bconsole $d/acl-dir
       cp ${bin}/bconsole $d/other
       setextattr user bareos.test rulez $d/other 2>/dev/null 1>/dev/null
       setextattr user bareos.secondtest rulez $d/other 2>/dev/null 1>/dev/null
 
       ( cd ${BackupDirectory}
-        for file in acl/*
-        do
-           getfacl $file
-        done > $cwd/tmp/org
-        getextattr user bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.org
-        getextattr user bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.org
+      for file in acl/*
+         do
+            getfacl $file
+      done > $cwd/tmp/org
+      getextattr -q user bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.org
+      getextattr -q user bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.org
       )
       ;;
    NetBSD)
@@ -284,8 +297,8 @@ case `uname -s` in
         do
            getfacl $file
         done > $cwd/tmp/new
-        getextattr user bareos.test $rd/other > $cwd/tmp/attr.new
-        getextattr user bareos.secondtest $rd/other >> $cwd/tmp/attr.new
+        getextattr -q user bareos.test $rd/other > $cwd/tmp/attr.new
+        getextattr -q user bareos.secondtest $rd/other >> $cwd/tmp/attr.new
       )
       ;;
    NetBSD)
@@ -297,9 +310,13 @@ case `uname -s` in
       ;;
 esac
 
-diff -u $cwd/tmp/org $cwd/tmp/new
-if [ $? -ne 0 ]; then
-   rstat=1
+if [ "$rootfs" = "zfs" ]; then
+   echo "NFSv4 ACL Test skipped. Not supported yet."
+else
+   diff -u $cwd/tmp/org $cwd/tmp/new
+   if [ $? -ne 0 ]; then
+      rstat=1
+   fi
 fi
 
 diff $cwd/tmp/attr.org $cwd/tmp/attr.new

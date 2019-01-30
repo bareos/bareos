@@ -42,9 +42,10 @@ public:
    QStringList createRes(const cl_opts& cl);
    MonitorResource* getMonitor() const;
    MonitorItem *getDirector() const;
+   bool doConnectionTest();
 
 protected:
-   virtual void run();
+   virtual void run() override;
    void dotest();
 
 private:

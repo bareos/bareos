@@ -30,12 +30,12 @@
 class IPADDR : public SmartAlloc {
  public:
    typedef enum { R_SINGLE, R_SINGLE_PORT, R_SINGLE_ADDR, R_MULTIPLE,
-                  R_DEFAULT, R_EMPTY
+                  R_DEFAULT, R_EMPTY, R_UNDEFINED
    } i_type;
    IPADDR(int af);
    IPADDR(const IPADDR & src);
  private:
-   IPADDR() {  /* block this construction */ }
+   IPADDR();
    i_type type;
    union {
       struct sockaddr dontuse;

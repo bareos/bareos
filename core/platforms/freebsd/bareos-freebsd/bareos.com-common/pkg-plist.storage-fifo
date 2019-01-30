@@ -1,0 +1,3 @@
+/usr/local/lib/libbareossd-fifo.so
+@(bareos,bareos,0640)  %%ETCDIR%%/bareos-dir.d/storage/NULL.conf.example
+@(bareos,bareos,0640)   %%ETCDIR%%/bareos-sd.d/device/NULL.conf.example

@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,7 @@ add_library(bareoslmdb SHARED mdb.c midl.c)
 # empty the include_directories
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
 
-set_target_properties(bareoslmdb PROPERTIES VERSION "${VERSION}"
+set_target_properties(bareoslmdb PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           )
 IF(HAVE_WIN32)

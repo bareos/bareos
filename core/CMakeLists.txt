@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,8 +33,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-Wsuggest-override compiler_will_suggest_override)
 
-
+if (${compiler_will_suggest_override})
+   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
+endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include_directories(/usr/include)
@@ -61,15 +65,19 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 # run git-info to collect sourcecode info
 file(MAKE_DIRECTORY build)
 execute_process(
-    COMMAND ${CMAKE_SOURCE_DIR}/scripts/git-info.sh
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/build
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/git-info.sh
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/build
 )
 
 INCLUDE(BareosExtractVersionInfo)
+add_definitions(-DVERSION="${BAREOS_FULL_VERSION}")
+
 
 INCLUDE(BareosFindAllLibraries)
 
-
+IF (NOT ${OPENSSL_FOUND})
+  MESSAGE(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
+ENDIF()
 
 
 IF (coverage)
@@ -125,21 +133,21 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include_directories(
-      ${CMAKE_SOURCE_DIR}/src/win32/include
-      ${CMAKE_SOURCE_DIR}/src/win32/compat/include
+      ${PROJECT_SOURCE_DIR}/src/win32/include
+      ${PROJECT_SOURCE_DIR}/src/win32/compat/include
       )
-   
+
    set(HAVE_WIN32 1)
 
    set(WINDOWS_LIBRARIES ws2_32)
 
-   SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll )
-   SET(PYTHON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
+   SET(PYTHON_LIBRARIES ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll )
+   SET(PYTHON_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include)
    SET(HAVE_PYTHON 1)
 
-   SET(PostgreSQL_LIBRARY ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll)
-   SET(PostgreSQL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include)
-   SET(PostgreSQL_TYPE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
+   SET(PostgreSQL_LIBRARY ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll)
+   SET(PostgreSQL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/include)
+   SET(PostgreSQL_TYPE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include)
 
 
 else()
@@ -242,7 +250,7 @@ ENDIF()
 
 MESSAGE( STATUS "VERSION: " ${CMAKE_MATCH_1} )
 
-MESSAGE( STATUS "CMAKE_SOURCE_DIR:         " ${CMAKE_SOURCE_DIR} )
+MESSAGE( STATUS "PROJECT_SOURCE_DIR:         " ${PROJECT_SOURCE_DIR} )
 
 
 # needed for check_include
@@ -261,7 +269,7 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 
 include_directories(${PYTHON_INCLUDE_PATH})
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
 # trick for socklen_t
 set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
@@ -279,7 +287,7 @@ set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 # /*	C++ comment style not allowed	*/
 
 
-# if you are building in-source, this is the same as CMAKE_SOURCE_DIR, otherwise
+# if you are building in-source, this is the same as PROJECT_SOURCE_DIR, otherwise
 # this is the top level directory of your build tree
 MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CMAKE_BINARY_DIR} )
 
@@ -288,7 +296,7 @@ MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CMAKE_BINARY_DIR} )
 MESSAGE( STATUS "CMAKE_CURRENT_BINARY_DIR: " ${CMAKE_CURRENT_BINARY_DIR} )
 
 # this is the directory, from which cmake was started, i.e. the top level source directory
-MESSAGE( STATUS "CMAKE_SOURCE_DIR:         " ${CMAKE_SOURCE_DIR} )
+MESSAGE( STATUS "PROJECT_SOURCE_DIR:         " ${PROJECT_SOURCE_DIR} )
 
 # this is the directory where the currently processed CMakeLists.txt is located in
 MESSAGE( STATUS "CMAKE_CURRENT_SOURCE_DIR: " ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -436,7 +444,7 @@ set(CCVERSION ${CMAKE_CXX_COMPILER_VERSION})
 set(CXX ${CMAKE_CXX_COMPILER})
 set(CXXVERSION ${CMAKE_CXX_COMPILER_VERSION})
 
-IF( "${HAVE_OPENSSL}" OR "${HAVE_GNUTLS}")
+IF( "${HAVE_OPENSSL}" )
    set(HAVE_TLS "1")
 ENDIF()
 
@@ -461,7 +469,6 @@ endif()
 set(have_tls "${HAVE_TLS}" )
 set(have_crypto "${HAVE_CRYPTO}" )
 set(have_openssl "${HAVE_OPENSSL}" )
-set(have_gnutls "${HAVE_GNUTLS}" )
 set(have_zlib "${ZLIB_FOUND}" )
 set(have_fastlz "${HAVE_FASTLZLIB_H}" )
 
@@ -599,7 +606,7 @@ MESSAGE("Configuration on ${NOW} : ")
 MESSAGE(" ")
 
 MESSAGE("   Host:                         ${host} -- ${DISTNAME} ${DISTVER} ")
-MESSAGE("   Bareos version:               ${BAREOS} ${VERSION} (${DATE}) ")
+MESSAGE("   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) ")
 MESSAGE("   Distribution:                 ${DISTNAME} OBS PROJECT:${OBS_PROJECT} OBS DIST:${OBS_DISTRIBUTION} OBS ARCH:${OBS_ARCH}")
 MESSAGE("   Source code location:         ${srcdir} ")
 MESSAGE("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")
@@ -660,7 +667,6 @@ MESSAGE("   TCP Wrappers support:         ${WRAP_FOUND} ${WRAP_LIBRARIES} ${WRAP
 MESSAGE("   TLS support:                  ${have_tls} ")
 MESSAGE("   Encryption support:           ${have_crypto} ")
 MESSAGE("   OpenSSL support:              ${OPENSSL_FOUND} ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES} ")
-MESSAGE("   GNUTLS support:               ${have_gnutls} ")
 MESSAGE("   PAM support:                  ${PAM_FOUND} ${PAM_LIBRARIES} ${PAM_INCLUDE_DIRS} ")
 MESSAGE("   ZLIB support:                 ${ZLIB_FOUND} ${ZLIB_LIBRARIES} ${ZLIB_INCLUDE_DIRS} ")
 MESSAGE("   LZO2 support:                 ${LZO2_FOUND} ${LZO2_LIBRARIES} ${LZO2_INCLUDE_DIRS} ")
@@ -668,6 +674,7 @@ MESSAGE("   FASTLZ support:               ${FASTLZ_FOUND} ${FASTLZ_LIBRARIES} ${
 MESSAGE("   JANSSON support:              ${JANSSON_FOUND} ${JANSSON_LIBRARIES} ${JANSSON_INCLUDE_DIRS} ")
 MESSAGE("   LMDB support:                 ${lmdb} ")
 MESSAGE("   NDMP support:                 ${ndmp} ")
+MESSAGE("   Build ndmjob binary:          ${build_ndmjob} ")
 MESSAGE("   enable-smartalloc:            ${smartalloc} ")
 MESSAGE("   enable-lockmgr:               ${lockmgr} ")
 MESSAGE("   bat support:                  ${support_bat} ")

@@ -42,9 +42,9 @@ private:
 
    /* methods -- in bsock_tcp.c */
    void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
-                 struct sockaddr *lclient_addr);
-   bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
-             int port, utime_t heart_beat, int *fatal);
+                 struct sockaddr *lclient_addr) override;
+   bool open(JobControlRecord *jcr, const char *name, const char *host, char *service,
+             int port, utime_t heart_beat, int *fatal) override;
    bool SetKeepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval);
    bool SendPacket(int32_t *hdr, int32_t pktsiz);
 
@@ -53,25 +53,35 @@ public:
    ~BareosSocketTCP();
 
    /* methods -- in bsock_tcp.c */
-   BareosSocket *clone();
+   BareosSocket *clone() override;
    bool connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
-                utime_t heart_beat, const char *name, char *host,
-                char *service, int port, bool verbose);
-   int32_t recv();
-   bool send();
+                utime_t heart_beat, const char *name, const char *host,
+                char *service, int port, bool verbose) override;
+   int32_t recv() override;
+   bool send() override;
    bool fsend(const char*, ...);
-   int32_t read_nbytes(char *ptr, int32_t nbytes);
-   int32_t write_nbytes(char *ptr, int32_t nbytes);
+   int32_t read_nbytes(char *ptr, int32_t nbytes) override;
+   int32_t write_nbytes(char *ptr, int32_t nbytes) override;
    bool signal(int signal);
-   void close();
-   void destroy();
-   int GetPeer(char *buf, socklen_t buflen);
-   bool SetBufferSize(uint32_t size, int rw);
-   int SetNonblocking();
-   int SetBlocking();
-   void RestoreBlocking(int flags);
-   int WaitData(int sec, int usec = 0);
-   int WaitDataIntr(int sec, int usec = 0);
+   void close() override;
+   void destroy() override;
+   int GetPeer(char *buf, socklen_t buflen) override;
+   bool SetBufferSize(uint32_t size, int rw) override;
+   int SetNonblocking() override;
+   int SetBlocking() override;
+   void RestoreBlocking(int flags) override;
+   bool ConnectionReceivedTerminateSignal() override;
+   int WaitData(int sec, int usec = 0) override;
+   int WaitDataIntr(int sec, int usec = 0) override;
 };
+
+typedef std::unique_ptr<BareosSocket,std::function<void(BareosSocket*)>> BareosSocketUniquePtr;
+
+inline BareosSocketUniquePtr MakeNewBareosSocketUniquePtr()
+{
+  /* this will call the smartalloc deleter */
+  BareosSocketUniquePtr p(New(BareosSocketTCP), [](BareosSocket *p) {delete p;});
+  return p;
+}
 
 #endif /* BAREOS_LIB_BSOCK_TCP_H_ */

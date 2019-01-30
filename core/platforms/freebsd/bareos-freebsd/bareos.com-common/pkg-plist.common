@@ -1,0 +1,47 @@
+
+@dir(bareos,root,0755) %%ETCDIR%%
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/catalog
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/client
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/console
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/counter
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/director
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/fileset
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/job
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/jobdefs
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/messages
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/pool
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/profile
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/schedule
+@dir(bareos,bareos,0750) %%ETCDIR%%/bareos-dir.d/storage
+@dir(bareos,bareos,755) lib/bareos
+@dir(bareos,bareos,750) /var/lib/bareos/storage
+@dir(bareos,bareos,750) /var/lib/bareos
+@dir(bareos,bareos,750) /var/log/bareos
+@dir(bareos,bareos,750) /var/run/bareos
+lib/libbareos.so.%%DISTVERSION%%
+lib/libbareos.so.%%LIBVERSION%%
+lib/libbareos.so
+lib/libbareosfind.so.%%DISTVERSION%%
+lib/libbareosfind.so.%%LIBVERSION%%
+lib/libbareosfind.so
+lib/libbareoslmdb.so.%%DISTVERSION%%
+lib/libbareoslmdb.so.%%LIBVERSION%%
+lib/libbareoslmdb.so
+lib/libbareosndmp.so.%%DISTVERSION%%
+lib/libbareosndmp.so.%%LIBVERSION%%
+lib/libbareosndmp.so
+lib/libbareossd.so
+@dir(bareos,bareos,755) /usr/lib/bareos
+@dir(bareos,bareos,755) /usr/lib/bareos/scripts
+/usr/lib/bareos/scripts/bareos-config
+/usr/lib/bareos/scripts/bareos-config-lib.sh
+/usr/lib/bareos/scripts/bareos-explorer
+/usr/lib/bareos/scripts/btraceback.gdb
+@dir(bareos,bareos,750) lib/bareos/plugins
+bin/bsmtp
+sbin/bsmtp
+sbin/btraceback
+sbin/bareos
+man/man1/bsmtp.1.gz
+man/man8/btraceback.8.gz

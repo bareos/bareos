@@ -40,11 +40,16 @@
 
 #include <include/bareos.h>
 #include <mutex>
+#include <functional>
 #include "lib/tls.h"
+#include "lib/s_password.h"
+#include "include/version_numbers.h"
 
 struct btimer_t; /* forward reference */
 class BareosSocket;
 class Tls;
+class BStringList;
+class QualifiedResourceNameTypeConverter;
 btimer_t *StartBsockTimer(BareosSocket *bs, uint32_t wait);
 void StopBsockTimer(btimer_t *wid);
 
@@ -76,6 +81,7 @@ class BareosSocket : public SmartAlloc {
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
   std::unique_ptr<Tls> tls_conn_init; /* during initialization */
+  BareosVersionNumber connected_daemon_version_;
 
  protected:
   JobControlRecord *jcr_; /* JobControlRecord or NULL for error msgs */
@@ -97,9 +103,9 @@ class BareosSocket : public SmartAlloc {
   btime_t last_tick_;    /* Last tick used by bwlimit */
   bool tls_established_; /* is true when tls connection is established */
 
-   virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
+  virtual void FinInit(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                        struct sockaddr *lclient_addr) = 0;
-   virtual bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
+  virtual bool open(JobControlRecord *jcr, const char *name, const char *host, char *service,
                      int port, utime_t heart_beat, int *fatal) = 0;
 
  private:
@@ -109,9 +115,9 @@ class BareosSocket : public SmartAlloc {
                           s_password &password,
                           TlsResource *tls_resource,
                           bool initiated_by_remote);
-  bool DoTlsHandshakeWithClient(TlsConfigBase *selected_local_tls,
+  bool DoTlsHandshakeWithClient(TlsConfigCert *local_tls_cert,
                                 JobControlRecord *jcr);
-  bool DoTlsHandshakeWithServer(TlsConfigBase *selected_local_tls,
+  bool DoTlsHandshakeWithServer(TlsConfigCert *local_tls_cert,
                                 const char *identity,
                                 const char *password,
                                 JobControlRecord *jcr);
@@ -131,7 +137,7 @@ class BareosSocket : public SmartAlloc {
                        utime_t max_retry_time,
                        utime_t heart_beat,
                        const char *name,
-                       char *host,
+                       const char *host,
                        char *service,
                        int port,
                        bool verbose)                      = 0;
@@ -146,6 +152,7 @@ class BareosSocket : public SmartAlloc {
   virtual int SetNonblocking()                            = 0;
   virtual int SetBlocking()                               = 0;
   virtual void RestoreBlocking(int flags)                 = 0;
+  virtual bool ConnectionReceivedTerminateSignal()        = 0;
   /*
    * Returns: 1 if data available, 0 if timeout, -1 if error
    */
@@ -157,18 +164,18 @@ class BareosSocket : public SmartAlloc {
   bool signal(int signal);
   const char *bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool AuthenticateWithDirector(JobControlRecord *jcr,
-                                const char *name,
-                                s_password &password,
-                                char *response,
-                                int response_len,
-                                TlsResource *tls_resource);
+  bool ConsoleAuthenticateWithDirector(JobControlRecord *jcr,
+                                       const char *name,
+                                       s_password &password,
+                                       TlsResource *tls_resource,
+                                       BStringList &response_args,
+                                       uint32_t &response_id);
   bool ParameterizeAndInitTlsConnection(TlsResource *tls_resource,
                                         const char *identity,
                                         const char *password,
                                         bool initiated_by_remote);
   bool ParameterizeAndInitTlsConnectionAsAServer(ConfigurationParser *config);
-  bool DoTlsHandshake(uint32_t remote_tls_policy,
+  bool DoTlsHandshake(TlsPolicy remote_tls_policy,
                       TlsResource *tls_resource,
                       bool initiated_by_remote,
                       const char *identity,
@@ -181,9 +188,15 @@ class BareosSocket : public SmartAlloc {
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist *src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool IsCleartextBareosHello();
+  bool EvaluateCleartextBareosHello(bool &cleartext,
+                                    std::string &client_name_out,
+                                    std::string &r_code_str_out,
+                                    BareosVersionNumber &version_out) const;
   void OutputCipherMessageString(std::function<void(const char *)>);
-  void GetCipherMessageString(std::string &str);
+  void GetCipherMessageString(std::string &str) const;
+  bool ReceiveAndEvaluateResponseMessage(uint32_t &id_out, BStringList &args_out);
+  bool FormatAndSendResponseMessage(uint32_t id, const BStringList &list_of_agruments);
+  bool FormatAndSendResponseMessage(uint32_t id, const std::string &str);
 
   bool AuthenticateOutboundConnection(JobControlRecord *jcr,
                                       const char *what,

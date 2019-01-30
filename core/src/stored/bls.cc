@@ -306,13 +306,15 @@ static void DoBlocks(char *infname)
    DeviceBlock *block = dcr->block;
    char buf1[100], buf2[100];
    for ( ;; ) {
-      if (!dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
-         Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
-         if (dev->AtEot()) {
+      switch(dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
+         case DeviceControlRecord::ReadStatus::Ok:
+            // no special handling required
+            break;
+         case DeviceControlRecord::ReadStatus::EndOfTape:
             if (!MountNextReadVolume(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
                   dev->file, dev->print_name(), dcr->VolumeName);
-               break;
+               return;
             }
             /* Read and discard Volume label */
             DeviceRecord *record;
@@ -322,19 +324,22 @@ static void DoBlocks(char *infname)
             GetSessionRecord(dev, record, &sessrec);
             FreeRecord(record);
             Jmsg(jcr, M_INFO, 0, _("Mounted Volume \"%s\".\n"), dcr->VolumeName);
-         } else if (dev->AtEof()) {
+            break;
+         case DeviceControlRecord::ReadStatus::EndOfFile:
             Jmsg(jcr, M_INFO, 0, _("End of file %u on device %s, Volume \"%s\"\n"),
                dev->file, dev->print_name(), dcr->VolumeName);
             Dmsg0(20, "read_record got eof. try again\n");
             continue;
-         } else if (dev->IsShortBlock()) {
-            Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
-            continue;
-         } else {
-            /* I/O error */
-            DisplayTapeErrorStatus(jcr, dev);
-            break;
-         }
+         default:
+            Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
+            if (dev->IsShortBlock()) {
+               Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
+               continue;
+            } else {
+               /* I/O error */
+               DisplayTapeErrorStatus(jcr, dev);
+               return;
+            }
       }
       if (!MatchBsrBlock(bsr, block)) {
          Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",

@@ -44,7 +44,6 @@ static const std::map<int, std::string> create_test_map()
 TEST(QualifiedResourceNameTypeConverter, StringToType)
 {
   bool ok;
-  int job_id;
   int r_type;
   std::string name;
   std::string result_str;
@@ -56,39 +55,19 @@ TEST(QualifiedResourceNameTypeConverter, StringToType)
   EXPECT_EQ(c.StringToResourceType("kThree"), kThree);
   EXPECT_EQ(c.StringToResourceType("kNotInsertedIntoMap"), -1);
 
-  job_id = -1; /* job_id should be unchanged */
   std::string tmp;
   tmp = std::string("kOne") + record_separator_ + std::string("Developer");
-  ok  = c.StringToResource(name, r_type, job_id, tmp);
+  ok  = c.StringToResource(name, r_type, tmp);
   EXPECT_EQ(ok, true);
-  EXPECT_EQ(job_id, -1);
-
-  job_id            = -1; /* job_id will be changed in this test */
-  std::string test1 = std::string("kOne") + record_separator_ + std::string("Developer") + record_separator_ +
-                      std::string("123");
-  ok = c.StringToResource(name, r_type, job_id, test1.c_str());
-  EXPECT_EQ(ok, true);
-  EXPECT_EQ(r_type, kOne);
-  EXPECT_EQ(job_id, 123);
-  EXPECT_STREQ(name.c_str(), "Developer");
 
   /* try invalid string */
-  ok = c.StringToResource(name, r_type, job_id, "foobar");
+  ok = c.StringToResource(name, r_type, "foobar");
   EXPECT_EQ(ok, false);
-
-  /* try invalid job_id (not a number) */
-  job_id = -2; /* job_id should be unchanged in this test */
-  std::string test2 = std::string("kOne") + record_separator_ + std::string("Developer") + record_separator_ +
-                      std::string("foo");
-  ok     = c.StringToResource(name, r_type, job_id, test2.c_str());
-  EXPECT_EQ(ok, false);
-  EXPECT_EQ(job_id, -2);
 }
 
 TEST(QualifiedResourceNameTypeConverter, TypeToString)
 {
   bool ok;
-  int job_id = 0;
   std::string name;
   std::string result_str;
 
@@ -99,19 +78,10 @@ TEST(QualifiedResourceNameTypeConverter, TypeToString)
   EXPECT_STREQ(c.ResourceTypeToString(kThree).c_str(), "kThree");
   EXPECT_STREQ(c.ResourceTypeToString(kNotInsertedIntoMap).c_str(), "");
 
-  /* resource without job_id */
   ok = c.ResourceToString("ResourceName", kTwo, result_str);
   EXPECT_EQ(ok, true);
   std::string test1 = std::string("kTwo") + record_separator_ + std::string("ResourceName");
   EXPECT_STREQ(result_str.c_str(), test1.c_str());
-
-  /* resource with job_id */
-  job_id = 456;
-  ok     = c.ResourceToString("ResourceName2", kThree, job_id, result_str);
-  EXPECT_EQ(ok, true);
-  std::string test2 = std::string("kThree") + record_separator_ + std::string("ResourceName2") + record_separator_ +
-                      std::string("456");
-  EXPECT_STREQ(result_str.c_str(), test2.c_str());
 
   /* try invalid resource type */
   ok = c.ResourceToString("ResourceName", kNotInsertedIntoMap, result_str);

@@ -22,6 +22,9 @@
 #ifndef BAREOS_FILED_DIR_CMD_H_
 #define BAREOS_FILED_DIR_CMD_H_ 1
 
+class JobControlRecord;
+class BareosSocket;
+
 namespace filedaemon {
 
 JobControlRecord *create_new_director_session(BareosSocket *dir);
@@ -29,7 +32,6 @@ void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir);
 void *handle_director_connection(BareosSocket *dir);
 bool StartConnectToDirectorThreads();
 bool StopConnectToDirectorThreads(bool wait=false);
-
 } /* namespace filedaemon */
 
 #endif /* BAREOS_FILED_DIR_CMD_H_ */

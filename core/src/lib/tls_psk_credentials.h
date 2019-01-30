@@ -34,18 +34,18 @@ public:
    PskCredentials(const std::string &identity, const std::string &psk)
       : identity_(identity)
       , psk_(psk) {
-      Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
+      Dmsg1(1000, "Construct PskCredentials: id=%s\n", identity_.c_str());
    }
 
    PskCredentials(const char *identity, const char *psk)
       : identity_(std::string(identity))
       , psk_(std::string(psk)) {
-      Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
+      Dmsg1(1000, "Construct PskCredentials: id=%s\n", identity_.c_str());
    }
 
    PskCredentials &operator = (const PskCredentials &rhs) {
       identity_ = rhs.identity_;
-      psk_ = rhs.identity_;
+      psk_ = rhs.psk_;
       return *this;
    }
 
@@ -60,7 +60,7 @@ public:
    const std::string &get_psk() const { return psk_; }
 
    ~PskCredentials() {
-      Dmsg2(100, "Destruct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
+      Dmsg1(1000, "Destruct PskCredentials: id=%s\n", identity_.c_str());
    }
 
 private:

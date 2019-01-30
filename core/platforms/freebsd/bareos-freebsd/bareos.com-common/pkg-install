@@ -1,0 +1,63 @@
+#!/bin/sh
+set -e
+
+PKGNAME="$1"
+MODE="$2" # PRE-INSTALL, POST-INSTALL, DEINSTALL, POST-DEINSTALL
+
+LOGFILE=/tmp/bareos-setup.log
+
+initialize_bareos(){
+		echo "$PKGNAME: initializing bareos configuration, logs to ${LOGFILE}"
+		/usr/lib/bareos/scripts/bareos-config initialize_local_hostname  >>${LOGFILE} 2>&1 || echo "initialize_local_hostname failed"
+		/usr/lib/bareos/scripts/bareos-config initialize_passwords       >>${LOGFILE} 2>&1 || echo "initialize_passwords failed"
+		/usr/lib/bareos/scripts/bareos-config initialize_database_driver >>${LOGFILE} 2>&1 || echo "initialize_database_driver failed"
+}
+
+case "$MODE" in
+POST-INSTALL)
+	case "$PKGNAME" in
+		bareos.com-director*)
+			initialize_bareos
+			#echo "enable the service with 'sysrc bareosdir_enable=YES'"
+		;;
+
+		bareos.com-filedaemon*)
+			initialize_bareos
+			#echo "enable the service with 'sysrc bareosfd_enable=YES'"
+
+		;;
+
+		bareos.com-storage*)
+			initialize_bareos
+			#echo "enable the service with 'sysrc bareossd_enable=YES'"
+		;;
+        esac
+	;;
+DEINSTALL)
+	;;
+PRE-INSTALL)
+	true
+	;;
+POST-DEINSTALL)
+	echo "deinstalling $PKGNAME"
+	case "$PKGNAME" in
+		bareos.com-director*)
+			echo "shutting down bareos-dir..."
+			service bareos-dir status && service bareos-dir stop || echo " already stopped"
+			#sysrc -x bareosdir_enable
+		;;
+
+		bareos.com-filedaemon*)
+			echo "shutting down bareos-fd..."
+			service bareos-fd status && service bareos-fd stop || echo " already stopped"
+			#sysrc -x bareosfd_enable
+		;;
+
+		bareos.com-storage*)
+			echo "shutting down bareos-fd..."
+			service bareos-sd status && service bareos-sd stop || echo " already stopped"
+			#sysrc -x bareossd_enable
+		;;
+        esac
+	;;
+esac

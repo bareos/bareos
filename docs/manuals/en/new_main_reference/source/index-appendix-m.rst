@@ -6,14 +6,14 @@ Bareos Copyright, Trademark and Licenses
 GNU Free Documentation License
 ------------------------------
 
-.. include:: appendix-m/fdl.txt
+.. literalinclude:: ../../main/fdl.txt
 
 GNU Affero General Public License
 ---------------------------------
 
-.. include:: appendix-m/agpl.txt
+.. literalinclude:: ../../main/agpl.txt
 
 GNU Lesser General Public License
 ---------------------------------
 
-.. include:: appendix-m/lgpl.txt
+.. literalinclude:: ../../main/lgpl.txt

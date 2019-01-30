@@ -35,6 +35,7 @@
 #define BAREOS_INCLUDE_JCR_H_ 1
 
 #include <include/bareos.h>
+#include "lib/tls_conf.h"
 
 #ifdef STORAGE_DAEMON
 #include "stored/read_ctx.h"
@@ -246,9 +247,9 @@ struct Resources {
    directordaemon::JobResource *job;         /**< Job resource */
    directordaemon::JobResource *verify_job;  /**< Job resource of verify previous job */
    directordaemon::JobResource *previous_job;/**< Job resource of migration previous job */
-   directordaemon::StorageResource *rstore;  /**< Selected read storage */
-   directordaemon::StorageResource *wstore;  /**< Selected write storage */
-   directordaemon::StorageResource *pstore;  /**< Selected paired storage (saved wstore or rstore) */
+   directordaemon::StorageResource *read_storage;  /**< Selected read storage */
+   directordaemon::StorageResource *write_storage;  /**< Selected write storage */
+   directordaemon::StorageResource *paired_read_write_storage;  /**< Selected paired storage (saved write_storage or read_storage) */
    directordaemon::ClientResource *client;   /**< Client resource */
    directordaemon::PoolResource *pool;       /**< Pool resource = write for migration */
    directordaemon::PoolResource *rpool;      /**< Read pool. Used only in migration */
@@ -266,9 +267,9 @@ struct Resources {
    POOLMEM *rstore_source;                /**< Where read storage came from */
    POOLMEM *wstore_source;                /**< Where write storage came from */
    POOLMEM *catalog_source;               /**< Where catalog came from */
-   alist *rstorage;                       /**< Read storage possibilities */
-   alist *wstorage;                       /**< Write storage possibilities */
-   alist *pstorage;                       /**< Paired storage possibilities (saved wstorage or rstorage) */
+   alist *read_storage_list;              /**< Read storage possibilities */
+   alist *write_storage_list;             /**< Write storage possibilities */
+   alist *paired_read_write_storage_list; /**< Paired storage possibilities (saved write_storage_list or read_storage_list) */
    bool run_pool_override;                /**< Pool override was given on run cmdline */
    bool run_full_pool_override;           /**< Full pool override was given on run cmdline */
    bool run_vfull_pool_override;          /**< Virtual Full pool override was given on run cmdline */
@@ -316,7 +317,7 @@ private:
    bool my_thread_killable;               /**< Can we kill the thread? */
 public:
       JobControlRecord() {
-            Dmsg0(100, "Contruct JobControlRecord\n");
+            Dmsg0(100, "Construct JobControlRecord\n");
       }
 
       ~JobControlRecord() {
@@ -410,7 +411,8 @@ public:
    POOLMEM *RestoreBootstrap;             /**< Bootstrap file to restore */
    POOLMEM *stime;                        /**< start time for incremental/differential */
    char *sd_auth_key;                     /**< SD auth key */
-   MessagesResource *jcr_msgs;                     /**< Copy of message resource -- actually used */
+   TlsPolicy sd_tls_policy;                  /**< SD Tls Policy */
+   MessagesResource *jcr_msgs;            /**< Copy of message resource -- actually used */
    uint32_t ClientId;                     /**< Client associated with Job */
    char *where;                           /**< Prefix to restore files to */
    char *RegexWhere;                      /**< File relocation in restore */
@@ -454,6 +456,7 @@ public:
    POOLMEM *comment;                      /**< Comment for this Job */
    int64_t max_bandwidth;                 /**< Bandwidth limit for this Job */
    htable *path_list;                     /**< Directory list (used by findlib) */
+   bool is_passive_client_connection_probing;     /**< Set if director probes a passive client connection */
 
    /*
     * Daemon specific part of JobControlRecord
@@ -643,13 +646,7 @@ public:
 #endif /* STORAGE_DAEMON */
 };
 
-/*
- * Setting a NULL in tsd doesn't clear the tsd but instead tells
- *   pthreads not to call the tsd destructor. Consequently, we
- *   define this *invalid* jcr address and stuff it in the tsd
- *   when the jcr is not valid.
- */
-#define INVALID_JCR ((JobControlRecord *)(-1))
+#define INVALID_JCR (nullptr)
 
 /*
  * Structure for all daemons that keeps some summary
@@ -684,7 +681,8 @@ extern JobControlRecord *get_jcr_by_id(uint32_t JobId);
 extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
 extern JobControlRecord *get_jcr_by_partial_name(char *Job);
 extern JobControlRecord *get_jcr_by_full_name(char *Job);
-extern const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name);
+extern const char *JcrGetAuthenticateKey(const char *unified_job_name);
+TlsPolicy JcrGetTlsPolicy(const char *unified_job_name);
 extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
 extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
 extern int num_jobs_run;

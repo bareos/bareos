@@ -42,15 +42,10 @@
 #include "include/bareos.h"
 #include "lib/crypto_wrap.h"
 
-#if defined(HAVE_OPENSSL) || defined(HAVE_GNUTLS)
+#if defined(HAVE_OPENSSL)
 
 #ifdef HAVE_OPENSSL
 #include <openssl/aes.h>
-#endif
-
-#ifdef HAVE_GNUTLS
-#include <gnutls/gnutls.h>
-#include <gnutls/crypto.h>
 #endif
 
 /*
@@ -66,10 +61,6 @@ void AesWrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
 #ifdef HAVE_OPENSSL
    AES_KEY key;
 #endif
-#ifdef HAVE_GNUTLS
-   gnutls_cipher_hd_t key;
-   gnutls_datum_t key_data;
-#endif
 
    a = cipher;
    r = cipher + 8;
@@ -82,11 +73,6 @@ void AesWrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
 
 #ifdef HAVE_OPENSSL
    AES_set_encrypt_key(kek, 128, &key);
-#endif
-#ifdef HAVE_GNUTLS
-   key_data.data = kek;
-   key_data.size = strlen((char *)kek);
-   gnutls_cipher_init(&key, GNUTLS_CIPHER_AES_128_CBC, &key_data, NULL);
 #endif
 
    /*
@@ -105,9 +91,6 @@ void AesWrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
 #ifdef HAVE_OPENSSL
          AES_encrypt(b, b, &key);
 #endif
-#ifdef HAVE_GNUTLS
-         gnutls_cipher_encrypt(key, b, sizeof(b));
-#endif
          memcpy(a, b, 8);
          a[7] ^= n * j + i;
          memcpy(r, b + 8, 8);
@@ -120,9 +103,6 @@ void AesWrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher)
     * These are already in @cipher due to the location of temporary
     * variables.
     */
-#ifdef HAVE_GNUTLS
-   gnutls_cipher_deinit(key);
-#endif
 }
 
 /*
@@ -138,10 +118,6 @@ int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
 #ifdef HAVE_OPENSSL
    AES_KEY key;
 #endif
-#ifdef HAVE_GNUTLS
-   gnutls_cipher_hd_t key;
-   gnutls_datum_t key_data;
-#endif
 
    /*
     * 1) Initialize variables.
@@ -152,11 +128,6 @@ int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
 
 #ifdef HAVE_OPENSSL
    AES_set_decrypt_key(kek, 128, &key);
-#endif
-#ifdef HAVE_GNUTLS
-   key_data.data = kek;
-   key_data.size = strlen((char *)kek);
-   gnutls_cipher_init(&key, GNUTLS_CIPHER_AES_128_CBC, &key_data, NULL);
 #endif
 
    /*
@@ -177,9 +148,6 @@ int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
 #ifdef HAVE_OPENSSL
          AES_decrypt(b, b, &key);
 #endif
-#ifdef HAVE_GNUTLS
-         gnutls_cipher_decrypt(key, b, sizeof(b));
-#endif
          memcpy(a, b, 8);
          memcpy(r, b + 8, 8);
          r -= 8;
@@ -197,10 +165,6 @@ int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
          return -1;
       }
    }
-
-#ifdef HAVE_GNUTLS
-   gnutls_cipher_deinit(key);
-#endif
 
    return 0;
 }
@@ -227,4 +191,4 @@ int AesUnwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain)
    memcpy(cipher, plain, n * 8);
    return 0;
 }
-#endif /* HAVE_OPENSSL || HAVE_GNUTLS */
+#endif /* HAVE_OPENSSL */

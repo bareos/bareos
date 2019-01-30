@@ -46,6 +46,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/edit.h"
+#include "lib/tls_conf.h"
 
 const int debuglevel = 3400;
 
@@ -822,7 +823,7 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
   return jcr;
 }
 
-const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
+const char *JcrGetAuthenticateKey(const char *unified_job_name)
 {
   if (!unified_job_name) { return nullptr; }
 
@@ -838,6 +839,26 @@ const char *JcrGetAuthenticateKey(uint32_t job_id, const char *unified_job_name)
   endeach_jcr(jcr);
 
   return auth_key;
+}
+
+TlsPolicy JcrGetTlsPolicy(const char *unified_job_name)
+{
+  if (!unified_job_name) { return kBnetTlsUnknown; }
+
+  TlsPolicy policy = kBnetTlsUnknown;
+  JobControlRecord *jcr;
+
+  foreach_jcr (jcr) {
+    if (bstrcmp(jcr->Job, unified_job_name)) {
+      policy = jcr->sd_tls_policy;
+      Dmsg4(debuglevel, "Inc get_jcr jid=%u UseCount=%d Job=%s TlsPolicy=%d\n",
+            jcr->JobId, jcr->UseCount(), jcr->Job, policy);
+      break;
+    }
+  }
+  endeach_jcr(jcr);
+
+  return policy;
 }
 
 static void UpdateWaitTime(JobControlRecord *jcr, int newJobStatus)

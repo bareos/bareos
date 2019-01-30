@@ -36,6 +36,7 @@
 #include "stored/fd_cmds.h"
 #include "stored/sd_cmds.h"
 #include "lib/bnet_server_tcp.h"
+#include "lib/try_tls_handshake_as_a_server.h"
 
 namespace storagedaemon {
 
@@ -66,11 +67,17 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
   char name[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
 
-  if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config); }
+  if (!TryTlsHandshakeAsAServer(bs, config)) {
+    bs->signal(BNET_TERMINATE);
+    bs->close();
+    delete bs;
+    return nullptr;
+  }
 
   if (bs->recv() <= 0) {
     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
+    bs->signal(BNET_TERMINATE);
     bs->close();
     return NULL;
   }
@@ -82,6 +89,7 @@ void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
     Dmsg1(000, "<filed: %s", bs->msg);
     Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
+    bs->signal(BNET_TERMINATE);
     bs->close();
     return NULL;
   }
@@ -128,8 +136,7 @@ void StartSocketServer(dlist *addrs)
 void StopSocketServer()
 {
   if (sock_fds) {
-    BnetStopThreadServerTcp(tcp_server_tid);
-    CleanupBnetThreadServerTcp(sock_fds, &socket_workq);
+    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     delete sock_fds;
     sock_fds = NULL;
   }

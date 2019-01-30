@@ -1119,7 +1119,7 @@ static void UpdateSlots(UaContext *ua)
       have_enabled = false;
    }
 
-   max_slots = GetNumSlots(ua, ua->jcr->res.wstore);
+   max_slots = GetNumSlots(ua, ua->jcr->res.write_storage);
    Dmsg1(100, "max_slots=%d\n", max_slots);
    if (max_slots <= 0) {
       ua->WarningMsg(_("No slots in changer to scan.\n"));
@@ -1149,15 +1149,15 @@ static void UpdateSlots(UaContext *ua)
     */
    memset(&mr, 0, sizeof(mr));
    foreach_dlist(vl, vol_list->contents) {
-      if (vl->Slot > max_slots) {
-         ua->WarningMsg(_("Slot %d greater than max %d ignored.\n"), vl->Slot, max_slots);
+      if (vl->bareos_slot_number > max_slots) {
+         ua->WarningMsg(_("Slot %d greater than max %d ignored.\n"), vl->bareos_slot_number, max_slots);
          continue;
       }
       /*
        * Check if user wants us to look at this slot
        */
-      if (!BitIsSet(vl->Slot - 1, slot_list)) {
-         Dmsg1(100, "Skipping slot=%d\n", vl->Slot);
+      if (!BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
+         Dmsg1(100, "Skipping slot=%d\n", vl->bareos_slot_number);
          continue;
       }
       /*
@@ -1168,12 +1168,12 @@ static void UpdateSlots(UaContext *ua)
             free(vl->VolName);
             vl->VolName = NULL;
          }
-         vl->VolName = get_volume_name_from_SD(ua, vl->Slot, drive);
-         Dmsg2(100, "Got Vol=%s from SD for Slot=%d\n", vl->VolName, vl->Slot);
+         vl->VolName = get_volume_name_from_SD(ua, vl->bareos_slot_number, drive);
+         Dmsg2(100, "Got Vol=%s from SD for Slot=%d\n", vl->VolName, vl->bareos_slot_number);
       }
-      ClearBit(vl->Slot - 1, slot_list); /* clear Slot */
+      ClearBit(vl->bareos_slot_number - 1, slot_list); /* clear Slot */
       SetStorageidInMr(store.store, &mr);
-      mr.Slot = vl->Slot;
+      mr.Slot = vl->bareos_slot_number;
       mr.InChanger = 1;
       mr.MediaId = 0;                 /* Get by VolumeName */
       if (vl->VolName) {
@@ -1195,8 +1195,8 @@ static void UpdateSlots(UaContext *ua)
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
 
       if (!vl->VolName) {
-         Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n", vl->Slot);
-         ua->InfoMsg(_("No VolName for Slot=%d InChanger set to zero.\n"), vl->Slot);
+         Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n", vl->bareos_slot_number);
+         ua->InfoMsg(_("No VolName for Slot=%d InChanger set to zero.\n"), vl->bareos_slot_number);
          continue;
       }
 
@@ -1209,8 +1209,8 @@ static void UpdateSlots(UaContext *ua)
          /*
           * If Slot, Inchanger, and StorageId have changed, update the Media record
           */
-         if (mr.Slot != vl->Slot || !mr.InChanger || mr.StorageId != store.store->StorageId) {
-            mr.Slot = vl->Slot;
+         if (mr.Slot != vl->bareos_slot_number || !mr.InChanger || mr.StorageId != store.store->StorageId) {
+            mr.Slot = vl->bareos_slot_number;
             mr.InChanger = 1;
             if (have_enabled) {
                mr.Enabled = Enabled;
@@ -1227,7 +1227,7 @@ static void UpdateSlots(UaContext *ua)
          }
       } else {
          ua->WarningMsg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"),
-                         mr.VolumeName, vl->Slot);
+                         mr.VolumeName, vl->bareos_slot_number);
       }
       DbUnlock(ua->db);
    }
@@ -1288,8 +1288,8 @@ void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_l
       /*
        * We are only interested in normal slots.
        */
-      switch (vl->Type) {
-      case slot_type_normal:
+      switch (vl->slot_type) {
+      case slot_type_storage:
          break;
       default:
          continue;
@@ -1298,7 +1298,7 @@ void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_l
       /*
        * Only update entries of slots marked in the slot_list.
        */
-      if (!BitIsSet(vl->Slot - 1, slot_list)) {
+      if (!BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
          continue;
       }
 
@@ -1306,7 +1306,7 @@ void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_l
        * Set InChanger to zero for this Slot
        */
       memset(&mr, 0, sizeof(mr));
-      mr.Slot = vl->Slot;
+      mr.Slot = vl->bareos_slot_number;
       mr.InChanger = 1;
       mr.MediaId = 0;                 /* Get by VolumeName */
       if (vl->VolName) {
@@ -1332,10 +1332,10 @@ void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_l
       /*
        * See if there is anything in the slot.
        */
-      switch (vl->Content) {
-      case slot_content_full:
+      switch (vl->slot_status) {
+      case slot_status_full:
          if (!vl->VolName) {
-            Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n", vl->Slot);
+            Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n", vl->bareos_slot_number);
             continue;
          }
          break;
@@ -1354,8 +1354,8 @@ void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_l
          Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
          /* If Slot, Inchanger, and StorageId have changed, update the Media record */
-         if (mr.Slot != vl->Slot || !mr.InChanger || mr.StorageId != store->StorageId) {
-            mr.Slot = vl->Slot;
+         if (mr.Slot != vl->bareos_slot_number || !mr.InChanger || mr.StorageId != store->StorageId) {
+            mr.Slot = vl->bareos_slot_number;
             mr.InChanger = 1;
             SetStorageidInMr(store, &mr);
             if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
@@ -1364,7 +1364,7 @@ void UpdateSlotsFromVolList(UaContext *ua, StorageResource *store, changer_vol_l
          }
       } else {
          ua->WarningMsg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"),
-                         mr.VolumeName, vl->Slot);
+                         mr.VolumeName, vl->bareos_slot_number);
       }
       DbUnlock(ua->db);
    }
@@ -1393,8 +1393,8 @@ void UpdateInchangerForExport(UaContext *ua, StorageResource *store, changer_vol
       /*
        * We are only interested in normal slots.
        */
-      switch (vl->Type) {
-      case slot_type_normal:
+      switch (vl->slot_type) {
+      case slot_type_storage:
          break;
       default:
          continue;
@@ -1403,7 +1403,7 @@ void UpdateInchangerForExport(UaContext *ua, StorageResource *store, changer_vol
       /*
        * Only update entries of slots marked in the slot_list.
        */
-      if (!BitIsSet(vl->Slot - 1, slot_list)) {
+      if (!BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
          continue;
       }
 
@@ -1411,7 +1411,7 @@ void UpdateInchangerForExport(UaContext *ua, StorageResource *store, changer_vol
        * Set InChanger to zero for this Slot
        */
       memset(&mr, 0, sizeof(mr));
-      mr.Slot = vl->Slot;
+      mr.Slot = vl->bareos_slot_number;
       mr.InChanger = 1;
       mr.MediaId = 0;                 /* Get by VolumeName */
       if (vl->VolName) {

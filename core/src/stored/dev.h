@@ -521,6 +521,7 @@ public:
    virtual bool DeviceStatus(bsdDevStatTrig *dst) { return false; }
    boffset_t lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); }
    bool truncate(DeviceControlRecord *dcr) { return d_truncate(dcr); }
+   bool flush(DeviceControlRecord *dcr) { return d_flush(dcr); };
 
    /*
     * Low level operations
@@ -532,6 +533,7 @@ public:
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
    virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) = 0;
    virtual bool d_truncate(DeviceControlRecord *dcr) = 0;
+   virtual bool d_flush(DeviceControlRecord *dcr) { return true; };
 
    /*
     * Locking and blocking calls
@@ -753,8 +755,16 @@ public:
     */
    bool WriteBlockToDevice();
    bool WriteBlockToDev();
-   bool ReadBlockFromDevice(bool check_block_numbers);
-   bool ReadBlockFromDev(bool check_block_numbers);
+
+   enum ReadStatus {
+      Error = 0,
+      Ok,
+      EndOfFile,
+      EndOfTape
+   };
+
+   ReadStatus ReadBlockFromDevice(bool check_block_numbers);
+   ReadStatus ReadBlockFromDev(bool check_block_numbers);
 
    /*
     * Methods in label.c
@@ -772,14 +782,14 @@ public:
    /*
     * Methods overriding default implementations.
     */
-   bool DirFindNextAppendableVolume();
-   bool DirUpdateVolumeInfo(bool label, bool update_LastWritten);
-   bool DirCreateJobmediaRecord(bool zero);
-   bool DirUpdateFileAttributes(DeviceRecord *record);
-   bool DirAskSysopToMountVolume(int mode);
-   bool DirAskSysopToCreateAppendableVolume();
-   bool DirGetVolumeInfo(enum get_vol_info_rw writing);
-   DeviceControlRecord *get_new_spooling_dcr();
+   bool DirFindNextAppendableVolume() override;
+   bool DirUpdateVolumeInfo(bool label, bool update_LastWritten) override;
+   bool DirCreateJobmediaRecord(bool zero) override;
+   bool DirUpdateFileAttributes(DeviceRecord *record) override;
+   bool DirAskSysopToMountVolume(int mode) override;
+   bool DirAskSysopToCreateAppendableVolume() override;
+   bool DirGetVolumeInfo(enum get_vol_info_rw writing) override;
+   DeviceControlRecord *get_new_spooling_dcr() override;
 };
 
 class BTAPE_DCR : public DeviceControlRecord {
@@ -792,11 +802,11 @@ public:
    /*
     * Methods overriding default implementations.
     */
-   bool DirFindNextAppendableVolume();
-   bool DirCreateJobmediaRecord(bool zero);
-   bool DirAskSysopToMountVolume(int mode);
-   bool DirAskSysopToCreateAppendableVolume();
-   DeviceControlRecord *get_new_spooling_dcr();
+   bool DirFindNextAppendableVolume() override;
+   bool DirCreateJobmediaRecord(bool zero) override;
+   bool DirAskSysopToMountVolume(int mode) override;
+   bool DirAskSysopToCreateAppendableVolume() override;
+   DeviceControlRecord *get_new_spooling_dcr() override;
 };
 
 Device *InitDev(JobControlRecord *jcr, DeviceResource *device);

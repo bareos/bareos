@@ -28,8 +28,10 @@ rst_epilog = '''
 .. |bareosFd| replace:: Bareos File Daemon
 .. |bareosSd| replace:: Bareos Storage Daemon
 .. |bareosDir| replace:: Bareos Director Daemon
+.. |bconsole| replace:: Bareos Console
 .. |bareosTraymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
+.. |webui| replace:: Bareos WebUI
 .. |mysql| replace:: MySQL/MariaDB
 .. |postgresql| replace:: PostgreSQL
 .. |sqlite| replace:: Sqlite
@@ -49,14 +51,20 @@ rst_epilog = '''
 extensions = ['sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.autosectionlabel',
-    'sphinxcontrib.plantuml'
+    'sphinxcontrib.plantuml',
+    'sphinxcontrib.blockdiag',
+    'sphinxcontrib.nwdiag',
+    'sphinxcontrib.seqdiag',
+    'sphinxcontrib.actdiag',
+    'sphinx_issues',
     ]
-plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
-#plantuml = 'java  -Djava.awt.headless=true -jar /usr/share/java/plantuml.jar'
+
+issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
+issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['templates']
+templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -69,14 +77,14 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Bareos Main Reference'
-copyright = '2018, Bareos GmbH & Co. KG and others'
+copyright = '2019, Bareos GmbH & Co. KG and others'
 author = 'Bareos GmbH & Co. KG'
 
 
 # auto detect version info from version.h
-import os
+import os,re
 release = os.popen('./get-version.sh').read()
-version = release[:4]
+version = re.match(r'\d+\.\d+',release).group()
 #print release
 #print version
 
@@ -140,7 +148,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['static']
+html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -210,3 +218,17 @@ texinfo_documents = [
      author, 'BareosMainReference', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+import re
+# settings for sphinxcontrib-versioning
+scv_whitelist_branches = (re.compile(r'^master$'),
+#        re.compile('sphinx-versioning$'),
+        re.compile(r'^bareos-18.2$'))
+scv_show_banner = True
+scv_priority = 'branches'
+scv_root_ref = 'bareos-18.2'
+scv_banner_main_ref = 'bareos-18.2'
+
+#scv_root_ref = 'dev/pstorz/bareos-18.2/sphinx-versioning'
+#scv_banner_main_ref = 'dev/pstorz/bareos-18.2/sphinx-versioning'

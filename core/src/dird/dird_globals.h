@@ -25,12 +25,12 @@
 #define BAREOS_DIRD_DIRD_GLOBALS_H_ 1
 
 class ConfigurationParser;
-extern ConfigurationParser *my_config;
 
 namespace directordaemon {
 
 class DirectorResource;
 extern DirectorResource *me;
+extern ConfigurationParser *my_config;
 
 extern char *configfile;
 extern void *start_heap;

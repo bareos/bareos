@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ FOREACH(SQLFILE ${SQLFILES})
    GET_FILENAME_COMPONENT(BASENAME ${SQLFILE} NAME)
    STRING(REGEX MATCH  "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}) # match the regex, we only are interested in submatch in parentheses
    SET(VERSION ${CMAKE_MATCH_1})
-   INSTALL (FILES ${SQLFILE} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/mysql RENAME ${VERSION})
+   INSTALL (FILES ${SQLFILE} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/mysql RENAME ${BAREOS_NUMERIC_VERSION})
 ENDFOREACH()
 
 
@@ -92,11 +92,11 @@ FOREACH(SQLFILE ${SQLFILES})
    FOREACH(LINE ${SQLFILE_LINE})
      STRING(REGEX MATCH "^ALTER|^DROP|^--|^$" IS_UPGRADE_LINE ${LINE})
      IF (NOT ${IS_UPGRADE_LINE} STREQUAL "")
-        FILE(APPEND ${UPGRADE_DBADMIN_DIR}/${VERSION} "${LINE}\n")
+        FILE(APPEND ${UPGRADE_DBADMIN_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
         SET(LINE "-- upgrade-dbadmin: ${LINE}")
-        FILE(APPEND ${UPGRADE_DIR}/${VERSION} "${LINE}\n")
+        FILE(APPEND ${UPGRADE_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
      ELSE()
-        FILE(APPEND ${UPGRADE_DIR}/${VERSION} "${LINE}\n")
+        FILE(APPEND ${UPGRADE_DIR}/${BAREOS_NUMERIC_VERSION} "${LINE}\n")
      ENDIF()
    ENDFOREACH()
 ENDFOREACH()
@@ -115,5 +115,5 @@ FOREACH(SQLFILE ${SQLFILES})
    GET_FILENAME_COMPONENT(BASENAME ${SQLFILE} NAME)
    STRING(REGEX MATCH  "[0-9]*_([0-9]*)" DUMMMY ${SQLFILE}) # match the regex, we only are interested in submatch in parentheses
    SET(VERSION ${CMAKE_MATCH_1})
-   INSTALL (FILES ${SQLFILE} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/sqlite3 RENAME ${VERSION})
+   INSTALL (FILES ${SQLFILE} DESTINATION ${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/sqlite3 RENAME ${BAREOS_NUMERIC_VERSION})
 ENDFOREACH()

@@ -56,6 +56,21 @@ static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
                                              struct ndm_session *sess);
 
 
+/**
+ * callback to check if job is cancelled and NDMP should stop
+ */
+int is_job_canceled_cb(struct ndm_session *sess) {
+
+   NIS *nis = (NIS *)sess->param->log.ctx;
+   JobControlRecord *jcr = nis->jcr;
+
+   return jcr->IsCanceled();
+}
+
+
+
+
+
 
 /**
  * Load next medium, also used as "load first" callback
@@ -78,7 +93,7 @@ int NdmpLoadNext(struct ndm_session *sess) {
    bool prune = false;
    struct ndmmedia *media;
    int index = 1;
-   StorageResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.write_storage;
 
    /*
     * get the poolid for pool name
@@ -130,12 +145,10 @@ int NdmpLoadNext(struct ndm_session *sess) {
          goto bail_out;
       }
 
-      slot_number_t slotnumber = LookupStorageMapping(store, slot_type_normal, LOGICAL_TO_PHYSICAL, mr.Slot);
-      /*
-       * check if LookupStorageMapping was successful
-       */
+      slot_number_t slotnumber = GetElementAddressByBareosSlotNumber(&store->rss->storage_mapping, slot_type_storage, mr.Slot);
+      /* check for success */
       if ( slotnumber < 0 ) {
-         Jmsg(jcr, M_FATAL, 0, _("LookupStorageMapping failed\n"));
+         Jmsg(jcr, M_FATAL, 0, _("GetElementAddressByBareosSlotNumber failed\n"));
          goto bail_out;
       }
 
@@ -159,7 +172,6 @@ bail_out:
  */
 bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
 {
-   unsigned int cnt;
    int i, status;
    char ed1[100];
    NIS *nis = NULL;
@@ -170,17 +182,20 @@ bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
    bool retval = false;
    int NdmpLoglevel;
 
-   if (jcr->res.client->ndmp_loglevel > me->ndmp_loglevel) {
-      NdmpLoglevel = jcr->res.client->ndmp_loglevel;
-   } else {
-      NdmpLoglevel = me->ndmp_loglevel;
-   }
+   int driveindex;
+   slot_number_t driveaddress;
+   char *item;
 
-   struct ndmca_media_callbacks  media_callbacks;
+   NdmpLoglevel = std::max(jcr->res.client->ndmp_loglevel, me->ndmp_loglevel);
+
+   struct ndmca_media_callbacks media_callbacks;
 
    media_callbacks.load_first = NdmpLoadNext; /* we use the same callback for first and next*/
    media_callbacks.load_next = NdmpLoadNext;
    media_callbacks.unload_current = NULL;
+
+   struct ndmca_jobcontrol_callbacks jobcontrol_callbacks;
+   jobcontrol_callbacks.is_job_canceled = is_job_canceled_cb;
 
 
    /*
@@ -196,248 +211,208 @@ bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
       return false;
    }
 
-   if (CheckHardquotas(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, "Quota Exceeded. Job terminated.");
-      return false;
-   }
-
-   if (CheckSoftquotas(jcr)) {
-      Dmsg0(10, "Quota exceeded\n");
-      Jmsg(jcr, M_FATAL, 0, "Soft Quota Exceeded / Grace Time expired. Job terminated.");
-      return false;
-   }
-
-   /*
-    * If we have a paired storage definition create a native connection
-    * to a Storage daemon and make it ready to receive a backup.
-    * The setup is more or less the same as for a normal non NDMP backup
-    * only the data doesn't come in from a FileDaemon but from a NDMP
-    * data mover which moves the data from the NDMP DATA AGENT to the NDMP
-    * TAPE AGENT.
-    */
-
    status = 0;
-   StorageResource *store = jcr->res.wstore;
-   int drive = 0;
+   StorageResource *store = jcr->res.write_storage;
+   PoolMem virtual_filename(PM_FNAME);
+   IncludeExcludeItem *ie;
 
-   /*
-    * Initialize the ndmp backup job. We build the generic job only once
-    * and reuse the job definition for each separate sub-backup we perform as
-    * part of the whole job. We only free the env_table between every sub-backup.
-    */
-   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.wstore, jcr->res.client,
+
+
+
+   if (!NdmpBuildClientAndStorageJob(jcr, jcr->res.write_storage, jcr->res.client,
             true, /* init_tape */
             true, /* init_robot */
             NDM_JOB_OP_BACKUP, &ndmp_job)) {
       goto bail_out;
    }
 
-   /*
-    * Set the remote robotics name to use.
-    * We use the ndmscsi_target_from_str() function which parses the NDMJOB format of a
-    * device in the form NAME[,[CNUM,]SID[,LUN]
-    */
-   ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
-      Actuallyfree(ndmp_job.robot_target);
-      Dmsg0(100,"NdmpSendLabelRequest: no robot to use\n");
-      return retval;
+   if ( !ndmp_native_setup_robot_and_tape_for_native_backup_job(jcr, store, ndmp_job)) {
+      Jmsg(jcr, M_ERROR, 0, _("ndmp_native_setup_robot_and_tape_for_native_backup_job failed\n"));
+      goto bail_out;
    }
-
-   ndmp_job.have_robot = 1;
-   /*
-    * unload tape if tape is in drive
-    */
-   ndmp_job.auto_remedy = 1;
-
-   /*
-    * Set the remote tape drive to use.
-    */
-   ndmp_job.tape_device = lookup_ndmp_drive(store, drive);
-   ndmp_job.record_size = jcr->res.client->ndmp_blocksize;
-
-   Jmsg(jcr, M_INFO, 0, _("Using Data  host %s\n"), ndmp_job.data_agent.host);
-   Jmsg(jcr, M_INFO, 0, _("Using Tape  host:device  %s:%s\n"), ndmp_job.tape_agent.host, ndmp_job.tape_device);
-   Jmsg(jcr, M_INFO, 0, _("Using Robot host:device  %s:%s\n"), ndmp_job.robot_agent.host, ndmp_job.robot_target);
-   Jmsg(jcr, M_INFO, 0, _("Using Tape record size %d\n"), ndmp_job.record_size);
-
-   if (!ndmp_job.tape_device) {
-      Actuallyfree(ndmp_job.robot_target);
-      Dmsg0(100,"ndmp: no tape drive to use\n");
-      return retval;
-   }
-
 
    nis = (NIS *)malloc(sizeof(NIS));
    memset(nis, 0, sizeof(NIS));
 
    /*
-    * Loop over each include set of the fileset and fire off a NDMP backup of the included fileset.
+    * Only one include set of the fileset  is allowed in NATIVE mode as
+    * in NDMP also per job only one filesystem can be backed up
     */
-   cnt = 0;
    fileset = jcr->res.fileset;
-   for (i = 0; i < fileset->num_includes; i++) {
-      int j;
-      char *item;
-      IncludeExcludeItem *ie = fileset->include_items[i];
-      PoolMem virtual_filename(PM_FNAME);
 
-      /*
-       * Loop over each file = entry of the fileset.
-       */
-      for (j = 0; j < ie->name_list.size(); j++) {
-         item = (char *)ie->name_list.get(j);
-
-         /*
-          * Perform the actual NDMP job.
-          * Initialize a new NDMP session
-          */
-         memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-         ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
-         ndmp_sess.control_agent_enabled = 1;
-
-         ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
-         memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-         ndmp_sess.param->log.deliver = NdmpLoghandler;
-         ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
-         nis->filesystem = item;
-         nis->FileIndex = cnt + 1;
-         nis->jcr = jcr;
-         nis->save_filehist = jcr->res.job->SaveFileHist;
-         nis->filehist_size = jcr->res.job->FileHistSize;
-
-         ndmp_sess.param->log.ctx = nis;
-         ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
-         ndmp_sess.dump_media_info = 1;
-
-         /*
-          * Initialize the session structure.
-          */
-         if (ndma_session_initialize(&ndmp_sess)) {
-            goto cleanup;
-         }
-         session_initialized = true;
-
-         /*
-          * Copy the actual job to perform.
-          */
-         memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
-
-         /*
-          * We can use the same private pointer used in the logging with the JobControlRecord in
-          * the file index generation. We don't setup a index_log.deliver
-          * function as we catch the index information via callbacks.
-          */
-         ndmp_sess.control_acb->job.index_log.ctx = ndmp_sess.param->log.ctx;
-
-         if (!FillBackupEnvironment(jcr,
-                  ie,
-                  nis->filesystem,
-                  &ndmp_sess.control_acb->job)) {
-            goto cleanup;
-         }
-         /* register the callbacks */
-         ndmca_media_register_callbacks (&ndmp_sess, &media_callbacks);
-
-         /*
-          * The full ndmp archive has a virtual filename, we need it to hardlink the individual
-          * file records to it. So we allocate it here once so its available during the whole
-          * NDMP session.
-          */
-         if (Bstrcasecmp(jcr->backup_format, "dump")) {
-            Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem, jcr->DumpLevel);
-         } else {
-            Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
-         }
-
-         if (nis->virtual_filename) {
-            free(nis->virtual_filename);
-         }
-         nis->virtual_filename = bstrdup(virtual_filename.c_str());
-
-         // FIXME: disabled because of "missing media entry" error
-         //if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) {
-         //   goto cleanup;
-         //}
-
-         /*
-          * Commission the session for a run.
-          */
-         if (ndma_session_commission(&ndmp_sess)) {
-            goto cleanup;
-         }
-
-         /*
-          * Setup the DMA.
-          */
-         if (ndmca_connect_control_agent(&ndmp_sess)) {
-            goto cleanup;
-         }
-
-         ndmp_sess.conn_open = 1;
-         ndmp_sess.conn_authorized = 1;
-
-         RegisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
-
-         /*
-          * Let the DMA perform its magic.
-          */
-         if (ndmca_control_agent(&ndmp_sess) != 0) {
-            goto cleanup;
-         }
-
-         /*
-          * See if there were any errors during the backup.
-          */
-         jcr->jr.FileIndex = cnt + 1;
-         if (!extract_post_backup_stats_ndmp_native(jcr, item, &ndmp_sess)) {
-            goto cleanup;
-         }
-         UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
-
-         /*
-          * Reset the NDMP session states.
-          */
-         ndma_session_decommission(&ndmp_sess);
-
-         /*
-          * Cleanup the job after it has run.
-          */
-         ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
-         ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
-         ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
-
-         /*
-          * Destroy the session.
-          */
-         ndma_session_destroy(&ndmp_sess);
-
-         /*
-          * Free the param block.
-          */
-         free(ndmp_sess.param->log_tag);
-         free(ndmp_sess.param);
-         ndmp_sess.param = NULL;
-
-         /*
-          * Reset the initialized state so we don't try to cleanup again.
-          */
-         session_initialized = false;
-
-         cnt++;
-      }
+   if (fileset->num_includes > 1) {
+      Jmsg(jcr, M_ERROR, 0, "Exactly one include set is supported in NDMP NATIVE mode\n");
+      return retval;
    }
+
+   ie = fileset->include_items[0];
+
+   /*
+    * only one file = entry is allowed
+    * and it is the ndmp filesystem to be backed up
+    */
+   if (ie->name_list.size() != 1) {
+      Jmsg(jcr, M_ERROR, 0, "Exactly one  File specification is supported in NDMP NATIVE mode\n");
+      return retval;
+   }
+
+   item = (char *)ie->name_list.first();
+
+   /*
+    * Perform the actual NDMP job.
+    * Initialize a new NDMP session
+    */
+   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
+   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
+   ndmp_sess.control_agent_enabled = 1;
+
+   ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
+   memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
+   ndmp_sess.param->log.deliver = NdmpLoghandler;
+   ndmp_sess.param->log_level = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
+   nis->filesystem = item;
+   nis->FileIndex = 1;
+   nis->jcr = jcr;
+   nis->save_filehist = jcr->res.job->SaveFileHist;
+   nis->filehist_size = jcr->res.job->FileHistSize;
+
+   ndmp_sess.param->log.ctx = nis;
+   ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+   ndmp_sess.dump_media_info = 1;
+
+   /*
+    * Initialize the session structure.
+    */
+   if (ndma_session_initialize(&ndmp_sess)) {
+      goto cleanup;
+   }
+   session_initialized = true;
+
+   /*
+    * Copy the actual job to perform.
+    */
+   memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
+
+   /*
+    * We can use the same private pointer used in the logging with the JCR in
+    * the file index generation. We don't setup a index_log.deliver
+    * function as we catch the index information via callbacks.
+    */
+   ndmp_sess.control_acb->job.index_log.ctx = ndmp_sess.param->log.ctx;
+
+   if (!FillBackupEnvironment(jcr,
+            ie,
+            nis->filesystem,
+            &ndmp_sess.control_acb->job)) {
+      goto cleanup;
+   }
+   /* register the callbacks */
+   ndmca_media_register_callbacks (&ndmp_sess, &media_callbacks);
+   ndmca_jobcontrol_register_callbacks (&ndmp_sess, &jobcontrol_callbacks);
+
+   /*
+    * The full ndmp archive has a virtual filename, we need it to hardlink the individual
+    * file records to it. So we allocate it here once so its available during the whole
+    * NDMP session.
+    */
+   if (Bstrcasecmp(jcr->backup_format, "dump")) {
+      Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem, jcr->DumpLevel);
+   } else {
+      Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
+   }
+
+   if (nis->virtual_filename) {
+      free(nis->virtual_filename);
+   }
+   nis->virtual_filename = bstrdup(virtual_filename.c_str());
+
+   // FIXME: disabled because of "missing media entry" error
+   //if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
+   //   goto cleanup;
+   //}
+
+   /*
+    * Commission the session for a run.
+    */
+   if (ndma_session_commission(&ndmp_sess)) {
+      goto cleanup;
+   }
+
+   /*
+    * Setup the DMA.
+    */
+   if (ndmca_connect_control_agent(&ndmp_sess)) {
+      goto cleanup;
+   }
+
+   ndmp_sess.conn_open = 1;
+   ndmp_sess.conn_authorized = 1;
+
+   RegisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
+
+   /*
+    * Let the DMA perform its magic.
+    */
+   if (ndmca_control_agent(&ndmp_sess) != 0) {
+      goto cleanup;
+   }
+
+   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
+      Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+            ndmp_job.tape_device, jcr->JobId);
+   }
+
+   /*
+    * See if there were any errors during the backup.
+    */
+   jcr->jr.FileIndex = 1;
+   if (!extract_post_backup_stats_ndmp_native(jcr, item, &ndmp_sess)) {
+      goto cleanup;
+   }
+   UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
+
+   /*
+    * Reset the NDMP session states.
+    */
+   ndma_session_decommission(&ndmp_sess);
+
+   /*
+    * Cleanup the job after it has run.
+    */
+   ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
+   ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
+   ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
+
+   /*
+    * Destroy the session.
+    */
+   ndma_session_destroy(&ndmp_sess);
+
+   /*
+    * Free the param block.
+    */
+   free(ndmp_sess.param->log_tag);
+   free(ndmp_sess.param);
+   ndmp_sess.param = NULL;
+
+   /*
+    * Reset the initialized state so we don't try to cleanup again.
+    */
+   session_initialized = false;
+
+
 
    status = JS_Terminated;
    retval = true;
+
 
    /*
     * If we do incremental backups it can happen that the backup is empty if
     * nothing changed but we always write a filestream. So we use the counter
     * which counts the number of actual NDMP backup sessions we run to completion.
     */
-   if (jcr->JobFiles < cnt) {
-      jcr->JobFiles = cnt;
+   if (jcr->JobFiles == 0) {
+      jcr->JobFiles = 1;
    }
 
    /*
@@ -446,6 +421,12 @@ bool DoNdmpBackupNdmpNative(JobControlRecord *jcr)
    goto ok_out;
 
 cleanup:
+
+   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
+      Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
+            ndmp_job.tape_device, jcr->JobId);
+   }
+
    /*
     * Only need to cleanup when things are initialized.
     */
@@ -466,10 +447,12 @@ cleanup:
       ndma_session_destroy(&ndmp_sess);
    }
 
-   if (ndmp_sess.param) {
-      free(ndmp_sess.param->log_tag);
-      free(ndmp_sess.param);
-   }
+   /*
+    * Free the param block.
+    */
+   free(ndmp_sess.param->log_tag);
+   free(ndmp_sess.param);
+   ndmp_sess.param = NULL;
 
 bail_out:
    /*
@@ -521,7 +504,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord *jcr)
     */
    CopyWstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
-   if (!jcr->res.wstorage) {
+   if (!jcr->res.write_storage_list) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
       return false;
    }
@@ -573,8 +556,7 @@ static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
        * translate Physical to Logical Slot before storing into database
        */
 
-      media->slot_addr = LookupStorageMapping(jcr->res.wstore, slot_type_normal,
-                                                  PHYSICAL_TO_LOGICAL, media->slot_addr);
+      media->slot_addr = GetBareosSlotNumberByElementAddress(&jcr->res.write_storage->rss->storage_mapping, slot_type_storage, media->slot_addr);
 #if 0
       Jmsg(jcr, M_INFO, 0, _("Physical Slot is %d\n"), media->slot_addr);
       Jmsg(jcr, M_INFO, 0, _("Logical slot is : %d\n"), media->slot_addr);

@@ -1,0 +1,9 @@
+Storage {
+  Name = Tape
+  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
+  Password = "Replace this by the Bareos Storage Daemon director password"
+  Device = autochanger-0
+  Media Type = LTO
+  Auto Changer = yes
+}
+

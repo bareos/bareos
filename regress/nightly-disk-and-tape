@@ -30,3 +30,4 @@ while [ $i -le 5 ]; do
 done
 REGRESS_DEBUG=${save_debug}
 echo "End nightly-disk-and-tape `date`"
+exit $rtn

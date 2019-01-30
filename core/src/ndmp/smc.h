@@ -34,6 +34,10 @@
  *
  */
 
+#ifndef BAREOS_SRC_NDMP_SMCC_H_
+#define BAREOS_SRC_NDMP_SMCC_H_
+
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -193,3 +197,5 @@ extern int	smc_pp_element_descriptor (struct smc_element_descriptor *edp,
 #ifdef  __cplusplus
 }
 #endif
+
+#endif // BAREOS_SRC_NDMP_SMCC_H_

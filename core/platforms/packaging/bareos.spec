@@ -89,9 +89,7 @@ BuildRequires: libtirpc-devel
 %define droplet 1
 %endif
 
-# Ceph packages have changed with SLE_12_SP2,
-# therefore build it only for SLE_12 and SLE_12_SP1
-%if 0%{?sle_version} >= 120000 && 0%{?sle_version} <= 120100
+%if 0%{?sle_version} >= 120000
 %define ceph 1
 %endif
 
@@ -153,7 +151,12 @@ BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
 %if 0%{?ceph}
+%if 0%{?sle_version} >= 120200
+BuildRequires: libcephfs-devel
+BuildRequires: librados-devel
+%else
 BuildRequires: ceph-devel
+%endif
 %endif
 
 %if 0%{?have_git}
@@ -811,7 +814,8 @@ cmake  .. \
 %if 0%{?systemd_support}
   -Dsystemd=yes \
 %endif
-  -Dincludes=yes
+  -Dincludes=yes \
+  -DVERSION_STRING=%version
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
@@ -1092,6 +1096,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{backend_dir}/libbareossd-droplet*.so
 %attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
 %attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
+%dir %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/*.example
 %endif
 
 %if 0%{?glusterfs}

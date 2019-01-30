@@ -34,6 +34,7 @@
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"
 #include "lib/bnet_server_tcp.h"
+#include "lib/try_tls_handshake_as_a_server.h"
 
 namespace filedaemon {
 
@@ -58,14 +59,20 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 {
    BareosSocket *bs = (BareosSocket *)arg;
 
-   if (!bs->IsCleartextBareosHello()) { bs->DoTlsHandshakeAsAServer(config); }
+   if (!TryTlsHandshakeAsAServer(bs, config)) {
+     bs->signal(BNET_TERMINATE);
+     bs->close();
+     delete bs;
+     return nullptr;
+   }
 
    if (bs->recv() <= 0) {
-      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
-      Bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      delete bs;
-      return NULL;
+     Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+     Bmicrosleep(5, 0);   /* make user wait 5 seconds */
+     bs->signal(BNET_TERMINATE);
+     bs->close();
+     delete bs;
+     return nullptr;
    }
 
    Dmsg1(110, "Conn: %s\n", bs->msg);
@@ -89,7 +96,7 @@ static void *HandleConnectionRequest(ConfigurationParser *config, void *arg)
 
    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->message_length);
 
-   return NULL;
+   return nullptr;
 }
 
 void StartSocketServer(dlist *addrs)
@@ -122,7 +129,7 @@ void StopSocketServer(bool wait)
 {
    Dmsg0(100, "StopSocketServer\n");
    if (sock_fds) {
-      BnetStopThreadServerTcp(tcp_server_tid);
+      BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
       /*
        * before thread_servers terminates,
        * it calls cleanup_bnet_thread_server_tcp

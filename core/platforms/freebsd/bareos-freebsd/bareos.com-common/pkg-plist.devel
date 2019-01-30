@@ -1,0 +1,286 @@
+usr/lib/bareos/scripts/bareos
+usr/lib/bareos/scripts/bareos.conf.sampleig
+usr/lib/bareos/scripts/bareos.conf.sampleig-lib.sh
+usr/lib/bareos/scripts/bareos-ctl-dir
+usr/lib/bareos/scripts/bareos-ctl-fd
+usr/lib/bareos/scripts/bareos-ctl-funcs
+usr/lib/bareos/scripts/bareos-ctl-sd
+usr/lib/bareos/scripts/bareos-explorer
+usr/lib/bareos/scripts/bareos-glusterfind-wrapper
+usr/lib/bareos/scripts/bareos.conf.sampleig
+usr/lib/bareos/scripts/btraceback.dbx
+usr/lib/bareos/scripts/btraceback.gdb
+usr/lib/bareos/scripts/btraceback.mdb
+usr/lib/bareos/scripts/create_bareos_database
+usr/lib/bareos/scripts/ddl/creates/postgresql.sql
+usr/lib/bareos/scripts/ddl/drops/postgresql.sql
+usr/lib/bareos/scripts/ddl/grants/postgresql-change_owner.d.conf.sampleig-template.sql
+usr/lib/bareos/scripts/ddl/grants/postgresql-readonly.sql
+usr/lib/bareos/scripts/ddl/grants/postgresql.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.10_11.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.11_12.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.12_14.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.14_2001.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.2001_2002.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.2002_2003.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.2003_2004.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.2004_2171.sql
+usr/lib/bareos/scripts/ddl/updates/postgresql.bee.1017_2004.sql
+usr/lib/bareos/scripts/ddl/versions.map
+usr/lib/bareos/scripts/delete_catalog_backup
+usr/lib/bareos/scripts/disk-changer
+usr/lib/bareos/scripts/drop_bareos_database
+usr/lib/bareos/scripts/drop_bareos_tables
+usr/lib/bareos/scripts/grant_bareos_privileges
+usr/lib/bareos/scripts/make_bareos_tables
+usr/lib/bareos/scripts/make_catalog_backup
+usr/lib/bareos/scripts/make_catalog_backup.pl
+usr/lib/bareos/scripts/mtx-changer
+usr/lib/bareos/scripts/query.sql
+usr/lib/bareos/scripts/update_bareos_tables
+bin/bconsole
+bin/bregex
+bin/bsmtp
+bin/bwild
+bin/timelimit
+@sample %%ETCDIR%%/bareos-dir.d/catalog/MyCatalog.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/client/bareos-fd.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/console/bareos-mon.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/director/bareos-dir.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/fileset/Catalog.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/fileset/LinuxAll.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/fileset/SelfTest.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf.sample
+%%ETCDIR%%/bareos-dir.d/fileset/plugin-ldap.conf.sample.example
+@sample %%ETCDIR%%/bareos-dir.d/job/BackupCatalog.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/job/RestoreFiles.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/job/backup-bareos-fd.conf.sample
+%%ETCDIR%%/bareos-dir.d/job/backup-ldap.conf.sample.example
+%%ETCDIR%%/bareos-dir.d/job/restore-ldap.conf.sample.example
+@sample %%ETCDIR%%/bareos-dir.d/jobdefs/DefaultJob.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/messages/Daemon.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/messages/Standard.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/pool/Differential.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/pool/Full.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/pool/Incremental.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/pool/Scratch.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/profile/operator.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycle.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf.sample
+@sample %%ETCDIR%%/bareos-dir.d/storage/File.conf.sample
+%%ETCDIR%%/bareos-dir.d/storage/NULL.conf.sample.example
+%%ETCDIR%%/bareos-dir.d/storage/Tape.conf.sample.example
+@sample %%ETCDIR%%/bareos-fd.d/client/myself.conf.sample
+@sample %%ETCDIR%%/bareos-fd.d/director/bareos-dir.conf.sample
+@sample %%ETCDIR%%/bareos-fd.d/director/bareos-mon.conf.sample
+@sample %%ETCDIR%%/bareos-fd.d/messages/Standard.conf.sample
+@sample %%ETCDIR%%/bareos-regress.conf.sample
+%%ETCDIR%%/bareos-sd.d/autochanger/autochanger-0.conf.sample.example
+@sample %%ETCDIR%%/bareos-sd.d/device/FileStorage.conf.sample
+%%ETCDIR%%/bareos-sd.d/device/NULL.conf.sample.example
+%%ETCDIR%%/bareos-sd.d/device/tapedrive-0.conf.sample.example
+@sample %%ETCDIR%%/bareos-sd.d/director/bareos-dir.conf.sample
+@sample %%ETCDIR%%/bareos-sd.d/director/bareos-mon.conf.sample
+@sample %%ETCDIR%%/bareos-sd.d/messages/Standard.conf.sample
+@sample %%ETCDIR%%/bareos-sd.d/storage/bareos-sd.conf.sample
+@sample %%ETCDIR%%/bconsole.conf.sample
+@sample %%ETCDIR%%/mtx-changer.conf.sample
+include/bareos/address.conf.sample.h
+include/bareos/alist.h
+include/bareos/attr.h
+include/bareos/b.conf.sampleig.h
+include/bareos/bareos.h
+include/bareos/base64.h
+include/bareos/bc_types.h
+include/bareos/berrno.h
+include/bareos/bits.h
+include/bareos/bpipe.h
+include/bareos/breg.h
+include/bareos/bregex.h
+include/bareos/bsock.h
+include/bareos/bsock_sctp.h
+include/bareos/bsock_tcp.h
+include/bareos/bsock_udt.h
+include/bareos/bsr.h
+include/bareos/btime.h
+include/bareos/btimers.h
+include/bareos/cbuf.h
+include/bareos/ch.h
+include/bareos.conf.sampleig.h
+include/bareos/crypto.h
+include/bareos/crypto_cache.h
+include/bareos/devlock.h
+include/bareos/dlist.h
+include/bareos/fileopts.h
+include/bareos/filetypes.h
+include/bareos/findlib/bfile.h
+include/bareos/findlib/find.h
+include/bareos/findlib/protos.h
+include/bareos/fnmatch.h
+include/bareos/guid_to_name.h
+include/bareos/host.h
+include/bareos/htable.h
+include/bareos/ini.h
+include/bareos/jcr.h
+include/bareos/lex.h
+include/bareos/lib.h
+include/bareos/lmdb/lmdb.h
+include/bareos/lmdb/midl.h
+include/bareos/lockmgr.h
+include/bareos/md5.h
+include/bareos/mem_pool.h
+include/bareos/message.h
+include/bareos/mntent_cache.h
+include/bareos/ndmp/ndmagents.h
+include/bareos/ndmp/ndmlib.h
+include/bareos/ndmp/ndmp0.h
+include/bareos/ndmp/ndmp0_enum_strs.h
+include/bareos/ndmp/ndmp2.h
+include/bareos/ndmp/ndmp2_enum_strs.h
+include/bareos/ndmp/ndmp2_translate.h
+include/bareos/ndmp/ndmp3.h
+include/bareos/ndmp/ndmp3_enum_strs.h
+include/bareos/ndmp/ndmp3_translate.h
+include/bareos/ndmp/ndmp4.h
+include/bareos/ndmp/ndmp4_enum_strs.h
+include/bareos/ndmp/ndmp4_translate.h
+include/bareos/ndmp/ndmp9.h
+include/bareos/ndmp/ndmp9_enum_strs.h
+include/bareos/ndmp/ndmp_ammend.h
+include/bareos/ndmp/ndmp_msg_buf.h
+include/bareos/ndmp/ndmp_translate.h
+include/bareos/ndmp/ndmprotocol.h
+include/bareos/ndmp/scsiconst.h
+include/bareos/ndmp/smc.h
+include/bareos/ndmp/smc_priv.h
+include/bareos/ndmp/smc_raw.h
+include/bareos/ndmp/wraplib.h
+include/bareos/ordered_cbuf.h
+include/bareos/parse.conf.sample.h
+include/bareos/plugins.h
+include/bareos/protos.h
+include/bareos/queue.h
+include/bareos/rblist.h
+include/bareos/runscript.h
+include/bareos/rwlock.h
+include/bareos/scsi_crypto.h
+include/bareos/scsi_lli.h
+include/bareos/scsi_tapealert.h
+include/bareos/sellist.h
+include/bareos/serial.h
+include/bareos/sha1.h
+include/bareos/smartall.h
+include/bareos/sql/cats.h
+include/bareos/sql/protos.h
+include/bareos/status.h
+include/bareos/streams.h
+include/bareos/tls.h
+include/bareos/tree.h
+include/bareos/var.h
+include/bareos/version.h
+include/bareos/watchdog.h
+include/bareos/workq.h
+lib/bareos/libbareoscats-postgresql.so.18.2.4
+lib/bareos/libbareoscats-postgresql.so
+lib/bareos/libbareossd-fifo.so.18.2.4
+lib/bareos/libbareossd-fifo.so
+lib/bareos/libbareossd-gentape.so.18.2.4
+lib/bareos/libbareossd-gentape.so
+lib/bareos/libbareossd-tape.so.18.2.4
+lib/bareos/libbareossd-tape.so
+lib/bareos/plugins/BareosDirPluginBaseclass.py
+lib/bareos/plugins/BareosDirWrapper.py
+lib/bareos/plugins/BareosFdPluginBaseclass.py
+lib/bareos/plugins/BareosFdPluginLDAP.py
+lib/bareos/plugins/BareosFdPluginLocalFileset.py
+lib/bareos/plugins/BareosFdWrapper.py
+lib/bareos/plugins/BareosSdPluginBaseclass.py
+lib/bareos/plugins/BareosSdWrapper.py
+lib/bareos/plugins/autoxflate-sd.so
+lib/bareos/plugins/bareos-dir-class-plugin.py
+lib/bareos/plugins/bareos-dir.py.template
+lib/bareos/plugins/bareos-fd-ldap.py
+lib/bareos/plugins/bareos-fd-local-fileset.py
+lib/bareos/plugins/bareos-fd-mock-test.py
+lib/bareos/plugins/bareos-fd.py.template
+lib/bareos/plugins/bareos-sd-class-plugin.py
+lib/bareos/plugins/bareos-sd.py.template
+lib/bareos/plugins/bareos_dir_consts.py
+lib/bareos/plugins/bareos_fd_consts.py
+lib/bareos/plugins/bareos_sd_consts.py
+lib/bareos/plugins/bpipe-fd.so
+lib/bareos/plugins/python-dir.so
+lib/bareos/plugins/python-fd.so
+lib/bareos/plugins/python-sd.so
+lib/bareos/plugins/scsicrypto-sd.so
+lib/bareos/plugins/scsitapealert-sd.so
+lib/libbareos.so.18.2.4
+lib/libbareos.so
+lib/libbareoscats.so.18.2.4
+lib/libbareoscats.so
+lib/libbareoscfg.so.18.2.4
+lib/libbareoscfg.so
+lib/libbareosfind.so.18.2.4
+lib/libbareosfind.so
+lib/libbareoslmdb.so.18.2.4
+lib/libbareoslmdb.so
+lib/libbareosndmp.so.18.2.4
+lib/libbareosndmp.so
+lib/libbareossd.so.18.2.4
+lib/libbareossd.so
+lib/libbareossql.so.18.2.4
+lib/libbareossql.so
+man/man1/bareos-tray-monitor.1.gz
+man/man1/bconsole.1.gz
+man/man1/bregex.1.gz
+man/man1/bsmtp.1.gz
+man/man1/bwild.1.gz
+man/man8/bareos-dbcheck.8.gz
+man/man8/bareos-dir.8.gz
+man/man8/bareos-fd.8.gz
+man/man8/bareos-sd.8.gz
+man/man8/bareos.8.gz
+man/man8/bcopy.8.gz
+man/man8/bextract.8.gz
+man/man8/bls.8.gz
+man/man8/bpluginfo.8.gz
+man/man8/bscan.8.gz
+man/man8/bscrypto.8.gz
+man/man8/btape.8.gz
+man/man8/btraceback.8.gz
+sbin/bareos
+sbin/bareos-dbcheck
+sbin/bareos-dir
+sbin/bareos-fd
+sbin/bareos-sd
+sbin/bbatch
+sbin/bconsole
+sbin/bcopy
+sbin/bextract
+sbin/bls
+sbin/bpluginfo
+sbin/bregex
+sbin/bregtest
+sbin/bscan
+sbin/bscrypto
+sbin/bsmtp
+sbin/btape
+sbin/btraceback
+sbin/bwild
+sbin/grow
+sbin/testls
+sbin/timelimit
+@dir %%ETCDIR%%/bareos-dir-export/client
+@dir %%ETCDIR%%/bareos-dir.d/counter
+@dir %%ETCDIR%%/bareos-sd.d/ndmp
+@dir /usr/lib/bareos/scripts/ddl/creates
+@dir /usr/lib/bareos/scripts/ddl/drops
+@dir /usr/lib/bareos/scripts/ddl/grants
+@dir /usr/lib/bareos/scripts/ddl/updates
+@dir /usr/lib/bareos/scripts/ddl
+@dir /usr/lib/bareos/scripts
+@dir /usr/lib/bareos
+@dir /var/lib/bareos/storage
+@dir /var/lib/bareos
+@dir /var/lib
+@dir /var/log/bareos

@@ -28,17 +28,12 @@ class QualifiedResourceNameTypeConverter {
  public:
   QualifiedResourceNameTypeConverter(const std::map<int, std::string> &map);
   bool ResourceToString(const std::string &name_of_resource, const int &r_type, std::string &out) const;
-  bool ResourceToString(const std::string &name_of_resource,
-                        const int &r_type,
-                        const int &JobId,
-                        std::string &out) const;
-  bool StringToResource(std::string &name_of_resource, int &r_type, int &job_id, const std::string &in) const;
+  bool StringToResource(std::string &name_of_resource, int &r_type, const std::string &in) const;
 
   std::string ResourceTypeToString(const int &type) const;
   int StringToResourceType(const std::string &) const;
 
  private:
-  static constexpr char record_separator_ = 0x1e;
   const std::map<int, std::string> type_name_relation_map_;
   const std::map<std::string, int> name_type_relation_map_;
 };

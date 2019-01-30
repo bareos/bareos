@@ -237,11 +237,11 @@ struct idpkt {
  *  - SDport
  *  - password
  */
-static inline bool IsSameStorageDaemon(StorageResource *rstore, StorageResource *wstore)
+static inline bool IsSameStorageDaemon(StorageResource *read_storage, StorageResource *write_storage)
 {
-   return rstore->SDport == wstore->SDport &&
-          Bstrcasecmp(rstore->address, wstore->address) &&
-          Bstrcasecmp(rstore->password.value, wstore->password.value);
+   return read_storage->SDport == write_storage->SDport &&
+          Bstrcasecmp(read_storage->address, write_storage->address) &&
+          Bstrcasecmp(read_storage->password_.value, write_storage->password_.value);
 }
 
 bool SetMigrationWstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where)
@@ -356,8 +356,8 @@ static inline bool SameStorage(JobControlRecord *jcr)
 {
    StorageResource *read_store, *write_store;
 
-   read_store = (StorageResource *)jcr->res.rstorage->first();
-   write_store = (StorageResource *)jcr->res.wstorage->first();
+   read_store = (StorageResource *)jcr->res.read_storage_list->first();
+   write_store = (StorageResource *)jcr->res.write_storage_list->first();
 
    if (!read_store->autochanger && !write_store->autochanger &&
        bstrcmp(read_store->name(), write_store->name())) {
@@ -1251,7 +1251,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
        * Get the storage that was used for the original Job.
        * This only happens when the original pool used doesn't have an explicit storage.
        */
-      if (!jcr->res.rstorage) {
+      if (!jcr->res.read_storage_list) {
          CopyRstorage(jcr, prev_job->storage, _("previous Job"));
       }
 
@@ -1261,7 +1261,7 @@ bool DoMigrationInit(JobControlRecord *jcr)
        * otherwise we open a connection to the reading SD and a second
        * one to the writing SD.
        */
-      jcr->remote_replicate = !IsSameStorageDaemon(jcr->res.rstore, jcr->res.wstore);
+      jcr->remote_replicate = !IsSameStorageDaemon(jcr->res.read_storage, jcr->res.write_storage);
 
       /*
        * set the JobLevel to what the original job was
@@ -1352,12 +1352,12 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
    }
 
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
-         ((StorageResource *)jcr->res.rstorage->first())->name(),
-         ((StorageResource *)jcr->res.wstorage->first())->name());
+         ((StorageResource *)jcr->res.read_storage_list->first())->name(),
+         ((StorageResource *)jcr->res.write_storage_list->first())->name());
 
    if (jcr->remote_replicate) {
 
-      alist *wstorage;
+      alist *write_storage_list;
 
       /*
        * See if we need to apply any bandwidth limiting.
@@ -1368,10 +1368,10 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
        */
       if (jcr->res.job->max_bandwidth > 0) {
          jcr->max_bandwidth = jcr->res.job->max_bandwidth;
-      } else if (jcr->res.wstore->max_bandwidth > 0) {
-         jcr->max_bandwidth = jcr->res.wstore->max_bandwidth;
-      } else if (jcr->res.rstore->max_bandwidth > 0) {
-         jcr->max_bandwidth = jcr->res.rstore->max_bandwidth;
+      } else if (jcr->res.write_storage->max_bandwidth > 0) {
+         jcr->max_bandwidth = jcr->res.write_storage->max_bandwidth;
+      } else if (jcr->res.read_storage->max_bandwidth > 0) {
+         jcr->max_bandwidth = jcr->res.read_storage->max_bandwidth;
       }
 
       /*
@@ -1380,19 +1380,19 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       Dmsg0(110, "Open connection with reading storage daemon\n");
 
       /*
-       * Clear the wstore of the jcr and assign it to the mig_jcr so
+       * Clear the write_storage of the jcr and assign it to the mig_jcr so
        * the jcr is connected to the reading storage daemon and the
        * mig_jcr to the writing storage daemon.
        */
-      mig_jcr->res.wstore = jcr->res.wstore;
-      jcr->res.wstore = NULL;
+      mig_jcr->res.write_storage = jcr->res.write_storage;
+      jcr->res.write_storage = NULL;
 
       /*
-       * Swap the wstorage between the jcr and the mig_jcr.
+       * Swap the write_storage_list between the jcr and the mig_jcr.
        */
-      wstorage = mig_jcr->res.wstorage;
-      mig_jcr->res.wstorage = jcr->res.wstorage;
-      jcr->res.wstorage = wstorage;
+      write_storage_list = mig_jcr->res.write_storage_list;
+      mig_jcr->res.write_storage_list = jcr->res.write_storage_list;
+      jcr->res.write_storage_list = write_storage_list;
 
       /*
        * Start conversation with Reading Storage daemon
@@ -1418,7 +1418,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       /*
        * Now start a job with the Reading Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, NULL, /* send_bsr */ true)) {
          goto bail_out;
       }
 
@@ -1428,7 +1428,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
        * Now start a job with the Writing Storage daemon
        */
 
-      if (!StartStorageDaemonJob(mig_jcr, NULL, mig_jcr->res.wstorage, /* send_bsr */ false)) {
+      if (!StartStorageDaemonJob(mig_jcr, NULL, mig_jcr->res.write_storage_list, /* send_bsr */ false)) {
          goto bail_out;
       }
 
@@ -1454,7 +1454,7 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, jcr->res.wstorage, /* send_bsr */ true)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, jcr->res.write_storage_list, /* send_bsr */ true)) {
          FreePairedStorage(jcr);
          return false;
       }
@@ -1513,8 +1513,8 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
     * to replicate to the other.
     */
    if (jcr->remote_replicate) {
-      StorageResource *wstore = mig_jcr->res.wstore;
-      StorageResource *rstore = jcr->res.rstore;
+      StorageResource *write_storage = mig_jcr->res.write_storage;
+      StorageResource *read_storage = jcr->res.read_storage;
       PoolMem command(PM_MESSAGE);
       uint32_t tls_need = 0;
 
@@ -1538,25 +1538,34 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
       /*
        * Send Storage daemon address to the other Storage daemon
        */
-      if (wstore->SDDport == 0) {
-         wstore->SDDport = wstore->SDport;
+      if (write_storage->SDDport == 0) {
+         write_storage->SDDport = write_storage->SDport;
       }
 
       /*
        * TLS Requirement
        */
-      tls_need = GetLocalTlsPolicyFromConfiguration(wstore);
+      tls_need = write_storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
 
-      char *connection_target_address = StorageAddressToContact(rstore, wstore);
+      char *connection_target_address = StorageAddressToContact(read_storage, write_storage);
 
       Mmsg(command, replicatecmd, mig_jcr->JobId, mig_jcr->Job, connection_target_address,
-           wstore->SDDport, tls_need, mig_jcr->sd_auth_key);
+           write_storage->SDDport, tls_need, mig_jcr->sd_auth_key);
 
       if (!jcr->store_bsock->fsend(command.c_str())) {
-         FreePairedStorage(jcr);
-         return false;
+         goto bail_out;
       }
-   }
+
+      if (jcr->store_bsock->recv() <= 0) {
+         goto bail_out;
+      }
+
+      std::string OK_replicate {"3000 OK replicate\n"};
+      std::string received = jcr->store_bsock->msg;
+      if (received != OK_replicate) {
+         goto bail_out;
+      }
+  }
 
    /*
     * Start the job prior to starting the message thread below
@@ -1596,25 +1605,25 @@ static inline bool DoActualMigration(JobControlRecord *jcr)
 
 bail_out:
    if (jcr->remote_replicate && mig_jcr) {
-      alist *wstorage;
+      alist *write_storage_list;
 
       /*
-       * Swap the wstorage between the jcr and the mig_jcr.
+       * Swap the write_storage_list between the jcr and the mig_jcr.
        */
-      wstorage = mig_jcr->res.wstorage;
-      mig_jcr->res.wstorage = jcr->res.wstorage;
-      jcr->res.wstorage = wstorage;
+      write_storage_list = mig_jcr->res.write_storage_list;
+      mig_jcr->res.write_storage_list = jcr->res.write_storage_list;
+      jcr->res.write_storage_list = write_storage_list;
 
       /*
-       * Undo the clear of the wstore in the jcr and assign the mig_jcr wstore
+       * Undo the clear of the write_storage in the jcr and assign the mig_jcr write_storage
        * back to the jcr. This is an undo of the clearing we did earlier
        * as we want the jcr connected to the reading storage daemon and the
-       * mig_jcr to the writing jcr. By clearing the wstore of the jcr the
+       * mig_jcr to the writing jcr. By clearing the write_storage of the jcr the
        * ConnectToStorageDaemon function will do the right thing e.g. connect
        * the jcrs in the way we want them to.
        */
-      jcr->res.wstore = mig_jcr->res.wstore;
-      mig_jcr->res.wstore = NULL;
+      jcr->res.write_storage = mig_jcr->res.write_storage;
+      mig_jcr->res.write_storage = NULL;
    }
 
    FreePairedStorage(jcr);
@@ -1726,10 +1735,10 @@ static inline void GenerateMigrateSummary(JobControlRecord *jcr, MediaDbRecord *
            jcr->res.client ? jcr->res.client->name() :  _("*None*"),
            jcr->res.fileset ? jcr->res.fileset->name() :  _("*None*"),
            jcr->res.rpool->name(), jcr->res.rpool_source,
-           jcr->res.rstore ? jcr->res.rstore->name() : _("*None*"),
+           jcr->res.read_storage ? jcr->res.read_storage->name() : _("*None*"),
            NPRT(jcr->res.rstore_source),
            jcr->res.pool->name(), jcr->res.pool_source,
-           jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
+           jcr->res.write_storage ? jcr->res.write_storage->name() : _("*None*"),
            NPRT(jcr->res.wstore_source),
            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            NPRT(jcr->res.npool_source),

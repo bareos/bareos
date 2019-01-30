@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,11 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/edit.h"
+#include "lib/ascii_control_characters.h"
+#include "lib/bstringlist.h"
+#include "lib/qualified_resource_name_type_converter.h"
+
+#include <algorithm>
 
 /*
  * Various BAREOS Utility subroutines
@@ -178,6 +183,89 @@ void UnbashSpaces(PoolMem &pm)
    }
 }
 
+struct HelloInformation {
+  std::string hello_string;
+  std::string resource_type_string;
+  uint32_t position_of_name;
+  int32_t position_of_version;
+};
+
+using SizeTypeOfHelloList = std::vector<std::string>::size_type;
+
+static std::list<HelloInformation> hello_list {
+  /* this order is important */
+  { "Hello Storage calling Start Job", "R_JOB", 5, -1 },
+  { "Hello Start Storage Job", "R_JOB", 4, -1 },
+  { "Hello Start Job", "R_JOB", 3, -1 },
+  { "Hello Director", "R_DIRECTOR", 2, -1 },
+  { "Hello Storage", "R_STORAGE", 2, -1 },
+  { "Hello Client", "R_CLIENT", 2, -1 },
+  { "Hello", "R_CONSOLE", 1, 4 } /* "Hello %s calling version %s" */
+};
+
+bool GetNameAndResourceTypeAndVersionFromHello(const std::string &input,
+                                     std::string &name,
+                                     std::string &r_type_str,
+                                     BareosVersionNumber &bareos_version)
+{
+  std::list<HelloInformation>::const_iterator hello = hello_list.cbegin();
+
+  bool found = false;
+  while (hello != hello_list.cend()) {
+    uint32_t size = hello->hello_string.size();
+    uint32_t input_size = input.size();
+    if (input_size >= size) {
+      if (!input.compare(0, size, hello->hello_string)) {
+        found = true;
+        break;
+      }
+    }
+    hello++;
+  }
+
+  if (!found) {
+    Dmsg1(100, "Client information not found: %s", input.c_str());
+    return false;
+  }
+
+  BStringList arguments_of_hello_string(input, ' '); /* split at blanks */
+
+  bool ok = false;
+  if (arguments_of_hello_string.size() > hello->position_of_name) {
+    name = arguments_of_hello_string[hello->position_of_name];
+    std::replace(name.begin(),name.end(), (char)0x1, ' ');
+    r_type_str = hello->resource_type_string;
+    ok = true;
+  } else {
+    Dmsg0(100, "Failed to retrieve the name from hello message\n");
+  }
+
+  if (ok) {
+    bareos_version = BareosVersionNumber::kUndefined;
+    if (hello->position_of_version >= 0) {
+      if (arguments_of_hello_string.size() > static_cast<SizeTypeOfHelloList>(hello->position_of_version)) {
+        std::string version_str = arguments_of_hello_string[hello->position_of_version];
+        if (!version_str.empty()) {
+          ok = false;
+          BStringList splittet_version (version_str, '.');
+          if (splittet_version.size() > 1) {
+            uint32_t v;
+            try {
+              v  = std::stoul(splittet_version[0]) * 100;
+              v += std::stoul(splittet_version[1]);
+              bareos_version = static_cast<BareosVersionNumber>(v);
+              ok = true;
+            } catch (const std::exception &e) {
+              Dmsg0(100, "Could not read out any version from hello message\n");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return ok;
+}
 
 /*
  * Parameter:

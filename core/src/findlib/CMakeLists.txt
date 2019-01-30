@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@ target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
 INSTALL(TARGETS bareosfind DESTINATION ${libdir})
 
-set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
+set_target_properties(bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )

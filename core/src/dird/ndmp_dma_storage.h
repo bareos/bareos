@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 #define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 
+struct ndm_job_param;
+
 namespace directordaemon {
 
 void DoNdmpStorageStatus(UaContext *ua, StorageResource *store, char *cmd);
@@ -37,6 +39,8 @@ bool NdmpSendLabelRequest(UaContext *ua, StorageResource *store, MediaDbRecord *
                              drive_number_t drive, slot_number_t slot);
 char *lookup_ndmp_drive(StorageResource *store, drive_number_t drive);
 bool NdmpUpdateStorageMappings(JobControlRecord* jcr, StorageResource *store);
-
+bool ndmp_native_setup_robot_and_tape_for_native_backup_job(JobControlRecord* jcr, StorageResource* store,
+      ndm_job_param& ndmp_job);
+bool unreserve_ndmp_tapedevice_for_job(StorageResource *store, JobControlRecord *jcr);
 } /* namespace directordaemon */
 #endif // BAREOS_DIRD_NDMP_DMA_STORAGE_H_

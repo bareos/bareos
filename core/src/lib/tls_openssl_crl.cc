@@ -44,7 +44,7 @@
 static X509_LOOKUP_METHOD *X509_LOOKUP_crl_reloader(void);
 static int LoadNewCrlFile(X509_LOOKUP *lu, const char *fname);
 
-bool SetCertificateRevocationList(const std::string &crlfile, SSL_CTX *openssl_ctx)
+bool SetCertificateRevocationList(const std::string &crlfile_, SSL_CTX *openssl_ctx)
 {
    X509_STORE *store;
    X509_LOOKUP *lookup;
@@ -61,7 +61,7 @@ bool SetCertificateRevocationList(const std::string &crlfile, SSL_CTX *openssl_c
       return false;
    }
 
-   if (!LoadNewCrlFile(lookup, (char *)crlfile.c_str())) {
+   if (!LoadNewCrlFile(lookup, (char *)crlfile_.c_str())) {
       OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
       return false;
    }

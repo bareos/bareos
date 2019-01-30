@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,6 @@ CHECK_FUNCTION_EXISTS(getxattr HAVE_GETXATTR)
 CHECK_FUNCTION_EXISTS(get_proplist_entry HAVE_GET_PROPLIST_ENTRY)
 CHECK_FUNCTION_EXISTS(glfs_readdirplus HAVE_GLFS_READDIRPLUS)
 CHECK_FUNCTION_EXISTS(glob HAVE_GLOB)
-CHECK_FUNCTION_EXISTS(gnutls_transport_set_int HAVE_GNUTLS_TRANSPORT_SET_INT)
 CHECK_FUNCTION_EXISTS(inet_ntop HAVE_INET_NTOP)
 CHECK_FUNCTION_EXISTS(inet_pton HAVE_INET_PTON)
 CHECK_FUNCTION_EXISTS(lchmod HAVE_LCHMOD)

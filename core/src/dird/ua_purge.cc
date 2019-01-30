@@ -814,7 +814,7 @@ static bool ActionOnPurgeCmd(UaContext *ua, const char *cmd)
    /*
     * Choose storage
     */
-   ua->jcr->res.wstore = store = get_storage_resource(ua);
+   ua->jcr->res.write_storage = store = get_storage_resource(ua);
    if (!store) {
       goto bail_out;
    }
@@ -895,7 +895,7 @@ bail_out:
    if (sd) {
       CloseSdBsock(ua);
    }
-   ua->jcr->res.wstore = NULL;
+   ua->jcr->res.write_storage = NULL;
    if (results) {
       free(results);
    }

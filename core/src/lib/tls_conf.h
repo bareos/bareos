@@ -23,16 +23,33 @@
 #define BAREOS_LIB_TLS_CONF_H_
 
 #include "lib/tls_psk_credentials.h"
-#include "lib/tls_conf_base.h"
 #include "lib/tls_conf_cert.h"
-#include "lib/tls_conf_psk.h"
-#include "lib/tls_conf_none.h"
-#include "lib/tls_conf_deny.h"
+#include "lib/bareos_resource.h"
+#include "lib/s_password.h"
 
-class TlsResource;
+enum TlsPolicy : uint32_t
+{
+  kBnetTlsNone     = 0,   /*!< No TLS configured */
+  kBnetTlsEnabled  = 1,   /*!< TLS with certificates is allowed but not required */
+  kBnetTlsRequired = 2,   /*!< TLS with certificates is required */
+  kBnetTlsAuto     = 4,   /*!< TLS mode will be negotiated by ssl handshake */
+  kBnetTlsDeny     = 0xFF,/*!< TLS connection not allowed */
+  kBnetTlsUnknown  = 0xFE /*!< TLS connection not allowed */
+};
 
-uint32_t GetLocalTlsPolicyFromConfiguration(TlsResource *tls_resource);
-TlsConfigBase *SelectTlsFromPolicy(TlsResource *tls_resource, uint32_t remote_policy);
-int SelectTlsPolicy(TlsResource *tls_resource, uint32_t remote_policy);
+class TlsResource : public BareosResource {
+ public:
+  s_password password_;     /* UA server password */
+  TlsConfigCert tls_cert_;  /* TLS structure */
+  std::string *cipherlist_; /* TLS Cipher List */
+  bool authenticate_;       /* Authenticate only with TLS */
+  bool tls_enable_;
+  bool tls_require_;
 
-#endif //BAREOS_LIB_TLS_CONF_H_
+  TlsResource();
+  bool IsTlsConfigured() const;
+  TlsPolicy GetPolicy() const;
+  int SelectTlsPolicy(TlsPolicy remote_policy) const;
+};
+
+#endif  // BAREOS_LIB_TLS_CONF_H_

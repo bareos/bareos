@@ -1542,25 +1542,19 @@ static void SendDirBusyMessage(BareosSocket *dir, Device *dev)
    }
 }
 
-static inline void SetStorageAuthKey(JobControlRecord *jcr, char *key)
+static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord *jcr, char *key, TlsPolicy policy)
 {
-   /*
-    * If no key don't update anything
-    */
-   if (!*key) {
-      return;
-   }
+   if (!*key) { return; }
 
-   /*
-    * Clear any sd_auth_key which can be a key when we are acting as
-    * the endpoint for a backup session which we don't seem to be.
-    */
    if (jcr->sd_auth_key) {
       bfree(jcr->sd_auth_key);
    }
 
    jcr->sd_auth_key = bstrdup(key);
    Dmsg0(5, "set sd auth key\n");
+
+   jcr->sd_tls_policy = policy;
+   Dmsg1(5, "set sd ssl_policy to %d\n", policy);
 }
 
 /**
@@ -1573,40 +1567,64 @@ static bool ListenCmd(JobControlRecord *jcr)
    return DoListenRun(jcr);
 }
 
-/**
- * Get address of storage daemon from Director
- */
+enum class ReplicateCmdState {
+  kInit,
+  kConnected,
+  kTlsEstablished,
+  kAuthenticated,
+  kError
+};
+
+class ReplicateCmdConnectState
+{
+   JobControlRecord *jcr_;
+   ReplicateCmdState state_;
+
+public:
+   ReplicateCmdConnectState(JobControlRecord *jcr) : jcr_(jcr), state_(ReplicateCmdState::kInit) {}
+
+   ~ReplicateCmdConnectState() {
+      if (state_ == ReplicateCmdState::kInit || state_ == ReplicateCmdState::kError) {
+         if (!jcr_) { return; }
+         if (jcr_->dir_bsock) {
+            jcr_->dir_bsock->fsend(BADcmd, "replicate", jcr_->dir_bsock->msg);
+         }
+         jcr_->store_bsock = nullptr;
+      }
+   }
+   void operator() (ReplicateCmdState state) {
+      state_ = state;
+   }
+};
+
 static bool ReplicateCmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
-   int enable_ssl;                 /* enable ssl to sd */
+   TlsPolicy tls_policy;                 /* enable ssl to sd */
    char JobName[MAX_NAME_LENGTH];
    char stored_addr[MAX_NAME_LENGTH];
    uint32_t JobId = 0;
    PoolMem sd_auth_key(PM_MESSAGE);
    BareosSocket *dir = jcr->dir_bsock;
-   BareosSocket *sd;                      /* storage daemon bsock */
-   std::string qualified_resource_name;
-   TlsResource *tls_resource;
+   BareosSocketUniquePtr storage_daemon_socket = MakeNewBareosSocketUniquePtr();
 
-   sd = New(BareosSocketTCP);
    if (me->nokeepalive) {
-      sd->ClearKeepalive();
+      storage_daemon_socket->ClearKeepalive();
    }
    Dmsg1(100, "ReplicateCmd: %s", dir->msg);
    sd_auth_key.check_size(dir->message_length);
 
    if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-              &enable_ssl, sd_auth_key.c_str()) != 6) {
+              &tls_policy, sd_auth_key.c_str()) != 6) {
       dir->fsend(BADcmd, "replicate", dir->msg);
-      goto bail_out;
+      return false;
    }
 
-   SetStorageAuthKey(jcr, sd_auth_key.c_str());
+   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, enable_ssl);
+   Dmsg3(110, "Open storage: %s:%d ssl=%d\n", stored_addr, stored_port, tls_policy);
 
-   sd->SetSourceAddress(me->SDsrc_addr);
+   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
 
    if (!jcr->max_bandwidth) {
       if (jcr->director->max_bandwidth_per_job) {
@@ -1616,62 +1634,59 @@ static bool ReplicateCmd(JobControlRecord *jcr)
       }
    }
 
-   sd->SetBwlimit(jcr->max_bandwidth);
+   storage_daemon_socket->SetBwlimit(jcr->max_bandwidth);
    if (me->allow_bw_bursting) {
-      sd->SetBwlimitBursting();
+      storage_daemon_socket->SetBwlimitBursting();
    }
 
-   /*
-    * Open command communications with Storage daemon
-    */
-   if (!sd->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
+   ReplicateCmdConnectState connect_state(jcr);
+
+   if (!storage_daemon_socket->connect(jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
                     _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
-      delete sd;
-      sd = NULL;
-   }
-
-   if (sd == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
            stored_addr, stored_port);
       Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
             stored_addr, stored_port);
-      goto bail_out;
+      connect_state(ReplicateCmdState::kError);
+      return false;
    }
    Dmsg0(110, "Connection OK to SD.\n");
+   connect_state(ReplicateCmdState::kConnected);
 
-   if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-           JobName, R_JOB, JobId, qualified_resource_name)) {
-     goto bail_out;
+   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
+      std::string qualified_resource_name;
+      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
+                      JobName, R_JOB, qualified_resource_name)) {
+         connect_state(ReplicateCmdState::kError);
+         return false;
+      } else if (!storage_daemon_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
+                                                       qualified_resource_name.c_str(),
+                                                       jcr->sd_auth_key, jcr)) {
+         Dmsg0(110, "TLS direct handshake failed\n");
+         connect_state(ReplicateCmdState::kError);
+         return false;
+      } else {
+         connect_state(ReplicateCmdState::kTlsEstablished);
+      }
    }
 
-   tls_resource = dynamic_cast<TlsResource *>(me);
-   if (!sd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, tls_resource, false, qualified_resource_name.c_str(),
-                           jcr->sd_auth_key, jcr)) {
-     goto bail_out;
-   }
+   jcr->store_bsock = storage_daemon_socket.get();
 
-   jcr->store_bsock = sd;
+   storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
 
-   sd->fsend("Hello Start Storage Job %s\n", JobName);
    if (!AuthenticateWithStoragedaemon(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
-      delete sd;
-      goto bail_out;
+      connect_state(ReplicateCmdState::kError);
+      return false;
+   } else {
+     connect_state(ReplicateCmdState::kAuthenticated);
+     Dmsg0(110, "Authenticated with SD.\n");
+
+     jcr->remote_replicate = true;
+
+     storage_daemon_socket.release(); /* jcr->store_bsock */
+     return dir->fsend(OK_replicate);
    }
-   Dmsg0(110, "Authenticated with SD.\n");
-
-   /*
-    * Keep track that we are replicating to a remote SD.
-    */
-   jcr->remote_replicate = true;
-
-   /*
-    * Send OK to Director
-    */
-   return dir->fsend(OK_replicate);
-
-bail_out:
-   return false;
 }
 
 static bool RunCmd(JobControlRecord *jcr)
@@ -1692,20 +1707,19 @@ static bool RunCmd(JobControlRecord *jcr)
 static bool PassiveCmd(JobControlRecord *jcr)
 {
    int filed_port;                 /* file daemon port */
-   int enable_ssl;                 /* enable ssl to fd */
+   TlsPolicy tls_policy;                 /* enable ssl to fd */
    char filed_addr[MAX_NAME_LENGTH];
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *fd;                      /* file daemon bsock */
-   std::string qualified_resource_name;
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
-   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
+   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &tls_policy) != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
       goto bail_out;
    }
 
-   Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port, enable_ssl);
+   Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%d\n", filed_addr, filed_port, tls_policy);
 
    jcr->passive_client = true;
 
@@ -1733,13 +1747,14 @@ static bool PassiveCmd(JobControlRecord *jcr)
    }
    Dmsg0(110, "Connection OK to FD.\n");
 
-   if (enable_ssl == TlsConfigBase::BNET_TLS_AUTO) {
+   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
+     std::string qualified_resource_name;
      if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
-             jcr->Job, R_JOB, jcr->JobId, qualified_resource_name)) {
+             jcr->Job, R_JOB, qualified_resource_name)) {
        goto bail_out;
      }
 
-     if (!fd->DoTlsHandshake(TlsConfigBase::BNET_TLS_AUTO, me, false,
+     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, me, false,
             qualified_resource_name.c_str(), jcr->sd_auth_key, jcr)) {
        goto bail_out;
      }

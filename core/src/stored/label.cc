@@ -148,7 +148,7 @@ int ReadDevVolumeLabel(DeviceControlRecord *dcr)
    EmptyBlock(dcr->block);
 
    Dmsg0(130, "Big if statement in ReadVolumeLabel\n");
-   if (!dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+   if (DeviceControlRecord::ReadStatus::Ok != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
       Mmsg(jcr->errmsg, _("Requested Volume \"%s\" on %s is not a Bareos "
            "labeled Volume, because: ERR=%s"), NPRT(VolName),
            dev->print_name(), dev->print_errmsg());

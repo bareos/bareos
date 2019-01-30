@@ -34,10 +34,12 @@
 #include "monitoritemthread.h"
 #include "lib/bsignal.h"
 
-ConfigurationParser *my_config = nullptr;             /* Our Global config */
+ConfigurationParser *my_config = nullptr;
 
-/* Static variables */
-static QApplication* app = NULL;
+/* QCoreApplication* app will be initialized with:
+ * - QApplication for normal execution with a GUI or
+ * - QCoreApplication for tests when no GUI must be used */
+static QCoreApplication* app = nullptr;
 
 static void usage()
 {
@@ -50,6 +52,7 @@ static void usage()
                        "        -d <nn>     set debug level to <nn>\n"
                        "        -dt         print timestamp in debug output\n"
                        "        -t          test - read configuration and exit\n"
+                       "        -rc         test - do connection test\n"
                        "        -xc         print configuration and exit\n"
                        "        -xs         print configuration file schema in JSON format and exit\n"
                        "        -?          print this message.\n"
@@ -66,13 +69,13 @@ static void usage()
 static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
 {
    int ch;
-   while ((ch = getopt(argc, argv, "bc:d:th?f:s:x:")) != -1) {
+   while ((ch = getopt(argc, argv, "bc:d:th?f:r:s:x:")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
-         if (cl.configfile) {
-            free(static_cast<void*>(cl.configfile));
+         if (cl.configfile_) {
+            free(static_cast<void*>(cl.configfile_));
          }
-         cl.configfile = bstrdup(optarg);
+         cl.configfile_ = bstrdup(optarg);
          break;
 
       case 'd':
@@ -87,14 +90,23 @@ static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
          break;
 
       case 't':
-         cl.test_config_only = true;
+         cl.test_config_only_ = true;
          break;
 
       case 'x':                    /* export configuration/schema and exit */
          if (*optarg == 's') {
-            cl.export_config_schema = true;
+            cl.export_config_schema_ = true;
          } else if (*optarg == 'c') {
-            cl.export_config = true;
+            cl.export_config_ = true;
+         } else {
+            usage();
+            exit(1);
+         }
+         break;
+
+      case 'r':
+         if ((*optarg) == 'c') {
+            cl.do_connection_test_only_ = true;
          } else {
             usage();
             exit(1);
@@ -147,12 +159,12 @@ static void cleanup()
 
    if(app) {
       delete app;
-      app = NULL;
+      app = nullptr;
    }
 
    if (my_config) {
       delete my_config;
-      my_config = NULL;
+      my_config = nullptr;
    }
 
    WSACleanup(); /* Cleanup Windows sockets */
@@ -190,10 +202,10 @@ int main(int argc, char *argv[])
    cl_opts cl; // remember some command line options
    ParseCommandLine(argc, argv, cl);
 
-   if (cl.export_config_schema) {
+   if (cl.export_config_schema_) {
       PoolMem buffer;
 
-      my_config = InitTmonConfig(cl.configfile, M_ERROR_TERM);
+      my_config = InitTmonConfig(cl.configfile_, M_ERROR_TERM);
       PrintConfigSchemaJson(buffer);
       printf("%s\n", buffer.c_str());
       fflush(stdout);
@@ -201,10 +213,10 @@ int main(int argc, char *argv[])
    }
 
    // read the config file
-   my_config = InitTmonConfig(cl.configfile, M_ERROR_TERM);
+   my_config = InitTmonConfig(cl.configfile_, M_ERROR_TERM);
    my_config->ParseConfig();
 
-   if (cl.export_config) {
+   if (cl.export_config_) {
       my_config->DumpResources(PrintMessage, NULL);
       exit(0);
    }
@@ -213,28 +225,36 @@ int main(int argc, char *argv[])
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
-   // this is the Qt core application
-   // with its message handler
-   app = new QApplication(argc, argv);
-   app->setQuitOnLastWindowClosed(false);
-
-   setupQtObjects();
-
-   // create the monitoritems
-   QStringList tabRefs = MonitorItemThread::instance()->createRes(cl);
-   MainWindow::instance()->addTabs(tabRefs);
-
-   // exit() if it was only a test
-   if (cl.test_config_only) {
-      exit(0);
+   if (cl.do_connection_test_only_) {
+      /* do not initialize a GUI */
+      app = new QCoreApplication(argc, argv);
+   } else {
+      QApplication *p = new QApplication(argc, argv);
+      p->setQuitOnLastWindowClosed(false);
+      app = p;
    }
 
-   MonitorItemThread::instance()->start();
+   if (!cl.do_connection_test_only_) {
+     setupQtObjects();
+   }
 
-   // launch the QApplication message handler
-   int ret = app->exec();
+   QStringList tabRefs = MonitorItemThread::instance()->createRes(cl);
 
-   // cleanup everything before finishing
+   int ret = 0;
+   if (cl.do_connection_test_only_) {
+     ret = MonitorItemThread::instance()->doConnectionTest() ? 0 : 1;
+   } else {
+     MainWindow::instance()->addTabs(tabRefs);
+
+     if (cl.test_config_only_) {
+        exit(0);
+     }
+
+     MonitorItemThread::instance()->start();
+
+     ret = app->exec();
+   }
+
    cleanup();
 
    return ret;

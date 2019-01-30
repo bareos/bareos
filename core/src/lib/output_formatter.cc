@@ -23,7 +23,7 @@
 /*
  * Output Formatter routines.
  *
- * The idea behind these routines is that output to the user (user inferfaces, UIs)
+ * The idea behind these routines is that output to the user (user interfaces, UIs)
  * is handled centrally with this class.
  *
  * Joerg Steffens, April 2015
@@ -890,14 +890,23 @@ void OutputFormatter::JsonFinalizeResult(bool result)
       free(string);
    }
 
-   /*
-    * empty result stack
-    */
+   /* cleanup and reinitialize */
    while (result_stack_json->pop()) {}
-   result_stack_json->push(result_json);
 
    json_object_clear(result_json);
+   json_decref(result_json);
+   result_json = nullptr;
+   result_json = json_object();
+   result_stack_json->push(result_json);
+
    json_object_clear(message_object_json);
+   json_decref(message_object_json);
+   message_object_json = nullptr;
+   message_object_json = json_object();
+
    json_object_clear(msg_obj);
+   json_decref(msg_obj);
+   msg_obj = nullptr;
+
 }
 #endif

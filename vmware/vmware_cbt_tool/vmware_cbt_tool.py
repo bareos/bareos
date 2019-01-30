@@ -32,6 +32,9 @@ import argparse
 import atexit
 import getpass
 import sys
+import os.path
+
+from collections import defaultdict
 
 
 def GetArgs():
@@ -63,13 +66,17 @@ def GetArgs():
                         action='store',
                         help='DataCenter Name')
     parser.add_argument('-f', '--folder',
-                        required=True,
+                        required=False,
                         action='store',
                         help='Folder Name (must start with /, use / for root folder')
     parser.add_argument('-v', '--vmname',
-                        required=True,
+                        required=False,
                         action='append',
                         help='Names of the Virtual Machines')
+    parser.add_argument('--vm-uuid',
+                        required=False,
+                        action='append',
+                        help='Instance UUIDs of the Virtual Machines')
     parser.add_argument('--enablecbt',
                         action='store_true',
                         default=False,
@@ -86,7 +93,18 @@ def GetArgs():
                         action='store_true',
                         default=False,
                         help='Show information (CBT supported and enabled or disabled)')
+    parser.add_argument('--listall',
+                        action='store_true',
+                        default=False,
+                        help='List all VMs in the given datacenter with UUID and containing folder')
     args = parser.parse_args()
+
+    if [args.enablecbt, args.disablecbt, args.resetcbt, args.info, args.listall].count(True) > 1:
+        parser.error("Only one of --enablecbt, --disablecbt, --resetcbt, --info, --listall allowed")
+
+    if args.folder and not args.folder.startswith('/'):
+        parser.error("Folder name must start with /")
+
     return args
 
 
@@ -115,19 +133,7 @@ def main():
             prompt='Enter password for host %s and user %s: ' %
             (args.host, args.user))
 
-    if [args.enablecbt, args.disablecbt, args.resetcbt, args.info].count(True) > 1:
-        print "ERROR: Only one of --enablecbt, --disablecbt, --resetcbt, --info allowed"
-        sys.exit(1)
-
-    if not args.folder.startswith('/'):
-        print "ERROR: Folder name must start with /"
-        sys.exit(1)
-
     try:
-        vmnames = args.vmname
-        if not len(vmnames):
-            print "No virtual machine specified "
-            sys.exit(1)
 
         si = None
         try:
@@ -158,22 +164,13 @@ def main():
                 folder = ''
                 get_dcftree(dcftree[dc.name], folder, dc.vmFolder)
 
+        if args.listall:
+            print_dcftree(dcftree)
+            sys.exit(0)
+
         vm = None
-        for vmname in args.vmname:
-            vm_path = args.folder + '/' + vmname
-            if args.folder.endswith('/'):
-                vm_path = args.folder + vmname
 
-            if args.datacenter not in dcftree:
-                print "ERROR: Could not find datacenter %s" % (args.datacenter)
-                sys.exit(1)
-
-            if vm_path not in dcftree[args.datacenter]:
-                print "ERROR: Could not find VM %s in folder %s" % (
-                    vmname, args.folder)
-                sys.exit(1)
-
-            vm = dcftree[args.datacenter][vm_path]
+        for vm in get_vm_list(args, dcftree):
 
             print "INFO: VM %s CBT supported: %s" % (
                 vm.name, vm.capability.changeTrackingSupported)
@@ -194,8 +191,49 @@ def main():
     except vmodl.MethodFault as e:
         print "Caught vmodl fault : " + e.msg
     except Exception as e:
-        print "Caught Exception : " + str(e)
+        print "Caught unexpected Exception : " + str(e)
         raise
+
+
+def get_vm_list(args, dcftree):
+    """
+    Check if VMs are specified by UUID or folder + VM names and
+    return list of VMs to work with
+    """
+    vm_list = []
+    if args.vmname:
+        for vmname in args.vmname:
+            folder_u = unicode(args.folder, 'utf8')
+            vmname_u = unicode(vmname, 'utf8')
+            vm_path = folder_u + '/' + vmname_u
+            if args.folder.endswith('/'):
+                vm_path = folder_u + vmname_u
+
+            if args.datacenter not in dcftree:
+                print "ERROR: Could not find datacenter %s" % (args.datacenter)
+                sys.exit(1)
+
+            if vm_path not in dcftree[args.datacenter]:
+                print "ERROR: Could not find VM %s in folder %s" % (
+                    vmname_u, folder_u)
+                sys.exit(1)
+
+            vm_list.append(dcftree[args.datacenter][vm_path])
+
+    elif args.vm_uuid:
+        vms_by_uuid = get_vms_by_uuid(dcftree)
+        for vm_uuid in args.vm_uuid:
+            if vm_uuid not in vms_by_uuid:
+                print "ERROR: Could not find VM with instance UUID %s" % (vm_uuid)
+                sys.exit(1)
+
+            vm_list.append(vms_by_uuid[vm_uuid])
+
+    else:
+        print "ERROR: No VMs given, neither by folder + name nor by UUID"
+        sys.exit(1)
+
+    return vm_list
 
 
 def enable_cbt(si, vm):
@@ -236,8 +274,12 @@ def get_dcftree(dcf, folder, vm_folder):
             dcf[folder + '/' + vm_or_folder.name] = vm_or_folder
         elif isinstance(vm_or_folder, vim.Folder):
             get_dcftree(dcf, folder + '/' + vm_or_folder.name, vm_or_folder)
+        elif isinstance(vm_or_folder, vim.VirtualApp):
+            # vm_or_folder is a vApp in this case, contains a list a VMs
+            for vapp_vm in vm_or_folder.vm:
+                dcf[folder + '/' + vm_or_folder.name + '/' + vapp_vm.name] = vapp_vm
         else:
-            print "ERROR: %s is neither Folder nor VirtualMachine" % vm_or_folder
+            print "NOTE: %s is neither Folder nor VirtualMachine nor vApp, ignoring." % vm_or_folder
 
 
 def create_vm_snapshot(si, vm):
@@ -344,6 +386,35 @@ def WaitForTasks(tasks, si):
             filter.Destroy()
 
     return True
+
+
+def print_dcftree(dcftree):
+    """
+    Print the Datacenter Folder Tree
+    """
+    for dc in dcftree:
+        dcftree_by_folder = defaultdict(dict)
+        for vm_path in dcftree[dc]:
+            dcftree_by_folder[os.path.dirname(vm_path)][os.path.basename(vm_path)] = \
+                dcftree[dc][vm_path].config.instanceUuid
+        print "DataCenter: %s" % dc
+        print "%-36s %-50s %s" % ('VM-Instance-UUID', 'VM-Name', 'VM-Folder and/or vApp')
+        for vm_folder in sorted(dcftree_by_folder):
+            for vm_name in sorted(dcftree_by_folder[vm_folder]):
+                print "%36s %-50s %s" % (dcftree_by_folder[vm_folder][vm_name], vm_name, vm_folder)
+
+
+def get_vms_by_uuid(dcftree):
+    """
+    Get the VMs in the Datacenter as dict with UUID as key
+    """
+    vms_by_uuid = {}
+    for dc in dcftree:
+        for vm_path in dcftree[dc]:
+            vms_by_uuid[dcftree[dc][vm_path].config.instanceUuid] = dcftree[dc][vm_path]
+
+    return vms_by_uuid
+
 
 # Start program
 if __name__ == "__main__":

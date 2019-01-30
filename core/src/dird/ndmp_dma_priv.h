@@ -122,7 +122,8 @@ bool NdmpBuildClientAndStorageJob(JobControlRecord *jcr, StorageResource *store,
                            bool init_tape, bool init_robot, int operation, struct ndm_job_param *job);
 
 void NdmpLoghandler(struct ndmlog *log, char *tag, int level, char *msg);
-void NdmpDoQuery(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
+void NdmpDoQuery(UaContext *ua, JobControlRecord *jcr,
+      ndm_job_param *ndmp_job, int NdmpLoglevel, ndmca_query_callbacks* query_cbs);
 
 /*
  * NDMP FHDB specific helpers.

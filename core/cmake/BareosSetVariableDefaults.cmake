@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -338,6 +338,11 @@ IF(NOT DEFINED xattr)
    SET(xattr ON)
 ENDIF()
 
+# build_ndmjob
+IF(NOT DEFINED build_ndmjob)
+   SET(build_ndmjob OFF)
+ENDIF()
+
 # bat
 IF(NOT DEFINED bat)
    SET(bat OFF)
@@ -541,10 +546,10 @@ SET(FSTYPE_MNTENT 1)
 
 SET(PACKAGE_BUGREPORT "\"\"")
 SET(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
-SET(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${VERSION}\"")
+SET(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
 SET(PACKAGE_TARNAME "\"\"" )
 SET(PACKAGE_URL "\"\"")
-SET(PACKAGE_VERSION "\"${VERSION}\"")
+SET(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
 set(ENABLE_NLS 1)
 

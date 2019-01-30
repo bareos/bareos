@@ -13,9 +13,15 @@ class DirectorConsole(LowLevel):
                  port=9101,
                  dirname=None,
                  name="*UserAgent*",
-                 password=None):
+                 password=None,
+                 tls_psk_enable=True,
+                 tls_psk_require=False
+                 ):
         super(DirectorConsole, self).__init__()
-        self.connect(address, port, dirname, ConnectionType.DIRECTOR)
+        self.tls_psk_enable=tls_psk_enable
+        self.tls_psk_require=tls_psk_require
+        self.identity_prefix = u'R_CONSOLE'
+        self.connect(address, port, dirname, ConnectionType.DIRECTOR, name, password)
         self.auth(name=name, password=password, auth_success_regex=b'^1000 OK.*$')
         self._init_connection()
 

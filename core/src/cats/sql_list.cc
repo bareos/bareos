@@ -498,7 +498,7 @@ bail_out:
  * List Job record(s) that match JobDbRecord
  */
 void BareosDb::ListJobRecords(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname, int jobstatus,
-                            int joblevel, const char *volumename, utime_t since_time, bool last, bool count,
+                            int joblevel, const char *volumename, const char *poolname, utime_t since_time, bool last, bool count,
                             OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
@@ -536,6 +536,11 @@ void BareosDb::ListJobRecords(JobControlRecord *jcr, JobDbRecord *jr, const char
 
    if (volumename) {
       temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
+      PmStrcat(selection, temp.c_str());
+   }
+
+   if (poolname) {
+      temp.bsprintf("AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ", poolname);
       PmStrcat(selection, temp.c_str());
    }
 

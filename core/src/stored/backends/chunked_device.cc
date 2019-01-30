@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
+   Copyright (C) 2017-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +67,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * SetupChunk() - Setup a chunked volume for reading or writing.
  * ReadChunked() - Read a chunked volume.
  * WriteChunked() - Write a chunked volume.
- * close_chunk() - Close a chunked volume.
+ * CloseChunk() - Close a chunked volume.
  * TruncateChunkedVolume() - Truncate a chunked volume.
  * ChunkedVolumeSize() - Get the current size of a volume.
  * LoadChunk() - Make sure we have the right chunk in memory.
@@ -306,7 +307,7 @@ void chunked_device::ClearInflightChunk(chunk_io_request *request)
    }
 
    P(mutex);
-   inflight_chunks_++;
+   inflight_chunks_--;
    V(mutex);
 }
 
@@ -662,16 +663,26 @@ bool chunked_device::ReadChunk()
 
 /*
  * Setup a chunked volume for reading or writing.
+ * return:
+ *  -1: failure
+ *   0: success
  */
 int chunked_device::SetupChunk(const char *pathname, int flags, int mode)
 {
+   int retval = -1;
    /*
     * If device is (re)opened and we are put into readonly mode because
     * of problems flushing chunks to the backing store we return EROFS
     * to the upper layers.
     */
    if ((flags & O_RDWR) && readonly_) {
-      dev_errno = EROFS;
+      dev_errno = EROFS; /** Read-only file system */
+      return -1;
+   }
+
+   if (!CheckRemote()) {
+      Dmsg0(100, "setup_chunk failed, as remote device is not available\n");
+      dev_errno = EIO; /**< I/O error */
       return -1;
    }
 
@@ -703,7 +714,6 @@ int chunked_device::SetupChunk(const char *pathname, int flags, int mode)
       current_chunk_->writing = true;
    }
 
-   current_chunk_->opened = true;
    current_chunk_->chunk_setup = false;
 
    /*
@@ -732,7 +742,23 @@ int chunked_device::SetupChunk(const char *pathname, int flags, int mode)
 
    current_volname_ = bstrdup(getVolCatName());
 
-   return 0;
+   /*
+    * in principle it is not required to load_chunk(),
+    * but we need a secure way to determine,
+    * if the chunk already exists.
+    */
+   if (LoadChunk()) {
+      current_chunk_->opened = true;
+      retval = 0;
+   } else if (flags & O_CREAT) {
+      /* create a chunk */
+      if (FlushChunk(false /* release */, false /* move_to_next_chunk */)) {
+         current_chunk_->opened = true;
+         retval = 0;
+      }
+   }
+
+   return retval;
 }
 
 /*
@@ -996,7 +1022,7 @@ bail_out:
 /*
  * Close a chunked volume.
  */
-int chunked_device::close_chunk()
+int chunked_device::CloseChunk()
 {
    int retval = -1;
 
@@ -1007,7 +1033,20 @@ int chunked_device::close_chunk()
          } else {
             dev_errno = EIO;
          }
+      } else {
+         /*
+          * If chunked_device::wait_until_chunks_written() has been called before,
+          * chunk has been flushed (buffer given to an io thread),
+          * but not released. Therefore the buffer is set to NULL,
+          * as normally done by flush_chunk(true, *).
+          */
+         if (io_threads_ && current_chunk_->buffer) {
+            FreeChunkbuffer(current_chunk_->buffer);
+            current_chunk_->buffer = NULL;
+         }
+         retval = 0;
       }
+
 
       /*
        * Invalidate chunk.
@@ -1156,6 +1195,88 @@ ssize_t chunked_device::ChunkedVolumeSize()
    return chunked_remote_volume_size();
 }
 
+bool chunked_device::is_written()
+{
+   /*
+    * See if we are using io-threads or not and the ordered circbuf is created.
+    * We try to make sure that nothing of the volume being requested is still inflight as then
+    * the chunked_remote_volume_size() method will fail to determine the size of the data as
+    * its not fully stored on the backing store yet.
+    */
+
+   if (current_chunk_->need_flushing) {
+      Dmsg1(100, "volume %s is pending, as current chunk needs flushing\n", current_volname_);
+      return false;
+   }
+
+   /*
+    * Make sure there is also nothing inflight to the backing store anymore.
+    */
+   int inflight_chunks = NrInflightChunks();
+   if (inflight_chunks > 0) {
+      Dmsg2(100, "volume %s is pending, as there are %d inflight chunks\n", current_volname_, inflight_chunks);
+      return false;
+   }
+
+   if (io_threads_ > 0 && cb_) {
+
+      if (!cb_->empty()) {
+
+         chunk_io_request *request;
+
+         /*
+          * Peek on the ordered circular queue if there are any pending IO-requests
+          * for this volume. If there are use that as the indication of the size of
+          * the volume and don't contact the remote storage as there is still data
+          * inflight and as such we need to look at the last chunk that is still not
+          * uploaded of the volume.
+          */
+         request = (chunk_io_request *)cb_->peek(PEEK_FIRST, current_volname_, CompareVolumeName);
+         if (request) {
+            free(request);
+            Dmsg1(100, "volume %s is pending, as there are queued write requests\n", current_volname_);
+            return false;
+         }
+      }
+   }
+
+   /* compare expected to written volume size */
+   ssize_t remote_volume_size = chunked_remote_volume_size();
+   Dmsg3(100, "volume: %s, chunked_remote_volume_size = %lld, VolCatInfo.VolCatBytes = %lld\n",
+         current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
+
+   if (remote_volume_size < VolCatInfo.VolCatBytes) {
+      Dmsg3(100, "volume %s is pending, as 'remote volume size' = %lld < 'catalog volume size' = %lld\n",
+            current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
+      return false;
+   }
+
+   return true;
+}
+
+
+/*
+ * Busy waits until write buffer is empty.
+ */
+bool chunked_device::WaitUntilChunksWritten()
+{
+   bool retval = true;
+
+   if (current_chunk_->need_flushing) {
+      if (!FlushChunk(false /* release */, false /* move_to_next_chunk */)) {
+         dev_errno = EIO;
+         retval = false;
+      }
+   }
+
+   while (!is_written()) {
+      Bmicrosleep(DEFAULT_RECHECK_INTERVAL_WRITE_BUFFER, 0);
+   }
+
+   return retval;
+}
+
+
 static int CloneIoRequest(void *item1, void *item2)
 {
    chunk_io_request *src = (chunk_io_request *)item1;
@@ -1276,6 +1397,7 @@ bool chunked_device::LoadChunk()
             if (current_chunk_->writing) {
                current_chunk_->end_offset = start_offset + (current_chunk_->chunk_size - 1);
             }
+            return false;
             break;
          default:
             return false;
@@ -1295,32 +1417,50 @@ static int ListIoRequest(void *request, void *data)
    bsdDevStatTrig *dst = (bsdDevStatTrig *)data;
    PoolMem status(PM_MESSAGE);
 
-   status.bsprintf("   /%s/%04d - %ld\n", io_request->volname, io_request->chunk, io_request->wbuflen);
+   status.bsprintf("   /%s/%04d - %ld (try=%d)\n", io_request->volname, io_request->chunk, io_request->wbuflen, io_request->tries);
    dst->status_length = PmStrcat(dst->status, status.c_str());
 
    return 0;
 }
 
-/*
+/**
  * Return specific device status information.
  */
 bool chunked_device::DeviceStatus(bsdDevStatTrig *dst)
 {
+   bool pending = false;
+   int inflight_chunks = 0;
+   PoolMem inflights(PM_MESSAGE);
+
+   dst->status_length = 0;
+   if (CheckRemote()) {
+      dst->status_length = PmStrcpy(dst->status, _("Backend connection is working.\n"));
+   } else {
+      dst->status_length = PmStrcpy(dst->status, _("Backend connection is not working.\n"));
+   }
    /*
     * See if we are using io-threads or not and the ordered CircularBuffer is created and not empty.
     */
-   dst->status_length = 0;
    if (io_threads_ > 0 && cb_) {
+      inflight_chunks = NrInflightChunks();
+      inflights.bsprintf("Inflight chunks: %d\n", inflight_chunks);
+      dst->status_length = PmStrcat(dst->status, inflights.c_str());
+      if (inflight_chunks > 0) {
+         pending = true;
+      }
       if (!cb_->empty()) {
-         dst->status_length = PmStrcpy(dst->status, _("Pending IO flush requests:\n"));
+         pending = true;
+         dst->status_length = PmStrcat(dst->status, _("Pending IO flush requests:\n"));
 
          /*
           * Peek on the ordered circular queue and list all pending requests.
           */
          cb_->peek(PEEK_LIST, dst, ListIoRequest);
-      } else {
-         dst->status_length = PmStrcpy(dst->status, _("No Pending IO flush requests\n"));
       }
+   }
+
+   if (!pending) {
+      dst->status_length = PmStrcat(dst->status, _("No pending IO flush requests.\n"));
    }
 
    return (dst->status_length > 0);
@@ -1377,7 +1517,6 @@ chunked_device::chunked_device()
    readonly_ = false;
    inflight_chunks_ = 0;
    cb_ = NULL;
-   io_threads_ = 0;
    chunk_size_ = 0;
    offset_ = 0;
    use_mmap_ = false;

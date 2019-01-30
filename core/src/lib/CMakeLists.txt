@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,15 +21,15 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    ../include/bc_types.h ../include/config.h
    ../include/jcr.h ../include/version.h
    address_conf.h alist.h attr.h base64.h berrno.h
-   bits.h bpipe.h breg.h bregex.h bsock.h
+   bits.h bpipe.h breg.h bregex.h bstringlist.h bsock.h
    bsock_tcp.h btime.h btimers.h cbuf.h
    crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
    guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
    md5.h mem_pool.h message.h mntent_cache.h parse_conf.h
    plugins.h qualified_resource_name_type_converter.h queue.h rblist.h
    runscript.h rwlock.h scsi_crypto.h scsi_lli.h scsi_tapealert.h sellist.h
-   serial.h sha1.h smartall.h status.h tls.h tls_conf.h tree.h var.h
-   watchdog.h workq.h)
+   serial.h sha1.h smartall.h status.h tls.h tls_conf.h tree.h try_tls_handshake_as_a_server.h
+   var.h watchdog.h workq.h)
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
@@ -45,9 +45,9 @@ include_directories(
 
 set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bpipe.cc
-   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc
-   bsys.cc btime.cc btimers.cc  cbuf.cc compression.cc
-   connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc crypto_gnutls.cc
+   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc bstringlist.cc
+   bsys.cc btime.cc btimers.cc  cbuf.cc
+   connection_pool.cc cram_md5.cc crypto.cc  crypto_cache.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
    jcr.cc json.cc  lockmgr.cc md5.cc mem_pool.cc message.cc mntent_cache.cc
@@ -55,9 +55,9 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    bpoll.cc  priv.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    sellist.cc serial.cc sha1.cc signal.cc  smartall.cc tls.cc
-   tls_gnutls.cc tls_conf_base.cc tls_conf_psk.cc tls_conf_cert.cc tls_openssl.cc
-   tls_openssl_crl.cc tls_openssl_private.cc tree.cc util.cc var.cc watchdog.cc
-   workq.cc)
+   tls_conf.cc tls_conf_cert.cc tls_openssl.cc
+   tls_openssl_crl.cc tls_openssl_private.cc tree.cc  try_tls_handshake_as_a_server.cc
+   compression.cc util.cc var.cc watchdog.cc workq.cc)
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOS_SRCS
@@ -83,7 +83,7 @@ target_link_libraries(bareos
 
 INSTALL(TARGETS bareos DESTINATION ${libdir})
 
-set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
+set_target_properties(bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                       SOVERSION "${SOVERSION}")
 
 IF(HAVE_WIN32)

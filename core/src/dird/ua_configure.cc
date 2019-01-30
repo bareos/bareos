@@ -192,7 +192,7 @@ static inline bool ConfigureCreateFdResourceString(UaContext *ua, PoolMem &resou
    if (!client) {
       return false;
    }
-   password = &client->password;
+   password = &client->password_;
 
    resource.strcat("Director {\n");
    config_add_directive(NULL, NULL, "Name", me->name(), resource);
@@ -420,9 +420,7 @@ bool ConfigureCmd(UaContext *ua, const char *cmd)
       ua->WarningMsg(_(
                "It seems that the configuration is not adapted to the include directory structure. "
                "This means, that the configure command may not work as expected. "
-               "Your configuration changes may not survive a reload/restart. "
-               "Please see %s for details.\n"),
-               MANUAL_CONFIG_DIR_URL);
+               "Your configuration changes may not survive a reload/restart. "));
    }
 
    if (ua->argc < 3) {

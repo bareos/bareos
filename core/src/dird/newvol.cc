@@ -77,7 +77,7 @@ bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StorageResource *store)
       memset(mr, 0, sizeof(MediaDbRecord));
       SetPoolDbrDefaultsInMediaDbr(mr, &pr);
       jcr->VolumeName[0] = 0;
-      bstrncpy(mr->MediaType, jcr->res.wstore->media_type, sizeof(mr->MediaType));
+      bstrncpy(mr->MediaType, jcr->res.write_storage->media_type, sizeof(mr->MediaType));
       GeneratePluginEvent(jcr, bDirEventNewVolume); /* return void... */
       if (jcr->VolumeName[0] && IsVolumeNameLegal(NULL, jcr->VolumeName)) {
          bstrncpy(mr->VolumeName, jcr->VolumeName, sizeof(mr->VolumeName));

@@ -179,24 +179,22 @@ e.g. Isilon with their \bquote{Isilon Backup Accelerator}.
 \begin{center}
 \begin{tabular}{l | c | c}
 \hline
-                             & \NdmpBareos     & \NdmpNative \\
+                                                                & \NdmpBareos                          & \NdmpNative \\
 \hline
-\DataManagementAgent         & \bareosDir      & \bareosDir  \\
-\TapeAgent                   & \bareosSd       & external    \\
-requires external \TapeAgent &                 & \bcheckmark \\
-backup to tape (and VTL)     & \bcheckmark     & \bcheckmark \\
-backup to other \linkResourceDirective{Sd}{Device}{Device Type}
-                             & \bcheckmark     & \\
-2-way backup                 &                 & \bcheckmark \\
-3-way backup                 & \bcheckmark     & untested    \\
-Full Backups                 & \bcheckmark     & \bcheckmark \\
-Differential Backups         & \bcheckmark     & \bcheckmark \\
-Incremental Backups          & \cmlink{sec:NdmpBackupLevel} (8) & \cmlink{sec:NdmpBackupLevel} (8)\\
-Single File Restore          & \bcheckmark     & \bcheckmark \\
-DAR                          &                 & \bcheckmark \\
-DDAR                         &                 & \bcheckmark \\
-\ilink{Copy and Migration jobs}{MigrationChapter}
-                             & \bcheckmark     & \\
+\DataManagementAgent                                            & \bareosDir                           & \bareosDir  \\
+\TapeAgent                                                      & \bareosSd                            & external    \\
+requires external \TapeAgent                                    &                                      & \bcheckmark \\
+backup to tape (and VTL)                                        & \bcheckmark                          & \bcheckmark \\
+backup to other \linkResourceDirective{Sd}{Device}{Device Type} & \bcheckmark                          & \\
+2-way backup                                                    &                                      & \bcheckmark \\
+3-way backup                                                    & \bcheckmark                          & untested    \\
+Full Backups                                                    & \bcheckmark                          & \bcheckmark \\
+Differential Backups                                            & \bcheckmark                          & \bcheckmark \\
+Incremental Backups                                             & \cmlink{sec:NdmpBackupLevel} (8) & \cmlink{sec:NdmpBackupLevel} (8)\\
+Single File Restore                                             & \bcheckmark                          & \bcheckmark \\
+DAR                                                             &                                      & \bcheckmark \\
+DDAR                                                            &                                      & \bcheckmark \\
+\ilink{Copy and Migration jobs}{MigrationChapter}               & \bcheckmark                          & \\
 \hline
 \end{tabular}
 \end{center}

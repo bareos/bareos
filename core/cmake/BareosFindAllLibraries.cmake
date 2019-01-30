@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,6 @@ INCLUDE(FindOpenSSL)
 if (${OPENSSL_FOUND})
    SET(HAVE_OPENSSL 1)
 endif()
-
 
 INCLUDE(BareosFindLibraryAndHeaders)
 

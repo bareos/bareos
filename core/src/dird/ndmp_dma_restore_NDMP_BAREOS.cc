@@ -451,10 +451,10 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord *jcr)
     * Setup all paired read storage.
     */
    SetPairedStorage(jcr);
-   if (!jcr->res.pstore) {
+   if (!jcr->res.paired_read_write_storage) {
       Jmsg(jcr, M_FATAL, 0,
            _("Read storage %s doesn't point to storage definition with paired storage option.\n"),
-           jcr->res.rstore->name());
+           jcr->res.read_storage->name());
       goto bail_out;
    }
 
@@ -482,7 +482,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord *jcr)
        * and reuse the job definition for each separate sub-restore we perform as
        * part of the whole job. We only free the env_table between every sub-restore.
        */
-      if (!NdmpBuildClientJob(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_EXTRACT, &ndmp_job)) {
+      if (!NdmpBuildClientJob(jcr, jcr->res.client, jcr->res.paired_read_write_storage, NDM_JOB_OP_EXTRACT, &ndmp_job)) {
          goto cleanup;
       }
 
@@ -506,7 +506,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, NULL)) {
          goto cleanup;
       }
 

@@ -35,7 +35,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 
 char* StorageAddressToContact(ClientResource *client, StorageResource *store);
 char* ClientAddressToContact(ClientResource *client, StorageResource *store);
-char* StorageAddressToContact(StorageResource *rstore, StorageResource *wstore);
+char* StorageAddressToContact(StorageResource *read_storage, StorageResource *write_storage);
 
 } /* namespace directordaemon */
 #endif // BAREOS_DIRD_BACKUP_H_

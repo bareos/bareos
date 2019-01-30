@@ -1,0 +1,18 @@
+NO_EXTRACT=     yes
+NO_INSTALL=     yes
+NO_BUILD=       yes
+NO_LICENSES_INSTALL= yes
+
+build:
+	echo build
+
+stage:
+	@echo building master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} package
+	@echo running fake stage: packaging built binaries from ${MASTERDIR}
+	@echo copying ${MASTERDIR}/work/stage ${WRKDIR}
+	@mkdir -p ${WRKDIR}
+	@cp -a ${MASTERDIR}/work/stage ${WRKDIR}
+	@mkdir -p ${WRKDIR}/.metadir
+	@[ -e pkg-install ] && cp -a pkg-install ${WRKDIR}/.metadir/+INSTALL || touch ${WRKDIR}/.metadir/+INSTALL
+	@[ -e pkg-message ] && cp -a pkg-message ${WRKDIR}/.metadir/+DISPLAY || touch ${WRKDIR}/.metadir/+DISPLAY

@@ -1815,75 +1815,6 @@ msgstr "Nieznany sig %d."
 msgid "Cannot fork to become daemon: ERR=%s\n"
 msgstr "Nie można wykonać fork aby stać się demonem: ERR=%s\n"
 
-#: src/lib/tls_gnutls.c:127
-#, fuzzy, c-format
-msgid "Failed to create a new GNUTLS certificate credential: ERR=%s\n"
-msgstr "Nie mogę otworzyć przestrzeni xattr na pliku \"%s\": ERR=%s\n"
-
-#: src/lib/tls_gnutls.c:138
-msgid "GNUTLS doesn't support certdir use certfile instead\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:155
-#, fuzzy, c-format
-msgid "Error loading CA certificates from %s\n"
-msgstr "Błąd skanowania nagwna rekordu: %s\n"
-
-#: src/lib/tls_gnutls.c:165
-msgid "Certificate file must be specified as a verification store\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:182
-#, fuzzy, c-format
-msgid "Error loading certificate revocation list from %s\n"
-msgstr "Błąd skanowania nagwna rekordu: %s\n"
-
-#: src/lib/tls_gnutls.c:204
-#, fuzzy, c-format
-msgid "Error loading key from %s or certificate from %s\n"
-msgstr "Błąd skanowania nagwna rekordu: %s\n"
-
-#: src/lib/tls_gnutls.c:219
-#, fuzzy, c-format
-msgid "Failed to load DH file %s\n"
-msgstr "Za komenda level: %s\n"
-
-#: src/lib/tls_gnutls.c:227
-#, fuzzy
-msgid "Failed to generate new DH parameters\n"
-msgstr "Nie mogę otworzyć xattr %s na pliku \"%s\": ERR=%s\n"
-
-#: src/lib/tls_gnutls.c:297
-#, fuzzy, c-format
-msgid "gnutls_certificate_verify_peers2 failed: ERR=%s\n"
-msgstr "nieudane cap_set_proc: ERR=%s\n"
-
-#: src/lib/tls_gnutls.c:304
-#, c-format
-msgid "peer certificate untrusted or revoked (0x%x)\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:311
-msgid "gnutls_certificate_expiration_time_peers failed\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:315
-msgid "peer certificate is expired\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:321
-msgid "gnutls_certificate_activation_time_peers failed\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:325
-msgid "peer certificate not yet active\n"
-msgstr ""
-
-#: src/lib/tls_gnutls.c:484
-#, fuzzy, c-format
-msgid "Failed to create a new GNUTLS session: ERR=%s\n"
-msgstr "Nie mogę odczyta linku symbolicznego %s na \"%s\": ERR=%s\n"
-
 #: src/lib/btimers.c:258
 msgid "stop_btimer called with NULL btimer_id\n"
 msgstr "wywołano stop_btimer z btimer_id równym NULL\n"
@@ -1947,11 +1878,6 @@ msgstr "Nie można dodać zadania do kolejki klienta: ERR=%s\n"
 #: src/lib/passphrase.c:71
 #, c-format
 msgid "Failed to get random bytes from RAND_bytes for passphrase: ERR=%s\n"
-msgstr ""
-
-#: src/lib/passphrase.c:85
-#, c-format
-msgid "Failed to get random bytes from gnutls_rnd for passphrase: ERR=%s\n"
 msgstr ""
 
 #: src/lib/attr.c:72
@@ -3009,15 +2935,10 @@ msgstr "Nie mogę zniszczyć muteksa: ERR=%s\n"
 msgid "Unable to destroy mutex: %d ERR=%s\n"
 msgstr "Nie mogę zniszczyć muteksa: ERR=%s\n"
 
-#: src/lib/crypto_gnutls.c:71 src/lib/crypto_nss.c:67 src/lib/crypto_none.c:65
+#: src/lib/crypto_nss.c:67 src/lib/crypto_none.c:65
 #, c-format
 msgid "Unsupported digest type=%d specified\n"
 msgstr ""
-
-#: src/lib/crypto_gnutls.c:243
-#, fuzzy, c-format
-msgid "Unable to init GNUTLS: ERR=%d\n"
-msgstr "Nie mogę zainicjować muteksa: ERR=%s\n"
 
 #: src/lib/signal.c:59
 msgid "Invalid signal number"

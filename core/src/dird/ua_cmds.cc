@@ -144,6 +144,7 @@ static bool use_cmd(UaContext *ua, const char *cmd);
 static bool var_cmd(UaContext *ua, const char *cmd);
 static bool VersionCmd(UaContext *ua, const char *cmd);
 static bool wait_cmd(UaContext *ua, const char *cmd);
+static bool WhoAmICmd(UaContext *ua, const char *cmd);
 
 static void DoJobDelete(UaContext *ua, JobId_t JobId);
 static bool DeleteJobIdRange(UaContext *ua, char *tok);
@@ -444,7 +445,9 @@ static struct ua_cmdstruct commands[] = {
    { NT_("version"), VersionCmd, _("Print Director version"),
      NT_(""), true, false },
    { NT_("wait"), wait_cmd, _("Wait until no jobs are running"),
-     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false }
+     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false },
+   { NT_("whoami"), WhoAmICmd, _("Print the user name associated with this console"),
+     NT_(""), false, false }
 };
 
 #define comsize ((int)(sizeof(commands)/sizeof(struct ua_cmdstruct)))
@@ -471,17 +474,18 @@ bool Do_a_command(UaContext *ua)
       return false;
    }
 
-   while (ua->jcr->res.wstorage->size()) {
-      ua->jcr->res.wstorage->remove(0);
+   while (ua->jcr->res.write_storage_list && ua->jcr->res.write_storage_list->size()) {
+      ua->jcr->res.write_storage_list->remove(0);
    }
 
    len = strlen(ua->argk[0]);
    for (i = 0; i < comsize; i++) { /* search for command */
       if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
          /*
-          * Check if command permitted, but "quit" is always OK
+          * Check if command permitted, but "quit" and "whoami" is always OK
           */
          if (!bstrcmp(ua->argk[0], NT_("quit")) &&
+             !bstrcmp(ua->argk[0], NT_("whoami")) &&
              !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
             break;
          }
@@ -875,7 +879,7 @@ static inline bool setbwlimit_stored(UaContext *ua, StorageResource *store,
    /*
     * Connect to Storage daemon
     */
-   ua->jcr->res.wstore = store;
+   ua->jcr->res.write_storage = store;
    ua->jcr->max_bandwidth = limit;
 
    /*
@@ -900,7 +904,7 @@ static inline bool setbwlimit_stored(UaContext *ua, StorageResource *store,
    ua->jcr->store_bsock->close();
    delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
-   ua->jcr->res.wstore = NULL;
+   ua->jcr->res.write_storage = NULL;
    ua->jcr->max_bandwidth = 0;
 
    return true;
@@ -958,7 +962,7 @@ static bool SetbwlimitCmd(UaContext *ua, const char *cmd)
          switch (jcr->getJobType()) {
          case JT_COPY:
          case JT_MIGRATE:
-            store = jcr->res.rstore;
+            store = jcr->res.read_storage;
             break;
          default:
             client = jcr->res.client;
@@ -1764,7 +1768,7 @@ static bool EstimateCmd(UaContext *ua, const char *cmd)
       return false;
    }
 
-   if (!SendJobInfo(jcr)) {
+   if (!SendJobInfoToFileDaemon(jcr)) {
       ua->ErrorMsg(_("Failed to connect to Client.\n"));
       return false;
    }
@@ -2062,13 +2066,13 @@ static bool DoTruncate(UaContext *ua, MediaDbRecord &mr)
    /*
     * Choose storage
     */
-   ua->jcr->res.wstore = ua->GetStoreResWithName(storage_dbr.Name);
-   if (!ua->jcr->res.wstore) {
+   ua->jcr->res.write_storage = ua->GetStoreResWithName(storage_dbr.Name);
+   if (!ua->jcr->res.write_storage) {
       ua->ErrorMsg("failed to determine storage resource by name %s\n", storage_dbr.Name);
       goto bail_out;
    }
 
-   if (SendLabelRequest(ua, ua->jcr->res.wstore,
+   if (SendLabelRequest(ua, ua->jcr->res.write_storage,
                           &mr, &mr,
                           &pool_dbr,
                           /* bool media_record_exists */
@@ -2084,7 +2088,7 @@ static bool DoTruncate(UaContext *ua, MediaDbRecord &mr)
    }
 
 bail_out:
-   ua->jcr->res.wstore = NULL;
+   ua->jcr->res.write_storage = NULL;
    return retval;
 }
 
@@ -2412,7 +2416,7 @@ static void DoMountCmd(UaContext *ua, const char *cmd)
    if (!do_alldrives) {
       DoAutochangerVolumeOperation(ua, store.store, cmd, drive, slot);
    } else {
-      nr_drives = GetNumDrives(ua, ua->jcr->res.wstore);
+      nr_drives = GetNumDrives(ua, ua->jcr->res.write_storage);
       for (drive_number_t i = 0; i < nr_drives; i++) {
          DoAutochangerVolumeOperation(ua, store.store, cmd, i, slot);
       }
@@ -2670,6 +2674,14 @@ static bool wait_cmd(UaContext *ua, const char *cmd)
    ua->send->ObjectEnd("Job");
 
    return true;
+}
+
+static bool WhoAmICmd(UaContext *ua, const char *cmd)
+{
+  std::string message;
+  message = ua->cons ? ua->cons->name(): "root";
+  message += '\n';
+  return ua->UA_sock->fsend(message.c_str());
 }
 
 static bool help_cmd(UaContext *ua, const char *cmd)

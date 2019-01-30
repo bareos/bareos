@@ -929,6 +929,11 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
       msgs = daemon_msgs;
    }
 
+   if (!msgs) {
+     Dmsg1(100, "Could not dispatch message: %s", msg);
+     return;
+   }
+
    /*
     * If closing this message resource, print and send to syslog, then get out.
     */
@@ -1046,6 +1051,7 @@ void DispatchMessage(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
             break;
          case MD_OPERATOR:
             Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
+            if (!jcr) { break; }
             mcmd = GetPoolMemory(PM_MESSAGE);
             if ((bpipe=open_mail_pipe(jcr, mcmd, d))) {
                int status;
@@ -1105,6 +1111,7 @@ send_to_file:
             if (msgs->IsClosing()) {
                break;
             }
+            if (!jcr) { break; }
             msgs->SetInUse();
             if (!d->fd && !OpenDestFile(jcr, d, mode)) {
                msgs->ClearInUse();

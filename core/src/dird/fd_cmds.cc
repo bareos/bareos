@@ -55,6 +55,8 @@ static char filesetcmd[] =
    "fileset%s\n"; /* set full fileset */
 static char jobcmd[] =
    "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+static char jobcmdssl[] =
+   "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
 /* Note, mtime_only is not used here -- implemented as file option */
 static char levelcmd[] =
    "level = %s%s%s mtime_only=%d %s%s\n";
@@ -165,7 +167,7 @@ static void OutputMessageForConnectionTry(JobControlRecord *jcr, UaContext *ua)
 
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      m = "Probing... (result will be saved until config reload)";
+      m = "Probing client protocol... (result will be saved until config reload)";
    } else {
      return;
    }
@@ -183,6 +185,7 @@ static void SendInfoChosenCipher(JobControlRecord *jcr, UaContext *ua)
 {
    std::string str;
    jcr->file_bsock->GetCipherMessageString(str);
+   str += '\n';
    if (jcr->JobId != 0) {
       Jmsg(jcr, M_INFO, 0, str.c_str());
    }
@@ -197,12 +200,14 @@ static void SendInfoSuccess(JobControlRecord *jcr, UaContext *ua)
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined) {
      m += "\r\v";
    }
+   bool add_newline_in_joblog = false;
    switch (jcr->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
        m += " Handshake: Immediate TLS,";
        break;
     case ClientConnectionHandshakeMode::kCleartextFirst:
        m += " Handshake: Cleartext,";
+       add_newline_in_joblog = true;
        break;
     default:
        m += " unknown mode\n";
@@ -213,6 +218,10 @@ static void SendInfoSuccess(JobControlRecord *jcr, UaContext *ua)
      std::string m1 = m;
      std::replace(m1.begin(), m1.end(), '\r', ' ');
      std::replace(m1.begin(), m1.end(), '\v', ' ');
+     std::replace(m1.begin(), m1.end(), ',' , ' ');
+     if (add_newline_in_joblog) {
+       m1 += std::string("\n");
+     }
      Jmsg(jcr, M_INFO, 0, m1.c_str());
    }
    if (ua) { /* only whith console connection */
@@ -233,10 +242,16 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    OutputMessageForConnectionTry(jcr, ua);
    if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kUndefined
     || jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kFailed) {
-      jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+      if (jcr->res.client->IsTlsConfigured()) {
+         jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kTlsFirst;
+      } else {
+         jcr->connection_handshake_try_ = ClientConnectionHandshakeMode::kCleartextFirst;
+      }
+      jcr->is_passive_client_connection_probing = true;
    } else {
       /* if there is a stored mode from a previous connection then use this */
       jcr->connection_handshake_try_ = jcr->res.client->connection_successful_handshake_;
+      jcr->is_passive_client_connection_probing = false;
    }
 
    do { /* while (tcp_connect_failed ...) */
@@ -257,6 +272,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
            success = true;
            SendInfoSuccess(jcr, ua);
            SendInfoChosenCipher(jcr, ua);
+           jcr->is_passive_client_connection_probing = false;
            jcr->res.client->connection_successful_handshake_ = jcr->connection_handshake_try_;
         } else {
           /* authentication failed due to
@@ -283,7 +299,7 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
           }
         }
      } else {
-        Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
+        Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n", jcr->res.client->name());
      }
      connect_tries--;
    } while (!tcp_connect_failed && connect_tries
@@ -297,20 +313,49 @@ bool ConnectToFileDaemon(JobControlRecord *jcr, int retry_interval, int max_retr
    return success;
 }
 
-int SendJobInfo(JobControlRecord *jcr)
+int SendJobInfoToFileDaemon(JobControlRecord *jcr)
 {
    BareosSocket *fd = jcr->file_bsock;
-   char ed1[30];
 
-   /*
-    * Now send JobId and authorization key
-    */
    if (jcr->sd_auth_key == NULL) {
       jcr->sd_auth_key = bstrdup("dummy");
    }
 
-   fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
-             jcr->VolSessionTime, jcr->sd_auth_key);
+   if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kTlsFirst) {
+      /* client protocol onwards Bareos 18.2 */
+      TlsPolicy tls_policy = kBnetTlsUnknown;
+      int JobLevel = jcr->getJobLevel();
+      switch (JobLevel) {
+         case L_VERIFY_INIT:
+         case L_VERIFY_CATALOG:
+         case L_VERIFY_DISK_TO_CATALOG:
+            tls_policy = kBnetTlsUnknown;
+            break;
+         default:
+            StorageResource *storage = nullptr;
+            if (jcr->res.write_storage) {
+               storage = jcr->res.write_storage;
+            } else if (jcr->res.read_storage) {
+               storage = jcr->res.read_storage;
+            } else {
+               Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
+               jcr->setJobStatus(JS_ErrorTerminated);
+               return 0;
+            }
+            if (storage) {
+              tls_policy = storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+            }
+            break;
+      }
+      char ed1[30];
+      fd->fsend(jobcmdssl, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+                jcr->VolSessionTime, jcr->sd_auth_key, tls_policy);
+   } else { /* jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst */
+      /* client protocol before Bareos 18.2 */
+      char ed1[30];
+      fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+                jcr->VolSessionTime, jcr->sd_auth_key);
+   } /* if (jcr->res.client->connection_successful_handshake_ == ClientConnectionHandshakeMode::kTlsFirst) */
 
    if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
@@ -482,7 +527,7 @@ static bool SendFileset(JobControlRecord *jcr)
 {
    FilesetResource *fileset = jcr->res.fileset;
    BareosSocket *fd = jcr->file_bsock;
-   StorageResource *store = jcr->res.wstore;
+   StorageResource *store = jcr->res.write_storage;
    int num;
    bool include = true;
 
@@ -1166,7 +1211,7 @@ bool CancelFileDaemonJob(UaContext *ua, JobControlRecord *jcr)
 
    ua->jcr->res.client = jcr->res.client;
    if (!ConnectToFileDaemon(ua->jcr, 10, me->FDConnectTimeout, true, ua)) {
-      ua->ErrorMsg(_("Failed to connect to File daemon.\n"));
+      ua->ErrorMsg(_("\nFailed to connect to File daemon.\n"));
       return false;
    }
    Dmsg0(200, "Connected to file daemon\n");
@@ -1205,7 +1250,7 @@ void DoNativeClientStatus(UaContext *ua, ClientResource *client, char *cmd)
    }
 
    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->SendMsg(_("Failed to connect to Client %s.\n====\n"),
+      ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();
@@ -1256,7 +1301,7 @@ void DoClientResolve(UaContext *ua, ClientResource *client)
    }
 
    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->SendMsg(_("Failed to connect to Client %s.\n====\n"),
+      ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
          ua->jcr->file_bsock->close();

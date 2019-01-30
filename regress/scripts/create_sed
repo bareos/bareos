@@ -64,6 +64,8 @@ cd -
 GCOV=`which gcov`
 PERL=`which perl`
 
+. ./config
+
 # Create sed command script
 >${out}
 echo "s%@bareos_gitrev@%${bareos_gitrev}%g" >>${out}
@@ -133,3 +135,7 @@ echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
 echo "s%@GCOV@%${GCOV}%g" >>${out}
 echo "s%@PERL@%${PERL}%g" >>${out}
 
+if [ -n "${TRAYMON}" ] ; then
+  echo "s%#ADD_TEST(disk:tray-monitor-connection-test-cleartext%ADD_TEST(disk:tray-monitor-connection-test-cleartext%g" >> ${out}
+  echo "s%#ADD_TEST(disk:tray-monitor-connection-test-tls-psk%ADD_TEST(disk:tray-monitor-connection-test-tls-psk%g" >> ${out}
+fi

@@ -50,7 +50,6 @@ scripts/create_sed
 sed -f tmp/sed_tmp scripts/regress-config.in >scripts/regress-config
 chmod 755 scripts/regress-config
 
-
 #
 # Run Bareos configuration, make, install
 #
@@ -93,3 +92,20 @@ rm_if_exists() {
       rm -f $1
    fi
 }
+
+#
+# Build webui
+#
+
+
+sh -x ../regress/scripts/regress-config-webui ${cwd}
+check_exit_code
+
+make -C build-webui install
+check_exit_code
+
+mv bin/bareos-dir.d/console/admin.conf.example bin/bareos-dir.d/console/admin.conf
+
+echo "webui can be started with  'php -S 127.0.0.1:9100 -t ../webui/public/'"
+
+exit 0

@@ -50,7 +50,7 @@ static int res_locked = 0; /* resource chain lock count -- for debug */
 
 // #define TRACE_RES
 
-void ConfigurationParser::b_LockRes(const char *file, int line)
+void ConfigurationParser::b_LockRes(const char *file, int line) const
 {
   int errstat;
 
@@ -72,7 +72,7 @@ void ConfigurationParser::b_LockRes(const char *file, int line)
   res_locked++;
 }
 
-void ConfigurationParser::b_UnlockRes(const char *file, int line)
+void ConfigurationParser::b_UnlockRes(const char *file, int line) const
 {
   int errstat;
 
@@ -88,7 +88,7 @@ void ConfigurationParser::b_UnlockRes(const char *file, int line)
 /*
  * Return resource of type rcode that matches name
  */
-CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock)
+CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char *name, bool lock) const
 {
   CommonResourceHeader *res;
   int rindex = rcode - r_first_;
@@ -111,7 +111,7 @@ CommonResourceHeader *ConfigurationParser::GetResWithName(int rcode, const char 
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-CommonResourceHeader *ConfigurationParser::GetNextRes(int rcode, CommonResourceHeader *res)
+CommonResourceHeader *ConfigurationParser::GetNextRes(int rcode, CommonResourceHeader *res) const
 {
   CommonResourceHeader *nres;
   int rindex = rcode - r_first_;
@@ -147,14 +147,13 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   if (!c) { return false; }
 
   int r_type;
-  int job_id = -1;
   std::string name; /* either unique job name or client name */
 
-  bool ok = c->StringToResource(name, r_type, job_id, fq_name_in);
+  bool ok = c->StringToResource(name, r_type, fq_name_in);
   if (!ok) { return false; }
 
-  if (job_id > 0 && fq_name.find("R_JOB") != std::string::npos) {
-    const char *psk_cstr = JcrGetAuthenticateKey(job_id, name.c_str());
+  if (fq_name.find("R_JOB") != std::string::npos) {
+    const char *psk_cstr = JcrGetAuthenticateKey(name.c_str());
     if (psk_cstr) {
       psk = psk_cstr;
       return true;
@@ -162,7 +161,7 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(ConfigurationPar
   } else {
     TlsResource *tls = reinterpret_cast<TlsResource *>(config->GetResWithName(r_type, name.c_str()));
     if (tls) {
-      psk = tls->password.value;
+      psk = tls->password_.value;
       return true;
     }
   }
@@ -1527,7 +1526,7 @@ static bool HasDefaultValue(ResourceItem *item)
         is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
         break;
       case CFG_TYPE_SIZE32:
-        is_default = (*(item->ui32value) != (uint32_t)str_to_int32(item->default_value));
+        is_default = (*(item->ui32value) == (uint32_t)str_to_int32(item->default_value));
         break;
       case CFG_TYPE_TIME:
         is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));

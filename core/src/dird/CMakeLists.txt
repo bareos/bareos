@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +21,8 @@
 set(DIRDSRCS dird.cc)
 
 #DIRD_OBJECTS_SRCS also used in a separate library for unittests
-set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
+set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc authenticate_console.cc
+   autoprune.cc backup.cc bsr.cc catreq.cc
    consolidate.cc dird_globals.cc dir_plugins.cc dird_conf.cc expand.cc fd_cmds.cc
    getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc mountreq.cc msgchan.cc
    ndmp_dma_storage.cc
@@ -29,6 +30,7 @@ set(DIRD_OBJECTS_SRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc
    ndmp_dma_generic.cc
    ndmp_dma_restore_common.cc ndmp_dma_restore_NDMP_BAREOS.cc ndmp_dma_restore_NDMP_NATIVE.cc
    ndmp_fhdb_common.cc ndmp_fhdb_helpers.cc
+   ndmp_slot2elemaddr.cc
    ndmp_fhdb_mem.cc ndmp_fhdb_lmdb.cc ndmp_ndmmedia_db_helpers.cc
    newvol.cc next_vol.cc quota.cc socket_server.cc recycle.cc restore.cc
    run_conf.cc sd_cmds.cc scheduler.cc stats.cc storage.cc ua.cc ua_acl.cc ua_audit.cc
@@ -46,7 +48,7 @@ IF(HAVE_PAM)
 ENDIF()
 
 IF(HAVE_WIN32)
-   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/dird)
+   include_directories(${PROJECT_SOURCE_DIR}/src/win32/generic ${PROJECT_SOURCE_DIR}/src/win32/dird)
    LIST(APPEND DIRDSRCS
       ../win32/generic/main.cc
       ../win32/generic/service.cc
@@ -107,4 +109,4 @@ install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
-install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
+install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)

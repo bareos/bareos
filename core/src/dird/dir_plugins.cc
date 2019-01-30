@@ -642,10 +642,10 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          Dmsg1(debuglevel, "dir-plugin: return bDirVarPool=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarStorage:
-         if (jcr->res.wstore) {
-            *((char **)value) = jcr->res.wstore->hdr.name;
-         } else if (jcr->res.rstore) {
-            *((char **)value) = jcr->res.rstore->hdr.name;
+         if (jcr->res.write_storage) {
+            *((char **)value) = jcr->res.write_storage->hdr.name;
+         } else if (jcr->res.read_storage) {
+            *((char **)value) = jcr->res.read_storage->hdr.name;
          } else {
             *((char **)value) = NULL;
             retval = bRC_Error;
@@ -653,8 +653,8 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          Dmsg1(debuglevel, "dir-plugin: return bDirVarStorage=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarWriteStorage:
-         if (jcr->res.wstore) {
-            *((char **)value) = jcr->res.wstore->hdr.name;
+         if (jcr->res.write_storage) {
+            *((char **)value) = jcr->res.write_storage->hdr.name;
          } else {
             *((char **)value) = NULL;
             retval = bRC_Error;
@@ -662,8 +662,8 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          Dmsg1(debuglevel, "dir-plugin: return bDirVarWriteStorage=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarReadStorage:
-         if (jcr->res.rstore) {
-            *((char **)value) = jcr->res.rstore->hdr.name;
+         if (jcr->res.read_storage) {
+            *((char **)value) = jcr->res.read_storage->hdr.name;
          } else {
             *((char **)value) = NULL;
             retval = bRC_Error;
@@ -675,10 +675,10 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          Dmsg1(debuglevel, "dir-plugin: return bDirVarCatalog=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarMediaType:
-         if (jcr->res.wstore) {
-            *((char **)value) = jcr->res.wstore->media_type;
-         } else if (jcr->res.rstore) {
-            *((char **)value) = jcr->res.rstore->media_type;
+         if (jcr->res.write_storage) {
+            *((char **)value) = jcr->res.write_storage->media_type;
+         } else if (jcr->res.read_storage) {
+            *((char **)value) = jcr->res.read_storage->media_type;
          } else {
             *((char **)value) = NULL;
             retval = bRC_Error;

@@ -33,7 +33,7 @@
 #include <openssl/ssl.h>
 #include <string>
 
-bool SetCertificateRevocationList(const std::string &crlfile, SSL_CTX *openssl_ctx);
+bool SetCertificateRevocationList(const std::string &crlfile_, SSL_CTX *openssl_ctx);
 
 
 #endif /* (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L) */

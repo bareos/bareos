@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-SET (BCONSSRCS console_conf.cc console_globals.cc console_output.cc)
+SET (BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc console_output.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()

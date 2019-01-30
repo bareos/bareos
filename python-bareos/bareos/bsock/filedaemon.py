@@ -15,9 +15,17 @@ class FileDaemon(LowLevel):
                  port=9102,
                  dirname=None,
                  name=None,
-                 password=None):
+                 password=None,
+                 tls_psk_enable=True,
+                 tls_psk_require=False
+                 ):
         super(FileDaemon, self).__init__()
-        self.connect(address, port, dirname, ConnectionType.FILEDAEMON)
+        self.tls_psk_enable=tls_psk_enable
+        self.tls_psk_require=tls_psk_require
+        # Well, we are not really a Director,
+        # but using the interface provided for Directors.
+        self.identity_prefix = u'R_DIRECTOR'
+        self.connect(address, port, dirname, ConnectionType.FILEDAEMON, name, password)
         self.auth(name=name, password=password, auth_success_regex=b'^2000 OK Hello.*$')
         self._init_connection()
 

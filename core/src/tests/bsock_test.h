@@ -27,8 +27,6 @@
 
 class BareosSocket;
 
-extern int port;
-
 void InitForTest();
 
 int create_accepted_server_socket(int port);

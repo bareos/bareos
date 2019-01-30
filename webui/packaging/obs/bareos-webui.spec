@@ -13,7 +13,10 @@ Source:        %{name}-%{version}.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-build
 BuildArch:     noarch
 
-BuildRequires: autoconf automake bareos-common
+BuildRequires: cmake
+BuildRequires: gcc
+BuildRequires: gcc-c++
+BuildRequires: bareos-common
 
 # ZendFramework 2.4 says it required php >= 5.3.23.
 # However, it works on SLES 11 with php 5.3.17
@@ -94,17 +97,24 @@ This package contains the webui (Bareos Web User Interface).
 %setup -q
 
 %build
-#autoreconf -fvi
-%configure
+cmake . \
+     -DCMAKE_VERBOSE_MAKEFILE=ON \
+     -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+     -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
+     -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+     -DLIB_INSTALL_DIR:PATH=/usr/lib \
+     -DSYSCONF_INSTALL_DIR:PATH=/etc \
+     -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+     -DBUILD_SHARED_LIBS:BOOL=ON \
+  -Dsysconfdir=%{_sysconfdir} \
+  -Dconfdir=%{_sysconfdir}/bareos \
+  -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
+  -DVERSION_STRING=%version
+
 make
 
 %install
-# makeinstall macro does not work on RedHat
-#makeinstall
 make DESTDIR=%{buildroot} install
-
-# write version to version file
-echo %version | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > %{buildroot}/%_datadir/%name/version.txt
 
 # With the introduction of config subdirectories (bareos-16.2)
 # some config files have been renamed (or even splitted into multiple files).

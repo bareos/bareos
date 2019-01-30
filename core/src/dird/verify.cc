@@ -251,7 +251,7 @@ bool DoVerify(JobControlRecord *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
+      if (!StartStorageDaemonJob(jcr, jcr->res.read_storage_list, NULL, /* send_bsr */ true)) {
          return false;
       }
 
@@ -280,7 +280,7 @@ bool DoVerify(JobControlRecord *jcr)
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
          goto bail_out;
       }
-      SendJobInfo(jcr);
+      SendJobInfoToFileDaemon(jcr);
       fd = jcr->file_bsock;
 
       /*
@@ -302,7 +302,7 @@ bool DoVerify(JobControlRecord *jcr)
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
          goto bail_out;
       }
-      SendJobInfo(jcr);
+      SendJobInfoToFileDaemon(jcr);
       fd = jcr->file_bsock;
       break;
    }
@@ -336,8 +336,7 @@ bool DoVerify(JobControlRecord *jcr)
       }
 
       if (!jcr->passive_client) {
-         uint32_t tls_need = 0;
-         StorageResource *store = jcr->res.rstore;
+         StorageResource *store = jcr->res.read_storage;
 
          /*
           * Send Storage daemon address to the File daemon
@@ -346,30 +345,35 @@ bool DoVerify(JobControlRecord *jcr)
             store->SDDport = store->SDport;
          }
 
-         /*
-          * TLS Requirement
-          */
+         TlsPolicy tls_policy;
+         if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
+           tls_policy = store->GetPolicy();
+         } else {
+           tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
+         }
 
-         tls_need = GetLocalTlsPolicyFromConfiguration(store);
+         Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
 
-         fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
+         fd->fsend(storaddrcmd, store->address, store->SDDport, tls_policy, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
             goto bail_out;
          }
       } else {
-         uint32_t tls_need = 0;
          ClientResource *client = jcr->res.client;
 
+         TlsPolicy tls_policy;
          if (jcr->res.client->connection_successful_handshake_ != ClientConnectionHandshakeMode::kTlsFirst) {
-            tls_need = GetLocalTlsPolicyFromConfiguration(client);
+            tls_policy = client->GetPolicy();
          } else {
-            tls_need = TlsConfigBase::BNET_TLS_AUTO;
+            tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto : TlsPolicy::kBnetTlsNone;
          }
+
+         Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
 
          /*
           * Tell the SD to connect to the FD.
           */
-         sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+         sd->fsend(passiveclientcmd, client->address, client->FDport, tls_policy);
          Bmicrosleep(2,0);
          if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
             goto bail_out;

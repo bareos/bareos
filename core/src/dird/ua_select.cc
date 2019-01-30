@@ -933,7 +933,7 @@ PoolResource *get_pool_resource(UaContext *ua)
  */
 int SelectJobDbr(UaContext *ua, JobDbRecord *jr)
 {
-   ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
+   ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, NULL, 0, 0, 0, ua->send, HORZ_LIST);
    if (!GetPint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }
@@ -1218,7 +1218,7 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
                ua->ErrorMsg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
                return NULL;
             }
-            store = jcr->res.wstore;
+            store = jcr->res.write_storage;
             FreeJcr(jcr);
             break;
          } else if (Bstrcasecmp(ua->argk[i], NT_("job")) ||
@@ -1231,7 +1231,7 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
                ua->ErrorMsg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
-            store = jcr->res.wstore;
+            store = jcr->res.write_storage;
             FreeJcr(jcr);
             break;
          } else if (Bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
@@ -1243,7 +1243,7 @@ StorageResource *get_storage_resource(UaContext *ua, bool use_default, bool auto
                ua->ErrorMsg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
-            store = jcr->res.wstore;
+            store = jcr->res.write_storage;
             FreeJcr(jcr);
             break;
         }

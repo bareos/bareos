@@ -1,6 +1,6 @@
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,7 @@ set(POSTGRESQL_SRCS postgresql.cc ${LIBBAREOSCATS_SRCS})
 
 add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})
 
-set_target_properties(bareossql PROPERTIES VERSION "${VERSION}"
+set_target_properties(bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           )
 target_link_libraries (bareossql bareoscats bareos)
@@ -58,7 +58,7 @@ list(LENGTH db_backends nr_db_backends)
 add_library(bareoscats SHARED ${LIBBAREOSCATS_SRCS})
 target_link_libraries (bareoscats bareos)
 set_target_properties(bareoscats PROPERTIES
-   VERSION ${VERSION}
+   VERSION ${BAREOS_NUMERIC_VERSION}
    SOVERSION "${SOVERSION}"
    )
 INSTALL(TARGETS bareoscats
@@ -133,8 +133,8 @@ IF(${nr_db_backends} EQUAL 1)
    install(CODE "set(backenddir \"${backenddir}\")")
    install(CODE "set(default_db_backend \"${default_db_backend}\")")
    install(CODE "set(CMAKE_SHARED_LIBRARY_SUFFIX \"${CMAKE_SHARED_LIBRARY_SUFFIX}\")")
-   install(CODE "set(VERSION \"${VERSION}\")")
+   install(CODE "set(VERSION \"${BAREOS_NUMERIC_VERSION}\")")
    install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
-   INSTALL(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/bareos-symlink-default-db-backend.cmake)
+   INSTALL(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/bareos-symlink-default-db-backend.cmake)
 ENDIF()

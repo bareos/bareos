@@ -83,7 +83,7 @@ void *handle_stored_connection(BareosSocket *sd)
     */
    if (!AuthenticateStoragedaemon(jcr)) {
       Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
+      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
       jcr->setJobStatus(JS_ErrorTerminated);
    } else {
       Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);

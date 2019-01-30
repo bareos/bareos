@@ -135,7 +135,7 @@ public:
       destroy();
    }
 
-   bool init() {
+   bool init() override {
       return true;
    }
 
@@ -145,12 +145,12 @@ public:
                  int lstat_length,
                  char *chksum,
                  int checksum_length,
-                 int32_t delta_seq);
-   bool EndLoad();
-   accurate_payload *lookup_payload(char *fname);
-   bool UpdatePayload(char *fname, accurate_payload *payload);
-   bool SendBaseFileList();
-   bool SendDeletedList();
+                 int32_t delta_seq) override;
+   bool EndLoad() override;
+   accurate_payload *lookup_payload(char *fname) override;
+   bool UpdatePayload(char *fname, accurate_payload *payload) override;
+   bool SendBaseFileList() override;
+   bool SendDeletedList() override;
 };
 
 #ifdef HAVE_LMDB
@@ -179,19 +179,19 @@ public:
    ~BareosAccurateFilelistLmdb() {
       destroy();
    }
-   bool init();
+   bool init() override;
    bool AddFile(char *fname,
                  int fname_length,
                  char *lstat,
                  int lstat_length,
                  char *chksum,
                  int checksum_length,
-                 int32_t delta_seq);
-   bool EndLoad();
-   accurate_payload *lookup_payload(char *fname);
-   bool UpdatePayload(char *fname, accurate_payload *payload);
-   bool SendBaseFileList();
-   bool SendDeletedList();
+                 int32_t delta_seq) override;
+   bool EndLoad() override;
+   accurate_payload *lookup_payload(char *fname) override;
+   bool UpdatePayload(char *fname, accurate_payload *payload) override;
+   bool SendBaseFileList() override;
+   bool SendDeletedList() override;
 };
 #endif /* HAVE_LMDB */
 
