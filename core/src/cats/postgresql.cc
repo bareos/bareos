@@ -689,7 +689,7 @@ retry_query:
          /*
           * Any fatal error should result in the daemon exiting.
           */
-         Emsg0(M_FATAL, 0, "Fatal database error\n");
+         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
       if (try_reconnect_ && !transaction_) {
