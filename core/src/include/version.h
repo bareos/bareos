@@ -1,5 +1,5 @@
 #ifndef VERSION
-#define VERSION "18.2.4"
+#define VERSION "18.2.5"
 #endif
 
 #define BDATE   "30 January 2019"
