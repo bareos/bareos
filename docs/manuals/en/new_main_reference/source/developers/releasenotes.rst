@@ -1,24 +1,24 @@
-.. _bareos-1824rc2-releasenotes:
+.. _bareos-1825-releasenotes:
 
-Bareos 18.2.4rc2 Release Notes
+Bareos 18.2.5 Release Notes
 ============================
 
 General Release Information
 ---------------------------
 
-.. list-table:: Bareos 18.2.4rc2 Release Information
+.. list-table:: Bareos 18.2.5 Release Information
    :header-rows: 0
    :widths: auto
 
    * - **Release Date**
-     - December 2018
+     - 31 January 2019
    * - **Database Version**
      -  2171
    * - **URL**
      - http://download.bareos.org/bareos/release/18.2/
-..
+
    * - **Release Ticket**
-     -
+     - :issue:`1040`
 ..
    * - **LOC**
      - 123456+ 12345-
@@ -40,7 +40,7 @@ General Release Information
    SLE_12_SP4, "x86_64"
    SLE_15, "x86_64"
    Univention_4.3, "x86_64"
-   win_cross, "x86_64"
+   Windows, "32Bit, 64Bit"
    xUbuntu_14.04, "i586,x86_64"
    xUbuntu_16.04, "i586,x86_64"
    xUbuntu_18.04, "x86_64"
@@ -93,15 +93,15 @@ Backward compatibility
 Full connection overview
 ------------------------
 This diagram contains all possible connections between Bareos components
-that are virtually usable. The numbers in each component are the version 
-numbers of this component that can be used with a Bareos 18.2 system 
+that are virtually usable. The numbers in each component are the version
+numbers of this component that can be used with a Bareos 18.2 system
 (Director Daemon and Storage Daemon). However, to be able to use all feature
 it is recommended to use all components from version 18.2.
 
-For a detailed explanation of all connection modes see :ref:`ConnectionOverviewReference`. 
+For a detailed explanation of all connection modes see :ref:`ConnectionOverviewReference`.
 
 .. uml::
-  :caption: Full overview of all Bareos connections possible with Bareos 18.2  
+  :caption: Full overview of all Bareos connections possible with Bareos 18.2
 
   skinparam shadowing false
 
@@ -115,9 +115,9 @@ For a detailed explanation of all connection modes see :ref:`ConnectionOverviewR
   [Storagedaemon 18] as SD18
   [Storagedaemon2 18] as SD218
 
-  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color> 
+  !define arrow_hidden(from,direction,to,comment) from -[#white]direction->to : <color white>comment</color>
 
-  !define arrow(from,direction,to,comment) from -direction->to : comment 
+  !define arrow(from,direction,to,comment) from -direction->to : comment
 
   arrow(Con1718, right, Dir18, 1n)
   arrow(Con1718, right, Dir18, 2r)
@@ -155,9 +155,20 @@ Bugs Fixed
 * :issue:`805`: can't restore vmware-plugin assisted backups via |bareosWebui|
 * Windows Installer: Fixed infinite install dialog for VC 2012 checks on x86 windows
 * Fixed memory leaks in the |bareosDir| when using bconsole or |bareosWebui|
-* Fixed a bug in the debug message handler on the |bareosDir| when debuglevel is >= 900
+* Fixed a debug message handler bug on |bareosDir| when debuglevel is >= 900
 * Improved shutdown of |bareosDir|
+* :issue:`1034`: Read error on tape may be misinterpreted as end-of-tape
+* "Exit On Fatal" works now as expected
+* Fixed a bug when migration storage daemons cannot connect
+* Guarded numerous nullpointers
 
+Updated Documentation
+---------------------
+* Updated vmware plugin documentation: :ref:`VMwarePlugin`
+* How to configure transport encryption in |bareosWebui|: :ref:`TransportEncryptionWebuiBareosDirChapter`
+* Detailed connections overview here: :ref:`ConnectionOverviewReference`
+* How to use PAM with |bareosDir|: :ref:`PAMConfigurationChapter`
+* Backward compatibility of |bareosFd|: :ref:`CompatibilityWithFileDaemonsBefore182Chapter`
 
 Internal Project Changes
 ------------------------
@@ -200,9 +211,9 @@ Internal Project Changes
 
 
 
-.. _bareos-1824rc2-updatefaq:
+.. _bareos-1825-updatefaq:
 
-Bareos 18.2.4rc2 FAQ
+Bareos 18.2.5 FAQ
 --------------------
 
 What is the important feature introduced in Bareos 18.2?
