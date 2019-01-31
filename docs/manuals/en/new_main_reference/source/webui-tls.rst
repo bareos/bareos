@@ -1,3 +1,4 @@
+.. _TransportEncryptionWebuiBareosDirChapter:
 
 Transport encryption between |bareosWebui| and |bareosDir|
 ==========================================================

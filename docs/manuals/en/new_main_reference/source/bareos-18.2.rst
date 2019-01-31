@@ -338,6 +338,9 @@ In Bareos Version 18.2 the relevant resources for some connections had to be cha
 .. [#user_agent] The name of the default console is predefined and cannot be changed
 .. [#cert] Certificate directives are: TlsVerifyPeer, TlsCaCertificateFile, TlsCaCertificateDir, TlsCertificateRevocationList, TlsCertificate, TlsKey, TlsAllowedCn
 
+
+.. _CompatibilityWithFileDaemonsBefore182Chapter:
+
 Compatibility with File Daemons before 18.2
 ===========================================
 As from Bareos 18.2 all components by default establish a secure connection with encryption first, followed by the proprietary Bareos protocol. This is accomplished using TLS PSK. Older components of Bareos than version 18.2 start a connection with a cleartext handshake without encryption.
