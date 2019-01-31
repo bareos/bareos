@@ -25,18 +25,14 @@
 #define BAREOS_FINDLIB_XATTR_H_
 
 /*
- * Number of xattr errors to report per job.
- */
-#define XATTR_REPORT_ERR_MAX_PER_JOB    25
-
-/*
  * Return codes from xattr subroutines.
  */
-typedef enum {
-   bxattr_exit_fatal = -1,
-   bxattr_exit_error = 0,
-   bxattr_exit_ok = 1
-} bxattr_exit_code;
+enum class BxattrExitCode {
+   kErrorFatal,
+   kError,
+   kWarning,
+   kSuccess
+};
 
 #if defined(HAVE_LINUX_OS)
 #define BXATTR_ENOTSUP EOPNOTSUPP
@@ -109,14 +105,14 @@ struct xattr_data_t {
  */
 #define XATTR_BUFSIZ	1024
 
-bxattr_exit_code SendXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, int stream);
+BxattrExitCode SendXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, int stream);
 void XattrDropInternalTable(alist *xattr_value_list);
 uint32_t SerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data,
                                 uint32_t expected_serialize_len, alist *xattr_value_list);
-bxattr_exit_code UnSerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, char *content,
+BxattrExitCode UnSerializeXattrStream(JobControlRecord *jcr, xattr_data_t *xattr_data, char *content,
                                           uint32_t content_length, alist *xattr_value_list);
-bxattr_exit_code BuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data, FindFilesPacket *ff_pkt);
-bxattr_exit_code ParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+BxattrExitCode BuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data, FindFilesPacket *ff_pkt);
+BxattrExitCode ParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                      int stream, char *content, uint32_t content_length);
 
 

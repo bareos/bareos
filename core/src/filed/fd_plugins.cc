@@ -1439,7 +1439,7 @@ bacl_exit_code plugin_parse_acl_streams(JobControlRecord *jcr,
 /**
  * Plugin specific callback for getting XATTR information.
  */
-bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr,
+BxattrExitCode PluginBuildXattrStreams(JobControlRecord *jcr,
                                             struct xattr_data_t *xattr_data,
                                             FindFilesPacket *ff_pkt)
 {
@@ -1447,17 +1447,17 @@ bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr,
 #if defined(HAVE_XATTR)
    alist *xattr_value_list = NULL;
 #endif
-   bxattr_exit_code retval = bxattr_exit_error;
+   BxattrExitCode retval = BxattrExitCode::kError;
 
    Dmsg0(debuglevel, "PluginBuildXattrStreams\n");
 
    if (!jcr->plugin_ctx) {
-      return bxattr_exit_ok;
+      return BxattrExitCode::kSuccess;
    }
    plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (PlugFunc(plugin)->getXattr == NULL) {
-      return bxattr_exit_ok;
+      return BxattrExitCode::kSuccess;
    } else {
 #if defined(HAVE_XATTR)
       bool more;
@@ -1554,7 +1554,7 @@ bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr,
           */
          retval = SendXattrStream(jcr, xattr_data, STREAM_XATTR_PLUGIN);
       } else {
-         retval = bxattr_exit_ok;
+         retval = BxattrExitCode::kSuccess;
       }
 #endif
    }
@@ -1572,7 +1572,7 @@ bail_out:
 /**
  * Plugin specific callback for setting XATTR information.
  */
-bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr,
+BxattrExitCode PluginParseXattrStreams(JobControlRecord *jcr,
                                             struct xattr_data_t *xattr_data,
                                             int stream,
                                             char *content,
@@ -1582,12 +1582,12 @@ bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr,
    Plugin *plugin;
    alist *xattr_value_list = NULL;
 #endif
-   bxattr_exit_code retval = bxattr_exit_error;
+   BxattrExitCode retval = BxattrExitCode::kError;
 
    Dmsg0(debuglevel, "PluginParseXattrStreams\n");
 
    if (!jcr->plugin_ctx) {
-      return bxattr_exit_ok;
+      return BxattrExitCode::kSuccess;
    }
 
 #if defined(HAVE_XATTR)
@@ -1602,7 +1602,7 @@ bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr,
                                    xattr_data,
                                    content,
                                    content_length,
-                                   xattr_value_list) != bxattr_exit_ok) {
+                                   xattr_value_list) != BxattrExitCode::kSuccess) {
          goto bail_out;
       }
 
@@ -1624,7 +1624,7 @@ bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr,
          }
       }
 
-      retval = bxattr_exit_ok;
+      retval = BxattrExitCode::kSuccess;
    }
 
 bail_out:
