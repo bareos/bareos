@@ -161,10 +161,11 @@ Bugs Fixed
 * "Exit On Fatal" works now as expected
 * Fixed a bug when migration storage daemons cannot connect
 * Guarded numerous nullpointers
+* VMware: fixed errors when using non-ascii characters
 
 Updated Documentation
 ---------------------
-* Updated vmware plugin documentation: :ref:`VMwarePlugin`
+* Updated VMware plugin documentation: :ref:`VMwarePlugin`
 * How to configure transport encryption in |bareosWebui|: :ref:`TransportEncryptionWebuiBareosDirChapter`
 * Detailed connections overview here: :ref:`ConnectionOverviewReference`
 * How to use PAM with |bareosDir|: :ref:`PAMConfigurationChapter`
