@@ -456,14 +456,7 @@ static inline bool DoBackupAcl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    case bacl_exit_fatal:
       return false;
    case bacl_exit_error:
-      /*
-       * Non-fatal errors, count them and when the number is under
-       * ACL_REPORT_ERR_MAX_PER_JOB print the error message set by the
-       * lower level routine in jcr->errmsg.
-       */
-      if (jcr->acl_data->u.build->nr_errors < ACL_REPORT_ERR_MAX_PER_JOB) {
-         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
-      }
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       jcr->acl_data->u.build->nr_errors++;
       break;
    case bacl_exit_ok:
@@ -475,7 +468,7 @@ static inline bool DoBackupAcl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 
 static inline bool DoBackupXattr(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
-   bxattr_exit_code retval;
+   BxattrExitCode retval;
 
    jcr->xattr_data->last_fname = jcr->last_fname;
 
@@ -486,20 +479,16 @@ static inline bool DoBackupXattr(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
    }
 
    switch (retval) {
-   case bxattr_exit_fatal:
+   case BxattrExitCode::kErrorFatal:
       return false;
-   case bxattr_exit_error:
-      /*
-       * Non-fatal errors, count them and when the number is under
-       * XATTR_REPORT_ERR_MAX_PER_JOB print the error message set by the
-       * lower level routine in jcr->errmsg.
-       */
-      if (jcr->xattr_data->u.build->nr_errors < XATTR_REPORT_ERR_MAX_PER_JOB) {
-         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
-      }
+   case BxattrExitCode::kWarning:
+      Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+      break;
+   case BxattrExitCode::kError:
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       jcr->xattr_data->u.build->nr_errors++;
       break;
-   case bxattr_exit_ok:
+   case BxattrExitCode::kSuccess:
       break;
    }
 

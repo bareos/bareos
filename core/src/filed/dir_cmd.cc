@@ -2343,8 +2343,11 @@ static bool RestoreCmd(JobControlRecord *jcr)
    DoRestore(jcr);
    StopDirHeartbeat(jcr);
 
-   jcr->setJobStatus(JS_Terminated);
-  if (!jcr->is_JobStatus(JS_Terminated)) { BnetSuppressErrorMessages(sd, 1); }
+   if (jcr->JobWarnings) {
+      jcr->setJobStatus(JS_Warnings);
+   } else {
+      jcr->setJobStatus(JS_Terminated);
+   }
 
    /**
     * Send Close session command to Storage daemon

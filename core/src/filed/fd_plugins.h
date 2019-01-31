@@ -269,9 +269,9 @@ bool PluginSetAttributes(JobControlRecord *jcr, Attributes *attr, BareosWinFileP
 bacl_exit_code PluginBuildAclStreams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
 bacl_exit_code plugin_parse_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, int stream,
                                         char *content, uint32_t content_length);
-bxattr_exit_code PluginBuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+BxattrExitCode PluginBuildXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                             FindFilesPacket *ff_pkt);
-bxattr_exit_code PluginParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+BxattrExitCode PluginParseXattrStreams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
                                             int stream, char *content, uint32_t content_length);
 int PluginSave(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 int PluginEstimate(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);

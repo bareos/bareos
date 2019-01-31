@@ -254,7 +254,7 @@ static inline bool do_restore_xattr(JobControlRecord *jcr,
                                     char *content,
                                     uint32_t content_length)
 {
-   bxattr_exit_code retval;
+   BxattrExitCode retval;
 
    jcr->xattr_data->last_fname = jcr->last_fname;
    switch (stream) {
@@ -267,19 +267,16 @@ static inline bool do_restore_xattr(JobControlRecord *jcr,
    }
 
    switch (retval) {
-   case bxattr_exit_fatal:
+   case BxattrExitCode::kErrorFatal:
       return false;
-   case bxattr_exit_error:
-      /*
-       * Non-fatal errors, count them and when the number is under XATTR_REPORT_ERR_MAX_PER_JOB
-       * print the error message set by the lower level routine in jcr->errmsg.
-       */
-      if (jcr->xattr_data->u.parse->nr_errors < XATTR_REPORT_ERR_MAX_PER_JOB) {
-         Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      }
+   case BxattrExitCode::kWarning:
+      Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+      break;
+   case BxattrExitCode::kError:
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       jcr->xattr_data->u.parse->nr_errors++;
       break;
-   case bxattr_exit_ok:
+   case BxattrExitCode::kSuccess:
       break;
    }
 
