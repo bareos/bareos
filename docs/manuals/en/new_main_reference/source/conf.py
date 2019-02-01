@@ -223,8 +223,8 @@ texinfo_documents = [
 import re
 # settings for sphinxcontrib-versioning
 scv_whitelist_branches = (re.compile(r'^master$'),
-#        re.compile('sphinx-versioning$'),
         re.compile(r'^bareos-18.2$'))
+scv_whitelist_tags = (re.compile(r'^not-exisiting-tag$'),)
 scv_show_banner = True
 scv_priority = 'branches'
 scv_root_ref = 'bareos-18.2'
