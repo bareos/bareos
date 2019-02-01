@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -263,7 +263,6 @@ static bool DoNdmpNativeRestore(JobControlRecord *jcr)
    bool retval = false;
    int NdmpLoglevel;
    char mediabuf[100];
-   ndmmedia *media;
    slot_number_t ndmp_slot;
    StorageResource *store = NULL;
 
