@@ -1,8 +1,8 @@
 #undef  VERSION
-#define VERSION "18.4.1"
+#define VERSION "19.1.2"
 
-#define BDATE   "10 January 2019"
-#define LSMDATE "10Jan19"
+#define BDATE   "01 February 2019"
+#define LSMDATE "01Feb19"
 
 #ifndef BAREOS_BINARY_INFO
 #define BAREOS_BINARY_INFO "self-compiled"
