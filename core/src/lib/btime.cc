@@ -262,12 +262,10 @@ void get_current_time(struct date_time *dt)
    Dmsg6(200, "m=%d d=%d y=%d h=%d m=%d s=%d\n", tm.tm_mon+1, tm.tm_mday, tm.tm_year+1900,
       tm.tm_hour, tm.tm_min, tm.tm_sec);
    TmEncode(dt, &tm);
-#ifdef DEBUG
    Dmsg2(200, "jday=%f jmin=%f\n", dt->julian_day_number, dt->julian_day_fraction);
    TmDecode(dt, &tm);
    Dmsg6(200, "m=%d d=%d y=%d h=%d m=%d s=%d\n", tm.tm_mon+1, tm.tm_mday, tm.tm_year+1900,
       tm.tm_hour, tm.tm_min, tm.tm_sec);
-#endif
 }
 
 

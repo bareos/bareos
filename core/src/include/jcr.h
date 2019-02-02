@@ -687,12 +687,8 @@ extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
 extern void SetJcrJobStatus(JobControlRecord *jcr, int JobStatus);
 extern int num_jobs_run;
 
-#ifdef DEBUG
 extern void b_free_jcr(const char *file, int line, JobControlRecord *jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
-#else
-extern void FreeJcr(JobControlRecord *jcr);
-#endif
 
 /*
  * Used to display specific job information after a fatal signal

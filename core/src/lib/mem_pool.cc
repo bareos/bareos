@@ -257,7 +257,6 @@ void SmFreePoolMemory(const char *fname, int lineno, POOLMEM *obuf)
    if (pool == 0) {
       free((char *)buf);              /* free nonpooled memory */
    } else {                           /* otherwise link it to the free pool chain */
-#ifdef DEBUG
       struct abufhead *next;
       /* Don't let him free the same buffer twice */
       for (next=pool_ctl[pool].free_buf; next; next=next->next) {
@@ -266,7 +265,6 @@ void SmFreePoolMemory(const char *fname, int lineno, POOLMEM *obuf)
             ASSERT(next != buf);      /* attempt to free twice */
          }
       }
-#endif
       buf->next = pool_ctl[pool].free_buf;
       pool_ctl[pool].free_buf = buf;
    }
@@ -386,7 +384,6 @@ void FreePoolMemory(POOLMEM *obuf)
    if (pool == 0) {
       free((char *)buf);              /* free nonpooled memory */
    } else {                           /* otherwise link it to the free pool chain */
-#ifdef DEBUG
       struct abufhead *next;
       /* Don't let him free the same buffer twice */
       for (next=pool_ctl[pool].free_buf; next; next=next->next) {
@@ -395,7 +392,6 @@ void FreePoolMemory(POOLMEM *obuf)
             ASSERT(next != buf);  /* attempt to free twice */
          }
       }
-#endif
       buf->next = pool_ctl[pool].free_buf;
       pool_ctl[pool].free_buf = buf;
    }
@@ -471,7 +467,6 @@ void GarbageCollectMemory()
 #endif
 }
 
-#ifdef DEBUG
 static const char *pool_name(int pool)
 {
    static char buf[30];
@@ -509,9 +504,6 @@ void PrintMemoryPoolStats()
 
    Pmsg0(-1, "\n");
 }
-#else
-void PrintMemoryPoolStats() {}
-#endif /* DEBUG */
 
 /*
  * Concatenate a string (str) onto a pool memory buffer pm

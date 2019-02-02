@@ -807,7 +807,6 @@ static void ListRunningJobs(StatusPacket *sp)
          jcr->LastJobBytes = jcr->JobBytes;
          jcr->last_time = now;
          found = true;
-#ifdef DEBUG
          if (jcr->file_bsock) {
             len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n"),
                        edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
@@ -818,7 +817,6 @@ static void ListRunningJobs(StatusPacket *sp)
             len = Mmsg(msg, _("    FDSocket closed\n"));
             sendit(msg, len, sp);
          }
-#endif
       }
    }
    endeach_jcr(jcr);

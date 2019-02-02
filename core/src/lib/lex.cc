@@ -444,7 +444,6 @@ static void BeginStr(LEX *lf, int ch)
    lf->begin_line_no = lf->line_no;   /* save start string line no */
 }
 
-#ifdef DEBUG
 static const char *lex_state_to_str(int state)
 {
    switch (state) {
@@ -462,7 +461,6 @@ static const char *lex_state_to_str(int state)
    default:                return "??????";
    }
 }
-#endif
 
 /*
  * Convert a lex token to a string

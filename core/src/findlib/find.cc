@@ -42,10 +42,8 @@ static const int debuglevel = 450;
 int32_t name_max;              /* filename max length */
 int32_t path_max;              /* path name max length */
 
-#ifdef DEBUG
 #undef bmalloc
 #define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
-#endif
 static int OurCallback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
 
 static const int fnmode = 0;

@@ -530,22 +530,11 @@ static void FreeCommonJcr(JobControlRecord *jcr)
 /*
  * Global routine to free a jcr
  */
-#ifdef DEBUG
 void b_free_jcr(const char *file, int line, JobControlRecord *jcr)
 {
   struct s_last_job *je;
 
   Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file, line);
-
-#else
-
-void FreeJcr(JobControlRecord *jcr)
-{
-  struct s_last_job *je;
-
-  Dmsg3(debuglevel, "Enter FreeJcr jid=%u UseCount=%d Job=%s\n", jcr->JobId, jcr->UseCount(), jcr->Job);
-
-#endif
 
   lock_jcr_chain();
   jcr->DecUseCount(); /* decrement use count */

@@ -62,7 +62,6 @@
 # define __PROTO(p)     ()
 #endif
 
-#ifdef DEBUG
 /**
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
@@ -78,10 +77,6 @@
    Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
    char *fatal = NULL; \
    fatal[0] = 0; }
-#else
-#define ASSERT(x)
-#define ASSERT2(x, y)
-#endif
 
 /**
  * Allow printing of NULL pointers
@@ -324,7 +319,6 @@ void b_memset(const char *file, int line, void *mem, int val, size_t num);
 * do not handle varargs #defines.
 */
 /** Debug Messages that are printed */
-#ifdef DEBUG
 #define Dmsg0(lvl, msg) \
 if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg)
 #define Dmsg1(lvl, msg, a1) \
@@ -353,20 +347,6 @@ if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a
 if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 #define Dmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
 if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
-#else
-#define Dmsg0(lvl, msg)
-#define Dmsg1(lvl, msg, a1)
-#define Dmsg2(lvl, msg, a1, a2)
-#define Dmsg3(lvl, msg, a1, a2, a3)
-#define Dmsg4(lvl, msg, a1, a2, a3, a4)
-#define Dmsg5(lvl, msg, a1, a2, a3, a4, a5)
-#define Dmsg6(lvl, msg, a1, a2, a3, a4, a5, a6)
-#define Dmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7)
-#define Dmsg8(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
-#define Dmsg11(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
-#define Dmsg12(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-#define Dmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
-#endif /* DEBUG */
 
 #ifdef TRACE_FILE
 #define Tmsg0(lvl, msg) \
@@ -570,17 +550,11 @@ int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 /** Use our sscanf, which is safer and works with known sizes */
 #define sscanf bsscanf
 
-#ifdef DEBUG
 #define bstrdup(str) strcpy((char *)b_malloc(__FILE__,__LINE__, strlen((str))+1), (str))
-#else
-#define bstrdup(str) strcpy((char *)bmalloc(strlen((str))+1),(str))
-#endif
 
 #define actuallystrdup(str) strcpy((char *)actuallymalloc(strlen((str))+1), (str))
 
-#ifdef DEBUG
 #define bmalloc(size) b_malloc(__FILE__, __LINE__, (size))
-#endif
 
 /** Macro to simplify free/reset pointers */
 #define BfreeAndNull(a) do{if(a){free(a); (a)=NULL;}} while(0)

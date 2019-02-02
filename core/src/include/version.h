@@ -53,8 +53,6 @@
 */
 
 /* Debug flags */
-#undef  DEBUG
-#define DEBUG 1
 #define TRACEBACK 1
 #define TRACE_FILE 1
 

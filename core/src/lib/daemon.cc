@@ -90,13 +90,6 @@ void daemon_start() {
    }
 #endif
 
-   /* Move to root directory. For debug we stay
-    * in current directory so dumps go there.
-    */
-#ifndef DEBUG
-   chdir("/");
-#endif
-
    /*
     * Avoid creating files 666 but don't override any
     * more restrictive mask set by the user.
