@@ -100,7 +100,8 @@ chmod +x %{our_find_requires}
 %setup -q -n %{sourcename}
 
 %build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr .
+
 make
 
 %install
