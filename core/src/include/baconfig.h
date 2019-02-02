@@ -348,7 +348,6 @@ if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a
 #define Dmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
 if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
 
-#ifdef TRACE_FILE
 #define Tmsg0(lvl, msg) \
 t_msg(__FILE__, __LINE__, lvl, msg)
 #define Tmsg1(lvl, msg, a1) \
@@ -377,22 +376,6 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 #define Tmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
-#else
-#define Tmsg0(lvl, msg)
-#define Tmsg1(lvl, msg, a1)
-#define Tmsg2(lvl, msg, a1, a2)
-#define Tmsg3(lvl, msg, a1, a2, a3)
-#define Tmsg4(lvl, msg, a1, a2, a3, a4)
-#define Tmsg5(lvl, msg, a1, a2, a3, a4, a5)
-#define Tmsg6(lvl, msg, a1, a2, a3, a4, a5, a6)
-#define Tmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7)
-#define Tmsg8(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
-#define Tmsg9(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-#define Tmsg10(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
-#define Tmsg11(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
-#define Tmsg12(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-#define Tmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
-#endif /* TRACE_FILE */
 
 /** Messages that are printed (uses p_msg) */
 #define Pmsg0(lvl, msg) \
