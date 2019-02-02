@@ -132,7 +132,6 @@
 /* #define TRACE_JCR_CHAIN 1 */
 /* #define TRACE_RES 1 */
 /* #define DEBUG_MEMSET 1 */
-/* #define DEBUG_MUTEX 1 */
 /* #define DEBUG_BLOCK_CHECKSUM 1 */
 
 /*
@@ -145,14 +144,6 @@
 
 /* Check if header of tape block is zero before writing */
 /* #define DEBUG_BLOCK_ZEROING 1 */
-
-/* #define FULL_DEBUG 1 */   /* normally on for testing only */
-
-/* Turn this on ONLY if you want all Dmsg() to append to the
- *   trace file. Implemented mainly for Win32 ...
- */
-/*  #define SEND_DMSG_TO_FILE 1 */
-
 
 /* The following are turned on for performance testing */
 /*
