@@ -76,11 +76,7 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
-#ifdef DATA_ENCRYPTION
 const bool have_encryption = true;
-#else
-const bool have_encryption = false;
-#endif
 
 /* Global variables to handle Client Initiated Connections */
 static bool quit_client_initiate_connection = false;

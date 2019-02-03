@@ -114,12 +114,6 @@
  */
 #define SQLITE3_INIT_QUERY "PRAGMA synchronous = NORMAL"
 
-/*
- * This should always be on. It enables data encryption code
- *  providing it is configured.
- */
-#define DATA_ENCRYPTION 1
-
 /* Debug flags not normally turned on */
 
 /* #define TRACE_JCR_CHAIN 1 */

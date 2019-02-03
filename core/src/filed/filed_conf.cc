@@ -120,7 +120,6 @@ static ResourceItem cli_items[] = {
      NULL},
     {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_client.max_network_buffer_size), 0, 0, NULL, NULL,
      NULL},
-#ifdef DATA_ENCRYPTION
     {"PkiSignatures", CFG_TYPE_BOOL, ITEM(res_client.pki_sign), 0, CFG_ITEM_DEFAULT, "false", NULL,
      "Enable Data Signing."},
     {"PkiEncryption", CFG_TYPE_BOOL, ITEM(res_client.pki_encrypt), 0, CFG_ITEM_DEFAULT, "false", NULL,
@@ -133,7 +132,6 @@ static ResourceItem cli_items[] = {
      "List of public key files. Data will be decryptable via the corresponding private keys."},
     {"PkiCipher", CFG_TYPE_CIPHER, ITEM(res_client.pki_cipher), 0, CFG_ITEM_DEFAULT, "aes128", NULL,
      "PKI Cipher used for data encryption."},
-#endif
     {"VerId", CFG_TYPE_STR, ITEM(res_client.verid), 0, 0, NULL, NULL, NULL},
     {"Compatible", CFG_TYPE_BOOL, ITEM(res_client.compatible), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
     {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
