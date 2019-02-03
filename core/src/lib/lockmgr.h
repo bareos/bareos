@@ -22,10 +22,6 @@
 #ifndef BAREOS_LIB_LOCKMGR_H_
 #define BAREOS_LIB_LOCKMGR_H_ 1
 
-#ifndef _USE_LOCKMGR
-#undef BAREOS_INCLUDE_VERSION_H_
-#endif
-
 #include "mutex_list.h"     /* Manage mutex with priority in a central place */
 #include <mutex>
 
@@ -35,7 +31,7 @@
 void Lmgr_p(pthread_mutex_t *m);
 void Lmgr_v(pthread_mutex_t *m);
 
-#ifdef BAREOS_INCLUDE_VERSION_H_
+#ifdef _USE_LOCKMGR
 
 typedef struct bthread_mutex_t
 {
@@ -214,7 +210,7 @@ int BthreadKill(pthread_t thread, int sig,
 #define pthread_kill(a,b) BthreadKill((a),(b), __FILE__, __LINE__)
 #endif
 #endif
-#else /* BAREOS_INCLUDE_VERSION_H_ */
+#else /* _USE_LOCKMGR */
 #define lmgr_detect_deadloc()
 #define LmgrDump()
 #define LmgrInitThread()
@@ -239,5 +235,5 @@ int BthreadKill(pthread_t thread, int sig,
 #define BTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #define LmgrMutexIsLocked(m) (1)
 #define BthreadCondWait_p(w,x,y,z) pthread_cond_wait(w,x)
-#endif /* BAREOS_INCLUDE_VERSION_H_ */
+#endif /* _USE_LOCKMGR */
 #endif /* BAREOS_LIB_LOCKMGR_H_ */

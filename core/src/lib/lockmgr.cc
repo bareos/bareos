@@ -66,7 +66,7 @@
 
 /*
   This lock manager will replace some pthread calls. It can be
-  enabled with BAREOS_INCLUDE_VERSION_H_
+  enabled with _USE_LOCKMGR
 
   Some part of the code can't use this manager, for example the
   rwlock object or the smartalloc lib. To disable LMGR, just add
@@ -103,7 +103,7 @@ void Lmgr_v(pthread_mutex_t *m)
    }
 }
 
-#ifdef BAREOS_INCLUDE_VERSION_H_
+#ifdef _USE_LOCKMGR
 
 typedef enum
 {
@@ -941,7 +941,7 @@ int LmgrThreadCreate(pthread_t *thread,
    return pthread_create(thread, attr, lmgr_thread_launcher, a);
 }
 
-#else  /* BAREOS_INCLUDE_VERSION_H_ */
+#else  /* _USE_LOCKMGR */
 
 /*
  * !!! WARNING !!!
@@ -953,7 +953,7 @@ void DbgPrintLock(FILE *fp)
    FPmsg0(000, "lockmgr disabled\n");
 }
 
-#endif  /* BAREOS_INCLUDE_VERSION_H_ */
+#endif  /* _USE_LOCKMGR */
 
 #ifdef _TEST_IT
 

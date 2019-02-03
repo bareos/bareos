@@ -72,13 +72,13 @@
 #endif
 
 /*
- * BAREOS_INCLUDE_VERSION_H_ does lock/unlock mutex tracking (dead lock)
+ * _USE_LOCKMGR does lock/unlock mutex tracking (dead lock)
  *   it can always be turned on, but we advise to use it only
  *   for debug
  */
-#ifndef BAREOS_INCLUDE_VERSION_H_
-#define BAREOS_INCLUDE_VERSION_H_
-#endif /* BAREOS_INCLUDE_VERSION_H_ */
+#ifndef _USE_LOCKMGR
+#define _USE_LOCKMGR
+#endif /* _USE_LOCKMGR */
 /*
  * Enable priority management with the lock manager
  *
@@ -98,7 +98,7 @@
 /* #define USE_LOCKMGR_SAFEKILL */
 
 #if !HAVE_LINUX_OS && !HAVE_SUN_OS && !HAVE_DARWIN_OS && !HAVE_FREEBSD_OS
-#undef BAREOS_INCLUDE_VERSION_H_
+#undef _USE_LOCKMGR
 #endif
 
 /*
