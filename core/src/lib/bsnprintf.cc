@@ -44,8 +44,6 @@
  */
 #undef SECURITY_PROBLEM
 
-#ifdef USE_BSNPRINTF
-
 #ifdef HAVE_LONG_DOUBLE
 #define LDOUBLE long double
 #else
@@ -847,4 +845,3 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    return currlen;
 }
 #endif  /* FP_OUTPUT */
-#endif /* USE_BSNPRINTF */

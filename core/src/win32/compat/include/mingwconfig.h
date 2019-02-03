@@ -63,7 +63,6 @@
 /* Set to correct scanf value for long long int */
 #define lld "lld"
 #define llu "llu"
-/* #define USE_BSNPRINTF */
 
 #define HAVE_STRTOLL 1
 

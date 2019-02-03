@@ -443,53 +443,6 @@ void *bcalloc(size_t size1, size_t size2)
    return buf;
 }
 
-/* Code now in src/lib/bsnprintf.c */
-#ifndef USE_BSNPRINTF
-
-#define BIG_BUF 5000
-/*
- * Implement snprintf
- */
-int Bsnprintf(char *str, int32_t size, const char *fmt,  ...)
-{
-   va_list   arg_ptr;
-   int len;
-
-   va_start(arg_ptr, fmt);
-   len = Bvsnprintf(str, size, fmt, arg_ptr);
-   va_end(arg_ptr);
-   return len;
-}
-
-/*
- * Implement vsnprintf()
- */
-int Bvsnprintf(char *str, int32_t size, const char  *format, va_list ap)
-{
-#ifdef HAVE_VSNPRINTF
-   int len;
-   len = vsnprintf(str, size, format, ap);
-   str[size - 1] = 0;
-   return len;
-
-#else
-
-   int len, buflen;
-   char *buf;
-   buflen = size > BIG_BUF ? size : BIG_BUF;
-   buf = GetMemory(buflen);
-   len = vsprintf(buf, format, ap);
-   if (len >= buflen) {
-      Emsg0(M_ABORT, 0, _("Buffer overflow.\n"));
-   }
-   memcpy(str, buf, len);
-   str[len] = 0;                /* len excludes the null */
-   FreeMemory(buf);
-   return len;
-#endif
-}
-#endif /* USE_BSNPRINTF */
-
 #ifndef HAVE_LOCALTIME_R
 struct tm *localtime_r(const time_t *timep, struct tm *tm)
 {

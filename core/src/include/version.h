@@ -120,13 +120,6 @@
  */
 #define DATA_ENCRYPTION 1
 
-/*
- * This uses a Bareos specific Bsnprintf rather than the sys lib
- *  version because it is much more secure. It should always be
- *  on.
- */
-#define USE_BSNPRINTF 1
-
 /* Debug flags not normally turned on */
 
 /* #define TRACE_JCR_CHAIN 1 */
