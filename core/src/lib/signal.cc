@@ -155,7 +155,6 @@ extern "C" void SignalHandler(int sig)
              _("BAREOS interrupted by signal %d: %s\n"), sig, get_signal_name(sig));
    }
 
-#ifdef TRACEBACK
    if (sig != SIGTERM) {
       struct sigaction sigdefault;
       static char *argv[5];
@@ -286,7 +285,6 @@ extern "C" void SignalHandler(int sig)
 #endif
 
    }
-#endif
    exit_handler(sig);
    Dmsg0(500, "Done exit_handler\n");
 }

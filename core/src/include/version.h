@@ -52,9 +52,6 @@
    02110-1301, USA.
 */
 
-/* Debug flags */
-#define TRACEBACK 1
-
 /* If this is set stdout will not be closed on startup */
 /* #define DEVELOPER 1 */
 
