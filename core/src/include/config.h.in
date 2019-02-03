@@ -1204,9 +1204,6 @@
 /* Directory for daemon files */
 #cmakedefine _PATH_BAREOS_WORKINGDIR @_PATH_BAREOS_WORKINGDIR@
 
-/* Define to 1 if you want Lock Manager enabled */
-#cmakedefine _USE_LOCKMGR @_USE_LOCKMGR@
-
 /* Define to empty if `const' does not conform to ANSI C. */
 #cmakedefine const @const@
 

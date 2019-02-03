@@ -72,36 +72,6 @@
 #endif
 
 /*
- * _USE_LOCKMGR does lock/unlock mutex tracking (dead lock)
- *   it can always be turned on, but we advise to use it only
- *   for debug
- */
-#ifndef _USE_LOCKMGR
-#define _USE_LOCKMGR
-#endif /* _USE_LOCKMGR */
-/*
- * Enable priority management with the lock manager
- *
- * Note, turning this on will cause the Bareos SD to abort if
- *  mutexes are executed out of order, which could lead to a
- *  deadlock.  However, note that this is not necessarily a
- *  deadlock, so turn this on only for debugging.
- */
-#define USE_LOCKMGR_PRIORITY
-
-/*
- * Enable thread verification before kill
- *
- * Note, this extra check have a high cost when using
- * dozens of thread, so turn this only for debugging.
- */
-/* #define USE_LOCKMGR_SAFEKILL */
-
-#if !HAVE_LINUX_OS && !HAVE_SUN_OS && !HAVE_DARWIN_OS && !HAVE_FREEBSD_OS
-#undef _USE_LOCKMGR
-#endif
-
-/*
  * for fastest speed but you must have a UPS to avoid unwanted shutdowns
  */
 //#define SQLITE3_INIT_QUERY "PRAGMA synchronous = OFF"
