@@ -29,9 +29,17 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt4)
-
 find_package(Qt5 COMPONENTS Core Widgets)
+IF(Qt5Widgets_FOUND)
+  message(STATUS "Found QT5Widgets")
+ELSE()
+  message(STATUS "QT5Widgets NOT found, checking for Qt4 ...")
+  find_package(Qt4)
+  IF (NOT Qt4_FOUND)
+    message(FATAL_ERROR "Both Qt5 and Qt4 not found, cannot build tray-monitor")
+  ENDIF()
+ENDIF()
+
 
 IF(HAVE_WIN32)
    include_directories(
