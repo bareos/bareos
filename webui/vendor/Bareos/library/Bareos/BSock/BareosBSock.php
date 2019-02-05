@@ -535,7 +535,12 @@ class BareosBSock implements BareosBSockInterface
       if (($this->config['server_can_do_tls'] || $this->config['server_requires_tls']) &&
          ($this->config['client_can_do_tls'] || $this->config['client_requires_tls'])) {
 
-         $crypto_method = STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+         $crypto_method = STREAM_CRYPTO_METHOD_TLS_CLIENT;
+
+         if (defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')) {
+            $crypto_method |= STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+         }
+
          $result = stream_socket_enable_crypto($this->socket, true, $crypto_method);
 
          if (!$result) {
