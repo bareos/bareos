@@ -435,14 +435,3 @@ Counter Resource
 
 The Counter Resource defines a counter variable that can be accessed by variable expansion used for creating Volume labels with the **Label Format**:sup:`Dir`:sub:`Pool`\  directive.
 
-.. _SampleDirectorConfiguration:
-
-Example Director Configuration File
------------------------------------
-
-:index:`[TAG=Configuration->Director->Example] <triple: Configuration; Director; Example>` :index:`[TAG=Configuration File Example] <single: Configuration File Example>`
-
-See below an example of a full Director configuration file:
-
-.. literalinclude:: ../../main/bareos-dir.conf.in
-

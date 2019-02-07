@@ -153,8 +153,6 @@ Example Storage daemon’s Director record
      Monitor = yes
    }
 
-A full example can be found at :ref:`ExampleStorageConfiguration`.
-
 Example Director’s Console record
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -169,6 +167,3 @@ Example Director’s Console record
      Password = "GN0uRo7PTUmlMbqrJ2Gr1p0fk0HQJTxwnFyE4WSST3MWZseR"
      CommandACL = status, .status
    }
-
-A full example can be found at :ref:`SampleDirectorConfiguration`.
-

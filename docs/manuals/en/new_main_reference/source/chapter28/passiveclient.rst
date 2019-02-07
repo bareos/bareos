@@ -24,7 +24,7 @@ By using Passive Client, the initialization of the datachannel is reversed, so t
 
 -  The client never needs any name resolution and is totally independent from any resolving issues.
 
-.. image:: images/passive-client-communication.*
+.. image:: /_static/images/passive-client-communication.*
    :width: 60.0%
 
 

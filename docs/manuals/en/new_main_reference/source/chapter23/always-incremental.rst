@@ -19,19 +19,19 @@ To better understand the advantages of the Always Incremental Backup scheme, we 
 
 The following figure shows the jobs available for restore over time. Red are full backups, green are differential backups and blue are incremental Backups. When you look for a data at the horizontal axis, you see what backup jobs are available for a restore at this given time.
 
-.. image:: images/inc-diff-full-jobs_available.*
+.. image:: /_static/images/inc-diff-full-jobs_available.*
 
 
 
 The next figure shows the amount of data being backed up over the network from that client over time:
 
-.. image:: images/inc-diff-full-jobdata.*
+.. image:: /_static/images/inc-diff-full-jobdata.*
 
 
 
 Depending on the retention periods, old jobs are removed to save space for newer backups:
 
-.. image:: images/inc-diff-full-jobs_available-zoom.*
+.. image:: /_static/images/inc-diff-full-jobs_available-zoom.*
 
 
 
@@ -235,7 +235,7 @@ The following configuration extract shows how a client backup is configured for 
 
 The following image shows the available backups for each day:
 
-.. image:: images/always-incremental.*
+.. image:: /_static/images/always-incremental.*
 
 
 
@@ -249,7 +249,7 @@ This can go on more or less forever and there will be always an incremental hist
 
 The following plot shows what happens if a job is not run for a certain amount of time.
 
-.. image:: images/always-incremental-with-pause-7days-retention-no-keep.*
+.. image:: /_static/images/always-incremental-with-pause-7days-retention-no-keep.*
 
 
 
@@ -259,7 +259,7 @@ For this reason, the directive **Always Incremental Keep Number**:sup:`Dir`:sub:
 
 Setting **Always Incremental Keep Number**:sup:`Dir`:sub:`Job`\  to 7 in our case leads to the following result:
 
-.. image:: images/always-incremental-with-pause-7days-retention-7days-keep.*
+.. image:: /_static/images/always-incremental-with-pause-7days-retention-7days-keep.*
 
 
 
@@ -291,7 +291,7 @@ The following figure shows the Data Volume being moved during the normal always 
 
 -  The green bars show the amount of data being moved every day during the consolidation jobs.
 
-.. image:: images/always-incremental-jobdata.*
+.. image:: /_static/images/always-incremental-jobdata.*
 
 
 
@@ -311,14 +311,14 @@ The resulting interval between full consolidations when running daily backups an
 
 \centering
 
-.. figure:: images/always-incremental-jobdata-AlwaysIncrementalMaxFullAge_21_days.*
+.. figure:: /_static/images/always-incremental-jobdata-AlwaysIncrementalMaxFullAge_21_days.*
    :alt: Data Volume being moved with "Always Incremental Max Full Age"
 
    Data Volume being moved with "Always Incremental Max Full Age"
 
 \centering
 
-.. figure:: images/always-incremental-jobs_available-AlwaysIncrementalMaxFullAge_21_days.*
+.. figure:: /_static/images/always-incremental-jobs_available-AlwaysIncrementalMaxFullAge_21_days.*
    :alt: Jobs Available with "Always Incremental Max Full Age"
 
    Jobs Available with "Always Incremental Max Full Age"
@@ -332,7 +332,7 @@ When the **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  of many clien
 
 The following figure shows the amount of data being copied by the virtual jobs that do the consolidation when having 3 identically configured backup jobs:
 
-.. image:: images/jobdata_multiple_clients.*
+.. image:: /_static/images/jobdata_multiple_clients.*
 
 
 
@@ -362,14 +362,14 @@ The number of always incremental jobs, the interval that the jobs are triggered 
 
 \centering
 
-.. figure:: images/jobdata_multiple_clients_maxfullconsilidate.*
+.. figure:: /_static/images/jobdata_multiple_clients_maxfullconsilidate.*
    :alt: Data Volume being moved with Max Full Consolidations = 1
 
    Data Volume being moved with Max Full Consolidations = 1
 
 \centering
 
-.. figure:: images/jobs_available_multiple_clients_maxfullconsolidate.*
+.. figure:: /_static/images/jobs_available_multiple_clients_maxfullconsolidate.*
    :alt: Jobs Available with Max Full Consolidations = 1
 
    Jobs Available with Max Full Consolidations = 1
@@ -409,7 +409,7 @@ As all full backups go into the **AI-Consolidated**:sup:`Dir`:sub:`pool`\ , we j
 
 As can be seen in the plot, the copy job creates a copy of the current full backup that is available and is already 7 days old.
 
-.. image:: images/always-incremental-copy-job-archiving.*
+.. image:: /_static/images/always-incremental-copy-job-archiving.*
 
 
 
@@ -446,7 +446,7 @@ To make sure the longterm \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} 
 
 As can be seen on the plot, the \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
 
-.. image:: images/always-incremental-virtualfull-job-archiving.*
+.. image:: /_static/images/always-incremental-virtualfull-job-archiving.*
 
 
 
@@ -465,13 +465,13 @@ This can be done in two ways
 
 #. Install a storage daemon in the remote location that needs to be backed up and connect it to the main director. This makes it easy to make a local backup in the remote location and then transfer the volumes to the local storage. For this option the communication between the local director and the remote storage daemon needs to be possible.
 
-.. image:: images/ai-transfer-first-backup2.*
+.. image:: /_static/images/ai-transfer-first-backup2.*
 
 
 
 #. Install a director and a storage daemon in the remote location. This option means that the backup is done completely independent from the local director and only the volume is then transferred and needs to be imported afterwards.
 
-.. image:: images/ai-transfer-first-backup3.*
+.. image:: /_static/images/ai-transfer-first-backup3.*
 
 
 

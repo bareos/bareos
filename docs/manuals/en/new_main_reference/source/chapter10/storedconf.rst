@@ -188,12 +188,3 @@ Messages Resource
 
 For a description of the Messages Resource, please see the :ref:`MessagesChapter` chapter of this manual.
 
-.. _ExampleStorageConfiguration:
-
-Example Storage Daemon Configuration File
------------------------------------------
-
-A example Storage Daemon configuration file might be the following:
-
-.. literalinclude:: ../../main/bareos-sd.conf
-

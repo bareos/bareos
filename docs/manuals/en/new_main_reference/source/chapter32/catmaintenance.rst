@@ -38,10 +38,10 @@ The first choice is, if **dbconfig-common** should be used at all. If you decide
 
 If you decided to use **dbconfig-common**, the next question will only be asked, if more than one Bareos database backend (**bareos-database-***) is installed. If this is the case, select the database backend you want to use.
 
-.. image:: images/dbconfig-1-enable.*
+.. image:: /_static/images/dbconfig-1-enable.*
    :width: 45.0%
 
-.. image:: images/dbconfig-2-select-database-type.*
+.. image:: /_static/images/dbconfig-2-select-database-type.*
    :width: 45.0%
 
 

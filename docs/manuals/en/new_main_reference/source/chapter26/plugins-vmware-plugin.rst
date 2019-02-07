@@ -44,7 +44,7 @@ Current limitations amongst others are:
 Requirements
 ~~~~~~~~~~~~
 
-As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 5.x. It does not work with standalone unlicensed |vmware| ESXi\trademark.
+As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 5.x. It does not work with standalone unlicensed |vmware| ESXi\ :sup:`(TM)`.
 
 Since Bareos :index:`Version >= 17.2.4 <pair: bareos-17.2.4; VMware Plugin: VDDK 6.5.2>` the plugin is using the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it should be compatible with vSphere 6.5 and the next major release (except new features) and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at https://code.vmware.com/web/sdk/65/vddk for details.
 

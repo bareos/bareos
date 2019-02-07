@@ -96,12 +96,7 @@ An example File Daemon configuration file might be the following:
 ::
 
    #
-   # Default  Bareos File Daemon Configuration file
-   #
-   #  For Bareos release 12.4.4 (12 June 2013)
-   #
-   # There is not much to change here except perhaps the
-   # File daemon Name to
+   # Bareos File Daemon Configuration file
    #
 
    #
