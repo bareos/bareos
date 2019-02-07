@@ -126,43 +126,18 @@
 
 \part{Introduction and Tutorial}
 
-\include{general}
-\include{state}
+\chapter{What is Bareos?}
+\label{GeneralChapter}
+  \include{general}
+  \include{state}
 
-
-\chapter{Installing Bareos}
-\label{InstallChapter}
-\index[general]{Bareos!Installing}
-\index[general]{Installation!Linux}
-
-  \input{install}      % install
-
-\chapter{Installing Bareos Webui}
-\label{sec:webui}
-\label{sec:install-webui}
-\index[general]{Webui}
-\index[general]{Webui!Install}
-
-  \input{webui}
-
-\chapter{Updating Bareos}
-\label{bareos-update}
-
-  \input{update}
-
-
-\chapter{Getting Started with Bareos}
-\label{QuickStartChapter}
-
-    \input{quickstart}   % install
-
-
-
+\include{install}
+\include{webui}
+\include{update}
+\include{quickstart}   % install
 \include{tutorial}
-
 \include{critical}     % install
 
-%\include{webui}
 
 \part{Configuration}
 
@@ -204,7 +179,7 @@
 
 \include{basejob}
 
-\include{plugins}
+\input{plugins}
 
 \include{win32}
 
@@ -216,9 +191,7 @@
 \include{tls}
 \include{dataencryption}
 
-\chapter{NDMP Backups with Bareos}
-\input{ndmp}
-
+\include{ndmp}
 
 \include{catmaintenance}  %catalog
 
@@ -228,14 +201,9 @@
 \appendix
 \part{Appendix}
 
-\input{requirements}
+\include{requirements}
 
-\chapter{Operating Systems}
-\label{SupportedOSes}
-\index[general]{Systems!Supported Operating Systems}
-\index[general]{Support!Operating Systems}
-
-    \input{supportedoses}
+\include{supportedoses}
 
 % outdated information
 %\include{supporteddrives}
@@ -259,45 +227,18 @@
 
 \include{tables}
 
-\chapter{Howtos}
-\input{howto}
-
+\include{howto}
 
 \include{rescue}
 
-\chapter{Troubleshooting}
-\input{troubleshooting}
+\include{troubleshooting}
 
-\chapter{Debugging}
-\input{debug}
+\include{debug}
 
-\chapter{Release Notes}
-\input{releasenotes}
+\include{releasenotes}
 
-\chapter{Bareos Copyright, Trademark, and Licenses}
-\label{LicenseChapter}
-\index[general]{License!Bareos Copyright Trademark Licenses}
-\index[general]{Bareos Copyright, Trademark, and Licenses}
+\include{license}
 
-    \input{license}
-
-    %\include{fdl}
-\pagebreak
-\section{GNU Free Documentation License}
-    \label{fdl}
-    \verbatiminput{fdl.txt}
-
-    %\include{agpl}
-\pagebreak
-\section{GNU Affero Gerneral Public License}
-    \label{agpl}
-    \verbatiminput{agpl.txt}
-
-    %\include{lesser}
-\pagebreak
-\section{GNU Lesser Gerneral Public License}
-    \label{lgpl}
-    \verbatiminput{lgpl.txt}
 
 % pull in the index
 %\clearpage

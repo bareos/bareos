@@ -1,3 +1,8 @@
+\chapter{Installing Bareos}
+\label{InstallChapter}
+\index[general]{Bareos!Installing}
+\index[general]{Installation!Linux}
+
 If you are like me, you want to get Bareos running immediately to get a feel
 for it, then later you want to go back and read about all the details. This
 chapter attempts to accomplish just that: get you going quickly without all
@@ -51,11 +56,11 @@ Bareos offers the following database backends:
         \warning{The Sqlite backend is only intended for testing, not for productive use.}
 \end{itemize}
 
-\paragraph{PostgreSQL} is the default backend.
-
-\paragraph{MariaDB/MySQL} backend is also included.
-
-\paragraph{Sqlite} backend is intended for testing purposes only.
+\begin{description}
+    \item[PostgreSQL] is the default backend.
+    \item[MariaDB/MySQL] backend is also included.
+    \item[Sqlite] backend is intended for testing purposes only.
+\end{description}
 
 The Bareos database packages have there dependencies only to the database client packages,
 therefore the database itself must be installed manually.

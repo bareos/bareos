@@ -224,6 +224,7 @@ jobid=536
 \item [catalogs]
   Used in the show command. Takes no arguments.
 \item [client \textbar\ fd]
+  Used to specify a client (or filedaemon).
 \item [clients]
   Used in the show, list, and llist commands. Takes no arguments.
 \item [counters]
@@ -237,9 +238,8 @@ jobid=536
   jobs scheduled for the number of days you want. It can also be used on the  \bcommand{rerun}{} command, where it will automatically select all failed jobids in the last number of days for rerunning.
 \item [devices]
   Used in the show command. Takes no arguments.
-\item [director \textbar\ dir]
-\item [directors]
-  Used in the show command. Takes no arguments.
+\item [director \textbar\ dir \textbar\ directors]
+  Used in the show and status command. Takes no arguments.
 \item [directory]
   Used in the restore command. Its argument specifies the directory
   to be restored.
@@ -258,6 +258,7 @@ jobid=536
 \item [files]
   Used in the list and llist commands. Takes no arguments.
 \item [fileset]
+  Used in the run and restore command. Specifies the fileset.
 \item [filesets]
   Used in the show command. Takes no arguments.
 \item [help]
@@ -285,9 +286,11 @@ jobid=536
   Jobs that ran.  It is typically useful if you want to list
   all jobs of a particular name.
 \item [level]
+  Used in the run command. Specifies the backup level.
 \item [listing]
   Permitted on the estimate command. Takes no argument.
 \item [limit]
+  Specifies the maximum number of items in the result.
 \item [messages]
   Used in the show command. Takes no arguments.
 \item [media]
@@ -299,6 +302,7 @@ jobid=536
 \item [off]
   Takes no keyword.
 \item [pool]
+  Specify the pool to be used.
 \item [pools]
   Used in the show, list, and llist commands. Takes no arguments.
 \item [select]
@@ -308,6 +312,7 @@ jobid=536
 \item [schedules]
   Used in the show command. Takes no arguments.
 \item [storage \textbar\ store \textbar\ sd]
+  Used to specify the name of a storage daemon.
 \item [storages]
   Used in the show command. Takes no arguments.
 \item [ujobid]
@@ -317,6 +322,7 @@ jobid=536
   with the date and time the job was run. This keyword is useful
   if you want to completely identify the Job instance run.
 \item [volume]
+  Used to specify a volume.
 \item [volumes]
   Used in the list and llist commands. Takes no arguments.
 \item [where]
@@ -1042,10 +1048,9 @@ mount storage=<storage-name> [slot=<num>] [drive=<num>]
 mount [jobid=<id> | job=<job-name>]
 \end{bconsole}
 
-   If you have specified \linkResourceDirectiveValue{Sd}{Device}{Automatic  Mount}{yes},
+   If you have specified \linkResourceDirectiveValue{Sd}{Device}{Automatic Mount}{yes},
    under most circumstances, Bareos will automatically access
-   the Volume unless you have explicitly \bcommand{unmount}{}ed it in  the Console
-   program.
+   the Volume unless you have explicitly unmounted it (in the Console program).
 
 \item [move]
    \index[general]{Console!Command!move}
