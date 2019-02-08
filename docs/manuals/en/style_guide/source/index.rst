@@ -17,3 +17,4 @@ Bareos Style Guide
    seldom_text
    images
    releases
+   trouble
