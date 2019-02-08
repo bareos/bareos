@@ -44,6 +44,9 @@
 
 <script>
 export default {
-  name: 'BareosUi'
+  name: 'BareosWebUI',
+  beforeCreate () {
+    this.$store.commit('initializeStore')
+  }
 }
 </script>

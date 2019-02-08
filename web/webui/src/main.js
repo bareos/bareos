@@ -48,6 +48,12 @@ Vue.use(VueNativeSock, process.env.VUE_APP_SOCKET, {
 
 Vue.config.productionTip = false
 
+// Subscribe to store updates
+store.subscribe((mutation, state) => {
+  // Store the state object as a JSON string
+  localStorage.setItem('store', JSON.stringify(state))
+})
+
 new Vue({
   router,
   store,
