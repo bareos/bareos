@@ -1,53 +1,37 @@
+# -*- coding: utf-8 -*-
+
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from docutils.parsers.rst import directives
+#from sphinx.util.docutils import SphinxDirective
 
-class Limitation(nodes.Structural, nodes.Element):
-    pass
-
-class LimitationDirective(Directive):
+class Limitation(Directive):
 
     # Define the parameters the directive expects
-    required_arguments = 0
+    required_arguments = 1
     optional_arguments = 0
 
     # A boolean, indicating if the final argument may contain whitespace
     final_argument_whitespace = True
-    option_spec = {'title', }
+    #option_spec = {'title', }
     has_content = True
 
     def run(self):
+
         # Raise an error if the directive does not have contents.
-        sett = self.state.document.settings
-        env = self.state.document.settings.env
-
-        config = env.config
-
         self.assert_has_content()
-        text = '\n'.join(self.content)
 
-        # Get access to the options of directive
-        options = self.options
+        title = 'Limitation: ' + self.arguments[0]
+        text  = '\n'.join(self.content)
 
-        # Create the limitation content, to be populated by `nested_parse`.
-        limitation_content = nodes.paragraph(rawsource=text)
+        paragraph = nodes.paragraph()
+        self.state.nested_parse(self.content, self.content_offset, paragraph)
 
-        # Parse the directive contents.
-        self.state.nested_parse(self.content, self.content_offset, limitation_content)
-
-        # Create a title
-        limitation_title = nodes.title("Limitations: " + options["title"])
-
-        # Create the limitation node
-        node = Limitation()
-        node += limitation_title
-        node += limitation_content
-
-        # Return the result
-        return [node]
-
-#class Limitation(LimitationDirective):
- #   pass
+        result  = nodes.section(ids=['limitation'])
+        result += nodes.title(text=title)
+        #result += nodes.paragraph(text=text)
+        result += paragraph
+        return [result]
 
 def setup(app):
-    app.add_node(Limitation)
-    app.add_directive("limitation", LimitationDirective)
+    directives.register_directive("limitation", Limitation)

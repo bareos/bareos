@@ -5,11 +5,7 @@
 from   __future__ import print_function
 import argparse
 import logging
-#import fileinput
 from   pandocfilters import toJSONFilter, Code, Str, Para, Plain
-#from pyparsing import Word, alphas, alphanums, Literal, restOfLine, OneOrMore, \
-#    empty, Suppress, replaceWith, nestedExpr
-from   pyparsing import *
 import re
 import sys
 
@@ -938,11 +934,23 @@ class Translate(object):
         # \index[general]{#1!Limitation!#2}%
         # }
         component, summary, text = item.getParameters()
-        if item.getOptionalParameters():
-            #item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n{2}\n'.format(component, summary, text))
-            item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n\n.. limitation:: **{1}.**\n{2}\n\n'.format(component, summary, text))
+
+        indenttext = '   '
+        # get indention of 2. line
+        match = re.match(r'.*?\n(\s*).*', text)
+        if match:
+            indenttext = match.expand(r'\1')
         else:
-            item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n\n.. limitation:: **Limitation {0}: {1}.**\n{2}\n\n'.format(component, summary, text))
+            # only a single line
+            match = re.match(r'(\s*).*', text)
+            if match:
+                indenttext = match.expand(r'\1')
+
+        #if item.getOptionalParameters():
+        #    #item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n{2}\n'.format(component, summary, text))
+        #    item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n\n.. limitation:: **{1}.**\n{2}\n\n'.format(component, summary, text))
+        #else:
+        item.replace(b'.. limitation:: {component}: {summary}.\n\n{indent}.. index::\n{indent}   triple: Limitation; {component}; {summary}\n\n{text}\n\n'.format(indent=indenttext, component=component, summary=summary, text=text))
 
 
 
