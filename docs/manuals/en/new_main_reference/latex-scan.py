@@ -135,7 +135,7 @@ class RegexDefs(object):
             'idir': {
                 'pattern': r'\\idir\ *(.*?)\n',
                 'flags':   re.VERBOSE,
-                'replace': r'images/\1.*\n'
+                'replace': r'/_static/images/\1.*\n'
             },
             'EnvBareosConfigResource': {
                 'pattern': r'::\n\n(\s*)\\begin{bareosConfigResource}{(.*?)}{(.*?)}{(.*?)}\s*\n(.*?)\n\s*\\end{bareosConfigResource}',
@@ -219,7 +219,7 @@ class RegexDefs(object):
                 'pattern': r'\.\.\s\|image\|\simage::\s\\idir\s(.*?)$(.*?)(?=\n[^\s]|^$)',
                 'flags':   self.regexOpts, 
                 'replace': r'',
-                'return':  r'.. image:: images/\1.*\2\n\n',
+                'return':  r'.. image:: /_static/images/\1.*\2\n\n',
                 'extraHandling': True
             },
         }
@@ -621,7 +621,7 @@ class Translate(object):
 
     @staticmethod
     def bconfigInput(item):
-        item.replace(b'.. literalinclude:: ../../main/{0}\n'.format(*item.getParameters()))
+        item.replace(b'\n\n.. literalinclude:: /_static/{0}\n\n'.format(*item.getParameters()))
 
     @staticmethod
     def bcommand(item):
@@ -743,7 +743,7 @@ class Translate(object):
     #
     @staticmethod
     def hfill(item):
-        item.replace(b'')
+        item.replace(r'')
 
     @staticmethod
     def hide(item):
@@ -906,6 +906,10 @@ class Translate(object):
         #${PERL} 's#:raw-latex:`\\package\{(.*?)\}`#**\1**#g'   ${DESTFILE}
 
     @staticmethod
+    def pagebreak(item):
+        item.replace(r'')
+
+    @staticmethod
     def parameter(item):
         # don't use :option:, as this has a special behavior, that we don't use.
         item.replace(b'``{0}``'.format(*item.getParameters()))
@@ -947,6 +951,26 @@ class Translate(object):
     #
     # s
     #
+    @staticmethod
+    def sdBackend(item):    
+        #\newcommand{\sdBackend}[2]{%
+        #\ifthenelse{\isempty{#2}}{%
+        #\path|#1|%
+        #\index[general]{#1}%
+        #\index[sd]{Backend!#1}%
+        #}{%
+        #\path|#1| (#2)%
+        #\index[general]{#1 (#2)}%
+        #\index[general]{#2!#1}%
+        #\index[sd]{Backend!#1 (#2)}%
+        #}%
+        #}
+        name, backend = item.getParameters()
+        if backend:
+            item.replace(b'**{0}** ({1})'.format(name, backend))
+        else:
+            item.replace(b'**{0}**'.format(name))
+
     @staticmethod
     def sinceVersion(item):
         #% 1: daemon (dir|sd|fd),
@@ -990,10 +1014,11 @@ class Translate(object):
         ##sed  's#:raw-latex:`\\sinceVersion\{(.*)\}\{(.*)\}\{(.*)\}`#\n\n.. versionadded:: \3\n   \1 \2\n#g'   ${DESTFILE}
         #${PERL} 's|:raw-latex:`\\sinceVersion\{(.*)\}\{(.*)\}\{(.*)\}`|\3|g'   ${DESTFILE}
 
-    @staticmethod
-    def subsubsubsection(item):
-        name = item.getParameters()[0]
-        item.replace(u'{0}\n{1}\n'.format(name, len(name)*'"'))
+    # moved to preconversion, to avoid errors.
+    #@staticmethod
+    #def subsubsubsection(item):
+    #    name = item.getParameters()[0]
+    #    item.replace(u'{0}\n{1}\n'.format(name, len(name)*'"'))
 
     #
     # t
@@ -1019,6 +1044,11 @@ class Translate(object):
     @staticmethod
     def TODO(item):
         item.replace(r'.. TODO: {0}'.format(*item.getParameters()))
+
+    @staticmethod
+    def trademark(item):
+        # TODO: fix this
+        item.replace(r'\ :sup:`(TM)`')
 
     #
     # u
@@ -1046,7 +1076,21 @@ class Translate(object):
 
     @staticmethod
     def volumeparameter(item):
-        item.replace(b'{0} = **{1}**'.format(*item.getParameters()))
+        parameter, value = item.getParameters()
+        if value:
+            item.replace(b'**{0} = {1}**'.format(parameter, value))
+        else:
+            item.replace(b'**{0}**'.format(parameter))
+        #\newcommand{\volumeparameter}[2]{\ifthenelse{\isempty{#2}}{%
+        #  \path|#1|%
+        # }{%
+        #  \path|#1 = #2|%
+        #}}
+
+    @staticmethod
+    def verbatiminput(item):
+        # file must be in the source/ directory (at least there have to be a link)
+        item.replace(b'\n\n.. literalinclude:: /_static/{0}\n\n'.format(*item.getParameters()))
 
 
     #
