@@ -43,7 +43,7 @@
 </style>
 
 <script>
-  export default {
-    name: 'BareosUi'
-  }
+export default {
+  name: 'BareosUi'
+}
 </script>

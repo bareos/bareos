@@ -1,7 +1,9 @@
 <template>
   <div class="container">
     <section>
-      <pre>{{ consoleOutput }}</pre>
+      <pre v-for="m in consoleOutput">
+        {{ m.data }}
+      </pre>
     </section>
     <section>
       <b-field label="Command">
@@ -19,14 +21,14 @@ export default {
   name: 'BConsole',
   data () {
     return {
-      command: '',
-      consoleOutput: ''
+      command: ''
+      //consoleOutput: ''
     }
   },
   created () {
     // const enc = new TextDecoder('utf-8')
     //    this.$connect('ws://localhost:9000/dingens')
-    // this.$socket.send('some data')
+    //    this.$socket.send(command)
     //    this.$ws.on('message', data => {
     //      console.log(data)
     //    })
@@ -37,7 +39,7 @@ export default {
     // })
   },
   destroyed () {
-    this.$disconnect()
+    //this.$disconnect()
   },
   methods: {
     onSubmit: function () {
@@ -46,7 +48,14 @@ export default {
       //   console.log(this.$route.params.id)
       //   this.$socket.emit(this.$route.params.id, this.command)
       // }
+      this.$socket.send(this.command)
       this.command = ''
+    }
+  },
+  computed: {
+    consoleOutput () {
+      console.dir(this.$store.state.socket.message)
+      return this.$store.state.socket.message
     }
   }
 }
