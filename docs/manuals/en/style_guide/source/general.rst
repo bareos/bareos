@@ -189,6 +189,28 @@ Normally, there are no heading levels assigned to certain characters as the stru
 * ``^``, for subsubsections
 * ``'``, for paragraphs
 
+::
+
+   ####
+   Part
+   ####
+   
+   Chapter
+   =======
+
+   Section
+   -------
+
+   Subsection
+   ~~~~~~~~~~
+
+   Subsubsection
+   ^^^^^^^^^^^^^
+
+   Paragraph
+   '''''''''
+
+
 This convention has be introduced from the conversion of thw original LaTex source to RST,
 as :program:`pandoc` has created RST file with this section markers (except of parts, which are not created at all).
 
