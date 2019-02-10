@@ -24,14 +24,12 @@ A Bareos Storage Daemon can use various storage backends:
 **Rados** (Ceph Object Store)
    is used to access a Ceph object store.
 
+.. _SdBackendDroplet:
+
 Droplet Storage Backend
 -----------------------
 
-:index:`[TAG=Backend->Droplet] <pair: Backend; Droplet>` :index:`[TAG=Backend->Droplet->S3] <triple: Backend; Droplet; S3>` :index:`[TAG=Backend->S3|see {Backend->Droplet}] <triple: Backend; S3|see {Backend; Droplet}>` 
-
-.. _SdBackendDroplet:
-
-
+:index:`[TAG=Backend->Droplet] <pair: Backend; Droplet>` :index:`[TAG=Backend->Droplet->S3] <triple: Backend; Droplet; S3>` :index:`[TAG=Backend->S3|see {Backend->Droplet}] <triple: Backend; S3|see {Backend; Droplet}>`
 
 The **bareos-storage-droplet** backend (:index:`Version >= 17.2.7 <pair: bareos-17.2.7; Droplet>`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see `<https://github.com/scality/Droplet>`_.
 
@@ -42,7 +40,7 @@ Requirements
 
 -  Droplet S3:
 
-   -  The droplet S3 backend can only be used with virtual-hosted-style buckets like `http://<bucket>.<s3_server>/object <http://<bucket>.<s3_server>/object>`__. Path-style buckets are not supported. It has been tested successfully with AWS S3 and CEPH Object Gateway S3.
+   -  The droplet S3 backend can only be used with virtual-hosted-style buckets like http://bucket.s3_server/object. Path-style buckets are not supported. It has been tested successfully with AWS S3 and CEPH Object Gateway S3.
 
 Installation
 ~~~~~~~~~~~~
@@ -288,7 +286,7 @@ For performance, **Device Options**:sup:`Sd`:sub:`Device`\  should be configured
 New AWS S3 Buckets
 ^^^^^^^^^^^^^^^^^^
 
-As AWS S3 buckets are accessed via virtual-hosted-style buckets (like `http://<bucket>.<s3_server>/object <http://<bucket>.<s3_server>/object>`__) creating a new bucket results in a new DNS entry.
+As AWS S3 buckets are accessed via virtual-hosted-style buckets (like http://bucket.s3_server/object) creating a new bucket results in a new DNS entry.
 
 As a new DNS entry is not available immediatly, Amazon solves this by using HTTP temporary redirects (code: 307) to redirect to the correct host. Unfortenatly, the Droplet library does not support HTTP redirects.
 

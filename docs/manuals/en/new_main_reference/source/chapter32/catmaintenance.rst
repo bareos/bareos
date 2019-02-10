@@ -635,86 +635,39 @@ You will note that the File table (containing the file attributes) make up the l
 Without proper setup and maintenance, your Catalog may continue to grow indefinitely as you run Jobs and backup Files, and/or it may become very inefficient and slow. How fast the size of your Catalog grows depends on the number of Jobs you run and how many files they backup. By deleting records within the database, you can make space available for the new records that will be added during the next Job. By constantly deleting old expired records (dates older than the Retention period), your
 database size will remain constant.
 
+.. _Retention:
+
 Setting Retention Periods
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`[TAG=Setting Retention Periods] <single: Setting Retention Periods>` :index:`[TAG=Periods->Setting Retention] <pair: Periods; Setting Retention>` 
-
-.. _Retention:
-
-
+:index:`[TAG=Setting Retention Periods] <single: Setting Retention Periods>` :index:`[TAG=Periods->Setting Retention] <pair: Periods; Setting Retention>`
 
 Bareos uses three Retention periods: the File Retention period, the Job Retention period, and the Volume Retention period. Of these three, the File Retention period is by far the most important in determining how large your database will become.
 
 The File Retention and the Job Retention are specified in each Client resource as is shown below. The Volume Retention period is specified in the Pool resource, and the details are given in the next chapter of this manual.
 
-\begin{description}
+File Retention = <time-period-specification>
+   :index:`[TAG=File Retention] <single: File Retention>` :index:`[TAG=Retention->File] <pair: Retention; File>` The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
+   File and Job retention periods, but Bareos uses the current values found in the Director’s Client resource to do the pruning.
 
-   \item [File Retention = <time-period-specification>]
-      :index:`[TAG=File Retention] <single: File Retention>`
-      :index:`[TAG=Retention->File] <pair: Retention; File>`
-      The  File Retention record defines the length of time that  Bareos will keep
-   File records in the Catalog database.  When this time period expires, and if
-   {\bf AutoPrune} is set to {\bf yes}, Bareos will prune (remove) File records
-   that  are older than the specified File Retention period. The pruning  will
-   occur at the end of a backup Job for the given Client.  Note that the Client
-   database record contains a copy of the  File and Job retention periods, but
-   Bareos uses the  current values found in the Director's Client resource to  do
-   the pruning.
+   Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
 
-   Since File records in the database account for probably 80 percent of the
-   size of the database, you should carefully determine exactly what File
-   Retention period you need. Once the File records have been removed from
-   the database, you will no longer be able to restore individual files
-   in a Job. However, as long as the
-   Job record still exists, you will be able to restore all files in the
-   job.
-
-   Retention periods are specified in seconds, but as a convenience, there are
-   a number of modifiers that permit easy specification in terms of minutes,
-   hours, days, weeks, months, quarters, or years on the record.  See the
-   :ref:`Configuration chapter <Time>` of this manual for additional details
-   of modifier specification.
+   Retention periods are specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years on the record. See the :ref:`Configuration chapter <Time>` of this manual for additional details of modifier specification.
 
    The default File retention period is 60 days.
 
-   \item [Job Retention = <time-period-specification>]
-      :index:`[TAG=Job->Retention] <pair: Job; Retention>`
-      :index:`[TAG=Retention->Job] <pair: Retention; Job>`
-      The Job Retention record defines the length of time that {\bf Bareos}
-   will keep Job records in the Catalog database.  When this time period
-   expires, and if {\bf AutoPrune} is set to {\bf yes} Bareos will prune
-   (remove) Job records that are older than the specified Job Retention
-   period.  Note, if a Job record is selected for pruning, all associated File
-   and JobMedia records will also be pruned regardless of the File Retention
-   period set.  As a consequence, you normally will set the File retention
-   period to be less than the Job retention period.
+Job Retention = <time-period-specification>
+   :index:`[TAG=Job->Retention] <pair: Job; Retention>` :index:`[TAG=Retention->Job] <pair: Retention; Job>` The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
+   period set. As a consequence, you normally will set the File retention period to be less than the Job retention period.
 
-   As mentioned above, once the File records are removed from the database,
-   you will no longer be able to restore individual files from the Job.
-   However, as long as the Job record remains in the database, you will be
-   able to restore all the files backuped for the Job.
-   As a consequence, it is generally a good idea to retain the Job
-   records much longer than the File records.
+   As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backuped for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
 
-   The retention period is specified in seconds, but as a convenience, there
-   are a number of modifiers that permit easy specification in terms of
-   minutes, hours, days, weeks, months, quarters, or years.
-   See the :ref:`Configuration chapter <Time>` of this manual for additional details of
-   modifier specification.
+   The retention period is specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years. See the :ref:`Configuration chapter <Time>` of this manual for additional details of modifier specification.
 
    The default Job Retention period is 180 days.
 
-   \item **Auto Prune**:sup:`Dir`:sub:`Client`\ 
-      :index:`[TAG=AutoPrune] <single: AutoPrune>`
-      :index:`[TAG=Job->Retention->AutoPrune] <triple: Job; Retention; AutoPrune>`
-      If set to  {\bf yes},
-   Bareos will automatically apply
-   the File retention period and the Job  retention period for the Client at the
-   end of the Job.
-   If you turn this off by setting it to {\bf no}, your  Catalog will grow each
-   time you run a Job.
-   \end{description}
+**Auto Prune**:sup:`Dir`:sub:`Client`\ 
+   :index:`[TAG=AutoPrune] <single: AutoPrune>` :index:`[TAG=Job->Retention->AutoPrune] <triple: Job; Retention; AutoPrune>` If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
 .. _section-JobStatistics:
 
