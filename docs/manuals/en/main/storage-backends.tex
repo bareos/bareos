@@ -19,10 +19,10 @@ A Bareos Storage Daemon can use various storage backends:
 
 
 \section{Droplet Storage Backend}
+\label{SdBackendDroplet}
 \index[sd]{Backend!Droplet}
 \index[sd]{Backend!Droplet!S3}
 \index[sd]{Backend!S3|see {Backend!Droplet}}
-\label{SdBackendDroplet}
 
 The \package{bareos-storage-droplet} backend (\sinceVersion{sd}{Droplet}{17.2.7}) can be used to access Object Storage through \package{libdroplet}.
 Droplet support a number of backends, most notably S3.
@@ -34,7 +34,7 @@ For details about Droplet itself see \externalReferenceDroplet.
   \item The Bareos package \package{bareos-storage-droplet} is not available on all platforms. Please refer to \nameref{sec:packages}.
   \item Droplet S3:
   \begin{itemize}
-    \item The droplet S3 backend can only be used with virtual-hosted-style buckets like \url{http://<bucket>.<s3_server>/object}.
+    \item The droplet S3 backend can only be used with virtual-hosted-style buckets like \url{http://bucket.s3_server/object}.
         Path-style buckets are not supported.
         It has  been tested successfully with AWS S3 and CEPH Object Gateway S3.
   \end{itemize}
@@ -275,7 +275,7 @@ For  performance, \linkResourceDirective{Sd}{Device}{Device Options} should be c
 
 \subsubsection{New AWS S3 Buckets}
 
-As AWS S3 buckets are accessed via virtual-hosted-style buckets (like \url{http://<bucket>.<s3_server>/object})
+As AWS S3 buckets are accessed via virtual-hosted-style buckets (like \url{http://bucket.s3_server/object})
 creating a new bucket results in a new DNS entry.
 
 As a new DNS entry is not available immediatly, Amazon solves this by using HTTP temporary redirects (code: 307) to redirect to the correct host.
