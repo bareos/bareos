@@ -105,6 +105,7 @@ We can use seqdiag:
 We can use nwdiag:
 
 .. nwdiag::
+
    {
      network dmz {
          address = "210.x.x.x/24"
@@ -147,7 +148,8 @@ We can use plantuml:
 
 
 History
-~~~~~~~
+-------
+
 
 Bareos is a fork of the open source project Bacula version 5.2. In 2010
 the Bacula community developer Marco van Wieringen started to collect
@@ -165,7 +167,7 @@ maintain a list of contributors to Bacula (until the time we’ve started
 the fork) and Bareos in our AUTHORS file.
 
 Contributions
-~~~~~~~~~~~~~
+-------------
 
 Contributions to the Bareos project come in many forms: ideas,
 participation in helping people on the bareos-users email list,
@@ -173,7 +175,7 @@ packaging Bareos binaries for the community, helping improve the
 documentation, and submitting code.
 
 Patches
-~~~~~~~
+-------
 
 Subject to the copyright assignment described below, your patches should
 be sent in **git format-patch** format relative to the current contents

@@ -62,24 +62,3 @@ appendix-j/troubleshooting.tex
 appendix-k/debug.tex
 appendix-l/releasenotes.tex
 appendix-m/license.tex
-
-# developer guide (only copying from developers guide)
-developers/releasenotes.rst
-developers/api.rst
-developers/catalog.rst
-developers/daemonprotocol.rst
-developers/directorConsole.rst
-developers/fdl.rst
-developers/file.rst
-developers/generaldevel.rst
-developers/mediaformat.rst
-developers/mempool.rst
-developers/messages.rst
-developers/netprotocol.rst
-developers/platformsupport.rst
-developers/pluginAPI.rst
-developers/porting.rst
-developers/regression.rst
-developers/smartall.rst
-developers/storage.rst
-developers/tls-techdoc.rst

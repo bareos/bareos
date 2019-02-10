@@ -10,14 +10,12 @@ PHASE=${1:-ALL}
 FILES=${2:-$(cat destfiles.txt | grep -v ^#)}
 
 for destfile in $FILES; do
-  file=`echo $destfile | sed 's#.*/##g'`
-  chapterdir=`echo $destfile | sed 's#/.*##g'`
-  filebase=`basename $destfile .tex`
+    file=`echo $destfile | sed 's#.*/##g'`
+    chapterdir=`echo $destfile | sed 's#/.*##g'`
+    filebase=`basename $destfile .tex`
 
-  mkdir -p ${WORK_DIR}${chapterdir}
-  mkdir -p ${TARGET_DIR}${chapterdir}
-
-  if [ "${chapterdir}" != "developers" ]; then
+    mkdir -p ${WORK_DIR}${chapterdir}
+    mkdir -p ${TARGET_DIR}${chapterdir}
 
     if [ $PHASE == "ALL" ] || [ $PHASE == "prepandoc" ]; then
         printf "%-50s (%s)\n" "$destfile" "prepandoc"
@@ -37,11 +35,4 @@ for destfile in $FILES; do
         printf "%s\n\n" "   It was automatically converted from the corresponding .tex file" >> ${TARGET_DIR}${chapterdir}/${filebase}.rst
         cat ${WORK_DIR}${chapterdir}/${filebase}.rst | ./latex-scan.py --standalone >> ${TARGET_DIR}${chapterdir}/${filebase}.rst 2>${WORK_DIR}${chapterdir}/${filebase}.latex-scan.log || exit "failed to post convert ${WORK_DIR}${chapterdir}/${filebase}.rst"
     fi
- else
-   # developers files are only copied over
-    if [ $PHASE == "ALL" ]; then
-        #cp ../developers/source/${file} ${TARGET_DIR}${chapterdir}
-        echo "not doing: cp ../developers/source/${file} ${TARGET_DIR}${chapterdir}"
-    fi
- fi
 done
