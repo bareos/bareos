@@ -47,17 +47,22 @@ rst_epilog = '''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-#extensions = ['sphinxcontrib.plantuml']
-extensions = ['sphinx.ext.todo',
-    'sphinx.ext.coverage',
+extensions = [
+    'sphinx_issues',
     'sphinx.ext.autosectionlabel',
-    'sphinxcontrib.plantuml',
+    'sphinx.ext.coverage',
+    'sphinx.ext.todo',
+    'sphinxcontrib.actdiag',
     'sphinxcontrib.blockdiag',
     'sphinxcontrib.nwdiag',
+    'sphinxcontrib.plantuml',
     'sphinxcontrib.seqdiag',
-    'sphinxcontrib.actdiag',
-    'sphinx_issues',
-    ]
+]
+
+# True to prefix each section label with the name of the document it is in, followed by a colon.
+# For example, index:Introduction for a section called Introduction that appears in document index.rst.
+# Useful for avoiding ambiguity when the same section heading appears in different documents.
+autosectionlabel_prefix_document = True
 
 issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
 issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
