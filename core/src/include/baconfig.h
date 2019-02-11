@@ -309,194 +309,114 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
 #define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
 /**
-* The digit following Dmsg and Emsg indicates the number of substitutions in
-* the message string. We need to do this kludge because non-GNU compilers
-* do not handle varargs #defines.
+* As of C++11 varargs macros are part of the standard.
+* We keep the kludgy versions for backwards compatability for now
+* but they're going to go away soon.
 */
 /** Debug Messages that are printed */
-#define Dmsg0(lvl, msg) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg)
-#define Dmsg1(lvl, msg, a1) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1)
-#define Dmsg2(lvl, msg, a1, a2) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
-#define Dmsg3(lvl, msg, a1, a2, a3) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Dmsg4(lvl, msg, a1, a2, a3, a4) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
-#define Dmsg5(lvl, msg, a1, a2, a3, a4, a5) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
-#define Dmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6)
-#define Dmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7)
-#define Dmsg8(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8) \
-if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
-#define Dmsg9(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
-if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-#define Dmsg10(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) \
-if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
-#define Dmsg11(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) \
-if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
-#define Dmsg12(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12) \
-if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-#define Dmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
-if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
+#define Dmsg0(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg1(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg2(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg3(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg4(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg5(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg6(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg7(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg8(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg9(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg10(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg11(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg12(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Dmsg13(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
-#define Tmsg0(lvl, msg) \
-t_msg(__FILE__, __LINE__, lvl, msg)
-#define Tmsg1(lvl, msg, a1) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1)
-#define Tmsg2(lvl, msg, a1, a2) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
-#define Tmsg3(lvl, msg, a1, a2, a3) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Tmsg4(lvl, msg, a1, a2, a3, a4) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
-#define Tmsg5(lvl, msg, a1, a2, a3, a4, a5) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
-#define Tmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6)
-#define Tmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7)
-#define Tmsg8(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
-#define Tmsg9(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-#define Tmsg10(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
-#define Tmsg11(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
-#define Tmsg12(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-#define Tmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
-t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
+#define Tmsg0(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg1(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg2(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg3(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg4(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg5(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg6(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg7(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg8(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg9(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg10(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg11(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg12(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Tmsg13(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
 /** Messages that are printed (uses p_msg) */
-#define Pmsg0(lvl, msg) \
-p_msg(__FILE__, __LINE__, lvl, msg)
-#define Pmsg1(lvl, msg, a1) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1)
-#define Pmsg2(lvl, msg, a1, a2) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
-#define Pmsg3(lvl, msg, a1, a2, a3) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Pmsg4(lvl, msg, a1, a2, a3, a4) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
-#define Pmsg5(lvl, msg, a1, a2, a3, a4, a5) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
-#define Pmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6)
-#define Pmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7)
-#define Pmsg8(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
-#define Pmsg9(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-#define Pmsg10(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
-#define Pmsg11(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
-#define Pmsg12(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-#define Pmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
-#define Pmsg14(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
-#define Pmsg15(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) \
-p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
+#define Pmsg0(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg1(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg2(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg3(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg4(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg5(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg6(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg7(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg8(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg9(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg10(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg11(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg12(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg13(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg14(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define Pmsg15(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
 /** Messages that are printed using fixed size buffers (uses p_msg_fb) */
-#define FPmsg0(lvl, msg) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg)
-#define FPmsg1(lvl, msg, a1) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg, a1)
-#define FPmsg2(lvl, msg, a1, a2) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2)
-#define FPmsg3(lvl, msg, a1, a2, a3) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define FPmsg4(lvl, msg, a1, a2, a3, a4) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
-#define FPmsg5(lvl, msg, a1, a2, a3, a4, a5) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
-#define FPmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
-p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6)
+#define FPmsg0(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define FPmsg1(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define FPmsg2(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define FPmsg3(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define FPmsg4(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define FPmsg5(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
+#define FPmsg6(lvl, ...) p_msg_fb(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
 /** Daemon Error Messages that are delivered according to the message resource */
-#define Emsg0(typ, lvl, msg) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg)
-#define Emsg1(typ, lvl, msg, a1) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg, a1)
-#define Emsg2(typ, lvl, msg, a1, a2) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg, a1, a2)
-#define Emsg3(typ, lvl, msg, a1, a2, a3) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg, a1, a2, a3)
-#define Emsg4(typ, lvl, msg, a1, a2, a3, a4) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg, a1, a2, a3, a4)
-#define Emsg5(typ, lvl, msg, a1, a2, a3, a4, a5) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg, a1, a2, a3, a4, a5)
-#define Emsg6(typ, lvl, msg, a1, a2, a3, a4, a5, a6) \
-e_msg(__FILE__, __LINE__, typ, lvl, msg, a1, a2, a3, a4, a5, a6)
+#define Emsg0(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
+#define Emsg1(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
+#define Emsg2(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
+#define Emsg3(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
+#define Emsg4(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
+#define Emsg5(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
+#define Emsg6(typ, lvl, ...) e_msg(__FILE__, __LINE__, typ, lvl, __VA_ARGS__)
 
 /** Job Error Messages that are delivered according to the message resource */
-#define Jmsg0(jcr, typ, lvl, msg) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg)
-#define Jmsg1(jcr, typ, lvl, msg, a1) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1)
-#define Jmsg2(jcr, typ, lvl, msg, a1, a2) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2)
-#define Jmsg3(jcr, typ, lvl, msg, a1, a2, a3) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3)
-#define Jmsg4(jcr, typ, lvl, msg, a1, a2, a3, a4) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4)
-#define Jmsg5(jcr, typ, lvl, msg, a1, a2, a3, a4, a5) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5)
-#define Jmsg6(jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6)
-#define Jmsg7(jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6, a7) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6, a7)
-#define Jmsg8(jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8) \
-j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
+#define Jmsg0(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg1(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg2(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg3(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg4(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg5(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg6(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg7(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Jmsg8(jcr, typ, lvl, ...) j_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
 
 /** Queued Job Error Messages that are delivered according to the message resource */
-#define Qmsg0(jcr, typ, lvl, msg) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg)
-#define Qmsg1(jcr, typ, lvl, msg, a1) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1)
-#define Qmsg2(jcr, typ, lvl, msg, a1, a2) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2)
-#define Qmsg3(jcr, typ, lvl, msg, a1, a2, a3) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3)
-#define Qmsg4(jcr, typ, lvl, msg, a1, a2, a3, a4) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4)
-#define Qmsg5(jcr, typ, lvl, msg, a1, a2, a3, a4, a5) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5)
-#define Qmsg6(jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6) \
-q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6)
+#define Qmsg0(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg1(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg2(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg3(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg4(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg5(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
+#define Qmsg6(jcr, typ, lvl, ...) q_msg(__FILE__, __LINE__, jcr, typ, lvl, __VA_ARGS__)
 
 /** Memory Messages that are edited into a Pool Memory buffer */
-#define Mmsg0(buf, msg) \
-msg_(__FILE__, __LINE__, buf, msg)
-#define Mmsg1(buf, msg, a1) \
-msg_(__FILE__, __LINE__, buf, msg, a1)
-#define Mmsg2(buf, msg, a1, a2) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2)
-#define Mmsg3(buf, msg, a1, a2, a3) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3)
-#define Mmsg4(buf, msg, a1, a2, a3, a4) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4)
-#define Mmsg5(buf, msg, a1, a2, a3, a4, a5) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5)
-#define Mmsg6(buf, msg, a1, a2, a3, a4, a5, a6) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6)
-#define Mmsg7(buf, msg, a1, a2, a3, a4, a5, a6, a7) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6)
-#define Mmsg8(buf, msg, a1, a2, a3, a4, a5, a6, a7, a8) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6)
-#define Mmsg11(buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
-#define Mmsg15(buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) \
-msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
+#define Mmsg0(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg1(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg2(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg3(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg4(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg5(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg6(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg7(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg8(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg9(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg10(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg11(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg12(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg13(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg14(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
+#define Mmsg15(buf, ...) msg_(__FILE__, __LINE__, buf, __VA_ARGS__)
 
 class PoolMem;
 
