@@ -3,6 +3,7 @@
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
+from sphinx import addnodes
 #from sphinx.util.docutils import SphinxDirective
 
 class Limitation(Directive):
@@ -18,6 +19,8 @@ class Limitation(Directive):
 
     def run(self):
 
+        env = self.state.document.settings.env
+
         # Raise an error if the directive does not have contents.
         self.assert_has_content()
 
@@ -27,10 +30,20 @@ class Limitation(Directive):
         paragraph = nodes.paragraph()
         self.state.nested_parse(self.content, self.content_offset, paragraph)
 
-        result  = nodes.section(ids=['limitation'])
+
+        tgtid = 'index-%s' % env.new_serialno('index')
+        indexnode = addnodes.index()
+        indexnode['entries'] = [
+                ('single', 'Limitation; ' + self.arguments[0] , tgtid , '', None)
+                ]
+
+
+        result = nodes.section(ids=['limitation'])
         result += nodes.title(text=title)
         #result += nodes.paragraph(text=text)
         result += paragraph
+        result += indexnode
+
         return [result]
 
 def setup(app):
