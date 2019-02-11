@@ -55,13 +55,6 @@
 /* If this is set stdout will not be closed on startup */
 /* #define DEVELOPER 1 */
 
-/* adjust DEVELOPER_MODE for status command */
-#ifdef DEVELOPER
-#define DEVELOPER_MODE 1
-#else
-#define DEVELOPER_MODE 0
-#endif
-
 /*
  * SMCHECK does orphaned buffer checking (memory leaks)
  *  it can always be turned on, but has some minor performance
