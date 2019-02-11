@@ -68,7 +68,6 @@ static int const next_check_secs = 60;
 /* Forward referenced subroutines */
 static void find_runs();
 static void add_job(JobResource *job, RunResource *run, time_t now, time_t runtime);
-static void dump_job(job_item *ji, const char *msg);
 
 /* Imported subroutines */
 
@@ -138,8 +137,6 @@ again:
    next_job = (job_item *)jobs_to_run->first();
    jobs_to_run->remove(next_job);
 
-   dump_job(next_job, _("Dequeued job"));
-
    if (!next_job) {                /* we really should have something now */
       Emsg0(M_ABORT, 0, _("Scheduler logic error\n"));
    }
@@ -150,12 +147,10 @@ again:
       /* discard scheduled queue and rebuild with new schedule objects. */
       LockJobs();
       if (schedules_invalidated) {
-          dump_job(next_job, "Invalidated job");
           free(next_job);
           while (!jobs_to_run->empty()) {
               next_job = (job_item *)jobs_to_run->first();
               jobs_to_run->remove(next_job);
-              dump_job(next_job, "Invalidated job");
               free(next_job);
           }
           schedules_invalidated = false;
@@ -184,7 +179,6 @@ again:
    job = next_job->job;
 
    if (job->enabled && (!job->client || job->client->enabled)) {
-      dump_job(next_job, _("Run job"));
    }
 
    free(next_job);
@@ -428,17 +422,8 @@ static void add_job(JobResource *job, RunResource *run, time_t now, time_t runti
     *  do run any job scheduled less than a minute ago.
     */
    if (((runtime - run->last_run) < 61) || ((runtime+59) < now)) {
-#ifdef SCHED_DEBUG
-      Dmsg4(000, "Drop: Job=\"%s\" run=%lld. last_run=%lld. now=%lld\n", job->hdr.name,
-            (utime_t)runtime, (utime_t)run->last_run, (utime_t)now);
-      fflush(stdout);
-#endif
       return;
    }
-#ifdef SCHED_DEBUG
-   Dmsg4(000, "Add: Job=\"%s\" run=%lld last_run=%lld now=%lld\n", job->hdr.name,
-            (utime_t)runtime, (utime_t)run->last_run, (utime_t)now);
-#endif
    /* accept to run this job */
    job_item *je = (job_item *)malloc(sizeof(job_item));
    je->run = run;
@@ -455,7 +440,6 @@ static void add_job(JobResource *job, RunResource *run, time_t now, time_t runti
       if (ji->runtime > je->runtime ||
           (ji->runtime == je->runtime && ji->Priority > je->Priority)) {
          jobs_to_run->InsertBefore(je, ji);
-         dump_job(je, _("Inserted job"));
          inserted = true;
          break;
       }
@@ -463,29 +447,6 @@ static void add_job(JobResource *job, RunResource *run, time_t now, time_t runti
    /* If place not found in queue, append it */
    if (!inserted) {
       jobs_to_run->append(je);
-      dump_job(je, _("Appended job"));
    }
-#ifdef SCHED_DEBUG
-   foreach_dlist(ji, jobs_to_run) {
-      dump_job(ji, _("Run queue"));
-   }
-   Dmsg0(000, "End run queue\n");
-#endif
-}
-
-static void dump_job(job_item *ji, const char *msg)
-{
-#ifdef SCHED_DEBUG
-   char dt[MAX_TIME_LENGTH];
-   int save_debug = debug_level;
-   if (debug_level < debuglevel) {
-      return;
-   }
-   bstrftime_nc(dt, sizeof(dt), ji->runtime);
-   Dmsg4(debuglevel, "%s: Job=%s priority=%d run %s\n", msg, ji->job->hdr.name,
-      ji->Priority, dt);
-   fflush(stdout);
-   debug_level = save_debug;
-#endif
 }
 } /* namespace directordaemon */
