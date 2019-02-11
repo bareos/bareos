@@ -89,11 +89,7 @@ static bool makedir(JobControlRecord *jcr, char *path, mode_t mode, int *created
 
 static void SetOwnMod(Attributes *attr, char *path, uid_t owner, gid_t group, mode_t mode)
 {
-   if (lchown(path, owner, group) != 0 && attr->uid == 0
-#ifdef AFS
-        && errno != EPERM
-#endif
-   ) {
+   if (lchown(path, owner, group) != 0 && attr->uid == 0) {
       BErrNo be;
       Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change owner and/or group of %s: ERR=%s\n"),
            path, be.bstrerror());
