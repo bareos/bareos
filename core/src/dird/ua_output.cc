@@ -1431,28 +1431,7 @@ RunResource *find_next_run(RunResource *run, JobResource *job, utime_t &runtime,
             BitIsSet(month, run->month) && BitIsSet(wom, run->wom) &&
             BitIsSet(woy, run->woy);
 
-#ifdef xxx
-         Pmsg2(000, "day=%d is_scheduled=%d\n", day, is_scheduled);
-         Pmsg1(000, "bit_set_mday=%d\n", BitIsSet(mday, run->mday));
-         Pmsg1(000, "bit_set_wday=%d\n", BitIsSet(wday, run->wday));
-         Pmsg1(000, "bit_set_month=%d\n", BitIsSet(month, run->month));
-         Pmsg1(000, "bit_set_wom=%d\n", BitIsSet(wom, run->wom));
-         Pmsg1(000, "bit_set_woy=%d\n", BitIsSet(woy, run->woy));
-#endif
-
          if (is_scheduled) { /* Jobs scheduled on that day */
-#ifdef xxx
-            char buf[300], num[10];
-            Bsnprintf(buf, sizeof(buf), "tm.hour=%d hour=", tm.tm_hour);
-            for (i=0; i<24; i++) {
-               if (BitIsSet(i, run->hour)) {
-                  Bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            Pmsg1(000, "%s", buf);
-#endif
             /* find time (time_t) job is to be run */
             Blocaltime(&future, &runtm);
             for (i= 0; i < 24; i++) {

@@ -781,35 +781,6 @@ void SetupNewDcrDevice(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *
    }
 }
 
-/**
- * Search the dcrs list for the given dcr. If it is found,
- *  as it should be, then remove it. Also zap the jcr pointer
- *  to the dcr if it is the same one.
- *
- * Note, this code will be turned on when we can write to multiple
- *  dcrs at the same time.
- */
-#ifdef needed
-static void RemoveDcrFromDcrs(DeviceControlRecord *dcr)
-{
-   JobControlRecord *jcr = dcr->jcr;
-   if (jcr->dcrs) {
-      int i = 0;
-      DeviceControlRecord *ldcr;
-      int num = jcr->dcrs->size();
-      for (i=0; i < num; i++) {
-         ldcr = (DeviceControlRecord *)jcr->dcrs->get(i);
-         if (ldcr == dcr) {
-            jcr->dcrs->remove(i);
-            if (jcr->dcr == dcr) {
-               jcr->dcr = NULL;
-            }
-         }
-      }
-   }
-}
-#endif
-
 static void AttachDcrToDev(DeviceControlRecord *dcr)
 {
    Device *dev;

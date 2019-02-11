@@ -254,23 +254,6 @@ static bool UseDeviceCmd(JobControlRecord *jcr)
       }
    }  while (ok && dir->recv() >= 0);
 
-#ifdef xxxx
-   /*
-    * Developer debug code
-    */
-   char *device_name;
-   if (debug_level >= debuglevel) {
-      foreach_alist(store, dirstore) {
-         Dmsg5(debuglevel, "Storage=%s media_type=%s pool=%s pool_type=%s append=%d\n",
-            store->name, store->media_type, store->pool_name,
-            store->pool_type, store->append);
-         foreach_alist(device_name, store->device) {
-            Dmsg1(debuglevel, "     Device=%s\n", device_name);
-         }
-      }
-   }
-#endif
-
    InitJcrDeviceWaitTimers(jcr);
    jcr->dcr = New(StorageDaemonDeviceControlRecord);
    SetupNewDcrDevice(jcr, jcr->dcr, NULL, NULL);

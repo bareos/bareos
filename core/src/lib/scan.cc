@@ -244,11 +244,6 @@ int ParseArgs(POOLMEM *cmd, POOLMEM *&args, int *argc,
       }
       argv[i] = p;                    /* save ptr to value or NULL */
    }
-#ifdef xxx_debug
-   for (int i=0; i < *argc; i++) {
-      Pmsg3(000, "Arg %d: kw=%s val=%s\n", i, argk[i], argv[i]?argv[i]:"NULL");
-   }
-#endif
    return 1;
 }
 

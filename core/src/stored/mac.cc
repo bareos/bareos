@@ -129,12 +129,6 @@ static bool CloneRecordInternally(DeviceControlRecord *dcr, DeviceRecord *rec)
    Device *dev = jcr->dcr->dev;
    char buf1[100], buf2[100];
 
-#ifdef xxx
-   Dmsg5(000, "on entry     JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
-         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
-#endif
-
    /*
     * If label, discard it as we create our SOS and EOS Labels
     * However, we still want the first Start Of Session label as that contains
@@ -311,12 +305,6 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord *dcr, DeviceRecord *rec)
    char buf1[100], buf2[100];
    BareosSocket *sd = jcr->store_bsock;
    bool send_eod, send_header;
-
-#ifdef xxx
-   Dmsg5(000, "on entry     JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
-         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
-#endif
 
    /*
     * If label discard it

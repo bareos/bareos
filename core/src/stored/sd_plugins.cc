@@ -133,13 +133,6 @@ static inline bool IsPluginDisabled(bpContext *ctx)
    return b_ctx->disabled;
 }
 
-#ifdef needed
-static inline bool IsPluginDisabled(JobControlRecord *jcr)
-{
-   return IsPluginDisabled(jcr->plugin_ctx);
-}
-#endif
-
 static bool IsCtxGood(bpContext *ctx, JobControlRecord *&jcr, b_plugin_ctx *&bctx)
 {
    if (!ctx) {

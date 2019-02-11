@@ -808,24 +808,6 @@ static bool AcquireResources(JobControlRecord *jcr)
       break;
    }
 
-#ifdef xxx
-   /*
-    * Turning this code off is likely to cause some deadlocks,
-    * but we do not really have enough information here to
-    * know if this is really a deadlock (it may be a dual drive
-    * autochanger), and in principle, the SD reservation system
-    * should detect these deadlocks, so push the work off on it.
-    */
-   if (jcr->res.read_storage && jcr->res.read_storage == jcr->res.write_storage) { /* possible deadlock */
-      Jmsg(jcr, M_FATAL, 0, _("Job canceled. Attempt to read and write same device.\n"
-           "    Read storage \"%s\" (From %s) -- Write storage \"%s\" (From %s)\n"),
-           jcr->res.read_storage->name(), jcr->res.rstore_source, jcr->res.write_storage->name(), jcr->res.wstore_source);
-      jcr->setJobStatus(JS_Canceled);
-
-      return false;
-   }
-#endif
-
    if (jcr->res.read_storage) {
       if (!IncReadStore(jcr)) {
          jcr->setJobStatus(JS_WaitStoreRes);

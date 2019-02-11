@@ -121,47 +121,8 @@ static void OutputStatus(JobControlRecord *jcr, StatusPacket *sp, const char *de
 
 static void ListResources(StatusPacket *sp)
 {
-#ifdef when_working
-   int len;
-   PoolMem msg(PM_MESSAGE);
-
-   if (!sp->api) {
-      len = Mmsg(msg, _("\nSD Resources:\n"));
-      sendit(msg, len, sp);
-   }
-
-   DumpResource(R_DEVICE, resources[R_DEVICE - my_config->r_first_], sp, false);
-
-   if (!sp->api) {
-      len = PmStrcpy(msg, "====\n\n");
-      sendit(msg, len, sp);
-   }
-#endif
+   /* this has not been implemented */
 }
-
-#ifdef xxxx
-static find_device(char *devname)
-{
-   bool found;
-   DeviceResource *device;
-   AutochangerResource *changer;
-
-   foreach_res(device, R_DEVICE) {
-      if (strcasecmp(device->name(), devname) == 0) {
-         found = true;
-         break;
-      }
-   }
-
-   if (!found) {
-      foreach_res(changer, R_AUTOCHANGER) {
-         if (strcasecmp(changer->name(), devname) == 0) {
-            break;
-         }
-      }
-   }
-}
-#endif
 
 static bool NeedToListDevice(const char *devicenames, const char *devicename)
 {

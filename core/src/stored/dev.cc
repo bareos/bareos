@@ -388,15 +388,6 @@ static inline Device *init_dev(JobControlRecord *jcr, DeviceResource *device, bo
 
    dev->SetMutexPriorities();
 
-#ifdef xxx
-   if ((errstat = RwlInit(&dev->lock)) != 0) {
-      BErrNo be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-#endif
-
    dev->ClearOpened();
    dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
    Dmsg2(100, "InitDev: tape=%d dev_name=%s\n", dev->IsTape(), dev->dev_name);

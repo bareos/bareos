@@ -57,18 +57,6 @@ static char *find_msg_start(char *msg);
 
 static char Job_status[] =
    "Status Job=%127s JobStatus=%d\n";
-#ifdef needed
-static char Device_update[] =
-   "DevUpd Job=%127s "
-   "device=%127s "
-   "append=%d read=%d num_writers=%d "
-   "open=%d labeled=%d offline=%d "
-   "reserved=%d max_writers=%d "
-   "autoselect=%d autochanger=%d "
-   "changer_name=%127s media_type=%127s volume_name=%127s "
-   "DevReadTime=%d DevWriteTime=%d DevReadBytes=%d "
-   "DevWriteBytes=%d\n";
-#endif
 
 static char OK_msg[] =
    "1000 OK\n";
@@ -300,65 +288,6 @@ int BgetDirmsg(BareosSocket *bs, bool allow_any_message)
          }
          continue;
       }
-#ifdef needed
-      /* No JobControlRecord for Device Updates! */
-      if (bs->msg[0] = 'D') {         /* Device update */
-         Device *dev;
-         PoolMem dev_name, changer_name, media_type, volume_name;
-         int dev_open, dev_append, dev_read, dev_labeled;
-         int dev_offline, dev_autochanger, dev_autoselect;
-         int dev_num_writers, dev_max_writers, dev_reserved;
-         uint64_t dev_read_time, dev_write_time, dev_write_bytes, dev_read_bytes;
-         uint64_t dev_PoolId = 0;
-         Dmsg1(100, "<stored: %s", bs->msg);
-         if (sscanf(bs->msg, Device_update,
-             &Job, dev_name.c_str(),
-             &dev_append, &dev_read,
-             &dev_num_writers, &dev_open,
-             &dev_labeled, &dev_offline, &dev_reserved,
-             &dev_max_writers, &dev_autoselect,
-             &dev_autochanger,
-             changer_name.c_str(), media_type.c_str(),
-             volume_name.c_str(),
-             &dev_read_time, &dev_write_time, &dev_read_bytes,
-             &dev_write_bytes) != 19) {
-            Emsg1(M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
-         } else {
-            UnbashSpaces(dev_name);
-            dev = (Device *)my_config->GetResWithName(R_DEVICE, dev_name.c_str());
-            if (!dev) {
-               continue;
-            }
-            UnbashSpaces(changer_name);
-            UnbashSpaces(media_type);
-            UnbashSpaces(volume_name);
-            bstrncpy(dev->ChangerName, changer_name.c_str(), sizeof(dev->ChangerName));
-            bstrncpy(dev->MediaType, media_type.c_str(), sizeof(dev->MediaType));
-            bstrncpy(dev->VolumeName, volume_name.c_str(), sizeof(dev->VolumeName));
-            /* Note, these are copied because they are boolean rather than
-             *  integer.
-             */
-            dev->open = dev_open;
-            dev->append = dev_append;
-            dev->read = dev_read;
-            dev->labeled = dev_labeled;
-            dev->offline = dev_offline;
-            dev->autoselect = dev_autoselect;
-            dev->autochanger = dev_autochanger > 0;
-            dev->num_drives = dev_autochanger;    /* does double duty */
-            dev->PoolId = dev_PoolId;
-            dev->num_writers = dev_num_writers;
-            dev->max_writers = dev_max_writers;
-            dev->reserved = dev_reserved;
-            dev->found = true;
-            dev->DevReadTime = dev_read_time; /* TODO : have to update database */
-            dev->DevWriteTime = dev_write_time;
-            dev->DevReadBytes = dev_read_bytes;
-            dev->DevWriteBytes = dev_write_bytes;
-         }
-         continue;
-      }
-#endif
       return n;
    }
    return n;

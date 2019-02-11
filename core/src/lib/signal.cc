@@ -97,8 +97,6 @@ static void dbg_print_bareos()
    DbgPrintPlugin(fp);
 
    if (fp != stderr) {
-#define direct_print
-#ifdef direct_print
       if (prt_kaboom) {
          rewind(fp);
          printf("\n\n ==== bactrace output ====\n\n");
@@ -107,15 +105,6 @@ static void dbg_print_bareos()
          }
          printf(" ==== End baktrace output ====\n\n");
       }
-#else
-      if (prt_kaboom) {
-         char buf1[512];
-         printf("\n\n ==== bactrace output ====\n\n");
-         snprintf(buf1, sizeof(buf1), "/bin/cat %s", buf);
-         system(buf1);
-         printf(" ==== End baktrace output ====\n\n");
-      }
-#endif
       fclose(fp);
    }
 }
@@ -253,7 +242,6 @@ extern "C" void SignalHandler(int sig)
       /*
        * If we want it printed, do so
        */
-#ifdef direct_print
       if (prt_kaboom) {
          FILE *fd;
 
@@ -268,15 +256,6 @@ extern "C" void SignalHandler(int sig)
             printf(" ==== End traceback output ====\n\n");
          }
       }
-#else
-      if (prt_kaboom) {
-         snprintf(buf, sizeof(buf), "/bin/cat %s/bareos.%s.traceback", working_directory, pid_buf);
-         fprintf(stderr, "\n\n ==== Traceback output ====\n\n");
-         system(buf);
-         fprintf(stderr, " ==== End traceback output ====\n\n");
-      }
-#endif
-
 #ifndef DEVELOPER /* When DEVELOPER set, this is done above */
       /*
        * Print information about the current state into working/<file>.bactrace

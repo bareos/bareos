@@ -83,31 +83,6 @@ static char Job_end[] =
 /* Forward referenced functions */
 extern "C" void *msg_thread(void *arg);
 
-/*
- * Here we ask the SD to send us the info for a
- *  particular device resource.
- */
-#ifdef xxx
-bool UpdateDeviceRes(JobControlRecord *jcr, DeviceResource *dev)
-{
-   PoolMem device_name;
-   BareosSocket *sd;
-   if (!ConnectToStorageDaemon(jcr, 5, 30, false)) {
-      return false;
-   }
-   sd = jcr->store_bsock;
-   PmStrcpy(device_name, dev->name());
-   BashSpaces(device_name);
-   sd->fsend(query_device, device_name.c_str());
-   Dmsg1(100, ">stored: %s\n", sd->msg);
-   /* The data is returned through Device_update */
-   if (BgetDirmsg(sd) <= 0) {
-      return false;
-   }
-   return true;
-}
-#endif
-
 /** Send bootstrap file to Storage daemon.
  *  This is used for
  *    * restore
@@ -522,56 +497,5 @@ void WaitForStorageDaemonTermination(JobControlRecord *jcr)
    }
    jcr->setJobStatus(JS_Terminated);
 }
-
-#ifdef needed
-#define MAX_TRIES 30
-#define WAIT_TIME 2
-extern "C" void *device_thread(void *arg)
-{
-   int i;
-   JobControlRecord *jcr;
-   DeviceResource *dev;
-
-   pthread_detach(pthread_self());
-   jcr = new_control_jcr("*DeviceInit*", JT_SYSTEM);
-   for (i=0; i < MAX_TRIES; i++) {
-      if (!ConnectToStorageDaemon(jcr, 10, 30, true)) {
-         Dmsg0(900, "Failed connecting to SD.\n");
-         continue;
-      }
-      LockRes(this);
-      foreach_res(dev, R_DEVICE) {
-         if (!UpdateDeviceRes(jcr, dev)) {
-            Dmsg1(900, "Error updating device=%s\n", dev->name());
-         } else {
-            Dmsg1(900, "Updated Device=%s\n", dev->name());
-         }
-      }
-      UnlockRes(this);
-      jcr->store_bsock->close();
-      delete jcr->store_bsock;
-      jcr->store_bsock = NULL;
-      break;
-
-   }
-   FreeJcr(jcr);
-   return NULL;
-}
-
-/** Start a thread to handle getting Device resource information
- *  from SD. This is called once at startup of the Director.
- */
-void InitDeviceResources()
-{
-   int status;
-   pthread_t thid;
-
-   Dmsg0(100, "Start Device thread.\n");
-   if ((status = pthread_create(&thid, NULL, device_thread, NULL)) != 0) {
-      BErrNo be;
-      Jmsg1(NULL, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
-   }
-}
-#endif
 
 } /* namespace directordaemon */

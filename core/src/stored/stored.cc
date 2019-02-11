@@ -594,13 +594,6 @@ void *device_initialization(void *arg)
       FreeDeviceControlRecord(dcr);
       jcr->dcr = NULL;
    }
-#ifdef xxx
-   if (jcr->dcr) {
-      Dmsg1(000, "FreeDeviceControlRecord=%p\n", jcr->dcr);
-      FreeDeviceControlRecord(jcr->dcr);
-      jcr->dcr = NULL;
-   }
-#endif
    FreeJcr(jcr);
    init_done = true;
    UnlockRes(my_config);

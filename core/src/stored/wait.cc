@@ -265,25 +265,4 @@ void ReleaseDeviceCond()
    pthread_cond_broadcast(&wait_device_release);
 }
 
-#ifdef xxx
-/**
- * The jcr timers are used for waiting on any device *
- * Returns: true if time doubled
- *          false if max time expired
- */
-static bool DoubleJcrWaitTime(JobControlRecord *jcr)
-{
-   jcr->wait_sec *= 2;               /* double wait time */
-   if (jcr->wait_sec > jcr->max_wait) {   /* but not longer than maxtime */
-      jcr->wait_sec = jcr->max_wait;
-   }
-   jcr->num_wait++;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   if (jcr->num_wait >= jcr->max_num_wait) {
-      return false;
-   }
-   return true;
-}
-#endif
-
 } /* namespace storagedaemon */

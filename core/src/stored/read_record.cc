@@ -411,18 +411,6 @@ bool ReadRecords(DeviceControlRecord *dcr,
          break;
       }
 
-#ifdef if_and_when_FAST_BLOCK_REJECTION_is_working
-      /*
-       * This does not stop when file/block are too big
-       */
-      if (!MatchBsrBlock(jcr->bsr, block)) {
-         if (TryDeviceRepositioning(jcr, rctx->rec, dcr)) {
-            break;                    /* get next volume */
-         }
-         continue;                    /* skip this record */
-      }
-#endif
-
       /*
        * Get a new record for each Job as defined by VolSessionId and VolSessionTime
        */

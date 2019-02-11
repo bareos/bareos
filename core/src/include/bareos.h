@@ -133,14 +133,6 @@ extern "C" {
 }
 #endif
 
-#ifdef xxxxx
-#ifdef HAVE_GETOPT_LONG
-#include <getopt.h>
-#else
-#include "lib/getopt.h"
-#endif
-#endif
-
 #include <string.h>
 #include <strings.h>
 #include <signal.h>

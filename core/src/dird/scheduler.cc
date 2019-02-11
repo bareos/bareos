@@ -131,12 +131,6 @@ again:
       Bmicrosleep(next_check_secs, 0); /* recheck once per minute */
    }
 
-#ifdef  list_chain
-   job_item *je;
-   foreach_dlist(je, jobs_to_run) {
-      dump_job(je, _("Walk queue"));
-   }
-#endif
    /*
     * Pull the first job to run (already sorted by runtime and
     *  Priority, then wait around until it is time to run it.
@@ -387,31 +381,6 @@ static void find_runs()
          /*
           * Find runs scheduled between now and the next hour.
           */
-#ifdef xxxx
-         Dmsg0(000, "\n");
-         Dmsg7(000, "run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
-            hour, month, mday, wday, wom, woy, yday);
-         Dmsg6(000, "bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
-               BitIsSet(hour, run->hour),
-               BitIsSet(month, run->month),
-               BitIsSet(mday, run->mday),
-               BitIsSet(wday, run->wday),
-               BitIsSet(wom, run->wom),
-               BitIsSet(woy, run->woy));
-
-         Dmsg7(000, "nh_run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
-               nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
-         Dmsg6(000, "nh_bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
-               BitIsSet(nh_hour, run->hour),
-               BitIsSet(nh_month, run->month),
-               BitIsSet(nh_mday, run->mday),
-               BitIsSet(nh_wday, run->wday),
-               BitIsSet(nh_wom, run->wom),
-               BitIsSet(nh_woy, run->woy));
-         Dmsg2(000, "run->last_set:%d, is_last_week:%d\n", run->last_set, is_last_week);
-         Dmsg2(000, "run->last_set:%d, nh_is_last_week:%d\n", run->last_set, nh_is_last_week);
-#endif
-
          run_now = BitIsSet(hour, run->hour) &&
                    BitIsSet(mday, run->mday) &&
                    BitIsSet(wday, run->wday) &&

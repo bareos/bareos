@@ -2166,9 +2166,6 @@ bail_out:
 
 static void statcmd()
 {
-#ifdef xxxx
-   int debug = debug_level;
-#endif
    char *status;
 
    status = dev->StatusDev();
@@ -2198,12 +2195,6 @@ static void statcmd()
    free(status);
 
    printf(_(". ERR=%s\n"), dev->bstrerror());
-
-#ifdef xxxx
-   debug_level = 30;
-   DumpVolumeLabel(dev);
-   debug_level = debug;
-#endif
 }
 
 /**
@@ -2371,9 +2362,6 @@ static void fillcmd()
             bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
             Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
             FlushBlock(block, 0);
-#ifdef needed_xxx
-            dev->weof(1);
-#endif
          }
 
          /* Get out after writing 1000 blocks to the second tape */

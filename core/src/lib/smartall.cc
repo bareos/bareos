@@ -548,20 +548,4 @@ void SmStatic(bool mode)
    bufimode = mode;
 }
 
-/*
- * Here we overload C++'s global new and delete operators
- *  so that the memory is allocated through smartalloc.
- */
-
-#ifdef xxx
-void * operator new(size_t size)
-{
-   return sm_malloc(__FILE__, __LINE__, size);
-}
-
-void operator delete(void *buf)
-{
-   sm_free(__FILE__, __LINE__, buf);
-}
-#endif
 #endif /* SMARTALLOC */

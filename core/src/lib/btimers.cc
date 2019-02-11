@@ -38,10 +38,6 @@ static btimer_t *btimer_start_common(uint32_t wait);
 /* Forward referenced callback functions */
 static void CallbackChildTimer(watchdog_t *self);
 static void CallbackThreadTimer(watchdog_t *self);
-#ifdef xxx
-static void DestructorThreadTimer(watchdog_t *self);
-static void DestructorChildTimer(watchdog_t *self);
-#endif
 
 /*
  * Start a timer on a child process of pid, kill it after wait seconds.
@@ -83,15 +79,6 @@ void StopChildTimer(btimer_t *wid)
    Dmsg2(debuglevel, "Stop child timer %p pid %d\n", wid, wid->pid);
    StopBtimer(wid);
 }
-
-#ifdef xxx
-static void DestructorChildTimer(watchdog_t *self)
-{
-   btimer_t *wid = (btimer_t *)self->data;
-   free(wid->wd);
-   free(wid);
-}
-#endif
 
 static void CallbackChildTimer(watchdog_t *self)
 {
@@ -224,15 +211,6 @@ void StopThreadTimer(btimer_t *wid)
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)));
    StopBtimer(wid);
 }
-
-#ifdef xxx
-static void DestructorThreadTimer(watchdog_t *self)
-{
-   btimer_t *wid = (btimer_t *)self->data;
-   free(wid->wd);
-   free(wid);
-}
-#endif
 
 static void CallbackThreadTimer(watchdog_t *self)
 {

@@ -611,27 +611,6 @@ static inline ssize_t WriteDataToBlock(DeviceBlock *block, const DeviceRecord *r
           len);
    block->bufp += len;
    block->binbuf += len;
-
-#ifdef xxxxxSMCHECK
-   if (!sm_check_rtn(__FILE__, __LINE__, False)) {
-      /*
-       * We damaged a buffer
-       */
-      Dmsg7(0, "Damaged block FI=%s SessId=%d Strm=%s datalen=%d\n"
-            "len=%d rem=%d remainder=%d\n",
-            FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-            stream_to_ascii(buf2, rec->Stream, rec->FileIndex),
-            rec->data_len, len, BlockWriteNavail(block),
-            rec->remainder);
-      Dmsg5(0, "Damaged block: bufp=%x binbuf=%d buf_len=%d rem=%d moved=%d\n",
-            block->bufp, block->binbuf, block->buf_len,
-            BlockWriteNavail(block), len);
-      Dmsg2(0, "Damaged block: buf=%x binbuffrombuf=%d \n",
-            block->buf, block->bufp-block->buf);
-      Emsg0(M_ABORT, 0, _("Damaged buffer\n"));
-   }
-#endif
-
    return len;
 }
 

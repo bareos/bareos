@@ -44,11 +44,6 @@ namespace directordaemon {
 /* Requests from the Storage daemon */
 
 /* Responses  sent to Storage daemon */
-#ifdef xxx
-static char OK_mount[] =
-   "1000 OK MountVolume\n";
-#endif
-
 static BQUEUE mountq = {&mountq, &mountq};
 static int num_reqs = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

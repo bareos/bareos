@@ -33,15 +33,6 @@
 
 #include "include/bareos.h"
 
-/*  General purpose queue  */
-
-#ifdef REALLY_NEEDED
-struct b_queue {
-        struct b_queue *qnext,       /* Next item in queue */
-                     *qprev;       /* Previous item in queue */
-};
-#endif
-
 /*
  * To define a queue, use the following
  *

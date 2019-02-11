@@ -600,14 +600,6 @@ static int MatchVolfile(BootStrapRecord *bsr, BsrVolumeFile *volfile, DeviceReco
  *   with disk files too, though since a "volfile" is 4GB, it does
  *   not improve performance much.
  */
-#ifdef xxx
-   /* For the moment, these tests work only with tapes. */
-   if (!(rec->state & REC_ISTAPE)) {
-      return 1;                       /* All File records OK for this match */
-   }
-   Dmsg3(dbglevel, "MatchVolfile: sfile=%u efile=%u recfile=%u\n",
-             volfile->sfile, volfile->efile, rec->File);
-#endif
    if (volfile->sfile <= rec->File && volfile->efile >= rec->File) {
       return 1;
    }
@@ -634,19 +626,6 @@ static int MatchVoladdr(BootStrapRecord *bsr, BsrVolumeAddress *voladdr, DeviceR
    if (!voladdr) {
       return 1;                       /* no specification matches all */
    }
-
-#ifdef xxx
-
-   /* For the moment, these tests work only with disk. */
-   if (rec->state & REC_ISTAPE) {
-      uint32_t sFile = (voladdr->saddr)>>32;
-      uint32_t eFile = (voladdr->eaddr)>>32;
-      if (sFile <= rec->File && eFile >= rec->File) {
-         return 1;
-      }
-   }
-
-#endif
 
    uint64_t addr = GetRecordAddress(rec);
    Dmsg6(dbglevel, "MatchVoladdr: saddr=%llu eaddr=%llu recaddr=%llu sfile=%u efile=%u recfile=%u\n",
