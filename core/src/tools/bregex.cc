@@ -29,27 +29,12 @@
 
 #include "include/bareos.h"
 
-/**
- *  If you define BAREOS_REGEX, bregex will be built with the
- *  Bareos bregex library, which is the same code that we
- *  use on Win32, thus using Linux, you can test your Win32
- *  expressions. Otherwise, this program will link with the
- *  system library routines.
- */
-//#define BAREOS_REGEX
-
-#ifdef BAREOS_REGEX
-
-#include "lib/bregex.h"
-
-#else
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else
 #include <regex.h>
 #endif
 
-#endif
 
 
 static void usage()
