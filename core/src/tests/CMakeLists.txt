@@ -102,7 +102,28 @@ add_test(NAME test_fd_plugins
     )
 
 set_property(TEST test_fd_plugins
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/filed"
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/findlib"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
+add_dependencies(check test_fd_plugins)
+####### test_sd_plugins #####################################
+add_executable(test_sd_plugins
+    test_sd_plugins.cc
+    )
+
+target_link_libraries(test_sd_plugins
+    bareos
+    bareossd
+    ${GTEST_LIBRARIES}
+    ${GTEST_MAIN_LIBRARIES}
+    )
+
+add_test(NAME test_sd_plugins
+    COMMAND test_sd_plugins
+    )
+
+set_property(TEST test_sd_plugins
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored"
    PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
    )
 add_dependencies(check test_fd_plugins)

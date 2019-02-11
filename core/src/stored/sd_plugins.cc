@@ -987,48 +987,4 @@ static void bareosFreeRecord(DeviceRecord *rec)
    FreeRecord(rec);
 }
 
-#ifdef TEST_PROGRAM
-int main(int argc, char *argv[])
-{
-   char plugin_dir[1000];
-   JobControlRecord mjcr1, mjcr2;
-   JobControlRecord *jcr1 = &mjcr1;
-   JobControlRecord *jcr2 = &mjcr2;
-
-   MyNameIs(argc, argv, "plugtest");
-   InitMsg(NULL, NULL);
-
-   OSDependentInit();
-
-   if (argc != 1) {
-      bstrncpy(plugin_dir, argv[1], sizeof(plugin_dir));
-   } else {
-      getcwd(plugin_dir, sizeof(plugin_dir)-1);
-   }
-   LoadSdPlugins(plugin_dir, NULL);
-
-   jcr1->JobId = 111;
-   NewPlugins(jcr1);
-
-   jcr2->JobId = 222;
-   NewPlugins(jcr2);
-
-   GeneratePluginEvent(jcr1, bsdEventJobStart, (void *)"Start Job 1");
-   GeneratePluginEvent(jcr1, bsdEventJobEnd);
-   GeneratePluginEvent(jcr2, bsdEventJobStart, (void *)"Start Job 1");
-   FreePlugins(jcr1);
-   GeneratePluginEvent(jcr2, bsdEventJobEnd);
-   FreePlugins(jcr2);
-
-   UnloadSdPlugins();
-
-   TermMsg();
-   CloseMemoryPool();
-   LmgrCleanupMain();
-   sm_dump(false);
-   exit(0);
-}
-
-#endif /* TEST_PROGRAM */
-
 } /* namespace storagedaemon */
