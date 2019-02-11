@@ -85,7 +85,6 @@
 
 /* #define TRACE_JCR_CHAIN 1 */
 /* #define TRACE_RES 1 */
-/* #define DEBUG_MEMSET 1 */
 /* #define DEBUG_BLOCK_CHECKSUM 1 */
 
 /*

@@ -505,19 +505,6 @@ int b_strerror(int errnum, char *buf, size_t bufsiz)
     return status;
 }
 
-#ifdef DEBUG_MEMSET
-/* These routines are not normally turned on */
-#undef memset
-void b_memset(const char *file, int line, void *mem, int val, size_t num)
-{
-   /* Testing for 2000 byte zero at beginning of Volume block */
-   if (num > 1900 && num < 3000) {
-      Pmsg3(000, _("Memset for %d bytes at %s:%d\n"), (int)num, file, line);
-   }
-   memset(mem, val, num);
-}
-#endif
-
 #if !defined(HAVE_WIN32)
 static bool del_pid_file_ok = false;
 #endif

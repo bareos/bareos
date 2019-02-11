@@ -308,11 +308,6 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
 #define LockRes(x)   (x)->b_LockRes(__FILE__, __LINE__)
 #define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
 
-#ifdef DEBUG_MEMSET
-#define memset(a, v, n) b_memset(__FILE__, __LINE__, a, v, n)
-void b_memset(const char *file, int line, void *mem, int val, size_t num);
-#endif
-
 /**
 * The digit following Dmsg and Emsg indicates the number of substitutions in
 * the message string. We need to do this kludge because non-GNU compilers
