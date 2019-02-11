@@ -23,6 +23,8 @@ IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)
 ENDIF()
 
+include_directories(${Readline_INCLUDE_DIR})
+
 IF(HAVE_PAM)
    include_directories(${PAM_INCLUDE_DIRS})
    LIST(APPEND BCONSSRCS auth_pam.cc)

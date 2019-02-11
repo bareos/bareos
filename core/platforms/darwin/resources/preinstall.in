@@ -11,4 +11,3 @@ if [ -f "$3/Library/LaunchDaemons/org.bareos.bareos-fd.plist" ]; then
 fi
 
 echo "finished" >> $LOG
-

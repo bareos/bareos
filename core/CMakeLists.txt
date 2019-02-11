@@ -20,6 +20,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos)
 
+INCLUDE(GNUInstallDirs)
+
 # switch on CXX 11 Support
 #
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
@@ -44,6 +46,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include_directories(/usr/include)
 endif()
 
+
 set(CMAKE_MODULE_PATH
          ${CMAKE_MODULE_PATH}
          ${PROJECT_SOURCE_DIR}/../../SOURCES
@@ -55,15 +58,10 @@ SET(host ${CMAKE_SYSTEM})
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
-
-
-
 # enable "make check"
 enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-
 
 # run git-info to collect sourcecode info
 file(MAKE_DIRECTORY build)
@@ -77,12 +75,16 @@ add_definitions(-DVERSION="${BAREOS_FULL_VERSION}")
 
 INCLUDE(BareosLocalBuildDefinitions RESULT_VARIABLE BareosLocalBuildDefinitionsFile)
 
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
+   set(Readline_ROOT_DIR /usr/local/opt/readline)
+ENDIF()
+
 INCLUDE(BareosFindAllLibraries)
 
 IF (NOT ${OPENSSL_FOUND})
   MESSAGE(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
 ENDIF()
-
 
 IF (coverage)
    set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage -fprofile-arcs -ftest-coverage" CACHE INTERNAL "")
@@ -117,6 +119,15 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
    link_libraries(intl)
 endif()
 
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   set(HAVE_DARWIN_OS 1)
+   #set(CMAKE_INCLUDE_PATH  "${OPENSSL_INCLUDE_DIR}:${CMAKE_INCLUDE_PATH}")
+   set(CMAKE_INCLUDE_PATH  "/usr/local/opt/:${CMAKE_INCLUDE_PATH}")
+   link_directories(/usr/local/lib)
+   link_libraries(intl)
+   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}-${BAREOS_FULL_VERSION}")
+ENDIF()
+
 # hpux
 if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
    set(HAVE_HPUX_OS 1)
@@ -134,6 +145,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
    set(lmdb 0FF)
    link_libraries(intl)
 endif()
+
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include_directories(
@@ -161,6 +173,8 @@ else()
    add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
+INCLUDE(FindIntl)
+
 IF(developer)
    add_definitions("-DDEVELOPER=1")
 ENDIF()
@@ -175,7 +189,6 @@ endif()
 
 INCLUDE(BareosFindPrograms)
 
-INCLUDE(GNUInstallDirs)
 
 INCLUDE(BareosSetVariableDefaults)
 
@@ -183,10 +196,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
    SET(ENABLE_NLS 0)
 endif()
 
+
 INCLUDE(BareosGetDistInfo)
 
 INCLUDE(BareosGenerateDebianInfo)
-
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    add_definitions(-DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION})
    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
@@ -208,43 +221,26 @@ mark_as_advanced(INSTALL_LIB_DIR)
 
 
 # RPATH settings (from https://cmake.org/Wiki/CMake_RPATH_handling)
-# use, i.e. don')t skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
-# when building, don't use the install RPATH already
-# (but later on when installing)
-#SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-#SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
-#SET(CMAKE_INSTALL_RPATH "/${INSTALL_LIB_DIR}")
 SET(CMAKE_INSTALL_RPATH "${libdir}")
 
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
-
-
-#cmake_host_system_information(RESULT hostname QUERY HOSTNAME)
 site_name(hostname)
 
 set(dbdriver sqlite3)
 
 #manual definitions
 set (BAREOS "Bareos")
-#set(CONFDIR \"${CMAKE_INSTALL_FULL_SYSCONFDIR}\")
-set(LOCALEDIR \"${CMAKE_INSTALL_FULL_LOCALEDIR}\")
-
-
-
+set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")
 
 set(HAVE_CRYPTO 1)
 
 INCLUDE(BareosTypeSizes)
-
-
 
 INCLUDE(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIGENDIAN)
@@ -255,12 +251,8 @@ ELSE()
    SET(HAVE_LITTLE_ENDIAN 1)
 ENDIF()
 
-
-
 MESSAGE( STATUS "VERSION: " ${CMAKE_MATCH_1} )
-
 MESSAGE( STATUS "PROJECT_SOURCE_DIR:         " ${PROJECT_SOURCE_DIR} )
-
 
 # needed for check_include
 set(CMAKE_REQUIRED_DEFINITIONS "-D_FILE_OFFSET_BITS=64")
@@ -284,7 +276,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
 check_type_size("socklen_t" HAVE_SOCKLEN_T)
 set(CMAKE_EXTRA_INCLUDE_FILES)
-
 
 set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 
@@ -474,24 +465,17 @@ if ("${PAM_FOUND}")
    set(HAVE_PAM 1)
 endif()
 
-
 set(have_tls "${HAVE_TLS}" )
 set(have_crypto "${HAVE_CRYPTO}" )
 set(have_openssl "${HAVE_OPENSSL}" )
 set(have_zlib "${ZLIB_FOUND}" )
 set(have_fastlz "${HAVE_FASTLZLIB_H}" )
 
-
-
-
 set(HAVE_CAPABILITY "${HAVE_CAPABILITY_H}" CACHE BOOL "compile with capability support")
 if ("${HAVE_CAPABILITY}")
    set(CAPABILITY_LIBS cap)
    message( STATUS "CAPABILITY set")
 endif()
-
-
-
 
 set(ndmp "${ndmp}" )
 set(lmdb "${lmdb}" )
@@ -521,7 +505,6 @@ if(${HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H})
    set(have_ceph_rados_striper ${HAVE_CEPH_RADOS_STRIPER})
 endif()
 
-
 if(${HAVE_GLUSTERFS_API_GLFS_H})
    set(HAVE_GLUSTERFS 1)
 endif()
@@ -529,8 +512,6 @@ set(have_glusterfs ${HAVE_GLUSTERFS_API_GLFS_H} )
 if (${HAVE_GLUSTERFS})
 include_directories(/usr/include/glusterfs)
 endif()
-
-
 
 if (NOT HAVE_WIN32)
    if (${ndmp})
@@ -543,8 +524,6 @@ if (${lmdb})
    set(HAVE_LMDB 1)
    set(LMDB_LIBS bareoslmdb)
 endif()
-
-
 
 # info what the config files need to be installed
 #####  PLUGINS  ############
@@ -561,7 +540,6 @@ LIST(APPEND PLUGINS gfapi-conf.d)
 endif()
 
 ##### BACKENDS  ####
-
 IF(build_client_only)
    SET(BACKENDS "")
 ELSE()
@@ -578,8 +556,6 @@ ELSE()
    endif()
 ENDIF()
 
-
-
 set(have_elasto "" )
 set(support_systemd "" )
 set(batch_insert_db_backends "" )
@@ -589,18 +565,14 @@ set(_PATH_BAREOS_BACKENDDIR \"${backenddir}\")
 set(_PATH_BAREOS_PIDDIR \"${piddir}\")
 set(_PATH_BAREOS_WORKINGDIR \"${workingdir}\")
 
-
-
-
 IF(HAVE_WIN32)
   INSTALL(DIRECTORY DESTINATION var/log)
 ENDIF()
 
 INSTALL(DIRECTORY DESTINATION ${logdir})
-
+INSTALL(DIRECTORY DESTINATION ${workingdir})
 
 INCLUDE(BareosConfigureFile)
-
 
 add_subdirectory(scripts)
 add_subdirectory(manpages)
@@ -670,7 +642,7 @@ MESSAGE("   File Daemon Group:            ${fd_group} ")
 MESSAGE(" ")
 MESSAGE("   Large file support:           ${largefile_support}")
 MESSAGE("   Bareos conio support:         ${got_conio} ${CONS_LIBS} ")
-MESSAGE("   readline support:             ${got_readline} ${Readline_ROOT_DIR} ${Readline_INCLUDE_DIR} ${Readline_LIBRARY}
+MESSAGE("   readline support:             ${got_readline} ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  ")
 MESSAGE("   TCP Wrappers support:         ${WRAP_FOUND} ${WRAP_LIBRARIES} ${WRAP_INCLUDE_DIRS} ")
 MESSAGE("   TLS support:                  ${have_tls} ")
@@ -707,6 +679,7 @@ MESSAGE("   Python support:               ${PYTHONLIBS_FOUND} ${PYTHONLIBS_VERSI
 MESSAGE("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 MESSAGE("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
 MESSAGE("   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} ")
+MESSAGE("   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}")
 
 MESSAGE("   Dynamic cats backends:        ${dynamic-cats-backends} ${HAVE_DYNAMIC_CATS_BACKENDS} ")
 MESSAGE("   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ")

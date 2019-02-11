@@ -31,30 +31,30 @@ ENDIF()
 
 # libdir
 IF(NOT DEFINED libdir)
-   set(libdir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME})
+   set(libdir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME})
 ENDIF()
 
 # includedir
 IF(NOT DEFINED includedir)
-   set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
+   set(includedir ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
 ENDIF()
 
 # bindir
 IF(NOT DEFINED bindir)
-   set(bindir ${CMAKE_INSTALL_FULL_BINDIR})
+   set(bindir ${CMAKE_INSTALL_BINDIR})
    MESSAGE(STATUS "set bindir to default ${bindir}")
 ENDIF()
 
 
 # sbindir
 IF(NOT DEFINED sbindir)
-   set(sbindir ${CMAKE_INSTALL_FULL_SBINDIR})
+   set(sbindir ${CMAKE_INSTALL_SBINDIR})
    MESSAGE(STATUS "set sbindir to default ${sbindir}")
 ENDIF()
 
 # sysconfdir
 IF(NOT DEFINED sysconfdir)
-   set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+   set(sysconfdir ${CMAKE_INSTALL_SYSCONFDIR})
 ENDIF()
 set(SYSCONFDIR "\"${sysconfdir}\"")
 
@@ -70,7 +70,7 @@ ENDIF()
 
 # mandir
 IF(NOT DEFINED mandir)
-   set(mandir ${CMAKE_INSTALL_FULL_MANDIR})
+   set(mandir ${CMAKE_INSTALL_MANDIR})
 ENDIF()
 
 # docdir
@@ -90,23 +90,23 @@ ENDIF()
 
 # backenddir
 IF(NOT DEFINED backenddir)
-   set(backenddir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
+   set(backenddir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
 ENDIF()
 
 # scriptdir
 IF(NOT DEFINED scriptdir)
-   set(scriptdir "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts")
+   set(scriptdir "lib/${CMAKE_PROJECT_NAME}/scripts")
 ENDIF()
 
 # workingdir
 IF(NOT DEFINED workingdir)
-   set(workingdir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+   set(workingdir "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
 ENDIF()
 set(working_dir "${workingdir}")
 
 # plugindir
 IF(NOT DEFINED plugindir)
-   set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
+   set(plugindir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
 ENDIF()
 
 # piddir
@@ -126,7 +126,7 @@ ENDIF()
 
 # datarootdir
 IF(NOT DEFINED datarootdir)
-   set(datarootdir "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
+   set(datarootdir "${CMAKE_INSTALL_DATAROOTDIR}")
 ENDIF()
 
 # subsysdir

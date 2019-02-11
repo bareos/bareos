@@ -170,6 +170,10 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
 endif()
 
+IF(HAVE_DARWIN_OS)
+  target_link_libraries(bareossd bareos)
+ENDIF()
+
 add_library(stored_objects STATIC ${SDSRCS})
 
 add_executable(bareos-sd stored.cc)

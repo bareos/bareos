@@ -73,6 +73,10 @@ target_link_libraries(bareos-fd
    ${BAREOS_FD_LIBRARIES}
          )
 
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set_target_properties(bareos-fd PROPERTIES INSTALL_RPATH "@loader_path/../${libdir}")
+ENDIF()
+
 
 INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}")
 

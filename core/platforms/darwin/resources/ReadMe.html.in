@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Bareos File Daemon @BAREOS_NUMERIC_VERSION@</title>
+  <meta name="author" content="Lorenz Schori">
+  <style type="text/css" media="screen">
+    body {font-family: Helvetica, sans-serif}
+  </style>
+</head>
+<body>
+  <h1>Bareos Client @BAREOS_NUMERIC_VERSION@ for MacOS X</h1>
+  <p>
+    Bareos is on Open Source, enterprise ready, network based backup program.
+    This installer package contains the Bareos File Daemon (and bconsole) for Mac OS X >= 10.5.
+  </p>
+  <h2>Requirements</h2>
+  <p>
+    The Bareos File Daemon (bareos-fd) is only the client component of the backup system.
+    For proper operation the file daemon needs to be accessed by a Bareos
+    Director and Bareos Storage Daemon, typically installed on a (Linux) server machine in
+    the local network.
+  </p>
+  <h2>Bareos File Daemon Configuration</h2>
+  <p>
+  To make use of your Bareos File Daemon on your system, it is required to configure the Bareos Director and the local Bareos File Daemon.
+
+  Configure the server-side by follow the instructions at <a href=https://docs.bareos.org>docs.bareos.org</a>.
+
+  <h3>Restart bareos-fd after changing the configuration</h3>
+
+
+The bareos-fd must be restarted to reread its configuration:
+
+<pre>
+sudo launchctl stop org.bareos.bareos-fd
+sudo launchctl start org.bareos.bareos-fd
+</pre>
+
+
+Following command can be used to check its status:
+
+<pre>
+sudo launchctl list org.bareos.bareos-fd
+</pre>
+You can also manually start bareos-fd in debug mode by:
+<pre>
+sudo /usr/local/sbin/bareos-fd -f -d 100
+</pre>
+</body>
+</html>

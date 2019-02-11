@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+IF(NOT client-only)
 set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    ../include/bc_types.h ../include/config.h
    ../include/jcr.h ../include/version.h
@@ -32,9 +33,10 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
    var.h watchdog.h workq.h)
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
+ENDIF()
 
 include_directories(
-   ${OPENSSL_INCLUDE_DIRS}
+   ${OPENSSL_INCLUDE_DIR}
    ${PTHREAD_INCLUDE_DIRS}
    ${FASTLZ_INCLUDE_DIRS}
    ${ZLIB_INCLUDE_DIRS}

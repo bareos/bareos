@@ -45,7 +45,7 @@ ENDIF()
 add_library(bpipe-fd MODULE bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir})
-IF(HAVE_WIN32)
+IF(HAVE_WIN32 OR HAVE_DARWIN_OS)
    target_link_libraries(bpipe-fd bareos)
 ENDIF()
 

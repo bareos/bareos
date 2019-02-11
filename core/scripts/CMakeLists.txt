@@ -25,8 +25,6 @@ INSTALL(FILES
                                  WORLD_READ WORLD_EXECUTE
          DESTINATION "${sbindir}")
 
-         # todo: bareos_config (contains output of configure command)
-
 INSTALL(FILES
          bareos
          btraceback.gdb
