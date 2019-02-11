@@ -21,8 +21,8 @@ start_test
 run_bareos
 
 cd ${WEBUI_DIR}
-${PHP} ${WEBUI_TESTS_DIR}/webui-bsock-connection-test.php
-cd -
+${PHP} ${WEBUI_TESTS_DIR}/webui-bsock-connection-test.php ${REGRESS_DEBUG}
+cd - > /dev/null
 
 estat_plain=$?
 

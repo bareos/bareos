@@ -1,4 +1,5 @@
-ADD_TEST(disk:webui-connection-test "../webui/tests/regress/webui-bsock-connection-test")
+ADD_TEST(disk:webui-connection-test "@webuidir@/tests/regress/webui-bsock-connection-test")
+ADD_TEST(disk:webui-connection-test-tls "@webuidir@/tests/regress/webui-bsock-connection-test-tls")
 #ADD_TEST(disk:tray-monitor-connection-test-cleartext "@regressdir@/tests/tray-monitor-connection-test-cleartext")
 #ADD_TEST(disk:tray-monitor-connection-test-tls-psk "@regressdir@/tests/tray-monitor-connection-test-tls-psk")
 ADD_TEST(disk:python-bareos-connection-test "@regressdir@/tests/python-bareos-connection-test")

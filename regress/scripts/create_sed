@@ -108,6 +108,7 @@ echo "s%@sdport@%${sdport}%g" >>${out}
 echo "s%@sdport2@%${sdport2}%g" >>${out}
 echo "s%@fdport@%${fdport}%g" >>${out}
 echo "s%@regressdir@%${cwd}%g" >>${out}
+echo "s%@webuidir@%${BAREOS_SOURCE}/webui%g" >>${out}
 echo "s%@srcdir@%${srcdir}%g" >>${out}
 echo "s%@sitename@%${SITE_NAME}%g" >>${out}
 echo "s%@os@%${os}%g" >>${out}
