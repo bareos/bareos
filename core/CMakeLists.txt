@@ -153,6 +153,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    SET(PostgreSQL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/include)
    SET(PostgreSQL_TYPE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include)
 
+   SET(dynamic-storage-backends OFF)
+   SET(HAVE_DYNAMIC_SD_BACKENDS 0)
+
 
 else()
    add_definitions("-D_FILE_OFFSET_BITS=64")
