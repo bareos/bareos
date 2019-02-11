@@ -425,21 +425,14 @@ The following sequence is used to figure out the right protocol version and to s
 |bareosFD| 18.2 with Bareos before 18.2
 ---------------------------------------
 
-|bareosFD| 18.2 onwards can be used on a Bareos system before 18.2. 
+|bareosFD| 18.2 onwards can be used on a Bareos system before 18.2.
 
-The older |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption only TLS with certificates can be used, not PSK as it is possible with Bareos 18.2. 
+The older |bareosDir| and |bareosSD| connect to |bareosFD| using the cleartext Bareos handshake before they can switch to TLS. If you want transport encryption only TLS with certificates can be used, not PSK as it is possible with Bareos 18.2.
 
-However, it is also possible to disable transport encryption completely and use cleartext transport using the following configuration changes:
+However, it is also possible to disable transport encryption and use cleartext transport using the following configuration changes:
 
-.. code-block:: ini
-  :caption: :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`
-
-  Director {
-    ...
-    TlsEnable = no
-    TlsRequire = no
-    ...
-  }
+|bareosDir| configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ini
   :caption: :file:`/etc/bareos/bareos-dir.d/client/bareos-fd.conf`
@@ -451,6 +444,51 @@ However, it is also possible to disable transport encryption completely and use 
     ...
   }
 
+.. code-block:: ini
+  :caption: :file:`/etc/bareos/bareos-dir.d/storage/bareos-sd.conf`
+
+  Storage {
+    ...
+    TlsEnable = no
+    TlsRequire = no
+    ...
+  }
+
+|bareosSD| configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: ini
+  :caption: :file:`/etc/bareos/bareos-sd.d/storage/bareos-sd.conf`
+
+  Storage {
+    ...
+    TlsEnable = no
+    TlsRequire = no
+    ...
+  }
+
+|bareosFD| configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: ini
+  :caption: :file:`/etc/bareos/bareos-fd.d/client/bareos-fd.conf`
+
+  Client {
+    ...
+    TlsEnable = no
+    TlsRequire = no
+    ...
+  }
+
+.. code-block:: ini
+  :caption: :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`
+
+  Director {
+    ...
+    TlsEnable = no
+    TlsRequire = no
+    ...
+  }
 
 .. _PAMConfigurationChapter:
 
