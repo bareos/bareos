@@ -1,95 +1,246 @@
+# -*- coding: utf-8 -*-
+
 from sphinx.domains import Domain, ObjType
 from sphinx.roles import XRefRole
 from sphinx.domains.std import GenericObject, StandardDomain
 from sphinx.directives import ObjectDescription
 from sphinx.util.nodes import clean_astext, make_refnode
+from sphinx.util import logging
 from sphinx.util import ws_re
 from sphinx import addnodes
 from sphinx.util.docfields import Field
 from docutils import nodes
+from pprint import pformat
+import re
 
-def get_id_from_cfg(text):
+#
+# modifies the default rule for rendering
+# .. config::option:
+# and
+# :config:option:`$cfg['AuthLog']`
+#
+# Also modifes the generated index.
+# If this extension is not loaded,
+# index will be 'command line option' ...
+#
+
+# phpmyadmin:
+# anchor: #cfg_DirJobAlwaysIncrementalMaxFullAge
+# index:  configuration option: ...
+
+# see
+# https://github.com/sphinx-doc/sphinx/blob/master/sphinx/directives/__init__.py
+# https://www.sphinx-doc.org/en/master/extdev/domainapi.html
+
+#
+# Adapted for Bareos:
+#
+# anchor: #config-{daemon}_{resource}_{CamelCaseDirective}
+          #config-Director_Job_AlwaysIncrementalMaxFullAge
+# index:  Configuration Directive; {directive} ({daemon}->{resource})
+
+# TODO
+# currently only adapted option. section must still be adapted.
+
+def convertCamelCase2Spaces(valueCC):
+    s1 = re.sub('([a-z0-9])([A-Z])', r'\1 \2', valueCC)
+    result=[]
+    for token in s1.split(' '):
+        u = token.upper()
+        if u in [ "ACL", "CA", "CN", "DB", "DH", "FD", "LMDB", "NDMP", "PSK", "SD", "SSL", "TLS", "VSS" ]:
+            token=u
+        result.append(token)
+    return " ".join(result)
+
+
+def get_config_directive(text):
     '''
-    Formats anchor ID from config option.
+    This function generates from the signature
+    the different required formats of a configuration directive.
+    The signature (text) must be given as
+
+    <dir|sd|fd|console>/<resourcetype_lower_case>/<DirectiveInCamelCase>
+
+    For example:
+    dir/job/TlsAlwaysIncrementalMaxFullAcl
     '''
-    if text[:6] == '$cfg[\'':
-        text = text[6:]
-    if text[-2:] == '\']':
-        text = text[:-2]
-    text = text.replace('[$i]', '')
-    parts = text.split("']['")
-    return parts
+    logger = logging.getLogger(__name__)
+    displaynametemplate = u'{Directive} ({Dmn}->{Resource})'
+    indextemplate  = u'Configuration Directive; ' + displaynametemplate
+
+    # Latex: directiveDirJobCancel%20Lower%20Level%20Duplicates
+    # The follow targettemplate will create identical anchors as Latex,
+    # but as the base URL is likly it be different, it does not help (and still looks ugly).
+    # targettemplate = u'directive{dmn}{resource}{directive}'
+    targettemplate = u'config-{Dmn}_{Resource}_{CamelCaseDirective}'
+
+    input_daemon = None
+    input_resource = None
+    try:
+        input_daemon, input_resource, input_directive = text.split('/', 2)
+    except ValueError:
+        # fall back
+        input_directive = text
+
+    result = {
+        'signature': text,
+    }
+
+    if input_daemon:
+        daemon = input_daemon.lower()
+        if daemon == 'director' or daemon == 'dir':
+            result['Daemon'] = 'Director'
+            result['dmn'] = 'dir'
+            result['Dmn'] = 'Dir'
+        elif daemon == 'storage daemon' or daemon == 'storage' or daemon == 'sd':
+            result['Daemon'] = 'Storage Daemon'
+            result['dmn'] = 'sd'
+            result['Dmn'] = 'Sd'
+        elif daemon == 'file daemon' or daemon == 'file' or daemon == 'fd':
+            result['Daemon'] = 'File Daemon'
+            result['dmn'] = 'fd'
+            result['Dmn'] = 'Fd'
+
+    else:
+        result['Daemon'] = None
+        result['Dmn'] = None
+        result['dmn'] = None
+
+    if input_resource:
+        result['resource'] = input_resource.replace(' ', '').lower()
+        result['Resource'] = input_resource.replace(' ', '').capitalize()
+    else:
+        result['resource'] = None
+        result['Resource'] = None
+
+
+    # input_directive should be without spaces.
+    # However, we make sure, by removing all spaces.
+    result['CamelCaseDirective'] = input_directive.replace(' ', '')
+    result['Directive'] = convertCamelCase2Spaces(result['CamelCaseDirective'])
+
+    result['displayname'] = displaynametemplate.format(**result)
+    result['indexentry'] = indextemplate.format(**result)
+    result['target'] = targettemplate.format(**result)
+
+    logger.debug('[bareos] ' + pformat(result))
+
+    return result
+
 
 
 class ConfigOption(ObjectDescription):
-    indextemplate = 'configuration option; %s'
     parse_node = None
 
     has_arguments = True
 
     doc_field_types = [
-        Field('default', label='Default value', has_arg=False,
-              names=('default', )),
+        Field('required', label='Required', has_arg=False,
+              names=('required', )),
         Field('type', label='Type', has_arg=False,
               names=('type',)),
+        Field('default', label='Default value', has_arg=False,
+              names=('default', )),
+        Field('version', label='Since Version', has_arg=False,
+              names=('version', )),
+        Field('deprecated', label='Deprecated', has_arg=False,
+              names=('deprecated', )),
+        Field('alias', label='Alias', has_arg=False,
+              names=('alias', )),
     ]
 
 
     def handle_signature(self, sig, signode):
+        directive = get_config_directive(sig)
         signode.clear()
-        signode += addnodes.desc_name(sig, sig)
+        # only show the directive (not daemon and resource type)
+        signode += addnodes.desc_name(sig, directive['Directive'])
         # normalize whitespace like XRefRole does
         name = ws_re.sub('', sig)
         return name
 
+
     def add_target_and_index(self, name, sig, signode):
-        targetparts =  get_id_from_cfg(name)
-        targetname = 'cfg_%s' % '_'.join(targetparts)
+        '''
+        Usage:
+
+        .. config:option:: dir/job/TlsEnable
+
+           :required: True
+           :type: Boolean
+           :default: False
+           :version: 16.2.4
+
+           Multiline description ...
+
+        The first argument specifies the directive and must be givenin following syntax:
+        config::option:: <dir|sd|fd|console>/<resourcetype_lower_case>/<DirectiveInCamelCase>
+
+        doc_field_types are only written when they should be displayed:
+        :required: True
+        :type: Boolean
+        :default: False
+        :version: 16.2.4
+        :deprecated: True
+        'alias: True
+
+        To refer to this description, use
+        :config:option:`dir/job/TlsEnable`.
+        '''
+
+        directive = get_config_directive(sig)
+
+        targetname = directive['target']
         signode['ids'].append(targetname)
         self.state.document.note_explicit_target(signode)
+
         indextype = 'single'
-
         # Generic index entries
-        indexentry = self.indextemplate % (name,)
-        self.indexnode['entries'].append((indextype, indexentry,
-                                          targetname, targetname, None))
-        self.indexnode['entries'].append((indextype, name,
+        self.indexnode['entries'].append((indextype, directive['indexentry'],
                                           targetname, targetname, None))
 
-        # Server section
-        if targetparts[0] == 'Servers' and len(targetparts) > 1:
-            indexname = ', '.join(targetparts[1:])
-            self.indexnode['entries'].append((indextype, 'server configuration; %s' % indexname,
-                                              targetname, targetname, None))
-            self.indexnode['entries'].append((indextype, indexname,
-                                              targetname, targetname, None))
-        else:
-            indexname = ', '.join(targetparts)
-            self.indexnode['entries'].append((indextype, indexname,
-                                              targetname, targetname, None))
-
-        self.env.domaindata['config']['objects'][self.objtype, name] = \
+        self.env.domaindata['config']['objects'][self.objtype, sig] = \
             self.env.docname, targetname
 
 
-class ConfigSectionXRefRole(XRefRole):
+class ConfigOptionXRefRole(XRefRole):
     """
-    Cross-referencing role for configuration sections (adds an index entry).
+    Cross-referencing role for configuration options (adds an index entry).
     """
 
     def result_nodes(self, document, env, node, is_ref):
+        logger = logging.getLogger(__name__)
+        logger.debug('[bareos] is_ref: {}, node[reftarget]: {}, {}'.format(str(is_ref), node['reftarget'], type(node['reftarget'])))
+
         if not is_ref:
             return [node], []
+
         varname = node['reftarget']
+
+        directive = get_config_directive(varname)
+
         tgtid = 'index-%s' % env.new_serialno('index')
+
         indexnode = addnodes.index()
         indexnode['entries'] = [
-            ('single', varname, tgtid, varname, None),
-            ('single', 'configuration section; %s' % varname, tgtid, varname, None)
+            ('single', directive['indexentry'], tgtid, varname, None)
         ]
         targetnode = nodes.target('', '', ids=[tgtid])
         document.note_explicit_target(targetnode)
+
         return [indexnode, targetnode, node], []
+
+
+
+    def process_link(self, env, refnode, has_explicit_title, title, target):
+        if has_explicit_title:
+            return title, target
+
+        directive = get_config_directive(title)
+        return directive['displayname'], target
+
+
+
 
 class ConfigSection(ObjectDescription):
     indextemplate = 'configuration section; %s'
@@ -123,9 +274,9 @@ class ConfigSection(ObjectDescription):
             self.env.docname, targetname
 
 
-class ConfigOptionXRefRole(XRefRole):
+class ConfigSectionXRefRole(XRefRole):
     """
-    Cross-referencing role for configuration options (adds an index entry).
+    Cross-referencing role for configuration sections (adds an index entry).
     """
 
     def result_nodes(self, document, env, node, is_ref):
@@ -136,7 +287,7 @@ class ConfigOptionXRefRole(XRefRole):
         indexnode = addnodes.index()
         indexnode['entries'] = [
             ('single', varname, tgtid, varname, None),
-            ('single', 'configuration option; %s' % varname, tgtid, varname, None)
+            ('single', 'configuration section; %s' % varname, tgtid, varname, None)
         ]
         targetnode = nodes.target('', '', ids=[tgtid])
         document.note_explicit_target(targetnode)

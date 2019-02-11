@@ -17,9 +17,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('./extensions'))
+
+
 
 # -- General configuration ------------------------------------------------
 
@@ -48,6 +50,7 @@ rst_epilog = '''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'bareos-ext',
     'sphinx_issues',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.coverage',
@@ -58,6 +61,10 @@ extensions = [
     'sphinxcontrib.plantuml',
     'sphinxcontrib.seqdiag',
 ]
+
+#    'limitation',
+#extensions.append('limitation')
+
 
 # True to prefix each section label with the name of the document it is in, followed by a colon.
 # For example, index:Introduction for a section called Introduction that appears in document index.rst.
