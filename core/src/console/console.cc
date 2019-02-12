@@ -114,7 +114,7 @@ PROG_COPYRIGHT
 "        -l          list Directors defined\n"
 "        -c <path>   specify configuration file or directory\n"
 #if defined(HAVE_PAM)
-"        -p <path>   specify pam credentials file\n"
+"        -p <file>   specify pam credentials file\n"
 "        -o          send pam credentials over unencrypted connection\n"
 #endif
 "        -d <nn>     set debug level to <nn>\n"
