@@ -1160,12 +1160,6 @@ wrap_send_data_read (FILE *fp,
 int
 wrap_parse_data_stats_msg (char *buf, struct wrap_msg_buf *wmsg)
 {
-#if 0
-	struct wrap_data_stats *res = &wmsg->body.data_stats;
-	char *			scan = buf+3;
-
-	wmsg->msg_type = WRAP_MSGTYPE_DATA_STATS;
-#endif
 	return -1;
 }
 

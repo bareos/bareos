@@ -327,11 +327,6 @@ ndma_dispatch_ctrl_unexpected (struct ndmconn *conn, struct ndmp_msg_buf *nmb)
 		ndmalogf (sess, conn->chan.name, 1,
 			"Unexpected message -- probably reply "
 			"w/ wrong reply_sequence");
-#if 0
-		/* causes crash, needs investigation */
-		ndmnmb_snoop (&sess->param.log, "WTF", 5,
-					nmb, conn->chan.name);
-#endif
 		ndmnmb_free (nmb);
 		return;
 	}
@@ -1735,10 +1730,6 @@ ndmp_sxa_data_get_env (struct ndm_session *sess,
 	reply->env.env_len = da->env_tab.n_env;
 	reply->env.env_val = env;
 
-#if 0
-	xa->reply.flags &= ~NDMNMB_FLAG_NO_FREE;  /* free env after xmit */
-#endif
-
 	return 0;
       NDMS_ENDWITH
 }
@@ -2511,12 +2502,6 @@ ndmp_sxa_mover_set_window (struct ndm_session *sess,
 		if (request->length % ms->record_size != 0) {
 			NDMADR_RAISE_ILLEGAL_ARGS("len !record_size");
 		}
-#if 0
-		/* Too pedantic. Sometimes needed (like for testing) */
-		if (request->length == 0) {
-			NDMADR_RAISE_ILLEGAL_ARGS("length 0");
-		}
-#endif
 
 		max_len = NDMP_LENGTH_INFINITY - request->offset;
 		max_len -= max_len % ms->record_size;

@@ -2957,15 +2957,6 @@ struct reqrep_xlate	ndmp2_reqrep_xlate_table[] = {
 	JUST_ERROR_REPLY,		/* no reply actually */
 	NO_MEMUSED /* no memory free routines written yet */
     },
-#if 0
-    {
-	NDMP2_LOG_MESSAGE,		NDMP9_LOG_MESSAGE,
-	ndmp_2to9_log_message_request,
-	ndmp_9to2_log_message_request,
-	JUST_ERROR_REPLY,		/* no reply actually */
-	NO_MEMUSED /* no memory free routines written yet */
-    },
-#endif
 
     {
 	NDMP2_FH_ADD_UNIX_PATH,		NDMP9_FH_ADD_FILE,

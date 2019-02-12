@@ -105,9 +105,6 @@ ndmnmb_snoop (
 	}
 
 	rc = ndmp_pp_header (nmb->protocol_version, &nmb->header, buf);
-#if 0
-	ndmlogf (log, tag, level5, "%s %s", buf, whence);
-#else
 	{
 		char combo[3];
 
@@ -122,7 +119,6 @@ ndmnmb_snoop (
 
 		ndmlogf (log, tag, level5, "%s %s", combo, buf+2);
 	}
-#endif
 
 	if (level < 6) {
 		return;

@@ -74,13 +74,6 @@ char *help_text[] = {
 	"  -o time-limit=N",
 	"           -- check for reply within specified seconds (default 360)",
 	"  -o swap-connect -- perform DATA LISTEN & MOVER CONNECT",
-#if 0
-	"  -p       -- pass DATA->DATA (ndmpcopy)",
-	"  -P       -- pass TAPE->TAPE",
-	"  -o c-partial   -- partial backup",
-	"  -o c-full      -- full backup",
-	"  -o x-restore   -- extract restoring",
-#endif
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */
 	"General and Logging parameters",
 	" --MACRO   -- expand MACRO from ndmjob-args file",
@@ -251,12 +244,6 @@ process_args (int argc, char *argv[])
             }
 
 	    case 'C':	/* -C DIR   -- change directory on data agent */
-#if 0
-		/* allow second to override first. make recover easier */
-		if (C_chdir) {
-			error_byebye ("more than one of -C");
-		}
-#endif
 		C_chdir = optarg;
 		break;
 

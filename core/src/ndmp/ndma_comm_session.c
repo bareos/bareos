@@ -358,24 +358,6 @@ ndma_session_quantum (struct ndm_session *sess, int max_delay_secs)
 	if (ndma_session_distribute_quantum (sess))
 		max_delay_usec = 0;
 
-#if 0
-#ifndef NDMOS_OPTION_NO_DATA_AGENT
-	/* bogus */
-	if (sess->data_acb
-	 && sess->data_acb->data_state.state == NDMP9_DATA_STATE_ACTIVE
-	 && sess->data_acb->data_state.data_connection_addr.addr_type
-						== NDMP9_ADDR_LOCAL) {
-		/*
-		 * There is no remote connection to cue forward
-		 * progress between local DATA/MOVER.
-		 * So, sniff all the connections, and immediately
-		 * attempt the next tape record.
-		 */
-		 max_delay_usec = 0;
-	}
-#endif /* !NDMOS_OPTION_NO_DATA_AGENT */
-#endif
-
 	/*
 	 * Block awaiting ready I/O. Many channel buffers
 	 * will have actual I/O (read/write) performed.

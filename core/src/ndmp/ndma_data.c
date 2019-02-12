@@ -745,28 +745,6 @@ ndmp9_fstat_from_wrap_fstat (ndmp9_file_stat *fstat9,
  ****************************************************************
  */
 
-#if 0
-void
-ndmda_send_logmsg (struct ndm_session *sess, char *fmt, ...)
-{
-	struct ndmconn *	conn = sess->plumb.control;
-	char			buf[4096];
-	va_list			ap;
-
-	va_start (ap, fmt);
-	vsnprintf (buf, sizeof(buf), fmt, ap);
-	va_end (ap);
-
-	// we don't handle our own messages so don't send them....
-	if (conn->conn_type == NDMCONN_TYPE_RESIDENT) {
-	    ndmalogf(sess, 0, 2, "RESIDENT AGENT LOGMSG: %s", buf);
-	    return;
-	}
-
-	ndma_send_logmsg (sess, buf, conn);
-}
-#endif
-
 void
 ndmda_send_notice (struct ndm_session *sess)
 {
@@ -796,10 +774,6 @@ ndmda_send_data_read (struct ndm_session *sess,
 	ndmp9_addr_type		addr_type;
 
 	addr_type = da->data_state.data_connection_addr.addr_type;
-#if 0
-	da->reco_read_offset = offset;
-	da->reco_read_length = length;
-#endif
 
 	if (NDMP9_ADDR_LOCAL == addr_type) {
 #ifndef NDMOS_OPTION_NO_TAPE_AGENT

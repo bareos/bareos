@@ -772,55 +772,6 @@ ndmis_ep_close (struct ndm_session *sess,
 	return -1;
 }
 
-#if 0
-ndmp9_error
-ndmis_ep_could_start (
-  struct ndm_session *sess,
-  int want_transfer_mode,	/* NDMCHAN_MODE_{IDLE|READ|WRITE} */
-  char *reason,
-  struct ndmis_end_point *mine_ep,
-  struct ndmis_end_point *peer_ep)
-{
-	ndmp9_error		error = NDMP9_NO_ERR;
-	char *			reason_end;
-
-	sprintf (reason, "IS %s_START: ", mine_ep->name);
-	reason_end = reason;
-	while (*reason_end) reason_end++;
-
-	if (want_transfer_mode == NDMCHAN_MODE_IDLE)
-		want_transfer_mode = mine_ep->transfer_mode;
-
-	switch (want_transfer_mode) {
-	case NDMCHAN_MODE_IDLE:
-		/* can't check much  */
-		break;
-
-	case NDMCHAN_MODE_READ:
-		/* what to check? */
-		break;
-
-	case NDMCHAN_MODE_WRITE:
-		/* what to check? */
-		break;
-
-	default:
-		strcpy (reason_end, "unknown chan_mode");
-		error = NDMP9_ILLEGAL_ARGS_ERR;
-		goto out;
-	}
-
-  out:
-	if (error == NDMP9_NO_ERR)
-		strcpy (reason_end, "OK");
-
-	return error;
-}
-#endif /* 0 */
-
-
-
-
 /*
  * ADDR_TCP helper routines
  ****************************************************************

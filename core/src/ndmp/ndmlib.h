@@ -482,11 +482,7 @@ struct ndmagent {
 	int		port;		/* 0->default (NDMPPORT) */
 	char		account[NDMAGENT_ACCOUNT_MAX+1]; /* clear text */
 	char		password[NDMAGENT_PASSWORD_MAX+1]; /* clear text */
-#if 0
-	ndmp_auth_type	auth_type;
-#else
 	int		auth_type;
-#endif
 };
 extern int	ndmagent_from_str (struct ndmagent *agent, char *str);
 extern int	ndmhost_lookup (char *hostname, struct sockaddr_in *sin);

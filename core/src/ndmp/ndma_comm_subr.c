@@ -72,25 +72,3 @@ ndmalogfv (struct ndm_session *sess, char *tag,
 
 	ndmlogfv (&sess->param->log, tag, level, fmt, ap);
 }
-
-
-#if 0
-#ifndef NDMOS_OPTION_NO_NDMP2
-char *
-ndma_log_dbg_tag (ndmp2_debug_level lev)
-{
-	switch (lev) {
-	case NDMP2_DBG_USER_INFO:	return "ui";
-	case NDMP2_DBG_USER_SUMMARY:	return "us";
-	case NDMP2_DBG_USER_DETAIL:	return "ud";
-	case NDMP2_DBG_DIAG_INFO:	return "di";
-	case NDMP2_DBG_DIAG_SUMMARY:	return "ds";
-	case NDMP2_DBG_DIAG_DETAIL:	return "dd";
-	case NDMP2_DBG_PROG_INFO:	return "pi";
-	case NDMP2_DBG_PROG_SUMMARY:	return "ps";
-	case NDMP2_DBG_PROG_DETAIL:	return "pd";
-	default:			return "??";
-	}
-}
-#endif /* !NDMOS_OPTION_NO_NDMP2 */
-#endif

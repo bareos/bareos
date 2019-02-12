@@ -400,12 +400,6 @@ ndmca_tm_listen (struct ndm_session *sess)
 	rc = ndmca_test_tape_close (sess, NDMP9_NO_ERR);
 	if (rc) return rc;
 
-#if 0
-	ndmca_test_done_phase (sess);
-#else
-	// done by the wrapper...
-#endif
-
 	/*
 	 * TODO: NDMP9_MOVER_MODE_DATA
 	 */
@@ -413,10 +407,6 @@ ndmca_tm_listen (struct ndm_session *sess)
 	/*
 	 * Good enough
 	 */
-
-#if 0
-	ndmca_test_phase (sess, "M-LISTEN", "Mover LISTEN State Series");
-#endif
 
 	return 0;	/* pass */
 }
@@ -447,18 +437,8 @@ ndmca_tm_listen_subr (struct ndm_session *sess,
 	rc = ndmca_test_mover_continue (sess, NDMP9_ILLEGAL_STATE_ERR);
 	if (rc) return rc;
 
-#if 0
-	/* let it slide for Veritas 3.2 for the moment... Oct 23, 2002 */
-#else
 	rc = ndmca_test_mover_stop (sess, NDMP9_ILLEGAL_STATE_ERR);
 	if (rc) return rc;
-#endif
-
-#if 0
-	/* ??? */
-	rc = ndmca_test_mover_close (sess, NDMP9_ILLEGAL_STATE_ERR);
-	if (rc) return rc;
-#endif
 
 	/* setting the window size in LISTEN mode is not legal in
 	 * version 4 and is required to work in earlier versions

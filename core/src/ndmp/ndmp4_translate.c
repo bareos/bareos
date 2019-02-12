@@ -1656,9 +1656,6 @@ ndmp_4to9_tape_get_state_reply (
 	CNVT_VUL_TO_9 (reply4, reply9, blockno);
 	CNVT_VUQ_TO_9 (reply4, reply9, total_space);
 	CNVT_VUQ_TO_9 (reply4, reply9, space_remain);
-#if 0
-	CNVT_VUL_TO_9 (reply4, reply9, partition);
-#endif
 
 	if (reply4->unsupported & NDMP4_TAPE_STATE_FILE_NUM_UNS)
 		CNVT_IUL_TO_9 (reply9, file_num);
@@ -1678,11 +1675,6 @@ ndmp_4to9_tape_get_state_reply (
 	if (reply4->unsupported & NDMP4_TAPE_STATE_SPACE_REMAIN_UNS)
 		CNVT_IUQ_TO_9 (reply9, space_remain);
 
-#if 0
-	if (reply4->unsupported & NDMP4_TAPE_STATE_PARTITION_UNS)
-		CNVT_IUL_TO_9 (reply9, partition);
-#endif
-
 	return 0;
 }
 
@@ -1699,9 +1691,6 @@ ndmp_9to4_tape_get_state_reply (
 	CNVT_VUL_FROM_9 (reply4, reply9, blockno);
 	CNVT_VUQ_FROM_9 (reply4, reply9, total_space);
 	CNVT_VUQ_FROM_9 (reply4, reply9, space_remain);
-#if 0
-	CNVT_VUL_FROM_9 (reply4, reply9, partition);
-#endif
 
 	reply4->unsupported = 0;
 
@@ -1722,11 +1711,6 @@ ndmp_9to4_tape_get_state_reply (
 
 	if (!reply9->space_remain.valid)
 		reply4->unsupported |= NDMP4_TAPE_STATE_SPACE_REMAIN_UNS;
-
-#if 0
-	if (!reply9->partition.valid)
-		reply4->unsupported |= NDMP4_TAPE_STATE_PARTITION_UNS;
-#endif
 
 	return 0;
 }

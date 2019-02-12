@@ -236,11 +236,6 @@ ndmca_monitor_backup (struct ndm_session *sess)
       if (ndmca_monitor_get_states(sess) < 0)
          break;
 
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
-
 		ds = ca->data_state.state;
 		ms = ca->mover_state.state;
 
@@ -375,11 +370,6 @@ ndmca_monitor_backup_tape_tcp (struct ndm_session *sess)
 		if (ndmca_monitor_get_states(sess) < 0)
 		    break;
 
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
-
 		ds = ca->data_state.state;
 
 		estb = ndmca_data_est(ca);
@@ -477,11 +467,6 @@ ndmca_monitor_recover (struct ndm_session *sess)
 
 		if (ndmca_monitor_get_states(sess) < 0)
 		    break;
-
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
 
 		ds = ca->data_state.state;
 		ms = ca->mover_state.state;
@@ -627,11 +612,6 @@ ndmca_monitor_recover_tape_tcp (struct ndm_session *sess)
 
 		if (ndmca_monitor_get_states(sess) < 0)
 		    break;
-
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
 
 		ds = ca->data_state.state;
 
@@ -819,11 +799,6 @@ ndmca_monitor_shutdown (struct ndm_session *sess)
 		if (ndmca_monitor_get_states (sess) < 0)
 		    break;
 
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
-
 		ds = ca->data_state.state;
 		ms = ca->mover_state.state;
 
@@ -882,11 +857,6 @@ ndmca_monitor_shutdown (struct ndm_session *sess)
 		if (ndmca_monitor_get_states(sess) < 0)
 		    break;
 
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
-
 		ds = ca->data_state.state;
 		ms = ca->mover_state.state;
 
@@ -923,11 +893,6 @@ ndmca_monitor_shutdown_tape_tcp (struct ndm_session *sess)
 
 		if (ndmca_monitor_get_states (sess) < 0)
 		    break;
-
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
 
 		ds = ca->data_state.state;
 
@@ -972,11 +937,6 @@ ndmca_monitor_shutdown_tape_tcp (struct ndm_session *sess)
 	for (count = 0; count < 10; count++) {
 		if (ndmca_monitor_get_states(sess) < 0)
 		    break;
-
-#if 0
-		if (count > 2)
-			ndmca_mon_show_states(sess);
-#endif
 
 		ds = ca->data_state.state;
 

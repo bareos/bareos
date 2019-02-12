@@ -240,9 +240,6 @@ int ndmp9_mover_mode_from_str (ndmp9_mover_mode *valp, char * str) {
 struct ndmp_enum_str_table ndmp9_mover_mode_table[] = {
 	{ "NDMP9_MOVER_MODE_READ",	NDMP9_MOVER_MODE_READ },
 	{ "NDMP9_MOVER_MODE_WRITE",	NDMP9_MOVER_MODE_WRITE },
-#if 0
-	{ "NDMP9_MOVER_MODE_DATA",	NDMP9_MOVER_MODE_DATA },
-#endif
 	{ 0 }
 };
 

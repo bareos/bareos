@@ -714,10 +714,6 @@ ndmca_tt_read (struct ndm_session *sess)
 			CHECK_FILENO_RECNO ("read", fileno, recno+1);
 
 			what = "compare";
-#if 0
-			if (bcmp (buf, pbuf, recsize) != 0)
-				goto fail;
-#else
 			if (bcmp (buf, pbuf, recsize) != 0) {
 				unsigned char *expect_p = (unsigned char *)pbuf;
 				unsigned char *got_p = (unsigned char *)buf;
@@ -736,7 +732,6 @@ ndmca_tt_read (struct ndm_session *sess)
 				}
 				goto fail;
 			}
-#endif
 		}
 
 		what = "eof read";

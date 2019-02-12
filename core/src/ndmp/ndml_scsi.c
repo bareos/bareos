@@ -196,11 +196,6 @@ ndmscsi_use (struct ndmconn *conn, struct ndmscsi_target *targ)
 {
 	int		rc;
 
-#if 0
-	rc = ndmscsi_close (conn);
-	/* error ignored */
-#endif
-
 	rc = ndmscsi_open (conn, targ->dev_name);
 	if (rc) return rc;
 

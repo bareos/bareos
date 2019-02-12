@@ -362,11 +362,6 @@ ndmjob_tape_close (struct ndm_session *sess)
 
 	simu_flush_weof(sess);
 
-#if 0
-	uint32_t		resid;
-	ndmos_tape_mtio (sess, NDMP9_MTIO_REW, 1, &resid);
-#endif
-
 	cur_pos = lseek (ta->tape_fd, (off_t)0, 1);
 	if (cur_pos != -1) {
 		char		pos_symlink_name[NDMOS_CONST_PATH_MAX];
@@ -789,11 +784,6 @@ ndmjob_tape_close (struct ndm_session *sess)
 	}
 
 	simu_flush_weof(sess);
-
-#if 0
-	uint32_t		resid;
-	ndmos_tape_mtio (sess, NDMP9_MTIO_REW, 1, &resid);
-#endif
 
 	close (ta->tape_fd);
 	ta->tape_fd = -1;
