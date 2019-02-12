@@ -228,15 +228,6 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table *media_tab, JobControlRecord  *
       media->file_mark_offset = VolParams[i].StartAddr;
 
       media->valid_filemark = NDMP9_VALIDITY_VALID;
-#if 0
-      Jmsg(jcr, M_INFO, 0, _("label           : %s\n"), media->label);
-      Jmsg(jcr, M_INFO, 0, _("file_mark_offset: %d\n"), media->file_mark_offset);
-      Jmsg(jcr, M_INFO, 0, _("Logical slot is : %d\n"), media->slot_addr);
-      Jmsg(jcr, M_INFO, 0, _("index           : %d\n"), media->index);
-      Jmsg(jcr, M_INFO, 0, _("n_bytes         : %u\n"), media->n_bytes);
-      Jmsg(jcr, M_INFO, 0, _("begin_offset    : %u\n"), media->begin_offset);
-      Jmsg(jcr, M_INFO, 0, _("end_offset      : %u\n"), media->end_offset);
-#endif
    }
    retval = true;
 

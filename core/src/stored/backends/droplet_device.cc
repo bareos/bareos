@@ -926,34 +926,6 @@ ssize_t droplet_device::chunked_remote_volume_size()
     *        mostly fine.
     */
 
-#if 0
-   /*
-    * First make sure that the chunkdir exists otherwise it makes little sense to scan it.
-    */
-   sysmd = dpl_sysmd_dup(&sysmd_);
-   status = dpl_getattr(ctx_, /* context */
-                        chunk_dir.c_str(), /* locator */
-                        NULL, /* metadata */
-                        sysmd); /* sysmd */
-
-   switch (status) {
-   case DPL_SUCCESS:
-      /*
-       * Make sure the filetype is a directory and not a file.
-       */
-      if (sysmd->ftype != DPL_FTYPE_DIR) {
-         volumesize = -1;
-         goto bail_out;
-      }
-      break;
-   case DPL_ENOENT:
-      volumesize = -1;
-      goto bail_out;
-   default:
-      break;
-   }
-#endif
-
    Dmsg1(100, "get chunked_remote_volume_size(%s)\n", getVolCatName());
    if (!walk_chunks(chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
       /* errno is already set in walk_chunks */

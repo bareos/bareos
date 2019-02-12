@@ -38,17 +38,9 @@
 #include "dird/job.h"
 #include "dird/storage.h"
 
-#if 0
-#define SCHED_DEBUG
-#define DBGLVL 0
-#else
-#undef SCHED_DEBUG
-#define DBGLVL 200
-#endif
-
 namespace directordaemon {
 
-const int debuglevel = DBGLVL;
+const int debuglevel = 200;
 
 /* Local variables */
 struct job_item {

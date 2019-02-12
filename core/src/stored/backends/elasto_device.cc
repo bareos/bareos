@@ -160,12 +160,6 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
    auth.insecure_http = insecure_http_;
 
    if (basedir_) {
-#if 0
-      status = elasto_fmkdir(&auth, basedir_);
-      if (status < 0) {
-         goto bail_out;
-      }
-#endif
       Mmsg(virtual_filename_, "%s/%s", basedir_, getVolCatName());
    } else {
       Mmsg(virtual_filename_, "%s", getVolCatName());

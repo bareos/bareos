@@ -157,9 +157,6 @@ static bool AclIsTrivial(struct acl *acl)
 
 static bool acl_nfs4_is_trivial(nfs4_acl_int_t *acl)
 {
-#if 0
-   return (acl->aclEntryN > 0 ? false : true);
-#else
    int i;
    int count = acl->aclEntryN;
    nfs4_ace_int_t *ace;
@@ -181,7 +178,6 @@ static bool acl_nfs4_is_trivial(nfs4_acl_int_t *acl)
       }
    }
    return true;
-#endif
 }
 
 /**

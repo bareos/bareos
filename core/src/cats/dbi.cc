@@ -963,11 +963,7 @@ void BareosDbDBI::SqlDataSeek(int row)
 
 int BareosDbDBI::SqlAffectedRows(void)
 {
-#if 0
-   return dbi_result_get_numrows_affected(result);
-#else
    return 1;
-#endif
 }
 
 uint64_t BareosDbDBI::SqlInsertAutokeyRecord(const char *query, const char *table_name)

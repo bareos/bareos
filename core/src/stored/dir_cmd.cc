@@ -93,10 +93,6 @@ static char mountcmd[] =
    "mount %127s drive=%hd";
 static char unmountcmd[] =
    "unmount %127s drive=%hd";
-#if 0
-static char actionopcmd[] =
-   "action_on_purge %127s vol=%127s action=%d";
-#endif
 static char releasecmd[] =
    "release %127s drive=%hd";
 static char readlabelcmd[] =
@@ -1163,44 +1159,6 @@ static bool UnmountCmd(JobControlRecord *jcr)
    dir->signal(BNET_EOD);
    return true;
 }
-
-#if 0
-/**
- * The truncate command will recycle a volume. The director can call this
- * after purging a volume so that disk space will not be wasted. Only useful
- * for File Storage, of course.
- *
- *
- * It is currently disabled
- */
-static bool ActionOnPurgeCmd(JobControlRecord *jcr)
-{
-   BareosSocket *dir = jcr->dir_bsock;
-
-   char devname[MAX_NAME_LENGTH];
-   char volumename[MAX_NAME_LENGTH];
-   int32_t action;
-
-   /* TODO: Need to find a free device and ask for slot to the director */
-   if (sscanf(dir->msg, actionopcmd, devname, volumename, &action) != 3)
-   {
-      dir->fsend(_("3916 Error scanning action_on_purge command\n"));
-      goto done;
-   }
-   UnbashSpaces(volumename);
-   UnbashSpaces(devname);
-
-   /* Check if action is correct */
-   if (action & AOP_TRUNCTATE) {
-
-   }
-   /* ... */
-
-done:
-   dir->signal(BNET_EOD);
-   return true;
-}
-#endif
 
 /**
  * Release command from Director. This rewinds the device and if

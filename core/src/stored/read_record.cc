@@ -473,25 +473,6 @@ bool ReadRecords(DeviceControlRecord *dcr,
             rec = (dcr->after_rec) ? dcr->after_rec : dcr->before_rec;
             ok = RecordCb(dcr, rec);
 
-#if 0
-            /*
-             * If we have a digest stream, we check to see if we have
-             *  finished the current bsr, and if so, repositioning will
-             *  be turned on.
-             */
-            if (CryptoDigestStreamType(rec->Stream) != CRYPTO_DIGEST_NONE) {
-               Dmsg3(debuglevel, "=== Have digest FI=%u before bsr check pos %u:%u\n",
-                     rec->FileIndex, dev->file, dev->block_num);
-               if (IsThisBsrDone(jcr->bsr, rec) && try_repositioning(jcr, rec, dcr)) {
-                  Dmsg1(debuglevel, "==== BootStrapRecord done at FI=%d\n", rec->FileIndex);
-                  Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n",
-                        dev->file, dev->block_num);
-                  break;
-               }
-               Dmsg2(900, "After is_bsr_done pos %u:%u\n", dev->file, dev->block_num);
-            }
-#endif
-
             /*
              * We can just release the translated record here as the record may not be
              * changed by the record callback so any changes made don't need to be copied

@@ -1892,11 +1892,6 @@ int ReMatch(regex_t * bufp, unsigned char *string, int size, int pos,
        /*NOTREACHED*/}
    }
 
-
-
-#if 0                              /* This line is never reached --Guido */
-   abort();
-#endif
    /*
     *NOTREACHED
     */
