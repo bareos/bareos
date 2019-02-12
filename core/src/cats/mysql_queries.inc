@@ -873,11 +873,13 @@ const char *BareosDbMysql::query_definitions[] = {
 "WHERE Log.JobId=%s "
 ,
 
-/* 0072_get_orphaned_paths_0.mysql */
-"SELECT DISTINCT ParentPath.PathId,File.PathId,ParentPath.Path "
-"FROM Path AS ParentPath LEFT OUTER JOIN File USING(PathId) "
+/* 0072_get_orphaned_paths_0 */
+"SELECT DISTINCT Path.PathId, File.PathId, Path.Path "
+"FROM Path "
+"LEFT JOIN File USING (PathId) "
+"LEFT JOIN PathHierarchy ON (Path.Pathid = PathHierarchy.PPathId) "
 "WHERE File.PathId IS NULL "
-  "AND NOT EXISTS (SELECT 1 FROM Path WHERE Path LIKE CONCAT(ParentPath.Path,'_%%')) "
+  "AND PathHierarchy.PPathId IS NULL "
 "LIMIT 300000 "
 ,
 
