@@ -1469,9 +1469,6 @@ int InitCrypto(void)
    }
 
 #ifdef HAVE_ENGINE_LOAD_PK11
-   /*
-    * FIXME: Until https://www.illumos.org/issues/1667 is solved.
-    */
    ENGINE_load_pk11();
 #else
    /*
@@ -1503,7 +1500,7 @@ int CleanupCrypto(void)
       return 0;
    }
 
-#ifndef HAVE_SUN_OS /* FIXME: Until https://www.illumos.org/issues/1667 is solved. */
+#ifndef HAVE_SUN_OS
    /*
     * Cleanup the builtin engines.
     */

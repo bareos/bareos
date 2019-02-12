@@ -1,6 +1,6 @@
 /*
 Subject: Re: send mail from chrooted Apache
- From: Wietse Venema (wietseporcupine.org)
+ From: Wietse Venema
  Date: Tue Jun 06 2000 - 07:43:31 CDT
 Next message: Wietse Venema: "Re: -"
 Previous message: Brad Knowles: "Re: performance issues"

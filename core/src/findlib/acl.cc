@@ -1464,8 +1464,6 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord *jcr,
       /**
        * Tru64 has next to BACL_TYPE_DEFAULT also BACL_TYPE_DEFAULT_DIR acls.
        * This is an inherited acl for all subdirs.
-       * See http://www.helsinki.fi/atk/unix/dec_manuals/DOC_40D/AQ0R2DTE/DOCU_018.HTM
-       * Section 21.5 Default ACLs
        */
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT_DIR) == bacl_exit_fatal) {
          return bacl_exit_error;

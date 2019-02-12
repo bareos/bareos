@@ -65,9 +65,6 @@
    jcr[0] = 0; }
 
 /*
-  Inspired from
-  http://www.cs.berkeley.edu/~kamil/teaching/sp03/041403.pdf
-
   This lock manager will replace some pthread calls. It can be
   enabled with BAREOS_INCLUDE_VERSION_H_
 
