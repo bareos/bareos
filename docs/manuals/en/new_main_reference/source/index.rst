@@ -11,8 +11,7 @@ As the conversion is automated, and there are still some things that are not
 perfectly converted, we still have the `old documentation <http://doc.bareos.org>`_ available.
 
 
-The Information regarding the newest release in the :ref:`bareos-1825-releasenotes`
-and in the :ref:`bareos-1825-updatefaq`
+The Information regarding the newest release in the :ref:`bareos-current-releasenotes`.
 
 
 
