@@ -17,7 +17,301 @@ A Bareos Storage Daemon can use various storage backends:
 \end{description}
 
 
-\input{storage-backend-droplet}
+
+\section{Droplet Storage Backend}
+\label{SdBackendDroplet}
+\index[sd]{Backend!Droplet}
+\index[sd]{Backend!Droplet!S3}
+\index[sd]{Backend!S3|see {Backend!Droplet}}
+
+The \package{bareos-storage-droplet} backend (\sinceVersion{sd}{Droplet}{17.2.7}) can be used to access Object Storage through \package{libdroplet}.
+Droplet support a number of backends, most notably S3.
+For details about Droplet itself see \externalReferenceDroplet.
+
+\subsection{Requirements}
+
+\begin{itemize}
+  \item The Bareos package \package{bareos-storage-droplet} is not available on all platforms. Please refer to \nameref{sec:packages}.
+  \item Droplet S3:
+  \begin{itemize}
+    \item The droplet S3 backend can only be used with virtual-hosted-style buckets like \url{http://bucket.s3_server/object}.
+        Path-style buckets are not supported.
+        It has  been tested successfully with AWS S3 and CEPH Object Gateway S3.
+  \end{itemize}
+\end{itemize}
+
+
+\subsection{Installation}
+
+Install the package \package{bareos-storage-droplet}
+by using an appropriate package management tool
+(eg. \command{yum}, \command{zypper}).
+
+
+
+
+
+\subsection{Configuration}
+The droplet backend requires a \bareosDir \nameref{DirectorResourceStorage}, a \bareosSd \nameref{StorageResourceDevice} as well as a Droplet profile file where your access-- and secret--keys and other parameters for the connection to your object storage are stored.
+
+\subsubsection{AWS S3}
+\label{sec:DropletAwsS3}
+
+\subsubsubsection{Director}
+
+First, we will create the new \bareosDir \nameref{DirectorResourceStorage}.
+
+For the following example, we
+\begin{itemize}
+  \item choose the name \resourcename{Dir}{Storage}{S3_Object}.
+  \item choose \resourceDirectiveValue{Dir}{Storage}{Media Type}{S3_Object1}. We name it this way, in case we later add more separated Object Storages that don't have access to the same volumes.
+  \item assume the \bareosSd is located on the host \host{bareos-sd.example.com} and will offers the \nameref{StorageResourceDevice} \resourcename{Sd}{Device}{S3_ObjectStorage} (to be configured in the next section).
+\end{itemize}
+
+\begin{bareosConfigResource}{bareos-dir}{storage}{S3\_Object}
+Storage {
+    Name = "S3_Object"
+    Address  = "bareos-sd.example.com"
+    Password = "secret"
+    Device = "AWS_S3_1-00"
+    Media Type = "S3_Object1"
+}
+\end{bareosConfigResource}
+
+These credentials are only used to connect to the \bareosSd. The credentials to access the object store (e.g. S3) are stored in the \bareosSd Droplet Profile.
+
+
+
+\subsubsubsection{Storage Daemon}
+
+
+As of your \bareosSd configuration, we need to setup a new device that acts as a link to Object Storage backend.
+
+The name and media type must correspond to those settings in the \bareosDir \nameref{DirectorResourceStorage}:
+
+\begin{itemize}
+        \item \linkResourceDirective{Sd}{Device}{Name} = \linkResourceDirective{Dir}{Storage}{Device}
+        \item \linkResourceDirective{Sd}{Device}{Media Type} = \linkResourceDirective{Dir}{Storage}{Media Type}
+\end{itemize}
+
+A device for the usage of AWS S3 object storage with a bucket named \path|backup-bareos| located in EU Central 1 (Frankfurt, Germany),
+would look like this:
+
+\begin{bareosConfigResource}{bareos-sd}{device}{AWS\_S3\_1-00}
+Device {
+  Name = "AWS_S3_1-00"
+  Media Type = "S3_Object1"
+  Archive Device = "AWS S3 Storage"
+  Device Type = droplet
+  Device Options = "profile=/etc/bareos/bareos-sd.d/device/droplet/aws.profile,bucket=backup-bareos,chunksize=100M"
+  Label Media = yes                    # Lets Bareos label unlabeled media
+  Random Access = yes
+  Automatic Mount = yes                # When device opened, read it
+  Removable Media = no
+  Always Open = no
+  Maximum Concurrent Jobs = 1
+}
+\end{bareosConfigResource}
+
+
+
+In these examples all the backup data is placed in the \path|bareos-backup| bucket on the defined S3 storage.
+In contrast to other \bareosSd backends, a Bareos volume is not represented by a single file.
+Instead a volume is a sub-directory in the defined bucket
+and every chunk is placed in the volume directory with the filename 0000-9999
+and a size defined in the chunksize option.
+It is implemented this way, as S3 does not allow to append to a file.
+Instead it always writes full files,
+so every append operation could result in reading and writing the full volume file.
+
+Following \linkResourceDirective{Sd}{Device}{Device Options} settings are possible:
+
+\begin{description}
+\item[profile] Droplet profile path (e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile). Make sure the profile file is readable for user \user{bareos}.
+\item[acl] Canned ACL
+\item[storageclass] Storage Class to use.
+\item[bucket] Bucket to store objects in.
+\item[chunksize] Size of Volume Chunks (default = 10 Mb).
+\item[iothreads] Number of IO-threads to use for uploads (if not set, blocking uploads are used)
+\item[ioslots] Number of IO-slots per IO-thread (0-255, default 10). Set this to $\ge 1$ for cached and to 0 for direct writing.
+\item[retries] Number of writing tries before discarding the data. Set this to 0 for unlimited retries. Setting anything $\neq 0$ here will cause dataloss if the backend is not available, so be very careful (0-255, default = 0, which means unlimited retries).
+\item[mmap] Use mmap to allocate Chunk memory instead of malloc().
+\item[location] Deprecated. If required (AWS only), it has to be set in the Droplet profile.
+\end{description}
+
+
+Create the Droplet profile to be used.
+This profile is used later by the droplet library when accessing your cloud storage.
+
+An example for AWS S3 could look like this:
+
+\begin{config}{aws.profile}
+host = s3.amazonaws.com         # This parameter is only used as baseurl and will be prepended with bucket and location set in device ressource to form correct url
+use_https = true
+access_key = myaccesskey
+secret_key = mysecretkey
+pricing_dir = ""                # If not empty, an droplet.csv file will be created which will record all S3 operations.
+backend = s3
+aws_auth_sign_version = 4       # Currently, AWS S3 uses version 4. The Ceph S3 gateway uses version 2.
+aws_region = eu-central-1
+\end{config}
+
+
+More arguments and the SSL parameters can be found in the documentation of the droplet library:
+\externalReferenceDropletDocConfigurationFile
+
+
+\subsubsection{CEPH Object Gateway S3}
+
+Please note, that there is also the \nameref{SdBackendRados} backend,
+which can backup to CEPH directly. However, currently (17.2.7) the \sdBackend{Droplet}{S3} is known to outperform the \sdBackend{Rados}{} backend.
+
+While parameters have been explained in the \nameref{sec:DropletAwsS3} section, this gives an example about how to backup to a CEPH Object Gateway S3.
+
+\begin{bareosConfigResource}{bareos-dir}{storage}{S3\_Object}
+Storage {
+    Name = "S3_Object"
+    Address  = "bareos-sd.example.com"
+    Password = "secret"
+    Device = "CEPH_1-00"
+    Media Type = "S3_Object1"
+}
+\end{bareosConfigResource}
+
+
+A device for CEPH object storage could look like this:
+\begin{bareosConfigResource}{bareos-sd}{device}{CEPH\_1-00}
+Device {
+  Name = "CEPH_1-00"
+  Media Type = "S3_Object1"
+  Archive Device = "Object S3 Storage"
+  Device Type = droplet
+  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/ceph-rados-gateway.profile,bucket=backup-bareos,chunksize=100M"
+  Label Media = yes                    # Lets Bareos label unlabeled media
+  Random Access = yes
+  Automatic Mount = yes                # When device opened, read it
+  Removable Media = no
+  Always Open = no
+  Maximum Concurrent Jobs = 1
+}
+\end{bareosConfigResource}
+
+The correspondig Droplet profile looks like this:
+\begin{config}{ceph-rados-gateway.profile}
+host = CEPH-host.example.com
+use_https = False
+access_key = myaccesskey
+secret_key = mysecretkey
+pricing_dir = ""
+backend = s3
+aws_auth_sign_version = 2
+\end{config}
+
+Main differences are, that \path|aws_region| is not required and \path|aws_auth_sign_version = 2| instead of 4.
+
+
+\subsection{Troubleshooting}
+
+
+
+\subsubsection{iothreads}
+
+For testing following \linkResourceDirective{Sd}{Device}{Device Options} should be used:
+\begin{itemize}
+    \item \path|iothreads=0|
+    \item \path|retries=1|
+\end{itemize}
+
+If the S3 backend is or becomes unreachable, the \bareosSd will behave depending on \argument{iothreads} and \argument{retries}.
+When the \bareosSd is using cached writing (\argument{iothreads}$>=1$) and \argument{retries} is set to zero (unlimited tries), the job will continue running until the backend becomes available again. The job cannot be canceled in this case, as the \bareosSd will continuously try to write the cached files.
+
+Great caution should be used when using \argument{retries} $>=0$ combined with cached writing. If the backend becomes unavailable and the \bareosSd
+reaches the predefined tries, the job will be discarded silently yet marked as \path|OK| in the \bareosDir.
+
+You can always check the status of the writing process by using \bcommand{status}{storage=...}. The current writing status will be displayed then:
+\begin{bconsole}{status storage}
+...
+Device "S3_ObjectStorage" (S3) is mounted with:
+    Volume:      Full-0085
+    Pool:        Full
+    Media type:  S3_Object1
+Backend connection is working.
+Inflight chunks: 2
+Pending IO flush requests:
+   /Full-0085/0002 - 10485760 (try=0)
+   /Full-0085/0003 - 10485760 (try=0)
+   /Full-0085/0004 - 10485760 (try=0)
+...
+Attached Jobs: 175
+...
+
+\end{bconsole}
+\argument{Pending IO flush requests} means that there is data to be written. \argument{try}=0 means that this is the first try and no problem has occurred. If \argument{try} $>0$, problems occurred and the storage daemon will continue trying.
+
+Status without pending IO chunks:
+\begin{bconsole}{status storage}
+...
+Device "S3_ObjectStorage" (S3) is mounted with:
+    Volume:      Full-0084
+    Pool:        Full
+    Media type:  S3_Object1
+Backend connection is working.
+No Pending IO flush requests.
+Configured device capabilities:
+  EOF BSR BSF FSR FSF EOM !REM RACCESS AUTOMOUNT LABEL !ANONVOLS !ALWAYSOPEN
+Device state:
+  OPENED !TAPE LABEL !MALLOC APPEND !READ EOT !WEOT !EOF !NEXTVOL !SHORT MOUNTED
+  num_writers=0 reserves=0 block=8
+Attached Jobs:
+...
+\end{bconsole}
+
+For  performance, \linkResourceDirective{Sd}{Device}{Device Options} should be configured with:
+\begin{itemize}
+    \item \path|iothreads >= 1|
+    \item \path|retries = 0|
+\end{itemize}
+
+
+\subsubsection{New AWS S3 Buckets}
+
+As AWS S3 buckets are accessed via virtual-hosted-style buckets (like \url{http://bucket.s3_server/object})
+creating a new bucket results in a new DNS entry.
+
+As a new DNS entry is not available immediatly, Amazon solves this by using HTTP temporary redirects (code: 307) to redirect to the correct host.
+Unfortenatly, the Droplet library does not support HTTP redirects.
+
+Requesting the device status only resturn a unspecific error:
+
+\begin{bconsole}{status storage}
+*status storage=...
+...
+Backend connection is not working.
+...
+\end{bconsole}
+
+\paragraph{Workaround:}
+
+\begin{itemize}
+    \item Wait until bucket is available a permanet hostname. This can take up to 24 hours.
+    \item Configure the AWS location into the profiles host entry.
+            For the AWS location \path|eu-central-1|,
+            change \configline{host = s3.amazonaws.com} into \configline{host = s3.eu-central-1.amazonaws.com}:
+\begin{config}{Droplet profile}
+...
+host = s3.eu-central-1.amazonaws.com
+aws_region = eu-central-1
+...
+\end{config}
+
+\end{itemize}
+
+
+
+\subsubsection{AWS S3 Logging}
+
+If you use AWS S3 object storage and want to debug your bareos setup, it is recommended to turn on the server access logging in your bucket properties. You will see if bareos gets to try writing into your bucket or not.
+
 
 
 \section{GFAPI Storage Backend}
@@ -31,7 +325,9 @@ See \url{http://www.gluster.org/} for more information regarding GlusterFS insta
 and specifically \url{https://gluster.readthedocs.org/en/latest/Administrator Guide/Bareos/}
 for Bareos integration.
 You can use following snippet to configure it as storage device:
+
 \bconfigInput{config/SdDeviceDeviceOptionsGfapi1.conf}
+
 Adapt server and volume name to your environment.
 
 \sinceVersion{sd}{GlusterFS Storage}{15.2.0}

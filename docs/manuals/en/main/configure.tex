@@ -50,7 +50,7 @@ When a Bareos component starts, it reads its configuration.
 In Bareos $<$ 16.2.2 only configuration files (which optionally can include other files) are supported.
 Since Bareos \sinceVersion{}{Subdirectory Configuration Scheme}{16.2.2} also configuration subdirectories are supported.
 
-\subsubsection{Naming}
+\subsection{Naming}
 
 In this section, the following naming is used:
 
@@ -119,7 +119,7 @@ the documentation will often refer to the configuration without the leading path
 When subdirectory configuration is used,
 all files matching \path|$PATH/$COMPONENT.d/*/*.conf| will be read, see \nameref{sec:ConfigurationSubdirectories}.
 
-\paragraph{Relation between Bareos components and configuration}
+\subsubsection{Relation between Bareos components and configuration}
 
 \begin{center}
 \begin{tabular}{ l || l | l }

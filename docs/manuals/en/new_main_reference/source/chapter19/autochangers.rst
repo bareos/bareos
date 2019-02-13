@@ -687,7 +687,7 @@ How to configure the block sizes in your environment
 
 The following chart shows how to set the directives for maximum block size and label block size depending on how your current setup is:
 
-.. image:: images/blocksize-decisionchart.*
+.. image:: /_static/images/blocksize-decisionchart.*
 
 
 

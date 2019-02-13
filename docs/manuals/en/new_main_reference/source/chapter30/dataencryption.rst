@@ -105,7 +105,10 @@ Example Data Encryption Configurations (bareos-fd.conf)
 
 :index:`[TAG=Example->Data Encryption Configuration File] <pair: Example; Data Encryption Configuration File>`
 
-.. literalinclude:: ../../main/config/FdClientPki.conf
+
+
+.. literalinclude:: /_static/config/FdClientPki.conf
+
 
 
 Decrypting with a Master Key

@@ -37,13 +37,16 @@ The console program can be run with the following options:
    Usage: bconsole [-s] [-c config_file] [-d debug_level]
           -D <dir>    select a Director
           -l          list Directors defined
-          -c <file>   set configuration file to file
+          -c <path>   specify configuration file or directory
+          -p <file>   specify pam credentials file
+          -o          send pam credentials over unencrypted connection
           -d <nn>     set debug level to <nn>
           -dt         print timestamp in debug output
-          -n          no conio
           -s          no signals
           -u <nn>     set command execution timeout to <nn> seconds
           -t          test - read configuration and exit
+          -xc         print configuration and exit
+          -xs         print configuration file schema in JSON format and exit
           -?          print this message.
    \end{commandOut}
 
@@ -203,6 +206,8 @@ catalogs
    Used in the show command. Takes no arguments.
 
 client | fd
+   Used to specify a client (or filedaemon).
+
 clients
    Used in the show, list, and llist commands. Takes no arguments.
 
@@ -218,9 +223,8 @@ days
 devices
    Used in the show command. Takes no arguments.
 
-director | dir
-directors
-   Used in the show command. Takes no arguments.
+director | dir | directors
+   Used in the show and status command. Takes no arguments.
 
 directory
    Used in the restore command. Its argument specifies the directory to be restored.
@@ -238,6 +242,8 @@ files
    Used in the list and llist commands. Takes no arguments.
 
 fileset
+   Used in the run and restore command. Specifies the fileset.
+
 filesets
    Used in the show command. Takes no arguments.
 
@@ -265,10 +271,14 @@ job | jobname
    The Job or Jobname keyword refers to the name you specified in the Job resource, and hence it refers to any number of Jobs that ran. It is typically useful if you want to list all jobs of a particular name.
 
 level
+   Used in the run command. Specifies the backup level.
+
 listing
    Permitted on the estimate command. Takes no argument.
 
 limit
+   Specifies the maximum number of items in the result.
+
 messages
    Used in the show command. Takes no arguments.
 
@@ -285,6 +295,8 @@ off
    Takes no keyword.
 
 pool
+   Specify the pool to be used.
+
 pools
    Used in the show, list, and llist commands. Takes no arguments.
 
@@ -298,6 +310,8 @@ schedules
    Used in the show command. Takes no arguments.
 
 storage | store | sd
+   Used to specify the name of a storage daemon.
+
 storages
    Used in the show command. Takes no arguments.
 
@@ -305,6 +319,8 @@ ujobid
    The ujobid is a unique job identification that is printed in the Job Report output. At the current time, it consists of the Job name (from the Name directive for the job) appended with the date and time the job was run. This keyword is useful if you want to completely identify the Job instance run.
 
 volume
+   Used to specify a volume.
+
 volumes
    Used in the list and llist commands. Takes no arguments.
 
@@ -868,7 +884,7 @@ mount
       mount storage=<storage-name> [slot=<num>] [drive=<num>]
       mount [jobid=<id> | job=<job-name>]
 
-   If you have specified **Automatic  Mount**:sup:`Sd`:sub:`Device`\ = **yes**, under most circumstances, Bareos will automatically access the Volume unless you have explicitly :strong:`unmount`ed it in the Console program.
+   If you have specified **Automatic Mount**:sup:`Sd`:sub:`Device`\ = **yes**, under most circumstances, Bareos will automatically access the Volume unless you have explicitly unmounted it (in the Console program).
 
 move
    :index:`[TAG=Console->Command->move] <triple: Console; Command; move>` The move command allows to move volumes between slots in an autochanger without having to leave the bconsole.

@@ -35,7 +35,7 @@ Configuration Path Layout
 When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :index:`Version >= 16.2.2 <pair: bareos-16.2.2; Subdirectory Configuration Scheme>` also configuration subdirectories are supported.
 
 Naming
-^^^^^^
+~~~~~~
 
 In this section, the following naming is used:
 
@@ -88,7 +88,7 @@ When starting a Bareos component, it will look for its configuration. Bareos com
 
 As the :file:`CONFIGDIR` differs between platforms or is overwritten by the path parameter, the documentation will often refer to the configuration without the leading path (e.g. :file:`COMPONENT.d/*/*.conf` instead of :file:`CONFIGDIR/COMPONENT.d/*/*.conf`).
 
-.. image:: images/bareos-read-configuration.*
+.. image:: /_static/images/bareos-read-configuration.*
 
 
 
@@ -96,7 +96,7 @@ As the :file:`CONFIGDIR` differs between platforms or is overwritten by the path
 When subdirectory configuration is used, all files matching :file:`PATH/COMPONENT.d/*/*.conf` will be read, see :ref:`section-ConfigurationSubdirectories`.
 
 Relation between Bareos components and configuration
-''''''''''''''''''''''''''''''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # Tabular in LaTex format (original)
 
@@ -1070,7 +1070,7 @@ The default configuration files are automatically defined for correct authorizat
 
 
 
-.. figure:: images/Conf-Diagram.*
+.. figure:: /_static/images/Conf-Diagram.*
    :alt: Relation between resource names and passwords
    :width: 80.0%
 

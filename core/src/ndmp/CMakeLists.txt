@@ -75,8 +75,11 @@ set(NDMJOB_SRCS ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c
 
 set(LIBBAREOSNDMP_SRCS  ${NDMP_PROTO_SRCS} ${NDMP_LIB_SRCS} ${NDMP_AGENT_SRCS} ${NDMP_HELPER_SRCS})
 
-set(RPCGEN_PARAMS "-CM")
-
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(RPCGEN_PARAMS "-C")
+ELSE()
+  set(RPCGEN_PARAMS "-CM")
+ENDIF()
 
 # create files with rpcgen
 

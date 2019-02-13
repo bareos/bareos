@@ -29,110 +29,223 @@ IF(NOT DEFINED prefix)
    set (prefix ${CMAKE_DEFAULT_PREFIX})
 ENDIF()
 
-# libdir
-IF(NOT DEFINED libdir)
-   set(libdir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME})
-ENDIF()
 
-# includedir
-IF(NOT DEFINED includedir)
-   set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-ENDIF()
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-# bindir
-IF(NOT DEFINED bindir)
-   set(bindir ${CMAKE_INSTALL_FULL_BINDIR})
-   MESSAGE(STATUS "set bindir to default ${bindir}")
-ENDIF()
+  # libdir
+  IF(NOT DEFINED libdir)
+    set(libdir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME})
+  ENDIF()
+
+  # includedir
+  IF(NOT DEFINED includedir)
+    set(includedir ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
+  ENDIF()
+
+  # bindir
+  IF(NOT DEFINED bindir)
+    set(bindir ${CMAKE_INSTALL_BINDIR})
+    MESSAGE(STATUS "set bindir to default ${bindir}")
+  ENDIF()
 
 
-# sbindir
-IF(NOT DEFINED sbindir)
-   set(sbindir ${CMAKE_INSTALL_FULL_SBINDIR})
-   MESSAGE(STATUS "set sbindir to default ${sbindir}")
-ENDIF()
+  # sbindir
+  IF(NOT DEFINED sbindir)
+    set(sbindir ${CMAKE_INSTALL_SBINDIR})
+    MESSAGE(STATUS "set sbindir to default ${sbindir}")
+  ENDIF()
 
-# sysconfdir
-IF(NOT DEFINED sysconfdir)
-   set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
-ENDIF()
-set(SYSCONFDIR "\"${sysconfdir}\"")
+  # sysconfdir
+  IF(NOT DEFINED sysconfdir)
+    set(sysconfdir ${CMAKE_INSTALL_SYSCONFDIR})
+  ENDIF()
+  set(SYSCONFDIR "\"${sysconfdir}\"")
 
-# confdir
-IF(NOT DEFINED confdir)
-   set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-ENDIF()
+  # confdir
+  IF(NOT DEFINED confdir)
+    set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
+  ENDIF()
 
-# configtemplatedir
-IF(NOT DEFINED configtemplatedir)
-   set(configtemplatedir "${confdir}")
-ENDIF()
+  # configtemplatedir
+  IF(NOT DEFINED configtemplatedir)
+    set(configtemplatedir "${confdir}")
+  ENDIF()
 
-# mandir
-IF(NOT DEFINED mandir)
-   set(mandir ${CMAKE_INSTALL_FULL_MANDIR})
-ENDIF()
+  # mandir
+  IF(NOT DEFINED mandir)
+    set(mandir ${CMAKE_INSTALL_MANDIR})
+  ENDIF()
 
-# docdir
-IF(NOT DEFINED docdir)
-   SET(docdir default_for_docdir)
-ENDIF()
+  # docdir
+  IF(NOT DEFINED docdir)
+    SET(docdir default_for_docdir)
+  ENDIF()
 
-# htmldir
-IF(NOT DEFINED htmldir)
-   SET(htmldir default_for_htmldir)
-ENDIF()
+  # htmldir
+  IF(NOT DEFINED htmldir)
+    SET(htmldir default_for_htmldir)
+  ENDIF()
 
-# archivedir
-IF(NOT DEFINED archivedir)
-   set(archivedir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage")
-ENDIF()
+  # archivedir
+  IF(NOT DEFINED archivedir)
+    set(archivedir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage")
+  ENDIF()
 
-# backenddir
-IF(NOT DEFINED backenddir)
-   set(backenddir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-ENDIF()
+  # backenddir
+  IF(NOT DEFINED backenddir)
+    set(backenddir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
+  ENDIF()
 
-# scriptdir
-IF(NOT DEFINED scriptdir)
-   set(scriptdir "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts")
-ENDIF()
+  # scriptdir
+  IF(NOT DEFINED scriptdir)
+    set(scriptdir "lib/${CMAKE_PROJECT_NAME}/scripts")
+  ENDIF()
 
-# workingdir
-IF(NOT DEFINED workingdir)
-   set(workingdir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
-ENDIF()
-set(working_dir "${workingdir}")
+  # workingdir
+  IF(NOT DEFINED workingdir)
+    set(workingdir "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+  ENDIF()
+  set(working_dir "${workingdir}")
 
-# plugindir
-IF(NOT DEFINED plugindir)
-   set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-ENDIF()
+  # plugindir
+  IF(NOT DEFINED plugindir)
+    set(plugindir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
+  ENDIF()
 
-# piddir
-IF(NOT DEFINED piddir)
-   SET(piddir ${workingdir})
-ENDIF()
+  # piddir
+  IF(NOT DEFINED piddir)
+    SET(piddir ${workingdir})
+  ENDIF()
 
-# bsrdir
-IF(NOT DEFINED bsrdir)
-   SET(bsrdir ${workingdir})
-ENDIF()
+  # bsrdir
+  IF(NOT DEFINED bsrdir)
+    SET(bsrdir ${workingdir})
+  ENDIF()
 
-# logdir
-IF(NOT DEFINED logdir)
-   set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-ENDIF()
+  # logdir
+  IF(NOT DEFINED logdir)
+    set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
+  ENDIF()
 
-# datarootdir
-IF(NOT DEFINED datarootdir)
-   set(datarootdir "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
-ENDIF()
+  # datarootdir
+  IF(NOT DEFINED datarootdir)
+    set(datarootdir "${CMAKE_INSTALL_DATAROOTDIR}")
+  ENDIF()
 
-# subsysdir
-IF(NOT DEFINED subsysdir)
-   set(subsysdir "${workingdir}")
-ENDIF()
+  # subsysdir
+  IF(NOT DEFINED subsysdir)
+    set(subsysdir "${workingdir}")
+  ENDIF()
+
+ELSE() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+  # libdir
+  IF(NOT DEFINED libdir)
+    set(libdir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME})
+  ENDIF()
+
+  # includedir
+  IF(NOT DEFINED includedir)
+    set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
+  ENDIF()
+
+  # bindir
+  IF(NOT DEFINED bindir)
+    set(bindir ${CMAKE_INSTALL_FULL_BINDIR})
+    MESSAGE(STATUS "set bindir to default ${bindir}")
+  ENDIF()
+
+
+  # sbindir
+  IF(NOT DEFINED sbindir)
+    set(sbindir ${CMAKE_INSTALL_FULL_SBINDIR})
+    MESSAGE(STATUS "set sbindir to default ${sbindir}")
+  ENDIF()
+
+  # sysconfdir
+  IF(NOT DEFINED sysconfdir)
+    set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+  ENDIF()
+  set(SYSCONFDIR "\"${sysconfdir}\"")
+
+  # confdir
+  IF(NOT DEFINED confdir)
+    set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
+  ENDIF()
+
+  # configtemplatedir
+  IF(NOT DEFINED configtemplatedir)
+    set(configtemplatedir "${confdir}")
+  ENDIF()
+
+  # mandir
+  IF(NOT DEFINED mandir)
+    set(mandir ${CMAKE_INSTALL_FULL_MANDIR})
+  ENDIF()
+
+  # docdir
+  IF(NOT DEFINED docdir)
+    SET(docdir default_for_docdir)
+  ENDIF()
+
+  # htmldir
+  IF(NOT DEFINED htmldir)
+    SET(htmldir default_for_htmldir)
+  ENDIF()
+
+  # archivedir
+  IF(NOT DEFINED archivedir)
+    set(archivedir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage")
+  ENDIF()
+
+  # backenddir
+  IF(NOT DEFINED backenddir)
+    set(backenddir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
+  ENDIF()
+
+  # scriptdir
+  IF(NOT DEFINED scriptdir)
+    set(scriptdir "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts")
+  ENDIF()
+
+  # workingdir
+  IF(NOT DEFINED workingdir)
+    set(workingdir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+  ENDIF()
+  set(working_dir "${workingdir}")
+
+  # plugindir
+  IF(NOT DEFINED plugindir)
+    set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
+  ENDIF()
+
+  # piddir
+  IF(NOT DEFINED piddir)
+    SET(piddir ${workingdir})
+  ENDIF()
+
+  # bsrdir
+  IF(NOT DEFINED bsrdir)
+    SET(bsrdir ${workingdir})
+  ENDIF()
+
+  # logdir
+  IF(NOT DEFINED logdir)
+    set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
+  ENDIF()
+
+  # datarootdir
+  IF(NOT DEFINED datarootdir)
+    set(datarootdir "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
+  ENDIF()
+
+  # subsysdir
+  IF(NOT DEFINED subsysdir)
+    set(subsysdir "${workingdir}")
+  ENDIF()
+
+ENDIF() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 
 # db_name
 IF(NOT DEFINED db_name)
@@ -290,21 +403,26 @@ ENDIF()
 
 # dynamic-cats-backends
 IF(NOT DEFINED dynamic-cats-backends)
-   SET(dynamic-cats-backends OFF)
-   SET(HAVE_DYNAMIC_CATS_BACKENDS 0)
-ELSE()
    SET(dynamic-cats-backends ON)
    SET(HAVE_DYNAMIC_CATS_BACKENDS 1)
+ELSE()
+   IF (${dynamic-cats-backends})
+     SET(HAVE_DYNAMIC_CATS_BACKENDS 1)
+   ELSE()
+     SET(HAVE_DYNAMIC_CATS_BACKENDS 0)
+   ENDIF()
 ENDIF()
 
 # dynamic-storage-backends
 IF(NOT DEFINED dynamic-storage-backends)
-   # OR (${dynamic-storage-backends}))
-   SET(dynamic-storage-backends OFF)
-   SET(HAVE_DYNAMIC_SD_BACKENDS 0)
+  SET(dynamic-storage-backends ON)
+  SET(HAVE_DYNAMIC_SD_BACKENDS 1)
 ELSE()
-   SET(dynamic-storage-backends ON)
-   SET(HAVE_DYNAMIC_SD_BACKENDS 1)
+  IF (${dynamic-storage-backends})
+    SET(HAVE_DYNAMIC_SD_BACKENDS 1)
+  ELSE()
+    SET(HAVE_DYNAMIC_SD_BACKENDS 0)
+  ENDIF()
 ENDIF()
 
 # scsi-crypto

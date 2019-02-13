@@ -3,7 +3,32 @@
 SOURCEFILE=$1
 DESTFILE=$2
 
-  cat ${SOURCEFILE}\
+while IFS= read -r line
+do
+  # \input{director-resource-director-definitions.tex}
+  if  [[ "${line}" =~ \\input\{(.*)\} ]]; then
+    INPUTFILE="../main/${BASH_REMATCH[1]}"
+
+    if [ ! -f "${INPUTFILE}" ] ; then
+      INPUTFILE="${INPUTFILE}.tex"
+    fi
+
+
+    if [ -f "${INPUTFILE}" ] ; then
+      echo "%%%% INPUT OF ${INPUTFILE} start"
+      cat "${INPUTFILE}"
+      echo "%%%% INPUT OF ${INPUTFILE} end"
+    else
+      echo "%%%% INPUTFILE ${INPUTFILE} NOT FOUND"
+    fi
+  else
+    echo "${line}"
+  fi
+done < "${SOURCEFILE}" > "${DESTFILE}"
+
+mv "${DESTFILE}" "${DESTFILE}.orig"
+
+cat ${DESTFILE}.orig\
     | perl -pe 's#\\begin\{bmessage\}#\\begin{verbatim}\\begin{bmessage}#g' \
     | perl -pe 's#\\end\{bmessage\}#\\end{bmessage}\\end{verbatim}#g' \
 \
@@ -27,6 +52,8 @@ DESTFILE=$2
     | perl -0 -pe 's|(\\begin\{bconsole\}.*?\\end\{bconsole\})|\\begin{verbatim}\1\\end{verbatim}|smg' \
 \
     | perl -0 -pe 's|(\\begin\{tabular\}.*?\\end\{tabular\})|\# Tabular in LaTex format (original)\n\\begin{verbatim}\1\\end{verbatim}\n\n\# Tabular converted from LaTeX to RST (or empty, in case of problems):\n\1|smg' \
+\
+    | perl -0 -pe 's|\\subsubsubsection\{|\\paragraph\{|g' \
 \
     | perl -0 -pe 's|\\releasenoteSection\{(.*?)\}|\\section*{\1}\n\n|smg' \
 \
@@ -61,7 +88,6 @@ DESTFILE=$2
     | perl -pe 's#\{\\textless\}#<#g' \
     | perl -pe 's#\{\\textgreater\}#>#g' \
     > ${DESTFILE}
-
 
 
 # \newcommand{\releasenote}[2]{

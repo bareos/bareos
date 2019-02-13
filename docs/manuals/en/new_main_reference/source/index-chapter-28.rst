@@ -1,6 +1,8 @@
 Network setup
 #############
 
-.. include:: chapter28/client-initiated-connection.rst
-.. include:: chapter28/passiveclient.rst
-.. include:: chapter28/lanaddress.rst
+.. toctree::
+
+   chapter28/client-initiated-connection.rst
+   chapter28/passiveclient.rst
+   chapter28/lanaddress.rst

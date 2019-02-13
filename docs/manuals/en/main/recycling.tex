@@ -167,7 +167,7 @@ volume. The Pool records that control the pruning are described below.
 
 \begin{description}
 
-\item \linkResourceDirective{Dir}{Pool}{Auto Prune} = yes:
+\item[\linkResourceDirective{Dir}{Pool}{Auto Prune} = yes]
    when running a Job  and it needs a new Volume but no appendable volumes are available, apply the Volume retention period.
    At that point,
    Bareos will prune all Volumes that can be pruned in an
@@ -180,7 +180,7 @@ volume. The Pool records that control the pruning are described below.
    If the Volume has another status, such as \volumestatus{Archive}, \volumestatus{Read-Only}, \volumestatus{Disabled},
    \volumestatus{Busy} or \volumestatus{Cleaning}, the Volume status will not be changed to \volumestatus{Purged}.
 
-\item \linkResourceDirective{Dir}{Pool}{Volume Retention}
+\item[\linkResourceDirective{Dir}{Pool}{Volume Retention}]
    defines the length of time that Bareos will
    guarantee that the Volume is not reused counting from the time the last
    job stored on the Volume terminated.  A key point is that this time
@@ -209,7 +209,7 @@ volume. The Pool records that control the pruning are described below.
    set to \volumestatus{Purged}. The files remain physically  on the Volume until the
    volume is overwritten.
 
-\item \linkResourceDirective{Dir}{Pool}{Recycle}
+\item[\linkResourceDirective{Dir}{Pool}{Recycle}]
    defines whether or not the particular Volume can be
    recycled (i.e.  rewritten).  If Recycle is set to \parameter{no},
    then even if Bareos prunes all the Jobs on the volume and it

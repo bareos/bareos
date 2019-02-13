@@ -72,21 +72,21 @@ Here are the important steps.
 
 -  For a standard installation you may only select the "Tray-Monitor" and the "Open Firewall for Client" as additional optional components.
 
-.. image:: images/win-install-1.*
+.. image:: /_static/images/win-install-1.*
    :width: 80.0%
 
 
 
 -  You need to fill in the name of your bareos director in the client configuration dialogue and the FQDN or ip address of your client.
 
-.. image:: images/win-install-2.*
+.. image:: /_static/images/win-install-2.*
    :width: 80.0%
 
 
 
 -  Add the client resource to your Bareos Director Configuration and a job resource for the client as it is also described in the default bareos-dir.conf
 
-.. image:: images/win-install-3.*
+.. image:: /_static/images/win-install-3.*
    :width: 80.0%
 
 
@@ -98,7 +98,7 @@ Command Line (Silent) Installation
 Silent installation is possible since :index:`Version >= 12.4.4 <triple: bareos-12.4.4; Windows; silent installation>`. All inputs that are given during interactive install can now directly be configured on the commandline, so that an automatic silent install is possible.
 
 Commandline Switches
-''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^
 
 /?
    shows the list of available parameters.

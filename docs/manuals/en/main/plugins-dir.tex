@@ -1,0 +1,85 @@
+\section{Director Plugins}
+\label{dirPlugins}
+
+\subsection{python-dir Plugin}
+\label{director-python-plugin}
+\index[general]{Plugin!Python!Director}
+
+The \name{python-dir} plugin is intended to extend the functionality of the Bareos Director by Python code.
+A working example is included.
+
+\begin{itemize}
+    \item install the \package{bareos-director-python-plugin} package
+    \item change to the Bareos plugin directory (\directory{/usr/lib/bareos/plugins/} or \directory{/usr/lib64/bareos/plugins/})
+    \item copy \file{bareos-dir.py.template} to \file{bareos-dir.py}
+    \item activate the plugin in the Bareos Director configuration
+    \item restart the Bareos Director
+    \item change \file{bareos-dir.py} as required
+    \item restart the Bareos Director
+\end{itemize}
+
+
+\subsubsection{Loading plugins}
+
+Since \sinceVersion{dir}{multiple Python plugins}{14.4.0} multiple Python plugins can be loaded and plugin names can be arbitrary. Before this, the Python plugin always loads the file \file{bareos-dir.py}.
+
+The director plugins are configured in the Job-Resource (or JobDefs resource). To load a Python plugin you need
+\begin{itemize}
+ \item [module\_path= ] pointing to your plugin directory (needs to be enabled in the Director resource, too
+ \item [module\_name= ] Your plugin (without the suffix .py)
+ \item [instance= ] default is '0', you can leave this, as long as you only have 1 Director Python plugin. If you have more than 1, start with instance=0 and increment the instance for each plugin.
+ \item You can add plugin specific option key-value pairs, each pair separated by ':' key=value
+\end{itemize}
+
+
+Single Python Plugin Loading Example:
+
+\begin{bconfig}{bareos-dir.conf: Single Python Plugin Loading Example}
+Director {
+  # ...
+  # Plugin directory
+  Plugin Directory = /usr/lib64/bareos/plugins
+  # Load the python plugin
+  Plugin Names = "python"
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  # ...
+  # Load the class based plugin with testoption=testparam
+  Dir Plugin Options = "python:instance=0:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam
+  # ...
+}
+\end{bconfig}
+
+
+Multiple Python Plugin Loading Example:
+
+\begin{bconfig}{bareos-dir.conf: Multiple Python Plugin Loading Example}
+Director {
+  # ...
+  # Plugin directory
+  Plugin Directory = /usr/lib64/bareos/plugins
+  # Load the python plugin
+  Plugin Names = "python"
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  # ...
+  # Load the class based plugin with testoption=testparam
+  Dir Plugin Options = "python:instance=0:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam1
+  Dir Plugin Options = "python:instance=1:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam2
+  # ...
+}
+\end{bconfig}
+
+
+\subsubsection{Write your own Python Plugin}
+
+Some plugin examples are available on \url{https://github.com/bareos/bareos-contrib}. 
+The class-based approach lets you easily reuse stuff already
+defined in the baseclass BareosDirPluginBaseclass, which ships with the \package{bareos-director-python-plugin} package.
+The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga\index[general]{Icinga} or Nagios\index[general]{Nagios|see{Icinga}} using the NSCA protocol.

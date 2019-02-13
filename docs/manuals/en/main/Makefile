@@ -146,7 +146,7 @@ check: bareos-manual-main-reference.pdf
 	@# hyperlink: multiline: pdfTeX warning .* has been reference$d but does not exist
 	@# defDirective multiline: Warning: defDirective{Dir}{Director}{PluginNames} has no matching resourceDirective and will be ignored.
 	@# pdfTeX warning (dest): name{directiveDirJobMigration\040Time} has been referenced but does not exist, replaced by a fixed one
-	@#if ! grep "LaTeX Warning: Hyper reference .* undefined on input\|LaTeX Warning: There were undefined references.\|pdfTeX warning .* has been reference\|Warning: defDirective\|pdfTeX warning (dest): name" $(LOG); then echo "CHECK: OK"; true; else echo "CHECK: FAILED: undefined references"; false; fi
+	@if ! grep "LaTeX Warning: Hyper reference .* undefined on input\|LaTeX Warning: There were undefined references.\|pdfTeX warning .* has been reference\|Warning: defDirective\|pdfTeX warning (dest): name" $(LOG); then echo "CHECK: OK"; true; else echo "CHECK: FAILED: undefined references"; false; fi
 
 clean:
 	if [ -e html/images/ ]; then rm -f html/images/* && rmdir html/images; fi

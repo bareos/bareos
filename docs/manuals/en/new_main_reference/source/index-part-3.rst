@@ -3,21 +3,22 @@ Task and Concepts
 
 .. toctree::
 
-   index-chapter-15.rst
-   index-chapter-16.rst
+   chapter15/bconsole.rst
+   chapter16/restore.rst
    index-chapter-17.rst
-   index-chapter-18.rst
-   index-chapter-19.rst
-   index-chapter-20.rst
-   index-chapter-21.rst
-   index-chapter-22.rst
-   index-chapter-23.rst
-   index-chapter-24+25.rst
+   chapter18/pools.rst
+   chapter19/autochangers.rst
+   chapter20/tape-without-autochanger.rst
+   chapter20/storage-backends.rst
+   chapter21/spooling.rst
+   chapter22/migration.rst
+   chapter23/always-incremental.rst
+   chapter24/basejob.rst
    index-chapter-26.rst
-   index-chapter-27.rst
+   chapter27/win32.rst
    index-chapter-28.rst
-   index-chapter-29.rst
-   index-chapter-30.rst
-   index-chapter-31.rst
-   index-chapter-32.rst
-   index-chapter-33.rst
+   chapter29/tls.rst
+   chapter30/dataencryption.rst
+   chapter31/ndmp.rst
+   chapter32/catmaintenance.rst
+   chapter33/security.rst

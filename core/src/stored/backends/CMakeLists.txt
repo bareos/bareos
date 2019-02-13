@@ -55,11 +55,17 @@ add_library(bareossd-elasto MODULE elasto_device.cc)
 
 add_library(bareossd-fifo MODULE unix_fifo_device.cc)
 INSTALL(TARGETS bareossd-fifo DESTINATION ${backenddir})
+IF(HAVE_DARWIN_OS)
+  target_link_libraries(bareossd-fifo bareos bareossd)
+ENDIF()
 
 
 
 add_library(bareossd-gentape SHARED generic_tape_device.cc)
 INSTALL(TARGETS bareossd-gentape DESTINATION ${backenddir})
+IF(HAVE_DARWIN_OS)
+  target_link_libraries(bareossd-gentape bareos bareossd)
+ENDIF()
 
 add_library(bareossd-tape MODULE unix_tape_device.cc)
 INSTALL(TARGETS bareossd-tape DESTINATION ${backenddir})

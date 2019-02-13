@@ -58,7 +58,7 @@ Configuration example for Bareos 17.2
 
 
 Configuration example for Bareos 18.2
----------------------
+-------------------------------------
 
 .. versionchanged:: 18.2
 .. warning::
@@ -125,8 +125,8 @@ Configuration example for Bareos 18.2
 
 .. _directors-ini-directives:
 
-Overview of the settings in the |bareosWebui| :file:`directors.ini` file.
------------------------------------------------------------
+Overview of the settings in the |bareosWebui| :file:`directors.ini` file
+------------------------------------------------------------------------
 
 .. csv-table:: TLS settings for |bareosWebui|
    :header-rows: 1

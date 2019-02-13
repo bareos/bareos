@@ -21,9 +21,19 @@
 
 MACRO(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS SRC_DIR)
 
-   MESSAGE(STATUS  "BareosInstallConfigFiles called with CONFDIR:${CONFDIR} CONFIGBASEDIRECTORY:${CONFIGBASEDIRECTORY} PLUGINS:${PLUGINS} BACKENDS:${BACKENDS} SRC_DIR:${SRC_DIR}")
+MESSAGE(STATUS  "BareosInstallConfigFiles called with CONFDIR:${CONFDIR} CONFIGBASEDIRECTORY:${CONFIGBASEDIRECTORY} PLUGINS:${PLUGINS} BACKENDS:${BACKENDS} SRC_DIR:${SRC_DIR}")
+MESSAGE(STATUS "CPACK_PACKAGING_INSTALL_PREFIX: ${CPACK_PACKAGING_INSTALL_PREFIX}")
+MESSAGE(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+MESSAGE(STATUS "DESTDIR: $ENV{DESTDIR}")
 
-set (DESTCONFDIR "$ENV{DESTDIR}/${CONFDIR}/${CONFIGBASEDIRECTORY}/")
+IF (IS_ABSOLUTE ${CONFDIR})
+    set (DESTCONFDIR "$ENV{DESTDIR}${CONFDIR}/${CONFIGBASEDIRECTORY}/")
+ELSE()
+    set (DESTCONFDIR "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFDIR}/${CONFIGBASEDIRECTORY}/")
+ENDIF()
+
+
+
 MESSAGE(STATUS  "installing configuration ${CONFIGBASEDIRECTORY}  resource files to ${DESTCONFDIR}")
 
 MESSAGE(STATUS  "globbing ${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*")
@@ -34,12 +44,15 @@ foreach(resdir ${resourcedirs})
    foreach(configfile ${configfiles})
       get_filename_component(fname ${configfile} NAME)
       if (EXISTS ${DESTCONFDIR}/${resname}/${fname})
-         MESSAGE(STATUS "${resname}/${fname} as ${resname}/${fname}.new (keep existing)")
+         MESSAGE(STATUS "${DESTCONFDIR}/${resname}/${fname} exists")
+         MESSAGE(STATUS "rename ${configfile} to ${configfile}.new")
          FILE (RENAME "${configfile}" "${configfile}.new")
-         FILE (COPY "${configfile}.new" DESTINATION "${DESTCONFDIR}/${resname}")
+
+         MESSAGE(STATUS "copy ${configfile}.new to ${DESTCONFDIR}/${resname}")
+         FILE (INSTALL "${configfile}.new" DESTINATION "${DESTCONFDIR}/${resname}")
          FILE (RENAME "${configfile}.new" "${configfile}")
       else()
-         MESSAGE(STATUS "${resname}/${fname} as ${resname}/${fname} (keep existing)")
+         MESSAGE(STATUS "${resname}/${fname} as ${resname}/${fname} (new installation)")
          FILE (COPY "${configfile}" DESTINATION "${DESTCONFDIR}/${resname}")
       endif()
    endforeach()

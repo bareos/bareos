@@ -1,3 +1,5 @@
+\chapter{NDMP Backups with Bareos}
+
 \index[general]{NDMP!Overview}
 
 \section{NDMP Basics}
@@ -1910,12 +1912,12 @@ Level & Description \\
 \hline
 \end{tabular}
 
-\paragraph{Differential Backups}
+\subsubsection{Differential Backups}
  are supported.
 The NDMP backup level will be 1,
 visible as trailing number in the backup file (\path|/@NDMP/ifs/home%1|).
 
-\paragraph{Incremental Backups}
+\subsubsection{Incremental Backups}
  are supported.
 The NDMP backup level will increment with each run, until a Full (0) or Differential (1) will be made.
 The maximum backup level will be 9.

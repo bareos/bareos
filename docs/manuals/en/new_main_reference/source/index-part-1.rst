@@ -3,11 +3,10 @@ Introduction and Tutorial
 
 .. toctree::
 
-   index-chapter-01
-   index-chapter-02
-   index-chapter-03
-   index-chapter-04
-   index-chapter-05
-   index-chapter-06
-   index-chapter-07
-
+   index-chapter-01.rst
+   chapter02/install.rst
+   chapter03/webui.rst
+   chapter04/update.rst
+   chapter05/quickstart.rst
+   chapter06/tutorial.rst
+   chapter07/critical.rst

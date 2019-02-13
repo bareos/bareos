@@ -37,7 +37,9 @@ foreach ($config as $key => $value) {
    $bsock->set_config_param($key, $value);
 }
 
-var_dump($bsock);
+if ($argv[1] === 1) {
+   var_dump($bsock);
+}
 
 $result = $bsock->connect_and_authenticate();
 

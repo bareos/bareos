@@ -1,3 +1,7 @@
+.. _GeneralChapter:
+
+What is Bareos?
+===============
 
 .. toctree::
 

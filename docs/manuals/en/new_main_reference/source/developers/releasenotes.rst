@@ -1,7 +1,66 @@
+.. _bareos-current-releasenotes:
+
+.. _bareos-1826-releasenotes:
+
+Bareos 18.2.6 Release Notes
+===========================
+
+General Release Information
+---------------------------
+
+.. list-table:: Bareos 18.2.6 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 13 February 2019
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+..
+   * - **Release Ticket**
+     - :issue:`1040`
+..
+   * - **LOC**
+     - 123456+ 12345-
+
+.. csv-table:: binary package availablility in the `bareos.com subscription repos <https://www.bareos.com/en/Subscription.html>`_
+   :header: "Distribution", "Architecture"
+   :widths: auto
+
+   CentOS_6, "x86_64"
+   CentOS_7, "x86_64"
+   Debian_8.0, "i586,x86_64"
+   Debian_9.0, "i586,x86_64"
+   Fedora_28, "x86_64"
+   Fedora_29, "x86_64"
+   FreeBSD_11.2, "x86_64"
+   MacOS, "x86_64"
+   RHEL_6, "x86_64"
+   RHEL_7, "x86_64"
+   SLE_12_SP3, "x86_64"
+   SLE_12_SP4, "x86_64"
+   SLE_15, "x86_64"
+   openSUSE_Leap_15.0, "x86_64"
+   Univention_4.3, "x86_64"
+   Windows, "32Bit, 64Bit"
+   xUbuntu_14.04, "i586,x86_64"
+   xUbuntu_16.04, "i586,x86_64"
+   xUbuntu_18.04, "x86_64"
+
+New Features
+------------
+* New packages for MacOS and FreeBSD
+* Updated documentation
+* |bareosWebui|: Fixed TLS-Cert problem with old PHP versions :issue:`1045`
+* dbcheck: completed merge of "Fix dbcheck orphaned path entries performance issue" (a8f2a39)
+
+
 .. _bareos-1825-releasenotes:
 
 Bareos 18.2.5 Release Notes
-============================
+===========================
 
 General Release Information
 ---------------------------
@@ -85,9 +144,10 @@ Changed Features
   * new |bareosFd| logs the current status of both options in job log
 
 Backward compatibility
----------------------
+----------------------
 * |bareosDir| >= 18.2 can work with all |bareosFd| versions. However, all other components need to be updated to Bareos version >= 18.2
 * To maintain |bareosWebui| access to the |bareosDir|, it depends on the current configuration. 1. TLS certificates: Nothing to do. 2. No TLS configured: Set TlsEnable=false in the respective console config of the |bareosWebui| in the |bareosDir|
+
 ..  * |bconsole| < 18.2 can be used with minor drawbacks (no PAM authentication, no TLS-PSK)
 
 Full connection overview
@@ -221,6 +281,7 @@ What is the important feature introduced in Bareos 18.2?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. A new network protocol was introduced where TLS is immediately used.
+
   * When no certificates are configured, the network connection will still be
     encrypted using TLS-PSK.
   * When certificates are configured, Bareos will configure both TLS-PSK and

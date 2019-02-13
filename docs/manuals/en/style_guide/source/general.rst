@@ -169,29 +169,62 @@ Alternatively, you can reference any label (not just section titles)
 if you provide the link text ``:ref:`link text <reference-label>```.
 
 
-
 Sections
 --------
-
-From https://devguide.python.org/documenting/#sections.
 
 Section headers are created by underlining (and optionally overlining) the section title with a punctuation character, at least as long as the text:
 
 ::
 
-   =================
+   #################
    This is a heading
-   =================
+   #################
 
-Normally, there are no heading levels assigned to certain characters as the structure is determined from the succession of headings. However, for the Python documentation, here is a suggested convention:
+Normally, there are no heading levels assigned to certain characters as the structure is determined from the succession of headings. However, this is our convention:
 
 * ``#`` with overline, for parts
-* ``*`` with overline, for chapters
-* ``=``, for sections
-* ``-``, for subsections
+* ``=`` for chapters
+* ``-``, for sections
+* ``~``, for subsections
 * ``^``, for subsubsections
-* ``"``, for paragraphs   
+* ``'``, for paragraphs
 
+::
+
+   ####
+   Part
+   ####
+   
+   Chapter
+   =======
+
+   Section
+   -------
+
+   Subsection
+   ~~~~~~~~~~
+
+   Subsubsection
+   ^^^^^^^^^^^^^
+
+   Paragraph
+   '''''''''
+
+
+This convention has be introduced from the conversion of thw original LaTex source to RST,
+as :program:`pandoc` has created RST file with this section markers (except of parts, which are not created at all).
+
+.. note::
+
+   With RST, there is no leaving out a section level.
+   If you write a chapter it is not possible to continue with a paragraph.
+   Instead the next section must be of the type section.
+   
+   If you try to do it overwise (chapter 1 ``=`` -> paragraph ``'``),
+   the ''paragraph'' is treated as a section.
+   And if you continue by another chapter (in the same file) (chapter 2 ``=`` -> section ``-``),
+   :program:`sphinx-build` got confused and at least produces a warning (`Title level inconsistent`)
+   and possibly renders the result incorrectly.
 
 
 File/Directory/Path
@@ -212,11 +245,11 @@ Backslahes (Windows paths) ``\`` have to written as ``\\``:
 
 The output should look like this:
   
-.. include:: include/file.rst
+.. include:: include/file.rst.inc
 
 The formatting looks a follows:
 
-.. literalinclude:: include/file.rst
+.. literalinclude:: include/file.rst.inc
 
 
 

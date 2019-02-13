@@ -3,16 +3,16 @@ Appendix
 
 .. toctree::
 
-   index-appendix-a.rst
-   index-appendix-b.rst
-   index-appendix-c.rst
-   index-appendix-d.rst
-   index-appendix-e.rst
-   index-appendix-f.rst
-   index-appendix-g.rst
-   index-appendix-h.rst
-   index-appendix-i.rst
-   index-appendix-j.rst
-   index-appendix-k.rst
-   index-appendix-l.rst
-   index-appendix-m.rst
+   appendix-a/requirements.rst
+   appendix-b/supportedoses.rst
+   appendix-c/programs.rst
+   appendix-d/bootstrap.rst
+   appendix-e/verify.rst
+   appendix-f/backward-compatibility.rst
+   appendix-g/tables.rst
+   appendix-h/howto.rst
+   appendix-i/rescue.rst
+   appendix-j/troubleshooting.rst
+   appendix-k/debug.rst
+   appendix-l/releasenotes.rst
+   appendix-m/license.rst
