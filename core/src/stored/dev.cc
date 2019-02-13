@@ -386,8 +386,6 @@ static inline Device *init_dev(JobControlRecord *jcr, DeviceResource *device, bo
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
 
-   dev->SetMutexPriorities();
-
    dev->ClearOpened();
    dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
    Dmsg2(100, "InitDev: tape=%d dev_name=%s\n", dev->IsTape(), dev->dev_name);

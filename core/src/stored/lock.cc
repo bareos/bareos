@@ -339,14 +339,6 @@ int Device::InitReadAcquireMutex()
    return pthread_mutex_init(&read_acquire_mutex, NULL);
 }
 
-/**
- * Set order in which device locks must be acquired
- */
-void Device::SetMutexPriorities()
-{
-   /* no mutex priorities without LOCKMGR */
-}
-
 int Device::NextVolTimedwait(const struct timespec *timeout)
 {
    return pthread_cond_timedwait(&wait_next_vol, &mutex_, timeout);

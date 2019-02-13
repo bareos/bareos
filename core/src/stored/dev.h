@@ -563,7 +563,6 @@ public:
    int InitAcquireMutex();
    int InitReadAcquireMutex();
    int init_volcat_mutex();
-   void SetMutexPriorities();
    int NextVolTimedwait(const struct timespec *timeout);
    void dblock(int why);
    void dunblock(bool locked = false);
