@@ -329,21 +329,6 @@ do { int errstat; if ((errstat=RwlWriteunlock(&(x)))) \
 #define Dmsg12(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 #define Dmsg13(lvl, ...) if ((lvl)<=debug_level) d_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 
-#define Tmsg0(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg1(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg2(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg3(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg4(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg5(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg6(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg7(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg8(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg9(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg10(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg11(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg12(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-#define Tmsg13(lvl, ...) t_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
-
 /** Messages that are printed (uses p_msg) */
 #define Pmsg0(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
 #define Pmsg1(lvl, ...) p_msg(__FILE__, __LINE__, lvl, __VA_ARGS__)
