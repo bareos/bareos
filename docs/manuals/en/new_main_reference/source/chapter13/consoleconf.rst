@@ -23,6 +23,60 @@ Director Resource
 
 The Director resource defines the attributes of the Director running on the network. You may have multiple Director resource specifications in a single Console configuration file. If you have more than one, you will be prompted to choose one when you start the Console program.
 
+\defDirective{Console}{Director}{Address}{}{}{%
+   Where the address is a host name,  a fully qualified domain name, or a network
+   address used to connect  to the Director.
+   }
+
+\defDirective{Console}{Director}{Description}{}{}{%
+   }
+
+\defDirective{Console}{Director}{Dir Port}{}{}{%
+   This port must be identical to the
+   \linkResourceDirective{Dir}{Director}{Dir Port} specified in the \nameref{DirectorChapter} file.
+   }
+
+\defDirective{Console}{Director}{Heartbeat Interval}{}{}{%
+   }
+
+\defDirective{Console}{Director}{Name}{}{}{%
+   The director name used to select among different Directors, otherwise, this
+   name is not used.
+   }
+
+\defDirective{Console}{Director}{Password}{}{}{%
+   This password is used to authenticate when connecting to the \bareosDir as default console.
+   It must correspond to \linkResourceDirective{Dir}{Director}{Password}.
+   }
+
+\defDirective{Console}{Director}{TLS Authenticate}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS CA Certificate Dir}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS CA Certificate File}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS Certificate}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS Certificate Revocation List}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS Enable}{}{}{%
+   Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
+   }
+
+\defDirective{Console}{Director}{TLS Key}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS Require}{}{}{%
+   }
+
+\defDirective{Console}{Director}{TLS Verify Peer}{}{}{%
+   }
+
 An actual example might be:
 
 
@@ -65,6 +119,77 @@ You may specify as many Console resources in the console’s conf file. If you d
 information.
 
 Note, the Console resource is optional, but can be useful for restricted consoles as noted above.
+
+\defDirective{Console}{Console}{Description}{}{}{%
+   }
+
+\defDirective{Console}{Console}{Director}{}{}{%
+   If this directive is specified, this Console resource will be
+   used by bconsole when that particular director is selected
+   when first starting bconsole.  I.e. it binds a particular console
+   resource with its name and password to a particular director.
+   }
+
+\defDirective{Console}{Console}{Heartbeat Interval}{}{}{%
+   This directive is optional and if specified will cause the Console to
+   set a keepalive interval (heartbeat) in seconds on each of the sockets
+   to communicate with the Director.  It is implemented only on systems
+   (Linux, ...) that provide the {\bf setsockopt} TCP\_KEEPIDLE function.
+   If the value is set to 0 (zero), no change is made to the socket.
+   }
+
+\defDirective{Console}{Console}{History File}{}{}{%
+   If this directive is specified and the console is compiled with readline support,
+   it will use the given filename as history file.
+   If not specified, the history file will be named \file{~/.bconsole_history}
+   }
+
+\defDirective{Console}{Console}{History Length}{}{}{%
+   If this directive is specified the history file will be truncated after \configdirective{HistoryLength} entries.
+   }
+
+\defDirective{Console}{Console}{Name}{}{}{%
+   The Console name used to allow a restricted console to change
+   its IP address using the SetIP command. The SetIP command must
+   also be defined in the Director's conf CommandACL list.
+   }
+
+\defDirective{Console}{Console}{Password}{}{}{%
+   If this password is supplied, then the password specified in the
+   Director resource of you Console conf will be ignored.  See below
+   for more details.
+   }
+
+\defDirective{Console}{Console}{Rc File}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS Authenticate}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS CA Certificate Dir}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS CA Certificate File}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS Certificate}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS Certificate Revocation List}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS Enable}{}{}{%
+   Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
+   }
+
+\defDirective{Console}{Console}{TLS Key}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS Require}{}{}{%
+   }
+
+\defDirective{Console}{Console}{TLS Verify Peer}{}{}{%
+   }
 
 Example Console Configuration File
 ----------------------------------

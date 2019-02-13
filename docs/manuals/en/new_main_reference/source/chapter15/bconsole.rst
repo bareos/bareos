@@ -37,13 +37,16 @@ The console program can be run with the following options:
    Usage: bconsole [-s] [-c config_file] [-d debug_level]
           -D <dir>    select a Director
           -l          list Directors defined
-          -c <file>   set configuration file to file
+          -c <path>   specify configuration file or directory
+          -p <file>   specify pam credentials file
+          -o          send pam credentials over unencrypted connection
           -d <nn>     set debug level to <nn>
           -dt         print timestamp in debug output
-          -n          no conio
           -s          no signals
           -u <nn>     set command execution timeout to <nn> seconds
           -t          test - read configuration and exit
+          -xc         print configuration and exit
+          -xs         print configuration file schema in JSON format and exit
           -?          print this message.
    \end{commandOut}
 

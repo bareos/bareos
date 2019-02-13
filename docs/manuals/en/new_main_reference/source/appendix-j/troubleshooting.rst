@@ -215,12 +215,115 @@ As a temporary fix, just reset this counter:
 
 In the long run, it is planed to modify the database schema to enable storing much larger numbers.
 
+.. _AnsiLabelsChapter:
+
+Tape Labels: ANSI or IBM
+------------------------
+
+:index:`[TAG=Label->Tape Labels] <pair: Label; Tape Labels>` :index:`[TAG=Tape->Label->ANSI] <triple: Tape; Label; ANSI>` :index:`[TAG=Tape->Label->IBM] <triple: Tape; Label; IBM>`
+
+By default, Bareos uses its own tape label (see :ref:`backward-compatibility-tape-format` and **Label Type**:sup:`Dir`:sub:`Pool`\ ). However, Bareos also supports reading and write ANSI and IBM tape labels.
+
+Reading
+~~~~~~~
+
+Reading ANSI/IBM labels is important, if some of your tapes are used by other programs that also support ANSI/IBM labels. For example, LTFS tapes :index:`[TAG=Tape->LTFS] <pair: Tape; LTFS>` are indicated by an ANSI label.
+
+If your are running Bareos in such an environment, you must set **Check Labels**:sup:`Sd`:sub:`Device`\  to yes, otherwise Bareos will not recognize that these tapes are already in use.
+
+Writing
+~~~~~~~
+
+To configure Bareos to also write ANSI/IBM tape labels, use **Label Type**:sup:`Dir`:sub:`Pool`\  or **Label Type**:sup:`Sd`:sub:`Device`\ . With the proper configuration, you can force Bareos to require ANSI or IBM labels.
+
+Even though Bareos will recognize and write ANSI and IBM labels, it always writes its own tape labels as well.
+
+If you have labeled your volumes outside of Bareos, then the ANSI/IBM label will be recognized by Bareos only if you have created the HDR1 label with BAREOS.DATA in the filename field (starting with character 5). If Bareos writes the labels, it will use this information to recognize the tape as a Bareos tape. This allows ANSI/IBM labeled tapes to be used at sites with multiple machines and multiple backup programs.
+
 .. _TapeTestingChapter:
 
 Tape Drive
 ----------
 
 :index:`[TAG=Problem->Tape] <pair: Problem; Tape>`
+
+This chapter is concerned with testing and configuring your tape drive to make sure that it will work properly with Bareos using the btape program.
+
+Get Your Tape Drive Working
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In general, you should follow the following steps to get your tape drive to work with Bareos. Start with a tape mounted in your drive. If you have an autochanger, load a tape into the drive. We use /dev/nst0 as the tape drive name, you will need to adapt it according to your system.
+
+Do not proceed to the next item until you have succeeded with the previous one.
+
+#. Make sure that Bareos (the Storage daemon) is not running or that you have unmounted the drive you will use for testing.
+
+#. Use tar to write to, then read from your drive:
+
+   
+
+   ::
+
+         mt -f /dev/nst0 rewind
+         tar cvf /dev/nst0 .
+         mt -f /dev/nst0 rewind
+         tar tvf /dev/nst0
+
+   
+
+#. Make sure you have a valid and correct Device resource corresponding to your drive. For Linux users, generally, the default one works. For FreeBSD users, there are two possible Device configurations (see below). For other drives and/or OSes, you will need to first ensure that your system tape modes are properly setup (see below), then possibly modify you Device resource depending on the output from the btape program (next item). When doing this, you should consult the
+   :ref:`Storage Daemon
+      Configuration <StoredConfChapter>` of this manual.
+
+#. If you are using a Fibre Channel to connect your tape drive to Bareos, please be sure to disable any caching in the NSR (network storage router, which is a Fibre Channel to SCSI converter).
+
+#. Run the btape test command:
+
+   
+
+   ::
+
+         btape /dev/nst0
+         test
+
+   
+
+   It isn’t necessary to run the autochanger part of the test at this time, but do not go past this point until the basic test succeeds. If you do have an autochanger, please be sure to read the :ref:`Autochanger
+      chapter <AutochangersChapter>` of this manual.
+
+#. Run the btape fill command, preferably with two volumes. This can take a long time. If you have an autochanger and it is configured, Bareos will automatically use it. If you do not have it configured, you can manually issue the appropriate mtx command, or press the autochanger buttons to change the tape when requested to do so.
+
+#. Run Bareos, and backup a reasonably small directory, say 60 Megabytes. Do three successive backups of this directory.
+
+#. Stop Bareos, then restart it. Do another full backup of the same directory. Then stop and restart Bareos.
+
+#. Do a restore of the directory backed up, by entering the following restore command, being careful to restore it to an alternate location:
+
+   
+
+   ::
+
+         restore select all done
+         yes
+
+   
+
+   Do a diff on the restored directory to ensure it is identical to the original directory. If you are going to backup multiple different systems (Linux, Windows, Mac, Solaris, FreeBSD, ...), be sure you test the restore on each system type.
+
+#. If you have an autochanger, you should now go back to the btape program and run the autochanger test:
+
+   
+
+   ::
+
+           btape /dev/nst0
+           auto
+
+   
+
+   Adjust your autochanger as necessary to ensure that it works correctly. See the :ref:`Autochanger chapter <AutochangerTesting>` of this manual for a complete discussion of testing your autochanger.
+
+
 
 Autochanger
 -----------
