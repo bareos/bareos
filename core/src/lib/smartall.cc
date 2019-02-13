@@ -33,8 +33,6 @@
                   http://www.fourmilab.ch/smartall/
 */
 
-#define _LOCKMGR_COMPLIANT
-
 #include "include/bareos.h"
 
 /*

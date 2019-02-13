@@ -19,37 +19,6 @@
    02110-1301, USA.
 */
 
-/*
-  How to use mutex with bad order usage detection
- ------------------------------------------------
-
- Note: see file mutex_list.h for current mutexes with
-       defined priorities.
-
- Instead of using:
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    P(mutex);
-    ..
-    V(mutex);
-
- use:
-    bthread_mutex_t mutex = BTHREAD_MUTEX_PRIORITY(1);
-    P(mutex);
-    ...
-    V(mutex);
-
- Mutex that doesn't need this extra check can be declared as pthread_mutex_t.
- You can use this object on pthread_mutex_lock/unlock/cond_wait/cond_timewait.
-
- With dynamic creation, you can use:
-    bthread_mutex_t mutex;
-    pthread_mutex_init(&mutex);
-    BthreadMutexSetPriority(&mutex, 10);
-    pthread_mutex_destroy(&mutex);
-
- */
-
-#define _LOCKMGR_COMPLIANT
 #include "include/bareos.h"
 #include "lib/edit.h"
 

@@ -103,7 +103,6 @@ int main (int argc, char *argv[])
    InitStackDump();
 
    MyNameIs(argc, argv, "bcopy");
-   LmgrInitThread();
    InitMsg(NULL, NULL);
 
    while ((ch = getopt(argc, argv, "b:c:D:d:i:o:pvw:?")) != -1) {

@@ -297,9 +297,9 @@ public:
    virtual ~Device() {}
    Device * volatile swap_dev;        /**< Swap vol from this device */
    dlist *attached_dcrs;              /**< Attached DeviceControlRecord list */
-   bthread_mutex_t mutex_;           /**< Access control */
-   bthread_mutex_t spool_mutex;       /**< Mutex for updating spool_size */
-   bthread_mutex_t acquire_mutex;     /**< Mutex for acquire code */
+   pthread_mutex_t mutex_;           /**< Access control */
+   pthread_mutex_t spool_mutex;       /**< Mutex for updating spool_size */
+   pthread_mutex_t acquire_mutex;     /**< Mutex for acquire code */
    pthread_mutex_t read_acquire_mutex; /**< Mutex for acquire read code */
    pthread_cond_t wait;               /**< Thread wait variable */
    pthread_cond_t wait_next_vol;      /**< Wait for tape to be mounted */
@@ -614,7 +614,7 @@ private:
 public:
    dlink dev_link;                    /**< Link to attach to dev */
    JobControlRecord *jcr;             /**< Pointer to JobControlRecord */
-   bthread_mutex_t mutex_;            /**< Access control */
+   pthread_mutex_t mutex_;            /**< Access control */
    pthread_mutex_t r_mutex;           /**< rLock pre-mutex */
    Device * volatile dev;             /**< Pointer to device */
    DeviceResource *device;            /**< Pointer to device resource */

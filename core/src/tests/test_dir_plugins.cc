@@ -77,7 +77,6 @@ TEST(dir, dir_plugins)
 
    TermMsg();
    CloseMemoryPool();
-   LmgrCleanupMain();
    sm_dump(false);
 }
 

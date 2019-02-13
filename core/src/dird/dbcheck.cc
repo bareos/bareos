@@ -1066,7 +1066,6 @@ int main (int argc, char *argv[])
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   LmgrInitThread();
 
    MyNameIs(argc, argv, "dbcheck");
    InitMsg(NULL, NULL);           /* setup message handler */
@@ -1270,7 +1269,6 @@ int main (int argc, char *argv[])
    DbFlushBackends();
    CloseMsg(NULL);
    TermMsg();
-   LmgrCleanupMain();
 
    return 0;
 }

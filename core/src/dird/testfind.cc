@@ -95,7 +95,6 @@ main (int argc, char *const *argv)
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   LmgrInitThread();
 
    while ((ch = getopt(argc, argv, "ac:d:f:?")) != -1) {
       switch (ch) {
@@ -240,7 +239,6 @@ main (int argc, char *const *argv)
    TermMsg();
 
    CloseMemoryPool();
-   LmgrCleanupMain();
    sm_dump(false);
    exit(0);
 }

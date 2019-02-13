@@ -383,7 +383,6 @@ int main (int argc, char *argv[])
    SetJcrInTsd(INVALID_JCR);
    SetThreadConcurrency(me->MaxConcurrentJobs * 2 +
                           4 /* UA */ + 5 /* sched+watchdog+jobsvr+misc */);
-   LmgrInitThread(); /* initialize the lockmanager stack */
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    backend_dir = nullptr;
@@ -513,7 +512,6 @@ void TerminateDird(int sig)
    TermMsg();                        /* Terminate message handler */
    CleanupCrypto();
    CloseMemoryPool();               /* release free memory in pool */
-   LmgrCleanupMain();
    sm_dump(false, false);
 
    exit(sig);

@@ -112,7 +112,6 @@ int main (int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
    InitStackDump();
-   LmgrInitThread();
 
    working_directory = "/tmp";
    MyNameIs(argc, argv, "bls");

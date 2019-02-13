@@ -935,7 +935,6 @@ int main(int argc, char *argv[])
    textdomain("bareos");
 
    InitStackDump();
-   LmgrInitThread();
    MyNameIs(argc, argv, "bconsole");
    InitMsg(NULL, NULL);
    working_directory = "/tmp";
@@ -1222,7 +1221,6 @@ static void TerminateConsole(int sig)
    FreePoolMemory(args);
       ConTerm();
    WSACleanup();               /* Cleanup Windows sockets */
-   LmgrCleanupMain();
 
    if (sig != 0) {
       exit(1);

@@ -289,7 +289,6 @@ int main (int argc, char *argv[])
     * Make sure on Solaris we can run concurrent, watch dog + servers + misc
     */
    SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4);
-   LmgrInitThread(); /* initialize the lockmanager stack */
 
    LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
@@ -707,7 +706,6 @@ void TerminateStored(int sig)
    CleanupCrypto();
    TermReservationsLock();
    CloseMemoryPool();
-   LmgrCleanupMain();
 
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);

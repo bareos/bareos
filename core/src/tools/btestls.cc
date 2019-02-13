@@ -86,7 +86,6 @@ int main(int argc, char *const *argv)
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
-   LmgrInitThread();
 
    while ((ch = getopt(argc, argv, "ad:e:i:q?")) != -1) {
       switch (ch) {
@@ -180,7 +179,6 @@ int main(int argc, char *const *argv)
    FreeJcr(jcr);
    TermLastJobsList();             /* free jcr chain */
    CloseMemoryPool();
-   LmgrCleanupMain();
    sm_dump(false);
    exit(0);
 }

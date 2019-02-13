@@ -65,7 +65,6 @@ TEST(sd, sd_plugins)
 
    TermMsg();
    CloseMemoryPool();
-   LmgrCleanupMain();
    sm_dump(false);
 }
 

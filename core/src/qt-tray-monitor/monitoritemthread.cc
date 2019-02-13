@@ -80,8 +80,6 @@ void MonitorItemThread::run()
    /* all this must be run in the same
     * context of the MonitorItemThread  */
 
-   LmgrInitThread();
-
    if (monitor) {
       refreshTimer->start(monitor->RefreshInterval * 1000);
    }

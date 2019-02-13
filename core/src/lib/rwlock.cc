@@ -29,7 +29,6 @@
  * This code adapted from "Programming with POSIX Threads", by David R. Butenhof
  */
 
-#define _LOCKMGR_COMPLIANT
 #include "include/bareos.h"
 
 /*
@@ -228,13 +227,11 @@ int RwlWritelock_p(brwlock_t *rwl, const char *file, int line)
       pthread_mutex_unlock(&rwl->mutex);
       return 0;
    }
-   LmgrPreLock(rwl, rwl->priority, file, line);
    if (rwl->w_active || rwl->r_active > 0) {
       rwl->w_wait++;                  /* indicate that we are waiting */
       pthread_cleanup_push(RwlWriteRelease, (void *)rwl);
       while (rwl->w_active || rwl->r_active > 0) {
          if ((status = pthread_cond_wait(&rwl->write, &rwl->mutex)) != 0) {
-            LmgrDoUnlock(rwl);
             break;                    /* error, bail out */
          }
       }
@@ -244,7 +241,6 @@ int RwlWritelock_p(brwlock_t *rwl, const char *file, int line)
    if (status == 0) {
       rwl->w_active++;                /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
-      LmgrPostLock();
    }
    pthread_mutex_unlock(&rwl->mutex);
    return status;
@@ -273,7 +269,6 @@ int RwlWritetrylock(brwlock_t *rwl)
    } else {
       rwl->w_active = 1;              /* we are running */
       rwl->writer_id = pthread_self(); /* save writer thread's id */
-      LmgrDoLock(rwl, rwl->priority, __FILE__, __LINE__);
    }
    status2 = pthread_mutex_unlock(&rwl->mutex);
    return (status == 0 ? status2 : status);
@@ -305,7 +300,6 @@ int RwlWriteunlock(brwlock_t *rwl)
    if (rwl->w_active > 0) {
       status = 0;                       /* writers still active */
    } else {
-      LmgrDoUnlock(rwl);
       /* No more writers, awaken someone */
       if (rwl->r_wait > 0) {         /* if readers waiting */
          status = pthread_cond_broadcast(&rwl->read);

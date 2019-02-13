@@ -190,7 +190,7 @@ void Device::dbg_Lock(const char *file, int line)
             GetJobidFromTid(pid_),
             file, line, count_);
    }
-   BthreadMutexLock_p(&mutex_, file, line);
+   pthread_mutex_lock(&mutex_);
    pid_ = pthread_self();
    count_++;
 }
@@ -199,7 +199,7 @@ void Device::dbg_Unlock(const char *file, int line)
 {
    count_--;
    Dmsg3(sd_debuglevel, "Unlock from %s:%d postcnt=%d\n", file, line, count_);
-   BthreadMutexUnlock_p(&mutex_, file, line);
+   pthread_mutex_unlock(&mutex_);
 }
 
 void Device::dbg_rUnlock(const char *file, int line)
@@ -211,25 +211,25 @@ void Device::dbg_rUnlock(const char *file, int line)
 void Device::dbg_Lock_acquire(const char *file, int line)
 {
    Dmsg2(sd_debuglevel, "Lock_acquire from %s:%d\n", file, line);
-   BthreadMutexLock_p(&acquire_mutex, file, line);
+   pthread_mutex_lock(&acquire_mutex);
 }
 
 void Device::dbg_Unlock_acquire(const char *file, int line)
 {
    Dmsg2(sd_debuglevel, "Unlock_acquire from %s:%d\n", file, line);
-   BthreadMutexUnlock_p(&acquire_mutex, file, line);
+   pthread_mutex_unlock(&acquire_mutex);
 }
 
 void Device::dbg_Lock_read_acquire(const char *file, int line)
 {
    Dmsg2(sd_debuglevel, "Lock_read_acquire from %s:%d\n", file, line);
-   BthreadMutexLock_p(&read_acquire_mutex, file, line);
+   pthread_mutex_lock(&read_acquire_mutex);
 }
 
 void Device::dbg_Unlock_read_acquire(const char *file, int line)
 {
    Dmsg2(sd_debuglevel, "Unlock_read_acquire from %s:%d\n", file, line);
-   BthreadMutexUnlock_p(&read_acquire_mutex, file, line);
+   pthread_mutex_unlock(&read_acquire_mutex);
 }
 
 #else
@@ -344,12 +344,7 @@ int Device::InitReadAcquireMutex()
  */
 void Device::SetMutexPriorities()
 {
-   /*
-    * Ensure that we respect this order in P/V operations
-    */
-   BthreadMutexSetPriority(&mutex_, PRIO_SD_DEV_ACCESS);
-   BthreadMutexSetPriority(&spool_mutex, PRIO_SD_DEV_SPOOL);
-   BthreadMutexSetPriority(&acquire_mutex, PRIO_SD_DEV_ACQUIRE);
+   /* no mutex priorities without LOCKMGR */
 }
 
 int Device::NextVolTimedwait(const struct timespec *timeout)
@@ -370,10 +365,7 @@ void Device::dbg_rLock(const char *file, int line, bool locked)
    Dmsg3(sd_debuglevel, "rLock blked=%s from %s:%d\n", print_blocked(),
          file, line);
    if (!locked) {
-      /*
-       * lockmgr version of P(mutex_)
-       */
-      BthreadMutexLock_p(&mutex_, file, line);
+      pthread_mutex_lock(&mutex);
       count_++;
    }
 #else
@@ -417,7 +409,6 @@ void Device::rLock(bool locked)
  */
 void _blockDevice(const char *file, int line, Device *dev, int state)
 {
-// ASSERT(LmgrMutexIsLocked(&dev->mutex_) == 1);
    ASSERT(dev->blocked() == BST_NOT_BLOCKED);
    dev->SetBlocked(state);           /* make other threads wait */
    dev->no_wait_id = pthread_self();  /* allow us to continue */
@@ -432,7 +423,6 @@ void _blockDevice(const char *file, int line, Device *dev, int state)
 void _unBlockDevice(const char *file, int line, Device *dev)
 {
    Dmsg3(sd_debuglevel, "unblock %s from %s:%d\n", dev->print_blocked(), file, line);
-// ASSERT(LmgrMutexIsLocked(&dev->mutex_) == 1);
    ASSERT(dev->blocked());
    dev->SetBlocked(BST_NOT_BLOCKED);
    ClearThreadId(dev->no_wait_id);

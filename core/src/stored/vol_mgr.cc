@@ -41,7 +41,7 @@ const int debuglevel = 150;
 static brwlock_t vol_list_lock;
 static dlist *vol_list = NULL;
 static dlist *read_vol_list = NULL;
-static bthread_mutex_t read_vol_lock = BTHREAD_MUTEX_PRIORITY(PRIO_SD_READ_VOL_LIST);
+static pthread_mutex_t read_vol_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* Global static variables */
 #ifdef SD_DEBUG_LOCK
@@ -148,13 +148,13 @@ void _unLockVolumes()
 void _lockReadVolumes(const char *file, int line)
 {
    read_vol_list_lock_count++;
-   BthreadMutexLock_p(&read_vol_lock, file, line);
+   pthread_mutex_lock(&read_vol_lock);
 }
 
 void _unLockReadVolumes()
 {
    read_vol_list_lock_count--;
-   BthreadMutexUnlock(&read_vol_lock);
+   pthread_mutex_unlock(&read_vol_lock);
 }
 
 /**

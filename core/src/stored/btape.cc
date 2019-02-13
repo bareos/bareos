@@ -169,7 +169,6 @@ int main(int margc, char *margv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
    InitStackDump();
-   LmgrInitThread();
 
    /* Sanity checks */
    if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
@@ -382,7 +381,6 @@ static void TerminateBtape(int status)
    TermMsg();
    TermLastJobsList();
    CloseMemoryPool();               /* free memory in pool */
-   LmgrCleanupMain();
 
    sm_dump(false, false);
    exit(status);

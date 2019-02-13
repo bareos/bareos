@@ -164,7 +164,6 @@ int main (int argc, char *argv[])
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
    InitStackDump();
-   LmgrInitThread();
 
    MyNameIs(argc, argv, "bscan");
    InitMsg(NULL, NULL);

@@ -262,7 +262,6 @@ int main (int argc, char *argv[])
    }
 
    SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 10);
-   LmgrInitThread(); /* initialize the lockmanager stack */
 
    /* Maximum 1 daemon at a time */
    CreatePidFile(me->pid_directory, "bareos-fd",
@@ -331,7 +330,6 @@ void TerminateFiled(int sig)
    TermMsg();
    CleanupCrypto();
    CloseMemoryPool();               /* release free memory in pool */
-   LmgrCleanupMain();
    sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }

@@ -22,37 +22,14 @@
 #ifndef BAREOS_LIB_LOCKMGR_H_
 #define BAREOS_LIB_LOCKMGR_H_ 1
 
-#include "mutex_list.h"     /* Manage mutex with priority in a central place */
+#define PRIO_SD_VOL_LIST      0            /* vol_list_lock */
+#define PRIO_SD_ACH_ACCESS    16           /* autochanger lock mutex */
+
 #include <mutex>
 
-/*
- * P and V op that don't use the lock manager (for memory allocation or on win32)
- */
 void Lmgr_p(pthread_mutex_t *m);
 void Lmgr_v(pthread_mutex_t *m);
 
-#define lmgr_detect_deadloc()
-#define LmgrDump()
-#define LmgrInitThread()
-#define LmgrCleanupThread()
-#define LmgrPreLock(m,prio,f,l)
-#define LmgrPostLock()
-#define LmgrDoLock(m,prio,f,l)
-#define LmgrDoUnlock(m)
-#define LmgrCleanupMain()
-#define BthreadMutexSetPriority(a,b)
-#define BthreadMutexLock(a) pthread_mutex_lock(a)
-#define BthreadMutexLock_p(a,f,l) pthread_mutex_lock(a)
-#define BthreadMutexUnlock(a) pthread_mutex_unlock(a)
-#define BthreadMutexUnlock_p(a,f,l) pthread_mutex_unlock(a)
-#define lmgr_cond_wait(a,b) pthread_cond_wait(a,b)
-#define lmgr_cond_timedwait(a,b,c) pthread_cond_timedwait(a,b,c)
-#define bthread_mutex_t pthread_mutex_t
 #define P(x) Lmgr_p(&(x))
 #define V(x) Lmgr_v(&(x))
-#define BTHREAD_MUTEX_PRIORITY(p) PTHREAD_MUTEX_INITIALIZER
-#define BTHREAD_MUTEX_NO_PRIORITY PTHREAD_MUTEX_INITIALIZER
-#define BTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
-#define LmgrMutexIsLocked(m) (1)
-#define BthreadCondWait_p(w,x,y,z) pthread_cond_wait(w,x)
 #endif /* BAREOS_LIB_LOCKMGR_H_ */
