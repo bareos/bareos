@@ -3,7 +3,32 @@
 SOURCEFILE=$1
 DESTFILE=$2
 
-  cat ${SOURCEFILE}\
+while IFS= read -r line
+do
+  # \input{director-resource-director-definitions.tex}
+  if  [[ "${line}" =~ \\input\{(.*)\} ]]; then
+    INPUTFILE="../main/${BASH_REMATCH[1]}"
+
+    if [ ! -f "${INPUTFILE}" ] ; then
+      INPUTFILE="${INPUTFILE}.tex"
+    fi
+
+
+    if [ -f "${INPUTFILE}" ] ; then
+      echo "%%%% INPUT OF ${INPUTFILE} start"
+      cat "${INPUTFILE}"
+      echo "%%%% INPUT OF ${INPUTFILE} end"
+    else
+      echo "%%%% INPUTFILE ${INPUTFILE} NOT FOUND"
+    fi
+  else
+    echo "${line}"
+  fi
+done < "${SOURCEFILE}" > "${DESTFILE}"
+
+mv "${DESTFILE}" "${DESTFILE}.orig"
+
+cat ${DESTFILE}.orig\
     | perl -pe 's#\\begin\{bmessage\}#\\begin{verbatim}\\begin{bmessage}#g' \
     | perl -pe 's#\\end\{bmessage\}#\\end{bmessage}\\end{verbatim}#g' \
 \
@@ -63,7 +88,6 @@ DESTFILE=$2
     | perl -pe 's#\{\\textless\}#<#g' \
     | perl -pe 's#\{\\textgreater\}#>#g' \
     > ${DESTFILE}
-
 
 
 # \newcommand{\releasenote}[2]{
