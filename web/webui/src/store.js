@@ -36,7 +36,7 @@ export default new Vuex.Store({
     },
     // default handler called for all methods
     SOCKET_ONMESSAGE (state, message) {
-      state.socket.message.push(message)
+      state.socket.message.push(message.data)
       console.log('SOCKET_ONMESSAGE')
       // console.log(message)
     },

@@ -1,20 +1,22 @@
 <template>
-  <div class="container">
-    <section>
-      <pre v-for="m in consoleOutput">
-        {{ m.data }}
-      </pre>
-    </section>
-    <section>
-      <b-field label="Command">
-        <b-input
-          v-model="command"
-          @keydown.native.enter="onSubmit"
-        />
-      </b-field>
-    </section>
-  </div>
+  <v-container>
+
+    <vue-term></vue-term>
+
+    <pre style="overflow: auto; width: 1080px; height: 650px; background: #000; color: #fff;">
+
+        <span v-for="m in consoleOutput">{{ m }}</span>
+
+    </pre>
+
+    <v-text-field v-model="command" @keydown.native.enter="onSubmit"
+      label="Enter Command"
+    >
+    </v-text-field>
+
+  </v-container>
 </template>
+
 <script>
 
 export default {
@@ -22,7 +24,7 @@ export default {
   data () {
     return {
       command: ''
-      //consoleOutput: ''
+      // consoleOutput: ''
     }
   },
   created () {
@@ -37,9 +39,11 @@ export default {
     //   this.consoleOutput += result
     //   console.log(result)
     // })
+    this.$store.state.socket.message = []
   },
   destroyed () {
-    //this.$disconnect()
+    // this.$disconnect()
+    this.$store.state.socket.message = []
   },
   methods: {
     onSubmit: function () {
