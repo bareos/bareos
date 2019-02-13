@@ -1053,7 +1053,7 @@ Include {
 \index[dir]{aclsupport}
 \index[dir]{Directive!aclsupport}
 \label{ACLSupport}
-   The default is {\bf no}.  If this option is set to yes, and you have the
+   The default is {\bf yes} since Bareos 18.2. If this option is set to yes, and you have the
    POSIX {\bf libacl} installed on your Linux system, Bareos will backup the
    file and directory Unix Access Control Lists (ACL) as defined in IEEE Std
    1003.1e draft 17 and "POSIX.1e" (abandoned).  This feature is
@@ -1090,7 +1090,7 @@ Include {
 \item [xattrsupport=yes{\textbar}no] \hfill \\
 \index[dir]{xattrsupport}
 \index[dir]{Directive!xattrsupport}
-   The default is {\bf no}.  If this option is set to yes, and your
+   The default is {\bf yes} since Bareos 18.2. If this option is set to yes, and your
    operating system support either so called Extended Attributes or
    Extensible Attributes Bareos will backup the file and directory
    XATTR data. This feature is available on UNIX only and depends on
