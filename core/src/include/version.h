@@ -1,5 +1,6 @@
-#undef  VERSION
+#ifndef VERSION
 #define VERSION "19.1.2"
+#endif
 
 #define BDATE   "01 February 2019"
 #define LSMDATE "01Feb19"
