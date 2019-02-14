@@ -67,8 +67,6 @@ const char *get_signal_name(int sig)
 extern void DbgPrintJcr(FILE *fp);
 /* defined in plugins.c */
 extern void DbgPrintPlugin(FILE *fp);
-/* defined in lockmgr.c */
-extern void DbgPrintLock(FILE *fp);
 
 /*
  * !!! WARNING !!!
@@ -92,7 +90,6 @@ static void dbg_print_bareos()
    /* Print also BareosDb and RWLOCK structure
     * Can add more info about JobControlRecord with DbgJcrAddHook()
     */
-   DbgPrintLock(fp);
    DbgPrintJcr(fp);
    DbgPrintPlugin(fp);
 

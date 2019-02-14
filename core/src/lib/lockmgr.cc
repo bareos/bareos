@@ -52,13 +52,3 @@ void Lmgr_v(pthread_mutex_t *m)
             be.bstrerror(errstat));
    }
 }
-
-/*
- * !!! WARNING !!!
- * Use this function is used only after a fatal signal
- * We don't use locking to display information
- */
-void DbgPrintLock(FILE *fp)
-{
-   FPmsg0(000, "lockmgr disabled\n");
-}
