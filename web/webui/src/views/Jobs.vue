@@ -11,7 +11,7 @@
 
 <script>
 import JobListing from '../components/JobListing'
-// import JobDetails from '../components/JobDetails'
+import JobDetails from '../components/JobDetails'
 import JobLog from '../components/JobLog'
 
 export default {

@@ -4,9 +4,7 @@
     <vue-term></vue-term>
 
     <pre style="overflow: auto; width: 1080px; height: 650px; background: #000; color: #fff;">
-
-        <span v-for="m in consoleOutput">{{ m }}</span>
-
+        <span v-for="m in consoleOutput" :key="m.id">{{ m }}</span>
     </pre>
 
     <v-text-field v-model="command" @keydown.native.enter="onSubmit"

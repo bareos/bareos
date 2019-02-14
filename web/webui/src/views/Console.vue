@@ -1,9 +1,10 @@
 <template>
-	<section>
-	    <div id="log" style="margin-top:20px;">
-			    <my-terminal :terminal="terminal" ref="xterm"></my-terminal>
-	    </div>
-	</section>
+  <section>
+
+      <!-- <my-terminal :terminal="terminal" ref="xterm"></my-terminal> -->
+      <my-terminal :terminal="terminal"></my-terminal>
+
+  </section>
 </template>
 
 <script>
@@ -13,70 +14,68 @@ import Console from '../components/Console'
 export default {
   data () {
     return {
+      terminal: {}
+      // output: '',
+      // command: '',
+      // terminal: {
+      //   pid: 1,
+      //   name: 'terminal',
+      //   cols: 1000,
+      //   rows: 1000
+      // }
 
-      env: '',
-      podName: '',
-      contaName: '',
-      logtxt: '',
-      input: 0,
-      command: '',
-			 terminal: {
-			  pid: 1,
-			  name: 'terminal',
-			  cols: 1000,
-        rows: 1000,
-        cursorBlink: true
-      }
-      
     }
   },
   methods: {
-
+    // getOutput () {
+    //   this.$socket.onmessage = (msg) => {
+    //     this.$refs.xterm.term.write(msg.data)
+    //   }
+    //   this.$refs.xterm.term.write('* ')
+    //   this.output = ''
+    //   this.command = ''
+    // }
+  },
+  beforeMounted () {
+    console.log('debug: beforeMounted()')
+    // delete this.$socket.onmessage
   },
   mounted () {
-    this.$refs.xterm.term.write('* ')
-
-    this.$refs.xterm.term.on('data', (data) => {
-      const code = data.charCodeAt(0)
-
-      if (code == 13) {
-        // CR received
-        console.log(this.command)
-        this.$socket.send(this.command)
-
-        this.$store.state.socket.message.forEach(element => {
-          element = element.replace(/\n/g, '\r\n')
-          this.$refs.xterm.term.write(element)
-        })
-        
-        this.$refs.xterm.term.writeln('')
-        this.$refs.xterm.term.fit()
-
-        this.$store.state.socket.message = []
-
-        // this.$refs.xterm.term.write("\r\nYou typed: '" + this.command + "'\r\n")
-        this.$refs.xterm.term.write('* ')
-        this.command = ''
-      } else if (code < 32 || code == 127) {
-        // Control codes
-
-      } else {
-        // Visible
-        this.$refs.xterm.term.write(data)
-        this.command += data
-      }
-
-    })
-    
+    console.log('debug: mounted()')
+    // this.$refs.xterm.term.write('* ')
+    // this.$refs.xterm.term.on('data', (data) => {
+    //   const code = data.charCodeAt(0)
+    //   if ((code < 32 || code === 127)) {
+    //     switch (code) {
+    //       case 13:
+    //           console.log(this.command)
+    //           this.$socket.send(this.command)
+    //           this.$refs.xterm.term.write('\r\n')
+    //           // this.getOutput()
+    //         break
+    //       default:
+    //     }
+    //   } else {
+    //     // Visible
+    //     this.$refs.xterm.term.write(data)
+    //     this.command += data
+    //   }
+    // })
+  },
+  beforeUpdated () {
+    console.log('debug: beforeUpdated()')
+  },
+  updated () {
+    console.log('debug: updated()')
   },
   created () {
-    this.$store.state.socket.message = []
+    console.log('debug: created()')
   },
   destroyed () {
-    this.$store.state.socket.message = []
+    console.log('debug: destroyed()')
   },
   components: {
-		    'my-terminal': Console
+    'my-terminal': Console
   },
   computed: {
 

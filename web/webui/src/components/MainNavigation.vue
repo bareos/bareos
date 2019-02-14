@@ -9,7 +9,7 @@
     >
       <v-list>
 
-        <v-list-tile href="/">
+        <v-list-tile to="/">
           <v-list-tile-action>
             <v-icon>dashboard</v-icon>
           </v-list-tile-action>
@@ -25,7 +25,7 @@
           <v-list-tile slot="activator">
             <v-list-tile-title>Backup</v-list-tile-title>
           </v-list-tile>
-          <v-list-tile href="/backup/history">
+          <v-list-tile to="/backup/history">
           <v-list-tile-action>
             <v-icon>history</v-icon>
           </v-list-tile-action>
@@ -33,7 +33,7 @@
             <v-list-tile-title>History</v-list-tile-title>
           </v-list-tile-content>
           </v-list-tile>
-          <v-list-tile href="/backup/clients">
+          <v-list-tile to="/backup/clients">
           <v-list-tile-action>
             <v-icon>computer</v-icon>
           </v-list-tile-action>
@@ -41,7 +41,7 @@
             <v-list-tile-title>Clients</v-list-tile-title>
           </v-list-tile-content>
           </v-list-tile>
-          <v-list-tile href="/backup/jobs">
+          <v-list-tile to="/backup/jobs">
           <v-list-tile-action>
             <v-icon>assignment</v-icon>
           </v-list-tile-action>
@@ -49,7 +49,7 @@
             <v-list-tile-title>Jobs</v-list-tile-title>
           </v-list-tile-content>
           </v-list-tile>
-          <v-list-tile href="/backup/filesets">
+          <v-list-tile to="/backup/filesets">
           <v-list-tile-action>
             <v-icon>description</v-icon>
           </v-list-tile-action>
@@ -57,7 +57,7 @@
             <v-list-tile-title>Filesets</v-list-tile-title>
           </v-list-tile-content>
           </v-list-tile>
-          <v-list-tile href="/backup/schedules">
+          <v-list-tile to="/backup/schedules">
           <v-list-tile-action>
             <v-icon>schedule</v-icon>
           </v-list-tile-action>
@@ -66,7 +66,7 @@
           </v-list-tile-content>
           </v-list-tile>
         </v-list-group>
-        <v-list-tile href="/restore/">
+        <v-list-tile to="/restore/">
           <v-list-tile-action>
             <v-icon>unarchive</v-icon>
           </v-list-tile-action>
@@ -74,7 +74,7 @@
             <v-list-tile-title>Restore</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
-        <v-list-tile href="/notifications/">
+        <v-list-tile to="/notifications/">
           <v-list-tile-action>
             <v-icon>notifications</v-icon>
           </v-list-tile-action>
@@ -82,7 +82,7 @@
             <v-list-tile-title>Notifications</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
-        <v-list-tile href="/console/">
+        <v-list-tile to="/console/">
           <v-list-tile-action>
             <v-icon>keyboard</v-icon>
           </v-list-tile-action>
@@ -98,7 +98,7 @@
           <v-list-tile slot="activator">
             <v-list-tile-title>Settings</v-list-tile-title>
           </v-list-tile>
-          <v-list-tile href="/settings/users/">
+          <v-list-tile to="/settings/users/">
           <v-list-tile-action>
             <v-icon>person</v-icon>
           </v-list-tile-action>
@@ -106,7 +106,7 @@
             <v-list-tile-title>Users</v-list-tile-title>
           </v-list-tile-content>
           </v-list-tile>
-          <v-list-tile href="/settings/Groups/">
+          <v-list-tile to="/settings/Groups/">
           <v-list-tile-action>
             <v-icon>group</v-icon>
           </v-list-tile-action>
@@ -129,7 +129,7 @@
         <v-menu offset-y>
           <v-btn slot="activator" flat>Button 3</v-btn>
           <v-list>
-            <v-list-tile @click="">
+            <v-list-tile to="">
               <v-list-tile-title>Item 1</v-list-tile-title>
             </v-list-tile>
           </v-list>
