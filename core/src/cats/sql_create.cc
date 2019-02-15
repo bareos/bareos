@@ -80,16 +80,15 @@ bool BareosDb::CreateJobRecord(JobControlRecord *jcr, JobDbRecord *jr)
    EscapeString(jcr, esc_ujobname, jr->Job, strlen(jr->Job));
    EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
 
-   /*
-    * Must create it
-    */
-   Mmsg(cmd,
-        "INSERT INTO Job (Job,Name,Type,Level,JobStatus,SchedTime,JobTDate,"
-        "ClientId,Comment) "
-        "VALUES ('%s','%s','%c','%c','%c','%s',%s,%s,'%s')",
-        esc_ujobname, esc_jobname, (char)(jr->JobType), (char)(jr->JobLevel),
-        (char)(jr->JobStatus), dt, edit_uint64(JobTDate, ed1),
-        edit_int64(jr->ClientId, ed2), buf.c_str());
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO Job (Job,Name,Type,Level,JobStatus,SchedTime,JobTDate,"
+       "ClientId,Comment) "
+       "VALUES ('%s','%s','%c','%c','%c','%s',%s,%s,'%s')",
+       esc_ujobname, esc_jobname, (char)(jr->JobType), (char)(jr->JobLevel),
+       (char)(jr->JobStatus), dt, edit_uint64(JobTDate, ed1),
+       edit_int64(jr->ClientId, ed2), buf.c_str());
+/* clang-format on */
 
    jr->JobId = SqlInsertAutokeyRecord(cmd, NT_("Job"));
    if (jr->JobId == 0) {
@@ -115,9 +114,6 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord *jcr, JobMediaDbRecord *jm)
 
    DbLock(this);
 
-   /*
-    * Now get count for VolIndex
-    */
    Mmsg(cmd,
         "SELECT count(*) from JobMedia WHERE JobId=%s",
         edit_int64(jm->JobId, ed1));
@@ -127,17 +123,20 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord *jcr, JobMediaDbRecord *jm)
    }
    count++;
 
-   Mmsg(cmd,
-        "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
-        "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-        "VALUES (%s,%s,%u,%u,%u,%u,%u,%u,%u,%s)",
-        edit_int64(jm->JobId, ed1),
-        edit_int64(jm->MediaId, ed2),
-        jm->FirstIndex, jm->LastIndex,
-        jm->StartFile, jm->EndFile,
-        jm->StartBlock, jm->EndBlock,
-        count,
-        edit_uint64(jm->JobBytes, ed3));
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
+       "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
+       "VALUES (%s,%s,%u,%u,%u,%u,%u,%u,%u,%s)",
+       edit_int64(jm->JobId, ed1),
+       edit_int64(jm->MediaId, ed2),
+       jm->FirstIndex, jm->LastIndex,
+       jm->StartFile, jm->EndFile,
+       jm->StartBlock, jm->EndBlock,
+       count,
+       edit_uint64(jm->JobBytes, ed3));
+/* clang-format on */
+
    Dmsg0(300, cmd);
    if (!INSERT_DB(jcr, cmd)) {
       Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd, sql_strerror());
@@ -189,30 +188,30 @@ bool BareosDb::CreatePoolRecord(JobControlRecord *jcr, PoolDbRecord *pr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
-   Mmsg(cmd,
-        "INSERT INTO Pool (Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-        "AcceptAnyVolume,AutoPrune,Recycle,VolRetention,VolUseDuration,"
-        "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
-        "RecyclePoolId,ScratchPoolId,ActionOnPurge,MinBlocksize,MaxBlocksize) "
-        "VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%d,%d)",
-        esc_poolname,
-        pr->NumVols, pr->MaxVols,
-        pr->UseOnce, pr->UseCatalog,
-        pr->AcceptAnyVolume,
-        pr->AutoPrune, pr->Recycle,
-        edit_uint64(pr->VolRetention, ed1),
-        edit_uint64(pr->VolUseDuration, ed2),
-        pr->MaxVolJobs, pr->MaxVolFiles,
-        edit_uint64(pr->MaxVolBytes, ed3),
-        pr->PoolType, pr->LabelType, esc_lf,
-        edit_int64(pr->RecyclePoolId,ed4),
-        edit_int64(pr->ScratchPoolId,ed5),
-        pr->ActionOnPurge,
-        pr->MinBlocksize,
-        pr->MaxBlocksize);
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO Pool (Name,NumVols,MaxVols,UseOnce,UseCatalog,"
+       "AcceptAnyVolume,AutoPrune,Recycle,VolRetention,VolUseDuration,"
+       "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
+       "RecyclePoolId,ScratchPoolId,ActionOnPurge,MinBlocksize,MaxBlocksize) "
+       "VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%d,%d)",
+       esc_poolname,
+       pr->NumVols, pr->MaxVols,
+       pr->UseOnce, pr->UseCatalog,
+       pr->AcceptAnyVolume,
+       pr->AutoPrune, pr->Recycle,
+       edit_uint64(pr->VolRetention, ed1),
+       edit_uint64(pr->VolUseDuration, ed2),
+       pr->MaxVolJobs, pr->MaxVolFiles,
+       edit_uint64(pr->MaxVolBytes, ed3),
+       pr->PoolType, pr->LabelType, esc_lf,
+       edit_int64(pr->RecyclePoolId,ed4),
+       edit_int64(pr->ScratchPoolId,ed5),
+       pr->ActionOnPurge,
+       pr->MinBlocksize,
+       pr->MaxBlocksize);
+/* clang-format on */
+
    Dmsg1(200, "Create Pool: %s\n", cmd);
    pr->PoolId = SqlInsertAutokeyRecord(cmd, NT_("Pool"));
    if (pr->PoolId == 0) {
@@ -278,9 +277,6 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord *jcr, DeviceDbRecord *dr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
    Mmsg(cmd,
         "INSERT INTO Device (Name,MediaTypeId,StorageId) VALUES ('%s',%s,%s)",
         esc,
@@ -345,9 +341,6 @@ bool BareosDb::CreateStorageRecord(JobControlRecord *jcr, StorageDbRecord *sr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
    Mmsg(cmd,
         "INSERT INTO Storage (Name,AutoChanger)"
         " VALUES ('%s',%d)",
@@ -394,14 +387,14 @@ bool BareosDb::CreateMediatypeRecord(JobControlRecord *jcr, MediaTypeDbRecord *m
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
-   Mmsg(cmd,
-        "INSERT INTO MediaType (MediaType,ReadOnly) "
-        "VALUES ('%s',%d)",
-        mr->MediaType,
-        mr->ReadOnly);
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO MediaType (MediaType,ReadOnly) "
+       "VALUES ('%s',%d)",
+       mr->MediaType,
+       mr->ReadOnly);
+/* clang-format on */
+
    Dmsg1(200, "Create mediatype: %s\n", cmd);
    mr->MediaTypeId = SqlInsertAutokeyRecord(cmd, NT_("MediaType"));
    if (mr->MediaTypeId == 0) {
@@ -449,42 +442,41 @@ bool BareosDb::CreateMediaRecord(JobControlRecord *jcr, MediaDbRecord *mr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
-   Mmsg(cmd,
-        "INSERT INTO Media (VolumeName,MediaType,MediaTypeId,PoolId,MaxVolBytes,"
-        "VolCapacityBytes,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
-        "VolStatus,Slot,VolBytes,InChanger,VolReadTime,VolWriteTime,"
-        "EndFile,EndBlock,LabelType,StorageId,DeviceId,LocationId,"
-        "ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,EncryptionKey,"
-        "MinBlocksize,MaxBlocksize) "
-        "VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,0,0,%d,%s,"
-        "%s,%s,%s,%s,%d,%d,'%s',%d,%d)",
-        esc_medianame,
-        esc_mtype, mr->PoolId,
-        edit_uint64(mr->MaxVolBytes,ed1),
-        edit_uint64(mr->VolCapacityBytes, ed2),
-        mr->Recycle,
-        edit_uint64(mr->VolRetention, ed3),
-        edit_uint64(mr->VolUseDuration, ed4),
-        mr->MaxVolJobs,
-        mr->MaxVolFiles,
-        esc_status,
-        mr->Slot,
-        edit_uint64(mr->VolBytes, ed5),
-        mr->InChanger,
-        edit_int64(mr->VolReadTime, ed6),
-        edit_int64(mr->VolWriteTime, ed7),
-        mr->LabelType,
-        edit_int64(mr->StorageId, ed8),
-        edit_int64(mr->DeviceId, ed9),
-        edit_int64(mr->LocationId, ed10),
-        edit_int64(mr->ScratchPoolId, ed11),
-        edit_int64(mr->RecyclePoolId, ed12),
-        mr->Enabled, mr->ActionOnPurge,
-        mr->EncrKey, mr->MinBlocksize,
-        mr->MaxBlocksize);
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO Media (VolumeName,MediaType,MediaTypeId,PoolId,MaxVolBytes,"
+       "VolCapacityBytes,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
+       "VolStatus,Slot,VolBytes,InChanger,VolReadTime,VolWriteTime,"
+       "EndFile,EndBlock,LabelType,StorageId,DeviceId,LocationId,"
+       "ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,EncryptionKey,"
+       "MinBlocksize,MaxBlocksize) "
+       "VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,0,0,%d,%s,"
+       "%s,%s,%s,%s,%d,%d,'%s',%d,%d)",
+       esc_medianame,
+       esc_mtype, mr->PoolId,
+       edit_uint64(mr->MaxVolBytes,ed1),
+       edit_uint64(mr->VolCapacityBytes, ed2),
+       mr->Recycle,
+       edit_uint64(mr->VolRetention, ed3),
+       edit_uint64(mr->VolUseDuration, ed4),
+       mr->MaxVolJobs,
+       mr->MaxVolFiles,
+       esc_status,
+       mr->Slot,
+       edit_uint64(mr->VolBytes, ed5),
+       mr->InChanger,
+       edit_int64(mr->VolReadTime, ed6),
+       edit_int64(mr->VolWriteTime, ed7),
+       mr->LabelType,
+       edit_int64(mr->StorageId, ed8),
+       edit_int64(mr->DeviceId, ed9),
+       edit_int64(mr->LocationId, ed10),
+       edit_int64(mr->ScratchPoolId, ed11),
+       edit_int64(mr->RecyclePoolId, ed12),
+       mr->Enabled, mr->ActionOnPurge,
+       mr->EncrKey, mr->MinBlocksize,
+       mr->MaxBlocksize);
+/* clang-format on */
 
    Dmsg1(500, "Create Volume: %s\n", cmd);
    mr->MediaId = SqlInsertAutokeyRecord(cmd, NT_("Media"));
@@ -564,16 +556,15 @@ bool BareosDb::CreateClientRecord(JobControlRecord *jcr, ClientDbRecord *cr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
-   Mmsg(cmd,
-        "INSERT INTO Client (Name,Uname,AutoPrune,"
-        "FileRetention,JobRetention) VALUES "
-        "('%s','%s',%d,%s,%s)",
-        esc_clientname, esc_uname, cr->AutoPrune,
-        edit_uint64(cr->FileRetention, ed1),
-        edit_uint64(cr->JobRetention, ed2));
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO Client (Name,Uname,AutoPrune,"
+       "FileRetention,JobRetention) VALUES "
+       "('%s','%s',%d,%s,%s)",
+       esc_clientname, esc_uname, cr->AutoPrune,
+       edit_uint64(cr->FileRetention, ed1),
+       edit_uint64(cr->JobRetention, ed2));
+/* clang-format on */
 
    cr->ClientId = SqlInsertAutokeyRecord(cmd, NT_("Client"));
    if (cr->ClientId == 0) {
@@ -693,9 +684,6 @@ bool BareosDb::CreateCounterRecord(JobControlRecord *jcr, CounterDbRecord *cr)
    }
    EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
 
-   /*
-    * Must create it
-    */
    FillQuery(SQL_QUERY_insert_counter_values, esc, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter);
 
    if (!INSERT_DB(jcr, cmd)) {
@@ -760,9 +748,6 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord *jcr, FileSetDbRecord *fsr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
    if (fsr->CreateTime == 0 && fsr->cCreateTime[0] == 0) {
       fsr->CreateTime = time(NULL);
    }
@@ -837,13 +822,11 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord *jcr)
       Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", errmsg);
       goto bail_out;
    }
+
    if (JobCanceled(jcr)) {
       goto bail_out;
    }
 
-   /*
-    * We have to lock tables
-    */
    if (!jcr->db_batch->SqlQuery(SQL_QUERY_batch_lock_path_query)) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
       goto bail_out;
@@ -860,15 +843,17 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord *jcr)
       goto bail_out;
    }
 
-   if (!jcr->db_batch->SqlQuery(
-                     "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode) "
-                     "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-                     "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode "
-                     "FROM batch "
-                     "JOIN Path ON (batch.Path = Path.Path) ")) {
-      Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", errmsg);
-      goto bail_out;
-   }
+/* clang-format off */
+  if (!jcr->db_batch->SqlQuery(
+        "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode) "
+        "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
+        "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode "
+        "FROM batch "
+        "JOIN Path ON (batch.Path = Path.Path) ")) {
+     Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", errmsg);
+     goto bail_out;
+  }
+/* clang-format on */
 
    jcr->JobStatus = JobStatus;         /* reset entry status */
    Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
@@ -995,12 +980,13 @@ bool BareosDb::CreateFileRecord(JobControlRecord *jcr, AttributesDbRecord *ar)
       digest = ar->Digest;
    }
 
-   /* Must create it */
-   Mmsg(cmd,
-        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
-        "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%llu,%llu)",
-        ar->FileIndex, ar->JobId, ar->PathId, esc_name,
-        ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO File (FileIndex,JobId,PathId,Name,"
+       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%llu,%llu)",
+       ar->FileIndex, ar->JobId, ar->PathId, esc_name,
+       ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
+/* clang-format on */
 
    ar->FileId = SqlInsertAutokeyRecord(cmd, NT_("File"));
    if (ar->FileId == 0) {
@@ -1109,15 +1095,18 @@ bool BareosDb::CommitBaseFileAttributesRecord(JobControlRecord *jcr)
 
    DbLock(this);
 
-   Mmsg(cmd,
-        "INSERT INTO BaseFiles (BaseJobId, JobId, FileId, FileIndex) "
-        "SELECT B.JobId AS BaseJobId, %s AS JobId, "
-        "B.FileId, B.FileIndex "
-        "FROM basefile%s AS A, new_basefile%s AS B "
-        "WHERE A.Path = B.Path "
-        "AND A.Name = B.Name "
-        "ORDER BY B.FileId",
-        edit_uint64(jcr->JobId, ed1), ed1, ed1);
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO BaseFiles (BaseJobId, JobId, FileId, FileIndex) "
+       "SELECT B.JobId AS BaseJobId, %s AS JobId, "
+       "B.FileId, B.FileIndex "
+       "FROM basefile%s AS A, new_basefile%s AS B "
+       "WHERE A.Path = B.Path "
+       "AND A.Name = B.Name "
+       "ORDER BY B.FileId",
+       edit_uint64(jcr->JobId, ed1), ed1, ed1);
+/* clang-format on */
+
    retval = SqlQuery(cmd);
    jcr->nb_base_files_used = SqlAffectedRows();
    CleanupBaseFile(jcr);
@@ -1188,14 +1177,16 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord *jcr, RestoreObjectDbR
    esc_plug_name = CheckPoolMemorySize(esc_plug_name, plug_name_len*2+1);
    EscapeString(jcr, esc_plug_name, ro->plugin_name, plug_name_len);
 
-   Mmsg(cmd,
-        "INSERT INTO RestoreObject (ObjectName,PluginName,RestoreObject,"
-        "ObjectLength,ObjectFullLength,ObjectIndex,ObjectType,"
-        "ObjectCompression,FileIndex,JobId) "
-        "VALUES ('%s','%s','%s',%d,%d,%d,%d,%d,%d,%u)",
-        esc_name, esc_plug_name, esc_obj,
-        ro->object_len, ro->object_full_len, ro->object_index,
-        ro->FileType, ro->object_compression, ro->FileIndex, ro->JobId);
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO RestoreObject (ObjectName,PluginName,RestoreObject,"
+       "ObjectLength,ObjectFullLength,ObjectIndex,ObjectType,"
+       "ObjectCompression,FileIndex,JobId) "
+       "VALUES ('%s','%s','%s',%d,%d,%d,%d,%d,%d,%u)",
+       esc_name, esc_plug_name, esc_obj,
+       ro->object_len, ro->object_full_len, ro->object_index,
+       ro->FileType, ro->object_compression, ro->FileIndex, ro->JobId);
+/* clang-format on */
 
    ro->RestoreObjectId = SqlInsertAutokeyRecord(cmd, NT_("RestoreObject"));
    if (ro->RestoreObjectId == 0) {
@@ -1235,9 +1226,6 @@ bool BareosDb::CreateQuotaRecord(JobControlRecord *jcr, ClientDbRecord *cr)
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
    Mmsg(cmd,
         "INSERT INTO Quota (ClientId, GraceTime, QuotaLimit)"
         " VALUES ('%s', '%s', %s)",
@@ -1286,9 +1274,6 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord *jcr, JobDbRecord *jr, ch
       SqlFreeResult();
    }
 
-   /*
-    * Must create it
-    */
    Mmsg(cmd,
         "INSERT INTO NDMPLevelMap (ClientId, FilesetId, FileSystem, DumpLevel)"
         " VALUES ('%s', '%s', '%s', %s)",
@@ -1399,27 +1384,27 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord *jcr, DeviceStatisticsDbR
 
    bstrutime(dt, sizeof(dt), stime);
 
-   /*
-    * Create device statistics record
-    */
-   Mmsg(cmd,
-        "INSERT INTO DeviceStats (DeviceId, SampleTime, ReadTime, WriteTime,"
-        " ReadBytes, WriteBytes, SpoolSize, NumWaiting, NumWriters, MediaId,"
-        " VolCatBytes, VolCatFiles, VolCatBlocks)"
-        " VALUES (%s, '%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        edit_int64(dsr->DeviceId, ed1),
-        dt,
-        edit_uint64(dsr->ReadTime, ed2),
-        edit_uint64(dsr->WriteTime, ed3),
-        edit_uint64(dsr->ReadBytes, ed4),
-        edit_uint64(dsr->WriteBytes, ed5),
-        edit_uint64(dsr->SpoolSize, ed6),
-        edit_uint64(dsr->NumWaiting, ed7),
-        edit_uint64(dsr->NumWriters, ed8),
-        edit_int64(dsr->MediaId, ed9),
-        edit_uint64(dsr->VolCatBytes, ed10),
-        edit_uint64(dsr->VolCatFiles, ed11),
-        edit_uint64(dsr->VolCatBlocks, ed12));
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO DeviceStats (DeviceId, SampleTime, ReadTime, WriteTime,"
+       " ReadBytes, WriteBytes, SpoolSize, NumWaiting, NumWriters, MediaId,"
+       " VolCatBytes, VolCatFiles, VolCatBlocks)"
+       " VALUES (%s, '%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+       edit_int64(dsr->DeviceId, ed1),
+       dt,
+       edit_uint64(dsr->ReadTime, ed2),
+       edit_uint64(dsr->WriteTime, ed3),
+       edit_uint64(dsr->ReadBytes, ed4),
+       edit_uint64(dsr->WriteBytes, ed5),
+       edit_uint64(dsr->SpoolSize, ed6),
+       edit_uint64(dsr->NumWaiting, ed7),
+       edit_uint64(dsr->NumWriters, ed8),
+       edit_int64(dsr->MediaId, ed9),
+       edit_uint64(dsr->VolCatBytes, ed10),
+       edit_uint64(dsr->VolCatFiles, ed11),
+       edit_uint64(dsr->VolCatBlocks, ed12));
+/* clang-format on */
+
    Dmsg1(200, "Create device stats: %s\n", cmd);
 
    if (!INSERT_DB(jcr, cmd)) {
@@ -1454,15 +1439,15 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord *jcr, TapealertStatsDb
 
    bstrutime(dt, sizeof(dt), stime);
 
-   /*
-    * Create device statistics record
-    */
-   Mmsg(cmd,
-        "INSERT INTO TapeAlerts (DeviceId, SampleTime, AlertFlags)"
-        " VALUES (%s, '%s', %s)",
-        edit_int64(tsr->DeviceId, ed1),
-        dt,
-        edit_uint64(tsr->AlertFlags, ed2));
+/* clang-format off */
+  Mmsg(cmd,
+       "INSERT INTO TapeAlerts (DeviceId, SampleTime, AlertFlags)"
+       " VALUES (%s, '%s', %s)",
+       edit_int64(tsr->DeviceId, ed1),
+       dt,
+       edit_uint64(tsr->AlertFlags, ed2));
+/* clang-format on */
+
    Dmsg1(200, "Create tapealert: %s\n", cmd);
 
    if (!INSERT_DB(jcr, cmd)) {

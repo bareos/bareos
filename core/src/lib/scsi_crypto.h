@@ -27,6 +27,8 @@
 #ifndef BAREOS_LIB_SCSI_CRYPTO_H_
 #define BAREOS_LIB_SCSI_CRYPTO_H_ 1
 
+/* clang-format off */
+
 /*
  * Include the SCSI Low Level Interface functions and definitions.
  */
@@ -377,6 +379,8 @@ typedef struct {
    uint8_t descriptorLength[2];                /* Key Descriptor Length MSB/LSB */
    uint8_t descriptor[SPP_DESCRIPTOR_LENGTH];
 } SPP_KAD;
+
+/* clang-format on */
 
 bool ClearScsiEncryptionKey(int fd, const char *device);
 bool SetScsiEncryptionKey(int fd, const char *device, char *encryption_key);

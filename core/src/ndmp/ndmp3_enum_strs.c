@@ -54,6 +54,7 @@ int ndmp3_error_from_str (ndmp3_error *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_error_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_error_table[] = {
 	{ "NDMP3_NO_ERR",		NDMP3_NO_ERR, },
 	{ "NDMP3_NOT_SUPPORTED_ERR",	NDMP3_NOT_SUPPORTED_ERR, },
@@ -81,6 +82,7 @@ struct ndmp_enum_str_table ndmp3_error_table[] = {
 	{ "NDMP3_CONNECT_ERR",		NDMP3_CONNECT_ERR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_header_message_type_table[];
@@ -95,11 +97,13 @@ int ndmp3_header_message_type_from_str (ndmp3_header_message_type *valp, char *s
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_header_message_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_header_message_type_table[] = {
 	{ "NDMP3_MESSAGE_REQUEST",	NDMP3_MESSAGE_REQUEST, },
 	{ "NDMP3_MESSAGE_REPLY",	NDMP3_MESSAGE_REPLY, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_message_table[];
@@ -114,6 +118,7 @@ int ndmp3_message_from_str (ndmp3_message *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_message_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_message_table[] = {
 	{ "NDMP3_CONNECT_OPEN",		NDMP3_CONNECT_OPEN, },
 	{ "NDMP3_CONNECT_CLIENT_AUTH",	NDMP3_CONNECT_CLIENT_AUTH, },
@@ -176,6 +181,7 @@ struct ndmp_enum_str_table ndmp3_message_table[] = {
 	{ "NDMP3_RESERVED_BASE",	NDMP3_RESERVED_BASE, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_auth_type_table[];
@@ -190,12 +196,14 @@ int ndmp3_auth_type_from_str (ndmp3_auth_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_auth_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_auth_type_table[] = {
 	{ "NDMP3_AUTH_NONE",		NDMP3_AUTH_NONE, },
 	{ "NDMP3_AUTH_TEXT",		NDMP3_AUTH_TEXT, },
 	{ "NDMP3_AUTH_MD5",		NDMP3_AUTH_MD5, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_addr_type_table[];
@@ -210,6 +218,7 @@ int ndmp3_addr_type_from_str (ndmp3_addr_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_addr_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_addr_type_table[] = {
 	{ "NDMP3_ADDR_LOCAL",		NDMP3_ADDR_LOCAL, },
 	{ "NDMP3_ADDR_TCP",		NDMP3_ADDR_TCP, },
@@ -217,6 +226,7 @@ struct ndmp_enum_str_table ndmp3_addr_type_table[] = {
 	{ "NDMP3_ADDR_IPC",		NDMP3_ADDR_IPC, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_tape_open_mode_table[];
@@ -231,11 +241,13 @@ int ndmp3_tape_open_mode_from_str (ndmp3_tape_open_mode *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_tape_open_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_tape_open_mode_table[] = {
 	{ "NDMP3_TAPE_READ_MODE",	NDMP3_TAPE_READ_MODE, },
 	{ "NDMP3_TAPE_RDWR_MODE",	NDMP3_TAPE_RDWR_MODE, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_tape_mtio_op_table[];
@@ -250,6 +262,7 @@ int ndmp3_tape_mtio_op_from_str (ndmp3_tape_mtio_op *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_tape_mtio_op_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_tape_mtio_op_table[] = {
 	{ "NDMP3_MTIO_FSF",		NDMP3_MTIO_FSF, },
 	{ "NDMP3_MTIO_BSF",		NDMP3_MTIO_BSF, },
@@ -260,6 +273,7 @@ struct ndmp_enum_str_table ndmp3_tape_mtio_op_table[] = {
 	{ "NDMP3_MTIO_OFF",		NDMP3_MTIO_OFF, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_mover_state_table[];
@@ -274,6 +288,7 @@ int ndmp3_mover_state_from_str (ndmp3_mover_state *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_mover_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_mover_state_table[] = {
 	{ "NDMP3_MOVER_STATE_IDLE",	NDMP3_MOVER_STATE_IDLE, },
 	{ "NDMP3_MOVER_STATE_LISTEN",	NDMP3_MOVER_STATE_LISTEN, },
@@ -282,6 +297,7 @@ struct ndmp_enum_str_table ndmp3_mover_state_table[] = {
 	{ "NDMP3_MOVER_STATE_HALTED",	NDMP3_MOVER_STATE_HALTED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_mover_pause_reason_table[];
@@ -296,6 +312,7 @@ int ndmp3_mover_pause_reason_from_str (ndmp3_mover_pause_reason *valp, char *str
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_mover_pause_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_mover_pause_reason_table[] = {
 	{ "NDMP3_MOVER_PAUSE_NA",	NDMP3_MOVER_PAUSE_NA, },
 	{ "NDMP3_MOVER_PAUSE_EOM",	NDMP3_MOVER_PAUSE_EOM, },
@@ -305,6 +322,7 @@ struct ndmp_enum_str_table ndmp3_mover_pause_reason_table[] = {
 	{ "NDMP3_MOVER_PAUSE_EOW",	NDMP3_MOVER_PAUSE_EOW, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_mover_halt_reason_table[];
@@ -319,6 +337,7 @@ int ndmp3_mover_halt_reason_from_str (ndmp3_mover_halt_reason *valp, char *str) 
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_mover_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_mover_halt_reason_table[] = {
 	{ "NDMP3_MOVER_HALT_NA",	NDMP3_MOVER_HALT_NA, },
 	{ "NDMP3_MOVER_HALT_CONNECT_CLOSED",
@@ -330,6 +349,7 @@ struct ndmp_enum_str_table ndmp3_mover_halt_reason_table[] = {
 					NDMP3_MOVER_HALT_CONNECT_ERROR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_mover_mode_table[];
@@ -344,11 +364,13 @@ int ndmp3_mover_mode_from_str (ndmp3_mover_mode *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_mover_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_mover_mode_table[] = {
 	{ "NDMP3_MOVER_MODE_READ",	NDMP3_MOVER_MODE_READ, },
 	{ "NDMP3_MOVER_MODE_WRITE",	NDMP3_MOVER_MODE_WRITE, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_data_operation_table[];
@@ -363,6 +385,7 @@ int ndmp3_data_operation_from_str (ndmp3_data_operation *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_data_operation_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_data_operation_table[] = {
 	{ "NDMP3_DATA_OP_NOACTION",	NDMP3_DATA_OP_NOACTION, },
 	{ "NDMP3_DATA_OP_BACKUP",	NDMP3_DATA_OP_BACKUP, },
@@ -371,6 +394,7 @@ struct ndmp_enum_str_table ndmp3_data_operation_table[] = {
 					NDMP3_DATA_OP_RESTORE_FILEHIST, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_data_state_table[];
@@ -385,6 +409,7 @@ int ndmp3_data_state_from_str (ndmp3_data_state *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_data_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_data_state_table[] = {
 	{ "NDMP3_DATA_STATE_IDLE",	NDMP3_DATA_STATE_IDLE, },
 	{ "NDMP3_DATA_STATE_ACTIVE",	NDMP3_DATA_STATE_ACTIVE, },
@@ -393,6 +418,7 @@ struct ndmp_enum_str_table ndmp3_data_state_table[] = {
 	{ "NDMP3_DATA_STATE_CONNECTED",	NDMP3_DATA_STATE_CONNECTED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_data_halt_reason_table[];
@@ -407,6 +433,7 @@ int ndmp3_data_halt_reason_from_str (ndmp3_data_halt_reason *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_data_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_data_halt_reason_table[] = {
 	{ "NDMP3_DATA_HALT_NA",		NDMP3_DATA_HALT_NA, },
 	{ "NDMP3_DATA_HALT_SUCCESSFUL",	NDMP3_DATA_HALT_SUCCESSFUL, },
@@ -415,6 +442,7 @@ struct ndmp_enum_str_table ndmp3_data_halt_reason_table[] = {
 	{ "NDMP3_DATA_HALT_CONNECT_ERROR", NDMP3_DATA_HALT_CONNECT_ERROR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_connect_reason_table[];
@@ -429,12 +457,14 @@ int ndmp3_connect_reason_from_str (ndmp3_connect_reason *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_connect_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_connect_reason_table[] = {
 	{ "NDMP3_CONNECTED",		NDMP3_CONNECTED, },
 	{ "NDMP3_SHUTDOWN",		NDMP3_SHUTDOWN, },
 	{ "NDMP3_REFUSED",		NDMP3_REFUSED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_log_type_table[];
@@ -449,6 +479,7 @@ int ndmp3_log_type_from_str (ndmp3_log_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_log_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_log_type_table[] = {
 	{ "NDMP3_LOG_NORMAL",		NDMP3_LOG_NORMAL, },
 	{ "NDMP3_LOG_DEBUG",		NDMP3_LOG_DEBUG, },
@@ -456,6 +487,7 @@ struct ndmp_enum_str_table ndmp3_log_type_table[] = {
 	{ "NDMP3_LOG_WARNING",		NDMP3_LOG_WARNING, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_fs_type_table[];
@@ -470,12 +502,14 @@ int ndmp3_fs_type_from_str (ndmp3_fs_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_fs_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_fs_type_table[] = {
 	{ "NDMP3_FS_UNIX",		NDMP3_FS_UNIX, },
 	{ "NDMP3_FS_NT",		NDMP3_FS_NT, },
 	{ "NDMP3_FS_OTHER",		NDMP3_FS_OTHER, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp3_file_type_table[];
@@ -490,6 +524,7 @@ int ndmp3_file_type_from_str (ndmp3_file_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp3_file_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp3_file_type_table[] = {
 	{ "NDMP3_FILE_DIR",		NDMP3_FILE_DIR, },
 	{ "NDMP3_FILE_FIFO",		NDMP3_FILE_FIFO, },
@@ -502,5 +537,6 @@ struct ndmp_enum_str_table ndmp3_file_type_table[] = {
 	{ "NDMP3_FILE_OTHER",		NDMP3_FILE_OTHER, },
 	{ 0 }
 };
+/* clang-format on */
 
 #endif /* !NDMOS_OPTION_NO_NDMP3 */

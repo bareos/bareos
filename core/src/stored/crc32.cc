@@ -70,6 +70,8 @@ main()
 #error Either HAVE_LITTLE_ENDIAN or HAVE_BIG_ENDIAN must be defined!
 #endif
 
+/* clang-format off */
+
 /* tole == To Little Endian */
 #ifdef HAVE_BIG_ENDIAN
 #define tole(x) \
@@ -359,16 +361,19 @@ uint32_t bcrc32(unsigned char*buf, int len)
 # ifdef HAVE_LITTLE_ENDIAN
 #  define DO_CRC(x) crc = tab[0][(crc ^ (x)) & 255 ] ^ (crc >> 8)
 #  define DO_CRC4 crc = tab[3][(crc) & 255 ] ^ \
-                tab[2][(crc >> 8) & 255 ] ^ \
-                tab[1][(crc >> 16) & 255 ] ^ \
-                tab[0][(crc >> 24) & 255 ]
+                        tab[2][(crc >> 8) & 255 ] ^ \
+                        tab[1][(crc >> 16) & 255 ] ^ \
+                        tab[0][(crc >> 24) & 255 ]
 # else
 #  define DO_CRC(x) crc = tab[0][((crc >> 24) ^ (x)) & 255] ^ (crc << 8)
 #  define DO_CRC4 crc = tab[0][(crc) & 255 ] ^ \
-                tab[1][(crc >> 8) & 255 ] ^ \
-                tab[2][(crc >> 16) & 255 ] ^ \
-                tab[3][(crc >> 24) & 255 ]
+                        tab[1][(crc >> 8) & 255 ] ^ \
+                        tab[2][(crc >> 16) & 255 ] ^ \
+                        tab[3][(crc >> 24) & 255 ]
 # endif
+
+/* clang-format on */
+
         const uint32_t *b;
         size_t    rem_len;
         uint32_t crc = tole(~0);

@@ -37,13 +37,14 @@ namespace directordaemon {
 
 #if HAVE_NDMP
 
+/* clang-format off */
 
 /**
  * Store ndmmedia information into database in MEDIA and JOBMEDIA information.
  * we map the ndm_media fields into the MediaDbRecord and JobMediaDbRecord fields as follows
  *
  ***********************************************************************************************
- *     NDM_MEDIA                        |        MediaDbRecord / JobMediaDbRecord                      *
+ *     NDM_MEDIA                        |        MediaDbRecord / JobMediaDbRecord              *
  ***********************************************************************************************
  char     label[NDMMEDIA_LABEL_MAX+1];  |  MediaDbRecord:      char VolumeName[MAX_NAME_LENGTH];
  unsigned slot_addr;                    |  MediaDbRecord:      int32_t Slot;
@@ -56,6 +57,8 @@ namespace directordaemon {
    * Slot needs to be translated from bareos slotnr to NDMP slot number  and back
    * uint64_t begin_offset,end_offset; do not need to be stored (scratchpad)
  */
+
+/* clang-format on */
 
 
 void NdmmediaToBareosDbRecords(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)

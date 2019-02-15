@@ -153,9 +153,7 @@ struct s_built_in_vars {
    int (*func)(JobControlRecord *jcr, int code, const char **val_ptr, int *val_len, int *val_size);
 };
 
-/*
- * Table of build in variables
- */
+/* clang-format off */
 static struct s_built_in_vars built_in_vars[] = {
    { NT_("Year"), 1, date_item },
    { NT_("Month"), 2, date_item },
@@ -178,6 +176,7 @@ static struct s_built_in_vars built_in_vars[] = {
    { NT_("JobName"), 12, job_item },
    { NULL, 0, NULL }
 };
+/* clang-format on */
 
 /**
  * Search the table of built-in variables, and if found,

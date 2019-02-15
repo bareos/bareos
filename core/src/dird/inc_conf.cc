@@ -60,16 +60,18 @@ extern void StoreInc(LEX *lc, ResourceItem *item, int index, int pass);
 /* We build the current new Include and Exclude items here */
 static IncludeExcludeItem res_incexe;
 
+/* clang-format off */
+
 /*
  * new Include/Exclude items
  * name handler value code flags default_value
  */
 ResourceItem newinc_items[] = {
-   { "File", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Options", CFG_TYPE_OPTIONS, { 0 }, 0, 0, NULL, NULL, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+  { "File", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Options", CFG_TYPE_OPTIONS, { 0 }, 0, 0, NULL, NULL, NULL },
+  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -77,47 +79,49 @@ ResourceItem newinc_items[] = {
  * name handler value code flags default_value
  */
 ResourceItem options_items[] = {
-   { "Compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "BaseJob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Accurate", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Verify", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "OneFs", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Recurse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Sparse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "HardLinks", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "ReadFifo", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Replace", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Portable", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "MtimeOnly", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "KeepAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Regex", CFG_TYPE_REGEX, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "RegexDir", CFG_TYPE_REGEX, { 0 }, 1, 0, NULL, NULL, NULL },
-   { "RegexFile", CFG_TYPE_REGEX, { 0 }, 2, 0, NULL, NULL, NULL },
-   { "Base", CFG_TYPE_BASE, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Wild", CFG_TYPE_WILD, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "WildDir", CFG_TYPE_WILD, { 0 }, 1, 0, NULL, NULL, NULL },
-   { "WildFile", CFG_TYPE_WILD, { 0 }, 2, 0, NULL, NULL, NULL },
-   { "Exclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "AclSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Plugin", CFG_TYPE_PLUGIN, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "IgnoreCase", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "FsType", CFG_TYPE_FSTYPE, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "HfsPlusSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "NoAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "EnhancedWild", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "DriveType", CFG_TYPE_DRIVETYPE, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "CheckFileChanges", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "StripPath", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "HonornoDumpFlag", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "XAttrSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "AutoExclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "ForceEncryption", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
-   { "Meta", CFG_TYPE_META, { 0 }, 0, 0, 0, NULL, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+  { "Compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "BaseJob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Accurate", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Verify", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "OneFs", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Recurse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Sparse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "HardLinks", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "ReadFifo", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Replace", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Portable", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "MtimeOnly", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "KeepAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Regex", CFG_TYPE_REGEX, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "RegexDir", CFG_TYPE_REGEX, { 0 }, 1, 0, NULL, NULL, NULL },
+  { "RegexFile", CFG_TYPE_REGEX, { 0 }, 2, 0, NULL, NULL, NULL },
+  { "Base", CFG_TYPE_BASE, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Wild", CFG_TYPE_WILD, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "WildDir", CFG_TYPE_WILD, { 0 }, 1, 0, NULL, NULL, NULL },
+  { "WildFile", CFG_TYPE_WILD, { 0 }, 2, 0, NULL, NULL, NULL },
+  { "Exclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "AclSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Plugin", CFG_TYPE_PLUGIN, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "IgnoreCase", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "FsType", CFG_TYPE_FSTYPE, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "HfsPlusSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "NoAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "EnhancedWild", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "DriveType", CFG_TYPE_DRIVETYPE, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "CheckFileChanges", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "StripPath", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "HonornoDumpFlag", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "XAttrSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "AutoExclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "ForceEncryption", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+  { "Meta", CFG_TYPE_META, { 0 }, 0, 0, 0, NULL, NULL },
+  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
+
+/* clang-format on */
 
 /**
  * determine used compression algorithms

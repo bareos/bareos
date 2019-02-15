@@ -54,6 +54,7 @@ int ndmp2_error_from_str (ndmp2_error *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_error_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_error_table[] = {
 	{ "NDMP2_NO_ERR",		NDMP2_NO_ERR },
 	{ "NDMP2_NOT_SUPPORTED_ERR",	NDMP2_NOT_SUPPORTED_ERR },
@@ -80,6 +81,7 @@ struct ndmp_enum_str_table ndmp2_error_table[] = {
 	{ "NDMP2_NO_MEM_ERR",		NDMP2_NO_MEM_ERR },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_header_message_type_table[];
 extern char * ndmp2_header_message_type_to_str (ndmp2_header_message_type val);
@@ -93,11 +95,13 @@ int ndmp2_header_message_type_from_str (ndmp2_header_message_type *valp, char * 
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_header_message_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_header_message_type_table[] = {
 	{ "NDMP2_MESSAGE_REQUEST",	NDMP2_MESSAGE_REQUEST },
 	{ "NDMP2_MESSAGE_REPLY",	NDMP2_MESSAGE_REPLY },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_message_table[];
 extern char * ndmp2_message_to_str (ndmp2_message val);
@@ -111,6 +115,7 @@ int ndmp2_message_from_str (ndmp2_message *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_message_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_message_table[] = {
 	{ "NDMP2_CONNECT_OPEN",		NDMP2_CONNECT_OPEN },
 	{ "NDMP2_CONNECT_CLIENT_AUTH",	NDMP2_CONNECT_CLIENT_AUTH },
@@ -169,6 +174,7 @@ struct ndmp_enum_str_table ndmp2_message_table[] = {
 	{ "NDMP2_RESERVED",		NDMP2_RESERVED },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_auth_type_table[];
 extern char * ndmp2_auth_type_to_str (ndmp2_auth_type val);
@@ -182,12 +188,14 @@ int ndmp2_auth_type_from_str (ndmp2_auth_type *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_auth_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_auth_type_table[] = {
 	{ "NDMP2_AUTH_NONE",	NDMP2_AUTH_NONE },
 	{ "NDMP2_AUTH_TEXT",	NDMP2_AUTH_TEXT },
 	{ "NDMP2_AUTH_MD5",	NDMP2_AUTH_MD5 },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_mover_addr_type_table[];
 extern char * ndmp2_mover_addr_type_to_str (ndmp2_mover_addr_type val);
@@ -201,11 +209,13 @@ int ndmp2_mover_addr_type_from_str (ndmp2_mover_addr_type *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_mover_addr_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_mover_addr_type_table[] = {
 	{ "NDMP2_ADDR_LOCAL",	NDMP2_ADDR_LOCAL },
 	{ "NDMP2_ADDR_TCP",	NDMP2_ADDR_TCP },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_tape_open_mode_table[];
 extern char * ndmp2_tape_open_mode_to_str (ndmp2_tape_open_mode val);
@@ -219,11 +229,13 @@ int ndmp2_tape_open_mode_from_str (ndmp2_tape_open_mode *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_tape_open_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_tape_open_mode_table[] = {
 	{ "NDMP2_TAPE_READ_MODE",	NDMP2_TAPE_READ_MODE },
 	{ "NDMP2_TAPE_WRITE_MODE",	NDMP2_TAPE_WRITE_MODE },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_tape_mtio_op_table[];
 extern char * ndmp2_tape_mtio_op_to_str (ndmp2_tape_mtio_op val);
@@ -237,6 +249,7 @@ int ndmp2_tape_mtio_op_from_str (ndmp2_tape_mtio_op *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_tape_mtio_op_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_tape_mtio_op_table[] = {
 	{ "NDMP2_MTIO_FSF",	NDMP2_MTIO_FSF },
 	{ "NDMP2_MTIO_BSF",	NDMP2_MTIO_BSF },
@@ -247,6 +260,7 @@ struct ndmp_enum_str_table ndmp2_tape_mtio_op_table[] = {
 	{ "NDMP2_MTIO_OFF",	NDMP2_MTIO_OFF },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_mover_state_table[];
 extern char * ndmp2_mover_state_to_str (ndmp2_mover_state val);
@@ -260,6 +274,7 @@ int ndmp2_mover_state_from_str (ndmp2_mover_state *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_mover_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_mover_state_table[] = {
 	{ "NDMP2_MOVER_STATE_IDLE",	NDMP2_MOVER_STATE_IDLE },
 	{ "NDMP2_MOVER_STATE_LISTEN",	NDMP2_MOVER_STATE_LISTEN },
@@ -268,6 +283,7 @@ struct ndmp_enum_str_table ndmp2_mover_state_table[] = {
 	{ "NDMP2_MOVER_STATE_HALTED",	NDMP2_MOVER_STATE_HALTED },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_mover_pause_reason_table[];
 extern char * ndmp2_mover_pause_reason_to_str (ndmp2_mover_pause_reason val);
@@ -281,6 +297,7 @@ int ndmp2_mover_pause_reason_from_str (ndmp2_mover_pause_reason *valp, char * st
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_mover_pause_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_mover_pause_reason_table[] = {
 	{ "NDMP2_MOVER_PAUSE_NA",	NDMP2_MOVER_PAUSE_NA },
 	{ "NDMP2_MOVER_PAUSE_EOM",	NDMP2_MOVER_PAUSE_EOM },
@@ -289,6 +306,7 @@ struct ndmp_enum_str_table ndmp2_mover_pause_reason_table[] = {
 	{ "NDMP2_MOVER_PAUSE_MEDIA_ERROR", NDMP2_MOVER_PAUSE_MEDIA_ERROR },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_mover_halt_reason_table[];
 extern char * ndmp2_mover_halt_reason_to_str (ndmp2_mover_halt_reason val);
@@ -302,6 +320,7 @@ int ndmp2_mover_halt_reason_from_str (ndmp2_mover_halt_reason *valp, char * str)
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_mover_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_mover_halt_reason_table[] = {
 	{ "NDMP2_MOVER_HALT_NA",	NDMP2_MOVER_HALT_NA },
 	{ "NDMP2_MOVER_HALT_CONNECT_CLOSED", NDMP2_MOVER_HALT_CONNECT_CLOSED },
@@ -310,6 +329,7 @@ struct ndmp_enum_str_table ndmp2_mover_halt_reason_table[] = {
 	{ "NDMP2_MOVER_HALT_CONNECT_ERROR", NDMP2_MOVER_HALT_CONNECT_ERROR },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_mover_mode_table[];
 extern char * ndmp2_mover_mode_to_str (ndmp2_mover_mode val);
@@ -323,12 +343,14 @@ int ndmp2_mover_mode_from_str (ndmp2_mover_mode *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_mover_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_mover_mode_table[] = {
 	{ "NDMP2_MOVER_MODE_READ",	NDMP2_MOVER_MODE_READ },
 	{ "NDMP2_MOVER_MODE_WRITE",	NDMP2_MOVER_MODE_WRITE },
 	{ "NDMP2_MOVER_MODE_DATA",	NDMP2_MOVER_MODE_DATA },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_data_operation_table[];
 extern char * ndmp2_data_operation_to_str (ndmp2_data_operation val);
@@ -342,6 +364,7 @@ int ndmp2_data_operation_from_str (ndmp2_data_operation *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_data_operation_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_data_operation_table[] = {
 	{ "NDMP2_DATA_OP_NOACTION",	NDMP2_DATA_OP_NOACTION },
 	{ "NDMP2_DATA_OP_BACKUP",	NDMP2_DATA_OP_BACKUP },
@@ -349,6 +372,7 @@ struct ndmp_enum_str_table ndmp2_data_operation_table[] = {
 	{ "NDMP2_DATA_OP_RESTORE_FILEHIST", NDMP2_DATA_OP_RESTORE_FILEHIST },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_data_state_table[];
 extern char * ndmp2_data_state_to_str (ndmp2_data_state val);
@@ -362,12 +386,14 @@ int ndmp2_data_state_from_str (ndmp2_data_state *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_data_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_data_state_table[] = {
 	{ "NDMP2_DATA_STATE_IDLE",	NDMP2_DATA_STATE_IDLE },
 	{ "NDMP2_DATA_STATE_ACTIVE",	NDMP2_DATA_STATE_ACTIVE },
 	{ "NDMP2_DATA_STATE_HALTED",	NDMP2_DATA_STATE_HALTED },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_data_halt_reason_table[];
 extern char * ndmp2_data_halt_reason_to_str (ndmp2_data_halt_reason val);
@@ -381,6 +407,7 @@ int ndmp2_data_halt_reason_from_str (ndmp2_data_halt_reason *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_data_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_data_halt_reason_table[] = {
 	{ "NDMP2_DATA_HALT_NA",	NDMP2_DATA_HALT_NA },
 	{ "NDMP2_DATA_HALT_SUCCESSFUL",	NDMP2_DATA_HALT_SUCCESSFUL },
@@ -389,6 +416,7 @@ struct ndmp_enum_str_table ndmp2_data_halt_reason_table[] = {
 	{ "NDMP2_DATA_HALT_CONNECT_ERROR", NDMP2_DATA_HALT_CONNECT_ERROR },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_connect_reason_table[];
 extern char * ndmp2_connect_reason_to_str (ndmp2_connect_reason val);
@@ -402,12 +430,14 @@ int ndmp2_connect_reason_from_str (ndmp2_connect_reason *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_connect_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_connect_reason_table[] = {
 	{ "NDMP2_CONNECTED",	NDMP2_CONNECTED },
 	{ "NDMP2_SHUTDOWN",	NDMP2_SHUTDOWN },
 	{ "NDMP2_REFUSED",	NDMP2_REFUSED },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_debug_level_table[];
 extern char * ndmp2_debug_level_to_str (ndmp2_debug_level val);
@@ -421,6 +451,7 @@ int ndmp2_debug_level_from_str (ndmp2_debug_level *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_debug_level_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_debug_level_table[] = {
 	{ "NDMP2_DBG_USER_INFO",	NDMP2_DBG_USER_INFO },
 	{ "NDMP2_DBG_USER_SUMMARY",	NDMP2_DBG_USER_SUMMARY },
@@ -433,6 +464,7 @@ struct ndmp_enum_str_table ndmp2_debug_level_table[] = {
 	{ "NDMP2_DBG_PROG_DETAIL",	NDMP2_DBG_PROG_DETAIL },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp2_unix_file_type_table[];
 extern char * ndmp2_unix_file_type_to_str (ndmp2_unix_file_type val);
@@ -446,6 +478,7 @@ int ndmp2_unix_file_type_from_str (ndmp2_unix_file_type *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp2_unix_file_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp2_unix_file_type_table[] = {
 	{ "NDMP2_FILE_DIR",	NDMP2_FILE_DIR },
 	{ "NDMP2_FILE_FIFO",	NDMP2_FILE_FIFO },
@@ -456,6 +489,6 @@ struct ndmp_enum_str_table ndmp2_unix_file_type_table[] = {
 	{ "NDMP2_FILE_SOCK",	NDMP2_FILE_SOCK },
 	{ 0 }
 };
-
+/* clang-format on */
 
 #endif /* !NDMOS_OPTION_NO_NDMP2 */

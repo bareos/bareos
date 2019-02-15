@@ -73,31 +73,25 @@ static void DumpResource(int type,
 UnionOfResources res_all;
 int32_t res_all_size = sizeof(res_all);
 
-/*
- * Definition of records permitted within each
- * resource with the routine to process the record
- * information.  NOTE! quoted names must be in lower case.
- */
+/* clang-format off */
+
 /*
  * Monitor Resource
  *
  * name handler value code flags default_value
  */
 static ResourceItem mon_items[] = {
-    {"Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
-    {"Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL},
-    {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL,
-     NULL},
-    {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL,
-     NULL},
-    {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL,
-     NULL},
-    {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL,
-     NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL},
+  {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
+  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
+  {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
     TLS_COMMON_CONFIG(res_monitor),
     TLS_CERT_CONFIG(res_monitor),
-    {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
+  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+};
 
 /*
  * Director's that we can contact
@@ -105,13 +99,14 @@ static ResourceItem mon_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem dir_items[] = {
-    {"Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
-    {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
-    {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-    {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
+  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+};
 
 /*
  * Client or File daemon resource
@@ -119,14 +114,15 @@ static ResourceItem dir_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem cli_items[] = {
-    {"Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL},
-    {"Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
-    {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-    {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
+  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+};
 
 /*
  * Storage daemon resource
@@ -134,16 +130,17 @@ static ResourceItem cli_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem store_items[] = {
-    {"Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL},
-    {"SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-    {"Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL},
-    {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL},
+  {"Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
+  {"Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-    {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
+  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+};
 
 /*
  * Font resource
@@ -151,10 +148,11 @@ static ResourceItem store_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem con_font_items[] = {
-    {"Name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-    {"Description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL, NULL, NULL},
-    {"Font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL, NULL, NULL},
-    {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}};
+  {"Name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"Description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL, NULL, NULL},
+  {"Font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL, NULL, NULL},
+  {NULL, 0, {0}, 0, 0, NULL, NULL, NULL}
+};
 
 /*
  * This is the master resource definition.
@@ -166,16 +164,19 @@ static ResourceItem con_font_items[] = {
  *  name items rcode res_head
  */
 static ResourceTable resources[] = {
-    {"Monitor", mon_items, R_MONITOR, sizeof(MonitorResource),
-     [](void *res) { return new ((MonitorResource *)res) MonitorResource(); }},
-    {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
-     [](void *res) { return new ((DirectorResource *)res) DirectorResource(); }},
-    {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
-     [](void *res) { return new ((ClientResource *)res) ClientResource(); }},
-    {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
-     [](void *res) { return new ((StorageResource *)res) StorageResource(); }},
-    {"ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource)},
-    {NULL, NULL, 0, 0}};
+  {"Monitor", mon_items, R_MONITOR, sizeof(MonitorResource),
+      [](void *res) { return new ((MonitorResource *)res) MonitorResource(); }},
+  {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+      [](void *res) { return new ((DirectorResource *)res) DirectorResource(); }},
+  {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
+      [](void *res) { return new ((ClientResource *)res) ClientResource(); }},
+  {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
+      [](void *res) { return new ((StorageResource *)res) StorageResource(); }},
+  {"ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource)},
+  {NULL, NULL, 0, 0}
+};
+
+/* clang-format on */
 
 /*
  * Dump contents of resource

@@ -955,6 +955,8 @@ void UpdateBootstrapFile(JobControlRecord *jcr)
    }
 }
 
+/* clang-format off */
+
 /*
  * Generic function which generates a backup summary message.
  * Used by:
@@ -1246,5 +1248,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         secure_erase_status.c_str(),
         BAREOS_JOBLOG_MESSAGE,
         TermMsg);
+
+/* clang-format on */
+
 }
 } /* namespace directordaemon */

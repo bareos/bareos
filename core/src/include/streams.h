@@ -30,6 +30,8 @@
 #ifndef BAREOS_INCLUDE_STREAMS_H_
 #define BAREOS_INCLUDE_STREAMS_H_ 1
 
+/* clang-format off */
+
 /**
  * Stream bits  -- these bits are new as of 24Nov10
  */
@@ -194,5 +196,7 @@
 /**
  * WARNING!!! do not define more than 2047 of these old types
  */
+
+/* clang-format on */
 
 #endif /* BAREOS_INCLUDE_STREAMS_H_ */

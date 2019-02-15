@@ -82,43 +82,41 @@ static int32_t res_all_size = sizeof(res_all);
  * information.
  */
 
-/*  Console "globals" */
+/* clang-format off */
+
 static ResourceItem cons_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
-   { "Description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL, NULL, NULL },
-   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL, NULL, NULL },
-   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL, NULL, NULL },
-   { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
-   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
-   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   TLS_COMMON_CONFIG(res_dir),
-   TLS_CERT_CONFIG(res_dir),
-   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+  { "Name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
+  { "Description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "RcFile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL, NULL, NULL },
+  { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL, NULL, NULL },
+  { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+  TLS_COMMON_CONFIG(res_dir),
+  TLS_CERT_CONFIG(res_dir),
+  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*  Director's that we can contact */
 static ResourceItem dir_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
-   { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-   { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
-   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   TLS_COMMON_CONFIG(res_dir),
-   TLS_CERT_CONFIG(res_dir),
-   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
+  { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
+  { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+  TLS_COMMON_CONFIG(res_dir),
+  TLS_CERT_CONFIG(res_dir),
+  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/**
- * This is the master resource definition.
- * It must have one item for each of the resources.
- */
 static ResourceTable resources[] = {
-   { "Console", cons_items, R_CONSOLE, sizeof(ConsoleResource), [] (void *res){ return new((ConsoleResource *) res) ConsoleResource(); } },
-   { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
-   { NULL, NULL, 0 }
+  { "Console", cons_items, R_CONSOLE, sizeof(ConsoleResource), [] (void *res){ return new((ConsoleResource *) res) ConsoleResource(); } },
+  { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
+  { NULL, NULL, 0 }
 };
+
+/* clang-format on */
 
 
 static void DumpResource(int type,

@@ -54,6 +54,7 @@ int ndmp4_error_from_str (ndmp4_error *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_error_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_error_table[] = {
 	{ "NDMP4_NO_ERR",		NDMP4_NO_ERR, },
 	{ "NDMP4_NOT_SUPPORTED_ERR",	NDMP4_NOT_SUPPORTED_ERR, },
@@ -81,6 +82,7 @@ struct ndmp_enum_str_table ndmp4_error_table[] = {
 	{ "NDMP4_CONNECT_ERR",		NDMP4_CONNECT_ERR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_header_message_type_table[];
@@ -114,6 +116,7 @@ int ndmp4_message_from_str (ndmp4_message *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_message_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_message_table[] = {
 	{ "NDMP4_CONNECT_OPEN",		NDMP4_CONNECT_OPEN, },
 	{ "NDMP4_CONNECT_CLIENT_AUTH",	NDMP4_CONNECT_CLIENT_AUTH, },
@@ -177,6 +180,7 @@ struct ndmp_enum_str_table ndmp4_message_table[] = {
 /*	{ "NDMP4_RESERVED_BASE",	NDMP4_RESERVED_BASE, }, */
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_auth_type_table[];
@@ -191,12 +195,14 @@ int ndmp4_auth_type_from_str (ndmp4_auth_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_auth_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_auth_type_table[] = {
 	{ "NDMP4_AUTH_NONE",		NDMP4_AUTH_NONE, },
 	{ "NDMP4_AUTH_TEXT",		NDMP4_AUTH_TEXT, },
 	{ "NDMP4_AUTH_MD5",		NDMP4_AUTH_MD5, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_addr_type_table[];
@@ -211,6 +217,7 @@ int ndmp4_addr_type_from_str (ndmp4_addr_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_addr_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_addr_type_table[] = {
 	{ "NDMP4_ADDR_LOCAL",		NDMP4_ADDR_LOCAL, },
 	{ "NDMP4_ADDR_TCP",		NDMP4_ADDR_TCP, },
@@ -218,6 +225,7 @@ struct ndmp_enum_str_table ndmp4_addr_type_table[] = {
 	{ "NDMP4_ADDR_IPC",		NDMP4_ADDR_IPC, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_tape_open_mode_table[];
@@ -232,12 +240,14 @@ int ndmp4_tape_open_mode_from_str (ndmp4_tape_open_mode *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_tape_open_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_tape_open_mode_table[] = {
 	{ "NDMP4_TAPE_READ_MODE",	NDMP4_TAPE_READ_MODE, },
 	{ "NDMP4_TAPE_RDWR_MODE",	NDMP4_TAPE_RDWR_MODE, },
 	{ "NDMP4_TAPE_RAW_MODE",	NDMP4_TAPE_RAW_MODE, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_tape_mtio_op_table[];
@@ -252,6 +262,7 @@ int ndmp4_tape_mtio_op_from_str (ndmp4_tape_mtio_op *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_tape_mtio_op_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_tape_mtio_op_table[] = {
 	{ "NDMP4_MTIO_FSF",		NDMP4_MTIO_FSF, },
 	{ "NDMP4_MTIO_BSF",		NDMP4_MTIO_BSF, },
@@ -262,6 +273,7 @@ struct ndmp_enum_str_table ndmp4_tape_mtio_op_table[] = {
 	{ "NDMP4_MTIO_OFF",		NDMP4_MTIO_OFF, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_mover_state_table[];
@@ -276,6 +288,7 @@ int ndmp4_mover_state_from_str (ndmp4_mover_state *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_mover_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_mover_state_table[] = {
 	{ "NDMP4_MOVER_STATE_IDLE",	NDMP4_MOVER_STATE_IDLE, },
 	{ "NDMP4_MOVER_STATE_LISTEN",	NDMP4_MOVER_STATE_LISTEN, },
@@ -284,6 +297,7 @@ struct ndmp_enum_str_table ndmp4_mover_state_table[] = {
 	{ "NDMP4_MOVER_STATE_HALTED",	NDMP4_MOVER_STATE_HALTED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_mover_pause_reason_table[];
@@ -298,6 +312,7 @@ int ndmp4_mover_pause_reason_from_str (ndmp4_mover_pause_reason *valp, char *str
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_mover_pause_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_mover_pause_reason_table[] = {
 	{ "NDMP4_MOVER_PAUSE_NA",	NDMP4_MOVER_PAUSE_NA, },
 	{ "NDMP4_MOVER_PAUSE_EOM",	NDMP4_MOVER_PAUSE_EOM, },
@@ -306,6 +321,7 @@ struct ndmp_enum_str_table ndmp4_mover_pause_reason_table[] = {
 	{ "NDMP4_MOVER_PAUSE_EOW",	NDMP4_MOVER_PAUSE_EOW, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_mover_halt_reason_table[];
@@ -320,6 +336,7 @@ int ndmp4_mover_halt_reason_from_str (ndmp4_mover_halt_reason *valp, char *str) 
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_mover_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_mover_halt_reason_table[] = {
 	{ "NDMP4_MOVER_HALT_NA",	NDMP4_MOVER_HALT_NA, },
 	{ "NDMP4_MOVER_HALT_CONNECT_CLOSED",
@@ -333,6 +350,7 @@ struct ndmp_enum_str_table ndmp4_mover_halt_reason_table[] = {
 					NDMP4_MOVER_HALT_MEDIA_ERROR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_mover_mode_table[];
@@ -347,11 +365,13 @@ int ndmp4_mover_mode_from_str (ndmp4_mover_mode *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_mover_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_mover_mode_table[] = {
 	{ "NDMP4_MOVER_MODE_READ",	NDMP4_MOVER_MODE_READ, },
 	{ "NDMP4_MOVER_MODE_WRITE",	NDMP4_MOVER_MODE_WRITE, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_data_operation_table[];
@@ -366,6 +386,7 @@ int ndmp4_data_operation_from_str (ndmp4_data_operation *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_data_operation_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_data_operation_table[] = {
 	{ "NDMP4_DATA_OP_NOACTION",	NDMP4_DATA_OP_NOACTION, },
 	{ "NDMP4_DATA_OP_BACKUP",	NDMP4_DATA_OP_BACKUP, },
@@ -374,6 +395,7 @@ struct ndmp_enum_str_table ndmp4_data_operation_table[] = {
 					NDMP4_DATA_OP_RECOVER_FILEHIST, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_data_state_table[];
@@ -388,6 +410,7 @@ int ndmp4_data_state_from_str (ndmp4_data_state *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_data_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_data_state_table[] = {
 	{ "NDMP4_DATA_STATE_IDLE",	NDMP4_DATA_STATE_IDLE, },
 	{ "NDMP4_DATA_STATE_ACTIVE",	NDMP4_DATA_STATE_ACTIVE, },
@@ -396,6 +419,7 @@ struct ndmp_enum_str_table ndmp4_data_state_table[] = {
 	{ "NDMP4_DATA_STATE_CONNECTED",	NDMP4_DATA_STATE_CONNECTED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_data_halt_reason_table[];
@@ -410,6 +434,7 @@ int ndmp4_data_halt_reason_from_str (ndmp4_data_halt_reason *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_data_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_data_halt_reason_table[] = {
 	{ "NDMP4_DATA_HALT_NA",		NDMP4_DATA_HALT_NA, },
 	{ "NDMP4_DATA_HALT_SUCCESSFUL",	NDMP4_DATA_HALT_SUCCESSFUL, },
@@ -418,6 +443,7 @@ struct ndmp_enum_str_table ndmp4_data_halt_reason_table[] = {
 	{ "NDMP4_DATA_HALT_CONNECT_ERROR", NDMP4_DATA_HALT_CONNECT_ERROR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_connection_status_reason_table[];
@@ -432,12 +458,14 @@ int ndmp4_connection_status_reason_from_str (ndmp4_connection_status_reason *val
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_connection_status_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_connection_status_reason_table[] = {
 	{ "NDMP4_CONNECTED",		NDMP4_CONNECTED, },
 	{ "NDMP4_SHUTDOWN",		NDMP4_SHUTDOWN, },
 	{ "NDMP4_REFUSED",		NDMP4_REFUSED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_log_type_table[];
@@ -452,6 +480,7 @@ int ndmp4_log_type_from_str (ndmp4_log_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_log_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_log_type_table[] = {
 	{ "NDMP4_LOG_NORMAL",		NDMP4_LOG_NORMAL, },
 	{ "NDMP4_LOG_DEBUG",		NDMP4_LOG_DEBUG, },
@@ -459,6 +488,7 @@ struct ndmp_enum_str_table ndmp4_log_type_table[] = {
 	{ "NDMP4_LOG_WARNING",		NDMP4_LOG_WARNING, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_fs_type_table[];
@@ -473,12 +503,14 @@ int ndmp4_fs_type_from_str (ndmp4_fs_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_fs_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_fs_type_table[] = {
 	{ "NDMP4_FS_UNIX",		NDMP4_FS_UNIX, },
 	{ "NDMP4_FS_NT",		NDMP4_FS_NT, },
 	{ "NDMP4_FS_OTHER",		NDMP4_FS_OTHER, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_file_type_table[];
@@ -493,6 +525,7 @@ int ndmp4_file_type_from_str (ndmp4_file_type *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_file_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_file_type_table[] = {
 	{ "NDMP4_FILE_DIR",		NDMP4_FILE_DIR, },
 	{ "NDMP4_FILE_FIFO",		NDMP4_FILE_FIFO, },
@@ -505,6 +538,7 @@ struct ndmp_enum_str_table ndmp4_file_type_table[] = {
 	{ "NDMP4_FILE_OTHER",		NDMP4_FILE_OTHER, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp4_recovery_status_table[];
@@ -519,6 +553,7 @@ int ndmp4_recovery_status_from_str (ndmp4_recovery_status *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp4_recovery_status_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp4_recovery_status_table[] = {
 	{ "NDMP4_RECOVERY_SUCCESSFUL",
 			NDMP4_RECOVERY_SUCCESSFUL, },
@@ -536,5 +571,6 @@ struct ndmp_enum_str_table ndmp4_recovery_status_table[] = {
 			NDMP4_RECOVERY_FAILED_UNDEFINED_ERROR, },
 	{ 0 }
 };
+/* clang-format on */
 
 #endif /* !NDMOS_OPTION_NO_NDMP4 */

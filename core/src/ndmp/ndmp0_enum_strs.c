@@ -54,6 +54,7 @@ int ndmp0_error_from_str (ndmp0_error *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp0_error_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp0_error_table[] = {
 	{ "NDMP0_NO_ERR",		NDMP0_NO_ERR, },
 	{ "NDMP0_NOT_SUPPORTED_ERR",	NDMP0_NOT_SUPPORTED_ERR, },
@@ -80,6 +81,7 @@ struct ndmp_enum_str_table ndmp0_error_table[] = {
 	{ "NDMP0_NO_MEM_ERR",		NDMP0_NO_MEM_ERR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp0_header_message_type_table[];
@@ -94,11 +96,13 @@ int ndmp0_header_message_type_from_str (ndmp0_header_message_type *valp, char *s
 	return ndmp_enum_from_str ((int*)valp, str, ndmp0_header_message_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp0_header_message_type_table[] = {
 	{ "NDMP0_MESSAGE_REQUEST",	NDMP0_MESSAGE_REQUEST, },
 	{ "NDMP0_MESSAGE_REPLY",	NDMP0_MESSAGE_REPLY, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp0_message_table[];
@@ -113,12 +117,14 @@ int ndmp0_message_from_str (ndmp0_message *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp0_message_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp0_message_table[] = {
 	{ "NDMP0_CONNECT_OPEN",		NDMP0_CONNECT_OPEN, },
 	{ "NDMP0_CONNECT_CLOSE",	NDMP0_CONNECT_CLOSE, },
 	{ "NDMP0_NOTIFY_CONNECTED",	NDMP0_NOTIFY_CONNECTED, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp0_connect_reason_table[];
@@ -133,9 +139,11 @@ int ndmp0_connect_reason_from_str (ndmp0_connect_reason *valp, char *str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp0_connect_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp0_connect_reason_table[] = {
 	{ "NDMP0_CONNECTED",		NDMP0_CONNECTED, },
 	{ "NDMP0_SHUTDOWN",		NDMP0_SHUTDOWN, },
 	{ "NDMP0_REFUSED",		NDMP0_REFUSED, },
 	{ 0 }
 };
+/* clang-format on */

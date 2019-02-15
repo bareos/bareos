@@ -54,6 +54,7 @@ int ndmp9_error_from_str (ndmp9_error *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_error_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_error_table[] = {
 	{ "NDMP9_NO_ERR",		NDMP9_NO_ERR },
 	{ "NDMP9_NOT_SUPPORTED_ERR",	NDMP9_NOT_SUPPORTED_ERR },
@@ -81,6 +82,7 @@ struct ndmp_enum_str_table ndmp9_error_table[] = {
 	{ "NDMP9_CONNECT_ERR",		NDMP9_CONNECT_ERR, },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp9_auth_type_table[];
@@ -95,12 +97,14 @@ int ndmp9_auth_type_from_str (ndmp9_auth_type *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_auth_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_auth_type_table[] = {
 	{ "NDMP9_AUTH_NONE",	NDMP9_AUTH_NONE },
 	{ "NDMP9_AUTH_TEXT",	NDMP9_AUTH_TEXT },
 	{ "NDMP9_AUTH_MD5",	NDMP9_AUTH_MD5 },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_addr_type_table[];
 extern char * ndmp9_addr_type_to_str (ndmp9_addr_type val);
@@ -114,11 +118,13 @@ int ndmp9_addr_type_from_str (ndmp9_addr_type *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_addr_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_addr_type_table[] = {
 	{ "NDMP9_ADDR_LOCAL",	NDMP9_ADDR_LOCAL },
 	{ "NDMP9_ADDR_TCP",	NDMP9_ADDR_TCP },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_tape_open_mode_table[];
 extern char * ndmp9_tape_open_mode_to_str (ndmp9_tape_open_mode val);
@@ -132,11 +138,13 @@ int ndmp9_tape_open_mode_from_str (ndmp9_tape_open_mode *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_tape_open_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_tape_open_mode_table[] = {
 	{ "NDMP9_TAPE_READ_MODE",	NDMP9_TAPE_READ_MODE },
 	{ "NDMP9_TAPE_RDWR_MODE",	NDMP9_TAPE_RDWR_MODE },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_tape_mtio_op_table[];
 extern char * ndmp9_tape_mtio_op_to_str (ndmp9_tape_mtio_op val);
@@ -150,6 +158,7 @@ int ndmp9_tape_mtio_op_from_str (ndmp9_tape_mtio_op *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_tape_mtio_op_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_tape_mtio_op_table[] = {
 	{ "NDMP9_MTIO_FSF",	NDMP9_MTIO_FSF },
 	{ "NDMP9_MTIO_BSF",	NDMP9_MTIO_BSF },
@@ -160,6 +169,7 @@ struct ndmp_enum_str_table ndmp9_tape_mtio_op_table[] = {
 	{ "NDMP9_MTIO_OFF",	NDMP9_MTIO_OFF },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_mover_state_table[];
 extern char * ndmp9_mover_state_to_str (ndmp9_mover_state val);
@@ -173,6 +183,7 @@ int ndmp9_mover_state_from_str (ndmp9_mover_state *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_mover_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_mover_state_table[] = {
 	{ "NDMP9_MOVER_STATE_IDLE",	NDMP9_MOVER_STATE_IDLE },
 	{ "NDMP9_MOVER_STATE_LISTEN",	NDMP9_MOVER_STATE_LISTEN },
@@ -181,6 +192,7 @@ struct ndmp_enum_str_table ndmp9_mover_state_table[] = {
 	{ "NDMP9_MOVER_STATE_HALTED",	NDMP9_MOVER_STATE_HALTED },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_mover_pause_reason_table[];
 extern char * ndmp9_mover_pause_reason_to_str (ndmp9_mover_pause_reason val);
@@ -194,6 +206,7 @@ int ndmp9_mover_pause_reason_from_str (ndmp9_mover_pause_reason *valp, char * st
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_mover_pause_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_mover_pause_reason_table[] = {
 	{ "NDMP9_MOVER_PAUSE_NA",	NDMP9_MOVER_PAUSE_NA },
 	{ "NDMP9_MOVER_PAUSE_EOM",	NDMP9_MOVER_PAUSE_EOM },
@@ -203,6 +216,7 @@ struct ndmp_enum_str_table ndmp9_mover_pause_reason_table[] = {
 	{ "NDMP9_MOVER_PAUSE_EOW",      NDMP9_MOVER_PAUSE_EOW },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_mover_halt_reason_table[];
 extern char * ndmp9_mover_halt_reason_to_str (ndmp9_mover_halt_reason val);
@@ -216,6 +230,7 @@ int ndmp9_mover_halt_reason_from_str (ndmp9_mover_halt_reason *valp, char * str)
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_mover_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_mover_halt_reason_table[] = {
 	{ "NDMP9_MOVER_HALT_NA",	NDMP9_MOVER_HALT_NA },
 	{ "NDMP9_MOVER_HALT_CONNECT_CLOSED", NDMP9_MOVER_HALT_CONNECT_CLOSED },
@@ -224,6 +239,7 @@ struct ndmp_enum_str_table ndmp9_mover_halt_reason_table[] = {
 	{ "NDMP9_MOVER_HALT_CONNECT_ERROR", NDMP9_MOVER_HALT_CONNECT_ERROR },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_mover_mode_table[];
 extern char * ndmp9_mover_mode_to_str (ndmp9_mover_mode val);
@@ -237,11 +253,13 @@ int ndmp9_mover_mode_from_str (ndmp9_mover_mode *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_mover_mode_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_mover_mode_table[] = {
 	{ "NDMP9_MOVER_MODE_READ",	NDMP9_MOVER_MODE_READ },
 	{ "NDMP9_MOVER_MODE_WRITE",	NDMP9_MOVER_MODE_WRITE },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_data_operation_table[];
 extern char * ndmp9_data_operation_to_str (ndmp9_data_operation val);
@@ -255,6 +273,7 @@ int ndmp9_data_operation_from_str (ndmp9_data_operation *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_data_operation_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_data_operation_table[] = {
 	{ "NDMP9_DATA_OP_NOACTION",	NDMP9_DATA_OP_NOACTION },
 	{ "NDMP9_DATA_OP_BACKUP",	NDMP9_DATA_OP_BACKUP },
@@ -262,6 +281,7 @@ struct ndmp_enum_str_table ndmp9_data_operation_table[] = {
 	{ "NDMP9_DATA_OP_RECOVER_FILEHIST", NDMP9_DATA_OP_RECOVER_FILEHIST },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_data_state_table[];
 extern char * ndmp9_data_state_to_str (ndmp9_data_state val);
@@ -275,12 +295,14 @@ int ndmp9_data_state_from_str (ndmp9_data_state *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_data_state_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_data_state_table[] = {
 	{ "NDMP9_DATA_STATE_IDLE",	NDMP9_DATA_STATE_IDLE },
 	{ "NDMP9_DATA_STATE_ACTIVE",	NDMP9_DATA_STATE_ACTIVE },
 	{ "NDMP9_DATA_STATE_HALTED",	NDMP9_DATA_STATE_HALTED },
 	{ 0 }
 };
+/* clang-format on */
 
 extern struct ndmp_enum_str_table ndmp9_data_halt_reason_table[];
 extern char * ndmp9_data_halt_reason_to_str (ndmp9_data_halt_reason val);
@@ -294,6 +316,7 @@ int ndmp9_data_halt_reason_from_str (ndmp9_data_halt_reason *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_data_halt_reason_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_data_halt_reason_table[] = {
 	{ "NDMP9_DATA_HALT_NA",	NDMP9_DATA_HALT_NA },
 	{ "NDMP9_DATA_HALT_SUCCESSFUL",	NDMP9_DATA_HALT_SUCCESSFUL },
@@ -302,6 +325,7 @@ struct ndmp_enum_str_table ndmp9_data_halt_reason_table[] = {
 	{ "NDMP9_DATA_HALT_CONNECT_ERROR", NDMP9_DATA_HALT_CONNECT_ERROR },
 	{ 0 }
 };
+/* clang-format on */
 
 
 extern struct ndmp_enum_str_table ndmp9_file_type_table[];
@@ -316,6 +340,7 @@ int ndmp9_file_type_from_str (ndmp9_file_type *valp, char * str) {
 	return ndmp_enum_from_str ((int*)valp, str, ndmp9_file_type_table);
 }
 
+/* clang-format off */
 struct ndmp_enum_str_table ndmp9_file_type_table[] = {
 	{ "NDMP9_FILE_DIR",	NDMP9_FILE_DIR },
 	{ "NDMP9_FILE_FIFO",	NDMP9_FILE_FIFO },
@@ -328,3 +353,4 @@ struct ndmp_enum_str_table ndmp9_file_type_table[] = {
 	{ "NDMP9_FILE_OTHER",	NDMP9_FILE_OTHER },
 	{ 0 }
 };
+/* clang-format on */

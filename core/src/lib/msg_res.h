@@ -29,6 +29,8 @@
 #ifndef BAREOS_LIB_MSG_RES_H_
 #define BAREOS_LIB_MSG_RES_H_ 1
 
+/* clang-format off */
+
 /*
  * Message resource directives
  * name config_data_type value code flags default_value
@@ -53,5 +55,7 @@ static ResourceItem msgs_items[] = {
    { "Catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL, NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
+
+/* clang-format on */
 
 #endif /* BAREOS_LIB_MSG_RES_H_ */
