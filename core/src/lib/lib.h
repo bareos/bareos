@@ -63,5 +63,4 @@
 #include "var.h"
 #include "guid_to_name.h"
 #include "htable.h"
-#include "sellist.h"
 #include "jcr.h"
