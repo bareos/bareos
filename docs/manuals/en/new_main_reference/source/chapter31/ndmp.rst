@@ -179,7 +179,7 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
    Tape Agent                                                      & |bareosSd|                            & external    \\
    requires external Tape Agent                                    &                                      & x \\
    backup to tape (and VTL)                                        & x                          & x \\
-   backup to other **Device Type**:sup:`Sd`:sub:`Device`\  & x                          & \\
+   backup to other :config:option:`sd/device/DeviceType`\  & x                          & \\
    2-way backup                                                    &                                      & x \\
    3-way backup                                                    & x                          & untested    \\
    Full Backups                                                    & x                          & x \\
@@ -201,7 +201,7 @@ Data Management Agent  |bareosDir|  |bareosDir|
 Tape Agent  |bareosSd|  external
 requires external Tape Agent                                                     x 
 backup to tape (and VTL)                                                      x  x 
-backup to other **Device Type**:sup:`Sd`:sub:`Device`\   x 
+backup to other :config:option:`sd/device/DeviceType`\   x 
 2-way backup                                                                                                                     x 
 3-way backup                                                                  x  untested
 Full Backups                                                                  x  x 
@@ -256,13 +256,13 @@ Bareos Director: Configure NDMP Client Resource
 
 Add a Client resource to the |bareosDir| configuration and configure it to access your NDMP storage system (Primary Storage System/Data Agent).
 
--  **Protocol**:sup:`Dir`:sub:`Client`\  must be either NDMPv2, NDMPv3 or NDMPv4.
+-  :config:option:`dir/client/Protocol`\  must be either NDMPv2, NDMPv3 or NDMPv4.
 
--  **Port**:sup:`Dir`:sub:`Client`\  is set to the NDMP Port (usually 10000).
+-  :config:option:`dir/client/Port`\  is set to the NDMP Port (usually 10000).
 
--  **Username**:sup:`Dir`:sub:`Client`\  and **Password**:sup:`Dir`:sub:`Client`\  are used for the authentication against the NDMP Storage System.
+-  :config:option:`dir/client/Username`\  and :config:option:`dir/client/Password`\  are used for the authentication against the NDMP Storage System.
 
--  **Auth Type**:sup:`Dir`:sub:`Client`\  is either Cleartext or MD5. NDMP supports both.
+-  :config:option:`dir/client/AuthType`\  is either Cleartext or MD5. NDMP supports both.
 
 In our example we connect to a Isilon storage appliance emulator:
 
@@ -357,7 +357,7 @@ Bareos Storage Daemon: Configure NDMP
 Enabling NDMP
 '''''''''''''
 
-To enable the NDMP Tape Agent inside of the |bareosSd|, set **NDMP Enable**:sup:`Sd`:sub:`Storage`\ =yes:
+To enable the NDMP Tape Agent inside of the |bareosSd|, set :config:option:`sd/storage/NdmpEnable`\ =yes:
 
 .. code-block:: sh
    :caption: enable NDMP in |bareosSd|
@@ -511,19 +511,19 @@ The specified directory needs to be a filesystem or a subdirectory of a filesyst
 
 
 .. warning::
-   Normally (**Protocol**:sup:`Dir`:sub:`Client`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (**Protocol**:sup:`Dir`:sub:`Client`\ =NDMP*), no |bareosFd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta` from **Include**:sup:`Dir`:sub:`FileSet`\ .
+   Normally (:config:option:`dir/client/Protocol`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (:config:option:`dir/client/Protocol`\ =NDMP*), no |bareosFd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta` from :config:option:`dir/fileset/Include`\ .
 
 
 
 .. warning::
-   Avoid using multiple **Include**:sup:`Dir`:sub:`FileSet`\  :strong:`File` directives.
+   Avoid using multiple :config:option:`dir/fileset/Include`\  :strong:`File` directives.
    The |bareosDir| would try to handle them by running multiple NDMP jobs in a single Bareos job.
    Even if this is working fine during backup, restore jobs will cause trouble.
 
 Some NDMP environment variables are set automatically by the DMA in the |bareosDir|. The following environment variables are currently set automatically:
 
 FILESYSTEM
-   is set to the **Include**:sup:`Dir`:sub:`FileSet`\  :strong:`File` directive.
+   is set to the :config:option:`dir/fileset/Include`\  :strong:`File` directive.
 
 HIST
    | = Y
@@ -619,7 +619,7 @@ To do NDMP backups and restores, some special settings need to be configured. We
      Where         = /
    }
 
--  **Backup Format**:sup:`Dir`:sub:`Job`\ =dump is used in our example. Other Backup Formats have other advantages/disadvantages.
+-  :config:option:`dir/job/BackupFormat`\ =dump is used in our example. Other Backup Formats have other advantages/disadvantages.
 
 \centering
 
@@ -910,7 +910,7 @@ Restore files to original path
 Restore files to different path
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The restore location is determined by the **Where**:sup:`Dir`:sub:`Job`\  setting of the restore job. In NDMP, this parameter works in a special manner, the prefix can be either :emphasis:`relative` to the filesystem or :emphasis:`absolute`. If a prefix is set in form of a directory (like :file:`/bareos-restores`), it will be a relative prefix and will be added between the filesystem and the filename. This is needed to make sure that the
+The restore location is determined by the :config:option:`dir/job/Where`\  setting of the restore job. In NDMP, this parameter works in a special manner, the prefix can be either :emphasis:`relative` to the filesystem or :emphasis:`absolute`. If a prefix is set in form of a directory (like :file:`/bareos-restores`), it will be a relative prefix and will be added between the filesystem and the filename. This is needed to make sure that the
 data is restored in a different directory, but into the same filesystem. If the prefix is set with a leading caret (^), it will be an absolute prefix and will be put at the front of the restore path. This is needed if the restored data should be stored into a different filesystem.
 
 Example:
@@ -981,7 +981,7 @@ Add a Pool that the copies will run to:
      Storage = File2                     # Pool belongs to Storage File2
    }
 
-Then we need to define the just defined pool as the **Next Pool**:sup:`Dir`:sub:`Pool`\  of the pool that actually holds the data to be copied.
+Then we need to define the just defined pool as the :config:option:`dir/pool/NextPool`\  of the pool that actually holds the data to be copied.
 
 In our case this is the **Full**:sup:`Dir`:sub:`Pool`  Pool:
 
@@ -1296,7 +1296,7 @@ Configure a NDMP Storage
 
 This defines now to connect to the Tape and Robot Agents and what devices to use.
 
-As we do not yet now the device names, we can put a placeholder string in **Device**:sup:`Dir`:sub:`Storage`\  and **NDMP Changer Device**:sup:`Dir`:sub:`Storage`\ :
+As we do not yet now the device names, we can put a placeholder string in :config:option:`dir/storage/Device`\  and :config:option:`dir/storage/NdmpChangerDevice`\ :
 
 .. code-block:: sh
    :caption: bareos-dir.d/Storage/isilon.conf
@@ -1976,23 +1976,23 @@ To debug the NDMP backups, these settings can be adapted:
 
 -  
 
-   **NDMP Snooping**:sup:`Dir`:sub:`Director`\ 
+   :config:option:`dir/director/NdmpSnooping`\ 
 
 -  
 
-   **NDMP Log Level**:sup:`Dir`:sub:`Director`\ 
+   :config:option:`dir/director/NdmpLogLevel`\ 
 
 -  
 
-   **NDMP Log Level**:sup:`Dir`:sub:`Client`\ 
+   :config:option:`dir/client/NdmpLogLevel`\ 
 
 -  
 
-   **NDMP Snooping**:sup:`Sd`:sub:`Storage`\ 
+   :config:option:`sd/storage/NdmpSnooping`\ 
 
 -  
 
-   **NDMP Log Level**:sup:`Sd`:sub:`Storage`\ 
+   :config:option:`sd/storage/NdmpLogLevel`\ 
 
 This will create a lot of debugging output that will help to find the problem during NDMP backups.
 
@@ -2005,11 +2005,11 @@ NDMP Fileset limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 :index:`NDMP: A NDMP fileset should only contain a single File directive and Meta options. <triple: Limitation; NDMP; A NDMP fileset should only contain a single File directive and Meta options>`
-   Using multiple **Include**:sup:`Dir`:sub:`FileSet`\  :strong:`File` directives should be avoided.
+   Using multiple :config:option:`dir/fileset/Include`\  :strong:`File` directives should be avoided.
    The |bareosDir| would try to handle them by running multiple NDMP jobs in a single Bareos job.
    Even if this is working fine during backup, restore jobs will cause trouble.
 
-   Normally (**Protocol**:sup:`Dir`:sub:`Client`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (**Protocol**:sup:`Dir`:sub:`Client`\ =NDMP*), no |bareosFd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta` from **Include**:sup:`Dir`:sub:`FileSet`\ .
+   Normally (:config:option:`dir/client/Protocol`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (:config:option:`dir/client/Protocol`\ =NDMP*), no |bareosFd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta` from :config:option:`dir/fileset/Include`\ .
    
 
 
@@ -2027,8 +2027,8 @@ Temporary memory mapped database
 
 :index:`NDMP: 64-bit system recommended. <triple: Limitation; NDMP; 64-bit system recommended>`
    The |bareosDir| uses a memory mapped database (LMBD) to temporarily store NDMP file information.
-   On some 32-bit systems the default **File History Size**:sup:`Dir`:sub:`Job`\  requires a larger memory area than available.
-   In this case, you either have to lower the **File History Size**:sup:`Dir`:sub:`Job`\ 
+   On some 32-bit systems the default :config:option:`dir/job/FileHistorySize`\  requires a larger memory area than available.
+   In this case, you either have to lower the :config:option:`dir/job/FileHistorySize`\ 
    or preferably run the |bareosDir| on a 64-bit system.
    
 

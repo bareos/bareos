@@ -1,0 +1,4 @@
+If this directive is set to yes (default no), and Bareos detects that a previous job at a higher level (i.e. Full or Differential) has failed, the current job level will be upgraded to the higher level. This is particularly useful for Laptops where they may often be unreachable, and if a prior Full save has failed, you wish the very next backup to be a Full save rather than whatever level it is started as.
+
+There are several points that must be taken into account when using this directive: first, a failed job is defined as one that has not terminated normally, which includes any running job of the same name (you need to ensure that two jobs of the same name do not run simultaneously); secondly, the :config:option:`dir/fileset/IgnoreFileSetChanges`\  directive is not considered when checking for failed levels, which means that any FileSet change will trigger a rerun.
+

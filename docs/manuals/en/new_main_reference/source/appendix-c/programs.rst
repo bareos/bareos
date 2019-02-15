@@ -117,13 +117,13 @@ Parameter
 Specifying the Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each of the utilities that deal with Volumes require a valid |bareosSd| configuration (actually, the only part of the configuration file that these programs need is the :sup:`Sd`\ :strong:`Device` resource definitions). This permits the programs to find the configuration parameters for your **Archive Device**:sup:`Sd`:sub:`Device`\ . Using the ``-c`` option a custom |bareosSd| configuration file or directory can be
+Each of the utilities that deal with Volumes require a valid |bareosSd| configuration (actually, the only part of the configuration file that these programs need is the :sup:`Sd`\ :strong:`Device` resource definitions). This permits the programs to find the configuration parameters for your :config:option:`sd/device/ArchiveDevice`\ . Using the ``-c`` option a custom |bareosSd| configuration file or directory can be
 selected.
 
 Specifying a Device
 ^^^^^^^^^^^^^^^^^^^
 
-Each of these programs require a ``device-name`` where the Volume can be found. The device-name is either the name of the |bareosSd| device (**Name**:sup:`Sd`:sub:`Device`\ ) or its **Archive Device**:sup:`Sd`:sub:`Device`\ .
+Each of these programs require a ``device-name`` where the Volume can be found. The device-name is either the name of the |bareosSd| device (:config:option:`sd/device/Name`\ ) or its :config:option:`sd/device/ArchiveDevice`\ .
 
 Specifying a Device Name For a Tape
 '''''''''''''''''''''''''''''''''''
@@ -144,7 +144,7 @@ In the case of a tape, this is the physical device name such as /dev/nst0 or /de
 Specifying a Device Name For a File
 '''''''''''''''''''''''''''''''''''
 
-If you are attempting to read or write an archive file rather than a tape, the ``device-name`` can be the full path to the archive location specified at **Archive Device**:sup:`Sd`:sub:`Device`\  or this including the filename of the volume. The filename (last part of the specification) will be stripped and used as the Volume name So, the path is equivalent to the **Archive Device**:sup:`Sd`:sub:`Device`\  and the filename is
+If you are attempting to read or write an archive file rather than a tape, the ``device-name`` can be the full path to the archive location specified at :config:option:`sd/device/ArchiveDevice`\  or this including the filename of the volume. The filename (last part of the specification) will be stripped and used as the Volume name So, the path is equivalent to the :config:option:`sd/device/ArchiveDevice`\  and the filename is
 equivalent to the volume name.
 
 Specifying Volumes
@@ -224,7 +224,7 @@ or
 Specifying Maximum Block Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you use Bareos with non-default block sizes defined in the pools (**Maximum Block Size**:sup:`Dir`:sub:`Pool`\ ), it might be necessary to specify the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  also in the storage device resource, see :ref:`Direct access to Volumes with non-default blocksizes <direct-access-to-volumes-with-non-default-blocksizes>`.
+If you use Bareos with non-default block sizes defined in the pools (:config:option:`dir/pool/MaximumBlockSize`\ ), it might be necessary to specify the :config:option:`sd/device/MaximumBlockSize`\  also in the storage device resource, see :ref:`Direct access to Volumes with non-default blocksizes <direct-access-to-volumes-with-non-default-blocksizes>`.
 
 bls
 ~~~
@@ -908,7 +908,7 @@ To determine the best configuration of your tape drive, you can run the new ``sp
 
 This command can have the following arguments:
 
--  Specify the **Maximum File Size**:sup:`Sd`:sub:`Device`\  for this test. This counter is in GB.
+-  Specify the :config:option:`sd/device/MaximumFileSize`\  for this test. This counter is in GB.
 
 -  Specify the number of file to be written. The amount of data should be greater than your memory (file_size :math:`*` nb_file).
 
@@ -1044,7 +1044,7 @@ When running :command:`bsmtp` by hand, you will need to terminate the message by
 If you are getting incorrect dates (e.g. 1970) and you are running with a non-English language setting, you might try adding a :command:`LANG=C` immediately before the :command:`bsmtp` call.
 
 In general, :command:`bsmtp` attempts to cleanup email addresses that you specify in the from, copy, mailhost, and recipient fields, by adding the necessary < and > characters around the address part. However, if you include a display-name (see RFC 5332), some SMTP servers such as Exchange may not accept the message if the display-name is also included in < and >. As mentioned above, you must test, and if you run into this situation, you may manually add the < and > to the Bareos
-**Mail Command**:sup:`Dir`:sub:`Messages`\  or **Operator Command**:sup:`Dir`:sub:`Messages`\  and when :command:`bsmtp` is formatting an address if it already contains a < or > character, it will leave the address unchanged.
+:config:option:`dir/messages/MailCommand`\  or :config:option:`dir/messages/OperatorCommand`\  and when :command:`bsmtp` is formatting an address if it already contains a < or > character, it will leave the address unchanged.
 
 bareos-dbcheck
 ~~~~~~~~~~~~~~

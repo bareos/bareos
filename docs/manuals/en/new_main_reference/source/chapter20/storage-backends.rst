@@ -90,9 +90,9 @@ As of your |bareosSd| configuration, we need to setup a new device that acts as 
 
 The name and media type must correspond to those settings in the |bareosDir| :ref:`DirectorResourceStorage`:
 
--  **Name**:sup:`Sd`:sub:`Device`\  = **Device**:sup:`Dir`:sub:`Storage`\ 
+-  :config:option:`sd/device/Name`\  = :config:option:`dir/storage/Device`\ 
 
--  **Media Type**:sup:`Sd`:sub:`Device`\  = **Media Type**:sup:`Dir`:sub:`Storage`\ 
+-  :config:option:`sd/device/MediaType`\  = :config:option:`dir/storage/MediaType`\ 
 
 A device for the usage of AWS S3 object storage with a bucket named :file:`backup-bareos` located in EU Central 1 (Frankfurt, Germany), would look like this:
 
@@ -116,7 +116,7 @@ A device for the usage of AWS S3 object storage with a bucket named :file:`backu
 In these examples all the backup data is placed in the :file:`bareos-backup` bucket on the defined S3 storage. In contrast to other |bareosSd| backends, a Bareos volume is not represented by a single file. Instead a volume is a sub-directory in the defined bucket and every chunk is placed in the volume directory with the filename 0000-9999 and a size defined in the chunksize option. It is implemented this way, as S3 does not allow to append to a file. Instead it always writes full
 files, so every append operation could result in reading and writing the full volume file.
 
-Following **Device Options**:sup:`Sd`:sub:`Device`\  settings are possible:
+Following :config:option:`sd/device/DeviceOptions`\  settings are possible:
 
 profile
    Droplet profile path (e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile). Make sure the profile file is readable for user **bareos**.
@@ -224,7 +224,7 @@ Troubleshooting
 iothreads
 ^^^^^^^^^
 
-For testing following **Device Options**:sup:`Sd`:sub:`Device`\  should be used:
+For testing following :config:option:`sd/device/DeviceOptions`\  should be used:
 
 -  :file:`iothreads=0`
 
@@ -277,7 +277,7 @@ Status without pending IO chunks:
    Attached Jobs:
    ...
 
-For performance, **Device Options**:sup:`Sd`:sub:`Device`\  should be configured with:
+For performance, :config:option:`sd/device/DeviceOptions`\  should be configured with:
 
 -  :file:`iothreads >= 1`
 
@@ -332,7 +332,7 @@ configure it as storage device:
 
 
 
-.. literalinclude:: /_static/config/SdDeviceDeviceOptionsGfapi1.conf
+   .. literalinclude:: /_static/config/SdDeviceDeviceOptionsGfapi1.conf
 
 
 

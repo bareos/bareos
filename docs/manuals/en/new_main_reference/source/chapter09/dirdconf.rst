@@ -4601,11 +4601,11 @@ Job. Bareos will not automatically search for the correct Pool.
 To use a Pool, there are three distinct steps. First the Pool must be defined in the Director’s configuration. Then the Pool must be written to the Catalog database. This is done automatically by the Director each time that it starts. Finally, if you change the Pool definition in the Director’s configuration file and restart Bareos, the pool will be updated alternatively you can use the :strong:`update pool` console command to refresh the database image. It is this database image
 rather than the Director’s resource image that is used for the default Volume attributes. Note, for the pool to be automatically created or updated, it must be explicitly referenced by a Job resource.
 
-If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :strong:`label` command in the console program or using the :command:`btape` program. The preferred method is to use the :strong:`label` command in the console program. Generally, automatic labeling is enabled for **Device Type**:sup:`Sd`:sub:`Device`\ = **File**
-and disabled for **Device Type**:sup:`Sd`:sub:`Device`\ = **Tape**.
+If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :strong:`label` command in the console program or using the :command:`btape` program. The preferred method is to use the :strong:`label` command in the console program. Generally, automatic labeling is enabled for :config:option:`sd/device/DeviceType`\ = **File**
+and disabled for :config:option:`sd/device/DeviceType`\ = **Tape**.
 
-Finally, you must add Volume names (and their attributes) to the Pool. For Volumes to be used by Bareos they must be of the same **Media Type**:sup:`Sd`:sub:`Device`\  as the archive device specified for the job (i.e. if you are going to back up to a DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be mounted on a DLT drive). The **Media Type**:sup:`Sd`:sub:`Device`\  has particular importance if you are backing up to files.
-When running a Job, you must explicitly specify which Pool to use. Bareos will then automatically select the next Volume to use from the Pool, but it will ensure that the **Media Type**:sup:`Sd`:sub:`Device`\  of any Volume selected from the Pool is identical to that required by the Storage resource you have specified for the Job.
+Finally, you must add Volume names (and their attributes) to the Pool. For Volumes to be used by Bareos they must be of the same :config:option:`sd/device/MediaType`\  as the archive device specified for the job (i.e. if you are going to back up to a DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be mounted on a DLT drive). The :config:option:`sd/device/MediaType`\  has particular importance if you are backing up to files.
+When running a Job, you must explicitly specify which Pool to use. Bareos will then automatically select the next Volume to use from the Pool, but it will ensure that the :config:option:`sd/device/MediaType`\  of any Volume selected from the Pool is identical to that required by the Storage resource you have specified for the Job.
 
 If you use the :strong:`label` command in the console program to label the Volumes, they will automatically be added to the Pool, so this last step is not normally required.
 
@@ -5340,7 +5340,7 @@ Named Console
    This second type of console begins with absolutely no privileges except those explicitly specified in the Director’s Console resource. Thus you can have multiple Consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to commands and resources by specifying access control lists in the Director’s Console resource. The ACLs
    are specified by a directive followed by a list of access names. Examples of this are shown below.
 
-   -  The third type of console is similar to the above mentioned one in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the **Name**:sup:`Dir`:sub:`Console`\  directive, is the same as a Client name, that console is permitted to use the :strong:`SetIP` command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits
+   -  The third type of console is similar to the above mentioned one in that it requires a Console resource definition in both the Director and the Console. In addition, if the console name, provided on the :config:option:`dir/console/Name`\  directive, is the same as a Client name, that console is permitted to use the :strong:`SetIP` command to change the Address directive in the Director’s client resource to the IP address of the Console. This permits
       portables or other machines using DHCP (non-fixed IP addresses) to "notify" the Director of their current IP address.
 
 The Console resource is optional and need not be specified. The following directives are permitted within these resources:
@@ -5472,7 +5472,7 @@ Profile Resource
 
 :index:`[TAG=Profile Resource] <single: Profile Resource>` :index:`[TAG=Resource->Profile] <pair: Resource; Profile>`
 
-The Profile Resource defines a set of ACLs. :ref:`DirectorResourceConsole`s can be tight to one or more profiles (**Profile**:sup:`Dir`:sub:`Console`\ ), making it easier to use a common set of ACLs.
+The Profile Resource defines a set of ACLs. :ref:`DirectorResourceConsole`s can be tight to one or more profiles (:config:option:`dir/console/Profile`\ ), making it easier to use a common set of ACLs.
 
 \defDirective{Dir}{Profile}{Catalog ACL}{}{}{%
    }
@@ -5517,7 +5517,7 @@ Counter Resource
 
 :index:`[TAG=Resource->Counter] <pair: Resource; Counter>` :index:`[TAG=Counter Resource] <single: Counter Resource>`
 
-The Counter Resource defines a counter variable that can be accessed by variable expansion used for creating Volume labels with the **Label Format**:sup:`Dir`:sub:`Pool`\  directive.
+The Counter Resource defines a counter variable that can be accessed by variable expansion used for creating Volume labels with the :config:option:`dir/pool/LabelFormat`\  directive.
 
 \defDirective{Dir}{Counter}{Catalog}{}{}{%
    If this directive is  specified, the counter and its values will be saved in

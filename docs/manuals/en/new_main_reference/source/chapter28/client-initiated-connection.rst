@@ -10,33 +10,33 @@ The |bareosDir| knows, when it is required to talk to a client (|bareosFd|). The
 
 However, there are setups where this can cause problems, as this means that:
 
--  The client must be reachable by its configured **Address**:sup:`Dir`:sub:`Client`\ . Address can be the DNS name or the IP address. (For completeness: there are potential workarounds by using the :ref:`setip <bcommandSetIP>` command.)
+-  The client must be reachable by its configured :config:option:`dir/client/Address`\ . Address can be the DNS name or the IP address. (For completeness: there are potential workarounds by using the :ref:`setip <bcommandSetIP>` command.)
 
 -  The |bareosDir| must be able to connect to the |bareosFd| over the network.
 
 To circumvent these problems, since Bareos :index:`Version >= 16.2.2 <pair: bareos-16.2.2; Client Initiated Connection>` it is possible to let the |bareosFd| initiate the network connection to the |bareosDir|.
 
-Which address the client connects to reach the |bareosDir| is configured in the **Address**:sup:`Fd`:sub:`Director`\  directive.
+Which address the client connects to reach the |bareosDir| is configured in the :config:option:`fd/director/Address`\  directive.
 
 To additional allow this connection direction use:
 
--  **Connection From Client To Director**:sup:`Dir`:sub:`Client`\  = yes
+-  :config:option:`dir/client/ConnectionFromClientToDirector`\  = yes
 
--  **Heartbeat Interval**:sup:`Dir`:sub:`Client`\  = 60 ``#`` to keep the network connection established
+-  :config:option:`dir/client/HeartbeatInterval`\  = 60 ``#`` to keep the network connection established
 
--  **Connection From Client To Director**:sup:`Fd`:sub:`Director`\  = yes
+-  :config:option:`fd/director/ConnectionFromClientToDirector`\  = yes
 
 To only allow Connection From the Client to the Director use:
 
--  **Connection From Director To Client**:sup:`Dir`:sub:`Client`\  = no
+-  :config:option:`dir/client/ConnectionFromDirectorToClient`\  = no
 
--  **Connection From Client To Director**:sup:`Dir`:sub:`Client`\  = yes
+-  :config:option:`dir/client/ConnectionFromClientToDirector`\  = yes
 
--  **Heartbeat Interval**:sup:`Dir`:sub:`Client`\  = 60 ``#`` to keep the network connection established
+-  :config:option:`dir/client/HeartbeatInterval`\  = 60 ``#`` to keep the network connection established
 
--  **Connection From Director To Client**:sup:`Fd`:sub:`Director`\  = no
+-  :config:option:`fd/director/ConnectionFromDirectorToClient`\  = no
 
--  **Connection From Client To Director**:sup:`Fd`:sub:`Director`\  = yes
+-  :config:option:`fd/director/ConnectionFromClientToDirector`\  = yes
 
 Using Client Initiated Connections has disadvantages. Without Client Initiated Connections the |bareosDir| only establishes a network connection when this is required. With Client Initiated Connections, the |bareosFd| connects to the |bareosDir| and the |bareosDir| keeps these connections open. The command :strong:`status dir` will show all waiting connections:
 

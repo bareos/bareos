@@ -20,7 +20,7 @@ Bareos provides autochanger support for reading and writing tapes. In order to w
 
 -  You need to ensure that your Storage daemon has access permissions to both the tape drive and the control device. On Linux, the system user **bareos** is added to the groups \group{disk} and \group{tape}, so that it should have the permission to access the library.
 
--  Set **Auto Changer**:sup:`Dir`:sub:`Storage`\ = **yes**.
+-  Set :config:option:`dir/storage/AutoChanger`\ = **yes**.
 
 Bareos uses its own :command:`mtx-changer` script to interface with a program that actually does the tape changing. Thus in principle, :command:`mtx-changer` can be adapted to function with any autochanger program, or you can call any other script or program. The current version of :command:`mtx-changer` works with the :command:`mtx` program. FreeBSD users might need to adapt this script to use :command:`chio`. For more details, refer
 to the :ref:`Testing Autochanger <AutochangerTesting>` chapter.
@@ -65,7 +65,7 @@ to see what SCSI devices you have available. You can also:
 
 
 
-to find out how to specify their control address (/dev/sg0 for the first, /dev/sg1 for the second, ...) on the **Changer Device**:sup:`Sd`:sub:`Autochanger`\  Bareos directive.
+to find out how to specify their control address (/dev/sg0 for the first, /dev/sg1 for the second, ...) on the :config:option:`sd/autochanger/ChangerDevice`\  Bareos directive.
 
 You can also use the excellent lsscsi tool. 
 
@@ -83,7 +83,7 @@ You can also use the excellent lsscsi tool.
 FreeBSD
 ~~~~~~~
 
-Under FreeBSD, use the following command to list the SCSI devices as well as the :file:`/dev/passN` that you will use on the Bareos **Changer Device**:sup:`Sd`:sub:`Autochanger`\  directive:
+Under FreeBSD, use the following command to list the SCSI devices as well as the :file:`/dev/passN` that you will use on the Bareos :config:option:`sd/autochanger/ChangerDevice`\  directive:
 
 
 
@@ -150,9 +150,9 @@ Multiple Devices
 Some autochangers have more than one read/write device (drive). The :ref:`Autochanger resource <AutochangerRes>` permits you to group Device resources, where each device represents a drive. The Director may still reference the Devices (drives) directly, but doing so, bypasses the proper functioning of the drives together. Instead, the Director (in the Storage resource) should reference the Autochanger resource name. Doing so permits the Storage daemon to ensure that only one drive
 uses the mtx-changer script at a time, and also that two drives don’t reference the same Volume.
 
-Multi-drive requires the use of the **Drive Index**:sup:`Sd`:sub:`Device`\  directive. Drive numbers or the Device Index are numbered beginning at zero, which is the default. To use the second Drive in an autochanger, you need to define a second Device resource, set the **Drive Index**:sup:`Sd`:sub:`Device`\  and set the **Archive Device**:sup:`Sd`:sub:`Device`\ .
+Multi-drive requires the use of the :config:option:`sd/device/DriveIndex`\  directive. Drive numbers or the Device Index are numbered beginning at zero, which is the default. To use the second Drive in an autochanger, you need to define a second Device resource, set the :config:option:`sd/device/DriveIndex`\  and set the :config:option:`sd/device/ArchiveDevice`\ .
 
-As a default, Bareos jobs will prefer to write to a Volume that is already mounted. If you have a multiple drive autochanger and you want Bareos to write to more than one Volume in the same Pool at the same time, you will need to set **Prefer Mounted Volumes**:sup:`Dir`:sub:`Job`\ = **no**. This will cause the Storage daemon to maximize the use of drives.
+As a default, Bareos jobs will prefer to write to a Volume that is already mounted. If you have a multiple drive autochanger and you want Bareos to write to more than one Volume in the same Pool at the same time, you will need to set :config:option:`dir/job/PreferMountedVolumes`\ = **no**. This will cause the Storage daemon to maximize the use of drives.
 
 Device Configuration Records
 ----------------------------
@@ -163,15 +163,15 @@ Configuration of autochangers within Bareos is done in the Device resource of th
 
 Following records control how Bareos uses the autochanger:
 
-**Autochanger**:sup:`Sd`:sub:`Device`\ 
+:config:option:`sd/device/Autochanger`\ 
    Specifies if the current device belongs to an autochanger resource.
 
-**Changer Command**:sup:`Sd`:sub:`Autochanger`\  (**Changer Command**:sup:`Sd`:sub:`Device`\ )
-**Changer Device**:sup:`Sd`:sub:`Autochanger`\  (**Changer Device**:sup:`Sd`:sub:`Device`\ )
-**Drive Index**:sup:`Sd`:sub:`Device`\ 
+:config:option:`sd/autochanger/ChangerCommand`\  (:config:option:`sd/device/ChangerCommand`\ )
+:config:option:`sd/autochanger/ChangerDevice`\  (:config:option:`sd/device/ChangerDevice`\ )
+:config:option:`sd/device/DriveIndex`\ 
    Individual driver number, starting at 0.
 
-**Maximum Changer Wait**:sup:`Sd`:sub:`Device`\ 
+:config:option:`sd/device/MaximumChangerWait`\ 
 
 Specifying Slots When Labeling
 ------------------------------
@@ -184,7 +184,7 @@ Specifying Slots When Labeling
 
 If you add an Autochanger = yes record to the Storage resource in your Director’s configuration file, the Bareos Console will automatically prompt you for the slot number when the Volume is in the changer when you add or label tapes for that Storage device. If your mtx-changer script is properly installed, Bareos will automatically load the correct tape during the label command.
 
-You must also set Autochanger = yes in the Storage daemon’s Device resource as we have described above in order for the autochanger to be used. Please see **Auto Changer**:sup:`Dir`:sub:`Storage`\  and **Autochanger**:sup:`Sd`:sub:`Device`\  for more details on these records.
+You must also set Autochanger = yes in the Storage daemon’s Device resource as we have described above in order for the autochanger to be used. Please see :config:option:`dir/storage/AutoChanger`\  and :config:option:`sd/device/Autochanger`\  for more details on these records.
 
 Thus all stages of dealing with tapes can be totally automated. It is also possible to set or change the Slot using the update command in the Console and selecting Volume Parameters to update.
 
@@ -509,12 +509,12 @@ Tapespeed and blocksizes
 
 The `Bareos Whitepaper Tape Speed Tuning <http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html>`_ shows that the two parameters :strong:`Maximum File Size` and :strong:`Maximum Block Size` of the device have significant influence on the tape speed.
 
-While it is no problem to change the **Maximum File Size**:sup:`Sd`:sub:`Device`\  parameter, unfortunately it is not possible to change the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  parameter is switched back to the old value to be able to read the old volumes, but of
+While it is no problem to change the :config:option:`sd/device/MaximumFileSize`\  parameter, unfortunately it is not possible to change the :config:option:`sd/device/MaximumBlockSize`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the :config:option:`sd/device/MaximumBlockSize`\  parameter is switched back to the old value to be able to read the old volumes, but of
 course then the new volumes would be unreadable.
 
 Why is that the case?
 
-The problem is that Bareos writes the label block (header) in the same block size that is configured in the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  parameter in the device. Per default, this value is 63k, so usually a tape written by Bareos looks like this:
+The problem is that Bareos writes the label block (header) in the same block size that is configured in the :config:option:`sd/device/MaximumBlockSize`\  parameter in the device. Per default, this value is 63k, so usually a tape written by Bareos looks like this:
 
 ::
 
@@ -552,7 +552,7 @@ To solve this problem, the block size handling was changed in Bareos :index:`Ver
 
 -  The following blocks are then written in the block size configured in the :strong:`Maximum Block Size` directive.
 
--  To be able to change the block size in an existing environment, it is now possible to set the **Maximum Block Size**:sup:`Dir`:sub:`Pool`\  and **Minimum Block Size**:sup:`Dir`:sub:`Pool`\  in the pool resource. This setting is automatically promoted to each medium in that pool as usual (i.e. when a medium is labeled for that pool or if a volume is transferred to that pool from the scratch pool). When a volume is mounted, the volume’s block size is
+-  To be able to change the block size in an existing environment, it is now possible to set the :config:option:`dir/pool/MaximumBlockSize`\  and :config:option:`dir/pool/MinimumBlockSize`\  in the pool resource. This setting is automatically promoted to each medium in that pool as usual (i.e. when a medium is labeled for that pool or if a volume is transferred to that pool from the scratch pool). When a volume is mounted, the volume’s block size is
    used to write and read the data blocks that follow the header block.
 
 The following picture shows the result:
@@ -574,7 +574,7 @@ This approach has the following advantages:
 
 -  If nothing is configured, existing installations keep on working without problems.
 
--  If you want to switch an existing installation that uses the default block size and move to a new (usually bigger) block size, you can do that easily by creating a new pool, where **Maximum Block Size**:sup:`Dir`:sub:`Pool`\  is set to the new value that you wish to use in the future:
+-  If you want to switch an existing installation that uses the default block size and move to a new (usually bigger) block size, you can do that easily by creating a new pool, where :config:option:`dir/pool/MaximumBlockSize`\  is set to the new value that you wish to use in the future:
 
 .. code-block:: sh
    :caption: Pool Ressource: setting Maximum Block Size
@@ -591,8 +591,8 @@ This approach has the following advantages:
 
 Now configure your backups that they will write into the newly defined pool in the future, and your backups will be written with the new block size.
 
-Your existing tapes can be automatically transferred to the new pool when they expire via the :ref:`Scratch Pool <TheScratchPool>` mechanism. When a tape in your old pool expires, it is transferred to the scratch pool if you set Recycle Pool = Scratch. When your new pool needs a new volume, it will get it from the scratch pool and apply the new pool’s properties to that tape which also include **Maximum Block Size**:sup:`Dir`:sub:`Pool`\  and
-**Minimum Block Size**:sup:`Dir`:sub:`Pool`\ .
+Your existing tapes can be automatically transferred to the new pool when they expire via the :ref:`Scratch Pool <TheScratchPool>` mechanism. When a tape in your old pool expires, it is transferred to the scratch pool if you set Recycle Pool = Scratch. When your new pool needs a new volume, it will get it from the scratch pool and apply the new pool’s properties to that tape which also include :config:option:`dir/pool/MaximumBlockSize`\  and
+:config:option:`dir/pool/MinimumBlockSize`\ .
 
 This way you can smoothly switch your tapes to a new block size while you can still restore the data on your old tapes at any time.
 
@@ -601,7 +601,7 @@ Possible Problems
 
 There is only one case where the new block handling will cause problems, and this is if you have used bigger block sizes already in your setup. As we now defined the label block to always be 63k, all labels will not be readable.
 
-To also solve this problem, the directive **Label Block Size**:sup:`Sd`:sub:`Device`\  can be used to define a different label block size. That way, everything should work smoothly as all label blocks will be readable again.
+To also solve this problem, the directive :config:option:`sd/device/LabelBlockSize`\  can be used to define a different label block size. That way, everything should work smoothly as all label blocks will be readable again.
 
 How can I find out which block size was used when the tape was written?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -623,7 +623,7 @@ Direct access to Volumes with with non-default block sizes
 
 :command:`bls` and :command:`bextract` can directly access Bareos volumes without catalog database. This means that these programs don’t have information about the used block size.
 
-To be able to read a volume written with an arbitrary block size, you need to set the **Label Block Size**:sup:`Sd`:sub:`Device`\  (to be able to to read the label block) and the **Maximum Block Size**:sup:`Sd`:sub:`Device`\  (to be able to read the data blocks) setting in the device definition used by those tools to be able to open the medium.
+To be able to read a volume written with an arbitrary block size, you need to set the :config:option:`sd/device/LabelBlockSize`\  (to be able to to read the label block) and the :config:option:`sd/device/MaximumBlockSize`\  (to be able to read the data blocks) setting in the device definition used by those tools to be able to open the medium.
 
 Example using :command:`bls` with a tape that was written with another blocksize than the \variable{DEFAULT_BLOCK_SIZE} (63k), but with the default label block size of 63k:
 
@@ -652,7 +652,7 @@ As can be seen, :command:`bls` manages to read the label block as it knows what 
 
 This shows that the block size for the data blocks that we need is 131072.
 
-Now we have to set this block size in the :file:`bareos-sd.conf`, device resource as **Maximum Block Size**:sup:`Sd`:sub:`Device`\ :
+Now we have to set this block size in the :file:`bareos-sd.conf`, device resource as :config:option:`sd/device/MaximumBlockSize`\ :
 
 .. code-block:: sh
    :caption: Storage Device Resource: setting Maximum Block Size
@@ -697,7 +697,7 @@ Tape Drive Cleaning
 
 Bareos has no build-in functionality for tape drive cleaning. Fortunately this is not required as most modern tape libraries have build in auto-cleaning functionality. This functionality might require an empty tape drive, so the tape library gets aware, that it is currently not used. However, by default Bareos keeps tapes in the drives, in case the same tape is required again.
 
-The directive **Cleaning Prefix**:sup:`Dir`:sub:`Pool`\  is only used for making sure that Bareos does not try to write backups on a cleaning tape.
+The directive :config:option:`dir/pool/CleaningPrefix`\  is only used for making sure that Bareos does not try to write backups on a cleaning tape.
 
 If your tape libraries auto-cleaning won’t work when there are tapes in the drives, it’s probably best to set up an admin job that removes the tapes from the drives. This job has to run, when no other backups do run. A job definition for an admin job to do that may look like this:
 
@@ -718,6 +718,6 @@ If your tape libraries auto-cleaning won’t work when there are tapes in the dr
        }
    }
 
-Replace **Tape**:sup:`Dir`:sub:`Storage`  by the storage name of your tape library. Use the highest **Priority**:sup:`Dir`:sub:`Job`\  value to make sure no other jobs are running. In the default configuration for example, the **CatalogBackup**:sup:`Dir`:sub:`job`\  job has Priority = 100. The higher the number, the lower the job priority.
+Replace **Tape**:sup:`Dir`:sub:`Storage`  by the storage name of your tape library. Use the highest :config:option:`dir/job/Priority`\  value to make sure no other jobs are running. In the default configuration for example, the **CatalogBackup**:sup:`Dir`:sub:`job`\  job has Priority = 100. The higher the number, the lower the job priority.
 
 

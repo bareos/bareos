@@ -437,7 +437,7 @@ For example, many users use OS snapshot features so that file ``/home/eric/mbox`
 
 However, case, you could use the **strip_prefix=/.snap** and **add_suffix=.bkp** options and Bareos will restore the file to its original location – that is ``/home/eric/mbox``.
 
-To use this feature, there are command line options as described in the :ref:`restore section <restorefilerelocation>` of this manual; you can modify your restore job before running it; or you can add options to your restore job in as described in **Strip Prefix**:sup:`Dir`:sub:`Job`\  and **Add Prefix**:sup:`Dir`:sub:`Job`\ .
+To use this feature, there are command line options as described in the :ref:`restore section <restorefilerelocation>` of this manual; you can modify your restore job before running it; or you can add options to your restore job in as described in :config:option:`dir/job/StripPrefix`\  and :config:option:`dir/job/AddPrefix`\ .
 
 ::
 

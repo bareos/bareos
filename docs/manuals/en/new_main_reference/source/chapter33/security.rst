@@ -64,15 +64,15 @@ This directive is optional and can be configured in:
 
 -  
 
-   **Secure Erase Command**:sup:`Dir`:sub:`Director`\ 
+   :config:option:`dir/director/SecureEraseCommand`\ 
 
 -  
 
-   **Secure Erase Command**:sup:`Sd`:sub:`Storage`\ 
+   :config:option:`sd/storage/SecureEraseCommand`\ 
 
 -  
 
-   **Secure Erase Command**:sup:`Fd`:sub:`Client`\ 
+   :config:option:`fd/client/SecureEraseCommand`\ 
 
 This directive configures the secure erase command globally for the daemon it was configured in.
 

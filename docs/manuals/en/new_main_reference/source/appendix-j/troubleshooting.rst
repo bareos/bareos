@@ -35,7 +35,7 @@ Difficulties Connecting from the FD to the SD
 
 :index:`[TAG=Problem->Connecting from the FD to the SD] <pair: Problem; Connecting from the FD to the SD>`
 
-If you are having difficulties getting one or more of your File daemons to connect to the Storage daemon, it is most likely because you have not used a fully qualified domain name on the **Address**:sup:`Dir`:sub:`Storage`\  directive. That is the resolver on the File daemon’s machine (not on the Director’s) must be able to resolve the name you supply into an IP address. An example of an address that is guaranteed not to work: :strong:`localhost`. An example that
+If you are having difficulties getting one or more of your File daemons to connect to the Storage daemon, it is most likely because you have not used a fully qualified domain name on the :config:option:`dir/storage/Address`\  directive. That is the resolver on the File daemon’s machine (not on the Director’s) must be able to resolve the name you supply into an IP address. An example of an address that is guaranteed not to work: :strong:`localhost`. An example that
 may work: :strong:`bareos-sd1`. An example that is more likely to work: :strong:`bareos-sd1.example.com`.
 
 You can verify how a |bareosFd| resolves a DNS name by the following command:
@@ -97,37 +97,37 @@ Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent J
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Dir`:sub:`Director`\ 
+      :config:option:`dir/director/MaximumConcurrentJobs`\ 
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Dir`:sub:`Client`\ 
+      :config:option:`dir/client/MaximumConcurrentJobs`\ 
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Dir`:sub:`Job`\ 
+      :config:option:`dir/job/MaximumConcurrentJobs`\ 
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Dir`:sub:`Storage`\ 
+      :config:option:`dir/storage/MaximumConcurrentJobs`\ 
 
 |bareosSd|
    | 
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Sd`:sub:`Storage`\ 
+      :config:option:`sd/storage/MaximumConcurrentJobs`\ 
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Sd`:sub:`Device`\ 
+      :config:option:`sd/device/MaximumConcurrentJobs`\ 
 
 |bareosFd|
    | 
 
    -  
 
-      **Maximum Concurrent Jobs**:sup:`Fd`:sub:`Client`\ 
+      :config:option:`fd/client/MaximumConcurrentJobs`\ 
 
 For example, if you want two different jobs to run simultaneously backing up the same Client to the same Storage device, they will run concurrently only if you have set :strong:`Maximum Concurrent Jobs` greater than one in the :strong:`Director` resource, the :strong:`Client` resource, and the :strong:`Storage` resource in |bareosDir| configuration.
 

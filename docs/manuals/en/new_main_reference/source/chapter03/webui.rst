@@ -415,7 +415,7 @@ Console/Profile changes
 
 The |bareosWebui| Director profile shipped with Bareos 15.2 (**webui**:sup:`Dir`:sub:`Profile`  in the file :file:`/etc/bareos/bareos-dir.d/webui-profiles.conf`) is not sufficient to use the |bareosWebui| 16.2. This has several reasons:
 
-#. The handling of :strong:`Acl`s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :strong:`.bvfs_*` to :strong:`.bvfs_.*` in your **Command ACL**:sup:`Dir`:sub:`Profile`\  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
+#. The handling of :strong:`Acl`s is more strict in Bareos 16.2 than it has been in Bareos 15.2. Substring matching is no longer enabled, therefore you need to change :strong:`.bvfs_*` to :strong:`.bvfs_.*` in your :config:option:`dir/profile/CommandAcl`\  to have a proper regular expression. Otherwise the restore module won’t work any longer, especially the file browser.
 
 #. The |bareosWebui| 16.2 uses following additional commands:
 

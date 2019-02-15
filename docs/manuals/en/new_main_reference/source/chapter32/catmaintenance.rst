@@ -51,7 +51,7 @@ Depending on the selected database backend, more questions about how to access t
 
 The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`.
 
-The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify **DB Address**:sup:`Dir`:sub:`Catalog`\  in the catalog ressource. A later reconfiguration might require manual adapt changes.
+The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog ressource. A later reconfiguration might require manual adapt changes.
 
 
 
@@ -145,26 +145,26 @@ The database preparation scripts have following configuration options:
        \item[db\_type] 
            \begin{itemize}
                \item command line parameter \$1
-               \item **DB Driver**:sup:`Dir`:sub:`Catalog`\  from the configuration
+               \item :config:option:`dir/catalog/DbDriver`\  from the configuration
                \item installed database backends
                \item fallback: postgresql
            \end{itemize}
        \item[db\_name] 
            \begin{itemize}
                \item environment variable \variable{db_name}
-               \item **DB Name**:sup:`Dir`:sub:`Catalog`\  from the configuration
+               \item :config:option:`dir/catalog/DbName`\  from the configuration
                \item default: bareos
            \end{itemize}
        \item[db\_user] 
            \begin{itemize}
                \item environment variable \variable{db_user}
-               \item **DB User**:sup:`Dir`:sub:`Catalog`\  from the configuration
+               \item :config:option:`dir/catalog/DbUser`\  from the configuration
                \item default: bareos
            \end{itemize}
        \item[db\_password] 
            \begin{itemize}
                \item environment variable \variable{db_password}
-               \item **DB Password**:sup:`Dir`:sub:`Catalog`\  from the configuration
+               \item :config:option:`dir/catalog/DbPassword`\  from the configuration
                \item default: \textit{none}
            \end{itemize}
    \end{description}
@@ -346,12 +346,12 @@ When configuring bareos with a remote database, your first step is to check the 
 
 With a correct configuration you can access the database, if it fails you need to correct the PostgreSQL servers configuration files.
 
-One way to manually create the database would be calling the bareos database preparation scripts with the ``--host`` option, explained later. How ever, it is advised to use the **dbconfig-common**. Both methods require you to add the database hostname/address as **DB Address**:sup:`Dir`:sub:`Catalog`\ .
+One way to manually create the database would be calling the bareos database preparation scripts with the ``--host`` option, explained later. How ever, it is advised to use the **dbconfig-common**. Both methods require you to add the database hostname/address as :config:option:`dir/catalog/DbAddress`\ .
 
 If you’re using **dbconfig-common** you should choose ``New Host``, enter the hostname or the local address followed by the password. As **dbconfig-common** uses the ``ident`` authentication by default the first try to connect will fail. Don’t be bothered by that. Choose ``Retry`` when prompted. From there, read carefully and configure the database to your needs. The authentication should be set
 to password, as the ident method will not work with a remote server. Set the user and administrator according to your PostgreSQL servers settings.
 
-Set the PostgreSQL server IP as **DB Address**:sup:`Dir`:sub:`Catalog`\  in :ref:`DirectorResourceCatalog`. You can also customize other parameters or use the defaults. A quick check should display your recent changes:
+Set the PostgreSQL server IP as :config:option:`dir/catalog/DbAddress`\  in :ref:`DirectorResourceCatalog`. You can also customize other parameters or use the defaults. A quick check should display your recent changes:
 
 .. code-block:: sh
    :caption: Show current database configuration
@@ -666,7 +666,7 @@ Job Retention = <time-period-specification>
 
    The default Job Retention period is 180 days.
 
-**Auto Prune**:sup:`Dir`:sub:`Client`\ 
+:config:option:`dir/client/AutoPrune`\ 
    :index:`[TAG=AutoPrune] <single: AutoPrune>` :index:`[TAG=Job->Retention->AutoPrune] <triple: Job; Retention; AutoPrune>` If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
 .. _section-JobStatistics:
@@ -697,7 +697,7 @@ organization using the ``[days=num]`` option.
 
 These statistics records aren’t used for restoring, but mainly for capacity planning, billings, etc.
 
-The **Statistics Retention**:sup:`Dir`:sub:`Director`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :strong:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
+The :config:option:`dir/director/StatisticsRetention`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :strong:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
 
 You can use the following Job resource in your nightly **BackupCatalog**:sup:`Dir`:sub:`job`\  job to maintain statistics.
 
@@ -1073,7 +1073,7 @@ The basic sequence of events to make this work correctly is as follows:
 
 -  The Catalog backup job must be scheduled after your last nightly backup
 
--  You use **Run Before Job**:sup:`Dir`:sub:`Job`\  to create the ASCII backup file and **Run After Job**:sup:`Dir`:sub:`Job`\  to clean up
+-  You use :config:option:`dir/job/RunBeforeJob`\  to create the ASCII backup file and :config:option:`dir/job/RunAfterJob`\  to clean up
 
 Assuming that you start all your nightly backup jobs at 1:05 am (and that they run one after another), you can do the catalog backup with the following additional Director configuration statements:
 

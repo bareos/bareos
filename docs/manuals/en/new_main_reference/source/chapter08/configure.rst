@@ -495,7 +495,7 @@ acl
 
 .. _section-CommandAclExample:
 
- For clarification, we demonstrate the usage of ACLs by some examples for **Command ACL**:sup:`Dir`:sub:`Console`\ :
+ For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandAcl`\ :
 
    .. code-block:: sh
       :caption: Allow only the help command
@@ -842,7 +842,7 @@ Depending on the directive, Bareos will expand to the following variables:
 Variable Expansion on Volume Labels
 '''''''''''''''''''''''''''''''''''
 
-When labeling a new volume (see **Label Format**:sup:`Dir`:sub:`Pool`\ ), following Bareos internal variables can be used:
+When labeling a new volume (see :config:option:`dir/pool/LabelFormat`\ ), following Bareos internal variables can be used:
 
 # Tabular in LaTex format (original)
 
@@ -969,7 +969,7 @@ At the configuration of mount commands the following variables can be used:
 Variable Expansion on RunScripts
 ''''''''''''''''''''''''''''''''
 
-Variable Expansion on RunScripts is described at **Run Script**:sup:`Dir`:sub:`Job`\ .
+Variable Expansion on RunScripts is described at :config:option:`dir/job/RunScript`\ .
 
 Variable Expansion in Mail and Operator Commands
 ''''''''''''''''''''''''''''''''''''''''''''''''

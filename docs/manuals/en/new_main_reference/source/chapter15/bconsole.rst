@@ -884,7 +884,7 @@ mount
       mount storage=<storage-name> [slot=<num>] [drive=<num>]
       mount [jobid=<id> | job=<job-name>]
 
-   If you have specified **Automatic Mount**:sup:`Sd`:sub:`Device`\ = **yes**, under most circumstances, Bareos will automatically access the Volume unless you have explicitly unmounted it (in the Console program).
+   If you have specified :config:option:`sd/device/AutomaticMount`\ = **yes**, under most circumstances, Bareos will automatically access the Volume unless you have explicitly unmounted it (in the Console program).
 
 move
    :index:`[TAG=Console->Command->move] <triple: Console; Command; move>` The move command allows to move volumes between slots in an autochanger without having to leave the bconsole.
@@ -939,7 +939,7 @@ purge
 
    For the :strong:`purge` command to work on volume catalog database records the volume status must be **Append**, **Full**, **Used** or **Error**.
 
-   The actual data written to the Volume will be unaffected by this command unless you are using the **Action On Purge**:sup:`Dir`:sub:`Pool`\ = **Truncate** option.
+   The actual data written to the Volume will be unaffected by this command unless you are using the :config:option:`dir/pool/ActionOnPurge`\ = **Truncate** option.
 
    To ask Bareos to truncate your **Purged** volumes, you need to use the following command in interactive mode:
 
@@ -997,7 +997,7 @@ release
 
       release storage=<storage-name>
 
-   After a release command, the device is still kept open by Bareos (unless **Always Open**:sup:`Sd`:sub:`Device`\ = **no**) so it cannot be used by another program. However, with some tape drives, the operator can remove the current tape and to insert a different one, and when the next Job starts, Bareos will know to re-read the tape label to find out what tape is mounted. If you want to be able to use the drive with another program (e.g. :command:`mt`), you
+   After a release command, the device is still kept open by Bareos (unless :config:option:`sd/device/AlwaysOpen`\ = **no**) so it cannot be used by another program. However, with some tape drives, the operator can remove the current tape and to insert a different one, and when the next Job starts, Bareos will know to re-read the tape label to find out what tape is mounted. If you want to be able to use the drive with another program (e.g. :command:`mt`), you
    must use the :strong:`unmount` command to cause Bareos to completely release (close) the device.
 
 reload
@@ -1277,7 +1277,7 @@ status
 
    In case you are running a maintained version of Bareos, the command :strong:`status subscriptions` (:index:`Version >= 12.4.4 <pair: bareos-12.4.4; status subscriptions>`) can help you to keep the overview over the subscriptions that are used.
 
-   To enable this functionality, just add the configuration **Subscriptions**:sup:`Dir`:sub:`Director`\  directive and specify the number of subscribed clients, for example:
+   To enable this functionality, just add the configuration :config:option:`dir/director/Subscriptions`\  directive and specify the number of subscribed clients, for example:
 
    .. code-block:: sh
       :caption: enable subscription check
@@ -1304,7 +1304,7 @@ status
 
    Please note: Nothing else than the warning is issued, no enforcement on backup, restore or any other operation will happen.
 
-   Setting the value for **Subscriptions**:sup:`Dir`:sub:`Director`\ = **0** disables this functionality:
+   Setting the value for :config:option:`dir/director/Subscriptions`\ = **0** disables this functionality:
 
    .. code-block:: sh
       :caption: disable subscription check
@@ -1443,7 +1443,7 @@ var
 
 .. _var:
 
- :index:`[TAG=Console->Command->var] <triple: Console; Command; var>` This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the **Label Format**:sup:`Dir`:sub:`Pool`\  string. The difference between the :strong:`var` command and the actual **Label Format**:sup:`Dir`:sub:`Pool`\  process is that during the var command, no job is running so dummy values are
+ :index:`[TAG=Console->Command->var] <triple: Console; Command; var>` This command takes a string or quoted string and does variable expansion on it mostly the same way variable expansion is done on the :config:option:`dir/pool/LabelFormat`\  string. The difference between the :strong:`var` command and the actual :config:option:`dir/pool/LabelFormat`\  process is that during the var command, no job is running so dummy values are
    used in place of Job specific variables.
 
 version

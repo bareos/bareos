@@ -1315,20 +1315,20 @@ Devices that require a mount (USB)
 :index:`[TAG=Devices that require a mount (USB)] <single: Devices that require a mount (USB)>`
 
 \begin{description}
-   \item **Requires Mount**:sup:`Sd`:sub:`Device`\ 
+   \item :config:option:`sd/device/RequiresMount`\ 
    You must set this directive to {\bf yes} for removable devices such as
    USB unless they are automounted, and to {\bf no} for all other devices
    (tapes/files).  This directive indicates if the device requires to be
    mounted to be read, and if it must be written in a special way.  If it
-   set, **Mount Point**:sup:`Sd`:sub:`Device`\ , 
-   **Mount Command**:sup:`Sd`:sub:`Device`\  and 
-   **Unmount Command**:sup:`Sd`:sub:`Device`\ 
+   set, :config:option:`sd/device/MountPoint`\ , 
+   :config:option:`sd/device/MountCommand`\  and 
+   :config:option:`sd/device/UnmountCommand`\ 
    directives must also be defined.
 
-   \item **Mount Point**:sup:`Sd`:sub:`Device`\ 
+   \item :config:option:`sd/device/MountPoint`\ 
    Directory where the device can be mounted.
 
-   \item **Mount Command**:sup:`Sd`:sub:`Device`\ 
+   \item :config:option:`sd/device/MountCommand`\ 
    Command that must be executed to mount the device. Before the command is
    executed, \%a is replaced with the Archive Device, and \%m with the Mount
    Point.
@@ -1358,7 +1358,7 @@ Devices that require a mount (USB)
 
    Similar consideration should be given to all other Command parameters.
 
-   \item **Unmount Command**:sup:`Sd`:sub:`Device`\ 
+   \item :config:option:`sd/device/UnmountCommand`\ 
    Command that must be executed to unmount the device. Before the command  is
    executed, \%a is replaced with the Archive Device, and \%m with the  Mount
    Point.

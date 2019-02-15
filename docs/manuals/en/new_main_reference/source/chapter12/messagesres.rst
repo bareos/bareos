@@ -32,7 +32,7 @@ destination = address = message-type1, message-type2, message-type3, ...
    | where
 
    destination
-      is one of a predefined set of keywords that define where the message is to be sent (**Append**:sup:`Dir`:sub:`Messages`\ , **Console**:sup:`Dir`:sub:`Messages`\ , **File**:sup:`Dir`:sub:`Messages`\ , **Mail**:sup:`Dir`:sub:`Messages`\ , ...),
+      is one of a predefined set of keywords that define where the message is to be sent (:config:option:`dir/messages/Append`\ , :config:option:`dir/messages/Console`\ , :config:option:`dir/messages/File`\ , :config:option:`dir/messages/Mail`\ , ...),
 
    address
       varies according to the destination keyword, but is typically an email address or a filename,
@@ -269,7 +269,7 @@ volmgmt
 
 audit
    | 
-   | :index:`[TAG=Messages->type->audit] <triple: Messages; type; audit>` :index:`[TAG=auditing] <single: auditing>` Audit messages. Interacting with the Bareos Director will be audited. Can be configured with in resource **Auditing**:sup:`Dir`:sub:`Director`\ .
+   | :index:`[TAG=Messages->type->audit] <triple: Messages; type; audit>` :index:`[TAG=auditing] <single: auditing>` Audit messages. Interacting with the Bareos Director will be audited. Can be configured with in resource :config:option:`dir/director/Auditing`\ .
 
 The following is an example of a valid Messages resource definition, where all messages except files explicitly skipped or daemon termination messages are sent by email to backupoperator@example.com. In addition all mount messages are sent to the operator (i.e. emailed to backupoperator@example.com). Finally all messages other than explicitly skipped files and files saved are sent to the console:
 

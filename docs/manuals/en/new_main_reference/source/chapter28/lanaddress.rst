@@ -86,7 +86,7 @@ Additionally, devices being in the LAN get the LAN address configured in the :st
 
 This way, backups and restores from each |bareosFd| using each |bareosSd| are possible as long as the firewall allows the needed network connections.
 
-The |bareosDir| simply checks if both the involved |bareosFd| and |bareosSd| both have a :strong:`Lan Address` (**Lan Address**:sup:`Dir`:sub:`Client`\  and **Lan Address**:sup:`Dir`:sub:`Storage`\ ) configured.
+The |bareosDir| simply checks if both the involved |bareosFd| and |bareosSd| both have a :strong:`Lan Address` (:config:option:`dir/client/LanAddress`\  and :config:option:`dir/storage/LanAddress`\ ) configured.
 
 In that case, the initiating daemon is ordered to connect to the :strong:`Lan Address` instead of the :strong:`Address`. In active client mode, the |bareosFd| connects to the |bareosSd|, in passive client mode (see :ref:`PassiveClient`) the |bareosSd| connects to the |bareosFd|.
 

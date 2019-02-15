@@ -37,21 +37,21 @@ Data Spooling Directives
 
 The following directives can be used to control data spooling.
 
--  Turn data spooling on/off at the Job level: **Spool Data**:sup:`Dir`:sub:`Job`\  = :strong:`Yes|No`
+-  Turn data spooling on/off at the Job level: :config:option:`dir/job/SpoolData`\  = :strong:`Yes|No`
 
--  This setting can be overwritten in a Schedule **Run**:sup:`Dir`:sub:`Schedule`\  directive: ``SpoolData=``:strong:`Yes|No`
+-  This setting can be overwritten in a Schedule :config:option:`dir/schedule/Run`\  directive: ``SpoolData=``:strong:`Yes|No`
 
 -  To override the Job specification in a bconsole session using the :strong:`run` command: ``SpoolData=``:strong:`Yes|No`
 
    Please note that this does not refer to a configuration statement, but to an argument for the run command.
 
--  To limit the the maximum spool file size for a particular job: **Spool Size**:sup:`Dir`:sub:`Job`\ 
+-  To limit the the maximum spool file size for a particular job: :config:option:`dir/job/SpoolSize`\ 
 
--  To limit the maximum total size of the spooled data for a particular device: **Maximum Spool Size**:sup:`Sd`:sub:`Device`\ 
+-  To limit the maximum total size of the spooled data for a particular device: :config:option:`sd/device/MaximumSpoolSize`\ 
 
--  To limit the maximum total size of the spooled data for a particular device for a single job: **Maximum Job Spool Size**:sup:`Sd`:sub:`Device`\ 
+-  To limit the maximum total size of the spooled data for a particular device for a single job: :config:option:`sd/device/MaximumJobSpoolSize`\ 
 
--  To specify the spool directory for a particular device: **Spool Directory**:sup:`Sd`:sub:`Device`\ 
+-  To specify the spool directory for a particular device: :config:option:`sd/device/SpoolDirectory`\ 
 
 Additional Notes
 ~~~~~~~~~~~~~~~~
@@ -67,7 +67,7 @@ Additional Notes
       spool file, the backup data will be written a second time to the spool file,
       and so on ad infinitum.
 
--  Another advice is to always specify the **Maximum Spool Size**:sup:`Sd`:sub:`Device`\  so that your disk doesn’t completely fill up. In principle, data spooling will properly detect a full disk, and despool data allowing the job to continue. However, attribute spooling is not so kind to the user. If the disk on which attributes are being spooled fills, the job will be canceled. In addition, if your working directory is on the same partition as the spool directory, then
+-  Another advice is to always specify the :config:option:`sd/device/MaximumSpoolSize`\  so that your disk doesn’t completely fill up. In principle, data spooling will properly detect a full disk, and despool data allowing the job to continue. However, attribute spooling is not so kind to the user. If the disk on which attributes are being spooled fills, the job will be canceled. In addition, if your working directory is on the same partition as the spool directory, then
    Bareos jobs will fail possibly in bizarre ways when the spool fills.
 
 -  When data spooling is enabled, Bareos automatically turns on attribute spooling. In other words, it also spools the catalog entries to disk. This is done so that in case the job fails, there will be no catalog entries pointing to non-existent tape backups.

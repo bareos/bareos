@@ -650,7 +650,7 @@ Backup of a PostgreSQL Database by using the RunScript directive
 
 One method to backup a PostgreSQL database is to use the :command:`pg_dumpall` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
-This can be done by using **Run Script**:sup:`Dir`:sub:`Job`\  directives inside a Job Resource, for example:
+This can be done by using :config:option:`dir/job/RunScript`\  directives inside a Job Resource, for example:
 
 .. code-block:: sh
    :caption: RunScript job resource for a PostgreSQL backup
@@ -691,14 +691,14 @@ This can be done by using **Run Script**:sup:`Dir`:sub:`Job`\  directives inside
      }
    }
 
-Note that redirecting the :command:`pg_dumpall` output to a file requires to run the whole command line through a shell, otherwise the :command:`pg_dumpall` would not know what do with the :command:`>` character and the job would fail. As no shell features like redirection or piping are used for the :command:`rm`, the :command:`sh -c` is not needed there. See **Run Script**:sup:`Dir`:sub:`Job`\  for more details.
+Note that redirecting the :command:`pg_dumpall` output to a file requires to run the whole command line through a shell, otherwise the :command:`pg_dumpall` would not know what do with the :command:`>` character and the job would fail. As no shell features like redirection or piping are used for the :command:`rm`, the :command:`sh -c` is not needed there. See :config:option:`dir/job/RunScript`\  for more details.
 
 Backup of a PostgreSQL Databases by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :index:`[TAG=bpipe->PostgreSQL backup] <pair: bpipe; PostgreSQL backup>`
 
-Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the **Include**:sup:`Dir`:sub:`FileSet`\  section of a File Set, e.g.:
+Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the :config:option:`dir/fileset/Include`\  section of a File Set, e.g.:
 
 .. code-block:: sh
    :caption: bpipe directive for PostgreSQL backup
@@ -940,7 +940,7 @@ Backup of a MySQL Database by using the RunScript directive
 
 One method to backup a MySQL database is to use the :command:`mysqldump` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
-This can be done by using **Run Script**:sup:`Dir`:sub:`Job`\  directives, for example:
+This can be done by using :config:option:`dir/job/RunScript`\  directives, for example:
 
 .. code-block:: sh
    :caption: RunScript job resource for a MySQL backup
@@ -981,7 +981,7 @@ This can be done by using **Run Script**:sup:`Dir`:sub:`Job`\  directives, for e
      }
    }
 
-Note that redirecting the :command:`mysqldump` output to a file requires to run the whole command line through a shell, otherwise the :command:`mysqldump` would not know what do with the :command:`>` character and the job would fail. As no shell features like redirection or piping are used for the :command:`rm`, the :command:`sh -c` is not needed there. See **Run Script**:sup:`Dir`:sub:`Job`\  for more details.
+Note that redirecting the :command:`mysqldump` output to a file requires to run the whole command line through a shell, otherwise the :command:`mysqldump` would not know what do with the :command:`>` character and the job would fail. As no shell features like redirection or piping are used for the :command:`rm`, the :command:`sh -c` is not needed there. See :config:option:`dir/job/RunScript`\  for more details.
 
 Backup of a MySQL Database by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1059,40 +1059,40 @@ Director Configuration - Director Resource Directives
 
 -  
 
-   **Statistics Collect Interval**:sup:`Dir`:sub:`Director`\ 
+   :config:option:`dir/director/StatisticsCollectInterval`\ 
 
 -  
 
-   **Statistics Retention**:sup:`Dir`:sub:`Director`\ 
+   :config:option:`dir/director/StatisticsRetention`\ 
 
 Director Configuration - Storage Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  
 
-   **Collect Statistics**:sup:`Dir`:sub:`Storage`\ 
+   :config:option:`dir/storage/CollectStatistics`\ 
 
 Storage Configuration - Storage Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  
 
-   **Collect Device Statistics**:sup:`Sd`:sub:`Storage`\ 
+   :config:option:`sd/storage/CollectDeviceStatistics`\ 
 
 -  
 
-   **Collect Job Statistics**:sup:`Sd`:sub:`Storage`\ 
+   :config:option:`sd/storage/CollectJobStatistics`\ 
 
 -  
 
-   **Statistics Collect Interval**:sup:`Sd`:sub:`Storage`\ 
+   :config:option:`sd/storage/StatisticsCollectInterval`\ 
 
 Storage Configuration - Device Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  
 
-   **Collect Statistics**:sup:`Sd`:sub:`Device`\ 
+   :config:option:`sd/device/CollectStatistics`\ 
 
 See chapter :ref:`section-JobStatistics` for additional information.
 

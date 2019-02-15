@@ -1,0 +1,3 @@
+The Client directive specifies the Client (File daemon) that will be used in the current Job. Only a single Client may be specified in any one Job. The Client runs on the machine to be backed up, and sends the requested files to the Storage daemon for backup, or receives them when restoring. For additional details, see the :ref:`DirectorResourceClient` of this chapter. This directive is required For versions before 13.3.0, this directive is required for all Jobtypes. For
+:index:`Version >= 13.3.0 <pair: bareos-13.3.0; Director Job Resource isn't required for Copy or Migrate jobs>` it is required for all Jobtypes but Copy or Migrate jobs.
+

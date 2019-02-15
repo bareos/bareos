@@ -1,0 +1,2 @@
+This directive is optional and if specified will cause the Director to set a keepalive interval (heartbeat) in seconds on each of the sockets it opens for the Storage resource. This value will override any specified at the Director level. It is implemented only on systems (Linux, ...) that provide the setsockopt TCP_KEEPIDLE function. The default value is zero, which means no change is made to the socket.
+

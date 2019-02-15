@@ -1,0 +1,2 @@
+If you run a verify job without this directive, the last job run will be compared with the catalog, which means that you must immediately follow a backup by a verify command. If you specify a Verify Job Bareos will find the last job with that name that ran. This permits you to run all your backups, then run Verify jobs on those that you wish to be verified (most often a VolumeToCatalog) so that the tape just written is re-read.
+

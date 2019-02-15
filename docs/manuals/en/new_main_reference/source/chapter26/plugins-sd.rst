@@ -27,9 +27,9 @@ Therefore the autoxflate plugin inserts a inflate and a deflate function block i
 
 Each stream passes first the inflate function block, then the deflate function block.
 
-The inflate blocks are controlled by the setting of the **Auto Inflate**:sup:`Sd`:sub:`Device`\  directive.
+The inflate blocks are controlled by the setting of the :config:option:`sd/device/AutoInflate`\  directive.
 
-The deflate blocks are controlled by the setting of the **Auto Deflate**:sup:`Sd`:sub:`Device`\ , **Auto Deflate Algorithm**:sup:`Sd`:sub:`Device`\  and **Auto Deflate Level**:sup:`Sd`:sub:`Device`\  directives.
+The deflate blocks are controlled by the setting of the :config:option:`sd/device/AutoDeflate`\ , :config:option:`sd/device/AutoDeflateAlgorithm`\  and :config:option:`sd/device/AutoDeflateLevel`\  directives.
 
 The inflate blocks, if enabled, will uncompress data if it is compressed using the algorithm that was used during compression.
 
@@ -64,7 +64,7 @@ When the autoxflate plugin is configured, it will write some status information 
 
    autoxflate-sd.c: deflate ratio: 50.59%
 
-Additional **Auto XFlate On Replication**:sup:`Sd`:sub:`Storage`\  can be configured at the Storage resource.
+Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configured at the Storage resource.
 
 scsicrypto-sd
 -------------
@@ -196,26 +196,26 @@ Changes in bareos-sd.conf
 
 -  Set the Key Encryption Key
 
-   -  **Key Encryption Key**:sup:`Sd`:sub:`Director`\  = :strong:`passphrase`
+   -  :config:option:`sd/director/KeyEncryptionKey`\  = :strong:`passphrase`
 
 -  Enable the loading of storage daemon plugins
 
-   -  **Plugin Directory**:sup:`Sd`:sub:`Storage`\  = :file:`path_to_sd_plugins`
+   -  :config:option:`sd/storage/PluginDirectory`\  = :file:`path_to_sd_plugins`
 
 -  Enable the SCSI encryption option
 
-   -  **Drive Crypto Enabled**:sup:`Sd`:sub:`Device`\  = yes
+   -  :config:option:`sd/device/DriveCryptoEnabled`\  = yes
 
 -  Enable this, if you want the plugin to probe the encryption status of the drive when it needs to clear a pending key
 
-   -  **Query Crypto Status**:sup:`Sd`:sub:`Device`\  = yes
+   -  :config:option:`sd/device/QueryCryptoStatus`\  = yes
 
 Changes in bareos-dir.conf
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  Set the Key Encryption Key
 
-   -  **Key Encryption Key**:sup:`Dir`:sub:`Director`\  = :strong:`passphrase`
+   -  :config:option:`dir/director/KeyEncryptionKey`\  = :strong:`passphrase`
 
 Testing
 ~~~~~~~

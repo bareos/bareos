@@ -1,0 +1,3 @@
+When this directive is enabled, the Storage daemon will submit a Mount Command before attempting to open the device. You must set this directive to yes for removable file systems such as USB devices that are not automatically mounted by the operating system when plugged in or opened by Bareos. It should be set to no for all other devices such as tapes and fixed filesystems. It should also be set to no for any removable device that is automatically mounted by the operating system when opened
+(e.g. USB devices mounted by udev or hotplug). This directive indicates if the device requires to be mounted using the Mount Command. To be able to write devices need a mount, the following directives must also be defined: Mount Point, Mount Command, and Unmount Command.
+

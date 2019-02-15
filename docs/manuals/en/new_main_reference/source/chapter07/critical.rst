@@ -32,7 +32,7 @@ you would use in setting up a production system (if you already are in productio
 
 -  Do at least one restore of files. If you backup multiple OS types (Linux, Solaris, HP, MacOS, FreeBSD, Win32, ...), restore files from each system type. The :ref:`Restoring Files <RestoreChapter>` chapter shows you how.
 
--  Write a bootstrap file to a separate system for each backup job. See **Write Bootstrap**:sup:`Dir`:sub:`Job`\  directive and more details are available in the :ref:`BootstrapChapter` chapter. Also, the default :file:`bareos-dir.conf` comes with a Write Bootstrap directive defined. This allows you to recover the state of your system as of the last backup.
+-  Write a bootstrap file to a separate system for each backup job. See :config:option:`dir/job/WriteBootstrap`\  directive and more details are available in the :ref:`BootstrapChapter` chapter. Also, the default :file:`bareos-dir.conf` comes with a Write Bootstrap directive defined. This allows you to recover the state of your system as of the last backup.
 
 -  Backup your catalog. An example of this is found in the default bareos-dir.conf file. The backup script is installed by default and should handle any database, though you may want to make your own local modifications. See also :ref:`Backing Up Your Bareos Database <BackingUpBareos>` for more information.
 

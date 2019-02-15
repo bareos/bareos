@@ -1,0 +1,2 @@
+Defines the label type to use, see section :ref:`AnsiLabelsChapter`. This directive is implemented in the Director Pool resource (:config:option:`dir/pool/LabelType`\ ) and in the SD Device resource. If it is specified in the the SD Device resource, it will take precedence over the value passed from the Director to the SD. If it is set to a non-default value, make sure to also enable :config:option:`sd/device/CheckLabels`\ .
+

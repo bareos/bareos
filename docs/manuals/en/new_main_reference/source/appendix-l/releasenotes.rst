@@ -59,7 +59,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 
 -  :issue:`967` :strong:`Windows`: overwrite symbolic links on restore.
 
--  :issue:`983` |bareosSd|: prevent sporadic crash when **Collect Job Statistics**:sup:`Sd`:sub:`Storage`\ = **yes**.
+-  :issue:`983` |bareosSd|: prevent sporadic crash when :config:option:`sd/storage/CollectJobStatistics`\ = **yes**.
 
 -  :strong:`SLES 12sp2` and :strong:`SLES 12sp3`: provide **bareos-storage-ceph** and **bareos-filedaemon-ceph-plugin** packages.
 
@@ -165,7 +165,7 @@ This release contains several bugfixes and enhancements. Excerpt:
 
    -  :issue:`905` fixes a problem with file names containing quotes.
 
--  **NDMP Block Size**:sup:`Dir`:sub:`Client`\  changed type from :strong:`Pint32` to :strong:`Size32`. This should not affect any configuration, but is more consistent with other block size configuration directives.
+-  :config:option:`dir/client/NdmpBlockSize`\  changed type from :strong:`Pint32` to :strong:`Size32`. This should not affect any configuration, but is more consistent with other block size configuration directives.
 
 bareos-17.2.4
 ~~~~~~~~~~~~~
@@ -538,14 +538,14 @@ First stable release of the Bareos 16.2 branch.
 
 -  Strict ACL handling
 
-   -  Bareos Console :strong:`Acl`s do no longer automatically matches substrings (to avoid that e.g. **Pool ACL**:sup:`Dir`:sub:`Console`\ = **Full** also matches **VirtualFull**:sup:`Dir`:sub:`pool`\ ). To configure the ACL to work as before, **Pool ACL**:sup:`Dir`:sub:`Console`\ = **.*Full.*** must be set. Unfortunately the |bareosWebui| 15.2 **webui**:sup:`Dir`:sub:`Profile`  did use
-      **Command ACL**:sup:`Dir`:sub:`Console`\ = **.bvfs***, which is also no longer works as intended. Moreover, to use all of |bareosWebui| 16.2 features, some additional commands must be permitted, so best use the new **webui-admin**:sup:`Dir`:sub:`Profile` .
+   -  Bareos Console :strong:`Acl`s do no longer automatically matches substrings (to avoid that e.g. :config:option:`dir/console/PoolAcl`\ = **Full** also matches **VirtualFull**:sup:`Dir`:sub:`pool`\ ). To configure the ACL to work as before, :config:option:`dir/console/PoolAcl`\ = **.*Full.*** must be set. Unfortunately the |bareosWebui| 15.2 **webui**:sup:`Dir`:sub:`Profile`  did use
+      :config:option:`dir/console/CommandAcl`\ = **.bvfs***, which is also no longer works as intended. Moreover, to use all of |bareosWebui| 16.2 features, some additional commands must be permitted, so best use the new **webui-admin**:sup:`Dir`:sub:`Profile` .
 
 -  
 
    |bareosWebui|
 
-   -  Updating from Bareos 15.2: Adapt **webui**:sup:`Dir`:sub:`Profile`  (from bareos 15.2) to allow all commands of **webui-admin**:sup:`Dir`:sub:`Profile`  (**Command ACL**:sup:`Dir`:sub:`Console`\ ). Alternately modify all :sup:`Dir`\ :strong:`Console`s currently using **webui**:sup:`Dir`:sub:`Profile`  to use **webui-admin**:sup:`Dir`:sub:`Profile`  instead.
+   -  Updating from Bareos 15.2: Adapt **webui**:sup:`Dir`:sub:`Profile`  (from bareos 15.2) to allow all commands of **webui-admin**:sup:`Dir`:sub:`Profile`  (:config:option:`dir/console/CommandAcl`\ ). Alternately modify all :sup:`Dir`\ :strong:`Console`s currently using **webui**:sup:`Dir`:sub:`Profile`  to use **webui-admin**:sup:`Dir`:sub:`Profile`  instead.
 
    -  While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package **bareos-webui** is not available for these platforms, as the required ZendFramework 2.4 do require PHP >= 5.3.17 (5.3.23). However, it is possible to use **bareos-webui** 15.2 against **bareos-director** 16.2. Also here, the profile must be adapted.
 
@@ -667,9 +667,9 @@ First stable release of the Bareos 15.2 branch.
 
 When coming from bareos-14.2.x, the following things have changed (same as in bareos-15.2.1):
 
--  The default setting for the Bacula Compatbile mode in **Compatible**:sup:`Fd`:sub:`Client`\  and **Compatible**:sup:`Sd`:sub:`Storage`\  have been changed from :strong:`yes` to :strong:`no`.
+-  The default setting for the Bacula Compatbile mode in :config:option:`fd/client/Compatible`\  and :config:option:`sd/storage/Compatible`\  have been changed from :strong:`yes` to :strong:`no`.
 
--  The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed. Before bareos-15.2, options have been configured as part of the **Archive Device**:sup:`Sd`:sub:`Device`\  directive, while now the Archive Device contains only information text and options are defined via the **Device Options**:sup:`Sd`:sub:`Device`\  directive. See examples in **Device Options**:sup:`Sd`:sub:`Device`\ .
+-  The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed. Before bareos-15.2, options have been configured as part of the :config:option:`sd/device/ArchiveDevice`\  directive, while now the Archive Device contains only information text and options are defined via the :config:option:`sd/device/DeviceOptions`\  directive. See examples in :config:option:`sd/device/DeviceOptions`\ .
 
 *bareos-15.2.1 (unstable)*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -698,9 +698,9 @@ Url              `<http://download.bareos.org/bareos/release/15.2/>`_
 
 Beta release.
 
--  The default setting for the Bacula Compatbile mode in **Compatible**:sup:`Fd`:sub:`Client`\  and **Compatible**:sup:`Sd`:sub:`Storage`\  have been changed from :strong:`yes` to :strong:`no`.
+-  The default setting for the Bacula Compatbile mode in :config:option:`fd/client/Compatible`\  and :config:option:`sd/storage/Compatible`\  have been changed from :strong:`yes` to :strong:`no`.
 
--  The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed. Before bareos-15.2, options have been configured as part of the **Archive Device**:sup:`Sd`:sub:`Device`\  directive, while now the Archive Device contains only information text and options are defined via the **Device Options**:sup:`Sd`:sub:`Device`\  directive. See examples in **Device Options**:sup:`Sd`:sub:`Device`\ .
+-  The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed. Before bareos-15.2, options have been configured as part of the :config:option:`sd/device/ArchiveDevice`\  directive, while now the Archive Device contains only information text and options are defined via the :config:option:`sd/device/DeviceOptions`\  directive. See examples in :config:option:`sd/device/DeviceOptions`\ .
 
 Bareos-14.2
 -----------

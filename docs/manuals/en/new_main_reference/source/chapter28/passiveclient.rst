@@ -33,7 +33,7 @@ By using Passive Client, the initialization of the datachannel is reversed, so t
 Usage
 -----
 
-To use this new feature, just configure **Passive**:sup:`Dir`:sub:`Client`\ =yes in the client definition of the |bareosDir|:
+To use this new feature, just configure :config:option:`dir/client/Passive`\ =yes in the client definition of the |bareosDir|:
 
 .. code-block:: sh
    :caption: Enable passive mode in bareos-dir.conf
@@ -45,7 +45,7 @@ To use this new feature, just configure **Passive**:sup:`Dir`:sub:`Client`\ =yes
       [...]
    }
 
-Also, prior to bareos version 15, you need to set **Compatible**:sup:`Fd`:sub:`Client`\ =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
+Also, prior to bareos version 15, you need to set :config:option:`fd/client/Compatible`\ =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
 
 .. code-block:: sh
    :caption: Disable compatible mode for the |bareosFd| in bareos-fd.conf

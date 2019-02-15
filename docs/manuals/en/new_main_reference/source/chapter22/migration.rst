@@ -33,12 +33,12 @@ Jobs can be selected for migration based on a number of criteria such as:
 
 The details of these selection criteria will be defined below.
 
-To run a Migration job, you must first define a Job resource very similar to a Backup Job but with **Type**:sup:`Dir`:sub:`Job`\  = Migrate instead of **Type**:sup:`Dir`:sub:`Job`\  = Backup. One of the key points to remember is that the Pool that is specified for the migration job is the only pool from which jobs will be migrated, with one exception noted below. In addition, the Pool to which the selected Job or Jobs will be migrated is defined by the
-**Next Pool**:sup:`Dir`:sub:`Pool`\  = ... in the Pool resource specified for the Migration Job.
+To run a Migration job, you must first define a Job resource very similar to a Backup Job but with :config:option:`dir/job/Type`\  = Migrate instead of :config:option:`dir/job/Type`\  = Backup. One of the key points to remember is that the Pool that is specified for the migration job is the only pool from which jobs will be migrated, with one exception noted below. In addition, the Pool to which the selected Job or Jobs will be migrated is defined by the
+:config:option:`dir/pool/NextPool`\  = ... in the Pool resource specified for the Migration Job.
 
 Bareos permits Pools to contain Volumes of different Media Types. However, when doing migration, this is a very undesirable condition. For migration to work properly, you should use Pools containing only Volumes of the same Media Type for all migration jobs.
 
-A migration job can be started manually or from a Schedule, like a backup job. It searches for existing backup Jobs that match the parameters specified in the migration Job resource, primarily a **Selection Type**:sup:`Dir`:sub:`Job`\ . If no match was found, the Migration job terminates without further action. Otherwise, for each Job found this way, the Migration Job will run a new Job which copies the Job data to a new Volume in the Migration Pool.
+A migration job can be started manually or from a Schedule, like a backup job. It searches for existing backup Jobs that match the parameters specified in the migration Job resource, primarily a :config:option:`dir/job/SelectionType`\ . If no match was found, the Migration job terminates without further action. Otherwise, for each Job found this way, the Migration Job will run a new Job which copies the Job data to a new Volume in the Migration Pool.
 
 Normally three jobs are involved during a migration:
 
@@ -55,7 +55,7 @@ Important Migration Considerations
 
 :index:`[TAG=Migration->Important Migration Considerations] <pair: Migration; Important Migration Considerations>`
 
--  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one **Media Type**:sup:`Dir`:sub:`Storage`\ .
+-  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one :config:option:`dir/storage/MediaType`\ .
 
 -  Migration takes place on a JobId by JobId basis. That is each JobId is migrated in its entirety and independently of other JobIds. Once the Job is migrated, it will be on the new medium in the new Pool, but for the most part, aside from having a new JobId, it will appear with all the same characteristics of the original job (start, end time, ...). The column RealEndTime in the catalog Job table will contain the time and date that the Migration terminated, and by comparing it with the EndTime
    column you can tell whether or not the job was migrated. Also, the Job table contains a PriorJobId column which is set to the original JobId for migration jobs. For non-migration jobs this column is zero.
@@ -67,11 +67,11 @@ Important Migration Considerations
 
 -  Migration works only if the Job resource of the original Job is still defined in the current Director configuration. Otherwise you’ll get a fatal error.
 
--  Setting the **Migration High Bytes**:sup:`Dir`:sub:`Pool`\  watermark is not sufficient for migration to take place. In addition, you must define and schedule a migration job which looks for jobs that can be migrated.
+-  Setting the :config:option:`dir/pool/MigrationHighBytes`\  watermark is not sufficient for migration to take place. In addition, you must define and schedule a migration job which looks for jobs that can be migrated.
 
--  Bareos currently does only minimal Storage conflict resolution, so you must take care to ensure that you don’t try to read and write to the same device or Bareos may block waiting to reserve a drive that it will never find. A way to prevent problems is that all your migration pools contain only one **Media Type**:sup:`Dir`:sub:`Storage`\ , and that you always migrate to a pool with a different Media Type.
+-  Bareos currently does only minimal Storage conflict resolution, so you must take care to ensure that you don’t try to read and write to the same device or Bareos may block waiting to reserve a drive that it will never find. A way to prevent problems is that all your migration pools contain only one :config:option:`dir/storage/MediaType`\ , and that you always migrate to a pool with a different Media Type.
 
--  The **Next Pool**:sup:`Dir`:sub:`Pool`\  = ... directive must be defined in the Pool referenced in the Migration Job to define the Pool into which the data will be migrated.
+-  The :config:option:`dir/pool/NextPool`\  = ... directive must be defined in the Pool referenced in the Migration Job to define the Pool into which the data will be migrated.
 
 -  Migration has only be tested carefully for the "Job" and "Volume" selection types. All other selection types (time, occupancy, smallest, oldest, ...) are experimental features.
 
@@ -85,39 +85,39 @@ The following directives can be used to define a Copy or Migration job:
 Job Resource
 ''''''''''''
 
--  **Type**:sup:`Dir`:sub:`Job`\  = Migrate|Copy
+-  :config:option:`dir/job/Type`\  = Migrate|Copy
 
 -  
 
-   **Selection Type**:sup:`Dir`:sub:`Job`\ 
+   :config:option:`dir/job/SelectionType`\ 
 
 -  
 
-   **Selection Pattern**:sup:`Dir`:sub:`Job`\ 
+   :config:option:`dir/job/SelectionPattern`\ 
 
--  | **Pool**:sup:`Dir`:sub:`Job`\ 
-   | For **Selection Type**:sup:`Dir`:sub:`Job`\  other than SQLQuery, this defines what Pool will be examined for finding JobIds to migrate
+-  | :config:option:`dir/job/Pool`\ 
+   | For :config:option:`dir/job/SelectionType`\  other than SQLQuery, this defines what Pool will be examined for finding JobIds to migrate
 
 -  
 
-   **Purge Migration Job**:sup:`Dir`:sub:`Job`\ 
+   :config:option:`dir/job/PurgeMigrationJob`\ 
 
 Pool Resource
 '''''''''''''
 
--  | **Next Pool**:sup:`Dir`:sub:`Pool`\ 
+-  | :config:option:`dir/pool/NextPool`\ 
    | to what pool Jobs will be migrated
 
--  | **Migration Time**:sup:`Dir`:sub:`Pool`\ 
-   | if **Selection Type**:sup:`Dir`:sub:`Job`\  = PoolTime
+-  | :config:option:`dir/pool/MigrationTime`\ 
+   | if :config:option:`dir/job/SelectionType`\  = PoolTime
 
--  | **Migration High Bytes**:sup:`Dir`:sub:`Pool`\ 
-   | if **Selection Type**:sup:`Dir`:sub:`Job`\  = PoolOccupancy
+-  | :config:option:`dir/pool/MigrationHighBytes`\ 
+   | if :config:option:`dir/job/SelectionType`\  = PoolOccupancy
 
--  | **Migration Low Bytes**:sup:`Dir`:sub:`Pool`\ 
-   | optional if **Selection Type**:sup:`Dir`:sub:`Job`\  = PoolOccupancy is used
+-  | :config:option:`dir/pool/MigrationLowBytes`\ 
+   | optional if :config:option:`dir/job/SelectionType`\  = PoolOccupancy is used
 
--  | **Storage**:sup:`Dir`:sub:`Pool`\ 
+-  | :config:option:`dir/pool/Storage`\ 
    | if Copy/Migration involves multiple Storage Daemon, see :ref:`section-CopyMigrationJobsMultipleStorageDaemons`
 
 Example Migration Jobs
@@ -180,8 +180,8 @@ Assume a simple configuration with a single backup job as described below.
      Media Type = DLT8000      # same as MediaType in Storage daemon
    }
 
-Note that the backup job writes to the **Default**:sup:`Dir`:sub:`pool`\  pool, which corresponds to **File**:sup:`Dir`:sub:`Storage`  storage. There is no **Storage**:sup:`Dir`:sub:`Pool`\  directive in the Job resource while the two :sup:`Dir`\ :strong:`Pool` resources contain different **Storage**:sup:`Dir`:sub:`Pool`\  directives. Moreover, the **Default**:sup:`Dir`:sub:`pool`\  pool contains a
-**Next Pool**:sup:`Dir`:sub:`Pool`\  directive that refers to the **Tape**:sup:`Dir`:sub:`pool`\  pool.
+Note that the backup job writes to the **Default**:sup:`Dir`:sub:`pool`\  pool, which corresponds to **File**:sup:`Dir`:sub:`Storage`  storage. There is no :config:option:`dir/pool/Storage`\  directive in the Job resource while the two :sup:`Dir`\ :strong:`Pool` resources contain different :config:option:`dir/pool/Storage`\  directives. Moreover, the **Default**:sup:`Dir`:sub:`pool`\  pool contains a
+:config:option:`dir/pool/NextPool`\  directive that refers to the **Tape**:sup:`Dir`:sub:`pool`\  pool.
 
 In order to migrate jobs from the **Default**:sup:`Dir`:sub:`Pool`  pool to the **Tape**:sup:`Dir`:sub:`Pool`  pool we add the following Job resource:
 
@@ -197,8 +197,8 @@ In order to migrate jobs from the **Default**:sup:`Dir`:sub:`Pool`  pool to the 
      Selection Pattern = "."
    }
 
-The **Selection Type**:sup:`Dir`:sub:`Job`\  and **Selection Pattern**:sup:`Dir`:sub:`Job`\  directives instruct Bareos to select all volumes of the given pool (**Default**:sup:`Dir`:sub:`pool`\ ) whose volume names match the given regular expression (:strong:`"."`), i.e., all volumes. Hence those jobs which were backed up to any volume in the **Default**:sup:`Dir`:sub:`pool`\  pool will be migrated. Because of the
-**Next Pool**:sup:`Dir`:sub:`Pool`\  directive of the **Default**:sup:`Dir`:sub:`pool`\  pool resource, the jobs will be migrated to tape storage.
+The :config:option:`dir/job/SelectionType`\  and :config:option:`dir/job/SelectionPattern`\  directives instruct Bareos to select all volumes of the given pool (**Default**:sup:`Dir`:sub:`pool`\ ) whose volume names match the given regular expression (:strong:`"."`), i.e., all volumes. Hence those jobs which were backed up to any volume in the **Default**:sup:`Dir`:sub:`pool`\  pool will be migrated. Because of the
+:config:option:`dir/pool/NextPool`\  directive of the **Default**:sup:`Dir`:sub:`pool`\  pool resource, the jobs will be migrated to tape storage.
 
 Another way to accomplish the same is the following Job resource:
 
@@ -231,7 +231,7 @@ Please note:
 
 -  each pool is linked to its own storage via the storage directive in the pool resource
 
--  to configure the migration from pool1 to pool2, the **Next Pool**:sup:`Dir`:sub:`Pool`\  directive of pool1 has to point to pool2
+-  to configure the migration from pool1 to pool2, the :config:option:`dir/pool/NextPool`\  directive of pool1 has to point to pool2
 
 -  the copy job itself has to be of type copy/migrate (exactly as already known in copy- and migration jobs)
 

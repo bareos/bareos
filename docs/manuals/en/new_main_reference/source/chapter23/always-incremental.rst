@@ -59,7 +59,7 @@ These two steps are then executed every day:
 
 -  Consolidation of the jobs older than maximum configure age
 
-Deleted files will be in the backup forever, if they are not detected as deleted using **Accurate**:sup:`Dir`:sub:`Job`\  backup.
+Deleted files will be in the backup forever, if they are not detected as deleted using :config:option:`dir/job/Accurate`\  backup.
 
 The Always Incremental Backup Scheme does not provide the option to have other longer retention periods for the backups.
 
@@ -97,19 +97,19 @@ To configure a job to use Always Incremental Backup Scheme, following configurat
        ...
    }
 
-**Accurate**:sup:`Dir`:sub:`Job`\ = **yes**
+:config:option:`dir/job/Accurate`\ = **yes**
    is required to detect deleted files and prevent that they are kept in the consolidated backup jobs.
 
-**Always Incremental**:sup:`Dir`:sub:`Job`\ = **yes**
+:config:option:`dir/job/AlwaysIncremental`\ = **yes**
    enables the Always Incremental feature.
 
-**Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ 
+:config:option:`dir/job/AlwaysIncrementalJobRetention`\ 
    set the age where incrementals of this job will be kept, older jobs will be consolidated.
 
-**Always Incremental Keep Number**:sup:`Dir`:sub:`Job`\ 
+:config:option:`dir/job/AlwaysIncrementalKeepNumber`\ 
    sets the number of incrementals that will be kept without regarding the age. This should make sure that a certain history of a job will be kept even if the job is not executed for some time.
 
-**Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\ 
+:config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ 
    is described later, see :ref:`section-AlwaysIncrementalMaxFullAge`.
 
 Consolidate Job
@@ -128,20 +128,20 @@ Consolidate Job
 \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate}
    configures a job to be a consolidate job. This type have been introduced with the Always Incremental feature. When used, it automatically trigger the consolidation of incremental jobs that need to be consolidated.
 
-**Accurate**:sup:`Dir`:sub:`Job`\ = **yes**
+:config:option:`dir/job/Accurate`\ = **yes**
    let the generated virtual backup job keep the accurate information.
 
-**Max Full Consolidations**:sup:`Dir`:sub:`Job`\ 
+:config:option:`dir/job/MaxFullConsolidations`\ 
    is described later, see :ref:`section-MaxFullConsolidations`.
 
-The **Consolidate**:sup:`Dir`:sub:`job`\  job evaluates all jobs configured with **Always Incremental**:sup:`Dir`:sub:`Job`\ = **yes**. When a job is selected for consolidation, all job runs are taken into account, independent of the pool and storage where they are located.
+The **Consolidate**:sup:`Dir`:sub:`job`\  job evaluates all jobs configured with :config:option:`dir/job/AlwaysIncremental`\ = **yes**. When a job is selected for consolidation, all job runs are taken into account, independent of the pool and storage where they are located.
 
 The always incremental jobs need to be executed during the backup window (usually at night), while the consolidation jobs should be scheduled during the daytime when no backups are executed.
 
 
 
 .. warning::
-   All Bareos job resources have some required directives, e.g. **Client**:sup:`Dir`:sub:`Job`\ .
+   All Bareos job resources have some required directives, e.g. :config:option:`dir/job/Client`\ .
    Even so, none other than the mentioned directives are evaluated by a \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate},
    they still have to be defined.
    Normally all required directives are already set in \resourceDirectiveValue{Dir}{Job}{Job Defs}{DefaultJob}.
@@ -243,9 +243,9 @@ The following image shows the available backups for each day:
 
 -  Every day a incremental backup is done and is additionally available.
 
--  When the age of the oldest incremental reaches **Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ , the consolidation job consolidates the oldest incremental with the full backup before to a new full backup.
+-  When the age of the oldest incremental reaches :config:option:`dir/job/AlwaysIncrementalJobRetention`\ , the consolidation job consolidates the oldest incremental with the full backup before to a new full backup.
 
-This can go on more or less forever and there will be always an incremental history of **Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ .
+This can go on more or less forever and there will be always an incremental history of :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
 The following plot shows what happens if a job is not run for a certain amount of time.
 
@@ -255,15 +255,15 @@ The following plot shows what happens if a job is not run for a certain amount o
 
 As can be seen, the nightly consolidation jobs still go on consolidating until the last incremental is too old and then only one full backup is left. This is usually not what is intended.
 
-For this reason, the directive **Always Incremental Keep Number**:sup:`Dir`:sub:`Job`\  is available which sets the minimum number of incrementals that should be kept even if they are older than **Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ .
+For this reason, the directive :config:option:`dir/job/AlwaysIncrementalKeepNumber`\  is available which sets the minimum number of incrementals that should be kept even if they are older than :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
-Setting **Always Incremental Keep Number**:sup:`Dir`:sub:`Job`\  to 7 in our case leads to the following result:
+Setting :config:option:`dir/job/AlwaysIncrementalKeepNumber`\  to 7 in our case leads to the following result:
 
 .. image:: /_static/images/always-incremental-with-pause-7days-retention-7days-keep.*
 
 
 
-**Always Incremental Keep Number**:sup:`Dir`:sub:`Job`\  incrementals are always kept, and when the backup starts again the consolidation of old incrementals starts again.
+:config:option:`dir/job/AlwaysIncrementalKeepNumber`\  incrementals are always kept, and when the backup starts again the consolidation of old incrementals starts again.
 
 Enhancements for the Always Incremental Backup Scheme
 -----------------------------------------------------
@@ -300,14 +300,14 @@ The following figure shows the Data Volume being moved during the normal always 
 Always Incremental Max Full Age
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To be able to cope with this problem, the directive **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  was added. When **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  is configured, in daily operation the Full Backup is left untouched while the incrementals are consolidated as usual. Only if the Full Backup is older than **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\ , the full backup will also be part of
+To be able to cope with this problem, the directive :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  was added. When :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  is configured, in daily operation the Full Backup is left untouched while the incrementals are consolidated as usual. Only if the Full Backup is older than :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ , the full backup will also be part of
 the consolidation.
 
-Depending on the setting of the **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\ , the amount of daily data being moved can be reduced without losing the advantages of the always incremental Backup Scheme.
+Depending on the setting of the :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ , the amount of daily data being moved can be reduced without losing the advantages of the always incremental Backup Scheme.
 
-**Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  must be larger than **Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ .
+:config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  must be larger than :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
-The resulting interval between full consolidations when running daily backups and daily consolidations is **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  - **Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ .
+The resulting interval between full consolidations when running daily backups and daily consolidations is :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  - :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
 \centering
 
@@ -328,7 +328,7 @@ The resulting interval between full consolidations when running daily backups an
 Max Full Consolidations
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-When the **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  of many clients is set to the same value, it is probable that all full backups will reach the **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  at once and so consolidation jobs including the full backup will be started for all clients at once. This would again mean that the whole data being stored from all clients will be moved in one day.
+When the :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  of many clients is set to the same value, it is probable that all full backups will reach the :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  at once and so consolidation jobs including the full backup will be started for all clients at once. This would again mean that the whole data being stored from all clients will be moved in one day.
 
 The following figure shows the amount of data being copied by the virtual jobs that do the consolidation when having 3 identically configured backup jobs:
 
@@ -338,9 +338,9 @@ The following figure shows the amount of data being copied by the virtual jobs t
 
 As can be seen, virtual jobs including the full are triggered for all three clients at the same time.
 
-This is of course not desirable so the directive **Max Full Consolidations**:sup:`Dir`:sub:`Job`\  was introduced.
+This is of course not desirable so the directive :config:option:`dir/job/MaxFullConsolidations`\  was introduced.
 
-**Max Full Consolidations**:sup:`Dir`:sub:`Job`\  needs to be configured in the \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate} job:
+:config:option:`dir/job/MaxFullConsolidations`\  needs to be configured in the \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate} job:
 
 .. code-block:: sh
    :caption: bareos-dir.d/job/Consolidate.conf
@@ -354,11 +354,11 @@ This is of course not desirable so the directive **Max Full Consolidations**:sup
        Max Full Consolidations = 1
    }
 
-If **Max Full Consolidations**:sup:`Dir`:sub:`Job`\  is configured, the consolidation job will not start more than the specified Consolidations that include the Full Backup.
+If :config:option:`dir/job/MaxFullConsolidations`\  is configured, the consolidation job will not start more than the specified Consolidations that include the Full Backup.
 
 This leads to a better load balancing of full backup consolidations over different days. The value should configured so that the consolidation jobs are completed before the next normal backup run starts.
 
-The number of always incremental jobs, the interval that the jobs are triggered and the setting of **Always Incremental Max Full Age**:sup:`Dir`:sub:`Job`\  influence the value that makes sense for **Max Full Consolidations**:sup:`Dir`:sub:`Job`\ .
+The number of always incremental jobs, the interval that the jobs are triggered and the setting of :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  influence the value that makes sense for :config:option:`dir/job/MaxFullConsolidations`\ .
 
 \centering
 
@@ -381,7 +381,7 @@ Long Term Storage of Always Incremental Jobs
 
 What is missing in the always incremental backup scheme in comparison to the traditional "Incremental Differential Full" scheme is the option to store a certain job for a longer time.
 
-When using always incremental, the usual maximum age of data stored during the backup cycle is **Always Incremental Job Retention**:sup:`Dir`:sub:`Job`\ .
+When using always incremental, the usual maximum age of data stored during the backup cycle is :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
 Usually, it is desired to be able to store a certain backup for a longer time, e.g. monthly a backup should be kept for half a year.
 
@@ -442,7 +442,7 @@ The alternative to Copy Jobs is creating a virtual Full Backup Job when the data
      }
    }
 
-To make sure the longterm \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} is not taken as base for the next incrementals, the job type of the copied job is set to \resourceDirectiveValue{Dir}{Job}{Type}{Archive} with the **Run Script**:sup:`Dir`:sub:`Job`\ .
+To make sure the longterm \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} is not taken as base for the next incrementals, the job type of the copied job is set to \resourceDirectiveValue{Dir}{Job}{Type}{Archive} with the :config:option:`dir/job/RunScript`\ .
 
 As can be seen on the plot, the \resourceDirectiveValue{Dir}{Job}{Level}{VirtualFull} archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
 

@@ -687,10 +687,10 @@ In detail:
    defines the name of the client. The default is :file:`<hostname>-fd`. Changes are only required, if you want to use another name or en- or disable special |bareosFd| features. See :ref:`ClientResourceClient`.
 
 :file:`director/bareos-dir.conf`
-   gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the **Password**:sup:`Fd`:sub:`Director`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-dir is the default |bareosDir| name>`.)
+   gives the |bareosDir| **bareos-dir** full access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random default. Adapt the name and/or the password to your |bareosDir|. (The name **bareos-dir** is the default |bareosDir| name since Bareos :index:`Version >= 16.2.4 <pair: bareos-16.2.4; bareos-dir is the default |bareosDir| name>`.)
 
 :file:`director/bareos-mon.conf`
-   gives the |bareosDir| **bareos-mon** restricted access to this |bareosFd|. During installation, the **Password**:sup:`Fd`:sub:`Director`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
+   gives the |bareosDir| **bareos-mon** restricted access to this |bareosFd|. During installation, the :config:option:`fd/director/Password`\  is set to a random value. This resource is intended to be used by the local **bareos-tray-monitor**.
 
 :file:`messages/Standard.conf`
    defines, how messages should be handled. The default sends all relevant messages to the |bareosDir|.
@@ -807,7 +807,7 @@ Pools
 
 Creating the Pool is automatically done when the |bareosDir| starts, so if you understand Pools, you can skip to the next section.
 
-When you run a backup job, one of the things that Bareos must know is what Volumes to use. Instead of specifying a Volume (tape) directly, you specify which Pool of Volumes you want Bareos to consult when it wants a Volume for writing backups. Bareos will select the first available Volume from the Pool that is appropriate for the **Storage**:sup:`Dir`:sub:`Job`\  you have specified for the Job being run. When a volume has filled up with data, Bareos will change its
+When you run a backup job, one of the things that Bareos must know is what Volumes to use. Instead of specifying a Volume (tape) directly, you specify which Pool of Volumes you want Bareos to consult when it wants a Volume for writing backups. Bareos will select the first available Volume from the Pool that is appropriate for the :config:option:`dir/job/Storage`\  you have specified for the Job being run. When a volume has filled up with data, Bareos will change its
 **VolStatus** from **Append** to **Full**, and then Bareos will use the next volume and so on. If no appendable Volume exists in the Pool, the Director will attempt to recycle an old Volume. For details, please read the :ref:`RecyclingChapter` chapter.
 
 If there are still no appendable Volumes available, Bareos will send a message requesting the operator to create an appropriate Volume.
