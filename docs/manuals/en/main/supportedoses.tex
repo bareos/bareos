@@ -102,7 +102,7 @@ However, the following tabular gives an overview, what components are expected o
 %     \item by GNU/Linux, we mean all x86 (32/64bit) versions of CentOS, Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES and Ubuntu that are officially supported  by the distribution itself.
 % \end{itemize}
 
-\section{}
+\section{Linux}
 
 \subsection{Packages for the different Linux platforms}
 \label{sec:packages}
@@ -160,9 +160,10 @@ In the further text, these version will be named \name{Bareos (Debian.org)}
     \end{itemize}
 
 
-\subsection{Mac OS X}
-\index[general]{Platform!Mac!OS X}
+
+\section{Mac OS X}
 \label{sec:macosx}
+\index[general]{Platform!Mac!OS X}
 
 Bareos for MacOS X is available either
 
@@ -182,7 +183,7 @@ Both packages contain the \bareosFd and \command{bconsole}.
 % For proper operation the \bareosFd needs to have access to a \bareosDir and \bareosSd,
 % typically installed on a (Linux) server machine in the local network.
 
-\subsubsection{Installing the Bareos Client as PKG}
+\subsection{Installing the Bareos Client as PKG}
 \index[general]{Installation!MacOS}
 
 The Bareos installer package for Mac OS X contains the \bareosFd for Mac OS X 10.5 or later.
@@ -196,7 +197,7 @@ Install the .pkg by holding the CTRL key, left-clicking the installer and choosi
 
 Follow the directions given to you and finish the installation.
 
-\subsubsection{Configuration}
+\subsection{Configuration}
 
 To make use of your \bareosFd on your system, it is required to configure the \bareosDir and the local \bareosFd.
 
@@ -207,7 +208,7 @@ transfer the necessary configuration file using following command
 or configure the client locally.
 
 
-\subsubsubsection{Option 1: Copy the director resource from the Bareos Director to the Client}
+\subsubsection{Option 1: Copy the director resource from the Bareos Director to the Client}
 
 Assuming your client has the DNS entry
 \host{client2.example.com} and has been added to \bareosDir as \resourcename{bareos-dir}{client}{client2-fd}:
@@ -223,7 +224,7 @@ while on MacOS they are located at
 
 
 
-\subsubsubsection{Option 2: Edit the director resource on the Client}
+\subsubsection{Option 2: Edit the director resource on the Client}
 
 Alternatively, you can edit the file \path|/usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf|.
 
@@ -250,7 +251,7 @@ Set this client-side password to the same value as given on the server-side.
 
 \warning{The configuration file contains passwords and therefore must not be accessible for any users except admin users.}
 
-\subsubsection{Restart bareos-fd after changing the configuration}
+\subsection{Restart bareos-fd after changing the configuration}
 
 The bareos-fd must be restarted to reread its configuration:
 
@@ -276,7 +277,7 @@ sudo launchctl start org.bareos.bareos-fd
 % \end{commands}
 
 
-\subsubsection{Verify that the Bareos File Daemon is working}
+\subsection{Verify that the Bareos File Daemon is working}
 
 Open the \command{bconsole} on your \bareosDir and check the status of the client with
 
