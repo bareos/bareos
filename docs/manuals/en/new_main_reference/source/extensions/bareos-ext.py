@@ -100,6 +100,14 @@ def get_config_directive(text):
             result['Daemon'] = 'File Daemon'
             result['dmn'] = 'fd'
             result['Dmn'] = 'Fd'
+        elif daemon == 'bconsole' or daemon == 'console':
+            result['Daemon'] = 'Console'
+            result['dmn'] = 'console'
+            result['Dmn'] = 'Console'
+        else:
+            result['Daemon'] = 'UNKNOWN'
+            result['dmn'] = 'UNKNOWN'
+            result['Dmn'] = 'UNKNOWN'
 
     else:
         result['Daemon'] = None

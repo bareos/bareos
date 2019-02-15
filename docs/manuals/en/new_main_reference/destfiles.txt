@@ -62,3 +62,32 @@ appendix-j/troubleshooting.tex
 appendix-k/debug.tex
 appendix-l/releasenotes.tex
 appendix-m/license.tex
+
+# configuration resource definition
+# ls -1 *-definitions.tex  | sed 's#^#temp/#'
+temp/bareos-dir-resource-profile-definitions.tex
+temp/bareos-fd-resource-client-definitions.tex
+temp/bareos-fd-resource-director-definitions.tex
+temp/bareos-sd-resource-autochanger-definitions.tex
+temp/bareos-sd-resource-device-definitions.tex
+temp/bareos-sd-resource-director-definitions.tex
+temp/bareos-sd-resource-messages-definitions.tex
+temp/bareos-sd-resource-ndmp-definitions.tex
+temp/bareos-sd-resource-storage-definitions.tex
+temp/bareos-tray-monitor-resource-client-definitions.tex
+temp/bareos-tray-monitor-resource-director-definitions.tex
+temp/bareos-tray-monitor-resource-monitor-definitions.tex
+temp/bareos-tray-monitor-resource-storage-definitions.tex
+temp/bconsole-resource-console-definitions.tex
+temp/bconsole-resource-director-definitions.tex
+temp/director-resource-catalog-definitions.tex
+temp/director-resource-client-definitions.tex
+temp/director-resource-console-definitions.tex
+temp/director-resource-counter-definitions.tex
+temp/director-resource-director-definitions.tex
+temp/director-resource-fileset-definitions.tex
+temp/director-resource-job-definitions.tex
+temp/director-resource-pool-definitions.tex
+temp/director-resource-schedule-definitions.tex
+temp/director-resource-storage-definitions.tex
+temp/resource-messages-definitions.tex

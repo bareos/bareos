@@ -68,6 +68,10 @@ class PFunction(PData):
     def getNotEmptyParameters(self):
         return list(filter(None, self.data['parsed']['parameters']))
 
+    def getIndent(self):
+        return self.data['parsed']['indent']
+
+
 
 class ParsedResults(object):
     def __init__(self):
@@ -314,6 +318,25 @@ class Parser(object):
 
         return result
 
+
+    def getIndent(self):
+        # This function returns by how many spaces something in indented
+        # in the *.tex file.
+        # However, it would be better, to determine the current indentation level
+        # in the resuling RST document.
+        # However, this number is not available.
+
+        indent = 0
+
+        pos = self.pos - 1
+        while pos >= self.start and self.data[pos] == ' ':
+            pos -= 1
+        if pos > 0 and self.data[pos] == '\n':
+            indent = self.pos - pos - 1
+
+        return indent
+
+
     def isEqual(self, string):
         return string == self.data[self.pos:self.pos+len(string)]
 
@@ -393,11 +416,13 @@ class Parser(object):
 
     def parseFunction(self):
         logger = logging.getLogger()
+        indent = self.getIndent()
         self.start = self.pos
         result = {
             'name': None,
             'optional': [],
-            'parameters': []
+            'parameters': [],
+            'indent': indent
         }
         result['name'] = self.getFunctionName()
         #logger.debug("function: {}, {} {}".format(result['name'], self.start, self.data[self.start:self.start+30]))
@@ -578,6 +603,38 @@ class Translate(object):
             return None
         logger.warning("Unknown daemon type {}".format(source))
 
+    @staticmethod
+    def getProgramName(source):
+        logger = logging.getLogger()
+
+        unifiedname = ''.join(source.lower().split(' '))
+
+        if unifiedname in [ 'director', 'dir' ]:
+            return "bareos-dir"
+        if unifiedname in [ 'storagedaemon', 'storage', 'sd' ]:
+            return "bareos-sd"
+        if unifiedname in [ 'filedaemon', 'file', 'client', 'fd' ]:
+            return "bareos-fd"
+        if unifiedname in [ 'bconsole', 'console' ]:
+            return "bconsole"
+        logger.warning("Unknown daemon type {}".format(source))
+        return None
+
+    @staticmethod
+    def getResourceReferenceString(daemon, resourcetype, directive):
+        '''
+        :param str daemon: Short form of the daemon, case insensitiv (dir, sd, fd, console)
+        :param str resourcetype: Type of the resource. Case insensitive.
+        :param str directive: Name of the directive. Either CamelCase or words separated by spaces.
+        :return: the full resource reference string as to be used with Sphinx :config:option:
+        :rtype: str
+        '''
+        dmn = daemon.lower()
+        resourcetype = resourcetype.lower()
+        DirectiveCamelCase = ''
+        for i in directive.split(' '):
+            DirectiveCamelCase += i.capitalize()
+        return '{}/{}/{}'.format(dmn, resourcetype, DirectiveCamelCase)
 
     @staticmethod
     def getRstPath(path):
@@ -621,7 +678,7 @@ class Translate(object):
 
     @staticmethod
     def bconfigInput(item):
-        item.replace(b'\n\n.. literalinclude:: /_static/{0}\n\n'.format(*item.getParameters()))
+        item.replace(b'\n\n{indent}.. literalinclude:: /_static/{0}\n\n'.format(*item.getParameters(), indent = ' ' * item.getIndent()))
 
     @staticmethod
     def bcommand(item):
@@ -680,6 +737,40 @@ class Translate(object):
     @staticmethod
     def dbtable(item):
         item.replace(b'**{0}**'.format(*item.getParameters()))
+
+    @staticmethod
+    def defDirective(item):
+
+        #
+        # Special handling.
+        # We assume, that defDirective is only used in the "*-definitions.tex" files.
+        # Instead of replacing them in the text,
+        # we create separate files for them.
+        # These newly created files must be converted
+        # by an additional pandoc and latex-scan.py call.
+        #
+
+        Dmn, Resourcetype, DirectiveWithSpaces, parameter, sinceVersion, Description = item.getParameters()
+
+        dmn = Dmn.lower()
+        #bareosProgram = self.getProgramName(Dmn)
+        resourcetype = Resourcetype.lower()
+        DirectiveCamelCase = ''
+        for i in DirectiveWithSpaces.split(' '):
+            DirectiveCamelCase += i.capitalize()
+        filename = 'build/config-directive-description/{}-{}-{}.tex'.format(dmn, resourcetype, DirectiveCamelCase)
+
+        description = Description.lstrip()
+
+        with open(filename, "w") as text_file:
+            text_file.write(description)
+
+        # It is not required to keep the text,
+        # as it is handled in separate files.
+        #item.replace('{}\n{}\n\n'.format(filename, description))
+        # delete the content
+        item.replace('')
+
 
     @staticmethod
     def developerGuide(item):
@@ -819,12 +910,19 @@ class Translate(object):
     #
     @staticmethod
     def linkResourceDirectiveValue(item):
-        item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ = **{3}**'.format(*item.getParameters()))
+        #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ = **{3}**'.format(*item.getParameters()))
+        daemon, resourcetype, directive, value = item.getParameters()
+        resourceReference = Translate.getResourceReferenceString(daemon, resourcetype, directive)
+        item.replace(b':config:option:`{0}`\ = **{1}**'.format(resourceReference, value))
+
 
     ## TODO: add link
     @staticmethod
     def linkResourceDirective(item):
-        item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ '.format(*item.getParameters()))
+        #item.replace(b'**{2}**:sup:`{0}`:sub:`{1}`\ '.format(*item.getParameters()))
+        daemon, resourcetype, directive = item.getParameters()
+        resourceReference = Translate.getResourceReferenceString(daemon, resourcetype, directive)
+        item.replace(b':config:option:`{0}`\ '.format(resourceReference))
         #${PERL} 's#:raw-latex:`\\linkResourceDirective\*\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ #g' ${DESTFILE}
         #${PERL} 's#:raw-latex:`\\resourceDirectiveValue\{(.*?)\}\{(.*?)\}\{(.*?)\}\{(.*?)\}`#**\3**:sup:`\1`:sub:`\2`\ = **\4**#g' ${DESTFILE}
 
