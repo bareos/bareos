@@ -4,6 +4,7 @@ Configuration
 .. toctree::
 
    chapter08/configure.rst
+   index-config.rst
    chapter09/dirdconf.rst
    chapter10/storedconf.rst
    chapter11/filedconf.rst

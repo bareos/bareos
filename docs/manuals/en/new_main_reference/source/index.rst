@@ -17,7 +17,7 @@ The Information regarding the newest release in the :ref:`bareos-current-release
 
 .. toctree::
    :maxdepth: 3
-   :numbered:
+   :numbered: 4
 
    index-part-1
    index-part-2
