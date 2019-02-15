@@ -614,7 +614,6 @@ For PAM authentication a dedicated named console is used. Set the directive UseP
   Console {
      Name = "PamConsole"
      Password = "Secretpassword"
-     UsePamAuthentication = yes
   }
 
 PAM User
