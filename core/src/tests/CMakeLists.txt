@@ -17,6 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+# "gtest_discover_tests" was added in cmake 3.10
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+include(GoogleTest)
+
 IF(HAVE_WIN32)
    link_libraries(kernel32
       user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)
@@ -72,16 +76,8 @@ target_link_libraries(test_lib
    ${GTEST_MAIN_LIBRARIES}
    )
 
-add_test(NAME test_lib
-   COMMAND test_lib
-   )
-
-set_property(TEST test_lib
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-
-add_dependencies(check test_lib)
+add_test(NAME test_lib COMMAND test_lib)
+gtest_discover_tests(test_lib)
 
 ####### test_fd_plugins #####################################
 add_executable(test_fd_plugins
@@ -97,15 +93,9 @@ target_link_libraries(test_fd_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-add_test(NAME test_fd_plugins
-    COMMAND test_fd_plugins
-    )
+add_test(NAME test_fd_plugins COMMAND test_fd_plugins)
+gtest_discover_tests(test_fd_plugins)
 
-set_property(TEST test_fd_plugins
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/findlib"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-add_dependencies(check test_fd_plugins)
 ####### test_sd_plugins #####################################
 add_executable(test_sd_plugins
     test_sd_plugins.cc
@@ -118,15 +108,9 @@ target_link_libraries(test_sd_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-add_test(NAME test_sd_plugins
-    COMMAND test_sd_plugins
-    )
+add_test(NAME test_sd_plugins COMMAND test_sd_plugins)
+gtest_discover_tests(test_sd_plugins)
 
-set_property(TEST test_sd_plugins
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-add_dependencies(check test_sd_plugins)
 ####### test_dir_plugins #####################################
 add_executable(test_dir_plugins
     test_dir_plugins.cc
@@ -141,15 +125,9 @@ target_link_libraries(test_dir_plugins
     ${GTEST_MAIN_LIBRARIES}
     )
 
-add_test(NAME test_dir_plugins
-    COMMAND test_dir_plugins
-    )
+add_test(NAME test_dir_plugins COMMAND test_dir_plugins)
+gtest_discover_tests(test_dir_plugins)
 
-set_property(TEST test_dir_plugins
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/cats"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-add_dependencies(check test_dir_plugins)
 ####### test_output_formatter ###############################
 add_executable(test_output_formatter
     lib_tests_output_formatter.cc
@@ -160,17 +138,8 @@ target_link_libraries(test_output_formatter
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
    )
-
-add_test(NAME test_output_formatter
-   COMMAND test_output_formatter
-   )
-
-set_property(TEST test_output_formatter
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-
-add_dependencies(check test_output_formatter)
+add_test(NAME test_output_formatter COMMAND test_output_formatter)
+gtest_discover_tests(test_output_formatter)
 
 ####### test_bsock ###############################
 add_executable(test_bsock
@@ -183,15 +152,7 @@ add_executable(test_bsock
     )
 target_link_libraries(test_bsock ${LINK_LIBRARIES})
 add_test(NAME test_bsock COMMAND test_bsock)
-
-
-
-set_property(TEST test_bsock
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-
-add_dependencies(check test_bsock)
+gtest_discover_tests(test_bsock)
 
 ####### test_connection_setup ###############################
 add_executable(test_connection_setup
@@ -202,14 +163,7 @@ add_executable(test_connection_setup
 target_link_libraries(test_connection_setup ${LINK_LIBRARIES})
 
 add_test(NAME test_connection_setup COMMAND test_connection_setup)
-
-set_property(TEST test_connection_setup
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-
-add_dependencies(check test_connection_setup)
-
+gtest_discover_tests(test_connection_setup)
 
 
 ####### test_ndmp_address_translate ###############################
@@ -221,14 +175,5 @@ add_executable(test_ndmp_address_translate
 target_link_libraries(test_ndmp_address_translate ${LINK_LIBRARIES})
 
 add_test(NAME test_ndmp_address_translate COMMAND test_ndmp_address_translate)
-
-set_property(TEST test_ndmp_address_translate
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/stored:${CMAKE_BINARY_DIR}/src/cats:${CMAKE_BINARY_DIR}/src/findlib:${CMAKE_BINARY_DIR}/src/lmdb:${CMAKE_BINARY_DIR}/src/ndmp"
-   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-   )
-
-add_dependencies(check test_ndmp_address_translate)
-
-
-
+gtest_discover_tests(test_ndmp_address_translate)
 
