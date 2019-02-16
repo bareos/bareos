@@ -19,7 +19,7 @@
 
 
 MESSAGE( STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE} )
-MESSAGE(STATUS  "installing systemd files to  ${SYSTEMD_UNITDIR}}")
+MESSAGE(STATUS  "installing systemd files to  ${SYSTEMD_UNITDIR}")
 set(SYSTEMD_TMPFILES ${sysconfdir}/tmpfiles.d)
 
 
