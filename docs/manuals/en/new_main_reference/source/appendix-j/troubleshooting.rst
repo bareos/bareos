@@ -222,19 +222,19 @@ Tape Labels: ANSI or IBM
 
 :index:`[TAG=Label->Tape Labels] <pair: Label; Tape Labels>` :index:`[TAG=Tape->Label->ANSI] <triple: Tape; Label; ANSI>` :index:`[TAG=Tape->Label->IBM] <triple: Tape; Label; IBM>`
 
-By default, Bareos uses its own tape label (see :ref:`backward-compatibility-tape-format` and **Label Type**:sup:`Dir`:sub:`Pool`\ ). However, Bareos also supports reading and write ANSI and IBM tape labels.
+By default, Bareos uses its own tape label (see :ref:`backward-compatibility-tape-format` and :config:option:`dir/pool/LabelType`\ ). However, Bareos also supports reading and write ANSI and IBM tape labels.
 
 Reading
 ~~~~~~~
 
 Reading ANSI/IBM labels is important, if some of your tapes are used by other programs that also support ANSI/IBM labels. For example, LTFS tapes :index:`[TAG=Tape->LTFS] <pair: Tape; LTFS>` are indicated by an ANSI label.
 
-If your are running Bareos in such an environment, you must set **Check Labels**:sup:`Sd`:sub:`Device`\  to yes, otherwise Bareos will not recognize that these tapes are already in use.
+If your are running Bareos in such an environment, you must set :config:option:`sd/device/CheckLabels`\  to yes, otherwise Bareos will not recognize that these tapes are already in use.
 
 Writing
 ~~~~~~~
 
-To configure Bareos to also write ANSI/IBM tape labels, use **Label Type**:sup:`Dir`:sub:`Pool`\  or **Label Type**:sup:`Sd`:sub:`Device`\ . With the proper configuration, you can force Bareos to require ANSI or IBM labels.
+To configure Bareos to also write ANSI/IBM tape labels, use :config:option:`dir/pool/LabelType`\  or :config:option:`sd/device/LabelType`\ . With the proper configuration, you can force Bareos to require ANSI or IBM labels.
 
 Even though Bareos will recognize and write ANSI and IBM labels, it always writes its own tape labels as well.
 

@@ -29,318 +29,441 @@ The Client Resource (or FileDaemon) resource defines the name of the Client (as 
 
 Start of the Client records. There must be one and only one Client resource in the configuration file, since it defines the properties of the current client program.
 
-\defDirective{Fd}{Client}{Absolute Job Timeout}{}{}{%
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientAbsolute Job Timeout}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/AbsoluteJobTimeout`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientAllow Bandwidth Bursting}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/AllowBandwidthBursting`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientAllowed Job Command}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/AllowedJobCommand`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`DirectoryList`                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientAllowed Script Dir}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/AllowedScriptDir`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientAlways Use LMDB}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/AlwaysUseLmdb`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientCompatible}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/Compatible`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientDescription}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/Description`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Address`                                                                                                  8102                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientFD Address}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/FdAddress`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Addresses`                                                                                                8102                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientFD Addresses}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/FdAddresses`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Port`                                                                                                     8102                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientFD Port}{yes}                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/FdPort`\                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Address`                                                                                                  0                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientFD Source Address}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/FdSourceAddress`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     0                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientHeartbeat Interval}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/HeartbeatInterval`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientLMDB Threshold}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/LmdbThreshold`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientLog Timestamp Format}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/LogTimestampFormat`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Speed`                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientMaximum Bandwidth Per Job}{yes}                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/MaximumBandwidthPerJob`\                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   20                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientMaximum Concurrent Jobs}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/MaximumConcurrentJobs`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   42                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientMaximum Connections}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/MaximumConnections`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientMaximum Network Buffer Size}{yes}                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/MaximumNetworkBufferSize`\                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Commonresourceheader`                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientMessages}{yes}                                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/Messages`\                                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientName}{yes}                                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`fd/client/Name`\ **                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPid Directory}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PidDirectory`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`EncryptionCipher`                                                                                         aes128                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPki Cipher}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PkiCipher`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPki Encryption}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PkiEncryption`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPki Key Pair}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PkiKeyPair`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`DirectoryList`                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPki Master Key}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PkiMasterKey`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPki Signatures}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PkiSignatures`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`DirectoryList`                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPki Signer}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PkiSigner`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPlugin Directory}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PluginDirectory`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`PluginNames`                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientPlugin Names}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/PluginNames`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientScripts Directory}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/ScriptsDirectory`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     1800                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientSD Connect Timeout}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/SdConnectTimeout`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientSecure Erase Command}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/SecureEraseCommand`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               *= :strong:`Directory`*                                                                                                                                                                                                                           *deprecated*
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientSub Sys Directory}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+*:config:option:`fd/client/SubSysDirectory`\ *                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Allowed CN}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsAllowedCn`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Authenticate}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsAuthenticate`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS CA Certificate Dir}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsCaCertificateDir`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS CA Certificate File}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsCaCertificateFile`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Certificate}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsCertificate`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Certificate Revocation List}{yes}                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsCertificateRevocationList`\                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Cipher List}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsCipherList`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS DH File}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsDhFile`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Enable}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsEnable`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Key}{yes}                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsKey`\                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS PSK Enable}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsPskEnable`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS PSK Require}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsPskRequire`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Require}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsRequire`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientTLS Verify Peer}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/TlsVerifyPeer`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientVer Id}{yes}                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/VerId`\                                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdClientWorking Directory}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/client/WorkingDirectory`\                                                                                                                                                                                                                                                                                                                    
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Fd}{Client}{Allow Bandwidth Bursting}{}{}{%
-   This option sets if there is Bandwidth Limiting in effect if the limiting
-   code can use bursting e.g. when from a certain timeslice not all bandwidth
-   is used this bandwidth can be used in a next timeslice. Which mean you will
-   get a smoother limiting which will be much closer to the actual limit set
-   but it also means that sometimes the bandwidth will be above the setting here.
-   }
-
-\defDirective{Fd}{Client}{Allowed Job Command}{}{}{%
-   This directive filters what type of jobs the filedaemon should allow.
-   Until now we had the -b (backup only) and -r (restore only) flags which could
-   be specified at the startup of the filedaemon.
-
-   Allowed Job Command can be defined globally for all directors by
-   adding it to the global filedaemon resource or for a specific director when
-   added to the director resource.
-
-   You specify all commands you want to be executed by the filedaemon. When you
-   don't specify the option it will be empty which means all commands are allowed.
-
-   The following example shows how to use this functionality:
-   \bconfigInput{config/FdClientAllowedJobCommand1.conf}
 
 
-   All commands that are allowed are specified each on a new line with the
-   Allowed Job Command keyword.
 
-   The following job commands are recognized:
 
-   \begin{description}
-       \item[backup] allow backups to be made
-       \item[restore] allow restores to be done
-       \item[verify] allow verify jobs to be done
-       \item[estimate] allow estimate cmds to be executed
-       \item[runscript] allow runscripts to run
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Fd}{Client}{Absolute Job Timeout}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Allow Bandwidth Bursting}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Fd}{Client}{Allowed Job Command}{\dt{StringList}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Allowed Script Dir}{\dt{DirectoryList}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Always Use LMDB}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Fd}{Client}{Compatible}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Fd}{Client}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{FD Address}{\dt{Address}}{}{8102}{}{}
+
+   \resourceDirective{Fd}{Client}{FD Addresses}{\dt{Addresses}}{}{8102}{}{}
+
+   \resourceDirective{Fd}{Client}{FD Port}{\dt{Port}}{}{8102}{}{}
+
+   \resourceDirective{Fd}{Client}{FD Source Address}{\dt{Address}}{}{0}{}{}
+
+   \resourceDirective{Fd}{Client}{Heartbeat Interval}{\dt{Time}}{}{0}{}{}
+
+   \resourceDirective{Fd}{Client}{LMDB Threshold}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Log Timestamp Format}{\dt{String}}{}{}{15.2.3}{}
+
+   \resourceDirective{Fd}{Client}{Maximum Bandwidth Per Job}{\dt{Speed}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Maximum Concurrent Jobs}{\dt{Pint32}}{}{20}{}{}
+
+   \resourceDirective{Fd}{Client}{Maximum Connections}{\dt{Pint32}}{}{42}{15.2.3}{}
+
+   \resourceDirective{Fd}{Client}{Maximum Network Buffer Size}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Messages}{\dt{Commonresourceheader}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Name}{\dt{Name}}{required}{}{}{The name of this resource. It is used to reference to it.}
+
+   \resourceDirective{Fd}{Client}{Pid Directory}{\dt{Directory}}{}{/home/joergs/git/bareos/bareos-18.2/regress/working \textit{\small(platform specific)}}{}{}
+
+   \resourceDirective{Fd}{Client}{Pki Cipher}{\dt{EncryptionCipher}}{}{aes128}{}{PKI Cipher used for data encryption.}
+
+   \resourceDirective{Fd}{Client}{Pki Encryption}{\dt{Boolean}}{}{no}{}{Enable Data Encryption.}
+
+   \resourceDirective{Fd}{Client}{Pki Key Pair}{\dt{Directory}}{}{}{}{File with public and private key to sign, encrypt (backup) and decrypt (restore) the data.}
+
+   \resourceDirective{Fd}{Client}{Pki Master Key}{\dt{DirectoryList}}{}{}{}{List of public key files. Data will be decryptable via the corresponding private keys.}
+
+   \resourceDirective{Fd}{Client}{Pki Signatures}{\dt{Boolean}}{}{no}{}{Enable Data Signing.}
+
+   \resourceDirective{Fd}{Client}{Pki Signer}{\dt{DirectoryList}}{}{}{}{Additional public/private key files to sign or verify the data.}
+
+   \resourceDirective{Fd}{Client}{Plugin Directory}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Plugin Names}{\dt{PluginNames}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Scripts Directory}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{SD Connect Timeout}{\dt{Time}}{}{1800}{}{}
+
+   \resourceDirective{Fd}{Client}{Secure Erase Command}{\dt{String}}{}{}{15.2.1}{Specify command that will be called when bareos unlinks files.}
+
+   \resourceDirective{Fd}{Client}{Sub Sys Directory}{\dt{Directory}}{}{}{deprecated}{}
+
+   \resourceDirective{Fd}{Client}{TLS Allowed CN}{\dt{StringList}}{}{}{}{"Common Name"s (CNs) of the allowed peer certificates.}
+
+   \resourceDirective{Fd}{Client}{TLS Authenticate}{\dt{Boolean}}{}{no}{}{Use TLS only to authenticate, not for encryption.}
+
+   \resourceDirective{Fd}{Client}{TLS CA Certificate Dir}{\dt{Stddirectory}}{}{}{}{Path of a TLS CA certificate directory.}
+
+   \resourceDirective{Fd}{Client}{TLS CA Certificate File}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS CA certificate(s) file.}
+
+   \resourceDirective{Fd}{Client}{TLS Certificate}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS certificate.}
+
+   \resourceDirective{Fd}{Client}{TLS Certificate Revocation List}{\dt{Stddirectory}}{}{}{}{Path of a Certificate Revocation List file.}
+
+   \resourceDirective{Fd}{Client}{TLS Cipher List}{\dt{String}}{}{}{}{List of valid TLS Ciphers.}
+
+   \resourceDirective{Fd}{Client}{TLS DH File}{\dt{Stddirectory}}{}{}{}{Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.}
+
+   \resourceDirective{Fd}{Client}{TLS Enable}{\dt{Boolean}}{}{no}{}{Enable TLS support.}
+
+   \resourceDirective{Fd}{Client}{TLS Key}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".}
+
+   \resourceDirective{Fd}{Client}{TLS PSK Enable}{\dt{Boolean}}{}{yes}{}{Enable TLS-PSK support.}
+
+   \resourceDirective{Fd}{Client}{TLS PSK Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".}
+
+   \resourceDirective{Fd}{Client}{TLS Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets "TLS Enable = yes".}
+
+   \resourceDirective{Fd}{Client}{TLS Verify Peer}{\dt{Boolean}}{}{no}{}{If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the "TLS Allowed CN" list.}
+
+   \resourceDirective{Fd}{Client}{Ver Id}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Fd}{Client}{Working Directory}{\dt{Directory}}{}{/home/joergs/git/bareos/bareos-18.2/regress/working \textit{\small(platform specific)}}{}{}
+
    \end{description}
-
-   Only the important commands the filedaemon can perform are filtered, as
-   some commands are part of the above protocols and by disallowing
-   the action the other commands are not invoked at all.
-
-   If runscripts are not needed it would be recommended as a security measure to disable
-   running those or only allow the commands that you really want to be used.
-
-   Runscripts are particularly a problem as they allow the \bareosFd to run
-   arbitrary commands. You may also look into the \linkResourceDirective{Fd}{Client}{Allowed Script Dir} keyword to
-   limit the impact of the runscript command.
-   }
-
-\defDirective{Fd}{Client}{Allowed Script Dir}{}{}{%
-   This directive limits the impact of the runscript command of the filedaemon.
-
-   It can be specified either for all directors  by adding it to the global filedaemon resource
-   or for a specific director when added to the director resource.
-
-   All directories in which the scripts or commands are located
-   that you allow to be run by the runscript command of the filedaemon. Any
-   program not in one of these paths (or subpaths) cannot be used. The
-   implementation checks if the full path of the script starts with one of the
-   specified paths.
-
-   The following example shows how to use this functionality:
-
-   \bconfigInput{config/FdClientAllowedScriptDir1.conf}
-   }
-
-\defDirective{Fd}{Client}{Always Use LMDB}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{Compatible}{}{}{%
-   This directive enables the compatible mode of the file daemon. In
-   this mode the file daemon will try to be as compatible to a native
-   Bacula file daemon as possible. Enabling this option means that
-   certain new options available in Bareos cannot be used as they would
-   lead to data not being able to be restored by a Native Bareos file daemon.
-
-   The default value for this directive was changed from yes to no since Bareos \sinceVersion{fd}{Compatible = no}{15.2.0}.
-
-   When you want to use bareos-only features, the value of compatible must be no.
-   }
-
-\defDirective{Fd}{Client}{Description}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{FD Address}{}{}{%
-   This record is optional,  and if it is specified, it will cause the File
-   daemon server (for  Director connections) to bind to the specified {\bf
-   IP-Address},  which is either a domain name or an IP address specified as a
-   dotted quadruple.
-   }
-
-\defDirective{Fd}{Client}{FD Addresses}{}{}{%
-   Specify the ports and addresses on which the File daemon listens for
-   Director connections.  Probably the simplest way to explain is to show
-   an example:
-
-   \bconfigInput{config/FdClientFDAddresses1.conf}
-
-   where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
-   can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
-   a symbolic name (only in the ip specification).  Also, the port can be specified
-   as a number or as the mnemonic value from  the /etc/services file.  If a port
-   is not specified, the default will be used. If an ip  section is specified,
-   the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
-   only IPv4 resolutions will be permitted,  and likewise with ip6.
-   }
-
-\defDirective{Fd}{Client}{FD Port}{}{}{%
-   This specifies the port number  on which the Client listens for Director
-   connections. It must agree  with the FDPort specified in the Client resource
-   of the Director's  configuration file.
-   }
-
-\defDirective{Fd}{Client}{FD Source Address}{}{}{%
-   If specified, the \bareosFd will bind to the specified address when creating outbound connections.
-   If this record is not specified, the kernel will choose
-   the best address according to the routing table (the default).
-   }
-
-\defDirective{Fd}{Client}{Heartbeat Interval}{}{}{%
-   This record defines an interval of time in seconds.  For each heartbeat that the
-   File daemon receives from the Storage daemon, it will forward it to the
-   Director.  In addition, if no heartbeat has been received from the
-   Storage daemon and thus forwarded the File daemon will send a heartbeat
-   signal to the Director and to the Storage daemon to keep the channels
-   active.  Setting the interval to 0 (zero) disables the heartbeat.
-   This feature is particularly useful if you have a router
-   that does not follow Internet standards and times out a valid
-   connection after a short duration despite the fact that keepalive is
-   set. This usually results in a broken pipe error message.
-   }
-
-\defDirective{Fd}{Client}{LMDB Threshold}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{Maximum Bandwidth Per Job}{}{}{%
-   The speed parameter specifies the maximum allowed bandwidth that a job may
-   use.
-   }
-
-\defDirective{Fd}{Client}{Maximum Concurrent Jobs}{}{}{%
-   This directive specifies the maximum number of Jobs that should run
-   concurrently. Each contact from the Director (e.g. status request, job start
-   request) is considered as a Job,
-   so if you want to be able to do a \bcommand{status} request in the console
-   at the same time as a Job is running, you
-   will need to set this value greater than 1.
-   }
-
-\defDirective{Fd}{Client}{Maximum Network Buffer Size}{}{}{%
-   This directive specifies the initial network buffer size to use.
-   This size will be adjusted down if it is too large until it
-   is accepted by the OS. Please use  care in setting this value since if it is
-   too large, it will  be trimmed by 512 bytes until the OS is happy, which may
-   require  a large number of system calls. The default value is 65,536 bytes.
-
-   Note, on certain Windows machines, there are reports that the
-   transfer rates are very slow and this seems to be related to
-   the default 65,536 size. On systems where the transfer rates
-   seem abnormally slow compared to other systems, you might try
-   setting the Maximum Network Buffer Size to 32,768 in both the
-   File daemon and in the Storage daemon.
-   }
-
-\defDirective{Fd}{Client}{Messages}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{Name}{}{}{%
-   The client name that must be used  by the Director when connecting. Generally,
-   it is a good idea  to use a name related to the machine so that error messages
-   can be easily identified if you have multiple Clients.  This directive is
-   required.
-   }
-
-\defDirective{Fd}{Client}{Pid Directory}{}{}{%
-   This directive specifies a directory in which the File Daemon
-   may put its process Id file files. The process Id file is used to  shutdown
-   Bareos and to prevent multiple copies of  Bareos from running simultaneously.
-
-   The Bareos file daemon uses a platform specific default value,
-   that is defined at compile time.
-   Typically on Linux systems, it is set to \verb|path:/var/lib/bareos/| or \verb|path:/var/run/|.
-   }
-
-\defDirective{Fd}{Client}{Pki Cipher}{}{}{%
-   See the \nameref{DataEncryption} chapter of this manual.
-
-   Depending on the openssl library version different ciphers are available. To choose the desired cipher, you can use the PKI Cipher option in the filedaemon configuration. Note that you have to set \linkResourceDirective{Fd}{Client}{Compatible} = no:
-
-   \bconfigInput{config/FdClientPki.conf}
-
-   The available options (and ciphers) are:
-   \begin{itemize}
-       \item aes128
-       \item aes192
-       \item aes256
-       \item camellia128
-       \item camellia192
-       \item camellia256
-       \item aes128hmacsha1
-       \item aes256hmacsha1
-       \item blowfish
-   \end{itemize}
-   They depend on the version of the openssl library installed.
-
-   For decryption of encrypted data, the right decompression algorithm should be automatically chosen.
-
-   }
-
-\defDirective{Fd}{Client}{Pki Encryption}{}{}{%
-   See \nameref{DataEncryption}.
-   }
-
-\defDirective{Fd}{Client}{Pki Key Pair}{}{}{%
-   See \nameref{DataEncryption}.
-   }
-
-\defDirective{Fd}{Client}{Pki Master Key}{}{}{%
-   See \nameref{DataEncryption}.
-   }
-
-\defDirective{Fd}{Client}{Pki Signatures}{}{}{%
-   See \nameref{DataEncryption}.
-   }
-
-\defDirective{Fd}{Client}{Pki Signer}{}{}{%
-   See \nameref{DataEncryption}.
-   }
-
-\defDirective{Fd}{Client}{Plugin Directory}{}{}{%
-   This directive specifies a directory in which the File Daemon searches for
-   plugins with the name \file{<pluginname>-fd.so} which it will load at startup.
-   Typically on Linux systems, plugins are installed to \verb|path:/usr/lib/bareos/plugins/| or \verb|path:/usr/lib64/bareos/plugins/|.
-   }
-
-\defDirective{Fd}{Client}{Plugin Names}{}{}{%
-   If a \linkResourceDirective{Fd}{Client}{Plugin Directory} is specified
-   \configdirective{Plugin Names} defines, which \nameref{fdPlugins} get loaded.
-
-   If \configdirective{Plugin Names} is not defined, all plugins get loaded,
-   otherwise the defined ones.
-   }
-
-\defDirective{Fd}{Client}{Scripts Directory}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{SD Connect Timeout}{}{}{%
-   This  record defines an interval of time that  the File daemon will try to
-   connect to the  Storage daemon. If no connection
-   is made in the specified time interval, the File daemon  cancels the Job.
-   }
-
-\defDirective{Fd}{Client}{Sub Sys Directory}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{Secure Erase Command}{}{}{%
-   When files are no longer needed, Bareos will delete (unlink) them.
-   With this directive, it will call the specified command to delete these files. See \nameref{section-SecureEraseCommand} for details.
-   }
-
-\defDirective{Fd}{Client}{TLS Authenticate}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS CA Certificate Dir}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS CA Certificate File}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS Certificate}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS Certificate Revocation List}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS Enable}{}{}{%
-   Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
-   }
-
-\defDirective{Fd}{Client}{TLS Key}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS Require}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{TLS Verify Peer}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{Ver Id}{}{}{%
-   }
-
-\defDirective{Fd}{Client}{Working Directory}{}{}{%
-   This directive is optional and specifies a directory in which the File
-   daemon  may put its status files.
-   %\TODO{This directory should be used only by {\bf
-   %Bareos}, but may be shared by other Bareos daemons provided the daemon
-   %names on the {\bf Name} definition are unique for each daemon.}
-
-   % The bareos file daemon uses a platform specific default value, that is defined at compile time.
-   % For Linux systems, the default is \verb|path:/var/lib/bareos/|.
-   % For Windows systems it is \%TEMP\%.
-
-   On Win32 systems, in some circumstances you may need to specify a drive
-   letter in the specified working directory path.  Also, please be sure
-   that this directory is writable by the SYSTEM user otherwise restores
-   may fail (the bootstrap file that is transferred to the File daemon from
-   the Director is temporarily put in this directory before being passed
-   to the Storage daemon).
-   }
 
 The following is an example of a valid Client resource definition:
 
@@ -363,90 +486,231 @@ Director Resource
 
 The Director resource defines the name and password of the Directors that are permitted to contact this Client.
 
-\defDirective{Fd}{Director}{Address}{}{}{%
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorAddress}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/Address`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorAllowed Job Command}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/AllowedJobCommand`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`DirectoryList`                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorAllowed Script Dir}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/AllowedScriptDir`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorConnection From Client To Director}{yes}                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/ConnectionFromClientToDirector`\                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorConnection From Director To Client}{yes}                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/ConnectionFromDirectorToClient`\                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorDescription}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/Description`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Speed`                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorMaximum Bandwidth Per Job}{yes}                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/MaximumBandwidthPerJob`\                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorMonitor}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/Monitor`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorName}{yes}                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`fd/director/Name`\ **                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               **= :strong:`Md5password`**                                                                                                                                                                                                                       **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorPassword}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`fd/director/Password`\ **                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   8101                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorPort}{yes}                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/Port`\                                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Allowed CN}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsAllowedCn`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Authenticate}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsAuthenticate`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS CA Certificate Dir}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsCaCertificateDir`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS CA Certificate File}{yes}                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsCaCertificateFile`\                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Certificate}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsCertificate`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Certificate Revocation List}{yes}                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsCertificateRevocationList`\                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Cipher List}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsCipherList`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS DH File}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsDhFile`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Enable}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsEnable`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Key}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsKey`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS PSK Enable}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsPskEnable`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS PSK Require}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsPskRequire`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Require}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsRequire`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedFdDirectorTLS Verify Peer}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`fd/director/TlsVerifyPeer`\                                                                                                                                                                                                                                                                                                                    
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Fd}{Director}{Allowed Job Command}{}{}{%
-   see \linkResourceDirective{Fd}{Client}{Allowed Job Command}
-   }
 
-\defDirective{Fd}{Director}{Allowed Script Dir}{}{}{%
-   see \linkResourceDirective{Fd}{Client}{Allowed Script Dir}
-   }
 
-\defDirective{Fd}{Director}{Connection From Client To Director}{}{}{%
-   For details, see \nameref{section-ClientInitiatedConnection}.
-   }
 
-\defDirective{Fd}{Director}{Connection From Director To Client}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{Description}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{Maximum Bandwidth Per Job}{}{}{%
-   The speed parameter specifies the maximum allowed bandwidth that a job may use
-   when started from this Director. The speed parameter should be specified in
-   k/s, Kb/s, m/s or Mb/s.
-   }
 
-\defDirective{Fd}{Director}{Monitor}{}{}{%
-   If Monitor is set to {\bf no},  this director will have full access
-   to this Client. If Monitor is set to  {\bf yes}, this director will only be
-   able to fetch the current status of this Client.
 
-   Please note that if this director is being used by a Monitor, we highly
-   recommend to set this directive to {\bf yes} to avoid serious security
-   problems.
-   }
 
-\defDirective{Fd}{Director}{Name}{}{}{%
-   The name of the Director  that may contact this Client. This name must be the
-   same as the name specified on the Director resource  in the Director's
-   configuration file. Note, the case (upper/lower) of the characters in
-   the name are significant (i.e. S is not the same as s). This directive
-   is required.
-   }
 
-\defDirective{Fd}{Director}{Password}{}{}{%
-   Specifies the password that must be  supplied for a Director to be authorized.
-   This password  must be the same as the password specified in the  Client
-   resource in the Director's configuration file.  This directive is required.
-   }
 
-\defDirective{Fd}{Director}{TLS Allowed CN}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS Authenticate}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS CA Certificate Dir}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS CA Certificate File}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS Certificate}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS Certificate Revocation List}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS DH File}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS Enable}{}{}{%
-   Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
-   }
 
-\defDirective{Fd}{Director}{TLS Key}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS Require}{}{}{%
-   }
 
-\defDirective{Fd}{Director}{TLS Verify Peer}{}{}{%
-   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Fd}{Director}{Address}{\dt{String}}{}{}{}{Director Network Address. Only required if "Connection From Client To Director" is enabled.}
+
+   \resourceDirective{Fd}{Director}{Allowed Job Command}{\dt{StringList}}{}{}{}{}
+
+   \resourceDirective{Fd}{Director}{Allowed Script Dir}{\dt{DirectoryList}}{}{}{}{}
+
+   \resourceDirective{Fd}{Director}{Connection From Client To Director}{\dt{Boolean}}{}{no}{16.2.2}{Let the Filedaemon initiate network connections to the Director.}
+
+   \resourceDirective{Fd}{Director}{Connection From Director To Client}{\dt{Boolean}}{}{yes}{16.2.2}{This Client will accept incoming network connection from this Director.}
+
+   \resourceDirective{Fd}{Director}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Fd}{Director}{Maximum Bandwidth Per Job}{\dt{Speed}}{}{}{}{}
+
+   \resourceDirective{Fd}{Director}{Monitor}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Fd}{Director}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Fd}{Director}{Password}{\dt{Md5password}}{required}{}{}{}
+
+   \resourceDirective{Fd}{Director}{Port}{\dt{Pint32}}{}{8101}{16.2.2}{Director Network Port. Only used if "Connection From Client To Director" is enabled.}
+
+   \resourceDirective{Fd}{Director}{TLS Allowed CN}{\dt{StringList}}{}{}{}{"Common Name"s (CNs) of the allowed peer certificates.}
+
+   \resourceDirective{Fd}{Director}{TLS Authenticate}{\dt{Boolean}}{}{no}{}{Use TLS only to authenticate, not for encryption.}
+
+   \resourceDirective{Fd}{Director}{TLS CA Certificate Dir}{\dt{Stddirectory}}{}{}{}{Path of a TLS CA certificate directory.}
+
+   \resourceDirective{Fd}{Director}{TLS CA Certificate File}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS CA certificate(s) file.}
+
+   \resourceDirective{Fd}{Director}{TLS Certificate}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS certificate.}
+
+   \resourceDirective{Fd}{Director}{TLS Certificate Revocation List}{\dt{Stddirectory}}{}{}{}{Path of a Certificate Revocation List file.}
+
+   \resourceDirective{Fd}{Director}{TLS Cipher List}{\dt{String}}{}{}{}{List of valid TLS Ciphers.}
+
+   \resourceDirective{Fd}{Director}{TLS DH File}{\dt{Stddirectory}}{}{}{}{Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.}
+
+   \resourceDirective{Fd}{Director}{TLS Enable}{\dt{Boolean}}{}{no}{}{Enable TLS support.}
+
+   \resourceDirective{Fd}{Director}{TLS Key}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".}
+
+   \resourceDirective{Fd}{Director}{TLS PSK Enable}{\dt{Boolean}}{}{yes}{}{Enable TLS-PSK support.}
+
+   \resourceDirective{Fd}{Director}{TLS PSK Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".}
+
+   \resourceDirective{Fd}{Director}{TLS Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets "TLS Enable = yes".}
+
+   \resourceDirective{Fd}{Director}{TLS Verify Peer}{\dt{Boolean}}{}{no}{}{If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the "TLS Allowed CN" list.}
+
+   \end{description}
 
 Thus multiple Directors may be authorized to use this Client’s services. Each Director will have a different name, and normally a different password as well.
 

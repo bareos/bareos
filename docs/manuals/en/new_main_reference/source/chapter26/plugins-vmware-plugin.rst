@@ -19,26 +19,34 @@ The Plugin can do full, differential and incremental backup and restore of VM di
 
 Current limitations amongst others are:
 
-:index:`VMware Plugin: Normal VM disks can not be excluded from the backup. <triple: Limitation; VMware Plugin; Normal VM disks can not be excluded from the backup>`
+.. limitation:: VMware Plugin: Normal VM disks can not be excluded from the backup.
+
        It is not yet possible to exclude normal (dependent) VM disks from backups.
        However, independent disks are excluded implicitly because they are not affected
        by snapshots which are required for CBT based backup.
 
 
-:index:`VMware Plugin: VM configuration is not backed up. <triple: Limitation; VMware Plugin; VM configuration is not backed up>`
+
+.. limitation:: VMware Plugin: VM configuration is not backed up.
+
        The VM configuration is not backed up, so that it is not yet possible to recreate a completely deleted VM.
 
 
-:index:`VMware Plugin: Virtual Disks have to be smaller than 2TB. <triple: Limitation; VMware Plugin; Virtual Disks have to be smaller than 2TB>`
+
+.. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB.
+
        Virtual Disks have to be smaller than 2 TB, see :issue:`670`.
 
 
-:index:`VMware Plugin: Restore can only be done to the same VM or to local VMDK files. <triple: Limitation; VMware Plugin; Restore can only be done to the same VM or to local VMDK files>`
+
+.. limitation:: VMware Plugin: Restore can only be done to the same VM or to local VMDK files.
+
        Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
        Since :index:`Version >= 15.2.3 <pair: bareos-15.2.3; VMware Plugin: restore to VMDK files>`
        %**bareos-vadp-dumper** :index:`Version >= 15.2.2-15 <pair: bareos-15.2.2-15; bareos-vadp-dumper>` and 
        %**bareos-vmware-plugin** :index:`Version >= 15.2.2-27 <pair: bareos-15.2.2-27; bareos-vmware-plugin>`
        it is also possible to restore to local VMDK files, see below for more details.
+
 
 
 Requirements

@@ -42,9 +42,11 @@ Always Incremental Concept
 
 The Always Incremental Backup Scheme does only incremental backups of clients, which reduces the amount of data transferred over the network to a minimum.
 
-:index:`Always Incremental Backup: Only suitable for file based backups. <triple: Limitation; Always Incremental Backup; Only suitable for file based backups>`
+.. limitation:: Always Incremental Backup: Only suitable for file based backups.
+
    Always Incremental backups are only suitable for file based backups. Other data can not be combined on the server side (e.g. vmware plugings, NDMP, ...)
    
+
 
 
 The Always Incremental Backup Scheme works as follows:

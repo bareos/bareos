@@ -1144,13 +1144,15 @@ NDMP Job limitations when scanning in volumes
 
 For NDMP jobs, all data is stored into a single big file. The file and directory information (File History in NDMP Terms) is stored as hardlinks to this big file.
 
-:index:`NDMP: File information are not available in the Bareos backup stream. <triple: Limitation; NDMP; File information are not available in the Bareos backup stream>`
+.. limitation:: NDMP: File information are not available in the Bareos backup stream.
+
    As hardlink information is only stored in the Bareos database, but not int the backup stream itself, it is not possible to recover the file history information from the NDMP stream with :command:`bscan`.
 
    As storing the database dump for disaster recovery and storing the bootstrap file offsite is recommended  anyway (see :ref:`section-before-disaster`), this should be not a big problem in correctly setup environments.
 
    For the same reason, the information about the number of files of a job (e.g. JobFiles with :strong:`list jobs` command) is limited to the number of NDMP backup files in copied jobs.
    
+
 
 
 Restore always transfers the full main backup file to the Primary Storage System
@@ -1913,8 +1915,10 @@ Now we want to restore some files from the backup we just did:
 Limitations
 ~~~~~~~~~~~
 
-:index:`NDMP\_NATIVE: Only use the first tape drive will be used. <triple: Limitation; NDMP\_NATIVE; Only use the first tape drive will be used>`
+.. limitation:: NDMP\_NATIVE: Only use the first tape drive will be used.
+
    A NDMP job only uses a single tape drive. Currently, a Bareos job always uses the first defined tape drive of the \TapeAgent.
+
 
 
 NDMP Common
@@ -2004,7 +2008,8 @@ Bareos NDMP Common Limitations
 NDMP Fileset limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`NDMP: A NDMP fileset should only contain a single File directive and Meta options. <triple: Limitation; NDMP; A NDMP fileset should only contain a single File directive and Meta options>`
+.. limitation:: NDMP: A NDMP fileset should only contain a single File directive and Meta options.
+
    Using multiple :config:option:`dir/fileset/Include`\  :strong:`File` directives should be avoided.
    The |bareosDir| would try to handle them by running multiple NDMP jobs in a single Bareos job.
    Even if this is working fine during backup, restore jobs will cause trouble.
@@ -2013,24 +2018,29 @@ NDMP Fileset limitations
    
 
 
+
 Single file restore on incremental backups
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`NDMP: No single file restore on merged backups. <triple: Limitation; NDMP; No single file restore on merged backups>`
+.. limitation:: NDMP: No single file restore on merged backups.
+
    Unfortunately, it is currently (bareos-15.2.2) not possible to restore a chain of Full and Incremental backups at once.
    The workaround for that problem is to restore the full backup and each incremental each in a single restore operation.
    
 
 
+
 Temporary memory mapped database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`NDMP: 64-bit system recommended. <triple: Limitation; NDMP; 64-bit system recommended>`
+.. limitation:: NDMP: 64-bit system recommended.
+
    The |bareosDir| uses a memory mapped database (LMBD) to temporarily store NDMP file information.
    On some 32-bit systems the default :config:option:`dir/job/FileHistorySize`\  requires a larger memory area than available.
    In this case, you either have to lower the :config:option:`dir/job/FileHistorySize`\ 
    or preferably run the |bareosDir| on a 64-bit system.
    
+
 
 
 Tested Environments

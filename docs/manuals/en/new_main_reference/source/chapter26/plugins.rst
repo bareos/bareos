@@ -197,26 +197,34 @@ The Plugin can do full, differential and incremental backup and restore of VM di
 
 Current limitations amongst others are:
 
-:index:`VMware Plugin: Normal VM disks can not be excluded from the backup. <triple: Limitation; VMware Plugin; Normal VM disks can not be excluded from the backup>`
+.. limitation:: VMware Plugin: Normal VM disks can not be excluded from the backup.
+
        It is not yet possible to exclude normal (dependent) VM disks from backups.
        However, independent disks are excluded implicitly because they are not affected
        by snapshots which are required for CBT based backup.
 
 
-:index:`VMware Plugin: VM configuration is not backed up. <triple: Limitation; VMware Plugin; VM configuration is not backed up>`
+
+.. limitation:: VMware Plugin: VM configuration is not backed up.
+
        The VM configuration is not backed up, so that it is not yet possible to recreate a completely deleted VM.
 
 
-:index:`VMware Plugin: Virtual Disks have to be smaller than 2TB. <triple: Limitation; VMware Plugin; Virtual Disks have to be smaller than 2TB>`
+
+.. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB.
+
        Virtual Disks have to be smaller than 2 TB, see :issue:`670`.
 
 
-:index:`VMware Plugin: Restore can only be done to the same VM or to local VMDK files. <triple: Limitation; VMware Plugin; Restore can only be done to the same VM or to local VMDK files>`
+
+.. limitation:: VMware Plugin: Restore can only be done to the same VM or to local VMDK files.
+
        Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
        Since :index:`Version >= 15.2.3 <pair: bareos-15.2.3; VMware Plugin: restore to VMDK files>`
        %**bareos-vadp-dumper** :index:`Version >= 15.2.2-15 <pair: bareos-15.2.2-15; bareos-vadp-dumper>` and 
        %**bareos-vmware-plugin** :index:`Version >= 15.2.2-27 <pair: bareos-15.2.2-27; bareos-vmware-plugin>`
        it is also possible to restore to local VMDK files, see below for more details.
+
 
 
 Requirements
@@ -611,9 +619,9 @@ Therefore the autoxflate plugin inserts a inflate and a deflate function block i
 
 Each stream passes first the inflate function block, then the deflate function block.
 
-The inflate blocks are controlled by the setting of the **Auto Inflate**:sup:`Sd`:sub:`Device`\  directive.
+The inflate blocks are controlled by the setting of the :config:option:`sd/device/AutoInflate`\  directive.
 
-The deflate blocks are controlled by the setting of the **Auto Deflate**:sup:`Sd`:sub:`Device`\ , **Auto Deflate Algorithm**:sup:`Sd`:sub:`Device`\  and **Auto Deflate Level**:sup:`Sd`:sub:`Device`\  directives.
+The deflate blocks are controlled by the setting of the :config:option:`sd/device/AutoDeflate`\ , :config:option:`sd/device/AutoDeflateAlgorithm`\  and :config:option:`sd/device/AutoDeflateLevel`\  directives.
 
 The inflate blocks, if enabled, will uncompress data if it is compressed using the algorithm that was used during compression.
 
@@ -648,7 +656,7 @@ When the autoxflate plugin is configured, it will write some status information 
 
    autoxflate-sd.c: deflate ratio: 50.59%
 
-Additional **Auto XFlate On Replication**:sup:`Sd`:sub:`Storage`\  can be configured at the Storage resource.
+Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configured at the Storage resource.
 
 scsicrypto-sd
 ~~~~~~~~~~~~~
@@ -782,26 +790,26 @@ Changes in bareos-sd.conf
 
 -  Set the Key Encryption Key
 
-   -  **Key Encryption Key**:sup:`Sd`:sub:`Director`\  = :strong:`passphrase`
+   -  :config:option:`sd/director/KeyEncryptionKey`\  = :strong:`passphrase`
 
 -  Enable the loading of storage daemon plugins
 
-   -  **Plugin Directory**:sup:`Sd`:sub:`Storage`\  = :file:`path_to_sd_plugins`
+   -  :config:option:`sd/storage/PluginDirectory`\  = :file:`path_to_sd_plugins`
 
 -  Enable the SCSI encryption option
 
-   -  **Drive Crypto Enabled**:sup:`Sd`:sub:`Device`\  = yes
+   -  :config:option:`sd/device/DriveCryptoEnabled`\  = yes
 
 -  Enable this, if you want the plugin to probe the encryption status of the drive when it needs to clear a pending key
 
-   -  **Query Crypto Status**:sup:`Sd`:sub:`Device`\  = yes
+   -  :config:option:`sd/device/QueryCryptoStatus`\  = yes
 
 Changes in bareos-dir.conf
 ''''''''''''''''''''''''''
 
 -  Set the Key Encryption Key
 
-   -  **Key Encryption Key**:sup:`Dir`:sub:`Director`\  = :strong:`passphrase`
+   -  :config:option:`dir/director/KeyEncryptionKey`\  = :strong:`passphrase`
 
 Testing
 ^^^^^^^

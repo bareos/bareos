@@ -27,40 +27,86 @@ Monitor Resource
 
 The Monitor resource defines the attributes of the Monitor running on the network. The parameters you define here must be configured as a Director resource in Clients and Storages configuration files, and as a Console resource in Directors configuration files.
 
-\defDirective{Console}{Monitor}{Description}{}{}{%
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorDescription}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/monitor/Description`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     10                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorDir Connect Timeout}{yes}                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/monitor/DirConnectTimeout`\                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     10                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorFD Connect Timeout}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/monitor/FdConnectTimeout`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorName}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/monitor/Name`\ **                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               **= :strong:`Md5password`**                                                                                                                                                                                                                       **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorPassword}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/monitor/Password`\ **                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     60                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorRefresh Interval}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/monitor/RefreshInterval`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorRequire SSL}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/monitor/RequireSsl`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     10                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleMonitorSD Connect Timeout}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/monitor/SdConnectTimeout`\                                                                                                                                                                                                                                                                                                             
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Console}{Monitor}{Dir Connect Timeout}{}{}{%
-   }
 
-\defDirective{Console}{Monitor}{FD Connect Timeout}{}{}{%
-   }
 
-\defDirective{Console}{Monitor}{Name}{}{}{%
-   Specifies the Director name used to connect to Client and Storage, and the
-   Console name used to connect to Director. This record is required.
-   }
 
-\defDirective{Console}{Monitor}{Password}{}{}{%
-   Where the password is needed for Directors to accept the Console
-   connection. This password must be identical to the {\bf Password} specified
-   in the {\bf Console} resource of the \ilink{Director's configuration}{DirectorChapter}
-   file. This record is required if you wish to monitor Directors.
-   }
 
-\defDirective{Console}{Monitor}{Refresh Interval}{}{}{%
-   Specifies the time to wait  between status requests to each daemon. It can't
-   be set to less than  1 second or more than 10 minutes.
-   % TODO: what is format of the time?
-   % TODO: should the digits in this  definition be spelled out? should
-   % TODO: this say "time-period-specification" above??)
-   }
 
-\defDirective{Console}{Monitor}{Require SSL}{}{}{%
-   }
 
-\defDirective{Console}{Monitor}{SD Connect Timeout}{}{}{%
-   }
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Console}{Monitor}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Monitor}{Dir Connect Timeout}{\dt{Time}}{}{10}{}{}
+
+   \resourceDirective{Console}{Monitor}{FD Connect Timeout}{\dt{Time}}{}{10}{}{}
+
+   \resourceDirective{Console}{Monitor}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Console}{Monitor}{Password}{\dt{Md5password}}{required}{}{}{}
+
+   \resourceDirective{Console}{Monitor}{Refresh Interval}{\dt{Time}}{}{60}{}{}
+
+   \resourceDirective{Console}{Monitor}{Require SSL}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Console}{Monitor}{SD Connect Timeout}{\dt{Time}}{}{10}{}{}
+
+   \end{description}
 
 .. _DirectorResource2:
 
@@ -75,29 +121,59 @@ As you are not permitted to define a Password in this resource, to avoid obtaini
 
 You may have multiple Director resource specifications in a single Monitor configuration file.
 
-\defDirective{Console}{Director}{Address}{}{}{%
-   Where the address is a host name,  a fully qualified domain name, or a network
-   address used to connect  to the Director. This record is required.
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               **= :strong:`String`**                                                                                                                                                                                                                            **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorAddress}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/director/Address`\ **                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorDescription}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/Description`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   9101                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorDir Port}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/DirPort`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorEnable SSL}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/EnableSsl`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorName}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/director/Name`\ **                                                                                                                                                                                                                                                                                                                     
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Console}{Director}{Description}{}{}{%
-   }
 
-\defDirective{Console}{Director}{Dir Port}{}{}{%
-   Specifies the port to use to connect  to the Director.
-   This port must be
-   identical to the  {\bf DIRport} specified in the {\bf Director} resource of the
-   \nameref{DirectorChapter} file.
-   }
 
-\defDirective{Console}{Director}{Enable SSL}{}{}{%
-   }
 
-\defDirective{Console}{Director}{Name}{}{}{%
-   The Director name used to identify  the Director in the list of monitored
-   daemons. It is not required  to be the same as the one defined in the Director's
-   configuration file.  This record is required.
-   }
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Console}{Director}{Address}{\dt{String}}{required}{}{}{}
+
+   \resourceDirective{Console}{Director}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Director}{Dir Port}{\dt{Pint32}}{}{9101}{}{}
+
+   \resourceDirective{Console}{Director}{Enable SSL}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Console}{Director}{Name}{\dt{Name}}{required}{}{}{}
+
+   \end{description}
 
 .. _ClientResource1:
 
@@ -112,35 +188,68 @@ You must create a Director resource in the :ref:`Client's configuration <FiledCo
 
 You may have multiple Director resource specifications in a single Monitor configuration file.
 
-\defDirective{Console}{Client}{Address}{}{}{%
-   Where the address is a host  name, a fully qualified domain name, or a network
-   address in  dotted quad notation for a Bareos File daemon.  This record is
-   required.
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               **= :strong:`String`**                                                                                                                                                                                                                            **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleClientAddress}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/client/Address`\ **                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleClientDescription}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/client/Description`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleClientEnable SSL}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/client/EnableSsl`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   9102                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleClientFD Port}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/client/FdPort`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleClientName}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/client/Name`\ **                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               **= :strong:`Md5password`**                                                                                                                                                                                                                       **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleClientPassword}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/client/Password`\ **                                                                                                                                                                                                                                                                                                                   
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Console}{Client}{Description}{}{}{%
-   }
 
-\defDirective{Console}{Client}{Enable SSL}{}{}{%
-   }
 
-\defDirective{Console}{Client}{FD Port}{}{}{%
-   Where the port is a port  number at which the Bareos File daemon can be
-   contacted.
-   }
 
-\defDirective{Console}{Client}{Name}{}{}{%
-   The Client name used to identify  the Director in the list of monitored
-   daemons. It is not required  to be the same as the one defined in the Client's
-   configuration file. This record is required.
-   }
 
-\defDirective{Console}{Client}{Password}{}{}{%
-   This is the password to be  used when establishing a connection with the File
-   services, so  the Client configuration file on the machine to be backed up
-   must  have the same password defined for this Director. This record is
-   required.
-   }
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Console}{Client}{Address}{\dt{String}}{required}{}{}{}
+
+   \resourceDirective{Console}{Client}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Client}{Enable SSL}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Console}{Client}{FD Port}{\dt{Pint32}}{}{9102}{}{}
+
+   \resourceDirective{Console}{Client}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Console}{Client}{Password}{\dt{Md5password}}{required}{}{}{}
+
+   \end{description}
 
 .. _StorageResource1:
 
@@ -155,41 +264,86 @@ You must create a Director resource in the :ref:`Storage's configuration <Stored
 
 You may have multiple Director resource specifications in a single Monitor configuration file.
 
-\defDirective{Console}{Storage}{Address}{}{}{%
-   Where the address is a host name, a fully qualified domain name, or a network
-   address in  dotted quad notation for a Bareos Storage daemon.  This record is
-   required.
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               **= :strong:`String`**                                                                                                                                                                                                                            **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageAddress}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/storage/Address`\ **                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageDescription}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/storage/Description`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageEnable SSL}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/storage/EnableSsl`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageName}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/storage/Name`\ **                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               **= :strong:`Md5password`**                                                                                                                                                                                                                       **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStoragePassword}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/storage/Password`\ **                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageSD Address}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/storage/SdAddress`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Md5password`                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageSD Password}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/storage/SdPassword`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   9103                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleStorageSD Port}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/storage/SdPort`\                                                                                                                                                                                                                                                                                                                        
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Console}{Storage}{Description}{}{}{%
-   }
 
-\defDirective{Console}{Storage}{Enable SSL}{}{}{%
-   }
 
-\defDirective{Console}{Storage}{Name}{}{}{%
-   The Storage name used to identify  the Director in the list of monitored
-   daemons. It is not required  to be the same as the one defined in the Storage's
-   configuration file. This record is required.
-   }
 
-\defDirective{Console}{Storage}{Password}{}{}{%
-   This is the password to be used  when establishing a connection with the
-   Storage services. This  same password also must appear in the Director
-   resource of the Storage  daemon's configuration file. This record is required.
-   }
 
-\defDirective{Console}{Storage}{SD Address}{}{}{%
-   }
 
-\defDirective{Console}{Storage}{SD Password}{}{}{%
-   }
 
-\defDirective{Console}{Storage}{SD Port}{}{}{%
-   Where port is the port to use to  contact the storage daemon for information
-   and to start jobs. This same port number must appear in the Storage resource
-   of the  Storage daemon's configuration file.
-   }
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Console}{Storage}{Address}{\dt{String}}{required}{}{}{}
+
+   \resourceDirective{Console}{Storage}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Storage}{Enable SSL}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Console}{Storage}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Console}{Storage}{Password}{\dt{Md5password}}{required}{}{}{}
+
+   \resourceDirective{Console}{Storage}{SD Address}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Storage}{SD Password}{\dt{Md5password}}{}{}{}{}
+
+   \resourceDirective{Console}{Storage}{SD Port}{\dt{Pint32}}{}{9103}{}{}
+
+   \end{description}
 
 Tray Monitor
 ------------

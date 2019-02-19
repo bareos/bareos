@@ -36,243 +36,486 @@ Storage Resource
 
 In general, the properties specified under the Storage resource define global properties of the Storage daemon. Each Storage daemon configuration file must have one and only one Storage resource definition.
 
-\defDirective{Sd}{Storage}{Absolute Job Timeout}{}{}{%
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageAbsolute Job Timeout}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/AbsoluteJobTimeout`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageAllow Bandwidth Bursting}{yes}                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/AllowBandwidthBursting`\                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageAuto XFlate On Replication}{yes}                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/AutoXflateOnReplication`\                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`DirectoryList`                                                                                            /home/joergs/git/bareos/bareos-18.2/regress/usr/lib/bareos/backends *(platform specific)*                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageBackend Directory}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/BackendDirectory`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     1800                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageClient Connect Wait}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/ClientConnectWait`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageCollect Device Statistics}{yes}                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/CollectDeviceStatistics`\                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageCollect Job Statistics}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/CollectJobStatistics`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageCompatible}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/Compatible`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageDescription}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/Description`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageDevice Reserve By Media Type}{yes}                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/DeviceReserveByMediaType`\                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     1800                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageFD Connect Timeout}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/FdConnectTimeout`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageFile Device Concurrent Read}{yes}                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/FileDeviceConcurrentRead`\                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     0                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageHeartbeat Interval}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/HeartbeatInterval`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageLog Timestamp Format}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/LogTimestampFormat`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Speed`                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageMaximum Bandwidth Per Job}{yes}                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/MaximumBandwidthPerJob`\                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   20                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageMaximum Concurrent Jobs}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/MaximumConcurrentJobs`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   42                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageMaximum Connections}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/MaximumConnections`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageMaximum Network Buffer Size}{yes}                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/MaximumNetworkBufferSize`\                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Commonresourceheader`                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageMessages}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/Messages`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageName}{yes}                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/storage/Name`\ **                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Address`                                                                                                  10000                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageNDMP Address}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/NdmpAddress`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Addresses`                                                                                                10000                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageNDMP Addresses}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/NdmpAddresses`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageNDMP Enable}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/NdmpEnable`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   4                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageNDMP Log Level}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/NdmpLogLevel`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Port`                                                                                                     10000                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageNDMP Port}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/NdmpPort`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageNDMP Snooping}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/NdmpSnooping`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStoragePid Directory}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/PidDirectory`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStoragePlugin Directory}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/PluginDirectory`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`PluginNames`                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStoragePlugin Names}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/PluginNames`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageScripts Directory}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/ScriptsDirectory`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Address`                                                                                                  8103                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSD Address}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SdAddress`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Addresses`                                                                                                8103                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSD Addresses}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SdAddresses`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     1800                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSD Connect Timeout}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SdConnectTimeout`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Port`                                                                                                     8103                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSD Port}{yes}                                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SdPort`\                                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Address`                                                                                                  0                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSD Source Address}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SdSourceAddress`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSecure Erase Command}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SecureEraseCommand`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   30                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageStatistics Collect Interval}{yes}                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/StatisticsCollectInterval`\                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageSub Sys Directory}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/SubSysDirectory`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Allowed CN}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsAllowedCn`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Authenticate}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsAuthenticate`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS CA Certificate Dir}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsCaCertificateDir`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS CA Certificate File}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsCaCertificateFile`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Certificate}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsCertificate`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Certificate Revocation List}{yes}                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsCertificateRevocationList`\                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Cipher List}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsCipherList`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS DH File}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsDhFile`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Enable}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsEnable`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Key}{yes}                                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsKey`\                                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS PSK Enable}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsPskEnable`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS PSK Require}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsPskRequire`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Require}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsRequire`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageTLS Verify Peer}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/TlsVerifyPeer`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageVer Id}{yes}                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/VerId`\                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                /home/joergs/git/bareos/bareos-18.2/regress/working *(platform specific)*                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdStorageWorking Directory}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/storage/WorkingDirectory`\                                                                                                                                                                                                                                                                                                                   
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Sd}{Storage}{Allow Bandwidth Bursting}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Auto XFlate On Replication}{}{13.4.0}{%
-   This directive controls the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
-   plugin when replicating data inside one or
-   between two storage daemons (Migration/Copy Jobs). Normally the storage daemon will
-   use the autoinflate/autodeflate setting of the device when reading and writing
-   data to it which could mean that while reading it inflates the compressed data
-   and the while writing the other deflates it again. If you just want the data to
-   be exactly the same e.g. don't perform any on the fly uncompression and compression
-   while doing the replication of data you can set this option to no and it will
-   override any setting on the device for doing auto inflation/deflation when doing
-   data replication. This will not have any impact on any normal backup or restore jobs.
-   }
 
-\defDirective{Sd}{Storage}{Client Connect Wait}{}{}{%
-   This directive defines an interval of time in seconds that
-   the Storage daemon will wait for a Client (the File daemon)
-   to connect.  Be aware that the
-   longer the Storage daemon waits for a Client, the more
-   resources will be tied up.
-   }
 
-\defDirective{Sd}{Storage}{Collect Device Statistics}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Collect Job Statistics}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Compatible}{}{}{%
-   This directive enables the compatible mode of the storage daemon. In
-   this mode the storage daemon will try to write the storage data in a
-   compatible way with Bacula of which Bareos is a fork. This only works
-   for the data streams both share and not for any new datastreams which
-   are Bareos specific. Which may be read when used by a Bareos storage
-   daemon but might not be understood by any of the Bacula components
-   (dir/sd/fd).
 
-   The default setting of this directive was changed to no since Bareos \sinceVersion{sd}{Compatible = no}{15.2.0}.
-   }
 
-\defDirective{Sd}{Storage}{Description}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Device Reserve By Media Type}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{FD Connect Timeout}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Heartbeat Interval}{}{}{%
-   \index[general]{Broken pipe}%
-   This directive defines an interval of time in seconds.  When
-   the Storage daemon is waiting for the operator to mount a
-   tape, each time interval, it will send a heartbeat signal to
-   the File daemon.  The default interval is zero which disables
-   the heartbeat.  This feature is particularly useful if you
-   have a router that does not follow Internet
-   standards and times out an valid connection after a short
-   duration despite the fact that keepalive is set.  This usually
-   results in a broken pipe error message.
-   }
 
-\defDirective{Sd}{Storage}{Maximum Bandwidth Per Job}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Maximum Concurrent Jobs}{}{}{%
-   This directive specifies the maximum number of Jobs that may run
-   concurrently. Each contact from the Director (e.g.  status request, job start
-   request) is considered as a Job, so if you want to be able to do a \bcommand{status}{}
-   request in the console at the same time as a Job is running, you
-   will need to set this value greater than 1.  To run simultaneous Jobs,
-   you will need to set a number of other directives in the Director's
-   configuration file.  Which ones you set depend on what you want, but you
-   will almost certainly need to set the \linkResourceDirective{Dir}{Storage}{Maximum Concurrent Jobs}.
-   Please refer to the \nameref{ConcurrentJobs} chapter.
-   }
 
-\defDirective{Sd}{Storage}{Maximum Network Buffer Size}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Messages}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Name}{}{}{%
-   Specifies the Name of the Storage daemon.
-   }
 
-\defDirective{Sd}{Storage}{NDMP Address}{}{}{%
-   This directive is optional, and if it is specified, it will cause the
-   Storage daemon server (for NDMP Tape Server connections) to bind
-   to the specified {\bf IP-Address}, which is either a domain name or an
-   IP address specified as a dotted quadruple.  If this directive is not
-   specified, the Storage daemon will bind to any available address (the
-   default).
-   }
 
-\defDirective{Sd}{Storage}{NDMP Addresses}{}{}{%
-   Specify the ports and addresses on which the Storage daemon will listen
-   for NDMP Tape Server connections.  Normally, the default is sufficient and you
-   do not need to specify this directive.
-   }
 
-\defDirective{Sd}{Storage}{NDMP Enable}{}{}{%
-   This directive enables the Native NDMP Tape Agent.
-   }
 
-\defDirective{Sd}{Storage}{NDMP Log Level}{}{}{%
-   This directive sets the loglevel for the NDMP protocol library.
-   }
 
-\defDirective{Sd}{Storage}{NDMP Port}{}{}{%
-   Specifies port number on which the Storage daemon listens for NDMP Tape Server
-   connections.
-   }
 
-\defDirective{Sd}{Storage}{NDMP Snooping}{}{}{%
-   This directive enables the Snooping and pretty printing of NDMP protocol
-   information in debugging mode.
-   }
 
-\defDirective{Sd}{Storage}{Pid Directory}{}{}{%
-   This directive specifies a directory in which the Storage Daemon may put its
-   process Id file files. The process Id file is used to  shutdown Bareos and to
-   prevent multiple copies of  Bareos from running simultaneously.
-   Standard shell expansion of the {\bf directory} is done when the
-   configuration file is read so that values such  as {\bf \$HOME} will be
-   properly expanded.
-   }
 
-\defDirective{Sd}{Storage}{Plugin Directory}{}{}{%
-   This directive specifies a directory in which the Storage Daemon searches for
-   plugins with the name \file{<pluginname>-sd.so} which it will load at startup.
-   }
 
-\defDirective{Sd}{Storage}{Plugin Names}{}{}{%
-   If a \linkResourceDirective{Sd}{Storage}{Plugin Directory} is specified
-   \configdirective{Plugin Names} defines, which \nameref{sdPlugins} get loaded.
 
-   If \configdirective{Plugin Names} is not defined, all plugins get loaded,
-   otherwise the defined ones.
-   }
 
-\defDirective{Sd}{Storage}{Scripts Directory}{}{}{%
-   This directive is currently unused.
-   }
 
-\defDirective{Sd}{Storage}{SD Address}{}{}{%
-   This directive is optional, and if it is specified, it will cause the
-   Storage daemon server (for Director and File daemon connections) to bind
-   to the specified IP-Address, which is either a domain name or an
-   IP address specified as a dotted quadruple.  
-   If this and the \linkResourceDirective{Sd}{Storage}{SD Addresses} directives are not
-   specified, the Storage daemon will bind to any available address (the
-   default).
-   }
 
-\defDirective{Sd}{Storage}{SD Addresses}{}{}{%
-   Specify the ports and addresses on which the Storage daemon will listen for Director connections.
-   Using this directive, you can replace both the 
-   \linkResourceDirective{Sd}{Storage}{SD Port}
-   and
-   \linkResourceDirective{Sd}{Storage}{SD Address}
-   directives.
-   }
 
-\defDirective{Sd}{Storage}{SD Connect Timeout}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{SD Port}{}{}{%
-   Specifies port number on which the Storage daemon  listens for Director
-   connections.
-   }
 
-\defDirective{Sd}{Storage}{SD Source Address}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Secure Erase Command}{}{}{%
-   When files are no longer needed, Bareos will delete (unlink) them.
-   With this directive, it will call the specified command to delete these files. See \nameref{section-SecureEraseCommand} for details.
-   }
 
-\defDirective{Sd}{Storage}{Statistics Collect Interval}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Sub Sys Directory}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Allowed CN}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Authenticate}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS CA Certificate Dir}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS CA Certificate File}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Certificate}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Certificate Revocation List}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS DH File}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Enable}{}{}{%
-   Bareos can be configured to encrypt all its network traffic.
-   Chapter \nameref{TlsDirectives} explains
-   how the Bareos components must be configured to use TLS.
-   }
 
-\defDirective{Sd}{Storage}{TLS Key}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Require}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{TLS Verify Peer}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Ver Id}{}{}{%
-   }
 
-\defDirective{Sd}{Storage}{Working Directory}{}{}{%
-   This directive specifies a directory in which the Storage daemon may put
-   its status files. This directory should be used only  by {\bf Bareos},
-   but may be shared by other Bareos daemons provided the names given to each
-   daemon are unique.
-   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Sd}{Storage}{Absolute Job Timeout}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Allow Bandwidth Bursting}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{Auto XFlate On Replication}{\dt{Boolean}}{}{no}{13.4.0}{}
+
+   \resourceDirective{Sd}{Storage}{Backend Directory}{\dt{DirectoryList}}{}{/home/joergs/git/bareos/bareos-18.2/regress/usr/lib/bareos/backends \textit{\small(platform specific)}}{}{}
+
+   \resourceDirective{Sd}{Storage}{Client Connect Wait}{\dt{Time}}{}{1800}{}{}
+
+   \resourceDirective{Sd}{Storage}{Collect Device Statistics}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{Collect Job Statistics}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{Compatible}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Device Reserve By Media Type}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{FD Connect Timeout}{\dt{Time}}{}{1800}{}{}
+
+   \resourceDirective{Sd}{Storage}{File Device Concurrent Read}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{Heartbeat Interval}{\dt{Time}}{}{0}{}{}
+
+   \resourceDirective{Sd}{Storage}{Log Timestamp Format}{\dt{String}}{}{}{15.2.3}{}
+
+   \resourceDirective{Sd}{Storage}{Maximum Bandwidth Per Job}{\dt{Speed}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Maximum Concurrent Jobs}{\dt{Pint32}}{}{20}{}{}
+
+   \resourceDirective{Sd}{Storage}{Maximum Connections}{\dt{Pint32}}{}{42}{15.2.3}{}
+
+   \resourceDirective{Sd}{Storage}{Maximum Network Buffer Size}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Messages}{\dt{Commonresourceheader}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{NDMP Address}{\dt{Address}}{}{10000}{}{}
+
+   \resourceDirective{Sd}{Storage}{NDMP Addresses}{\dt{Addresses}}{}{10000}{}{}
+
+   \resourceDirective{Sd}{Storage}{NDMP Enable}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{NDMP Log Level}{\dt{Pint32}}{}{4}{}{}
+
+   \resourceDirective{Sd}{Storage}{NDMP Port}{\dt{Port}}{}{10000}{}{}
+
+   \resourceDirective{Sd}{Storage}{NDMP Snooping}{\dt{Boolean}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Storage}{Pid Directory}{\dt{Directory}}{}{/home/joergs/git/bareos/bareos-18.2/regress/working \textit{\small(platform specific)}}{}{}
+
+   \resourceDirective{Sd}{Storage}{Plugin Directory}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Plugin Names}{\dt{PluginNames}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Scripts Directory}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{SD Address}{\dt{Address}}{}{8103}{}{}
+
+   \resourceDirective{Sd}{Storage}{SD Addresses}{\dt{Addresses}}{}{8103}{}{}
+
+   \resourceDirective{Sd}{Storage}{SD Connect Timeout}{\dt{Time}}{}{1800}{}{}
+
+   \resourceDirective{Sd}{Storage}{SD Port}{\dt{Port}}{}{8103}{}{}
+
+   \resourceDirective{Sd}{Storage}{SD Source Address}{\dt{Address}}{}{0}{}{}
+
+   \resourceDirective{Sd}{Storage}{Secure Erase Command}{\dt{String}}{}{}{15.2.1}{Specify command that will be called when bareos unlinks files.}
+
+   \resourceDirective{Sd}{Storage}{Statistics Collect Interval}{\dt{Pint32}}{}{30}{}{}
+
+   \resourceDirective{Sd}{Storage}{Sub Sys Directory}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{TLS Allowed CN}{\dt{StringList}}{}{}{}{"Common Name"s (CNs) of the allowed peer certificates.}
+
+   \resourceDirective{Sd}{Storage}{TLS Authenticate}{\dt{Boolean}}{}{no}{}{Use TLS only to authenticate, not for encryption.}
+
+   \resourceDirective{Sd}{Storage}{TLS CA Certificate Dir}{\dt{Stddirectory}}{}{}{}{Path of a TLS CA certificate directory.}
+
+   \resourceDirective{Sd}{Storage}{TLS CA Certificate File}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS CA certificate(s) file.}
+
+   \resourceDirective{Sd}{Storage}{TLS Certificate}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS certificate.}
+
+   \resourceDirective{Sd}{Storage}{TLS Certificate Revocation List}{\dt{Stddirectory}}{}{}{}{Path of a Certificate Revocation List file.}
+
+   \resourceDirective{Sd}{Storage}{TLS Cipher List}{\dt{String}}{}{}{}{List of valid TLS Ciphers.}
+
+   \resourceDirective{Sd}{Storage}{TLS DH File}{\dt{Stddirectory}}{}{}{}{Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.}
+
+   \resourceDirective{Sd}{Storage}{TLS Enable}{\dt{Boolean}}{}{no}{}{Enable TLS support.}
+
+   \resourceDirective{Sd}{Storage}{TLS Key}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".}
+
+   \resourceDirective{Sd}{Storage}{TLS PSK Enable}{\dt{Boolean}}{}{yes}{}{Enable TLS-PSK support.}
+
+   \resourceDirective{Sd}{Storage}{TLS PSK Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".}
+
+   \resourceDirective{Sd}{Storage}{TLS Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets "TLS Enable = yes".}
+
+   \resourceDirective{Sd}{Storage}{TLS Verify Peer}{\dt{Boolean}}{}{no}{}{If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the "TLS Allowed CN" list.}
+
+   \resourceDirective{Sd}{Storage}{Ver Id}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Sd}{Storage}{Working Directory}{\dt{Directory}}{}{/home/joergs/git/bareos/bareos-18.2/regress/working \textit{\small(platform specific)}}{}{}
+
+   \end{description}
 
 The following is a typical Storage daemon storage resource definition.
 
@@ -297,75 +540,188 @@ Director Resource
 
 The Director resource specifies the Name of the Director which is permitted to use the services of the Storage daemon. There may be multiple Director resources. The Director Name and Password must match the corresponding values in the Director’s configuration file.
 
-\defDirective{Sd}{Director}{Description}{}{}{%
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorDescription}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/Description`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Autopassword`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorKey Encryption Key}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/KeyEncryptionKey`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Speed`                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorMaximum Bandwidth Per Job}{yes}                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/MaximumBandwidthPerJob`\                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorMonitor}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/Monitor`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorName}{yes}                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/director/Name`\ **                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               **= :strong:`Autopassword`**                                                                                                                                                                                                                      **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorPassword}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/director/Password`\ **                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Allowed CN}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsAllowedCn`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Authenticate}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsAuthenticate`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS CA Certificate Dir}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsCaCertificateDir`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS CA Certificate File}{yes}                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsCaCertificateFile`\                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Certificate}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsCertificate`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Certificate Revocation List}{yes}                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsCertificateRevocationList`\                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Cipher List}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsCipherList`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS DH File}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsDhFile`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Enable}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsEnable`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Key}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsKey`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS PSK Enable}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsPskEnable`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS PSK Require}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsPskRequire`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Require}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsRequire`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDirectorTLS Verify Peer}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/director/TlsVerifyPeer`\                                                                                                                                                                                                                                                                                                                    
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Sd}{Director}{Key Encryption Key}{}{}{%
-   This key is used to encrypt the Security Key that is exchanged between
-   the Director and the Storage Daemon for supporting Application Managed
-   Encryption (AME). For security reasons each Director should have a
-   different Key Encryption Key.
-   }
 
-\defDirective{Sd}{Director}{Maximum Bandwidth Per Job}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{Monitor}{}{}{%
-   If Monitor is set to {\bf no} (default), this director will have full
-   access to this Storage daemon.  If Monitor is set to {\bf yes}, this
-   director will only be able to fetch the current status of this Storage
-   daemon.
 
-   Please note that if this director is being used by a Monitor, we highly
-   recommend to set this directive to {\bf yes} to avoid serious security
-   problems.
-   }
 
-\defDirective{Sd}{Director}{Name}{}{}{%
-   Specifies the Name of the Director allowed to connect  to the Storage daemon.
-   This directive is required.
-   }
 
-\defDirective{Sd}{Director}{Password}{}{}{%
-   Specifies the password that must be supplied by the above named  Director.
-   This directive is required.
-   }
 
-\defDirective{Sd}{Director}{TLS Allowed CN}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS Authenticate}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS CA Certificate Dir}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS CA Certificate File}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS Certificate}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS Certificate Revocation List}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS DH File}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS Enable}{}{}{%
-   Bareos can be configured to encrypt all its network traffic.
-   Chapter \nameref{TlsDirectives} explains
-   how the Bareos components must be configured to use TLS.
-   }
 
-\defDirective{Sd}{Director}{TLS Key}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS Require}{}{}{%
-   }
 
-\defDirective{Sd}{Director}{TLS Verify Peer}{}{}{%
-   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Sd}{Director}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Sd}{Director}{Key Encryption Key}{\dt{Autopassword}}{}{}{}{}
+
+   \resourceDirective{Sd}{Director}{Maximum Bandwidth Per Job}{\dt{Speed}}{}{}{}{}
+
+   \resourceDirective{Sd}{Director}{Monitor}{\dt{Boolean}}{}{}{}{}
+
+   \resourceDirective{Sd}{Director}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Director}{Password}{\dt{Autopassword}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Director}{TLS Allowed CN}{\dt{StringList}}{}{}{}{"Common Name"s (CNs) of the allowed peer certificates.}
+
+   \resourceDirective{Sd}{Director}{TLS Authenticate}{\dt{Boolean}}{}{no}{}{Use TLS only to authenticate, not for encryption.}
+
+   \resourceDirective{Sd}{Director}{TLS CA Certificate Dir}{\dt{Stddirectory}}{}{}{}{Path of a TLS CA certificate directory.}
+
+   \resourceDirective{Sd}{Director}{TLS CA Certificate File}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS CA certificate(s) file.}
+
+   \resourceDirective{Sd}{Director}{TLS Certificate}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS certificate.}
+
+   \resourceDirective{Sd}{Director}{TLS Certificate Revocation List}{\dt{Stddirectory}}{}{}{}{Path of a Certificate Revocation List file.}
+
+   \resourceDirective{Sd}{Director}{TLS Cipher List}{\dt{String}}{}{}{}{List of valid TLS Ciphers.}
+
+   \resourceDirective{Sd}{Director}{TLS DH File}{\dt{Stddirectory}}{}{}{}{Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.}
+
+   \resourceDirective{Sd}{Director}{TLS Enable}{\dt{Boolean}}{}{no}{}{Enable TLS support.}
+
+   \resourceDirective{Sd}{Director}{TLS Key}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".}
+
+   \resourceDirective{Sd}{Director}{TLS PSK Enable}{\dt{Boolean}}{}{yes}{}{Enable TLS-PSK support.}
+
+   \resourceDirective{Sd}{Director}{TLS PSK Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".}
+
+   \resourceDirective{Sd}{Director}{TLS Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets "TLS Enable = yes".}
+
+   \resourceDirective{Sd}{Director}{TLS Verify Peer}{\dt{Boolean}}{}{no}{}{If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the "TLS Allowed CN" list.}
+
+   \end{description}
 
 The following is an example of a valid Director resource definition:
 
@@ -390,39 +746,68 @@ NDMP Resource
 
 The NDMP Resource specifies the authentication details of each NDMP client. There may be multiple NDMP resources for a single Storage daemon. In general, the properties specified within the NDMP resource are specific to one client.
 
-\defDirective{Sd}{Ndmp}{Auth Type}{}{}{%
-   Specifies the authentication type that must be supplied by the above named NDMP Client.
-   This directive is required.
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`AuthType`                                                                                                 None                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdNdmpAuth Type}{yes}                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/ndmp/AuthType`\                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdNdmpDescription}{yes}                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/ndmp/Description`\                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   4                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdNdmpLog Level}{yes}                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/ndmp/LogLevel`\                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdNdmpName}{yes}                                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/ndmp/Name`\ **                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               **= :strong:`Autopassword`**                                                                                                                                                                                                                      **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdNdmpPassword}{yes}                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/ndmp/Password`\ **                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               **= :strong:`String`**                                                                                                                                                                                                                            **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdNdmpUsername}{yes}                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/ndmp/Username`\ **                                                                                                                                                                                                                                                                                                                          
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-   The following values are allowed:
-   \begin{enumerate}
-   \item None - Use no password
-   \item Clear - Use clear text password
-   \item MD5 - Use MD5 hashing
-   \end{enumerate}
-   }
 
-\defDirective{Sd}{Ndmp}{Description}{}{}{%
-   }
 
-\defDirective{Sd}{Ndmp}{Log Level}{}{}{%
-   Specifies the NDMP Loglevel which overrides the global NDMP loglevel for this client.
-   }
 
-\defDirective{Sd}{Ndmp}{Name}{}{}{%
-   Specifies the name of the NDMP Client allowed to connect to the Storage daemon.
-   This directive is required.
-   }
 
-\defDirective{Sd}{Ndmp}{Password}{}{}{%
-   Specifies the password that must be supplied by the above named NDMP Client.
-   This directive is required.
-   }
 
-\defDirective{Sd}{Ndmp}{Username}{}{}{%
-   Specifies the username that must be supplied by the above named NDMP Client.
-   This directive is required.
-   }
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Sd}{Ndmp}{Auth Type}{\dt{AuthType}}{}{None}{}{}
+
+   \resourceDirective{Sd}{Ndmp}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Sd}{Ndmp}{Log Level}{\dt{Pint32}}{}{4}{}{}
+
+   \resourceDirective{Sd}{Ndmp}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Ndmp}{Password}{\dt{Autopassword}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Ndmp}{Username}{\dt{String}}{required}{}{}{}
+
+   \end{description}
 
 .. _StorageResourceDevice:
 
@@ -433,857 +818,608 @@ Device Resource
 
 The Device Resource specifies the details of each device (normally a tape drive) that can be used by the Storage daemon. There may be multiple Device resources for a single Storage daemon. In general, the properties specified within the Device resource are specific to the Device.
 
-\defDirective{Sd}{Device}{Alert Command}{}{}{%
-   This specifies an external program to be called at the
-   completion of each Job after the device is released.  The purpose of this
-   command is to check for Tape Alerts, which are present when something is
-   wrong with your tape drive (at least for most modern tape drives).  The same
-   substitution characters that may be specified in the Changer Command may
-   also be used in this string.  For more information, see the
-   \nameref{AutochangersChapter} chapter.
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAlert Command}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AlertCommand`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAlways Open}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AlwaysOpen`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               **= :strong:`Strname`**                                                                                                                                                                                                                           **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceArchive Device}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/device/ArchiveDevice`\ **                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`IoDirection`                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAuto Deflate}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AutoDeflate`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`CompressionAlgorithm`                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAuto Deflate Algorithm}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AutoDeflateAlgorithm`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Pint16`                                                                                                   6                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAuto Deflate Level}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AutoDeflateLevel`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`IoDirection`                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAuto Inflate}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AutoInflate`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAuto Select}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AutoSelect`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAutochanger}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/Autochanger`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceAutomatic Mount}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/AutomaticMount`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceBackward Space File}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/BackwardSpaceFile`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceBackward Space Record}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/BackwardSpaceRecord`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceBlock Checksum}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/BlockChecksum`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceBlock Positioning}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/BlockPositioning`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceBsf At Eom}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/BsfAtEom`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceChanger Command}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/ChangerCommand`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceChanger Device}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/ChangerDevice`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceCheck Labels}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/CheckLabels`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceClose On Poll}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/CloseOnPoll`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceCollect Statistics}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/CollectStatistics`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDescription}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/Description`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDevice Options}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/DeviceOptions`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`DeviceType`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDevice Type}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/DeviceType`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDiagnostic Device}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/DiagnosticDevice`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDrive Crypto Enabled}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/DriveCryptoEnabled`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Pint16`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDrive Index}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/DriveIndex`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceDrive Tape Alert Enabled}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/DriveTapeAlertEnabled`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceFast Forward Space File}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/FastForwardSpaceFile`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceForward Space File}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/ForwardSpaceFile`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceForward Space Record}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/ForwardSpaceRecord`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               *= :strong:`Strname`*                                                                                                                                                                                                                             *deprecated*
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceFree Space Command}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+*:config:option:`sd/device/FreeSpaceCommand`\ *                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceHardware End Of File}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/HardwareEndOfFile`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceHardware End Of Medium}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/HardwareEndOfMedium`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   64512                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceLabel Block Size}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/LabelBlockSize`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceLabel Media}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/LabelMedia`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Label`                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceLabel Type}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/LabelType`\                                                                                                                                                                                                                                                                                                                           
+.. raw:: latex                                                                                                               = :strong:`MaxBlocksize`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Block Size}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumBlockSize`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     300                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Changer Wait}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumChangerWait`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Concurrent Jobs}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumConcurrentJobs`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Size64`                                                                                                   1000000000                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum File Size}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumFileSize`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Size64`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Job Spool Size}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumJobSpoolSize`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Network Buffer Size}{yes}                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumNetworkBufferSize`\                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   1                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Open Volumes}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumOpenVolumes`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     300                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Open Wait}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumOpenWait`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               *= :strong:`Size64`*                                                                                                                                                                                                                              *deprecated*
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Part Size}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+*:config:option:`sd/device/MaximumPartSize`\ *                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     300                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Rewind Wait}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumRewindWait`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Size64`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Spool Size}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MaximumSpoolSize`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               *= :strong:`Size64`*                                                                                                                                                                                                                              *deprecated*
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMaximum Volume Size}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+*:config:option:`sd/device/MaximumVolumeSize`\ *                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               **= :strong:`Strname`**                                                                                                                                                                                                                           **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMedia Type}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/device/MediaType`\ **                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMinimum Block Size}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MinimumBlockSize`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMount Command}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MountCommand`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceMount Point}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/MountPoint`\                                                                                                                                                                                                                                                                                                                          
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceName}{yes}                                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`sd/device/Name`\ **                                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceNo Rewind On Close}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/NoRewindOnClose`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceOffline On Unmount}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/OfflineOnUnmount`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceQuery Crypto Status}{yes}                                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/QueryCryptoStatus`\                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceRandom Access}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/RandomAccess`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceRemovable Media}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/RemovableMedia`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceRequires Mount}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/RequiresMount`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceSpool Directory}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/SpoolDirectory`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceTwo Eof}{yes}                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/TwoEof`\                                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Strname`                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceUnmount Command}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/UnmountCommand`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Bit`                                                                                                      yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceUse Mtiocget}{yes}                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/UseMtiocget`\                                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Size64`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceVolume Capacity}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/VolumeCapacity`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     300                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceVolume Poll Interval}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`sd/device/VolumePollInterval`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               *= :strong:`Strname`*                                                                                                                                                                                                                             *deprecated*
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedSdDeviceWrite Part Command}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+*:config:option:`sd/device/WritePartCommand`\ *                                                                                                                                                                                                                                                                                                                
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-   Note, it is not necessary to have an autochanger to use this command. The
-   example below uses the \command{tapeinfo} program that comes with the \command{mtx}
-   package, but it can be used on any tape drive. However, you will need to
-   specify a \linkResourceDirective{Sd}{Device}{Changer Device} directive
-   so that the generic SCSI device name can be edited into the command (with
-   the \%c).
 
-   An example of the use of this command to print Tape Alerts  in the Job report
-   is:
-   \bconfigInput{config/SdDeviceAlertCommand1.conf}
 
-   and an example output when there is a problem could be:
-   \bconfigInput{config/SdDeviceAlertCommand2.conf}
-   }
 
-\defDirective{Sd}{Device}{Always Open}{}{}{%
-   If {\bf Yes}, Bareos will always keep the device open unless
-   specifically {\bf unmounted} by the Console program.  This permits
-   Bareos to ensure that the tape drive is always available, and properly
-   positioned. If you set
-   {\bf AlwaysOpen} to {\bf no} {\bf Bareos} will only open the
-   drive when necessary, and at the end of the Job if no other Jobs are
-   using the drive, it will be freed.  The next time Bareos wants to append
-   to a tape on a drive that was freed, Bareos will rewind the tape and
-   position it to the end.  To avoid unnecessary tape positioning and to
-   minimize unnecessary operator intervention, it is highly recommended
-   that {\bf Always Open = yes}.  This also ensures that the drive is
-   available when Bareos needs it.
 
-   If you have {\bf Always Open = yes} (recommended) and you want to use the
-   drive for something else, simply use the {\bf unmount} command in the
-   Console program to release the drive. However, don't forget to remount the
-   drive with {\bf mount} when the drive is available or the next Bareos job
-   will block.
 
-   For File storage, this directive is ignored. For a FIFO storage  device, you
-   must set this to {\bf No}.
 
-   Please note that if you set this directive to {\bf No} Bareos  will release
-   the tape drive between each job, and thus the next job  will rewind the tape
-   and position it to the end of the data. This  can be a very time consuming
-   operation. In addition, with this directive set to no, certain multiple
-   drive autochanger operations will fail.  We strongly recommend to keep
-   {\bf Always Open} set to {\bf Yes}
-   }
 
-\defDirective{Sd}{Device}{Archive Device}{}{}{%
-   Specifies where to read and write the backup data.
-   The type of the Archive Device can be specified by the \linkResourceDirective{Sd}{Device}{Device Type} directive.
-   If Device Type is not specified, Bareos tries to guess the Device Type
-   accordingly to the type of the specified Archive Device file type.
 
-   There are different types that are supported:
-   \begin{description}
-       \item[device] Usually the device file
-   name of a removable storage device (tape drive),  for example \verb|path:/dev/nst0|
-   or \verb|path:/dev/rmt/0mbn|, preferably in the "non-rewind" variant.
-   In addition, on systems such as Sun, which have multiple tape
-   access methods, you must be sure to specify to use Berkeley I/O
-   conventions with the device.  The {\bf b} in the Solaris (Sun) archive
-   specification \verb|path:/dev/rmt/0mbn| is what is needed in this case.
-   Bareos does not support SysV tape drive behavior.
 
-       \item[directory] If a directory is specified, it is used as file storage.
-   The directory must be existing and be specified as absolute path.
-   Bareos will write to file storage in the specified
-   directory and the filename used will be the Volume name as specified in the
-   Catalog.  If you want to write into more than one directory (i.e.  to spread
-   the load to different disk drives), you will need to define two Device
-   resources, each containing an Archive Device with a different directory.
 
-       \item[fifo] \label{SetupFifo}
-   A FIFO is a special kind of file that connects two programs
-   via kernel memory. If a FIFO device is specified  for a backup operation, you
-   must have a program that reads what Bareos  writes into the FIFO. When the
-   Storage daemon starts the job,
-   it  will wait for \linkResourceDirective{Sd}{Device}{Maximum Open Wait} seconds
-   for the read program to start reading, and then time it out and  terminate
-   the job. As a consequence, it is best to start the read  program at the
-   beginning of the job perhaps with the  \linkResourceDirective{Dir}{Job}{Run Before Job} directive.
-   For this kind of device,
-   you always want to specify \linkResourceDirective{Sd}{Device}{Always Open} = no,
-   because you want the Storage daemon to open it only  when a job starts.
-   Since a FIFO is a one way device, Bareos will not attempt
-   to read  a label of a FIFO device, but will simply write on it. To create a
-   FIFO Volume in the catalog, use the {\bf add} command rather than the {\bf
-   label} command to avoid attempting to write a label.
 
-   \bconfigInput{config/SdDeviceArchiveDevice1.conf}
 
-   During a restore operation, if the Archive Device is a FIFO, Bareos  will
-   attempt to read from the FIFO, so you must have an external program  that
-   writes into the FIFO. 
-   Bareos will wait \linkResourceDirective{Sd}{Device}{Maximum Open Wait} seconds  for the
-   program to begin writing and will then time it out and  terminate the job. As
-   noted above, you may use the \linkResourceDirective{Dir}{Job}{Run Before Job} to start the writer program
-   at the beginning of the job.
 
-   A FIFO device can also be used to test your configuration, see the \ilink{Howto section}{TestUsingFifoDevice}.
 
-       \item[GlusterFS Storage] \label{GlusterArchiveType}
-       don't use this directive,
-       but only \linkResourceDirective{Sd}{Device}{Device Type} and \linkResourceDirective{Sd}{Device}{Device Options}
-       (this behavior have changed with \sinceVersion{Sd}{Device Options}{15.2.0}).
-       
-      \item[Ceph Object Store] \label{CephArchiveType}
-       don't use this directive,
-       but only \linkResourceDirective{Sd}{Device}{Device Type} and \linkResourceDirective{Sd}{Device}{Device Options}.
-       (this behavior have changed with \sinceVersion{Sd}{Device Options}{15.2.0}).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Sd}{Device}{Alert Command}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Always Open}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Archive Device}{\dt{Strname}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Auto Deflate}{\dt{IoDirection}}{}{}{13.4.0}{}
+
+   \resourceDirective{Sd}{Device}{Auto Deflate Algorithm}{\dt{CompressionAlgorithm}}{}{}{13.4.0}{}
+
+   \resourceDirective{Sd}{Device}{Auto Deflate Level}{\dt{Pint16}}{}{6}{13.4.0}{}
+
+   \resourceDirective{Sd}{Device}{Auto Inflate}{\dt{IoDirection}}{}{}{13.4.0}{}
+
+   \resourceDirective{Sd}{Device}{Auto Select}{\dt{Boolean}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Autochanger}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Automatic Mount}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Backward Space File}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Backward Space Record}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Block Checksum}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Block Positioning}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Bsf At Eom}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Changer Command}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Changer Device}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Check Labels}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Close On Poll}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Collect Statistics}{\dt{Boolean}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Description}{\dt{String}}{}{}{}{The Description directive provides easier human recognition, but is not used by Bareos directly.}
+
+   \resourceDirective{Sd}{Device}{Device Options}{\dt{String}}{}{}{15.2.0}{}
+
+   \resourceDirective{Sd}{Device}{Device Type}{\dt{DeviceType}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Diagnostic Device}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Drive Crypto Enabled}{\dt{Boolean}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Drive Index}{\dt{Pint16}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Drive Tape Alert Enabled}{\dt{Boolean}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Fast Forward Space File}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Forward Space File}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Forward Space Record}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Free Space Command}{\dt{Strname}}{}{}{deprecated}{}
+
+   \resourceDirective{Sd}{Device}{Hardware End Of File}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Hardware End Of Medium}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Label Block Size}{\dt{Pint32}}{}{64512}{}{}
+
+   \resourceDirective{Sd}{Device}{Label Media}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Label Type}{\dt{Label}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Block Size}{\dt{MaxBlocksize}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Changer Wait}{\dt{Time}}{}{300}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Concurrent Jobs}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum File Size}{\dt{Size64}}{}{1000000000}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Job Spool Size}{\dt{Size64}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Network Buffer Size}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Open Volumes}{\dt{Pint32}}{}{1}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Open Wait}{\dt{Time}}{}{300}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Part Size}{\dt{Size64}}{}{}{deprecated}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Rewind Wait}{\dt{Time}}{}{300}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Spool Size}{\dt{Size64}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Maximum Volume Size}{\dt{Size64}}{}{}{deprecated}{}
+
+   \resourceDirective{Sd}{Device}{Media Type}{\dt{Strname}}{required}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Minimum Block Size}{\dt{Pint32}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Mount Command}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Mount Point}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Name}{\dt{Name}}{required}{}{}{Unique identifier of the resource.}
+
+   \resourceDirective{Sd}{Device}{No Rewind On Close}{\dt{Boolean}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Offline On Unmount}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Query Crypto Status}{\dt{Boolean}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Random Access}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Removable Media}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Requires Mount}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Spool Directory}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Two Eof}{\dt{Bit}}{}{no}{}{}
+
+   \resourceDirective{Sd}{Device}{Unmount Command}{\dt{Strname}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Use Mtiocget}{\dt{Bit}}{}{yes}{}{}
+
+   \resourceDirective{Sd}{Device}{Volume Capacity}{\dt{Size64}}{}{}{}{}
+
+   \resourceDirective{Sd}{Device}{Volume Poll Interval}{\dt{Time}}{}{300}{}{}
+
+   \resourceDirective{Sd}{Device}{Write Part Command}{\dt{Strname}}{}{}{deprecated}{}
+
    \end{description}
-   }
-
-\defDirective{Sd}{Device}{Auto Deflate}{}{13.4.0}{%
-   This is a parameter used by \nameref{plugin-autoxflate-sd}
-    which allow you to transform
-   a non compressed piece of data into a compressed piece of data on the storage daemon.
-   e.g. Storage Daemon compression. You can either enable compression on the client
-   and use the CPU cyclces there to compress your data with one of the supported
-   compression algorithms. The value of this parameter specifies a so called io-direction
-   currently you can use the following io-directions:
-
-   \begin{itemize}
-   \item in - compress data streams while reading the data from a device.
-   \item out - compress data streams while writing the data to a device.
-   \item both - compress data streams both when reading and writing to a device.
-   \end{itemize}
-
-   Currently only plain data streams are compressed (so things that are already
-   compressed or encrypted will not be considered for compression.) Also meta-data
-   streams are not compressed. The compression is done in a way that the stream is
-   transformed into a native compressed data stream. So if you enable this and
-   send the data to a filedaemon it will know its a compressed stream and will
-   do the decompression itself. This also means that you can turn this option on
-   and off at any time without having any problems with data already written.
-
-   This option could be used if your clients doesn't have enough power to do
-   the compression/decompression itself and you have enough network bandwidth.
-   Or when your filesystem doesn't have the option to transparently compress
-   data you write to it but you want the data to be compressed when written.
-   }
-
-\defDirective{Sd}{Device}{Auto Deflate Algorithm}{}{13.4.0}{%
-   This option specifies the compression algorithm used for the autodeflate option
-   which is performed by the autoxflate-sd plugin. The algorithms supported are:
-   \begin{itemize}
-   \item GZIP - gzip level 1--9
-   \item LZO
-   \item LZFAST
-   \item LZ4
-   \item LZ4HC
-   \end{itemize}
-   }
-
-\defDirective{Sd}{Device}{Auto Deflate Level}{}{13.4.0}{%
-   This option specifies the level to be used when compressing when you select a
-   compression algorithm that has different levels.
-   }
-
-\defDirective{Sd}{Device}{Auto Inflate}{}{13.4.0}{%
-   This is a parameter used by \nameref{plugin-autoxflate-sd}
-   which allow you to transform
-   a compressed piece of data into a non compressed piece of data on the storage daemon.
-   e.g. Storage Daemon decompression. You can either enable decompression on the client
-   and use the CPU cyclces there to decompress your data with one of the supported
-   compression algorithms. The value of this parameter specifies a so called io-direction
-   currently you can use the following io-directions:
-
-   \begin{itemize}
-   \item in - decompress data streams while reading the data from a device.
-   \item out - decompress data streams while writing the data to a device.
-   \item both - decompress data streams both when reading and writing to a device.
-   \end{itemize}
-
-   This option allows you to write uncompressed data to for instance a tape drive
-   that has hardware compression even when you compress your data on the client with
-   for instance a low cpu load compression method (LZ4 for instance) to transfer
-   less data over the network. It also allows you to restore data in a compression
-   format that the client might not support but the storage daemon does. This only
-   works on normal compressed datastreams not on encrypted datastreams or meta data
-   streams.
-   }
-
-\defDirective{Sd}{Device}{Auto Select}{}{}{%
-   If this directive is set to {\bf yes}, and the Device
-   belongs to an autochanger, then when the Autochanger is referenced
-   by the Director, this device can automatically be selected. If this
-   directive is set to {\bf no}, then the Device can only be referenced
-   by directly using the Device name in the Director. This is useful
-   for reserving a drive for something special such as a high priority
-   backup or restore operations.
-   }
-
-\defDirective{Sd}{Device}{Autochanger}{}{}{%
-   If set to \parameter{yes}, this device belongs to an automatic tape changer, and you
-   must specify an {\bf Autochanger} resource that points to this {\bf
-   Device} resource.
-
-   If set to \parameter{no},
-   the volume must be manually changed.
-
-   In the \bareosDir, the directive \linkResourceDirective{Dir}{Storage}{Auto Changer} should be set in correspondence.
-   }
-
-\defDirective{Sd}{Device}{Automatic Mount}{}{}{%
-   If \parameter{yes}, permits the daemon to examine the device to
-   determine if it contains a Bareos labeled volume.  This is done
-   initially when the daemon is started, and then at the beginning of each
-   job.  This directive is particularly important if you have set
-   \linkResourceDirectiveValue{Sd}{Device}{Always Open}{no}
-   because it permits Bareos to attempt to read the
-   device before asking the system operator to mount a tape.  However,
-   please note that the tape must be mounted before the job begins.
-   }
-
-\defDirective{Sd}{Device}{Backward Space File}{}{}{%
-   If {\bf Yes}, the archive device supports the {\bf MTBSF} and  {\bf MTBSF
-     ioctl}s to backspace over an end of file mark and to the  start of a file. If
-     {\bf No}, these calls are not used and the  device must be rewound and
-     advanced forward to the desired position.
-   }
-
-\defDirective{Sd}{Device}{Backward Space Record}{}{}{%
-   If {\bf Yes}, the archive device supports the {\tt MTBSR ioctl} to backspace
-   records. If {\bf No}, this call is not used and the device must be rewound
-   and advanced forward to the desired position.
-   This function if enabled is used at the end of a
-   Volume after writing the end of file and any ANSI/IBM labels to determine
-   whether or not the last block was written correctly. If you turn this
-   function off, the test will not be done. This causes no harm as the re-read
-   process is precautionary rather than required.
-   }
-
-\defDirective{Sd}{Device}{Block Checksum}{}{}{%
-   You may turn off the Block Checksum (CRC32) code that Bareos uses when
-   writing blocks to a Volume. Doing so can reduce the Storage daemon CPU usage
-   slightly.  It will also permit Bareos to read a Volume that has corrupted
-   data.
-
-   It is not recommend to turn this off, particularly on older tape
-   drives or for disk Volumes where doing so may allow corrupted data to go
-   undetected.
-   }
-
-\defDirective{Sd}{Device}{Block Positioning}{}{}{%
-   This directive tells Bareos not to use block positioning when doing restores.
-   Turning this directive off can cause Bareos to be {\bf extremely} slow
-   when restoring files.  You might use this directive if you wrote your
-   tapes with Bareos in variable block mode (the default), but your drive
-   was in fixed block mode.
-   }
-
-\defDirective{Sd}{Device}{Bsf At Eom}{}{}{%
-   If \parameter{no}, no special action is taken by Bareos with the End
-   of Medium (end of tape) is reached because the tape will be positioned after
-   the last EOF tape mark, and Bareos can append to the tape as desired.
-   However, on some systems, such as FreeBSD, when Bareos reads the End of
-   Medium (end of tape), the tape will be positioned after the second EOF tape
-   mark (two successive EOF marks indicated End of Medium). If Bareos appends
-   from that point, all the appended data will be lost. The solution for such
-   systems is to specify \linkResourceDirectiveValue{Sd}{Device}{Bsf At Eom}{yes}
-   which causes Bareos to backspace over
-   the second EOF mark. Determination of whether or not you need this directive
-   is done using the {\bf test} command in the \command{btape} program.
-   }
-
-\defDirective{Sd}{Device}{Changer Command}{}{}{%
-   This directive can be specified if this device is used with an autochanger
-   and you want to overwrite the default \linkResourceDirective{Sd}{Autochanger}{Changer Command}.
-   Normally, this directive will be specified only in the \nameref{StorageResourceAutochanger},
-   which is then used for all devices.  However, you may also specify
-   the different Changer Command in each Device resource.
-   }
-
-\defDirective{Sd}{Device}{Changer Device}{}{}{%
-   This directive should be specified if
-   \begin{itemize}
-     \item this device is used with an autochanger
-           and you want to overwrite the default \linkResourceDirective{Sd}{Autochanger}{Changer Device} or
-     \item if you have a standard tape drive and want to use the \linkResourceDirective{Sd}{Device}{Alert Command}.
-   \end{itemize}
-
-   The specified device must be a generic SCSI device.
-
-   For details, see the \nameref{AutochangersChapter} chapter.
-   }
-
-\defDirective{Sd}{Device}{Check Labels}{}{}{%
-   If you intend to read ANSI or IBM labels, this \textbf{must} be set.
-   Even if the volume is not ANSI labeled, you can set this to yes, and Bareos will check the
-   label type. Without this directive set to yes, Bareos will assume that
-   labels are of Bareos type and will not check for ANSI or IBM labels.
-   In other words, if there is a possibility of Bareos encountering an
-   ANSI/IBM label, you must set this to yes.
-   }
-
-\defDirective{Sd}{Device}{Close On Poll}{}{}{%
-   If {\bf Yes}, Bareos close the device (equivalent to  an unmount except no
-   mount is required) and reopen it at each  poll. Normally this is not too
-   useful unless you have the  {\bf Offline on Unmount} directive set, in which
-   case the  drive will be taken offline preventing wear on the tape  during any
-   future polling. Once the operator inserts a new  tape, Bareos will recognize
-   the drive on the next poll and  automatically continue with the backup.
-   Please see above for more details.
-   }
-
-\defDirective{Sd}{Device}{Collect Statistics}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Description}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Device Options}{}{}{%
-   Some \linkResourceDirective{Sd}{Device}{Device Type} require additional configuration.
-   This can be specified in this directive, e.g. for
-   \begin{description}
-       \item [\nameref{SdBackendDroplet}]
-       \item [\nameref{SdBackendGfapi}]
-       \item [\nameref{SdBackendRados}]
-   \end{description}
-
-   Before the Device Options directive have been introduced,
-   these options have to be configured in the \linkResourceDirective{Sd}{Device}{Archive Device} directive.
-   This behavior have changed with \sinceVersion{sd}{Device Options}{15.2.0}.
-   }
-
-\defDirective{Sd}{Device}{Device Type}{}{}{%
-   The Device Type specification allows you to explicitly define the kind of device you want to use.
-   It may be one of the following:
-   \begin{description}
-   \item [\sdBackend{Tape}{}] is used to access tape device and thus has sequential access. Tape devices
-     are controlled using ioctl() calls.
-   \item [\sdBackend{File}{}]
-     tells Bareos that the device is a file. It may either be a
-     file defined on fixed medium or a removable filesystem such as
-     USB.  All files must be random access devices.
-   \item [\sdBackend{Fifo}{}] is a first-in-first-out sequential access read-only
-     or write-only device.
-   \item [\sdBackend{GFAPI}{GlusterFS}] is used to access a GlusterFS storage.
-     It must be configured using \linkResourceDirective{Sd}{Device}{Device Options}.
-     For details, refer to \nameref{SdBackendGfapi}.
-
-     \sinceVersion{sd}{GlusterFS (gfapi)}{14.2.2}
-   \item [\sdBackend{Rados}{Ceph Object Store}] is used to access a Ceph object store.
-     It must be configured using \linkResourceDirective{Sd}{Device}{Device Options}.
-     For details, refer to  \nameref{SdBackendRados}.
-
-     \sinceVersion{sd}{Ceph (Rados)}{14.2.2}
-   \item [\sdBackend{Droplet}{}] is used to access an object store supported by \package{libdroplet}, most notably S3.
-     For details, refer to \nameref{SdBackendDroplet}.
-
-     \sinceVersion{sd}{Droplet}{17.2.7}
-   \end{description}
-
-   The Device Type directive is not required in all cases.
-   If it is not specified, Bareos will attempt to guess what kind of device has been specified using the
-   \linkResourceDirective{Sd}{Device}{Archive Device} specification supplied.
-   There are several advantages to
-   explicitly specifying the Device Type. First, on some systems, block and
-   character devices have the same type.
-   Secondly, if you explicitly specify the Device Type, the mount point
-   need not be defined until the device is opened. This is the case with
-   most removable devices such as USB.
-   If the Device Type is not explicitly specified, then the mount point
-   must exist when the Storage daemon starts.
-   }
-
-\defDirective{Sd}{Device}{Diagnostic Device}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Drive Crypto Enabled}{}{}{%
-   The default for this directive is {\bf No}. If {\bf Yes} the storage daemon
-   can perform so called Application Managed Encryption (AME) using a special
-   Storage Daemon plugin which loads and clears the Encryption key using the
-   SCSI SPIN/SPOUT protocol.
-   }
-
-\defDirective{Sd}{Device}{Drive Index}{}{}{%
-   The {\bf Drive Index} that you specify is passed
-   to the \linkResourceDirective{Sd}{Device}{Changer Command}.
-   By default, the Drive Index is zero, so if you have only one drive in your
-   autochanger, everything will work normally.  However, if you have
-   multiple drives, you must specify multiple Bareos Device resources (one
-   for each drive).  The first Device should have the Drive Index set to 0,
-   and the second Device Resource should contain a Drive Index set to 1,
-   and so on.  This will then permit you to use two or more drives in your
-   autochanger.
-
-   For details, refer to \nameref{section-MultipleDevices}.
-   }
-
-\defDirective{Sd}{Device}{Drive Tape Alert Enabled}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Fast Forward Space File}{}{}{%
-   If {\bf No}, the archive device is not required to support  keeping track of
-   the file number ({\bf MTIOCGET} ioctl) during  forward space file. If {\bf
-   Yes}, the archive device must support  the {\tt ioctl} {\tt MTFSF} call, which
-   virtually all drivers  support, but in addition, your SCSI driver must keep
-   track of the  file number on the tape and report it back correctly by the
-   {\bf MTIOCGET} ioctl. Note, some SCSI drivers will correctly  forward space,
-   but they do not keep track of the file number or more  seriously, they do not
-   report end of medium.
-   }
-
-\defDirective{Sd}{Device}{Forward Space File}{}{}{%
-   If {\bf Yes}, the archive device must support the {\tt MTFSF  ioctl} to
-   forward space by file marks. If {\bf No}, data  must be read to advance the
-   position on the device.
-   }
-
-\defDirective{Sd}{Device}{Forward Space Record}{}{}{%
-   If {\bf Yes}, the archive device must support the {\bf MTFSR  ioctl} to
-   forward space over records. If {\bf No}, data must  be read in order to
-   advance the position on the device.
-   }
-
-\defDirective{Sd}{Device}{Free Space Command}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Hardware End Of File}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Hardware End Of Medium}{}{}{%
-   All modern (after 1998) tape drives should support this
-   feature. In doubt, use the {\bf btape} program  to test your drive to see whether or not it
-   supports this function.
-   If the archive device does not support the end of medium
-   ioctl request {\tt MTEOM}, set this parameter to {\bf No}.
-   The storage daemon will then use the forward space file
-   function to find the end of the recorded data.
-   In addition, your SCSI driver must
-   keep track of the file number on the tape and report it back correctly by
-   the {\bf MTIOCGET} ioctl. Note, some SCSI drivers will correctly forward
-   space to the end of the recorded data, but they do not keep track of the
-   file number.  On Linux machines, the SCSI driver has a {\bf fast-eod}
-   option, which if set will cause the driver to lose track of the file
-   number. You should ensure that this option is always turned off using the
-   {\bf mt} program.
-   }
-
-\defDirective{Sd}{Device}{Label Block Size}{64512}{14.2.0}{%
-   The storage daemon will write the label blocks with the size configured here.
-   Usually, you will not need to change this directive.
-
-   For more information on this directive, please see \nameref{Tapespeed and blocksizes}.
-   }
-
-\defDirective{Sd}{Device}{Label Media}{}{}{%
-   \index[general]{Label!Label Media}%
-   If {\bf Yes}, permits this device to automatically label blank media
-   without an explicit operator command.  It does so by using an internal
-   algorithm as defined on the \linkResourceDirective{Dir}{Pool}{Label Format} record in each
-   Pool resource.  If this is {\bf No} as by default, Bareos will label
-   tapes only by specific operator command (\bcommand{label}{} in the Console) or
-   when the tape has been recycled.  The automatic labeling feature is most
-   useful when writing to disk rather than tape volumes.
-   }
-
-\defDirective{Sd}{Device}{Label Type}{}{}{%
-   Defines the label type to use, see section \nameref{AnsiLabelsChapter}.
-   This directive is implemented in the Director Pool resource (\linkResourceDirective{Dir}{Pool}{Label Type})
-   and in the SD Device resource.  If it is specified in the the SD Device resource, it will take
-   precedence over the value passed from the Director to the SD.
-   If it is set to a non-default value, make sure to also enable \linkResourceDirective{Sd}{Device}{Check Labels}.
-   }
-
-\defDirective{Sd}{Device}{Maximum Block Size}{64512}{}{%
-   The Storage daemon will always attempt to
-   write blocks of the specified size (in-bytes) to the archive device.
-   As a consequence, this statement specifies both the default block size
-   and the maximum block size.  The size written never exceed the given
-   size.  If adding data to a block would cause it to exceed
-   the given maximum size, the block will be written to the archive device,
-   and the new data will begin a new block.
-
-   If no value is specified or zero is specified, the Storage daemon will
-   use a default block size of 64,512 bytes (126 * 512).
-
-   \warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes.}
-
-   Please read chapter \nameref{Tapespeed and blocksizes},
-   to see how to tune this value in a safe manner.
-   }
-
-\defDirective{Sd}{Device}{Maximum Changer Wait}{}{}{%
-   This directive specifies the maximum amount of time that Bareos
-   will wait for the changer to respond to a command (e.g.  load).
-   If you have a slow autoloader you may want to set it longer.
-
-   If the autoloader program fails to respond in this time,
-   Bareos will invalidate the volume slot number stored in the catalog and
-   try again.  If no additional changer volumes exist, Bareos will ask the
-   operator to intervene.
-   }
-
-\defDirective{Sd}{Device}{Maximum Concurrent Jobs}{}{}{%
-   This directive specifies the maximum number of Jobs that can run
-   concurrently on a specified Device.  Using this directive, it is possible
-   to have different Jobs using multiple drives, because when
-   the Maximum Concurrent Jobs limit is
-   reached, the Storage Daemon will start new Jobs on any other available
-   compatible drive.  This facilitates writing to multiple drives with
-   multiple Jobs that all use the same Pool.
-   }
-
-\defDirective{Sd}{Device}{Maximum File Size}{}{}{%
-   No more than {\bf size} bytes will be written into a given logical file
-   on the volume.  Once this size is reached, an end of file mark is
-   written on the volume and subsequent data are written into the next
-   file.  Breaking long sequences of data blocks with file marks permits
-   quicker positioning to the start of a given stream of data and can
-   improve recovery from read errors on the volume.  The default is one
-   Gigabyte.  This directive creates EOF marks only on tape media.
-   However, regardless of the medium type (tape, disk, USB ...) each time
-   a the Maximum File Size is exceeded, a record is put into the catalog
-   database that permits seeking to that position on the medium for
-   restore operations. If you set this to a small value (e.g. 1MB),
-   you will generate lots of database records (JobMedia) and may
-   significantly increase CPU/disk overhead.
-
-   If you are configuring an modern drive like LTO-4 or newer, you probably will
-   want to set the {\bf Maximum File Size} to 20GB or bigger to avoid making
-   the drive stop to write an EOF mark.
-
-   For more info regarding this parameter, read \nameref{Tapespeed and blocksizes}.
-
-   Note, this directive does not limit the size of Volumes that Bareos
-   will create regardless of whether they are tape or disk volumes. It
-   changes only the number of EOF marks on a tape and the number of
-   block positioning records that are generated. If you
-   want to limit the size of all Volumes for a particular device, use
-   the use the
-   \linkResourceDirective{Dir}{Pool}{Maximum Volume Bytes} directive.
-   }
-
-\defDirective{Sd}{Device}{Maximum Job Spool Size}{}{}{%
-   where the bytes specify the maximum spool size for any one job  that is
-   running. The default is no limit.
-   }
-
-\defDirective{Sd}{Device}{Maximum Network Buffer Size}{}{}{%
-   where {\bf bytes} specifies the initial network buffer  size to use with the
-   File daemon.  This size will be adjusted down if it is too large until
-   it is accepted by the OS. Please use care in setting this value since if
-   it is too large, it will be trimmed by 512 bytes until the OS is happy,
-   which may require a large number of system calls.  The default value is
-   32,768 bytes.
-
-   The default size was chosen to be relatively large but not too big in
-   the case that you are transmitting data over Internet.  It is clear that
-   on a high speed local network, you can increase this number and improve
-   performance. For example, some users have found that if you use a value
-   of 65,536 bytes they get five to ten times the throughput.  Larger values for
-   most users don't seem to improve performance. If you are interested
-   in improving your backup speeds, this is definitely a place to
-   experiment. You will probably also want to make the corresponding change
-   in each of your File daemons conf files.
-   }
-
-\defDirective{Sd}{Device}{Maximum Open Volumes}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Maximum Open Wait}{}{}{%
-   This directive specifies the maximum amount of time that
-   Bareos will wait for a device that is busy.
-   If the device cannot be obtained, the current Job will be terminated in
-   error.  Bareos will re-attempt to open the drive the next time a Job
-   starts that needs the the drive.
-   }
-
-\defDirective{Sd}{Device}{Maximum Part Size}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Maximum Rewind Wait}{}{}{%
-   This directive specifies the maximum time in seconds for Bareos to wait
-   for a rewind before timing out.  If this time is exceeded,
-   Bareos will cancel the job.
-   }
-
-\defDirective{Sd}{Device}{Maximum Spool Size}{}{}{%
-   where the bytes specify the maximum spool size for all jobs that are
-   running.  The default is no limit.
-   }
-
-\defDirective{Sd}{Device}{Maximum Volume Size}{}{}{%
-   Normally, \linkResourceDirective{Dir}{Pool}{Maximum Volume Bytes} should be used instead.
-   Limit the number of bytes that will be written onto a given volume on the
-   archive device.
-   This directive is used mainly in testing Bareos to
-   simulate a small Volume.
-   }
-
-\defDirective{Sd}{Device}{Media Type}{}{}{%
-   The specified value names the type of media supported by this
-   device, for example, "DLT7000".  Media type names are arbitrary in that you
-   set them to anything you want, but they must be known to the volume
-   database to keep track of which storage daemons can read which volumes.  In
-   general, each different storage type should have a unique Media Type
-   associated with it.  The same {\bf name-string} must appear in the
-   appropriate Storage resource definition in the Director's configuration
-   file.
-
-   Even though the names you assign are arbitrary (i.e.  you choose the name
-   you want), you should take care in specifying them because the Media Type
-   is used to determine which storage device Bareos will select during
-   restore.  Thus you should probably use the same Media Type specification
-   for all drives where the Media can be freely interchanged.  This is not
-   generally an issue if you have a single Storage daemon, but it is with
-   multiple Storage daemons, especially if they have incompatible media.
-
-   For example, if you specify a Media Type of "DDS-4" then during the
-   restore, Bareos will be able to choose any Storage Daemon that handles
-   "DDS-4".  If you have an autochanger, you might want to name the Media Type
-   in a way that is unique to the autochanger, unless you wish to possibly use
-   the Volumes in other drives.  You should also ensure to have unique Media
-   Type names if the Media is not compatible between drives.  This
-   specification is required for all devices.
-
-   In addition, if you are using disk storage, each Device resource will
-   generally have a different mount point or directory. In order for
-   Bareos to select the correct Device resource, each one must have a
-   unique Media Type.
-   }
-
-\defDirective{Sd}{Device}{Minimum Block Size}{}{}{%
-   This statement applies only to non-random access devices (e.g.
-   tape drives).  Blocks written by the storage daemon to a non-random
-   archive device will never be smaller than the given size.
-   The Storage daemon will attempt to efficiently fill blocks with data
-   received from active sessions but will, if necessary, add padding to a
-   block to achieve the required minimum size.
-
-   To force the block size to be fixed, as is the case for some non-random
-   access devices (tape drives), set the {\bf Minimum block size} and the
-   {\bf Maximum block size} to the same value.  The default
-   is that both the minimum and maximum block size are zero and the default
-   block size is 64,512 bytes.
-
-   For  example, suppose you want a fixed block size of 100K bytes, then you
-   would specify:
-
-   \bconfigInput{config/SdDeviceMinimumBlockSize1.conf}
-
-   Please note that if you specify a fixed block size as shown above,  the tape
-   drive must either be in variable block size mode, or  if it is in fixed block
-   size mode, the block size (generally  defined by \command{mt}) {\bf must} be
-   identical to the size specified  in Bareos -- otherwise when you attempt to
-   re-read your Volumes,  you will get an error.
-
-   If you want the  block size to be variable but with a 63K minimum and 200K
-   maximum (and  default as well), you would specify:
-
-   \bconfigInput{config/SdDeviceMinimumBlockSize2.conf}
-   }
-
-\defDirective{Sd}{Device}{Mount Command}{}{}{%
-   This directive specifies the command that must be executed to mount
-   devices such as many USB devices. Before the command is
-   executed, \%a is replaced with the Archive Device, and \%m with the Mount
-   Point.
-
-   See the \nameref{mountcodes} section below for more details of
-   the editing codes that can be used in this directive.
-
-   If you need to specify multiple commands, create a shell script.
-   }
-
-\defDirective{Sd}{Device}{Mount Point}{}{}{%
-   Directory where the device can be mounted.
-   This directive is used only
-   for devices that have {\bf Requires Mount} enabled such as
-   USB file devices.
-   }
-
-\defDirective{Sd}{Device}{Name}{}{}{%
-   Specifies the Name that the Director will use when asking to backup or
-   restore to or from to this device. This is the logical  Device name, and may
-   be any string up to 127 characters in length.  It is generally a good idea to
-   make it correspond to the English  name of the backup device. The physical
-   name of the device is  specified on the \linkResourceDirective{Sd}{Device}{Archive Device} directive.
-   The name you specify here is also used in your Director's
-   configuration  file on the
-   \nameref{DirectorResourceStorage} in its Storage
-   resource.
-   }
-
-\defDirective{Sd}{Device}{No Rewind On Close}{}{}{%
-   If {\bf Yes} the storage daemon
-   will not try to rewind the device on closing the device e.g. when shutting
-   down the Storage daemon. This allows you to do an emergency shutdown of
-   the Daemon without the need to wait for the device to rewind. On restarting
-   and opening the device it will get a rewind anyhow and this way services
-   don't have to wait forever for a tape to spool back.
-   }
-
-\defDirective{Sd}{Device}{Offline On Unmount}{}{}{%
-   If {\bf Yes} the  archive device
-   must support the {\tt MTOFFL ioctl} to rewind and  take the volume offline. In
-   this case, Bareos will issue the  offline (eject) request before closing the
-   device during the {\bf unmount}  command. If {\bf No} Bareos will not attempt
-   to offline the  device before unmounting it. After an offline is issued,  the
-   cassette will be ejected thus {\bf requiring operator intervention}  to
-   continue, and on some systems require an explicit load command  to be issued
-   ({\bf mt -f /dev/xxx load}) before the system will recognize  the tape. If you
-   are using an autochanger, some devices  require an offline to be issued prior
-   to changing the volume. However,  most devices do not and may get very
-   confused.
-
-   If you are using a Linux 2.6 kernel or other OSes
-   such as FreeBSD or Solaris, the Offline On Unmount will leave the drive
-   with no tape, and Bareos will not be able to properly open the drive and
-   may fail the job.
-   %\TODO{missing reference:  For more information on this problem, please see the
-   %\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
-   %Testing chapter.}
-   }
-
-\defDirective{Sd}{Device}{Query Crypto Status}{}{}{%
-   The default for this directive is {\bf No}. If {\bf Yes} the storage daemon
-   may query the tape device for it security status. This only makes sense when
-   Drive Crypto Enabled is also set to {\bf yes} as the actual query is performed
-   by the same Storage Daemon plugin and using the same SCSI SPIN protocol.
-   }
-
-\defDirective{Sd}{Device}{Random Access}{}{}{%
-   If {\bf Yes}, the archive device is assumed to be a random access medium
-   which supports the {\bf lseek} (or {\bf lseek64} if Largefile is enabled
-   during configuration) facility. This should be set to {\bf Yes} for all
-   file systems such as USB, and fixed files.  It should be set to
-   {\bf No} for non-random access devices such as tapes and named pipes.
-   }
-
-\defDirective{Sd}{Device}{Removable Media}{}{}{%
-   If {\bf Yes}, this device supports removable media (for example tapes).
-   If {\bf No}, media cannot be removed (for example, an
-   intermediate backup area on a hard disk). If {\bf Removable media} is
-   enabled on a File device (as opposed to a tape) the Storage daemon will
-   assume that device may be something like a USB device that can be
-   removed or a simply a removable harddisk. When attempting to open
-   such a device, if the Volume is not found (for File devices, the Volume
-   name is the same as the Filename), then the Storage daemon will search
-   the entire device looking for likely Volume names, and for each one
-   found, it will ask the Director if the Volume can be used.  If so,
-   the Storage daemon will use the first such Volume found.  Thus it
-   acts somewhat like a tape drive -- if the correct Volume is not found,
-   it looks at what actually is found, and if it is an appendable Volume,
-   it will use it.
-
-   If the removable medium is not automatically mounted (e.g. udev), then
-   you might consider using additional Storage daemon device directives
-   such as {\bf Requires Mount}, {\bf Mount Point}, {\bf Mount Command},
-   and {\bf Unmount Command}, all of which can be used in conjunction with
-   {\bf Removable Media}.
-   }
-
-\defDirective{Sd}{Device}{Requires Mount}{}{}{%
-   When this directive is enabled, the Storage daemon will submit
-   a {\bf Mount Command} before attempting to open the device.
-   You must set this directive to {\bf yes} for removable
-   file systems such as USB devices that are not automatically mounted
-   by the operating system when plugged in or opened by Bareos.
-   It should be set to {\bf no} for
-   all other devices such as tapes and fixed filesystems. It should also
-   be set to {\bf no} for any removable device that is automatically
-   mounted by the operating system when opened (e.g. USB devices mounted
-   by udev or hotplug). This directive
-   indicates if the device requires to be mounted using the {\bf Mount
-   Command}.  To be able to write devices need a mount, the following
-   directives must also be defined: {\bf Mount Point}, {\bf Mount Command},
-   and {\bf Unmount Command}.
-   }
-
-\defDirective{Sd}{Device}{Spool Directory}{}{}{%
-   specifies the name of the directory to be used to store  the spool files for
-   this device. This directory is also used to store  temporary part files when
-   writing to a device that requires mount (USB).  The default is to use the
-   working directory.
-   }
-
-\defDirective{Sd}{Device}{Two Eof}{}{}{%
-   If {\bf Yes}, Bareos will write two end of file marks when terminating a
-   tape -- i.e. after the last job or at the end of the medium. If {\bf No},
-   Bareos will only write one end of file to terminate the tape.
-   }
-
-\defDirective{Sd}{Device}{Unmount Command}{}{}{%
-   This directive specifies the command that must be executed to unmount
-   devices such as many USB devices. Before the command  is
-   executed, \%a is replaced with the Archive Device, and \%m with the  Mount
-   Point.
-
-   Most frequently, you will define it as follows:
-
-   \bconfigInput{config/SdDeviceUnmountCommand1.conf}
-
-   See the \nameref{mountcodes} section below for more details of
-   the editing codes that can be used in this directive.
-
-   If you need to specify multiple commands, create a shell script.
-   }
-
-\defDirective{Sd}{Device}{Use Mtiocget}{}{}{%
-   If {\bf No}, the operating system is not required to support keeping track of
-   the file number and reporting it in the ({\bf MTIOCGET} ioctl).
-   If you must set this to No, Bareos will do the proper file
-   position determination, but it is very unfortunate because it means that
-   tape movement is very inefficient.
-   Fortunately, this operation system deficiency seems to be the case only
-   on a few *BSD systems.  Operating systems known to work correctly are
-   Solaris, Linux and FreeBSD.
-   }
-
-\defDirective{Sd}{Device}{Volume Capacity}{}{}{%
-   }
-
-\defDirective{Sd}{Device}{Volume Poll Interval}{}{}{%
-   If the time  specified on this directive is non-zero,
-   %after  asking the operator to mount a new volume
-   Bareos will  periodically poll (or read) the
-   drive at the specified  interval to see if a new volume has been mounted. If
-   the  time interval is zero, no polling will occur.  This
-   directive can be useful if you want to avoid operator  intervention via the
-   console. Instead, the operator can  simply remove the old volume and insert
-   the requested one,  and Bareos on the next poll will recognize the new tape
-   and  continue.
-   Please be aware that if you set this interval  too small, you
-   may excessively wear your tape drive if the  old tape remains in the drive,
-   since Bareos will read it on  each poll.
-   % This can be avoided by ejecting the
-   % tape using  the {\bf Offline On Unmount} and the {\bf Close on Poll}
-   % directives.
-   % However, if you are using a Linux 2.6 kernel or other OSes
-   % such as FreeBSD or Solaris, the Offline On Unmount will leave the drive
-   % with no tape, and Bareos will not be able to properly open the drive and
-   % may fail the job.
-   %\TODO{reference is missing:  For more information on this problem, please see the
-   %\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
-   %Testing chapter.}
-   }
-
-\defDirective{Sd}{Device}{Write Part Command}{}{}{%
-   }
 
 Edit Codes for Mount and Unmount Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1418,9 +1554,9 @@ The following is an example of a valid Autochanger resource definition:
      ...
    }
 
-Please note that it is important to include the **Autochanger**:sup:`Sd`:sub:`Device`\ = **yes** directive in each device definition that belongs to an Autochanger. A device definition should not belong to more than one Autochanger resource.
+Please note that it is important to include the :config:option:`sd/device/Autochanger`\ = **yes** directive in each device definition that belongs to an Autochanger. A device definition should not belong to more than one Autochanger resource.
 
-Also, your **Device**:sup:`Dir`:sub:`Storage`\  must refer to the Autochanger’s resource name rather than a name of one of the Devices.
+Also, your :config:option:`dir/storage/Device`\  must refer to the Autochanger’s resource name rather than a name of one of the Devices.
 
 For details refer to the :ref:`AutochangersChapter` chapter.
 

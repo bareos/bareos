@@ -23,59 +23,191 @@ Director Resource
 
 The Director resource defines the attributes of the Director running on the network. You may have multiple Director resource specifications in a single Console configuration file. If you have more than one, you will be prompted to choose one when you start the Console program.
 
-\defDirective{Console}{Director}{Address}{}{}{%
-   Where the address is a host name,  a fully qualified domain name, or a network
-   address used to connect  to the Director.
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorAddress}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/Address`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorDescription}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/Description`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   8101                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorDir Port}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/DirPort`\                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     0                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorHeartbeat Interval}{yes}                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/HeartbeatInterval`\                                                                                                                                                                                                                                                                                                            
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorName}{yes}                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/director/Name`\ **                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               **= :strong:`Md5password`**                                                                                                                                                                                                                       **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorPassword}{yes}                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/director/Password`\ **                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Allowed CN}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsAllowedCn`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Authenticate}{yes}                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsAuthenticate`\                                                                                                                                                                                                                                                                                                              
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS CA Certificate Dir}{yes}                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsCaCertificateDir`\                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS CA Certificate File}{yes}                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsCaCertificateFile`\                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Certificate}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsCertificate`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Certificate Revocation List}{yes}                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsCertificateRevocationList`\                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Cipher List}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsCipherList`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS DH File}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsDhFile`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Enable}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsEnable`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Key}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsKey`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS PSK Enable}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsPskEnable`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS PSK Require}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsPskRequire`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Require}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsRequire`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorTLS Verify Peer}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/TlsVerifyPeer`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleDirectorUse Pam Authentication}{yes}                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/director/UsePamAuthentication`\                                                                                                                                                                                                                                                                                                        
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Console}{Director}{Description}{}{}{%
-   }
 
-\defDirective{Console}{Director}{Dir Port}{}{}{%
-   This port must be identical to the
-   \linkResourceDirective{Dir}{Director}{Dir Port} specified in the \nameref{DirectorChapter} file.
-   }
 
-\defDirective{Console}{Director}{Heartbeat Interval}{}{}{%
-   }
 
-\defDirective{Console}{Director}{Name}{}{}{%
-   The director name used to select among different Directors, otherwise, this
-   name is not used.
-   }
 
-\defDirective{Console}{Director}{Password}{}{}{%
-   This password is used to authenticate when connecting to the \bareosDir as default console.
-   It must correspond to \linkResourceDirective{Dir}{Director}{Password}.
-   }
 
-\defDirective{Console}{Director}{TLS Authenticate}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS CA Certificate Dir}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS CA Certificate File}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS Certificate}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS Certificate Revocation List}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS Enable}{}{}{%
-   Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
-   }
 
-\defDirective{Console}{Director}{TLS Key}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS Require}{}{}{%
-   }
 
-\defDirective{Console}{Director}{TLS Verify Peer}{}{}{%
-   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Console}{Director}{Address}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Director}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Director}{Dir Port}{\dt{Pint32}}{}{8101}{}{}
+
+   \resourceDirective{Console}{Director}{Heartbeat Interval}{\dt{Time}}{}{0}{}{}
+
+   \resourceDirective{Console}{Director}{Name}{\dt{Name}}{required}{}{}{}
+
+   \resourceDirective{Console}{Director}{Password}{\dt{Md5password}}{required}{}{}{}
+
+   \resourceDirective{Console}{Director}{TLS Allowed CN}{\dt{StringList}}{}{}{}{"Common Name"s (CNs) of the allowed peer certificates.}
+
+   \resourceDirective{Console}{Director}{TLS Authenticate}{\dt{Boolean}}{}{no}{}{Use TLS only to authenticate, not for encryption.}
+
+   \resourceDirective{Console}{Director}{TLS CA Certificate Dir}{\dt{Stddirectory}}{}{}{}{Path of a TLS CA certificate directory.}
+
+   \resourceDirective{Console}{Director}{TLS CA Certificate File}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS CA certificate(s) file.}
+
+   \resourceDirective{Console}{Director}{TLS Certificate}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS certificate.}
+
+   \resourceDirective{Console}{Director}{TLS Certificate Revocation List}{\dt{Stddirectory}}{}{}{}{Path of a Certificate Revocation List file.}
+
+   \resourceDirective{Console}{Director}{TLS Cipher List}{\dt{String}}{}{}{}{List of valid TLS Ciphers.}
+
+   \resourceDirective{Console}{Director}{TLS DH File}{\dt{Stddirectory}}{}{}{}{Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.}
+
+   \resourceDirective{Console}{Director}{TLS Enable}{\dt{Boolean}}{}{no}{}{Enable TLS support.}
+
+   \resourceDirective{Console}{Director}{TLS Key}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".}
+
+   \resourceDirective{Console}{Director}{TLS PSK Enable}{\dt{Boolean}}{}{yes}{}{Enable TLS-PSK support.}
+
+   \resourceDirective{Console}{Director}{TLS PSK Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".}
+
+   \resourceDirective{Console}{Director}{TLS Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets "TLS Enable = yes".}
+
+   \resourceDirective{Console}{Director}{TLS Verify Peer}{\dt{Boolean}}{}{no}{}{If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the "TLS Allowed CN" list.}
+
+   \resourceDirective{Console}{Director}{Use Pam Authentication}{\dt{Boolean}}{}{no}{}{}
+
+   \end{description}
 
 An actual example might be:
 
@@ -120,76 +252,202 @@ information.
 
 Note, the Console resource is optional, but can be useful for restricted consoles as noted above.
 
-\defDirective{Console}{Console}{Description}{}{}{%
-   }
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+:strong:`:strong:`configuration directive name                                                    ``  :strong:`:strong:`type of data                                                                    ``  :strong:`:strong:`default value                                                                   ``  :strong:`:strong:`remark                                                                          `` 
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleDescription}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/Description`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleDirector}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/Director`\                                                                                                                                                                                                                                                                                                                       
+.. raw:: latex                                                                                                               = :strong:`Time`                                                                                                     0                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleHeartbeat Interval}{yes}                                                                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/HeartbeatInterval`\                                                                                                                                                                                                                                                                                                             
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleHistory File}{yes}                                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/HistoryFile`\                                                                                                                                                                                                                                                                                                                   
+.. raw:: latex                                                                                                               = :strong:`Pint32`                                                                                                   100                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleHistory Length}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/HistoryLength`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               **= :strong:`Name`**                                                                                                                                                                                                                              **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleName}{yes}                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/console/Name`\ **                                                                                                                                                                                                                                                                                                                      
+.. raw:: latex                                                                                                               **= :strong:`Md5password`**                                                                                                                                                                                                                       **required**
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsolePassword}{yes}                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                      
+**:config:option:`console/console/Password`\ **                                                                                                                                                                                                                                                                                                                  
+.. raw:: latex                                                                                                               = :strong:`Directory`                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleRc File}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/RcFile`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`StringList`                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Allowed CN}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsAllowedCn`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Authenticate}{yes}                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsAuthenticate`\                                                                                                                                                                                                                                                                                                               
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS CA Certificate Dir}{yes}                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsCaCertificateDir`\                                                                                                                                                                                                                                                                                                         
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS CA Certificate File}{yes}                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsCaCertificateFile`\                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Certificate}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsCertificate`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Certificate Revocation List}{yes}                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsCertificateRevocationList`\                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`String`                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Cipher List}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsCipherList`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS DH File}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsDhFile`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Enable}{yes}                                                                                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsEnable`\                                                                                                                                                                                                                                                                                                                     
+.. raw:: latex                                                                                                               = :strong:`Stddirectory`                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Key}{yes}                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsKey`\                                                                                                                                                                                                                                                                                                                        
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  yes                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS PSK Enable}{yes}                                                                                                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsPskEnable`\                                                                                                                                                                                                                                                                                                                 
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS PSK Require}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsPskRequire`\                                                                                                                                                                                                                                                                                                                
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Require}{yes}                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsRequire`\                                                                                                                                                                                                                                                                                                                    
+.. raw:: latex                                                                                                               = :strong:`Boolean`                                                                                                  no                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                      
+   \csgdef{resourceDirectiveDefinedConsoleConsoleTLS Verify Peer}{yes}                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                      
+:config:option:`console/console/TlsVerifyPeer`\                                                                                                                                                                                                                                                                                                                
+============================================================================================================================ ============================================================================================================================ ============================================================================================================================ ============================================================================================================================
 
-\defDirective{Console}{Console}{Director}{}{}{%
-   If this directive is specified, this Console resource will be
-   used by bconsole when that particular director is selected
-   when first starting bconsole.  I.e. it binds a particular console
-   resource with its name and password to a particular director.
-   }
 
-\defDirective{Console}{Console}{Heartbeat Interval}{}{}{%
-   This directive is optional and if specified will cause the Console to
-   set a keepalive interval (heartbeat) in seconds on each of the sockets
-   to communicate with the Director.  It is implemented only on systems
-   (Linux, ...) that provide the {\bf setsockopt} TCP\_KEEPIDLE function.
-   If the value is set to 0 (zero), no change is made to the socket.
-   }
 
-\defDirective{Console}{Console}{History File}{}{}{%
-   If this directive is specified and the console is compiled with readline support,
-   it will use the given filename as history file.
-   If not specified, the history file will be named \file{~/.bconsole_history}
-   }
 
-\defDirective{Console}{Console}{History Length}{}{}{%
-   If this directive is specified the history file will be truncated after \configdirective{HistoryLength} entries.
-   }
 
-\defDirective{Console}{Console}{Name}{}{}{%
-   The Console name used to allow a restricted console to change
-   its IP address using the SetIP command. The SetIP command must
-   also be defined in the Director's conf CommandACL list.
-   }
 
-\defDirective{Console}{Console}{Password}{}{}{%
-   If this password is supplied, then the password specified in the
-   Director resource of you Console conf will be ignored.  See below
-   for more details.
-   }
 
-\defDirective{Console}{Console}{Rc File}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS Authenticate}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS CA Certificate Dir}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS CA Certificate File}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS Certificate}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS Certificate Revocation List}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS Enable}{}{}{%
-   Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
-   }
 
-\defDirective{Console}{Console}{TLS Key}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS Require}{}{}{%
-   }
 
-\defDirective{Console}{Console}{TLS Verify Peer}{}{}{%
-   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{description}
+
+   \resourceDirective{Console}{Console}{Description}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Console}{Director}{\dt{String}}{}{}{}{}
+
+   \resourceDirective{Console}{Console}{Heartbeat Interval}{\dt{Time}}{}{0}{}{}
+
+   \resourceDirective{Console}{Console}{History File}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Console}{Console}{History Length}{\dt{Pint32}}{}{100}{}{}
+
+   \resourceDirective{Console}{Console}{Name}{\dt{Name}}{required}{}{}{The name of this resource.}
+
+   \resourceDirective{Console}{Console}{Password}{\dt{Md5password}}{required}{}{}{}
+
+   \resourceDirective{Console}{Console}{Rc File}{\dt{Directory}}{}{}{}{}
+
+   \resourceDirective{Console}{Console}{TLS Allowed CN}{\dt{StringList}}{}{}{}{"Common Name"s (CNs) of the allowed peer certificates.}
+
+   \resourceDirective{Console}{Console}{TLS Authenticate}{\dt{Boolean}}{}{no}{}{Use TLS only to authenticate, not for encryption.}
+
+   \resourceDirective{Console}{Console}{TLS CA Certificate Dir}{\dt{Stddirectory}}{}{}{}{Path of a TLS CA certificate directory.}
+
+   \resourceDirective{Console}{Console}{TLS CA Certificate File}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS CA certificate(s) file.}
+
+   \resourceDirective{Console}{Console}{TLS Certificate}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded TLS certificate.}
+
+   \resourceDirective{Console}{Console}{TLS Certificate Revocation List}{\dt{Stddirectory}}{}{}{}{Path of a Certificate Revocation List file.}
+
+   \resourceDirective{Console}{Console}{TLS Cipher List}{\dt{String}}{}{}{}{List of valid TLS Ciphers.}
+
+   \resourceDirective{Console}{Console}{TLS DH File}{\dt{Stddirectory}}{}{}{}{Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications.}
+
+   \resourceDirective{Console}{Console}{TLS Enable}{\dt{Boolean}}{}{no}{}{Enable TLS support.}
+
+   \resourceDirective{Console}{Console}{TLS Key}{\dt{Stddirectory}}{}{}{}{Path of a PEM encoded private key. It must correspond to the specified "TLS Certificate".}
+
+   \resourceDirective{Console}{Console}{TLS PSK Enable}{\dt{Boolean}}{}{yes}{}{Enable TLS-PSK support.}
+
+   \resourceDirective{Console}{Console}{TLS PSK Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencryption connections. Enabling this implicitly sets "TLS-PSK Enable = yes".}
+
+   \resourceDirective{Console}{Console}{TLS Require}{\dt{Boolean}}{}{no}{}{Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets "TLS Enable = yes".}
+
+   \resourceDirective{Console}{Console}{TLS Verify Peer}{\dt{Boolean}}{}{no}{}{If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the "TLS Allowed CN" list.}
+
+   \end{description}
 
 Example Console Configuration File
 ----------------------------------
