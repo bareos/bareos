@@ -51,6 +51,7 @@ rst_epilog = '''
 # ones.
 extensions = [
     'bareos-ext',
+    'limitation',
     'sphinx_issues',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.coverage',

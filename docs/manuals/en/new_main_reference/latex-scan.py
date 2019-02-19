@@ -559,14 +559,20 @@ class Parser(object):
 
     def parse(self, string):
 
+        logger = logging.getLogger()
+
         self.data = string
         self.start = 0
         self.pos = 0
         self.length = len(self.data)
         self.result = ParsedResults()
 
+        count = 0
 
         while not self.isEod():
+            #count += 1
+            #if count % 10000 == 0:
+            #    logger.warning("pos = {} (count = {})".format(self.pos, count))
             if self.parseRawLatexBlock():
                 pass
             elif self.parseRawLatex():
@@ -950,7 +956,8 @@ class Translate(object):
         #    #item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n{2}\n'.format(component, summary, text))
         #    item.replace(b':index:`{0}: {1}. <triple: Limitation; {0}; {1}>`\n\n.. limitation:: **{1}.**\n{2}\n\n'.format(component, summary, text))
         #else:
-        item.replace(b'.. limitation:: {component}: {summary}.\n\n{indent}.. index::\n{indent}   triple: Limitation; {component}; {summary}\n\n{text}\n\n'.format(indent=indenttext, component=component, summary=summary, text=text))
+        #item.replace(b'.. limitation:: {component}: {summary}.\n\n{indent}.. index::\n{indent}   triple: Limitation; {component}; {summary}\n\n{text}\n\n'.format(indent=indenttext, component=component, summary=summary, text=text))
+        item.replace(b'.. limitation:: {component}: {summary}.\n\n{text}\n\n'.format(indent=indenttext, component=component, summary=summary, text=text))
 
 
 

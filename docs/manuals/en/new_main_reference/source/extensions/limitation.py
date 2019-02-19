@@ -4,7 +4,6 @@ from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 from sphinx import addnodes
-#from sphinx.util.docutils import SphinxDirective
 
 class Limitation(Directive):
 
@@ -14,33 +13,33 @@ class Limitation(Directive):
 
     # A boolean, indicating if the final argument may contain whitespace
     final_argument_whitespace = True
-    #option_spec = {'title', }
     has_content = True
 
     def run(self):
 
         env = self.state.document.settings.env
 
+        # Content text is optional, therefore don't raise an exception.
         # Raise an error if the directive does not have contents.
-        self.assert_has_content()
+        #self.assert_has_content()
 
+        # TODO: parse title
         title = 'Limitation: ' + self.arguments[0]
-        text  = '\n'.join(self.content)
+        indextext = 'Limitation; ' + self.arguments[0]
+
+        _id = nodes.make_id(title)
 
         paragraph = nodes.paragraph()
         self.state.nested_parse(self.content, self.content_offset, paragraph)
 
-
-        tgtid = 'index-%s' % env.new_serialno('index')
+        # Generic index entries
         indexnode = addnodes.index()
         indexnode['entries'] = [
-                ('single', 'Limitation; ' + self.arguments[0] , tgtid , '', None)
-                ]
+            ('single', indextext, _id, '', None)
+        ]
 
-
-        result = nodes.section(ids=['limitation'])
+        result = nodes.section(ids=[_id])
         result += nodes.title(text=title)
-        #result += nodes.paragraph(text=text)
         result += paragraph
         result += indexnode
 
