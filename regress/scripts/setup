@@ -60,7 +60,7 @@ make -C build ${MAKEOPT}
 check_exit_code
 make -C build install
 check_exit_code
-make -C build ${MAKEOPT} check
+make -C build ${MAKEOPT} test
 check_exit_code
 
 #  TargetDirectories for gcov
